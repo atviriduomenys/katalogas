@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h1>{% translate "Datasets" %}</h1>
+    <ul>
+        {% for dataset in page_obj %}
+        <li><a href="{{ dataset.get_absolute_url }}">{{ dataset.title }}</a></li>
+        {% endfor %}
+    </ul>
+    {% include "vitrina/common/pagination.html" %}
+{% endblock content %}

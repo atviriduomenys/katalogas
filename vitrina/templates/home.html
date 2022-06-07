@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="counts">
+    <p>{{ counts.dataset }} {% translate "Datasets" %}<p>
+    <p>{{ counts.organization }} {% translate "Organizations" %}<p>
+    <p>{{ counts.project }} {% translate "Projects" %}<p>
+</div>
+{% endblock content %}

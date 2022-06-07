@@ -1,0 +1,4 @@
+/local/
+/db.sqlite3
+*.pyc
+/pylsp-mypy.cfg

@@ -9,7 +9,8 @@ Programavimas
 *************
 
 - Visi pakeitimai daromi ``devel`` šakoje.
-- Laikomasi TDD (Test Driven Development) principo.
-- Laikomasi DDD (Documentation Driven Development) principo, panašiai, kaip TDD, tik vietoje testų, rašoma dokumentacija.
+- Laikomasi TDD_ (Test Driven Development) principo.
+- Laikomasi DDD_ (Documentation Driven Development) principo.
 
 .. _TDD: https://en.wikipedia.org/wiki/Test-driven_development
+.. _DDD: https://gist.github.com/zsup/9434452

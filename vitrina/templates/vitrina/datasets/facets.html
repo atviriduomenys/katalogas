@@ -1,0 +1,204 @@
+{% for ff in facets %}
+    {% if ff.name == 'data_status' %}
+        <nav class="category-panel">
+            <p class="category-panel-heading">
+                <strong> translate(concat("filter.", ff.name)) | upper }}</strong>
+            </p>
+            {% for fv in ff.values %}
+                {% if fv.name in selectedFacets %}
+                    <div class="is-flex">
+                    <span class="category-panel-block"><strong>
+                            if fv.name=="1" }
+                                 translate "general.inventored" %}
+                                {#                                <span class="icon info-icon has-tooltip-multiline m-r-md has-tooltip-right"#}
+                                {#                                                                            data-tooltip="{{ translate("tooltip.inventored") }}"><i#}
+                                {#                                        class="fas fa-info-circle"></i></span>#}
+                            {% elif fv.name=="2" %}
+                                {% translate "general.metadataOnly" %}
+                            {% elif fv.name=="3" %}
+                                {% translate "general.structureUploaded" %}
+                            {% else %}
+                                {% translate("general.dataOpened" %}
+                            {% endif %}
+                        </strong></span>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% else %}
+                    <div class="facet-{{ ff.name }} is-flex">
+                        <a href="{{ concat(currentQuery, "&", ff.name, "=", fv.name | url_encode ) }}"
+                           class="category-panel-block">
+                            {% if fv.name=="1" %}
+                                {% translate "general.inventored" %}
+                                {#                                <span class="icon info-icon has-tooltip-multiline m-r-md has-tooltip-right"#}
+                                {#                                                                            data-tooltip="{{ translate("tooltip.inventored") }}"><i#}
+                                {#                                        class="fas fa-info-circle"></i></span>#}
+                            {% elif fv.name=="2" %}
+                                {% translate "general.metadataOnly" %}
+                            {% elif fv.name=="3" %}
+                                {{ translate("general.structureUploaded") }}
+                            {% else %}
+                                {{ translate("general.dataOpened") }}
+                            {% endif %}</a>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </nav>
+    {% elseif ff.name == 'has_data' %}
+        {#        <nav class="category-panel">#}
+        {#            <p class="category-panel-heading">#}
+        {#                <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>#}
+        {#            </p>#}
+        {#            {% for fv in ff.values|reverse %}#}
+        {#                {% if fv.name in selectedFacets %}#}
+        {#                    <div class="is-flex">#}
+        {#                        <span class="category-panel-block"><strong>{% if fv.name=="true" %}{{ translate("general.uploaded") }}{% else %}{{ translate("general.notUploaded") }}{% endif %}</strong></span>#}
+        {#                        <div class="stays-right">({{ fv.count }})</div>#}
+        {#                    </div>#}
+        {#                {% else %}#}
+        {#                    <div class="facet-{{ ff.name }} is-flex">#}
+        {#                        <a href="{{ concat(currentQuery, "&", ff.name, "=", fv.name | url_encode ) }}"#}
+        {#                           class="category-panel-block">{% if fv.name=="true" %}{{ translate("general.uploaded") }}{% else %}{{ translate("general.notUploaded") }}{% endif %}</a>#}
+        {#                        <div class="stays-right">({{ fv.count }})</div>#}
+        {#                    </div>#}
+        {#                {% endif %}#}
+        {#            {% endfor %}#}
+        {#        </nav>#}
+    {% elseif ff.name == 'organization_id_title' %}
+        <nav class="category-panel">
+            <p class="category-panel-heading">
+                <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>
+            </p>
+            {% for fv in ff.values %}
+                {% if split(fv.name,'&&&')[1] in selectedFacets %}
+                    <div class="is-flex">
+                        <span class="category-panel-block"><strong>{{ split(fv.name,'&&&')[1] }}</strong></span>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% else %}
+                    <div {% if loop.index > 10 %}class="facet-{{ ff.name }} is-hidden is-flex"
+                         {% else %}class="is-flex"{% endif %}>
+                        <a href="{{ concat(currentQuery, "&organization_id=", split(fv.name,'&&&')[0] | url_encode ) }}"
+                           class="category-panel-block">{{ split(fv.name,'&&&')[1] }}</a>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if ff.values|length > 10 %}
+                <div>
+                    <span class="facets-more" id="facet-{{ ff.name }}">{{ translate("general.more") }}</span>
+                </div>
+            {% endif %}
+        </nav>
+    {% elseif ff.name == 'category_id_title' %}
+        {% if locale == 'lt' %}
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>
+                </p>
+                {% for fv in ff.values %}
+                    {% if split(fv.name,'&&&')[1] in selectedFacets %}
+                        <div class="is-flex">
+                            <span class="category-panel-block"><strong>{{ split(fv.name,'&&&')[1] }}</strong></span>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% else %}
+                        <div {% if loop.index > 10 %}class="facet-{{ ff.name }} is-hidden is-flex"
+                             {% else %}class="is-flex"{% endif %}>
+                            <a href="{{ concat(currentQuery, "&category_id=", split(fv.name,'&&&')[0] | url_encode ) }}"
+                               class="category-panel-block">{{ split(fv.name,'&&&')[1] }}</a>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if ff.values|length > 10 %}
+                    <div class="is-flex">
+                        <span class="facets-more" id="facet-{{ ff.name }}">{{ translate("general.more") }}</span>
+                    </div>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% elseif ff.name == 'category_id_title_en' %}
+        {% if locale == 'en' %}
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>
+                </p>
+                {% for fv in ff.values %}
+                    {% if split(fv.name,'&&&')[1] in selectedFacets %}
+                        <div class="is-flex">
+                            <span class="category-panel-block"><strong>{{ split(fv.name,'&&&')[1] }}</strong></span>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% else %}
+                        <div {% if loop.index > 10 %}class="facet-{{ ff.name }} is-hidden is-flex"
+                             {% else %}class="is-flex"{% endif %}>
+                            <a href="{{ concat(currentQuery, "&category_id=", split(fv.name,'&&&')[0] | url_encode ) }}"
+                               class="category-panel-block">{{ split(fv.name,'&&&')[1] }}</a>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if ff.values|length > 10 %}
+                    <div class="is-flex">
+                        <span class="facets-more" id="facet-{{ ff.name }}">{{ translate("general.more") }}</span>
+                    </div>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% elseif ff.name == 'tags' %}
+        {% if showTags %}
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>
+                </p>
+                {% for fv in ff.values %}
+                    {% if fv.name in selectedFacets %}
+                        <div class="is-flex">
+                            <span class="category-panel-block"><strong>{{ fv.name }}</strong></span>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% else %}
+                        <div {% if loop.index > 10 %}class="facet-{{ ff.name }} is-hidden is-flex"
+                             {% else %}class="is-flex"{% endif %}>
+                            <a href="{{ concat(currentQuery, "&", ff.name, "=", fv.name | url_encode ) }}"
+                               class="category-panel-block">{{ fv.name }}</a>
+                            <div class="stays-right">({{ fv.count }})</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if ff.values|length > 10 %}
+                    <div>
+                        <span class="facets-more" id="facet-{{ ff.name }}">{{ translate("general.more") }}</span>
+                    </div>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <nav class="category-panel">
+            <p class="category-panel-heading">
+                <strong>{{ translate(concat("filter.", ff.name)) | upper }}</strong>
+            </p>
+            {% for fv in ff.values %}
+                {% if fv.name in selectedFacets %}
+                    <div class="is-flex">
+                        <span class="category-panel-block"><strong>{{ fv.name }}</strong></span>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% else %}
+                    <div {% if loop.index > 10 %}class="facet-{{ ff.name }} is-hidden is-flex"
+                         {% else %}class="is-flex"{% endif %}>
+                        <a href="{{ concat(currentQuery, "&", ff.name, "=", fv.name | url_encode ) }}"
+                           class="category-panel-block">{{ fv.name }}</a>
+                        <div class="stays-right">({{ fv.count }})</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if ff.values|length > 10 %}
+                <div>
+                    <span class="facets-more" id="facet-{{ ff.name }}">{{ translate("general.more") }}</span>
+                </div>
+            {% endif %}
+        </nav>
+    {% endif %}
+{% endfor %}

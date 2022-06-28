@@ -6,7 +6,7 @@ from vitrina.projects.models import Project
 
 
 def home(request):
-    return render(request, 'home.html', {
+    return render(request, 'landing.html', {
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),

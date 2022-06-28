@@ -1,0 +1,20 @@
+{% load i18n %}
+{#<section class="section">#}
+{#<br/>#}
+{#<br/>#}
+<div class="container">
+    <form id="quick-search" class="field has-addons media-content" action="/search/quick" method="post" autocomplete="off">
+        <p class="control is-expanded">
+            <input name="q" class="input search-input is-large" type="text" value="{{ q | escape }}" placeholder="{% translate "Ieškoti duomenų..." %}" id="search-input">
+        </p>
+        <p class="control">
+            <button class="button is-large is-link" type="submit">
+                <span class="icon">
+                    <i class="fas fa-search"></i>
+                </span>
+            </button>
+        </p>
+    </form>
+    <a href="/search" class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
+</div>
+{#</section>#}

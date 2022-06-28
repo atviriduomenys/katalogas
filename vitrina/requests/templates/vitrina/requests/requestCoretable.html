@@ -1,0 +1,73 @@
+{% load i18n %}
+<table class="table custom-table-padding">
+    <tbody>
+    <tr>
+        <th>{% translate "Pasiūlymas organizacijai" %}</th>
+        <td>{% if organization.slug %}<a href="/organizations/{{ organization.slug }}">{{ organization }}</a>{% else %}{{ organization }}{% endif %}</td>
+    </tr>
+    {% if request.isExisting == 'true' %}
+        <tr>
+            <th>{% translate "request.forDataset" %}</th>
+            <td>{% if datasetSlug %}<a href="/dataset/{{ datasetSlug }}">{{ request.title }}</a>{% else %}{{ request.title }}{% endif %}</td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>{% translate "Būsena" %}</th>
+        <td>{% if request.status == 'CREATED' %}
+                <b>{% translate "Pateiktas" %}</b>
+            {% elif request.status == "REJECTED" %}
+                <b>{% translate "Atmestas" %}</b>
+            {% elif request.status == "ALREADY_OPENED" %}
+                <b>{% translate "request.alreadyOpen" %}</b>
+            {% else %}
+                <b>{% translate "request.answered" %}</b>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>{% translate "Registravimo data" %}</th>
+        <td>{{ request.getDate }}</td>
+    </tr>
+    {% if request.modified %}
+        <tr>
+            <th>{% translate "Atnaujinimo data" %}</th>
+            <td>{{ request.getDateModified }}</td>
+        </tr>
+    {% endif %}
+    {% if request.plannedOpeningDate %}
+        {% if request.isExisting == 'false' %}
+            <tr>
+                <th>{% translate "request.plannedDate" %}</th>
+                <td>{{ request.getOpeningDate }}</td>
+            </tr>
+        {% endif %}
+    {% endif %}
+    {% if request.usercount %}
+        <tr>
+            <th>{% translate "request.user.count" %}</th>
+            <td>{{ request.usercount }}</td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
+        <td>{{ request.periodicity }}</td>
+    </tr>
+    {#<tr>#}
+      {#  <th>{% translate "request.likes" %}:</th>#}
+        {#<td>#}
+          {#  {% if likeCount %}#}
+            {#    {{ likeCount }}#}
+            {#{% else %}#}
+             {#   0#}
+            {#{% endif %}#}
+            {#{% if user %}#}
+              {#  {% if liked %}#}
+                {#    {#<td>{% translate "request.alreadyLiked" %}</td>#}
+                {#{% else %}#}
+                  {#  {% include "../../component/like.twig" %}#}
+                {#{% endif %}#}
+            {#{% endif %}#}
+        </td>
+    </tr>
+    </tbody>
+</table>

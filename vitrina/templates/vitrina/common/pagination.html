@@ -2,19 +2,19 @@
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">{% translate "previous" %}</a>
+            <a href="?page=1">&laquo; {% translate "Pradinis" %}</a>
+            <a href="?page={{ page_obj.previous_page_number }}">{% translate "Atgal" %}</a>
         {% endif %}
 
         <span class="current">
             {% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}
-            Page {{ number }} of {{ total }}.
+                Puslapis {{ number }} iš {{ total }}.
             {% endblocktranslate %}
         </span>
 
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">{% translate "next" %}</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        <a href="?page={{ page_obj.next_page_number }}">{% translate "Pirmyn" %}</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">{% translate "Paskutinis" %} &raquo;</a>
         {% endif %}
     </span>
 </div>

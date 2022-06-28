@@ -1,18 +1,63 @@
 {% load cms_tags sekizai_tags %}
 {% load menu_tags %}
+{% load static %}
+{% load sass_tags %}
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>{% page_attribute "page_title" %}</title>
-        {% render_block "css" %}
-    </head>
-    <body>
-        {% cms_toolbar %}
-        <ul class="nav">
-            {% show_menu 0 100 100 100 %}
-        </ul>
-        {% block content %}
-            {% placeholder "content" %}
-        {% endblock content %}
-        {% render_block "js" %}
-    </body>
+<head>
+    <meta charset="utf-8">
+
+    <title>Lietuvos atvirų duomenų portalas{% block pageTitle %}{% endblock %}</title>
+    <meta name="description" content="{% block pageDescription %}Atvirų duomenų portalas - tai vieningas prieigos taškas prie visų Lietuvoje atvertų duomenų rinkinių ir suteikiantis technologines priemones atvirų duomenų tiekėjams parengti ir publikuoti atvertų duomenų rinkinių metaduomenis.{% endblock %}">
+    <meta name="keywords" content="{% block pageKeywords %}atviri duomenys, duomenų rinkiniai, atvirų duomenų portalas{% endblock %}">
+    <meta name="author" content="{% block pageAuthor %}Informacinės visuomenės plėtros komitetas{% endblock %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta property="og:title" content="Lietuvos atvirų duomenų portalas{% block pageOgTitle %}{% endblock %}" />
+    <meta property="og:type" content="{% block pageOgType %}website{% endblock %}" />
+    <meta property="og:description" content="{% block pageOgDescription %}Atvirų duomenų portalas - tai vieningas prieigos taškas prie visų Lietuvoje atvertų duomenų rinkinių ir suteikiantis technologines priemones atvirų duomenų tiekėjams parengti ir publikuoti atvertų duomenų rinkinių metaduomenis.{% endblock %}" />
+
+    <link type="text/css" href="{% sass_src 'css/adp-final.scss' %}" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="{% static 'css/icons.css' %}">
+    <script defer src="{% static 'js/all.js' %}"></script>
+    {% include "component/favicon.html" %}
+    {% block head %}{% endblock %}
+    {% if cssOverride %}
+        <style>
+            {{ cssOverride }}
+        </style>
+    {% endif %}
+</head>
+<body {% if stagingEnv %}class="contains-warning-border"{% endif %}>
+{% block warning %}
+    {% if stagingEnv %}
+        <div id="top-bar" class="is-warning-bar">
+            <p>"testingEnvironment"</p>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block notification %}{% endblock %}
+<header>
+    {#<div class="container">#}
+    {% include "component/navbar.html" %}
+    {#</div>#}
+</header>
+{% block root %}
+    <section class="section">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </section>
+{% endblock %}
+{% include "component/footer.html" %}
+<script>
+    function openMenu() {
+        var burger = document.querySelector('.burger');
+        var nav = document.querySelector('#navbarBasic');
+        burger.classList.toggle('is-active');
+        nav.classList.toggle('is-active');
+    }
+</script>
+{% block scripts %}{% endblock %}
+</body>
 </html>

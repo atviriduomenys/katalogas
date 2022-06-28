@@ -1,7 +1,286 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block content %}
+
 <h1>{{ object.title }}</h1>
 <p>{{ object.description|linebreaks }}</p>
-{% endblock content %}
+
+
+{% block parent_title %}{% translate "page.title.requests" %}{% endblock %}
+{% block current_title %}{{ request.title }}{% endblock %}
+
+{% block content %}
+    {#{% if request.purpose %}#}
+      {#  {% set purposes = request.purpose|split(',') %}#}
+    {# {% endif %}#}
+    {#{% if request.format %}#}
+      {#  {% set formats = request.format|split(',') %}#}
+    {#{% endif %}#}
+    {#{% if request.changes %}#}
+     {#   {% set changes = request.changes|split(',') %}#}
+    {#{% endif %}#}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            <article class="panel">
+                <p class="panel-heading">
+                    {% translate "Poreikiai ir pasiūlymai" %}
+                </p>
+                <nav class="category-panel">
+                    <a class="panel-block is-active" href="/requests/submitted">
+                        <span class="panel-icon">
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        {% translate "Gauti poreikiai duomenų rinkiniams" %}
+                    </a>
+                    <a class="panel-block" href="/requests/suggest">
+                        <span class="panel-icon">
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                        {% translate "Pateikti pasiūlymą / pastabą" %}
+                    </a>
+                </nav>
+            </article>
+            <div class="content">
+                <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
+                <a href="/requests/new"
+                   class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
+            </div>
+        </div>
+        <div class="column is-three-quarters">
+            <div class="content">
+                <div class="request-title">
+                    {% if request.isExisting == 'false' %}
+                        <p class="is-size-4">{% translate "Naujų duomenų atvėrimo poreikis" %}: </p>
+                    {% else %}
+                        <p class="is-size-4">{% translate "Esamo duomenų rinkinio papildymo poreikis" %}: </p>
+                    {% endif %}
+                    <h1 class="is-size-4">{{ request.title | escape }}</h1>
+                </div>
+            </div>
+            <div class="content">{{ request.description | escape }}</div>
+            {% include "vitrina/requests/requestCoretable.html" %}
+            {#{% include "dataset/tags.twig" %}#}
+            {% if request.isExisting == 'false' %}
+                {% if request.purpose %}
+                    <div class="field">
+                        <label class="label">{% translate "request.data.usage.purpose" %}</label>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="purpose"
+                                        value="science"
+                                        disabled
+                                        {% if 'science' in purposes %}checked{% endif %}
+                                >{% translate "request.purpose.science" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="purpose"
+                                        value="product"
+                                        disabled
+                                        {% if 'product' in purposes %}checked{% endif %}
+                                >{% translate "request.purpose.product" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="purpose"
+                                        value="democracy"
+                                        disabled
+                                        {% if 'democracy' in purposes %}checked{% endif %}
+                                >{% translate "request.purpose.democracy" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="purpose"
+                                        value="society"
+                                        disabled
+                                        {% if 'society' in purposes %}checked{% endif %}
+                                >{% translate "request.purpose.society" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="purpose"
+                                        value="social"
+                                        disabled
+                                        {% if 'social' in purposes %}checked{% endif %}
+                                >{% translate "request.purpose.social" %}</label>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if request.changes %}
+                    <div class="field">
+                        <label class="label">{% translate "request.preferred.change" %}</label>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="changes"
+                                        value="format"
+                                        id="change-format"
+                                        disabled
+                                        {% if 'format' in changes %}checked{% endif %}
+                                >{% translate "request.change.format" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="changes"
+                                        value="data"
+                                        id="add-new-data"
+                                        disabled
+                                        {% if 'data' in changes %}checked{% endif %}
+                                >{% translate "request.add.new.data" %}</label>
+                        </div>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input
+                                        type="checkbox"
+                                        name="changes"
+                                        value="period"
+                                        id="change-period"
+                                        disabled
+                                        {% if 'period' in changes %}checked{% endif %}
+                                >{% translate "request.change.periodicity" %}</label>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% if request.format %}
+                <div class="field">
+                    <label class="label">{% translate "request.format" %}</label>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input
+                                    type="checkbox"
+                                    name="format"
+                                    value="csv"
+                                    disabled
+                                    {% if 'csv' in formats %}checked{% endif %}
+                            >CSV</label>
+                        <label class="checkbox">
+                            <input
+                                    type="checkbox"
+                                    name="format"
+                                    value="xlsx"
+                                    disabled
+                                    {% if 'xlsx' in formats %}checked{% endif %}
+                            >XLSX</label>
+                        <label class="checkbox">
+                            <input
+                                    type="checkbox"
+                                    name="format"
+                                    value="json"
+                                    disabled
+                                    {% if 'json' in formats %}checked{% endif %}
+                            >JSON</label>
+                        <label class="checkbox">
+                            <input
+                                    type="checkbox"
+                                    name="format"
+                                    value="rdf"
+                                    disabled
+                                    {% if 'rdf' in formats %}checked{% endif %}
+                            >RDF</label>
+                        <label class="checkbox">
+                            <input
+                                    type="checkbox"
+                                    name="format"
+                                    value="xml"
+                                    disabled
+                                    {% if 'xml' in formats %}checked{% endif %}
+                            >XML</label>
+                    </div>
+                </div>
+            {% endif %}
+            {% if structure %}
+                <div class="field">
+                    <label class="label">{% translate "request.structure" %}</label>
+                </div>
+                <table class="table is-bordered">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "request.data.name.placeholder" %}</th>
+                        <th>{% translate "request.data.dictionary.placeholder" %}</th>
+                        <th>{% translate "request.data.type.placeholder" %}</th>
+                        <th>{% translate "request.data.notes" %}</th>
+                    </tr>
+                        {% for struct in structure %}
+                            <tr>
+                                <td>{{ struct.dataTitle }}</td>
+                                <td>{{ struct.dictionaryTitle }}</td>
+                                <td>{{ struct.dataType }}</td>
+                                <td>{{ struct.dataNotes }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="structure-wrapper m-b-sm"></div>
+            {% endif %}
+            {% if structureFile %}
+                <p class="label">{% translate "request.structureFile" %}</p>
+                <div class="content">
+                    <a href="{{ structureFileUrl }}">{{structureFile}}</a>
+                </div>
+            {% endif %}
+            {% if request.notes != "" %}
+                <p class="label">{% translate "Papildoma informacija" %}</p>
+                <div class="content">
+                    {{ request.notes }}
+                </div>
+                <br>
+            {% endif %}
+            {#<h3 class="title is-size-4-mobile">{% translate "dataset.description" %}</h3>#}
+            {#<div class="content">{{ request.description | escape }}</div>#}
+            {% if request.comment != "" %}
+                <div class="organization-comment">
+                    <h3 class="organization-comment-title">{% translate "request.comment" %}</h3>
+                    <div class="content">{{ request.comment | escape }}</div>
+                </div>
+                <br>
+            {% endif %}
+            {% if history %}
+                {% include 'request/history.twig' %}
+            {% endif %}
+            {#{% if request.status == 'APPROVED' %}#}
+            
+            <br>
+            {#{% endif %}#}
+            {#{% if request.status == 'APPROVED' %}#}
+            {#{% include 'request/comments.twig' %}#}
+            {#{% endif %}#}
+        </div>
+    </div>
+{% endblock %}
+{#{% block extraContent %}#}
+    {#<div class="container">#}
+        {#{% include '../component/requestBlockWide.twig' %}#}
+    {#</div>#}
+{#{% endblock %}#}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            $('.reply-button').click(function () {
+                $('#media-' + this.id).toggleClass('is-hidden');
+            });
+
+            $('#form-comment').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+
+            $('#form-reply').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+        });
+    </script>
+{% endblock %}

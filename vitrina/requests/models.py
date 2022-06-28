@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from django.urls import reverse
+
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
 
@@ -39,6 +41,9 @@ class Request(models.Model):
     class Meta:
         managed = False
         db_table = 'request'
+
+    def get_absolute_url(self):
+        return reverse('request-detail', kwargs={'pk': self.pk})
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

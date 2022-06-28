@@ -1,0 +1,29 @@
+// Set your brand colors
+$header-background-color: #f3f4f1;
+$white: #ffffff;
+$black: #000000;
+$adp-dark-blue: #006d9b;
+$adp-blue: #007db2;
+$adp-light-blue: #62b9d4;
+$adp-light-blue-hover: #15b9ec;
+$adp-light-gray: #777777;
+$adp-light-gray-hover: #999999;
+$adp-gray: #737373;
+$adp-dark-gray: #444444;
+$adp-medium-gray: #333333;
+
+$adp-social-icon: #c9cbcd;
+
+$adp-line-color: #dbdbdb;
+
+// Update Bulma's global variables
+$primary: $adp-light-blue;
+$info: $adp-light-blue;
+$link: $adp-dark-blue;
+$light: $adp-light-gray;
+$button-hover-border-color: $adp-light-blue-hover;
+
+$modal-content-width: calc(100vw - 40px);
+
+$gap: 32px;
+$fullhd: 1216px + (2 * $gap);

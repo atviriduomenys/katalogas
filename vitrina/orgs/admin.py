@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from vitrina.datasets.models import Organization
+from vitrina.orgs.models import Organization
 
 
 class OrganizationAdmin(admin.ModelAdmin):

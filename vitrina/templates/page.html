@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {{ title }}{% endblock %}
+{% block pageOgTitle %} | {{ title }}{% endblock %}
+
+{% block metaDescription %}{{ description }}{% endblock %}
+
+{% block current_title %}{{ title }}{% endblock %}
+
+{% block content %}
+    
+        <div class="columns full-h">
+            <div class="column is-one-quarter">
+                <article class="panel">
+                    <p class="panel-heading">
+{#                        {% if parent %}#}
+{#                            {{ parent.title }}#}
+{#                        {% else %}#}
+                        <a href="{{ slug }}">{{ title }}</a>
+{#                        {% endif %}#}
+                    </p>
+                    <nav class="category-panel">
+                        {% for child in children %}
+                            <a class="panel-block {% if current_title == child.title %} is-active {% endif %}"
+                               href="{{ child.slug }}">
+                        <span class="panel-icon">
+                            <i class="fas fa-book" aria-hidden="true"></i>
+                        </span>
+                                {{ child.title }}
+                            </a>
+                        {% endfor %}
+                    </nav>
+                </article>
+            </div>
+            <div class="column is-three-quarters">
+                <div class="content m-b-md">
+                    {{ body }}
+                </div>
+            </div>
+        </div>
+    
+{% endblock %}

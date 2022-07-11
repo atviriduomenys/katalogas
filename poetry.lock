@@ -513,6 +513,14 @@ htmlsoup = ["beautifulsoup4"]
 source = ["Cython (>=0.29.7)"]
 
 [[package]]
+name = "mysqlclient"
+version = "2.1.1"
+description = "Python interface to MySQL"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -772,7 +780,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "38f78c41c73c685a51e5a3cdbb83def5a9063235a8d17dfc68b2e4e6cac400b6"
+content-hash = "12ccc41b262a63814377b681a57b8c4435769cb947ddcbcd9779c0fcc0b0b64a"
 
 [metadata.files]
 aldryn-apphooks-config = [
@@ -1006,6 +1014,15 @@ lxml = [
     {file = "lxml-4.9.0-pp39-pypy39_pp73-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_24_i686.whl", hash = "sha256:615886ee84b6f42f1bdf1852a9669b5fe3b96b6ff27f1a7a330b67ad9911200a"},
     {file = "lxml-4.9.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:94f2e45b054dd759bed137b6e14ae8625495f7d90ddd23cf62c7a68f72b62656"},
     {file = "lxml-4.9.0.tar.gz", hash = "sha256:520461c36727268a989790aef08884347cd41f2d8ae855489ccf40b50321d8d7"},
+]
+mysqlclient = [
+    {file = "mysqlclient-2.1.1-cp310-cp310-win_amd64.whl", hash = "sha256:c1ed71bd6244993b526113cca3df66428609f90e4652f37eb51c33496d478b37"},
+    {file = "mysqlclient-2.1.1-cp311-cp311-win_amd64.whl", hash = "sha256:c812b67e90082a840efb82a8978369e6e69fc62ce1bda4ca8f3084a9d862308b"},
+    {file = "mysqlclient-2.1.1-cp38-cp38-win_amd64.whl", hash = "sha256:0d1cd3a5a4d28c222fa199002810e8146cffd821410b67851af4cc80aeccd97c"},
+    {file = "mysqlclient-2.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:b355c8b5a7d58f2e909acdbb050858390ee1b0e13672ae759e5e784110022994"},
+    {file = "mysqlclient-2.1.1-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:996924f3483fd36a34a5812210c69e71dea5a3d5978d01199b78b7f6d485c855"},
+    {file = "mysqlclient-2.1.1-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:dea88c8d3f5a5d9293dfe7f087c16dd350ceb175f2f6631c9cf4caf3e19b7a96"},
+    {file = "mysqlclient-2.1.1.tar.gz", hash = "sha256:828757e419fb11dd6c5ed2576ec92c3efaa93a0f7c39e263586d1ee779c3d782"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},

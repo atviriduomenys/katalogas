@@ -1,10 +1,16 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}    
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block head %}
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+    <link href="{% static 'css/datepicker.min.css' %}" rel="stylesheet">
+    <script src="{% static 'js/datepicker.min.js' %}"></script>
+    <script src="{% static 'js/datepicker.lt-LT.js' %}"></script>
+    
     <style>
         .autocomplete {
             /*the container must be positioned relative:*/
@@ -63,21 +69,7 @@
             {#{% endfor %}#}
             {#{% endif %}#}
 
-            {#{% include "vitrina/datasets/facets.html" %}#}
-
-            <nav class="category-panel">
-                <p class="category-panel-heading">
-                    <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
-                </p>
-                <div class="field">
-                    <input class="input datepicker-from" name="date_from" id="from" value="{{ dateFrom }}"
-                           placeholder="{% translate "Data nuo" %}">
-                </div>
-                <div class="field">
-                    <input class="input datepicker-to" name="date_to" id="to" value="{{ dateTo }}"
-                           placeholder="{% translate "Data iki" %}">
-                </div>
-            </nav>
+            {% include "vitrina/datasets/filters.html" %}
         </div>
 
         <div class="column is-three-quarters">
@@ -246,7 +238,7 @@
             $('.facets-more').click(function () {
                 $('.' + this.id).toggleClass('is-hidden');
                 $(this).text(function (i, text) {
-                    return text === "{% translate "general.more" %}" ? "{% translate "general.less" %}" : "{% translate "general.more" %}";
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
                 })
             });
 
@@ -260,50 +252,47 @@
                 $('#facet-modal').toggleClass("is-active");
             });
 
-            var lang = "{{ locale }}";
+            var lang = "lt-LT";
             var currentUrl = new URL(window.location);
             var searchParams = new URLSearchParams(currentUrl.search);
             var selectedDate = null;
-            var datasetTitles = {{ datasetSuggestions }};
+            var datasetTitles = "datasetSuggestions";
 
             $('.datepicker-from').datepicker({
                 language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_from', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
+                format: 'yyyy-mm-dd',
+                autoHide: true,
+                hide: function () {
+                    getFromDateAndExecute();
                 }
             });
+
             $('.datepicker-to').datepicker({
                 language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_to', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
+                format: 'yyyy-mm-dd',
+                autoHide: true,
+                hide: function () {
+                    getToDateAndExecute();
                 }
             });
+
+            function getFromDateAndExecute() {
+                var date = $('.datepicker-from').datepicker('getDate', 'true');
+                if (date != null) {
+                    searchParams.set('date_from', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
+                }
+            }
+
+            function getToDateAndExecute() {
+                var date = $('.datepicker-to').datepicker('getDate', 'true');
+                if (date != null) {
+                    searchParams.set('date_to', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
+                }
+            }
 
             function autocomplete(inp, arr) {
                 var currentFocus;

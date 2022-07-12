@@ -1,0 +1,126 @@
+{% load i18n %}
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
+    </p>
+    <div class="facet-data_status is-flex">
+        <a href="?status=HAS_DATA" class="category-panel-block" title="Atverti duomenys">
+            {% translate "Atverti duomenys" %}
+        </a>
+    </div>
+    <div class="facet-data_status is-flex">
+        <a href="?status=INVENTORED" class="category-panel-block" title="Atverti duomenys">
+            {% translate "Tik inventorintas" %}
+        </a>
+    </div>
+    <div class="facet-data_status is-flex">
+        <a href="?status=HAS_STRUCTURE" class="category-panel-block" title="Atverti duomenys">
+            {% translate "Įkelta duomenų struktūra" %}
+        </a>
+    </div>
+    <div class="facet-data_status is-flex">
+        <a href="?status=METADATA" class="category-panel-block" title="Atverti duomenys">
+            {% translate "Tik metaduomenys" %}
+        </a>
+    </div>    
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Organizacija" as orgTitle %} {{orgTitle|upper}}</strong>
+    </p>
+
+    {% for org in orgs %}
+        <div class="{% if forloop.counter > 10 %} facet-orgs is-hidden {% endif %} is-flex">
+            <a href="?organization={{ org.id }}" class="category-panel-block" title="{{ org.title }}">{{ org.title }}</a>
+        </div>
+    {% endfor %}
+    
+    {% if orgs|length > 10 %}
+        <div>
+            <span class="facets-more" id="facet-orgs">{% translate "Išskleisti" %}</span>
+        </div>
+    {% endif %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Kategorija" as catTitle %} {{catTitle|upper}}</strong>
+    </p>
+    
+    {% for cat in categories %}
+        <div class="{% if forloop.counter > 10 %} facet-cats is-hidden {% endif %} is-flex">
+            <a href="?category={{ cat.id }}" class="category-panel-block" title="{{ cat.title }}">{{ cat.title }}</a>  
+        </div>
+    {% endfor %}
+
+    {% if categories|length > 10 %}
+        <div>
+            <span class="facets-more" id="facet-cats">{% translate "Išskleisti" %}</span>
+        </div>
+    {% endif %}            
+</nav>
+
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Žymė" as tagTitle %} {{tagTitle|upper}}</strong>
+    </p>
+
+    <div class="is-flex">
+        <a href="?q=&amp;format=CSV" class="category-panel-block" title="CSV">CSV</a>
+    </div>    
+    <div class="is-flex">
+        <a href="?q=&amp;format=WMS" class="category-panel-block" title="WMS">WMS</a>
+    </div>
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Formatas" as formatTitle %} {{formatTitle|upper}}</strong>
+    </p>
+            
+    <div class="facet-format is-flex">
+        <a href="?q=&amp;format=DOC" class="category-panel-block" title="DOC">DOC</a>
+        
+    </div>
+
+    <div class="facet-format is-flex">
+        <a href="?q=&amp;format=OGS+WMS" class="category-panel-block" title="OGS WMS">OGS WMS</a>
+    </div>        
+    
+    <div>
+        <span class="facets-more" id="facet-format">{% translate "Išskleisti" %}</span>
+    </div>        
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Atnaujinama" as freqTitle %} {{freqTitle|upper}}</strong>
+    </p>
+    
+    {% for freq in frequencies %}
+        <div class="{% if forloop.counter > 10 %} facet-frequency is-hidden {% endif %} is-flex">
+            <a href="?frequency={{ freq.id }}" class="category-panel-block" title="{{ freq.title }}">{{ freq.title }}</a>                
+        </div>
+    {% endfor %}
+    
+    <div>
+        <span class="facets-more" id="facet-frequency">{% translate "Išskleisti" %}</span>
+    </div>   
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
+    </p>
+    <div class="field">
+        <input class="input datepicker-from" name="date_from" id="from"
+                           placeholder="{% translate "Data nuo" %}">
+    </div>
+    <div class="field">
+        <input class="input datepicker-to" name="date_to" id="to"
+                           placeholder="{% translate "Data iki" %}">
+    </div>
+</nav>

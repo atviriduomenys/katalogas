@@ -1,0 +1,19 @@
+{% load i18n %}
+
+{% if new_structure %}
+    <a href="/dataset/{{ dataset.id }}/structure/{{ new_structure.filename | escape }}"
+       class="button is-primary structure-button">{% translate "Atsisiųsti" %}</a>
+    {% if new_structure.standardized %}
+        <a class="button is-primary structure-button new-preview-button">{% translate "Peržiūrėti" %}</a>
+    {% endif %}
+{#{% else %}#}
+{#    {% for str in structure %}#}
+{#        {% if str.title %}#}
+{#            {% set title = str.title %}#}
+{#        {% else %}#}
+{#            {% set title = str.filename %}#}
+{#        {% endif %}#}
+{#        <a href="/dataset/{{ dataset.id }}/structure/{{ str.id }}/{{ str.filename | escape }}"#}
+{#           class="button is-primary structure-button">{{ str.filename }}</a>#}
+{#    {% endfor %}#}
+{% endif %}

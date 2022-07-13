@@ -1,0 +1,24 @@
+<section class="section">
+    <div class="container">
+        <div class="columns is-multiline p-t-lg">
+            {% for cat in categories %}
+                <div class="column is-2-fullhd is-3-desktop is-4-tablet">
+                    <div class="category-box has-text-centered">
+                       
+                            <a href="/datasets?category_id={{ cat.id }}"
+                                    title="{{ cat.description }}"
+                                    class="if activeCategories[cat.title] == null %} category-empty category-icon">
+                                {% if cat.icon %}
+                                    <p>
+                                        <span class="category-custom-icon icon-{{ cat.icon }}"></span>
+                                    </p>
+                                {% endif %}
+                                <p class="category-icon-text">{{ cat.title }}</p>
+                            </a>
+                        
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

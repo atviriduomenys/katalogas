@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}    
+
+{% block pageTitle %} | {% translate "Organizacijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Organizacijos" %}{% endblock %}
+
+{% block head %}
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+{% endblock %}
+
+{% block current_title %}{% translate "Organizacijos" %}{% endblock %}
+
+{% block content %}
+    {#<section class="section section-padding-small">#}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Valdymo sritis" as jurisdictionTitle %}{{ jurisdictionTitle|upper}}</strong>
+                </p>
+                {% for jurisdiction in jurisdictions %}
+                    <div class="{% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %} is-flex ">
+                        <a href="?jurisdiction={{ jurisdiction }}" class="category-panel-block" title="{{ jurisdiction }}">
+                            {{jurisdiction}}
+                        </a>
+                    </div> 
+                {% endfor %}   
+                {% if jurisdictions|length > 10 %}
+                    <div>
+                        <span class="facets-more" id="facet-jurisdiction">{% translate "Išskleisti" %}</span>
+                    </div>
+                {% endif %} 
+            </nav>
+            {#            <div style="text-align: center;">#}
+            {#                <span class="icon is-huge">#}
+            {#                    <i class="far fa-10x fa-building"></i>#}
+            {#                </span>#}
+            {#            </div>#}
+            {#            <br/>#}
+            {#            #}
+            {#<nav class="panel">#}
+            {#<p class="panel-heading">#}
+            {#<b>{% translate "organizations.whatis" %}</b>#}
+            {#</p>#}
+            {#<p class="panel-block">Organizations are used to create, manage and publish collections of#}
+            {#datasets. Users can have different roles within an Organization, depending on their level of#}
+            {#authorisation to create, edit and publish.</p>#}
+            {#</nav>#}
+        </div>
+
+        
+
+        <div class="column is-three-quarters">
+
+            <form class="field has-addons is-fullwidth" method="get">
+                <div class="control is-expanded">
+                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos"
+                    action="{% url 'organization-list' %}" />
+                </div>
+                <p class="control">
+                    <button class="button is-primary" type="submit">
+                        <span class="icon is-large">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </button>
+                </p>
+            </form>
+
+            {#            <h1 class="title">{{ items.numFound }} {% translate "type.organizations" %}</h1>#}
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
+
+            {% for i in page_obj %}
+                <article class="media is-expanded">
+                    <div class="media-content">
+                        <div class="content">
+                            <div>
+                                <span class="icon is-medium is-hidden-mobile">
+                                    <i class="fas fa-building"></i>
+                                </span>
+                                <strong><a href="/{{ radix }}/{{ i.slug }}" class="dataset-list-title">{{ i.title }}</a></strong>
+                            </div>
+                            {% if i.description %}
+                                <p class="dataset-list-description">
+                                    {{ i.description }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+
+                {#                    <div class="box organization-box" style="text-align: center;">#}
+                {#                            <span class="icon is-huge">#}
+                {#                                <i class="fas fa-10x fa-building"></i>#}
+                {#                            </span>#}
+                {#                        <a href="/organizations/{{ i.id }}">#}
+                {#                            #}{#                                <img src="/img/placeholder/128x128.png">#}
+                {#                            <div class="content">#}
+                {#                                <p>#}
+                {#                                    <strong><a href="/organizations/{{ i.id }}">{{ i.title }}</a></strong>#}
+                {#                                </p>#}
+                {#                            </div>#}
+                {#                            #}{#                                <nav class="level is-mobile">#}
+                {#                            #}{#                                    <div class="level-left">#}
+                {#                            #}{#                                        <a class="level-item">#}
+                {#                            #}{#                                            4 duomenų rinkiniai#}
+                {#                            #}{#                                        </a>#}
+                {#                            #}{#                                    </div>#}
+                {#                            #}{#                                </nav>#}
+                {#                        </a>#}
+                {#                    </div>#}
+
+            {% endfor %}
+            <br/>
+            {% include "vitrina/common/pagination.html" %}
+        </div>
+    </div>
+    {#</section>#}
+    <br/>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+        });
+    </script>
+{% endblock %}

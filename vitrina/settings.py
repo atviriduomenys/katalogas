@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
 
     # Django CMS
+    'sass_processor',
     'sekizai',
     'cms',
     'menus',
@@ -120,6 +121,12 @@ TEMPLATES = [
     },
 ]
 
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'sass_processor.finders.CssFinder',
+)
+
 WSGI_APPLICATION = 'vitrina.wsgi.application'
 
 
@@ -128,8 +135,12 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'adp-dev',
+        'USER': 'root',
+        'PASSWORD': 'r00t',
+        'HOST': '192.168.2.60',
+        'PORT': '3306'
     },
 }
 
@@ -173,6 +184,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = 'static/'
+
+SASS_PROCESSOR_ROOT = STATIC_ROOT
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -185,7 +200,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SITE_ID = 1
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
-    ('home.html', _("Home page")),
+    ('page.html', _("Home page")),
 ]
 
 THUMBNAIL_HIGH_RESOLUTION = True

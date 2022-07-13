@@ -7,7 +7,7 @@ urlpatterns = [
     # @GetMapping("/requests/submitted")
     path('requests/submitted/', RequestListView.as_view(), name='request-list'),
     # @GetMapping("/requests/{slug}")
-    path('requests/<slug:uuid>/', RequestDetailView.as_view(), name='request-detail'),
+    path('requests/<pk>/', RequestDetailView.as_view(), name='request-detail'),
     # @GetMapping("/requests/info")
     # @GetMapping("/requests/request")
     # @GetMapping("/requests/new")

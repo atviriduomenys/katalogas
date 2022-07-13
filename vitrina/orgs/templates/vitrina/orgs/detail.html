@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block content %}
+
+    <div class="columns no-margin-bottom">
+        <div class="column">
+            <div class="columns no-margin-bottom">
+                <div class="column">
+                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ organization.title }}</h3>
+                </div>
+            </div>
+
+            <div class="content">
+                {% if organization.description %}
+                	<p class="no-margin-bottom">{{ organization.description | linebreaks }}</p>
+            	{% endif %}
+            </div>
+        </div>
+    
+	    <div class="column is-one-third">
+	            <div class="dataset-organization">
+	                <div class="is-hidden-mobile">
+	                    {% if org_logo %}
+	                        <img src="/image/{{ org_logo }}" class="image max-128x128 m-b-md">
+	                    {% endif %}
+	                </div>
+
+	                <p class="dataset-meta-title">{% translate "Organizacija" %}</p>
+	                <p class="dataset-meta-value organization-title"><a
+	                            href="/organizations/{{ organization.slug }}">{{ organization.title }}</a></p>
+
+	                {% if organization.kind == 'gov' %}
+	                	<p class="dataset-meta-title">{% translate "Pavaldumas" %}</p>
+	                	<p class="dataset-meta-value"></p>
+	                {% endif %}
+
+	                {% if organization.company_code %}
+	                	<p class="dataset-meta-title">{% translate "Įmonės kodas" %}</p>
+	                	<p class="dataset-meta-value"> {{ organization.company_code }}</p>
+	                {% endif %}
+
+	                {% if organization.email %}
+	                	<p class="dataset-meta-title">{% translate "El. paštas" %}</p>
+	                	<p class="dataset-meta-value"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
+	                {% endif %}
+
+	                {% if organization.address %}
+	                	<p class="dataset-meta-title">{% translate "Buveinės adresas" %}</p>
+	                	<p class="dataset-meta-value">{{ organization.address }}</p>
+	                {% endif %}
+
+	                {% if organization.phone %}
+	                	<p class="dataset-meta-title">{% translate "Telefonas" %}</p>
+	                	<p class="dataset-meta-value">{{ organization.phone }}</p>
+	                {% endif %}
+
+	                {% if organization.website %}
+	                	<p class="dataset-meta-title">{% translate "Tinklalapis" %}</p>
+	                	<p class="dataset-meta-value">
+	                		<a href="{{ organization.website }}"
+	                        	target="_blank">{{ organization.website }}
+	                    	</a>
+	                	</p>
+	                {% endif %}
+	            </div>
+	        </div>
+	    </div>
+	</div>
+{% endblock %}

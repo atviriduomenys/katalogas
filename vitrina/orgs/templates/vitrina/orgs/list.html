@@ -54,13 +54,8 @@
                                 <span class="icon is-medium is-hidden-mobile">
                                     <i class="fas fa-building"></i>
                                 </span>
-                                <strong><a href="/{{ radix }}/{{ i.slug }}" class="dataset-list-title">{{ i.title }}</a></strong>
+                                <strong><a href="/organizations/{{ i.kind }}/{{ i.slug }}" class="dataset-list-title">{{ i.title }}</a></strong>
                             </div>
-                            {% if i.description %}
-                                <p class="dataset-list-description">
-                                    {{ i.description }}
-                                </p>
-                            {% endif %}
                         </div>
                     </div>
                 </article>

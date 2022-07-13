@@ -49,6 +49,7 @@ class Organization(models.Model):
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
+    kind = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -56,6 +57,10 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def kind(self):
+        return "org"
 
     objects = models.Manager()
     public = PublicOrganizationManager()

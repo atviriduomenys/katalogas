@@ -1,0 +1,21 @@
+{% load menu_tags %}
+
+{# Nerenderiuojam rekursyviai, o renderiuojam viską iš karto, t.y. 0 lygį kaip navbarą ir pirmą lygį kaip itemo dropdowną #}
+
+{% for child in children %}
+    {% if child.children %}
+        <div class="navbar-item has-dropdown is-hoverable {% if child.selected %} selected{% endif %}">
+            <a href="{{ child.attr.redirect_url|default:child.get_absolute_url }}" title="{{ child.get_menu_title }}"
+               class="navbar-link">{{ child.get_menu_title }}</a>
+            <div class="navbar-dropdown">
+                {% for cc in child.children %}
+                    <a href="{{ cc.attr.redirect_url|default:cc.get_absolute_url }}"
+                       class="navbar-item">{{ cc.get_menu_title }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <a href="{{ child.attr.redirect_url|default:child.get_absolute_url }}"
+           class="navbar-item {% if child.selected %} selected{% endif %}">{{ child.get_menu_title }}</a>
+    {% endif %}
+{% endfor %}

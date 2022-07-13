@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block content %}
+
+	<div class="tabs">
+        <ul>
+            <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
+            {% if representatives %}
+                <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/representatives">{% translate "Kontaktai" %}</a></li>
+            {% endif %}
+            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
+        </ul>
+    </div>
+
+    <table class="table is-fullwidth">
+        <tbody>
+        <tr>
+            <td></td>
+            <th>{% translate "Pavadinimas" %}</th>
+            <th>{% translate "Aprašymas" %}</th>
+        </tr>
+        {% for d in datasets %}
+            <tr>
+                <td>{{ forloop.counter }}.</td>
+                <td><a href="/dataset/{{ d.slug }}">{{ d.title }}</a></td>
+                <td>{{ d.description }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

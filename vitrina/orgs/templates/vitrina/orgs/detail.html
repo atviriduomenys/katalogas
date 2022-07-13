@@ -6,6 +6,18 @@
 
 {% block content %}
 
+	<div class="tabs">
+        <ul>
+            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
+            {% if representatives %}
+				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/representatives">{% translate "Kontaktai" %}</a></li>
+			{% endif %}
+            {% if datasets %}
+				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
+			{% endif %}
+        </ul>
+    </div>
+
     <div class="columns no-margin-bottom">
         <div class="column">
             <div class="columns no-margin-bottom">

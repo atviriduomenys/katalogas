@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block content %}
+
+	<div class="tabs">
+        <ul>
+            <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
+            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/representatives">{% translate "Kontaktai" %}</a></li>
+            {% if datasets %}
+                <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <table class="table">
+        <tbody>
+        <tr>
+            <th></th>
+            <th>{% translate "Vardas" %}</th>
+            <th>{% translate "Pavardė" %}</th>
+            <th>{% translate "El. paštas" %}</th>
+            <th>{% translate "Telefonas" %}</th>
+        </tr>
+        {% for r in representatives %}
+            <tr>
+                <td>{{ forloop.counter }}.</td>
+                <td>{{ r.first_name }}</td>
+                <td>{{ r.last_name }}</td>
+                <td><a href="mailto:{{ r.email }}">{{ r.email }}</a></td>
+                <td>{{ r.phone }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

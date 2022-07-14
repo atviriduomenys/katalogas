@@ -19,15 +19,15 @@ class OrganizationDetailView(DetailView):
         context_data = super().get_context_data(**kwargs)
         organization = context_data.get('organization')
         extra_context_data = {
-            'representatives': organization.representative_set.all(),
+            'members': organization.representative_set.all(),
             'datasets': organization.dataset_set.all()
         }
         context_data.update(extra_context_data)
         return context_data
 
 
-class OrganizationRepresentativesView(OrganizationDetailView):
-    template_name = 'vitrina/orgs/representatives.html'
+class OrganizationMembersView(OrganizationDetailView):
+    template_name = 'vitrina/orgs/members.html'
 
 
 class OrganizationDatasetsView(OrganizationDetailView):

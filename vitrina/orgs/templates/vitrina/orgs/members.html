@@ -9,7 +9,7 @@
 	<div class="tabs">
         <ul>
             <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
-            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/representatives">{% translate "Kontaktai" %}</a></li>
+            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/members">{% translate "Organizacijos nariai" %}</a></li>
             {% if datasets %}
                 <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
             {% endif %}
@@ -25,13 +25,13 @@
             <th>{% translate "El. paštas" %}</th>
             <th>{% translate "Telefonas" %}</th>
         </tr>
-        {% for r in representatives %}
+        {% for m in members %}
             <tr>
                 <td>{{ forloop.counter }}.</td>
-                <td>{{ r.first_name }}</td>
-                <td>{{ r.last_name }}</td>
-                <td><a href="mailto:{{ r.email }}">{{ r.email }}</a></td>
-                <td>{{ r.phone }}</td>
+                <td>{{ m.first_name }}</td>
+                <td>{{ m.last_name }}</td>
+                <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+                <td>{{ m.phone }}</td>
             </tr>
         {% endfor %}
         </tbody>

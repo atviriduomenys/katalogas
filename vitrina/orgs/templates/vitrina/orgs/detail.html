@@ -9,8 +9,8 @@
 	<div class="tabs">
         <ul>
             <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
-            {% if representatives %}
-				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/representatives">{% translate "Kontaktai" %}</a></li>
+            {% if members %}
+				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/members">{% translate "Organizacijos nariai" %}</a></li>
 			{% endif %}
             {% if datasets %}
 				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
@@ -45,9 +45,9 @@
 	                <p class="dataset-meta-value organization-title"><a
 	                            href="/organizations/{{ organization.slug }}">{{ organization.title }}</a></p>
 
-	                {% if organization.kind == 'gov' %}
-	                	<p class="dataset-meta-title">{% translate "Pavaldumas" %}</p>
-	                	<p class="dataset-meta-value"></p>
+	                {% if organization.kind == 'gov' and organization.parent %}
+	                	<p class="dataset-meta-title">{% translate "Pavaldus" %}</p>
+	                	<p class="dataset-meta-value">{{ organization.parent }}</p>
 	                {% endif %}
 
 	                {% if organization.company_code %}

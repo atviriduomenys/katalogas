@@ -1,4 +1,5 @@
 from django.db import models
+from treebeard.al_tree import AL_Node
 
 from vitrina.orgs.managers import PublicOrganizationManager
 
@@ -29,7 +30,7 @@ class Municipality(models.Model):
         db_table = 'municipality'
 
 
-class Organization(models.Model):
+class Organization(AL_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -50,6 +51,7 @@ class Organization(models.Model):
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, blank=True, null=True)
+    parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
 
     class Meta:
         managed = False
@@ -62,8 +64,20 @@ class Organization(models.Model):
     def kind(self):
         return "org"
 
+    @property
+    def parent(self):
+        return None
+
     objects = models.Manager()
     public = PublicOrganizationManager()
+
+    @classmethod
+    def find_problems(cls):
+        pass
+
+    @classmethod
+    def fix_tree(cls):
+        pass
 
 
 class Representative(models.Model):

@@ -227,5 +227,3 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
-
-CRISPY_TEMPLATE_PACK = 'bootstrap4'

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    {% if form_title %}
+        <div class="columns no-margin-bottom">
+            <div class="column">
+                <h3 class="custom-title is-size-4-mobile no-margin-bottom">
+                    {{ form_title }}
+                </h3>
+            </div>
+        </div>
+    {% endif %}
+    <div class="column is-half">
+        {% crispy form %}
+    </div>
+{% endblock %}

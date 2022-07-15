@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'crispy_forms',
 
     'vitrina',
     'vitrina.cms',
@@ -226,3 +227,5 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'

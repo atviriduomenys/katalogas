@@ -1,27 +1,31 @@
-Katalogas
-#########
+Data catalogue
+##############
 
 
-Lietuvos atvirų duomenų katalogas (data.gov.lt).
+Lithuania's open data catalogue (data.gov.lt).
 
 
-Programavimas
-*************
+Contributing
+************
 
-- Visi pakeitimai daromi ``devel`` šakoje.
-- Laikomasi TDD_ (Test Driven Development) principo.
-- Laikomasi DDD_ (Documentation Driven Development) principo.
-- Laikomasi `GitHub Flow`_ principo.
+- All development changes goes to ``devel`` branch, ``main`` is reserved for
+  production releases.
+
+- Follow TDD_ (Test Driven Development) principle.
+
+- Follow DDD_ (Documentation Driven Development) principle.
+
+- Follow `GitHub Flow`_ principle.
 
 .. _TDD: https://en.wikipedia.org/wiki/Test-driven_development
 .. _DDD: https://gist.github.com/zsup/9434452
 .. _GitHub Flow: https://docs.github.com/en/get-started/quickstart/github-flow
 
 
-Paleidimas
-**********
+Development environment
+***********************
 
-Projekto root kataloge:
+From project root directory run::
 
-- ``docker-compose up``
-- ``poetry run python manage.py migrate``
+    docker-compose up
+    poetry run python manage.py migrate

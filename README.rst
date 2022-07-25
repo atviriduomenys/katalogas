@@ -16,3 +16,12 @@ Programavimas
 .. _TDD: https://en.wikipedia.org/wiki/Test-driven_development
 .. _DDD: https://gist.github.com/zsup/9434452
 .. _GitHub Flow: https://docs.github.com/en/get-started/quickstart/github-flow
+
+
+Paleidimas
+**********
+
+Projekto root kataloge:
+
+- ``docker-compose up``
+- ``poetry run python manage.py migrate``

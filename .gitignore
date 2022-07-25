@@ -2,3 +2,12 @@
 /db.sqlite3
 *.pyc
 /pylsp-mypy.cfg
+
+# IntelliJ
+.idea
+
+# OS specific
+.DS_Store
+
+# dev DB
+/postgres

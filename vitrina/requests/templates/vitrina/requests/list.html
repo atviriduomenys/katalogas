@@ -1,29 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-
-    <h1>{% translate "Requests" %}</h1>
-    <ul>
-        {% for dataset in page_obj %}
-        <li><a href="{{ dataset.get_absolute_url }}">{{ dataset.title }}</a></li>
-        {% endfor %}
-    </ul>
-
-
 {% block pageTitle %} | {% translate "requests.submittedRequests" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "requests.submittedRequests" %}{% endblock %}
 
 {% block current_title %}{% translate "requests.submittedRequests" %}{% endblock %}
-
-{#{% block notification %}#}
- {#   {% if notification %}#}
- {#       <div id="top-bar">#}
- {#           <p>{{ translate(notification.type) }}<span class="is-pulled-right message-close-button"#}
- {#                                                      onClick="HideMessage()">X</span>#}
- {#           </p>#}
- {#       </div>#}
- {#   {% endif %}#}
-{#{% endblock %}#}
 
 {% block content %}
     <div class="columns">

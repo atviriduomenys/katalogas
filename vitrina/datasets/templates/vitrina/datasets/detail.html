@@ -1,18 +1,14 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-
-<h1>{{ object.title }}</h1>
-<p>{{ object.description|linebreaks }}</p>
-
-{% block pageTitle %} | {% if locale == "lt" %}{{ dataset.title }}{% else %}{% if dataset.titleEn != "" %}{{ dataset.titleEn }}{% else %}{{ dataset.title }}{% endif %}{% endif %}{% endblock %}
-{% block pageDescription %}{% if locale == "lt" %}{{ dataset.description | escape }}{% else %}{{ dataset.descriptionEn | escape }}{% endif %}{% endblock %}
+{% block pageTitle %} | {{ dataset.title }}{% endblock %}
+{% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
 {% block pageAuthor %}{{ organization.title }}{% endblock %}
 {% block pageOgTitle %} | {{ dataset.title }}{% endblock %}
-{% block pageOgDescription %}{% if locale == "lt" %}{{ dataset.description | escape }}{% else %}{{ dataset.descriptionEn | escape }}{% endif %}{% endblock %}
+{% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
-{% block current_title %}{% if locale == "lt" %}{{ dataset.title }}{% else %}{% if dataset.titleEn != "" %}{{ dataset.titleEn }}{% else %}{{ dataset.title }}{% endif %}{% endif %}{% endblock %}
+{% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block head %}
     <link href="/css/datatables.min.css" rel="stylesheet">
@@ -20,21 +16,10 @@
     <script src="/js/datatables.min.js"></script>
 {% endblock %}
 
-{% block notification %}
-    {% if notification %}
-        {#<div id="top-bar">#}
-            {#<p>{{ translate(notification.type) }}#}
-                {#<span class="is-pulled-right message-close-button"
-                      onClick="HideMessage()">X</span>#}
-            {#</p>#}
-        {#</div>#}
-    {% endif %}
-{% endblock %}
-
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column">
-            {# aprašymas ir peržiūrų skaičius #}
+            {# description and view count #}
             <div class="columns no-margin-bottom">
                 <div class="column">
                     <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ object.title }}</h3>
@@ -46,9 +31,9 @@
 
             <div class="content">
                 <p class="no-margin-bottom">{{ object.description | linebreaks }}</p>
-                {# tagai #}
+                {# tags #}
                 {#{% include "dataset/tags.twig" %}#}
-                {# pagrindinė info #}
+                {# main info #}
                 {#{% include "dataset/coretable4.twig" %}#}
             </div>
             {#    {% include "dataset/coresimple.twig" %}#}
@@ -114,28 +99,28 @@
                 <p class="dataset-meta-title m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
                 <p class="social-icons m-t-md">
                     <a target="_blank"
-                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt/dataset/{{ dataset.slug }}"
+                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link">
                         <span class="icon is-gray">
                             <i class="fab fa-facebook-square fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="https://www.linkedin.com/sharing/share-offsite/?url=https://data.gov.lt/dataset/{{ dataset.slug }}&title={{ dataset.title }}"
+                       href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url=https://data.gov.lt{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-linkedin fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="http://twitter.com/share?text={{ dataset.title }}&url=https://data.gov.lt/dataset/{{ dataset.slug }}"
+                       href="http://twitter.com/share?text={{ dataset.title }}&url=https://data.gov.lt{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-twitter-square fa-2x"></i>
                         </span>
                     </a>
                 </p>
-                {% if user %}
+                {% if user.is_authenticated %}
                     {% if subscription %}
                         <p class="dataset-meta-title">{% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" %}</p>
                         <p>

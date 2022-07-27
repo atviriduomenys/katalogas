@@ -12,7 +12,7 @@ class Region(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'region'
 
 
@@ -25,7 +25,7 @@ class Municipality(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'municipality'
 
 
@@ -51,7 +51,7 @@ class Organization(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'organization'
 
     def __str__(self):
@@ -74,7 +74,7 @@ class Representative(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'representative'
 
 
@@ -88,7 +88,7 @@ class PublishedReport(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'published_report'
 
 
@@ -102,5 +102,5 @@ class Report(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'report'

@@ -15,7 +15,7 @@ class CmsAttachment(models.Model):
     cms_page = models.ForeignKey('CmsPage', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'cms_attachment'
 
 
@@ -27,7 +27,7 @@ class CmsMenuItem(models.Model):
     version = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'cms_menu_item'
 
 
@@ -49,7 +49,7 @@ class CmsPage(models.Model):
     list_children = models.TextField()  # This field type is a guess.
 
     class Meta:
-        managed = False
+        managed = True
         # XXX: Original table is name is `cms_page`, but it clashes with django-cms.
         db_table = 'adp_cms_page'
 
@@ -67,7 +67,7 @@ class CssRuleOverride(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'css_rule_override'
 
 
@@ -83,7 +83,7 @@ class ExternalSite(models.Model):
     url = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'external_site'
 
 
@@ -97,7 +97,7 @@ class Faq(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'faq'
 
 
@@ -116,7 +116,7 @@ class FileResource(models.Model):
     type = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'file_resource'
 
 
@@ -141,7 +141,7 @@ class LearningMaterial(models.Model):
     requested = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'learning_material'
 
 
@@ -165,7 +165,7 @@ class NewsItem(models.Model):
     published = models.DateField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'news_item'
 
 
@@ -183,5 +183,5 @@ class TermsOfUse(models.Model):
     published = models.DateField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'terms_of_use'

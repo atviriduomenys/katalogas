@@ -22,7 +22,7 @@ class Catalog(models.Model):
     licence = models.ForeignKey(Licence, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'catalog'
 
 
@@ -44,5 +44,5 @@ class HarvestingJob(models.Model):
     active = models.TextField(blank=True, null=True)  # This field type is a guess.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'harvesting_job'

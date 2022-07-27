@@ -39,7 +39,7 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request'
 
     def get_absolute_url(self):
@@ -59,7 +59,7 @@ class RequestEvent(models.Model):
     request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_event'
 
 
@@ -77,5 +77,5 @@ class RequestStructure(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_structure'

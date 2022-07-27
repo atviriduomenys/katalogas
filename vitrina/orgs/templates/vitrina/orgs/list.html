@@ -29,7 +29,7 @@
 
         <div class="column is-three-quarters">
 
-            <form class="field has-addons is-fullwidth" method="get">
+            <form class="field has-addons is-fullwidth" action="{% url 'organization-search-results' %}" method="get">
                 <div class="control is-expanded">
                     <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos"
                            value="{{ query | escape }}"/>

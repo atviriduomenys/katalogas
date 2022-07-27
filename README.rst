@@ -28,4 +28,5 @@ Development environment
 From project root directory run::
 
     docker-compose up
+    pgloader mysql://adp:secret@localhost/adp-dev postgresql://adp:secret@localhost/adp-dev
     poetry run python manage.py migrate

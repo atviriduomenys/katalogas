@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-28 15:57+0300\n"
+"POT-Creation-Date: 2022-07-12 16:05+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,13 +34,14 @@ msgid "Requests"
 msgstr "Poreikiai"
 
 #: vitrina/datasets/templates/vitrina/datasets/detail.html:14
-#: vitrina/datasets/templates/vitrina/datasets/list.html:4
 #: vitrina/datasets/templates/vitrina/datasets/list.html:5
-#: vitrina/datasets/templates/vitrina/datasets/list.html:48
+#: vitrina/datasets/templates/vitrina/datasets/list.html:6
+#: vitrina/datasets/templates/vitrina/datasets/list.html:54
 msgid "Duomenų rinkiniai"
 msgstr ""
 
 #: vitrina/datasets/templates/vitrina/datasets/detail.html:89
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:31
 #, fuzzy
 #| msgid "Organizations"
 msgid "Organizacija"
@@ -91,50 +92,90 @@ msgstr "O gal duomenų rinkinys neatitinka lūkesčių?"
 msgid "dataset.hideExtraMeta"
 msgstr "O gal duomenų rinkinys neatitinka lūkesčių?"
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:70
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:5
+msgid "Rinkinio būsena"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:9
+msgid "Atverti duomenys"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:14
+msgid "Tik inventorintas"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:19
+msgid "Įkelta duomenų struktūra"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:24
+msgid "Tik metaduomenys"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:42
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:60
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:94
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:110
+#: vitrina/datasets/templates/vitrina/datasets/list.html:241
+msgid "Išskleisti"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:49
+msgid "Kategorija"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:68
+msgid "Žymė"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:81
+msgid "Formatas"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:100
+msgid "Atnaujinama"
+msgstr ""
+
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:116
 msgid "Įkėlimo data"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:74
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:120
 #: vitrina/requests/templates/vitrina/requests/list.html:65
 msgid "Data nuo"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:78
+#: vitrina/datasets/templates/vitrina/datasets/filters.html:124
 #: vitrina/requests/templates/vitrina/requests/list.html:74
 msgid "Data iki"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:94
+#: vitrina/datasets/templates/vitrina/datasets/list.html:86
 msgid "Ieškoti duomenų rinkinio"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:111
+#: vitrina/datasets/templates/vitrina/datasets/list.html:103
 #: vitrina/templates/component/search.html:18
 msgid "Išplėstinė paieška"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:113
+#: vitrina/datasets/templates/vitrina/datasets/list.html:105
 #: vitrina/orgs/templates/vitrina/orgs/list.html:47
 #: vitrina/requests/templates/vitrina/requests/list.html:100
 msgid "Paieškos rezultatai"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:116
+#: vitrina/datasets/templates/vitrina/datasets/list.html:108
 #: vitrina/requests/templates/vitrina/requests/list.html:103
 msgid "filter.results"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:132
+#: vitrina/datasets/templates/vitrina/datasets/list.html:124
 msgid "search.removefilters"
 msgstr ""
 
-#: vitrina/datasets/templates/vitrina/datasets/list.html:249
-msgid "general.more"
-msgstr ""
-
-#: vitrina/datasets/templates/vitrina/datasets/list.html:249
-msgid "general.less"
+#: vitrina/datasets/templates/vitrina/datasets/list.html:241
+msgid "Suskleisti"
 msgstr ""
 
 #: vitrina/orgs/apps.py:8

@@ -15,9 +15,9 @@
 {% block current_title %}{% if locale == "lt" %}{{ dataset.title }}{% else %}{% if dataset.titleEn != "" %}{{ dataset.titleEn }}{% else %}{{ dataset.title }}{% endif %}{% endif %}{% endblock %}
 
 {% block head %}
-    <link href="/css/datatables.min.css" rel="stylesheet">
-    <script src="/js/jquery-3.4.1.min.js"></script>
-    <script src="/js/datatables.min.js"></script>
+    <link href="{% static 'css/datatables.min.css' %}" rel="stylesheet">
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+    <script src="{% static 'js/datatables.min.js' %}"></script>
 {% endblock %}
 
 {% block notification %}

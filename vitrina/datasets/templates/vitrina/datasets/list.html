@@ -88,7 +88,7 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
-            <form id="dataset-filter" class="field has-addons is-fullwidth" method="get">
+            <form id="dataset-filter" class="field has-addons is-fullwidth" action="{% url 'dataset-search-results' %}" method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
                            placeholder="{% translate "Ieškoti duomenų rinkinio" %}" value="{{ q | escape }}"/>

@@ -1,0 +1,9 @@
+{% load i18n %}
+
+{% if new_structure %}
+    <a href="/dataset/{{ dataset.id }}/structure/{{ new_structure.filename | escape }}"
+       class="button is-primary structure-button">{% translate "Atsisiųsti" %}</a>
+    {% if new_structure.standardized %}
+        <a class="button is-primary structure-button new-preview-button">{% translate "Peržiūrėti" %}</a>
+    {% endif %}
+{% endif %}

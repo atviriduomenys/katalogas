@@ -24,6 +24,7 @@ class DatasetDetailView(DetailView):
             'subscription': [],
             'views': -1,
             'rating': 3.0,
+            'status': dataset.get_status_label()
         }
         context_data.update(extra_context_data)
         return context_data

@@ -154,10 +154,10 @@
                         <div class="content">
                             <div>
                                 <strong><a href="{{ i.get_absolute_url }}"
-                                           class="dataset-list-title">{% if locale == "lt" %}{{ i.title }}{% else %}{% if i.title_en != "" %}{{ i.title_en }}{% else %}{{ i.title }}{% endif %}{% endif %}</a></strong>
+                                           class="dataset-list-title">{{ i.title }}</a></strong>
                                 <div class="is-pulled-right">
                                     <a target="_blank"
-                                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt/{{ radix }}/{{ i.slug }}">
+                                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt{{ i.get_absolute_url }}">
                                     <span class="icon">
                                         <i class="fab fa-facebook-square"></i>
                                     </span>
@@ -180,7 +180,7 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% if locale == "lt" %}{{ i.description }}{% else %}{% if i.description_en != "" %}{{ i.description_en }}{% else %}{{ i.description }}{% endif %}{% endif %}
+                                {{ i.description }}
                             </p>
                             <div class="tags">
                                 {% if i.format %}

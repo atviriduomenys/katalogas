@@ -1,11 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-
-<h1>{{ object.title }}</h1>
-<p>{{ object.description|linebreaks }}</p>
-
-
 {% block parent_title %}{% translate "page.title.requests" %}{% endblock %}
 {% block current_title %}{{ request.title }}{% endblock %}
 

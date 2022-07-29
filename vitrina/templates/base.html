@@ -36,7 +36,18 @@
         </div>
     {% endif %}
 {% endblock %}
-{% block notification %}{% endblock %}
+{% block messages %}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %} <li class="{{ message.tags }}" id="message-list-{{ forloop.counter }}"> {% else %} <li> {% endif %}
+                    {{ message }}
+                    <span class="is-pulled-right message-close-button" onClick="HideMessage({{ forloop.counter }})">X</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock messages %}
 <header>
     {#<div class="container">#}
     {% include "component/navbar.html" %}
@@ -56,6 +67,10 @@
         var nav = document.querySelector('#navbarBasic');
         burger.classList.toggle('is-active');
         nav.classList.toggle('is-active');
+    }
+    function HideMessage(counter){
+          var notificationBar = document.getElementById('message-list-' + counter);
+          notificationBar.classList.add('is-hidden');
     }
 </script>
 {% block scripts %}{% endblock %}

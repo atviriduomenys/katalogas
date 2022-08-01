@@ -19,9 +19,7 @@ class OrganizationSearchResultsView(ListView):
     def get_queryset(self):
         query = self.request.GET.get('q')
         if query:
-            orgs = Organization.objects.filter(
-                Q(title__icontains=query)
-            )
+            orgs = Organization.public.filter(title__icontains=query)
         else:
-            orgs = Organization.objects.all()
+            orgs = Organization.public.all()
         return orgs

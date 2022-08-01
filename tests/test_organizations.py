@@ -2,14 +2,14 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
-from vitrina.orgs.models import Organization
+from vitrina.orgs.factories import OrganizationFactory
 
 
 @pytest.mark.django_db
 def test_organization_search_view(app: DjangoTestApp):
-    organization = Organization.objects.create(title="Organization 1", version=1)
-    Organization.objects.create(title="Organization 2", version=1)
-    Organization.objects.create(title="Organization 3", version=1)
+    organization = OrganizationFactory(title="Organization 1")
+    OrganizationFactory(title="Organization 2")
+    OrganizationFactory(title="Organization 3")
 
     # without query
     resp = app.get(reverse('organization-search-results'))

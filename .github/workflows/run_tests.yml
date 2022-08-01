@@ -2,7 +2,7 @@ name: 'Run tests'
 on:
   push:
     branches:
-      - 65-padaryti-github-ci
+      - main
   pull_request:
     branches:
       - main

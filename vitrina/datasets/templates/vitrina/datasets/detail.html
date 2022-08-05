@@ -99,21 +99,21 @@
                 <p class="dataset-meta-title m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
                 <p class="social-icons m-t-md">
                     <a target="_blank"
-                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt{{ dataset.get_absolute_url }}"
+                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link">
                         <span class="icon is-gray">
                             <i class="fab fa-facebook-square fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url=https://data.gov.lt{{ dataset.get_absolute_url }}"
+                       href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-linkedin fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="http://twitter.com/share?text={{ dataset.title }}&url=https://data.gov.lt{{ dataset.get_absolute_url }}"
+                       href="http://twitter.com/share?text={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-twitter-square fa-2x"></i>

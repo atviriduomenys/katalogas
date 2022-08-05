@@ -53,6 +53,18 @@
     {% include "component/navbar.html" %}
     {#</div>#}
 </header>
+
+{% block breadcrumbs %}
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
+        <div class="container needs-padding">
+            <ul class="p-t-sm">
+                <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
+            </ul>
+            <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</span>
+        </div>
+    </nav>
+{% endblock %}
+
 {% block root %}
     <section class="section">
         <div class="container">

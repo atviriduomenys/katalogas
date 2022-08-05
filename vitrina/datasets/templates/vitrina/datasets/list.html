@@ -157,17 +157,17 @@
                                            class="dataset-list-title">{{ i.title }}</a></strong>
                                 <div class="is-pulled-right">
                                     <a target="_blank"
-                                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt{{ i.get_absolute_url }}">
+                                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.get_absolute_url }}">
                                     <span class="icon">
                                         <i class="fab fa-facebook-square"></i>
                                     </span>
                                     </a>
-                                    {#<a target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&url=https://data.gov.lt/{{ radix }}/{{ i.slug }}&title={{ i.title }}">#}
+                                    {#<a target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}&title={{ i.title }}">#}
                                     {#<span class="icon">#}
                                     {#<i class="fab fa-linkedin"></i>#}
                                     {#</span>#}
                                     {#</a>#}
-                                    {#<a target="_blank" href="http://twitter.com/share?text={{ i.title }}&url=https://data.gov.lt/{{ radix }}/{{ i.slug }}">#}
+                                    {#<a target="_blank" href="http://twitter.com/share?text={{ i.title }}&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}">#}
                                     {#<span class="icon">#}
                                     {#<i class="fab fa-twitter-square"></i>#}
                                     {#</span>#}

@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 
@@ -26,6 +27,34 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_parents(self, include_self=False):
+        parents = []
+        if include_self:
+            parents.append(self)
+        if self.parent_id:
+            try:
+                parent = Category.objects.get(pk=self.parent_id)
+            except ObjectDoesNotExist:
+                parent = None
+            if parent:
+                parents.extend(parent.get_parents(include_self=True))
+        return parents
+
+    def get_children(self, include_self=False):
+        all_children = []
+        children = Category.objects.filter(parent_id=self.pk)
+        if include_self:
+            all_children.append(self)
+        for child in children:
+            all_children.extend(child.get_children(include_self=True))
+        return all_children
+
+    def get_family_objects(self):
+        parents = self.get_parents()
+        children = self.get_children()
+        parents.extend(children)
+        return parents
 
 
 class Licence(models.Model):

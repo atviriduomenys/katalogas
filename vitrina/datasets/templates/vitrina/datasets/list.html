@@ -102,7 +102,7 @@
             <a href="/search"
                class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
 
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ num_found }}</h1>
 
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
@@ -258,41 +258,22 @@
             var selectedDate = null;
             var datasetTitles = "datasetSuggestions";
 
-            $('.datepicker-from').datepicker({
-                language: lang,
-                format: 'yyyy-mm-dd',
-                autoHide: true,
-                hide: function () {
-                    getFromDateAndExecute();
-                }
-            });
-
-            $('.datepicker-to').datepicker({
-                language: lang,
-                format: 'yyyy-mm-dd',
-                autoHide: true,
-                hide: function () {
-                    getToDateAndExecute();
-                }
-            });
-
-            function getFromDateAndExecute() {
-                var date = $('.datepicker-from').datepicker('getDate', 'true');
+            $('.date_from').change(function() {
+                var date = $('.date_from').val();
                 if (date != null) {
                     searchParams.set('date_from', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
                 }
-            }
-
-            function getToDateAndExecute() {
-                var date = $('.datepicker-to').datepicker('getDate', 'true');
+            });
+            $('.date_to').change(function() {
+                var date = $('.date_to').val();
                 if (date != null) {
                     searchParams.set('date_to', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
                 }
-            }
+            });
 
             function autocomplete(inp, arr) {
                 var currentFocus;

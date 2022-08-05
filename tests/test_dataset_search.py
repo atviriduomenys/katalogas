@@ -5,7 +5,6 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset
 
 
 @pytest.mark.django_db

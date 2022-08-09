@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% load static %}
+{% load hitcount_tags %}
+
+{% block head %}
+    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
+{% endblock %}
 
 <h1>{{ object.title }}</h1>
 <p>{{ object.description|linebreaks }}</p>
@@ -54,6 +61,10 @@
                     {% else %}
                         <p class="is-size-4">{% translate "Esamo duomenų rinkinio papildymo poreikis" %}: </p>
                     {% endif %}
+                    {% get_hit_count for request as total_hits %}
+                    <p class="is-pulled-right">{% translate "Poreikio peržiūros" %}:
+                        <b id="total_hits">{{ total_hits }}</b>
+                    </p>
                     <h1 class="is-size-4">{{ request.title | escape }}</h1>
                 </div>
             </div>
@@ -268,8 +279,11 @@
     {#</div>#}
 {#{% endblock %}#}
 {% block scripts %}
+    {% get_hit_count_js_variables for request as hitcount %}
     <script type="text/javascript">
         $(function () {
+            $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
+
             $('.reply-button').click(function () {
                 $('#media-' + this.id).toggleClass('is-hidden');
             });

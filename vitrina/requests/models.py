@@ -57,6 +57,17 @@ class Request(models.Model):
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
 
+    def get_status_label(self):
+        if self.status == 'CREATED':
+            return _("Pateiktas")
+        elif self.status == 'REJECTED':
+            return _("Atmestas")
+        elif self.status == 'ALREADY_OPENED':
+            return _("Jau atvertas")
+        elif self.status == 'ANSWERED':
+            return _('Atsakytas')
+        return ''
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

@@ -1,10 +1,11 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
+from vitrina.users.models import User
 
 
 class Request(models.Model):
@@ -44,6 +45,17 @@ class Request(models.Model):
 
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
+
+    def get_status_label(self):
+        if self.status == 'CREATED':
+            return _("Pateiktas")
+        elif self.status == 'REJECTED':
+            return _("Atmestas")
+        elif self.status == 'ALREADY_OPENED':
+            return _("Jau atvertas")
+        elif self.status == 'ANSWERED':
+            return _('Atsakytas')
+        return ''
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

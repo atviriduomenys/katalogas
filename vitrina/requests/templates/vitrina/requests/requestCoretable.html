@@ -5,68 +5,55 @@
         <th>{% translate "Pasiūlymas organizacijai" %}</th>
         <td>{% if organization.slug %}<a href="/organizations/{{ organization.slug }}">{{ organization }}</a>{% else %}{{ organization }}{% endif %}</td>
     </tr>
-    {% if request.isExisting == 'true' %}
+    {% if request.is_existing and dataset %}
         <tr>
-            <th>{% translate "request.forDataset" %}</th>
-            <td>{% if datasetSlug %}<a href="/dataset/{{ datasetSlug }}">{{ request.title }}</a>{% else %}{{ request.title }}{% endif %}</td>
+            <th>{% translate "Norimas keisti duomenų rinkinys" %}</th>
+            <td>{% if dataset.slug %}<a href="/dataset/{{ dataset.slug }}">{{ request.title }}</a>{% else %}{{ request.title }}{% endif %}</td>
         </tr>
     {% endif %}
     <tr>
         <th>{% translate "Būsena" %}</th>
-        <td>{% if request.status == 'CREATED' %}
-                <b>{% translate "Pateiktas" %}</b>
-            {% elif request.status == "REJECTED" %}
-                <b>{% translate "Atmestas" %}</b>
-            {% elif request.status == "ALREADY_OPENED" %}
-                <b>{% translate "request.alreadyOpen" %}</b>
-            {% else %}
-                <b>{% translate "request.answered" %}</b>
-            {% endif %}
-        </td>
+        <td><b>{{ status }}</b></td>
     </tr>
     <tr>
         <th>{% translate "Registravimo data" %}</th>
-        <td>{{ request.getDate }}</td>
+        <td>{{ request.created }}</td>
     </tr>
     {% if request.modified %}
         <tr>
             <th>{% translate "Atnaujinimo data" %}</th>
-            <td>{{ request.getDateModified }}</td>
+            <td>{{ request.modified }}</td>
         </tr>
     {% endif %}
-    {% if request.plannedOpeningDate %}
-        {% if request.isExisting == 'false' %}
+    {% if request.planned_opening_date %}
+        {% if not request.is_existing %}
             <tr>
-                <th>{% translate "request.plannedDate" %}</th>
-                <td>{{ request.getOpeningDate }}</td>
+                <th>{% translate "Planuojama atvėrimo data" %}</th>
+                <td>{{ request.planned_opening_date }}</td>
             </tr>
         {% endif %}
     {% endif %}
-    {% if request.usercount %}
+    {% if user_count %}
         <tr>
             <th>{% translate "request.user.count" %}</th>
-            <td>{{ request.usercount }}</td>
+            <td>{{ user_count }}</td>
         </tr>
     {% endif %}
     <tr>
         <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
         <td>{{ request.periodicity }}</td>
     </tr>
-    {#<tr>#}
-      {#  <th>{% translate "request.likes" %}:</th>#}
-        {#<td>#}
-          {#  {% if likeCount %}#}
-            {#    {{ likeCount }}#}
-            {#{% else %}#}
-             {#   0#}
-            {#{% endif %}#}
-            {#{% if user %}#}
-              {#  {% if liked %}#}
-                {#    {#<td>{% translate "request.alreadyLiked" %}</td>#}
-                {#{% else %}#}
-                  {#  {% include "../../component/like.twig" %}#}
-                {#{% endif %}#}
-            {#{% endif %}#}
+    <tr>
+        <th>{% translate "Patinka" %}:</th>
+        <td>
+            {{ like_count }}
+            {% if user.is_authenticated %}
+                {% if not liked %}
+                    <form action="/request/{{ request.pk }}/like" method="post" class="rating-form">
+                        <input type="submit" class="button is-primary is-small m-l-md" value="{% translate 'Patinka' %}">
+                    </form>
+                {% endif %}
+            {% endif %}
         </td>
     </tr>
     </tbody>

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'crispy_forms',
 
     'vitrina',
     'vitrina.cms',

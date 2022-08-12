@@ -6,17 +6,7 @@
 
 {% block content %}
 
-	<div class="tabs">
-        <ul>
-            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
-            {% if members %}
-				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/members">{% translate "Organizacijos nariai" %}</a></li>
-			{% endif %}
-            {% if datasets %}
-				<li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
-			{% endif %}
-        </ul>
-    </div>
+	{% include 'vitrina/orgs/tabs.html' %}
 
     <div class="columns no-margin-bottom">
         <div class="column">
@@ -41,13 +31,9 @@
 	                    {% endif %}
 	                </div>
 
-	                <p class="dataset-meta-title">{% translate "Organizacija" %}</p>
-	                <p class="dataset-meta-value organization-title"><a
-	                            href="/organizations/{{ organization.slug }}">{{ organization.title }}</a></p>
-
 	                {% if organization.kind == 'gov' and organization.parent %}
 	                	<p class="dataset-meta-title">{% translate "Pavaldus" %}</p>
-	                	<p class="dataset-meta-value">{{ organization.parent }}</p>
+	                	{% include "vitrina/orgs/parent_list.html" with parent=organization.parent %}
 	                {% endif %}
 
 	                {% if organization.company_code %}

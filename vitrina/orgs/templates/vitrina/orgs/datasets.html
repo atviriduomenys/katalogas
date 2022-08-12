@@ -6,15 +6,7 @@
 
 {% block content %}
 
-	<div class="tabs">
-        <ul>
-            <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}">{% translate "Informacija" %}</a></li>
-            {% if members %}
-                <li><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/members">{% translate "Organizacijos nariai" %}</a></li>
-            {% endif %}
-            <li class="is-active"><a href="/orgs/{{ organization.kind }}/{{ organization.slug }}/datasets">{% translate "Duomenų rinkiniai" %}</a></li>
-        </ul>
-    </div>
+	{% include 'vitrina/orgs/tabs.html' %}
 
     <table class="table is-fullwidth">
         <tbody>
@@ -26,7 +18,7 @@
         {% for d in datasets %}
             <tr>
                 <td>{{ forloop.counter }}.</td>
-                <td><a href="/dataset/{{ d.slug }}">{{ d.title }}</a></td>
+                <td><a href="{% url 'dataset-detail' d.slug %}">{{ d.title }}</a></td>
                 <td>{{ d.description }}</td>
             </tr>
         {% endfor %}

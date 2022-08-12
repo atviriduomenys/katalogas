@@ -140,7 +140,11 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': 'r00t',
         'HOST': '192.168.2.60',
-        'PORT': '3306'
+        'PORT': '3306',
+        'TEST': {
+            'NAME': 'adp-test',
+            'MIGRATE': False
+        }
     },
 }
 

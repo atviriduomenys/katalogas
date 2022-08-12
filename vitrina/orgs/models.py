@@ -3,6 +3,8 @@ from treebeard.al_tree import AL_Node
 
 from vitrina.orgs.managers import PublicOrganizationManager
 
+from django.utils.translation import gettext_lazy as _
+
 
 class Region(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -31,6 +33,15 @@ class Municipality(models.Model):
 
 
 class Organization(AL_Node):
+    GOV = "gov"
+    COM = "com"
+    ORG = "org"
+    ORGANIZATION_KINDS = {
+        (GOV, _("Valstybinė įstaiga")),
+        (COM, _("Verslo organizacija")),
+        (ORG, _("Nepelno ir nevalstybinė organizacija"))
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -50,7 +61,7 @@ class Organization(AL_Node):
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
-    kind = models.CharField(max_length=36, blank=True, null=True)
+    kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
     parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
 
     class Meta:
@@ -59,14 +70,6 @@ class Organization(AL_Node):
 
     def __str__(self):
         return self.title
-
-    @property
-    def kind(self):
-        return "org"
-
-    @property
-    def parent(self):
-        return None
 
     objects = models.Manager()
     public = PublicOrganizationManager()

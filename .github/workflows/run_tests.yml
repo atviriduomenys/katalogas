@@ -2,10 +2,10 @@ name: 'Run tests'
 on:
   push:
     branches:
-      - 65-padaryti-github-ci
+      - devel
   pull_request:
     branches:
-      - main
+      - devel
 
 jobs:
   run-tests:

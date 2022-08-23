@@ -69,8 +69,10 @@
 
             <form class="field has-addons is-fullwidth" method="get">
                 <div class="control is-expanded">
-                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos"
-                    action="{% url 'organization-list' %}" />
+                    {% if jurisdiction_query %}
+                        <input type="hidden" name="jurisdiction" value="{{ jurisdiction_query }}" />
+                    {% endif %}
+                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos" />
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">

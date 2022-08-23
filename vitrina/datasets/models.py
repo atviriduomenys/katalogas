@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -102,6 +103,19 @@ class Dataset(models.Model):
 
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'slug': self.slug})
+
+    def get_status_label(self):
+        if self.status == 'HAS_DATA':
+            return _("Atvertas")
+        elif self.status == 'INVENTORED':
+            return _("Inventorintas")
+        elif self.status == 'METADATA':
+            return _("Parengti metaduomenys")
+        elif self.status == 'PRIORITIZED':
+            return _('Įvertinti prioritetai')
+        elif self.status == 'FINANCING':
+            return _('Įvertintas finansavimas')
+        return ''
 
 
 # TODO: To be merged into Dataset:

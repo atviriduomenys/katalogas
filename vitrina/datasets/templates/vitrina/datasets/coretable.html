@@ -14,21 +14,8 @@
                         <span class="icon"><i class="fas fa-star"></i></span>
                     {% endif %}
                 {% endfor %}
-                {#                {{ rating }}#}
             {% else %}
                 {% translate "Dar nevertinta" %}
-            {% endif %}
-
-            {% if user %}
-                {% if not rated %}
-                    {#                    {% translate "dataset.alreadyRated" %}#}
-                    {#                {% else %}#}
-                        {% if result %}
-                           {# {% include "../../component/harvested-rating.twig" %} #}
-                        {% else %}
-                            {# {% include "../../component/rating.twig" %} #}
-                        {% endif %}
-                {% endif %}
             {% endif %}
         </td>
     </tr>
@@ -42,13 +29,6 @@
         </th>
         <td>
             {{ openness }}
-            {#            {% for item in [1,2,3,4,5] %}#}
-            {#                {% if loop.index <= openness %}#}
-            {#                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>#}
-            {#                {% else %}#}
-            {#                    <span class="icon"><i class="fas fa-star"></i></span>#}
-            {#                {% endif %}#}
-            {#            {% endfor %}#}
         </td>
     </tr>
     {% if dataset.temporal_coverage %}
@@ -63,7 +43,7 @@
         <th>{% translate "Atnaujinama" %}</th>
         <td>
             {% if dataset.update_frequency %}
-                {% if locale == 'lt' %}{{ updateFrequency.title }}{% else %}{{ updateFrequency.titleEn }}{% endif %}
+                {{ update_frequency }}
             {% endif %}
         </td>
     </tr>
@@ -71,11 +51,11 @@
         <th>{% translate "Kategorijos" %}</th>
         <td>
             {% if dataset.category %}
-                {% if locale == 'lt' %}{{ dataset.category }}{% else %}{{ dataset.category.title_en }}{% endif %}
+                {{ dataset.category.title }}
             {% endif %}
         </td>
     </tr>
-    {% if dataset.status %}
+    {% if status %}
         <tr>
             <th>
                 {% translate "Būsena" %}
@@ -84,17 +64,7 @@
                             class="fas fa-info-circle"></i></span>
             </th>
             <td>
-                {% if dataset.status == 'HAS_DATA' %}
-                    {% translate "status.open" %}
-                {% elif dataset.status == 'INVENTORED' %}
-                    {% translate "status.inventored" %}
-                {% elif dataset.status == 'METADATA' %}
-                    {% translate "status.metadata" %}
-                {% elif dataset.status == 'PRIORITIZED' %}
-                    {% translate "status.prioritized" %}
-                {% elif dataset.status == 'FINANCING' %}
-                    {% translate "status.financing" %}
-                {% endif %}
+                {{ status }}
             </td>
         </tr>
     {% endif %}
@@ -128,7 +98,6 @@
                     {{ dataset.catalog }}
                 {% else %}
                     {{ dataset.catalog.title }}
-                    {# {% if locale == "lt" %}{{ dataset.catalog.title }}{% else %}{{ dataset.catalog.title_en }}{% endif %} #}
                 {% endif %}
             {% endif %}
         </td>
@@ -160,13 +129,9 @@
     {% else %}
         {% if meta %}
             <tr>
-                {# Čia koordinatorius ar kontaktinis asmuo? #}
                 <th>{% translate "Atsakingas asmuo" %}</th>
                 {% for key, value in meta %}
                     {% if key == 'Kontaktinis_asmuo' %}
-                        <td>
-                        {#    {{ split(value,',')[0] }}, {{ split(split(value,',')[1], " ")[2] }}   #}
-                        </td>
                     {% endif %}
                 {% endfor %}
             </tr>
@@ -174,12 +139,10 @@
     {% endif %}
     <tr>
         <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
-        {# <td>{% if harvested %}{{ dataset.created }}{% else %}{{ dataset.getCreatedPretty() }}{% endif %}</td> #}
     </tr>
     {% if dataset.modified %}
         <tr>
             <th>{% translate "Paskutinio atnaujinimo data" %}</th>
-            {# <td>{% if harvested %}{{ dataset.modified }}{% else %}{{ dataset.getUpdatedPretty() }}{% endif %}</td> #}
         </tr>
     {% endif %}
     <tr>
@@ -215,33 +178,5 @@
             </tr>
         {% endif %}
     {% endif %}
-    {#    {% if dataset.catalog %}#}
-    {#        <tr>#}
-    {#            <th>{% translate "dataset.catalog" %}</th>#}
-    {#            <td><a href="/catalog/{{ catalog.id }}" title="{{ catalog.description }}">{{ catalog.title }}</a></td>#}
-    {#        </tr>#}
-    {#    {% endif %}#}
-    {#    {% if dataset.language %}#}
-    {#        <tr>#}
-    {#            <th>{% translate "dataset.language" %}</th>#}
-    {#            <td>{{ dataset.language }}</td>#}
-    {#        </tr>#}
-    {#    {% endif %}#}
-    {#    {% if dataset.spatialCoverage %}#}
-    {#        <tr>#}
-    {#            <th>{% translate "dataset.spatial" %}</th>#}
-    {#            <td>{{ dataset.spatialCoverage }}</td>#}
-    {#        </tr>#}
-    {#    {% endif %}#}
-    {#    {% if dataset.origin %}#}
-    {#        <tr>#}
-    {#            <th>{% translate "dataset.origin" %}</th>#}
-    {#            <td>{{ dataset.origin }}</td>#}
-    {#        </tr>#}
-    {#    {% endif %}#}
-    {#    <tr>#}
-    {#        <th>{% translate "dataset.views" %}</th>#}
-    {#        <td>{{ views }}</td>#}
-    {#    </tr>#}
     </tbody>
 </table>

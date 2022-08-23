@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
-{% get_current_language as locale %}
 
 {% block pageTitle %} | {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
@@ -38,7 +37,6 @@
                 {# main info #}
                 {% include "./coretable.html" %}
             </div>
-            {# {% include "./coresimple.html" %} #}
 
             {% if structure or new_structure %}
                 <div class="content structure-block no-margin-bottom">
@@ -49,16 +47,6 @@
                     {% include './structuretable.html' %}
                 </div>
             {% endif %}
-
-            {#            <br/>#}
-            {#            <h4 class="custom-title is-size-4-mobile">{% translate "dataset.resources" %}</h4>#}
-
-            {#            <br/>#}
-
-            {#            {% if preview %}#}
-            {#                <h4 class="custom-title is-size-4-mobile">{% translate "dataset.preview" %}</h4>#}
-            {#                {% include 'dataset/preview.twig' %}#}
-            {#            {% endif %}#}
         </div>
         <div class="column is-one-third">
             <div class="dataset-organization">
@@ -84,7 +72,7 @@
 
                 {% if dataset.coordinator %}
                     <p class="dataset-meta-title">{% translate "Koordinatorius" %}</p>
-                    <p class="dataset-meta-value"><span>{{ dataset.coordinator|upper }}</span></p>
+                    <p class="dataset-meta-value"><span>{{ dataset.coordinator }}</span></p>
                     <p class="dataset-meta-value"><a href="mailto:{{ dataset.coordinator.email }}">{{ dataset.coordinator.email|default_if_none:"" }}</a>
                     </p>
                     {% if dataset.coordinator.phone %}
@@ -117,38 +105,9 @@
                         </span>
                     </a>
                 </p>
-                {% if user.is_authenticated %}
-                    {% if subscription %}
-                        <p class="dataset-meta-title">{% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" %}</p>
-                        <p>
-                            <a href="/dataset/{{ dataset.slug }}/unfollow"
-                               class="button is-primary is-small">{% translate "Atsisakyti prenumeratos" %}</a>
-                        </p>
-                    {% else %}
-                        <p class="dataset-meta-title">{% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" %}</p>
-                        <p>
-                            <a href="/dataset/{{ dataset.slug }}/follow"
-                               class="button is-primary is-small">{% translate "Prenumeruoti" %}</a>
-                        </p>
-                    {% endif %}
-                {% endif %}
             </div>
         </div>
     </div>
-    {#{% if (resources or newStructure or structure) %}#}
-        {#<div class="columns no-margin-bottom">#}
-            {#<div class="column is-full">#}
-                {#<h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "dataset.resources" %}</h4>#}
-                {#{% include '../component/datatable-4.twig' %}#}
-            {#</div>#}
-        {#</div>#}
-    {#{% endif %}#}
-    <div class="columns no-margin-bottom">
-        <div class="column is-three-quarters">
-            {#{% include 'dataset/comments.twig' %}#}
-        </div>
-    </div>
-    {#{% include '../component/requestBlockWide.twig' %}#}
 {% endblock %}
 {% block scripts %}
     <script type="text/javascript">

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 
 from vitrina.orgs.managers import PublicOrganizationManager
@@ -30,7 +32,7 @@ class Municipality(models.Model):
 
 
 class Organization(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=datetime.now)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     description = models.TextField(blank=True, null=True)
@@ -53,6 +55,7 @@ class Organization(models.Model):
     class Meta:
         managed = False
         db_table = 'organization'
+        ordering = ("-created",)
 
     def __str__(self):
         return self.title

@@ -1,0 +1,247 @@
+{% load i18n %}
+
+<table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
+    <tbody>
+    <tr>
+        <th>{% translate "Naudotojų įvertinimas" %}</th>
+        <td>
+            {% if rating %}
+                <span>{{ rating }}</span>
+                {% for item in '12345'|make_list %}
+                    {% if forloop.counter <= rating %}
+                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                    {% else %}
+                        <span class="icon"><i class="fas fa-star"></i></span>
+                    {% endif %}
+                {% endfor %}
+                {#                {{ rating }}#}
+            {% else %}
+                {% translate "Dar nevertinta" %}
+            {% endif %}
+
+            {% if user %}
+                {% if not rated %}
+                    {#                    {% translate "dataset.alreadyRated" %}#}
+                    {#                {% else %}#}
+                        {% if result %}
+                           {# {% include "../../component/harvested-rating.twig" %} #}
+                        {% else %}
+                            {# {% include "../../component/rating.twig" %} #}
+                        {% endif %}
+                {% endif %}
+            {% endif %}
+        </td>
+    </tr>
+    <tr title="{{ rating.description }}">
+        <th>
+            {% translate "Brandos lygis" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'T. y. atvirų duomenų rinkinio formatas, kuriuo atverti atvirų duomenų rinkinio duomenys ir kuris įvertintas pagal Tim Berners-Lee penkių žvaigždučių modelį' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
+        <td>
+            {{ openness }}
+            {#            {% for item in [1,2,3,4,5] %}#}
+            {#                {% if loop.index <= openness %}#}
+            {#                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>#}
+            {#                {% else %}#}
+            {#                    <span class="icon"><i class="fas fa-star"></i></span>#}
+            {#                {% endif %}#}
+            {#            {% endfor %}#}
+        </td>
+    </tr>
+    {% if dataset.temporal_coverage %}
+        <tr>
+            <th>{% translate "Laikotarpis" %}</th>
+            <td>
+                {{ dataset.temporal_coverage }}
+            </td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>{% translate "Atnaujinama" %}</th>
+        <td>
+            {% if dataset.update_frequency %}
+                {% if locale == 'lt' %}{{ updateFrequency.title }}{% else %}{{ updateFrequency.titleEn }}{% endif %}
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <th>{% translate "Kategorijos" %}</th>
+        <td>
+            {% if dataset.category %}
+                {% if locale == 'lt' %}{{ dataset.category }}{% else %}{{ dataset.category.title_en }}{% endif %}
+            {% endif %}
+        </td>
+    </tr>
+    {% if dataset.status %}
+        <tr>
+            <th>
+                {% translate "Būsena" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Duomenų rinkinio atvėrimo būsena: Inventorintas, parengti metaduomenys, planuojamas atverti, atvertas, nenumatytas atverti' %}"><i
+                            class="fas fa-info-circle"></i></span>
+            </th>
+            <td>
+                {% if dataset.status == 'HAS_DATA' %}
+                    {% translate "status.open" %}
+                {% elif dataset.status == 'INVENTORED' %}
+                    {% translate "status.inventored" %}
+                {% elif dataset.status == 'METADATA' %}
+                    {% translate "status.metadata" %}
+                {% elif dataset.status == 'PRIORITIZED' %}
+                    {% translate "status.prioritized" %}
+                {% elif dataset.status == 'FINANCING' %}
+                    {% translate "status.financing" %}
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    {% if harvested %}
+        <tr>
+            <th>
+                {% translate "dataset.status" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'tooltip.datasetStatus' %}"><i
+                            class="fas fa-info-circle"></i></span>
+            </th>
+            <td>
+                {% translate "dataset.statusOpen" %}
+            </td>
+        </tr>
+    {% endif %}
+    {% if dataset.licence %}
+        <tr>
+            <th>{% translate "Licencija" %}</th>
+            <td>
+                <a href="{{ dataset.licence.url | default:dataset.licence.id }}" target="_blank"
+                   title="{{ dataset.licence.description }}">{{ dataset.licence.title }}</a>
+            </td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>{% translate "Katalogas" %}</th>
+        <td>
+            {% if dataset.catalog %}
+                {% if harvested %}
+                    {{ dataset.catalog }}
+                {% else %}
+                    {{ dataset.catalog.title }}
+                    {# {% if locale == "lt" %}{{ dataset.catalog.title }}{% else %}{{ dataset.catalog.title_en }}{% endif %} #}
+                {% endif %}
+            {% endif %}
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="is-pulled-right m-t-sm m-b-sm">
+    <p class="dataset-extra-meta-button">{% translate "Peržiūrėti papildomą informaciją" %} +</p>
+</div>
+
+<table class="table is-fullwidth is-hidden has-border-top has-border-bottom th-40 custom-table-padding"
+       id="extra-table">
+    <tbody>
+    {% if dataset.manager %}
+        <tr>
+            <th>{% translate "Atsakingas asmuo" %}</th>
+            <td>
+                {{ dataset.manager }}{% if dataset.manager.email %}, {{ dataset.manager.email }}{% endif %}{% if dataset.manager.phone %}, {{ dataset.manager.phone }}{% endif %}
+            </td>
+        </tr>
+    {% elif harvested %}
+        <tr>
+            <th>{% translate "dataset.responsiblePerson" %}</th>
+            <td>
+                {{ dataset.responsiblePerson }}{% if dataset.email1 %} {{ dataset.email1 }}{% endif %}{% if dataset.phone %} {{ dataset.phone }}{% endif %}
+            </td>
+        </tr>
+    {% else %}
+        {% if meta %}
+            <tr>
+                {# Čia koordinatorius ar kontaktinis asmuo? #}
+                <th>{% translate "Atsakingas asmuo" %}</th>
+                {% for key, value in meta %}
+                    {% if key == 'Kontaktinis_asmuo' %}
+                        <td>
+                        {#    {{ split(value,',')[0] }}, {{ split(split(value,',')[1], " ")[2] }}   #}
+                        </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        {% endif %}
+    {% endif %}
+    <tr>
+        <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
+        {# <td>{% if harvested %}{{ dataset.created }}{% else %}{{ dataset.getCreatedPretty() }}{% endif %}</td> #}
+    </tr>
+    {% if dataset.modified %}
+        <tr>
+            <th>{% translate "Paskutinio atnaujinimo data" %}</th>
+            {# <td>{% if harvested %}{{ dataset.modified }}{% else %}{{ dataset.getUpdatedPretty() }}{% endif %}</td> #}
+        </tr>
+    {% endif %}
+    <tr>
+        <th>{% translate "Platinimo sąlygos" %}</th>
+        <td>{% if harvested %}
+                {% if dataset.useLimitation %}
+                    {% translate "dataset.useLimitation" %}: {{ dataset.useLimitation }}<br>
+                {% endif %}
+                {% if dataset.accessConstraints %}
+                    {% translate "dataset.accessConstraints" %}: {{ dataset.accessConstraints }}<br>
+                {% endif %}
+                {% if dataset.useConstraints %}
+                    {% translate "dataset.useConstraints" %}: {{ dataset.useConstraints }}<br>
+                {% endif %}
+                {% if dataset.otherConstraints %}
+                    {% translate "dataset.otherConstraints" %}: {{ dataset.otherConstraints }}
+                {% endif %}
+            {% else %}
+                {{ dataset.distributionConditions }}
+            {% endif %}
+        </td>
+    </tr>
+    {% if harvested %}
+        {% if orgProvider %}
+            <tr>
+                <th>{% translate "organization.provider" %}</th>
+                <td>
+                    {{ dataset.orgProvider }}<br>
+                    <a href="mailto:{{ dataset.orgEmail }}">{{ dataset.orgEmail }}</a><br>
+                    {{ dataset.orgPhone }}<br>
+                    <a href="{{ dataset.orgWebsite }}">{{ dataset.orgWebsite }}</a>
+                </td>
+            </tr>
+        {% endif %}
+    {% endif %}
+    {#    {% if dataset.catalog %}#}
+    {#        <tr>#}
+    {#            <th>{% translate "dataset.catalog" %}</th>#}
+    {#            <td><a href="/catalog/{{ catalog.id }}" title="{{ catalog.description }}">{{ catalog.title }}</a></td>#}
+    {#        </tr>#}
+    {#    {% endif %}#}
+    {#    {% if dataset.language %}#}
+    {#        <tr>#}
+    {#            <th>{% translate "dataset.language" %}</th>#}
+    {#            <td>{{ dataset.language }}</td>#}
+    {#        </tr>#}
+    {#    {% endif %}#}
+    {#    {% if dataset.spatialCoverage %}#}
+    {#        <tr>#}
+    {#            <th>{% translate "dataset.spatial" %}</th>#}
+    {#            <td>{{ dataset.spatialCoverage }}</td>#}
+    {#        </tr>#}
+    {#    {% endif %}#}
+    {#    {% if dataset.origin %}#}
+    {#        <tr>#}
+    {#            <th>{% translate "dataset.origin" %}</th>#}
+    {#            <td>{{ dataset.origin }}</td>#}
+    {#        </tr>#}
+    {#    {% endif %}#}
+    {#    <tr>#}
+    {#        <th>{% translate "dataset.views" %}</th>#}
+    {#        <td>{{ views }}</td>#}
+    {#    </tr>#}
+    </tbody>
+</table>

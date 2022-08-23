@@ -13,6 +13,19 @@ from vitrina.datasets.managers import PublicDatasetManager
 
 
 class Dataset(models.Model):
+    HAS_DATA = "HAS_DATA"
+    INVENTORED = "INVENTORED"
+    METADATA = "METADATA"
+    PRIORITIZED = "PRIORITIZED"
+    FINANCING = "FINANCING"
+    STATUSES = {
+        (HAS_DATA, _("Atvertas")),
+        (INVENTORED, _("Inventorintas")),
+        (METADATA, _("Parengti metaduomenys")),
+        (PRIORITIZED, _("Įvertinti prioritetai")),
+        (FINANCING, _("Įvertintas finansavimas")),
+    }
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -50,7 +63,7 @@ class Dataset(models.Model):
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True)
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
 
@@ -104,18 +117,8 @@ class Dataset(models.Model):
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'slug': self.slug})
 
-    def get_status_label(self):
-        if self.status == 'HAS_DATA':
-            return _("Atvertas")
-        elif self.status == 'INVENTORED':
-            return _("Inventorintas")
-        elif self.status == 'METADATA':
-            return _("Parengti metaduomenys")
-        elif self.status == 'PRIORITIZED':
-            return _('Įvertinti prioritetai')
-        elif self.status == 'FINANCING':
-            return _('Įvertintas finansavimas')
-        return ''
+    def get_tag_list(self):
+        return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
 
 # TODO: To be merged into Dataset:

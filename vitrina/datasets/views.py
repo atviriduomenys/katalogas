@@ -20,11 +20,11 @@ class DatasetDetailView(DetailView):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
         extra_context_data = {
-            'tags': dataset.tags.replace(" ", "").split(',') if dataset.tags else "",
+            'tags': dataset.get_tag_list(),
             'subscription': [],
             'views': -1,
             'rating': 3.0,
-            'status': dataset.get_status_label()
+            'status': dataset.get_status_display()
         }
         context_data.update(extra_context_data)
         return context_data

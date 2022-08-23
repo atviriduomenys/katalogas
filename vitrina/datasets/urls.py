@@ -2,7 +2,6 @@ from django.urls import path
 
 from vitrina.datasets.views import DatasetListView, DatasetMembersView
 from vitrina.datasets.views import DatasetDetailView
-from vitrina.datasets.views import DatasetSearchResultsView
 
 
 urlpatterns = [

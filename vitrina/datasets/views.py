@@ -7,21 +7,9 @@ from vitrina.datasets.models import Dataset
 
 class DatasetListView(ListView):
     model = Dataset
-    queryset = Dataset.public.order_by('-published')
     template_name = 'vitrina/datasets/list.html'
     paginate_by = 20
 
-
-class DatasetDetailView(DetailView):
-    model = Dataset
-    template_name = 'vitrina/datasets/detail.html'
-
-
-class DatasetSearchResultsView(ListView):
-    model = Dataset
-    template_name = 'vitrina/datasets/list.html'
-    paginate_by = 20
-    
     def get_queryset(self):
         query = self.request.GET.get('q')
         if query:
@@ -31,3 +19,8 @@ class DatasetSearchResultsView(ListView):
         else:
             datasets = Dataset.public.order_by('-published')
         return datasets
+
+
+class DatasetDetailView(DetailView):
+    model = Dataset
+    template_name = 'vitrina/datasets/detail.html'

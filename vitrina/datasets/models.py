@@ -119,6 +119,7 @@ class Dataset(models.Model):
         managed = True
         db_table = 'dataset'
         unique_together = (('internal_id', 'organization_id'),)
+        ordering = ('-published',)
 
     def __str__(self):
         return self.title

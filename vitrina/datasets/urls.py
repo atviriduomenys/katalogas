@@ -1,5 +1,7 @@
 from django.urls import path
 
+from vitrina.datasets.views import DatasetListView
+from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView,\
     DatasetDetailView, DatasetSearchResultsView
 

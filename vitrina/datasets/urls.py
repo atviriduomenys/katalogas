@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
+from vitrina.datasets.views import DatasetListView
+from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView,\
     DatasetDetailView, DatasetSearchResultsView
 from vitrina.datasets.views import DatasetListView, DatasetCreateView, DatasetUpdateView, DatasetStructureView, DatasetStructureDownloadView, DatasetCreateView, DatasetUpdateView, DatasetDetailView, DatasetDistributionDownloadView, DatasetDistributionPreviewView

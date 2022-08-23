@@ -117,6 +117,8 @@ TEMPLATES = [
                 # Django CMS
                 'sekizai.context_processors.sekizai',
                 'cms.context_processors.cms_settings',
+
+                'vitrina.context_processors.current_domain'
             ],
         },
     },

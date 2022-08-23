@@ -2,3 +2,5 @@
 /db.sqlite3
 *.pyc
 /pylsp-mypy.cfg
+*.mo
+*.css.map

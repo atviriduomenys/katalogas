@@ -17,7 +17,7 @@ class DatasetListView(ListView):
                 Q(title__icontains=query) | Q(title_en__icontains=query)
             )
         else:
-            datasets = Dataset.public.order_by('-published')
+            datasets = Dataset.public.all()
         return datasets.order_by('-published')
 
 

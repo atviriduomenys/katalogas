@@ -18,7 +18,7 @@ class DatasetListView(ListView):
             )
         else:
             datasets = Dataset.public.order_by('-published')
-        return datasets
+        return datasets.order_by('-published')
 
 
 class DatasetDetailView(DetailView):

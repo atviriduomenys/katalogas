@@ -4,23 +4,10 @@ from django.views.generic.detail import DetailView
 from django.db.models import Q
 
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import filter_by_status, get_related_categories
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-
-from django.utils.translation import gettext_lazy as _
-
-
-HAS_DATA = "HAS_DATA"
-INVENTORED = "INVENTORED"
-HAS_STRUCTURE = "HAS_STRUCTURE"
-METADATA = "METADATA"
-DATASET_STATUSES = {
-    HAS_DATA: _("Atverti duomenys"),
-    INVENTORED: _("Tik inventorintas"),
-    HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-    METADATA: _("Tik metaduomenys")
-}
 
 
 class DatasetListView(ListView):
@@ -67,12 +54,12 @@ class DatasetSearchResultsView(ListView):
         elif date_to:
             datasets = datasets.filter(published__lt=date_to)
         if status:
-            datasets = self.filter_by_status(datasets, status)
+            datasets = filter_by_status(datasets, status)
         if tags:
             for tag in tags:
                 datasets = datasets.filter(tags__icontains=tag)
         if categories:
-            related_categories = self.get_related_categories(categories, only_children=True)
+            related_categories = get_related_categories(categories, only_children=True)
             datasets = datasets.filter(category__pk__in=related_categories)
         if filter_dict:
             datasets = datasets.filter(**filter_dict)
@@ -90,35 +77,6 @@ class DatasetSearchResultsView(ListView):
                     pass
         return selected_value
 
-    @staticmethod
-    def get_related_categories(selected_categories, only_children=False):
-        related_categories = []
-        selected_category_objects = Category.objects.filter(pk__in=selected_categories)
-        for selected in selected_category_objects:
-            related_categories.append(selected.pk)
-            if only_children:
-                family_objects = [obj.pk for obj in selected.get_children()]
-            else:
-                family_objects = [obj.pk for obj in selected.get_family_objects()]
-            related_categories.extend(family_objects)
-        if len(selected_category_objects) > 1:
-            related_categories = [category for category in related_categories
-                                  if related_categories.count(category) == len(selected_category_objects)]
-        related_categories = list(set(related_categories))
-        return related_categories
-
-    @staticmethod
-    def filter_by_status(queryset, status):
-        if status == HAS_DATA:
-            return queryset.filter(status=HAS_DATA)
-        elif status == INVENTORED:
-            return queryset.filter(status=INVENTORED)
-        elif status == HAS_STRUCTURE:
-            return queryset.filter(datasetstructure__isnull=False)
-        elif status == METADATA:
-            return queryset.filter(status=METADATA)
-        return queryset
-
     def get_context_data(self, **kwargs):
         context = super(DatasetSearchResultsView, self).get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
@@ -132,7 +90,7 @@ class DatasetSearchResultsView(ListView):
         selected_date_from = self.get_selected_value('date_from', is_int=False)
         selected_date_to = self.get_selected_value('date_to', is_int=False)
 
-        related_categories = self.get_related_categories(selected_categories)
+        related_categories = get_related_categories(selected_categories)
 
         # after task #118 tags filter should be redone
         tags = Dataset.public.exclude(tags="").exclude(tags__isnull=True).values_list('tags', flat=True)
@@ -150,10 +108,11 @@ class DatasetSearchResultsView(ListView):
                 dataset_tags = dataset_tags.replace(" ", "").split(",")
                 related_tag_list.extend(dataset_tags)
             related_tag_list = list(set(related_tag_list))
+            related_tag_list.sort()
 
         status_counts = {}
-        for status in DATASET_STATUSES.keys():
-            status_counts[status] = self.filter_by_status(filtered_queryset, status).count()
+        for status in Dataset.FILTER_STATUSES.keys():
+            status_counts[status] = filter_by_status(filtered_queryset, status).count()
 
         category_counts = {}
         if selected_categories:
@@ -164,14 +123,14 @@ class DatasetSearchResultsView(ListView):
                     category_counts[category] = 0
                     continue
                 count = filtered_queryset.filter(category=category).count()
-                children = category.get_children()
+                children = category.get_descendants()
                 for ch in children:
                     count += filtered_queryset.filter(category=ch).count()
                 category_counts[category.pk] = count
         else:
             for category in Category.objects.all():
                 count = filtered_queryset.filter(category=category).count()
-                children = category.get_children()
+                children = category.get_descendants()
                 for ch in children:
                     count += filtered_queryset.filter(category=ch).count()
                 category_counts[category.pk] = count
@@ -183,7 +142,7 @@ class DatasetSearchResultsView(ListView):
                 'title': value,
                 'query': "?%s%sstatus=%s" % (query, "&" if query else "", key),
                 'count': status_counts.get(key, 0)
-            } for key, value in DATASET_STATUSES.items() if status_counts.get(key, 0) > 0],
+            } for key, value in Dataset.FILTER_STATUSES.items() if status_counts.get(key, 0) > 0],
             'selected_status': selected_status,
 
             'organization_filters': [{

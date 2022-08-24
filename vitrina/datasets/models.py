@@ -10,8 +10,30 @@ from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
+from django.utils.translation import gettext_lazy as _
+
 
 class Dataset(models.Model):
+    HAS_DATA = "HAS_DATA"
+    INVENTORED = "INVENTORED"
+    METADATA = "METADATA"
+    PRIORITIZED = "PRIORITIZED"
+    FINANCING = "FINANCING"
+    HAS_STRUCTURE = "HAS_STRUCTURE"
+    STATUSES = {
+        (HAS_DATA, _("Atvertas")),
+        (INVENTORED, _("Inventorintas")),
+        (METADATA, _("Parengti metaduomenys")),
+        (PRIORITIZED, _("Įvertinti prioritetai")),
+        (FINANCING, _("Įvertintas finansavimas")),
+    }
+    FILTER_STATUSES = {
+        HAS_DATA: _("Atverti duomenys"),
+        INVENTORED: _("Tik inventorintas"),
+        HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
+        METADATA: _("Tik metaduomenys")
+    }
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -49,7 +71,7 @@ class Dataset(models.Model):
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True)
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
 

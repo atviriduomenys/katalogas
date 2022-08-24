@@ -15,9 +15,9 @@ def organizations():
 
 
 @pytest.mark.django_db
-def test_dataset_filter_without_query(app: DjangoTestApp, organizations):
+def test_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert len(resp.context['object_list']) == 3
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
         {
@@ -34,10 +34,9 @@ def test_dataset_filter_without_query(app: DjangoTestApp, organizations):
 
 
 @pytest.mark.django_db
-def test_dataset_filter_with_jurisdiction(app: DjangoTestApp, organizations):
+def test_with_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=Jurisdiction1" % reverse('organization-list'))
-    assert len(resp.context['object_list']) == 1
-    assert resp.context['object_list'][0].pk == organizations[0].pk
+    assert list(resp.context['object_list']) == [organizations[0]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction1"
     assert resp.context['jurisdictions'] == [
         {
@@ -54,11 +53,9 @@ def test_dataset_filter_with_jurisdiction(app: DjangoTestApp, organizations):
 
 
 @pytest.mark.django_db
-def test_dataset_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
+def test_with_other_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=Jurisdiction2" % reverse('organization-list'))
-    assert len(resp.context['object_list']) == 2
-    assert resp.context['object_list'][0].pk == organizations[1].pk
-    assert resp.context['object_list'][1].pk == organizations[2].pk
+    assert list(resp.context['object_list']) == [organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
         {
@@ -75,7 +72,7 @@ def test_dataset_filter_with_other_jurisdiction(app: DjangoTestApp, organization
 
 
 @pytest.mark.django_db
-def test_dataset_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
+def test_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
     assert resp.context['selected_jurisdiction'] == "doesnotexist"
@@ -94,10 +91,9 @@ def test_dataset_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organ
 
 
 @pytest.mark.django_db
-def test_dataset_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
+def test_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=1&jurisdiction=Jurisdiction1" % reverse('organization-list'))
-    assert len(resp.context['object_list']) == 1
-    assert resp.context['object_list'][0].pk == organizations[0].pk
+    assert list(resp.context['object_list']) == [organizations[0]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction1"
     assert resp.context['jurisdictions'] == [
         {
@@ -110,4 +106,19 @@ def test_dataset_filter_with_jurisdiction_and_title(app: DjangoTestApp, organiza
             'query': "?q=1&jurisdiction=Jurisdiction2",
             'count': 0
         }
+    ]
+
+
+@pytest.mark.django_db
+def test_with_query_containing_special_characters(app: DjangoTestApp):
+    organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction="Jurisdiction\"<'>\\")
+    resp = app.get("%s?q=\"<'>\\&jurisdiction=Jurisdiction\"<'>\\" % reverse('organization-list'))
+    assert list(resp.context['object_list']) == [organization]
+    assert resp.context['selected_jurisdiction'] == "Jurisdiction\"<'>\\"
+    assert resp.context['jurisdictions'] == [
+        {
+            'title': "Jurisdiction\"<'>\\",
+            'query': "?q=\"<'>\\&jurisdiction=Jurisdiction\"<'>\\",
+            'count': 1
+        },
     ]

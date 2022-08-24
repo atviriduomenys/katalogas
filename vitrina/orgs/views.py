@@ -14,4 +14,4 @@ class OrganizationListView(ListView):
             orgs = Organization.public.filter(title__icontains=query)
         else:
             orgs = Organization.public.all()
-        return orgs
+        return orgs.order_by("-created")

@@ -55,7 +55,6 @@ class Organization(models.Model):
     class Meta:
         managed = False
         db_table = 'organization'
-        ordering = ("-created",)
 
     def __str__(self):
         return self.title

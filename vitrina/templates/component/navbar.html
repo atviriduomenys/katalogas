@@ -40,7 +40,7 @@
                     {% endif %}
                 {% endfor %}
                 <div class="navbar-item">
-                    {% if user %}
+                    {% if user.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
                             <a class="navbar-link"><strong>{{ user.firstName }} {{ user.lastName }}</strong></a>
                             <div class="navbar-dropdown">
@@ -53,7 +53,7 @@
                         </div>
                     {% else %}
                         <div class="buttons">
-                            <a href="/login" class="button is-primary"{% translate auth.login %}</a>
+                            <a href="/login" class="button is-primary">{% translate auth.login %}</a>
                         </div>
                     {% endif %}
                 </div>
@@ -109,7 +109,7 @@
                     </div>
                 </div>
                 <div class="navbar-item">
-                    {% if user %}
+                    {% if user.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
                             <a class="navbar-link"><strong>{{ user.firstName }} {{ user.lastName }}</strong></a>
                             <div class="navbar-dropdown">

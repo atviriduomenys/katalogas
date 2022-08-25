@@ -18,14 +18,7 @@ class OrganizationDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         organization = context_data.get('organization')
-        extra_context_data = {
-            'members': organization.representative_set.all(),
-            'datasets': organization.dataset_set.all(),
-            'detail_active': True,
-            'members_active': False,
-            'datasets_active': False
-        }
-        context_data.update(extra_context_data)
+        context_data['ancestors'] = organization.get_ancestors()
         return context_data
 
 
@@ -34,9 +27,8 @@ class OrganizationMembersView(OrganizationDetailView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data['detail_active'] = False
-        context_data['members_active'] = True
-        context_data['datasets_active'] = False
+        organization = context_data.get('organization')
+        context_data['members'] = organization.representative_set.all()
         return context_data
 
 
@@ -45,7 +37,7 @@ class OrganizationDatasetsView(OrganizationDetailView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data['detail_active'] = False
-        context_data['members_active'] = False
-        context_data['datasets_active'] = True
+        organization = context_data.get('organization')
+        context_data['datasets'] = organization.dataset_set.all()
         return context_data
+

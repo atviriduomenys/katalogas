@@ -11,15 +11,13 @@
     <table class="table is-fullwidth">
         <tbody>
         <tr>
-            <td></td>
             <th>{% translate "Pavadinimas" %}</th>
             <th>{% translate "Aprašymas" %}</th>
         </tr>
         {% for d in datasets %}
             <tr>
-                <td>{{ forloop.counter }}.</td>
                 <td><a href="{% url 'dataset-detail' d.slug %}">{{ d.title }}</a></td>
-                <td>{{ d.description }}</td>
+                <td>{{ d.description|truncatewords:12 }}</td>
             </tr>
         {% endfor %}
         </tbody>

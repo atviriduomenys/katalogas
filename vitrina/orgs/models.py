@@ -1,5 +1,6 @@
 from django.db import models
-from treebeard.al_tree import AL_Node
+from django.urls import reverse
+from treebeard.al_tree import AL_Node, AL_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
 
@@ -64,15 +65,19 @@ class Organization(AL_Node):
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
     parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
 
+    node_order_by = ["pk"]
+
     class Meta:
-        managed = False
         db_table = 'organization'
 
     def __str__(self):
         return self.title
 
-    objects = models.Manager()
+    objects = AL_NodeManager()
     public = PublicOrganizationManager()
+
+    def get_absolute_url(self):
+        return reverse('organization-detail', kwargs={'kind': self.kind, 'slug': self.slug})
 
     @classmethod
     def find_problems(cls):

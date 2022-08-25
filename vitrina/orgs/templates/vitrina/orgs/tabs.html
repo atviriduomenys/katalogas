@@ -1,24 +1,20 @@
 {% load i18n %}
 <div class="tabs">
     <ul>
-        <li class="{%if detail_active %} is-active {% endif %}">
+        <li class="{%if request.resolver_match.url_name == 'organization-detail' %} is-active {% endif %}">
             <a href="{% url 'organization-detail' kind=organization.kind slug=organization.slug %}">
                 {% translate "Informacija" %}
             </a>
         </li>
-        {% if members %}
-            <li class="{%if members_active %} is-active {% endif %}">
-                <a href="{% url 'organization-members' kind=organization.kind slug=organization.slug %}">
-                    {% translate "Organizacijos nariai" %}
-                </a>
-            </li>
-        {% endif %}
-        {% if datasets %}
-            <li class="{%if datasets_active %} is-active {% endif %}">
-                <a href="{% url 'organization-datasets' kind=organization.kind slug=organization.slug %}">
-                    {% translate "Duomenų rinkiniai" %}
-                </a>
-            </li>
-        {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'organization-members' %} is-active {% endif %}">
+            <a href="{% url 'organization-members' kind=organization.kind slug=organization.slug %}">
+                {% translate "Organizacijos nariai" %}
+            </a>
+        </li>
+        <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
+            <a href="{% url 'organization-datasets' kind=organization.kind slug=organization.slug %}">
+                {% translate "Duomenų rinkiniai" %}
+            </a>
+        </li>
     </ul>
 </div>

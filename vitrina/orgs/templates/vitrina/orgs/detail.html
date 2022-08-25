@@ -31,9 +31,11 @@
 	                    {% endif %}
 	                </div>
 
-	                {% if organization.kind == 'gov' and organization.parent %}
+	                {% if ancestors %}
 	                	<p class="dataset-meta-title">{% translate "Pavaldus" %}</p>
-	                	{% include "vitrina/orgs/parent_list.html" with parent=organization.parent %}
+	                	{% for anc in ancestors %}
+							<p class="dataset-meta-value">{{ anc }}</p>
+						{% endfor %}
 	                {% endif %}
 
 	                {% if organization.company_code %}

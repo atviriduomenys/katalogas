@@ -11,7 +11,6 @@
     <table class="table">
         <tbody>
         <tr>
-            <th></th>
             <th>{% translate "Vardas" %}</th>
             <th>{% translate "Pavardė" %}</th>
             <th>{% translate "El. paštas" %}</th>
@@ -19,7 +18,6 @@
         </tr>
         {% for m in members %}
             <tr>
-                <td>{{ forloop.counter }}.</td>
                 <td>{{ m.first_name }}</td>
                 <td>{{ m.last_name }}</td>
                 <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>

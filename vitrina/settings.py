@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'vitrina.comments',
     'vitrina.messages',
     'vitrina.translate',
+    'vitrina.redirections',
 ]
 
 MIDDLEWARE = [

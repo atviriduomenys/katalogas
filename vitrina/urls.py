@@ -18,6 +18,7 @@ from django.urls import include
 from django.urls import path
 
 from vitrina.views import home
+from vitrina.redirections.views import redirection_handler
 
 urlpatterns = [
     path('', home, name="home"),
@@ -39,7 +40,10 @@ urlpatterns = [
     path('', include('vitrina.classifiers.urls')),
     path('', include('vitrina.cms.urls')),
     path('', include('vitrina.translate.urls')),
+    path('', include('vitrina.redirections.urls')),
     path('admin/', admin.site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path('', include('cms.urls')),
 ]
+
+handler404 = redirection_handler

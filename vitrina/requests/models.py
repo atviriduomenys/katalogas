@@ -10,6 +10,17 @@ from vitrina.users.models import User
 
 class Request(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
+    CREATED = "CREATED"
+    REJECTED = "REJECTED"
+    ALREADY_OPENED = "ALREADY_OPENED"
+    ANSWERED = "ANSWERED"
+    STATUSES = {
+        (CREATED, _("Pateiktas")),
+        (REJECTED, _("Atmestas")),
+        (ALREADY_OPENED, _("Jau atvertas")),
+        (ANSWERED, _("Atsakytas"))
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -27,7 +38,7 @@ class Request(models.Model):
     planned_opening_date = models.DateField(blank=True, null=True)
     purpose = models.CharField(max_length=255, blank=True, null=True)
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
@@ -45,17 +56,6 @@ class Request(models.Model):
 
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
-
-    def get_status_label(self):
-        if self.status == 'CREATED':
-            return _("Pateiktas")
-        elif self.status == 'REJECTED':
-            return _("Atmestas")
-        elif self.status == 'ALREADY_OPENED':
-            return _("Jau atvertas")
-        elif self.status == 'ANSWERED':
-            return _('Atsakytas')
-        return ''
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

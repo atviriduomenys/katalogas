@@ -10,13 +10,21 @@ from vitrina.requests.factories import RequestFactory
 @pytest.mark.django_db
 def test_request_detail_view(app: DjangoTestApp):
     dataset = DatasetFactory()
-    request = RequestFactory(dataset_id=dataset.pk, is_existing=True, status="REJECTED", purpose="science,product",
-                             changes="format", format="csv, json, rdf",
-                             structure_data="data1,dictionary1,type1,notes1;data2,dictionary2,type2,notes2")
+    request = RequestFactory(
+        dataset_id=dataset.pk,
+        is_existing=True,
+        status="REJECTED",
+        purpose="science,product",
+        changes="format",
+        format="csv, json, rdf",
+        structure_data=(
+            "data1,dictionary1,type1,notes1;"
+            "data2,dictionary2,type2,notes2"
+        )
+    )
 
     resp = app.get(reverse('request-detail', args=[request.pk]))
 
-    assert resp.status == '200 OK'
     assert resp.context['status'] == "Atmestas"
     assert resp.context['purposes'] == ['science', 'product']
     assert resp.context['changes'] == ['format']

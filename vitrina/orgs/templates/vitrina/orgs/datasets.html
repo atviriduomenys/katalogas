@@ -16,7 +16,7 @@
         </tr>
         {% for d in datasets %}
             <tr>
-                <td><a href="{% url 'dataset-detail' d.slug %}">{{ d.title }}</a></td>
+                <td><a href="{{ d.get_absolute_url }}">{{ d.title }}</a></td>
                 <td>{{ d.description|truncatewords:12 }}</td>
             </tr>
         {% endfor %}

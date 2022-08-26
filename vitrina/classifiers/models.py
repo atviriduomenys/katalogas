@@ -24,7 +24,6 @@ class Category(AL_Node):
     node_order_by = ['pk']
 
     class Meta:
-        managed = False
         db_table = 'category'
 
     def __str__(self):

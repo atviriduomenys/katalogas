@@ -21,21 +21,21 @@ def status_filter_data():
 
 @pytest.mark.django_db
 def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert list(resp.context['object_list']) == status_filter_data
     assert resp.context['selected_status'] is None
 
 
 @pytest.mark.django_db
 def test_status_filter_has_data(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?status=%s" % (reverse('dataset-search-results'), Dataset.HAS_DATA))
+    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.HAS_DATA))
     assert list(resp.context['object_list']) == [status_filter_data[0]]
     assert resp.context['selected_status'] == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
 def test_status_filter_has_structure(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?status=%s" % (reverse('dataset-search-results'), Dataset.HAS_STRUCTURE))
+    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.HAS_STRUCTURE))
     assert list(resp.context['object_list']) == [status_filter_data[1]]
     assert resp.context['selected_status'] == Dataset.HAS_STRUCTURE
 
@@ -53,14 +53,14 @@ def organization_filter_data():
 
 @pytest.mark.django_db
 def test_organization_filter_without_query(app: DjangoTestApp, organization_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert list(resp.context['object_list']) == organization_filter_data["datasets"]
     assert resp.context['selected_organization'] is None
 
 
 @pytest.mark.django_db
 def test_organization_filter_with_organization(app: DjangoTestApp, organization_filter_data):
-    resp = app.get("%s?organization=%s" % (reverse("dataset-search-results"),
+    resp = app.get("%s?organization=%s" % (reverse("dataset-list"),
                                            organization_filter_data["organization"].pk))
     assert list(resp.context['object_list']) == organization_filter_data["datasets"]
     assert resp.context['selected_organization'] == organization_filter_data["organization"].pk
@@ -84,7 +84,7 @@ def category_filter_data():
 
 @pytest.mark.django_db
 def test_category_filter_without_query(app: DjangoTestApp, category_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert len(resp.context['object_list']) == 4
     assert resp.context['selected_categories'] == []
     assert resp.context['related_categories'] == []
@@ -92,7 +92,7 @@ def test_category_filter_without_query(app: DjangoTestApp, category_filter_data)
 
 @pytest.mark.django_db
 def test_category_filter_with_parent_category(app: DjangoTestApp, category_filter_data):
-    resp = app.get("%s?category=%s" % (reverse("dataset-search-results"), category_filter_data["categories"][0].pk))
+    resp = app.get("%s?category=%s" % (reverse("dataset-list"), category_filter_data["categories"][0].pk))
     assert list(resp.context['object_list']) == category_filter_data["datasets"]
     assert resp.context['selected_categories'] == [category_filter_data["categories"][0].pk]
     assert resp.context['related_categories'] == [
@@ -105,7 +105,7 @@ def test_category_filter_with_parent_category(app: DjangoTestApp, category_filte
 
 @pytest.mark.django_db
 def test_category_filter_with_middle_category(app: DjangoTestApp, category_filter_data):
-    resp = app.get("%s?category=%s" % (reverse("dataset-search-results"), category_filter_data["categories"][1].pk))
+    resp = app.get("%s?category=%s" % (reverse("dataset-list"), category_filter_data["categories"][1].pk))
     assert list(resp.context['object_list']) == [
         category_filter_data["datasets"][1],
         category_filter_data["datasets"][3],
@@ -120,7 +120,7 @@ def test_category_filter_with_middle_category(app: DjangoTestApp, category_filte
 
 @pytest.mark.django_db
 def test_category_filter_with_child_category(app: DjangoTestApp, category_filter_data):
-    resp = app.get("%s?category=%s" % (reverse("dataset-search-results"), category_filter_data["categories"][3].pk))
+    resp = app.get("%s?category=%s" % (reverse("dataset-list"), category_filter_data["categories"][3].pk))
     assert list(resp.context['object_list']) == [category_filter_data["datasets"][3]]
     assert resp.context['selected_categories'] == [category_filter_data["categories"][3].pk]
     assert resp.context['related_categories'] == [
@@ -132,7 +132,7 @@ def test_category_filter_with_child_category(app: DjangoTestApp, category_filter
 
 @pytest.mark.django_db
 def test_category_filter_with_parent_and_child_category(app: DjangoTestApp, category_filter_data):
-    resp = app.get("%s?category=%s&category=%s" % (reverse("dataset-search-results"),
+    resp = app.get("%s?category=%s&category=%s" % (reverse("dataset-list"),
                                                    category_filter_data["categories"][0].pk,
                                                    category_filter_data["categories"][3].pk))
     assert list(resp.context['object_list']) == [category_filter_data["datasets"][3]]
@@ -156,7 +156,7 @@ def tag_filter_data():
 
 @pytest.mark.django_db
 def test_tag_filter_without_query(app: DjangoTestApp, tag_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert list(resp.context['object_list']) == tag_filter_data
     assert resp.context['selected_tags'] == []
     assert resp.context['related_tags'] == []
@@ -164,7 +164,7 @@ def test_tag_filter_without_query(app: DjangoTestApp, tag_filter_data):
 
 @pytest.mark.django_db
 def test_tag_filter_with_one_tag(app: DjangoTestApp, tag_filter_data):
-    resp = app.get("%s?tags=tag2" % reverse("dataset-search-results"))
+    resp = app.get("%s?tags=tag2" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == [tag_filter_data[0]]
     assert resp.context['selected_tags'] == ['tag2']
     assert resp.context['related_tags'] == ['tag1', 'tag2', 'tag3']
@@ -172,7 +172,7 @@ def test_tag_filter_with_one_tag(app: DjangoTestApp, tag_filter_data):
 
 @pytest.mark.django_db
 def test_tag_filter_with_shared_tag(app: DjangoTestApp, tag_filter_data):
-    resp = app.get("%s?tags=tag3" % reverse("dataset-search-results"))
+    resp = app.get("%s?tags=tag3" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == tag_filter_data
     assert resp.context['selected_tags'] == ['tag3']
     assert resp.context['related_tags'] == ['tag1', 'tag2', 'tag3', 'tag4', 'tag5']
@@ -180,7 +180,7 @@ def test_tag_filter_with_shared_tag(app: DjangoTestApp, tag_filter_data):
 
 @pytest.mark.django_db
 def test_tag_filter_with_multiple_tags(app: DjangoTestApp, tag_filter_data):
-    resp = app.get("%s?tags=tag4&tags=tag3" % reverse("dataset-search-results"))
+    resp = app.get("%s?tags=tag4&tags=tag3" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == [tag_filter_data[1]]
     assert resp.context['selected_tags'] == ['tag4', 'tag3']
     assert resp.context['related_tags'] == ['tag1', 'tag3', 'tag4', 'tag5']
@@ -199,14 +199,14 @@ def frequency_filter_data():
 
 @pytest.mark.django_db
 def test_frequency_filter_without_query(app: DjangoTestApp, frequency_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert list(resp.context['object_list']) == frequency_filter_data["datasets"]
     assert resp.context['selected_frequency'] is None
 
 
 @pytest.mark.django_db
 def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_data):
-    resp = app.get("%s?frequency=%s" % (reverse("dataset-search-results"),  frequency_filter_data["frequency"].pk))
+    resp = app.get("%s?frequency=%s" % (reverse("dataset-list"),  frequency_filter_data["frequency"].pk))
     assert list(resp.context['object_list']) == frequency_filter_data["datasets"]
     assert resp.context['selected_frequency'] == frequency_filter_data["frequency"].pk
 
@@ -221,7 +221,7 @@ def date_filter_data():
 
 @pytest.mark.django_db
 def test_date_filter_without_query(app: DjangoTestApp, date_filter_data):
-    resp = app.get(reverse('dataset-search-results'))
+    resp = app.get(reverse('dataset-list'))
     assert list(resp.context['object_list']) == date_filter_data
     assert resp.context['selected_date_from'] is None
     assert resp.context['selected_date_to'] is None
@@ -229,7 +229,7 @@ def test_date_filter_without_query(app: DjangoTestApp, date_filter_data):
 
 @pytest.mark.django_db
 def test_date_filter_wit_date_from(app: DjangoTestApp, date_filter_data):
-    resp = app.get("%s?date_from=2022-02-10" % reverse("dataset-search-results"))
+    resp = app.get("%s?date_from=2022-02-10" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == [date_filter_data[0]]
     assert resp.context['selected_date_from'] == "2022-02-10"
     assert resp.context['selected_date_to'] is None
@@ -237,7 +237,7 @@ def test_date_filter_wit_date_from(app: DjangoTestApp, date_filter_data):
 
 @pytest.mark.django_db
 def test_date_filter_with_date_to(app: DjangoTestApp, date_filter_data):
-    resp = app.get("%s?date_to=2022-02-10" % reverse("dataset-search-results"))
+    resp = app.get("%s?date_to=2022-02-10" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == [date_filter_data[1], date_filter_data[2]]
     assert resp.context['selected_date_from'] is None
     assert resp.context['selected_date_to'] == "2022-02-10"
@@ -245,7 +245,7 @@ def test_date_filter_with_date_to(app: DjangoTestApp, date_filter_data):
 
 @pytest.mark.django_db
 def test_date_filter_with_dates_from_and_to(app: DjangoTestApp, date_filter_data):
-    resp = app.get("%s?date_from=2022-01-01&date_to=2022-02-10" % reverse("dataset-search-results"))
+    resp = app.get("%s?date_from=2022-01-01&date_to=2022-02-10" % reverse("dataset-list"))
     assert list(resp.context['object_list']) == [date_filter_data[1]]
     assert resp.context['selected_date_from'] == "2022-01-01"
     assert resp.context['selected_date_to'] == "2022-02-10"
@@ -256,12 +256,24 @@ def test_dataset_filter_all(app: DjangoTestApp):
     organization = OrganizationFactory()
     category = CategoryFactory()
     frequency = FrequencyFactory()
-    dataset_with_all_filters = DatasetFactory(status=Dataset.HAS_DATA, tags="tag1, tag2, tag3", published=datetime(2022, 2, 9),
-                                              organization=organization, category=category, frequency=frequency)
+    dataset_with_all_filters = DatasetFactory(
+        status=Dataset.HAS_DATA,
+        tags="tag1, tag2, tag3",
+        published=datetime(2022, 2, 9),
+        organization=organization,
+        category=category,
+        frequency=frequency
+    )
 
-    resp = app.get("%s?status=%s&organization=%s&category=%s&tags=tag1&tags=tag2&frequency=%s&"
-                   "date_from=2022-01-01&date_to=2022-02-10" % (reverse("dataset-search-results"), Dataset.HAS_DATA,
-                                                                organization.pk, category.pk, frequency.pk))
+    resp = app.get(reverse("dataset-list"), {
+        'status': Dataset.HAS_DATA,
+        'organization': organization.pk,
+        'category': category.pk,
+        'tags': ['tag1', 'tag2'],
+        'frequency': frequency.pk,
+        'date_from': '2022-01-01',
+        'date_to': '2022-02-10',
+    })
 
     assert list(resp.context['object_list']) == [dataset_with_all_filters]
     assert resp.context['selected_status'] == Dataset.HAS_DATA

@@ -1,17 +1,20 @@
+from typing import List, Any, Dict
+
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
 
 
-def filter_by_status(queryset, status):
+def filter_by_status(queryset: QuerySet, status: str) -> QuerySet:
     if status == Dataset.HAS_STRUCTURE:
         return queryset.filter(datasetstructure__isnull=False)
     else:
         return queryset.filter(status=status)
 
 
-def get_related_categories(selected_categories, only_children=False):
+def get_related_categories(selected_categories: List[Any], only_children: bool = False) -> List[Any]:
     related_categories = []
     selected_category_objects = Category.objects.filter(pk__in=selected_categories)
     for selected in selected_category_objects:
@@ -29,7 +32,7 @@ def get_related_categories(selected_categories, only_children=False):
     return related_categories
 
 
-def get_tag_list():
+def get_tag_list() -> List[Any]:
     # after task #118 tags filter should be redone
     tags = Dataset.public.exclude(tags="").exclude(tags__isnull=True).values_list('tags', flat=True)
     tag_list = []
@@ -40,7 +43,7 @@ def get_tag_list():
     return tag_list
 
 
-def get_related_tag_list(selected_tags, queryset):
+def get_related_tag_list(selected_tags: List[Any], queryset: QuerySet) -> List[Any]:
     related_tag_list = []
     if selected_tags:
         related_tags = queryset.exclude(tags="").exclude(tags__isnull=True).values_list('tags', flat=True)
@@ -53,7 +56,8 @@ def get_related_tag_list(selected_tags, queryset):
     return related_tag_list
 
 
-def get_category_counts(selected_categories, related_categories, queryset):
+def get_category_counts(selected_categories: List[Any], related_categories: List[Any],
+                        queryset: QuerySet) -> Dict[str, Any]:
     category_counts = {}
     if selected_categories:
         for category in related_categories:

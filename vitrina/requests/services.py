@@ -1,7 +1,11 @@
+from typing import List, Dict, Any
+
 from vitrina.likes.models import UserLike
+from vitrina.requests.models import Request
+from vitrina.users.models import User
 
 
-def get_structure(request):
+def get_structure(request: Request) -> List[Dict[str, Any]]:
     structure_data = request.structure_data.split(";") if request.structure_data else []
     structure = []
     for struct in structure_data:
@@ -16,7 +20,7 @@ def get_structure(request):
     return structure
 
 
-def get_is_liked(user, request):
+def get_is_liked(user: User, request: Request) -> bool:
     liked = False
     if user.is_authenticated:
         user_like = UserLike.objects.filter(request_id=request.pk, user_id=user.pk)

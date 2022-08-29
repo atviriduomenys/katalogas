@@ -3,12 +3,12 @@
     <tbody>
     <tr>
         <th>{% translate "Pasiūlymas organizacijai" %}</th>
-        <td>{% if organization.slug %}<a href="/organizations/{{ organization.slug }}">{{ organization }}</a>{% else %}{{ organization }}{% endif %}</td>
+        <td>{% if request.organization.slug %}<a href="{{ request.organization.get_absolute_url }}">{{ request.organization }}</a>{% else %}{{ request.organization }}{% endif %}</td>
     </tr>
     {% if request.is_existing and dataset %}
         <tr>
             <th>{% translate "Norimas keisti duomenų rinkinys" %}</th>
-            <td>{% if dataset.slug %}<a href="/dataset/{{ dataset.slug }}">{{ request.title }}</a>{% else %}{{ request.title }}{% endif %}</td>
+            <td>{% if dataset.slug %}<a href="{{ dataset.get_absolute_url }}">{{ dataset.title }}</a>{% else %}{{ dataset.title }}{% endif %}</td>
         </tr>
     {% endif %}
     <tr>
@@ -49,7 +49,7 @@
             {{ like_count }}
             {% if user.is_authenticated %}
                 {% if not liked %}
-                    <form action="/request/{{ request.pk }}/like" method="post" class="rating-form">
+                    <form action="{% url 'request-like' request.pk %}" method="post" class="rating-form">
                         <input type="submit" class="button is-primary is-small m-l-md" value="{% translate 'Patinka' %}">
                     </form>
                 {% endif %}

@@ -1,4 +1,4 @@
-from vitrina.redirections.models import Redirections
+from vitrina.compat.models import Redirections
 from django.shortcuts import redirect
 
 

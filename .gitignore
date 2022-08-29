@@ -4,3 +4,4 @@
 /pylsp-mypy.cfg
 *.mo
 *.css.map
+.idea/

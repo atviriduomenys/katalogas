@@ -17,7 +17,7 @@ class OrganizationDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        organization = context_data.get('organization')
+        organization: Organization = self.object
         context_data['ancestors'] = organization.get_ancestors()
         return context_data
 
@@ -27,17 +27,6 @@ class OrganizationMembersView(OrganizationDetailView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        organization = context_data.get('organization')
+        organization: Organization = self.object
         context_data['members'] = organization.representative_set.all()
         return context_data
-
-
-class OrganizationDatasetsView(OrganizationDetailView):
-    template_name = 'vitrina/orgs/datasets.html'
-
-    def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        organization = context_data.get('organization')
-        context_data['datasets'] = organization.dataset_set.all()
-        return context_data
-

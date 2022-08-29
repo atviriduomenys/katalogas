@@ -41,5 +41,5 @@ def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
 def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
     resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].kind,
                                                           data_for_tabs["organization"].slug]))
-    assert list(resp.context['datasets']) == [data_for_tabs["dataset"]]
+    assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]

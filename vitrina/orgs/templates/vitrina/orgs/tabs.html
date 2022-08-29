@@ -2,17 +2,17 @@
 <div class="tabs">
     <ul>
         <li class="{%if request.resolver_match.url_name == 'organization-detail' %} is-active {% endif %}">
-            <a href="{% url 'organization-detail' kind=organization.kind slug=organization.slug %}">
+            <a href="{% url 'organization-detail' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}">
                 {% translate "Informacija" %}
             </a>
         </li>
         <li class="{%if request.resolver_match.url_name == 'organization-members' %} is-active {% endif %}">
-            <a href="{% url 'organization-members' kind=organization.kind slug=organization.slug %}">
+            <a href="{% url 'organization-members' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}">
                 {% translate "Organizacijos nariai" %}
             </a>
         </li>
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
-            <a href="{% url 'organization-datasets' kind=organization.kind slug=organization.slug %}">
+            <a href="{% url 'organization-datasets' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}">
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>

@@ -48,6 +48,10 @@
 {% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {#<div style="text-align: center;">#}

@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from treebeard.al_tree import AL_Node, AL_NodeManager
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
 
@@ -33,7 +33,7 @@ class Municipality(models.Model):
         db_table = 'municipality'
 
 
-class Organization(AL_Node):
+class Organization(MP_Node):
     GOV = "gov"
     COM = "com"
     ORG = "org"
@@ -63,7 +63,6 @@ class Organization(AL_Node):
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
-    parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
 
     node_order_by = ["pk"]
 
@@ -73,19 +72,11 @@ class Organization(AL_Node):
     def __str__(self):
         return self.title
 
-    objects = AL_NodeManager()
+    objects = MP_NodeManager()
     public = PublicOrganizationManager()
 
     def get_absolute_url(self):
         return reverse('organization-detail', kwargs={'kind': self.kind, 'slug': self.slug})
-
-    @classmethod
-    def find_problems(cls):
-        pass
-
-    @classmethod
-    def fix_tree(cls):
-        pass
 
 
 class Representative(models.Model):

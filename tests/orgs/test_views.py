@@ -10,7 +10,7 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 @pytest.fixture
 def data_for_tabs():
     parent_organization = OrganizationFactory()
-    organization = OrganizationFactory(parent=parent_organization)
+    organization = parent_organization.add_child(**OrganizationFactory.stub().__dict__)
     dataset = DatasetFactory(organization=organization)
     representative = RepresentativeFactory(organization=organization)
     return {

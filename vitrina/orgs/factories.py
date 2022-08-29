@@ -13,6 +13,10 @@ class OrganizationFactory(DjangoModelFactory):
     slug = factory.Faker('word')
     version = 1
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        return model_class.add_root(**kwargs)
+
 
 class RepresentativeFactory(DjangoModelFactory):
     class Meta:

@@ -177,6 +177,14 @@ rcssmin = "1.1.0"
 rjsmin = "1.2.0"
 
 [[package]]
+name = "django-etc"
+version = "1.3.1"
+description = "Tiny stuff for Django that won't fit into separate apps."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "django-crispy-forms"
 version = "1.14.0"
 description = "Best way to have Django DRY forms"
@@ -209,6 +217,17 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 Django = ">=2.2"
+
+[[package]]
+name = "django-hitcount"
+version = "1.3.5"
+description = "Hit counting application for Django."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+django-etc = ">=1.2.0"
 
 [[package]]
 name = "django-js-asset"
@@ -855,6 +874,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 lock-version = "1.1"
 python-versions = "^3.10"
 content-hash = "8b685ef1bdf87f8abf4eb08500802358c219b5bee7a58e6e3de72e95eed5e3ec"
+
 [metadata.files]
 aldryn-apphooks-config = []
 asgiref = []
@@ -870,6 +890,8 @@ django-appdata = []
 django-classy-tags = []
 django-cms = []
 django-compressor = []
+django-etc = []
+django-hitcount = []
 django-crispy-forms = []
 django-filer = []
 django-formtools = []

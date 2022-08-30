@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -139,12 +139,15 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'adp-dev',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'adp',
         'USER': 'adp',
-        'PASSWORD': 'secret',
+        'PASSWORD': 'adp',
         'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'PORT': '3306',
+        'TEST': {
+            'NAME': 'test_adp',
+        },
     },
 }
 

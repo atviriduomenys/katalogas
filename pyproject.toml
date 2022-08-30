@@ -16,6 +16,10 @@ django-compressor = "^4.0"
 django-libsass = "^0.9"
 libsass = "^0.21.0"
 django-sass-processor = "^1.2"
+flake8 = "^4.0.1"
+psycopg2 = "^2.9.3"
+pytest-cov = "^3.0.0"
+django-crispy-forms = "^1.14.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

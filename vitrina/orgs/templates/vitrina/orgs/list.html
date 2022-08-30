@@ -1,8 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}    
 
 {% block pageTitle %} | {% translate "Organizacijos" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Organizacijos" %}{% endblock %}
+
+{% block head %}
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+{% endblock %}
 
 {% block current_title %}{% translate "Organizacijos" %}{% endblock %}
 
@@ -10,6 +15,37 @@
     {#<section class="section section-padding-small">#}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Valdymo sritis" as jurisdictionTitle %}{{ jurisdictionTitle|upper}}</strong>
+                </p>
+                {% if selected_jurisdiction %}
+                    {% for jurisdiction in jurisdictions %}
+                        {% if jurisdiction.title == selected_jurisdiction %}
+                            <div class="is-flex">
+                                <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                                    <strong>{{ jurisdiction.title }}</strong>
+                                </span>
+                                <div class="stays-right">({{ jurisdiction.count }})</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {% for jurisdiction in jurisdictions %}
+                        <div class="{% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %} is-flex ">
+                            <a href="{{ jurisdiction.query }}" class="category-panel-block" title="{{ jurisdiction.title }}">
+                                {{ jurisdiction.title }}
+                            </a>
+                             <div class="stays-right">({{ jurisdiction.count }})</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                {% if jurisdictions|length > 10 %}
+                    <div>
+                        <span class="facets-more" id="facet-jurisdiction">{% translate "Išskleisti" %}</span>
+                    </div>
+                {% endif %} 
+            </nav>
             {#            <div style="text-align: center;">#}
             {#                <span class="icon is-huge">#}
             {#                    <i class="far fa-10x fa-building"></i>#}
@@ -27,12 +63,16 @@
             {#</nav>#}
         </div>
 
+        
+
         <div class="column is-three-quarters">
 
             <form class="field has-addons is-fullwidth" action="{% url 'organization-list' %}" method="get">
                 <div class="control is-expanded">
-                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos"
-                           value="{{ query | escape }}"/>
+                    {% if jurisdiction_query %}
+                        <input type="hidden" name="jurisdiction" value="{{ jurisdiction_query }}" />
+                    {% endif %}
+                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos" />
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -97,6 +137,12 @@
 {% block scripts %}
     <script type="text/javascript">
         $(function () {
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
 
             $('.show-mobile-facets').click(function () {
                 $('#facet-modal').toggleClass("is-hidden");

@@ -1,0 +1,31 @@
+name: 'Run tests'
+on:
+  push:
+    branches:
+      - devel
+  pull_request:
+    branches:
+      - devel
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Create DB image
+        run: docker-compose -f docker-compose-test.yml up -d
+
+      - name: Test with pytest
+        run: poetry run pytest -vvra --tb=short --cov=vitrina --cov=report=term-missing tests

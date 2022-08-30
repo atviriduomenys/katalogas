@@ -11,13 +11,13 @@ class OrganizationListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
-        orgs = Organization.public.order_by('title')
+        orgs = Organization.public.all()
 
         if query:
             orgs = orgs.filter(title__icontains=query)
         if jurisdiction:
             orgs = orgs.filter(jurisdiction=jurisdiction)
-        return orgs
+        return orgs.order_by("-created")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationListView, self).get_context_data(**kwargs)

@@ -10,7 +10,6 @@ from vitrina.datasets.factories import DatasetFactory
 from django.test.utils import override_settings
 
 
-@override_settings(DEBUG=False, ALLOWED_HOSTS=['*'])
 @pytest.mark.django_db
 def test_redirection_doesnt_exist(app: DjangoTestApp):
     c = Client()
@@ -18,7 +17,6 @@ def test_redirection_doesnt_exist(app: DjangoTestApp):
     assert response.status_code == 404
 
 
-@override_settings(DEBUG=False, ALLOWED_HOSTS=['*'])
 @pytest.mark.django_db
 def test_redirection_exists(app: DjangoTestApp):
     custom_dataset = DatasetFactory()

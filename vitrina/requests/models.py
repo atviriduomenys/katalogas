@@ -1,10 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from django.urls import reverse
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
+from vitrina.users.models import User
 
 
 class Request(models.Model):

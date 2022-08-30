@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'vitrina.users',
 
     # Django CMS
     'sass_processor',
@@ -66,7 +67,6 @@ INSTALLED_APPS = [
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
-    'vitrina.users',
     'vitrina.viisp',
     'vitrina.orgs',
     'vitrina.plans',
@@ -141,7 +141,10 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': 'r00t',
         'HOST': '192.168.2.60',
-        'PORT': '3306'
+        'PORT': '3306',
+        'TEST': {
+            'MIGRATE': False
+        }
     },
 }
 
@@ -227,3 +230,12 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+
+AUTH_USER_MODEL = 'vitrina_users.User'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+EMAIL_HOST = 'smtp.mailtrap.io'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = '2525'

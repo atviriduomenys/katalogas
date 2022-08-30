@@ -1,10 +1,12 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from vitrina.orgs.models import Organization
+from vitrina.users.managers import UserManager
 
 
-# TODO: Replace with django.contrib.auth.models.User.
-class User(models.Model):
+class User(AbstractUser):
+    username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -12,7 +14,7 @@ class User(models.Model):
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
-    password = models.CharField(max_length=60, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     role = models.CharField(max_length=255, blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
@@ -23,9 +25,16 @@ class User(models.Model):
     disabled = models.BooleanField()
     suspended = models.BooleanField()
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+
     class Meta:
-        managed = False
         db_table = 'user'
+
+    def __str__(self):
+        return "%s %s" % (self.first_name, self.last_name)
 
 
 class UserTablePreferences(models.Model):

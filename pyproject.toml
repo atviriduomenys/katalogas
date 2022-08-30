@@ -20,6 +20,7 @@ flake8 = "^4.0.1"
 psycopg2 = "^2.9.3"
 pytest-cov = "^3.0.0"
 django-crispy-forms = "^1.14.0"
+PyMySQL = "^1.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

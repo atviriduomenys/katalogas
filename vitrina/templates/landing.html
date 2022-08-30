@@ -53,13 +53,7 @@
     {% endif %}
 {% endblock %}
 
-{% block notification %}
-    {% if notification %}
-        <div id="top-bar">
-            <p>translate(notification.type) }}<span class="is-pulled-right message-close-button" onClick="HideMessage()">X</span></p>
-        </div>
-    {% endif %}
-{% endblock %}
+{% block breadcrumbs %}{% endblock %}
 
 {% block root %}
     {% include "component/hero.html" %}

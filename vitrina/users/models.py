@@ -27,6 +27,9 @@ class User(models.Model):
         managed = False
         db_table = 'user'
 
+    def __str__(self):
+        return '%s %s' % (self.first_name, self.last_name)
+
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

@@ -12,3 +12,6 @@
 
 # dev DB
 /postgres
+
+*.mo
+*.css.map

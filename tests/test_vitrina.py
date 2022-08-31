@@ -21,8 +21,8 @@ def test_home(app: DjangoTestApp):
         'organization': 1,
         'project': 1,
     }
-    assert list(resp.html.find(id='counts').p.stripped_strings) == [
-        '1 Datasets',
-        '1 Organizations',
-        '1 Projects',
+    assert [list(elem.stripped_strings) for elem in resp.html.find_all(id="counts")] == [
+        ['1', 'Rinkinių'],
+        ['1', 'Organizacijų'],
+        ['1', 'Panaudojimo atvejų'],
     ]

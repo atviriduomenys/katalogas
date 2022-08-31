@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-28 15:57+0300\n"
+"POT-Creation-Date: 2022-07-13 10:59+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -115,7 +115,7 @@ msgid "Išplėstinė paieška"
 msgstr ""
 
 #: vitrina/datasets/templates/vitrina/datasets/list.html:113
-#: vitrina/orgs/templates/vitrina/orgs/list.html:47
+#: vitrina/orgs/templates/vitrina/orgs/list.html:71
 #: vitrina/requests/templates/vitrina/requests/list.html:100
 msgid "Paieškos rezultatai"
 msgstr ""
@@ -141,13 +141,26 @@ msgstr ""
 msgid "Organizations"
 msgstr "Organizacijos"
 
-#: vitrina/orgs/templates/vitrina/orgs/list.html:4
 #: vitrina/orgs/templates/vitrina/orgs/list.html:5
-#: vitrina/orgs/templates/vitrina/orgs/list.html:7
+#: vitrina/orgs/templates/vitrina/orgs/list.html:6
+#: vitrina/orgs/templates/vitrina/orgs/list.html:12
 #, fuzzy
 #| msgid "Organizations"
 msgid "Organizacijos"
 msgstr "Organizacijos"
+
+#: vitrina/orgs/templates/vitrina/orgs/list.html:20
+msgid "Valdymo sritis"
+msgstr ""
+
+#: vitrina/orgs/templates/vitrina/orgs/list.html:31
+#: vitrina/orgs/templates/vitrina/orgs/list.html:127
+msgid "Išskleisti"
+msgstr ""
+
+#: vitrina/orgs/templates/vitrina/orgs/list.html:127
+msgid "Suskleisti"
+msgstr ""
 
 #: vitrina/projects/templates/vitrina/projects/list.html:4
 #: vitrina/projects/templates/vitrina/projects/list.html:5

@@ -69,6 +69,8 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'hitcount',
+    'crispy_forms',
 
     'vitrina',
     'vitrina.cms',
@@ -124,6 +126,8 @@ TEMPLATES = [
                 # Django CMS
                 'sekizai.context_processors.sekizai',
                 'cms.context_processors.cms_settings',
+
+                'vitrina.context_processors.current_domain'
             ],
         },
     },

@@ -41,5 +41,6 @@ urlpatterns = [
     path('', include('vitrina.translate.urls')),
     path('admin/', admin.site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
+    path('hitcount/', include('hitcount.urls', namespace='hitcount')),
     path('', include('cms.urls')),
 ]

@@ -29,3 +29,12 @@ From project root directory run::
 
     docker-compose up
     poetry run python manage.py migrate
+
+
+To log into adminer use credentials in docker-compose.yml::
+
+    System: PostgreSQL
+    Server: postgres
+    Username: adp
+    Password: secret
+    Database: adp-dev

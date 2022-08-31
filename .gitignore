@@ -2,6 +2,7 @@
 /db.sqlite3
 *.pyc
 /pylsp-mypy.cfg
+.env
 
 # IntelliJ
 .idea

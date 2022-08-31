@@ -11,3 +11,5 @@ class RequestFactory(DjangoModelFactory):
 
     title = factory.Faker('catch_phrase')
     version = 1
+    is_existing = True
+    is_public = True

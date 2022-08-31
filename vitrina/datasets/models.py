@@ -169,7 +169,7 @@ class OpenDataGovLtEntry(models.Model):
 
 
 class HarvestingResult(models.Model):
-    published = models.TextField()  # This field type is a guess.
+    published = models.BooleanField()
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)

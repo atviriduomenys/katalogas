@@ -1,4 +1,4 @@
-from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 
@@ -13,13 +13,8 @@ class DatasetListView(ListView):
 
     def get_queryset(self):
         datasets = Dataset.public.order_by('-published')
-        organization = None
-        if self.kwargs.get('slug'):
-            try:
-                organization = Organization.objects.get(slug=self.kwargs['slug'])
-            except ObjectDoesNotExist:
-                pass
-        if organization:
+        if self.kwargs.get('slug') and self.request.resolver_match.url_name == 'organization-datasets':
+            organization = get_object_or_404(Organization, slug=self.kwargs['slug'])
             datasets = Dataset.public.filter(organization=organization)
         return datasets
 

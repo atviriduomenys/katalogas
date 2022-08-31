@@ -26,10 +26,6 @@ class RegisterView(CreateView):
             user = form.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
-        # this is for email unique error that comes from model, so that there wouldn't be two of them,
-        # because there's already one in clean method
-        if "email" in form.errors:
-            form.errors.pop('email')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
 

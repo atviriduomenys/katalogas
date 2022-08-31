@@ -10,12 +10,6 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('Users are required to have an email address.')
         email = self.normalize_email(email)
-
-        extra_fields.setdefault('version', 1)
-        extra_fields.setdefault('needs_password_change', False)
-        extra_fields.setdefault('disabled', False)
-        extra_fields.setdefault('suspended', False)
-
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

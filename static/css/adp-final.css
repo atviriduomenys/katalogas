@@ -9351,4 +9351,13 @@ table.th-40 th {
     margin-top: 1.5rem;
 }
 
+.control-group.error input {
+    border-color: #ff3860;
+}
+
+.control-group.error span.help-inline strong, .control-group.error label {
+    color: #ff3860;
+    font-weight: 500;
+}
+
 /*# sourceMappingURL=adp-final.css.map */

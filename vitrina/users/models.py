@@ -9,7 +9,7 @@ class User(AbstractUser):
     username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     email = models.CharField(unique=True, max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
@@ -20,10 +20,10 @@ class User(AbstractUser):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
-    needs_password_change = models.BooleanField()
+    needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
-    disabled = models.BooleanField()
-    suspended = models.BooleanField()
+    disabled = models.BooleanField(default=False)
+    suspended = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

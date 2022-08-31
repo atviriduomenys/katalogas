@@ -1,9 +1,9 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit, ButtonHolder
 from django.contrib.auth import authenticate
-from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm
+from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm
 from django.core.exceptions import ValidationError
-from django.forms import Form, EmailField, CharField, PasswordInput, ModelForm, BooleanField
+from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField
 
 from django.utils.translation import gettext_lazy as _
 
@@ -42,16 +42,19 @@ class LoginForm(Form):
         return self.user_cache
 
 
-class RegisterForm(ModelForm):
+class RegisterForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("El. paštas"), required=True, error_messages={})
-    password = CharField(widget=PasswordInput, label=_("Slaptažodis"), required=True)
     agree_to_terms = BooleanField(label="Sutinku su", required=False)
+    password1 = CharField(label=_("Slaptažodis"), strip=False,
+                          widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+    password2 = CharField(label=_("Pakartokite slaptažodį"), strip=False,
+                          widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", 'password', 'agree_to_terms',)
+        fields = ("first_name", "last_name", "email", 'password1', 'password2', 'agree_to_terms',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,7 +66,9 @@ class RegisterForm(ModelForm):
                     css_class='control'), css_class='field'),
             Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('password', css_class='input', placeholder=_("Slaptažodis")),
+            Div(Div(Field('password1', css_class='input', placeholder=_("Slaptažodis")),
+                    css_class='control'), css_class='field'),
+            Div(Div(Field('password2', css_class='input', placeholder=_("Pakartokite slaptažodį")),
                     css_class='control'), css_class='field'),
             Div(Div(Field('agree_to_terms'), css_class='control'), css_class='field'),
             Submit('submit', _("Registruotis"), css_class='button is-primary'),
@@ -73,35 +78,16 @@ class RegisterForm(ModelForm):
         cleaned_data = super().clean()
         first_name = cleaned_data.get('first_name', "")
         last_name = cleaned_data.get('last_name', "")
-        password = cleaned_data.get('password', "")
-        email = cleaned_data.get('email', "")
 
-        if (len(first_name) < 3 or not first_name.isalpha()) or (len(last_name) < 3 or not last_name.isalpha()):
-            raise ValidationError(_("Vardas ir pavardė negali būti trumpesni nei 3 simboliai, negali turėti skaičių"))
-        if email and User.objects.filter(email=email).exists():
-            raise ValidationError(_("Naudotojas su tokiu el. pašto adresu jau egzistuoja"))
-        if len(password) < 8 or not any(i.isdigit() for i in password) or not any(i.isalpha() for i in password) \
-                or not any(not c.isalnum() for c in password):
-            raise ValidationError(_("Slaptažodis turi būti ne trupesnis nei 8 simboliai, "
-                                    "jį turi sudaryti raidės ir skaičiai bei specialus simbolis"))
+        if len(first_name) < 3 or not first_name.isalpha():
+            self.add_error('first_name',
+                           _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"))
+        if len(last_name) < 3 or not last_name.isalpha():
+            self.add_error('last_name',
+                           _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
         if 'agree_to_terms' in cleaned_data and not cleaned_data['agree_to_terms']:
-            raise ValidationError(_("Turite sutikti su naudojimo sąlygomis"))
+            self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password"])
-        if user.version is None:
-            user.version = 1
-        if user.needs_password_change is None:
-            user.needs_password_change = False
-        if user.suspended is None:
-            user.suspended = False
-        if user.disabled is None:
-            user.disabled = False
-        if commit:
-            user.save()
-        return user
 
 
 class PasswordResetForm(BasePasswordResetForm):

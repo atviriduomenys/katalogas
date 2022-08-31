@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.redirects',
 
     # Django CMS
     'sass_processor',
@@ -90,6 +91,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
@@ -139,12 +141,12 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'adp-dev',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'adp',
         'USER': 'adp',
-        'PASSWORD': 'secret',
+        'PASSWORD': 'adp',
         'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'PORT': '3306',
     },
 }
 

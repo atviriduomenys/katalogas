@@ -1,13 +1,7 @@
-from datetime import datetime
-
 import pytest
-from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, Client
+from django.test import Client
 from django_webtest import DjangoTestApp
-
-from vitrina.compat.models import Redirections
-from vitrina.datasets.factories import DatasetFactory
-from django.test.utils import override_settings
+from django.contrib.redirects.models import Redirect
 
 
 @pytest.mark.django_db
@@ -18,13 +12,23 @@ def test_redirection_doesnt_exist(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_redirection_exists(app: DjangoTestApp):
-    custom_dataset = DatasetFactory()
-    ctype = ContentType.objects.get(model='dataset')
-    Redirections.objects.create(created=datetime.now(),
-                                name="labas",
-                                path="/labas/",
-                                content_type=ctype,
-                                object_id=custom_dataset.pk)
-    resp = app.get('/labas/')
-    assert resp.status == '308 Permanent Redirect'
+def test_redirection_exists_has_new_path(app: DjangoTestApp):
+    c = Client()
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/labas/',
+        new_path='/labas_naujas/',
+    )
+    response = c.get('/labas/')
+    assert response.status_code == 301
+
+
+@pytest.mark.django_db
+def test_redirection_exists_no_new_path(app: DjangoTestApp):
+    c = Client()
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/labas/',
+    )
+    response = c.get('/labas/')
+    assert response.status_code == 410

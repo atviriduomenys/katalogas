@@ -18,7 +18,6 @@ from django.urls import include
 from django.urls import path
 
 from vitrina.views import home
-from vitrina.compat.views import redirection_handler
 
 urlpatterns = [
     path('', home, name="home"),
@@ -44,5 +43,3 @@ urlpatterns = [
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path('', include('cms.urls')),
 ]
-
-handler404 = redirection_handler

@@ -21,8 +21,9 @@ class RequestForm(ModelForm):
         button = "Update" if request_instance else "Create"
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Div(Div(Field('title', css_class='input', placeholder='Title'), css_class='control'), css_class='field'),
-            Div(Div(Field('description', css_class='textarea', placeholder='Description'), css_class='control'),
-                css_class='field'),
+            Div(Div(Field('title', css_class='input', placeholder=_('Pavadinimas')),
+                    css_class='control'), css_class='field'),
+            Div(Div(Field('description', css_class='textarea', placeholder=_('Aprašymas')),
+                    css_class='control'), css_class='field'),
             Submit('submit', button, css_class='button is-primary')
         )

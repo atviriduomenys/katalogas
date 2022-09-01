@@ -3,6 +3,8 @@
 {% load i18n %}
 {% load crispy_forms_tags %}
 
+{% block current_title %}{{ current_title }}{% endblock %}
+
 {% block content %}
     {% if form_title %}
         <div class="columns no-margin-bottom">

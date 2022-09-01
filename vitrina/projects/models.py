@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
@@ -7,7 +8,7 @@ from vitrina.projects.managers import PublicProjectManager
 class Project(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     beneficiary_group = models.CharField(max_length=255, blank=True, null=True)
     benefit = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
@@ -21,13 +22,17 @@ class Project(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
+    image = models.ImageField(upload_to='files/projects/%Y/%m/%d/', blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'usecase'
 
     objects = models.Manager()
     public = PublicProjectManager()
+
+    def get_absolute_url(self):
+        return reverse('project-detail', kwargs={'pk': self.pk})
 
 
 class UsecaseDatasetIds(models.Model):

@@ -72,7 +72,7 @@ def test_register_without_agreeing_to_terms(client: Client):
 def test_register_with_correct_data(client: Client):
     resp = client.post(reverse('register'), data={'first_name': "Test", 'last_name': 'User', 'email': "test_@test.com",
                                                   'password': "test123?", 'agree_to_terms': True})
-    resp.status_code = 302
+    assert resp.status_code == 302
     assert resp.url == reverse('home')
     assert User.objects.filter(email='test_@test.com').count() == 1
     assert resp.wsgi_request.user.is_authenticated is True
@@ -82,7 +82,6 @@ def test_register_with_correct_data(client: Client):
 @pytest.mark.django_db
 def test_reset_password_with_wrong_email(client: Client, user: User):
     resp = client.post(reverse('reset'), data={'email': "wrong.email@test.com"})
-    resp.status_code = 202
     assert list(resp.context['form'].errors.values()) == [[reset_error]]
     assert len(mail.outbox) == 0
 

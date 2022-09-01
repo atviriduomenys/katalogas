@@ -78,9 +78,11 @@ INSTALLED_APPS = [
     'vitrina.classifiers',
     'vitrina.projects',
     'vitrina.requests',
+    'vitrina.resources',
     'vitrina.comments',
     'vitrina.messages',
     'vitrina.translate',
+    'vitrina.likes'
 ]
 
 MIDDLEWARE = [

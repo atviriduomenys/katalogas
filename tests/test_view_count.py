@@ -1,9 +1,7 @@
-import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.test import Client
 
-from django_webtest import DjangoTestApp
+from django_webtest import WebTest
 from hitcount.models import HitCount
 
 from vitrina.datasets.factories import DatasetFactory
@@ -11,95 +9,88 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 
 
-@pytest.mark.django_db
-def test_view_count_dataset(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    hit_count = HitCount.objects.create(content_object=dataset)
+class DatasetViewCountTest(WebTest):
+    csrf_checks = False
 
-    client = Client()
-    user1 = User.objects.create_user(username='user1', password='12345')
-    user2 = User.objects.create_user(username='user2', password='12345')
+    def setUp(self):
+        self.dataset = DatasetFactory()
+        self.hit_count = HitCount.objects.create(content_object=self.dataset)
+        self.user1 = User.objects.create_user(username='user1', password='12345')
+        self.user2 = User.objects.create_user(username='user2', password='12345')
 
-    client.force_login(user1)
+    def test_hit_count(self):
+        # with one user
+        self.app.set_user(self.user1)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    # visit with one user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
+        # with the same user
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content,
+                         b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    # visit with the same user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
-
-    # visit with another user
-    client.force_login(user2)
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 2
+        # with another user
+        self.app.set_user(self.user2)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 2)
 
 
-@pytest.mark.django_db
-def test_view_count_request(app: DjangoTestApp):
-    request = RequestFactory()
-    hit_count = HitCount.objects.create(content_object=request)
+class RequestViewCountTest(WebTest):
+    csrf_checks = False
 
-    client = Client()
-    user1 = User.objects.create_user(username='user1', password='12345')
-    user2 = User.objects.create_user(username='user2', password='12345')
+    def setUp(self):
+        self.request = RequestFactory()
+        self.hit_count = HitCount.objects.create(content_object=self.request)
+        self.user1 = User.objects.create_user(username='user1', password='12345')
+        self.user2 = User.objects.create_user(username='user2', password='12345')
 
-    client.force_login(user1)
+    def test_hit_count(self):
+        # with one user
+        self.app.set_user(self.user1)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    # visit with one user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
+        # with the same user
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content,
+                         b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    # visit with the same user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
-
-    # visit with another user
-    client.force_login(user2)
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 2
+        # with another user
+        self.app.set_user(self.user2)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 2)
 
 
-@pytest.mark.django_db
-def test_view_count_project(app: DjangoTestApp):
-    project = ProjectFactory()
+class ProjectViewCountTest(WebTest):
+    csrf_checks = False
 
-    hit_count = HitCount.objects.create(content_object=project)
+    def setUp(self):
+        self.project = ProjectFactory()
+        self.hit_count = HitCount.objects.create(content_object=self.project)
+        self.user1 = User.objects.create_user(username='user1', password='12345')
+        self.user2 = User.objects.create_user(username='user2', password='12345')
 
-    client = Client()
-    user1 = User.objects.create_user(username='user1', password='12345')
-    user2 = User.objects.create_user(username='user2', password='12345')
+    def test_hit_count(self):
+        # with one user
+        self.app.set_user(self.user1)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    client.force_login(user1)
+        # with the same user
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content,
+                         b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 1)
 
-    # visit with one user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
-
-    # visit with the same user
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": false, "hit_message": "Not counted: authenticated user has active hit"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 1
-
-    # visit with another user
-    client.force_login(user2)
-    resp = client.post(reverse('hitcount:hit_ajax'), data={'hitcountPK': hit_count.pk},
-                       HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.content == b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}'
-    assert HitCount.objects.get(pk=hit_count.pk).hits == 2
+        # with another user
+        self.app.set_user(self.user2)
+        resp = self.app.post(reverse('hitcount:hit_ajax'), {'hitcountPK': self.hit_count.pk}, xhr=True)
+        self.assertEqual(resp.content, b'{"hit_counted": true, "hit_message": "Hit counted: user authentication"}')
+        self.assertEqual(HitCount.objects.get(pk=self.hit_count.pk).hits, 2)

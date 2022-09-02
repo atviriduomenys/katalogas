@@ -1,42 +1,30 @@
-import pytest
 from django.urls import reverse
-from django_webtest import DjangoTestApp
+from django_webtest import WebTest
 
 from vitrina.datasets.factories import DatasetFactory
 
 
-@pytest.fixture
-def dataset():
-    dataset = DatasetFactory(status="HAS_DATA")
-    return dataset
+class DatasetDetailTest(WebTest):
+    def setUp(self):
+        self.dataset = DatasetFactory(status="HAS_DATA")
 
+    def test_without_tags(self):
+        resp = self.app.get(reverse('dataset-detail', args=[self.dataset.slug]))
+        self.assertEqual(resp.context['tags'], [])
 
-@pytest.mark.django_db
-def test_dataset_detail_without_tags(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
-    assert resp.context['tags'] == []
+    def test_tags(self):
+        self.dataset.tags = "tag-1, tag-2, tag-3"
+        self.dataset.save()
+        resp = self.app.get(reverse('dataset-detail', args=[self.dataset.slug]))
+        self.assertEqual(resp.context['tags'], ['tag-1', 'tag-2', 'tag-3'])
 
+    def test_status(self):
+        resp = self.app.get(reverse('dataset-detail', args=[self.dataset.slug]))
+        self.assertEqual(resp.context['status'], "Atvertas")
 
-@pytest.mark.django_db
-def test_dataset_detail_tags(app: DjangoTestApp, dataset):
-    dataset.tags = "tag-1, tag-2, tag-3"
-    dataset.save()
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
-    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+    def test_other_context_data(self):
+        resp = self.app.get(reverse('dataset-detail', args=[self.dataset.slug]))
 
-
-@pytest.mark.django_db
-def test_dataset_detail_status(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
-    assert resp.context['status'] == "Atvertas"
-
-
-@pytest.mark.django_db
-def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
-
-    # hardcoded values, will need to change with later tasks
-    assert resp.context['subscription'] == []
-    assert resp.context['views'] == -1
-    assert resp.context['rating'] == 3.0
-
+        # hardcoded values, will need to change with later tasks
+        self.assertEqual(resp.context['subscription'], [])
+        self.assertEqual(resp.context['rating'], 3.0)

@@ -32,7 +32,6 @@ class DatasetDetailView(DetailView):
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
-            'views': -1,
             'rating': 3.0,
             'status': dataset.get_status_display()
         }

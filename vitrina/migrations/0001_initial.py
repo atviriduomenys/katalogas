@@ -9,11 +9,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL('ALTER TABLE `cms_attachment` MODIFY `deleted` TINYINT(1)  NULL;'
-                          'ALTER TABLE `cms_menu_item` MODIFY `deleted` TINYINT(1)  NULL;'
+        migrations.RunSQL('ALTER TABLE `adp_cms_attachment` MODIFY `deleted` TINYINT(1)  NULL;'
+                          'ALTER TABLE `adp_cms_menu_item` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `adp_cms_page` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `adp_cms_page` MODIFY `list_children` TINYINT(1)  NOT  NULL;'
                           'ALTER TABLE `adp_cms_page` MODIFY `published` TINYINT(1)  NOT  NULL;'
+                          'ALTER TABLE `api_description` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `api_key` MODIFY `enabled` TINYINT(1)  NULL;'
                           'ALTER TABLE `api_key` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `application_setting` MODIFY `deleted` TINYINT(1)  NULL;'
@@ -21,6 +22,9 @@ class Migration(migrations.Migration):
                           'ALTER TABLE `catalog` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `category` MODIFY `featured` TINYINT(1)  NOT  NULL;'
                           'ALTER TABLE `category` MODIFY `deleted` TINYINT(1)  NULL;'
+                          'ALTER TABLE `cms_page_original` MODIFY `deleted` TINYINT(1)  NULL;'
+                          'ALTER TABLE `cms_page_original` MODIFY `published` TINYINT(1)  NOT  NULL;'
+                          'ALTER TABLE `cms_page_original` MODIFY `list_children` TINYINT(1)  NOT  NULL;'
                           'ALTER TABLE `comment` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `css_rule_override` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `css_rule_override` MODIFY `active` TINYINT(1)  NULL;'
@@ -39,6 +43,8 @@ class Migration(migrations.Migration):
                           'ALTER TABLE `dataset_structure_field` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `dataset_visit` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `distribution_format` MODIFY `deleted` TINYINT(1)  NULL;'
+                          'ALTER TABLE `dmkauthentication_entry` MODIFY `deleted` TINYINT(1)  NULL;'
+                          'ALTER TABLE `dmkevent` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `email_template` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `external_site` MODIFY `deleted` TINYINT(1)  NULL;'
                           'ALTER TABLE `faq` MODIFY `deleted` TINYINT(1)  NULL;'

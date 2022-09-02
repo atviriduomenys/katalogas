@@ -7,7 +7,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_users', '0001_initial'),
         ('vitrina_projects', '0002_alter_project_options'),
     ]
 

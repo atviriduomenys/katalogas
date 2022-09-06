@@ -41,7 +41,7 @@ class Dataset(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField()
+    version = 1
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
@@ -108,7 +108,7 @@ class Dataset(models.Model):
     financing_priorities = models.TextField(blank=True, null=True)
     financing_received = models.BigIntegerField(blank=True, null=True)
     financing_required = models.BigIntegerField(blank=True, null=True)
-    will_be_financed = models.BooleanField()
+    will_be_financed = models.BooleanField(blank=True, null=True)
     # --------------------------->8-------------------------------------
 
     objects = models.Manager()

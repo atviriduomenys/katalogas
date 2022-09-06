@@ -21,9 +21,11 @@
 
 {% block content %}
     <div class="columns no-margin-bottom">
-        <a href="/datasets/{{ dataset.organization.kind }}/{{ dataset.organization.slug }}/{{ dataset.slug }}/update" class="button is-primary is-normal m-t-md is-size-6-mobile">
-            {% translate "Redaguoti rinkinį" %}
-        </a>
+        {% if user.is_authenticated and user == dataset.manager %}
+            <a href="/datasets/{{ dataset.slug }}/update" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                {% translate "Redaguoti rinkinį" %}
+            </a>
+        {% endif %}
         <div class="column">
             {# description and view count #}
             <div class="columns no-margin-bottom">

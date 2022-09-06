@@ -15,7 +15,7 @@ class UserLike(models.Model):
     user_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_like'
 
 
@@ -32,5 +32,5 @@ class UserVote(models.Model):
     harvested = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_vote'

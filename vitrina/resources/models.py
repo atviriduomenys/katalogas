@@ -15,7 +15,7 @@ class Format(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'format'
 
 
@@ -28,7 +28,7 @@ class DistributionFormat(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'distribution_format'
 
 
@@ -66,5 +66,5 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_distribution'

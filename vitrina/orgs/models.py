@@ -51,6 +51,7 @@ class Organization(models.Model):
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
+    kind = 1
 
     class Meta:
         managed = False

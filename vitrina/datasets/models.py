@@ -42,7 +42,6 @@ class Dataset(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
     version = models.IntegerField()
-
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)

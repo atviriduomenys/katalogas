@@ -1,12 +1,12 @@
-import csv
-
-from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+import csv
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
 
+from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -15,7 +15,7 @@ from vitrina.datasets.services import filter_by_status, get_related_categories, 
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, FileResponse
 
 from django.utils.translation import gettext_lazy as _
 
@@ -205,3 +205,20 @@ class DatasetStructureDownloadView(View):
         structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
+
+
+class DatasetCreateView(CreateView):
+    model = Dataset
+    template_name = 'vitrina/templates/base_form.html'
+    context_object_name = 'dataset'
+    form = NewDatasetForm
+
+
+class DatasetUpdateView(UpdateView):
+    model = Dataset
+    template_name = 'vitrina/templates/base_form.html'
+    context_object_name = 'dataset'
+    form = NewDatasetForm
+    fields = ('is_public', 'title', 'description', 'tags',
+              'category', 'licence', 'update_frequency',
+              'access_rights', 'distribution_conditions')

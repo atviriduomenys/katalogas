@@ -1,11 +1,13 @@
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
+from slugify import slugify
 
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.models import Dataset
-from django import forms
 
 
 class DatasetListView(ListView):
@@ -45,16 +47,44 @@ class DatasetDetailView(DetailView):
 
 class DatasetCreateView(CreateView):
     model = Dataset
-    template_name = 'vitrina/templates/base_form.html'
+    template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form = NewDatasetForm
+    form_class = NewDatasetForm
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.organization.slug == self.kwargs['org_slug']:
+            return super(DatasetCreateView, self).get(request, *args, **kwargs)
+        else:
+            return redirect('orgs', self.kwargs['org_slug'])
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        object.save()
+        return super(DatasetCreateView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})
 
 
 class DatasetUpdateView(UpdateView):
     model = Dataset
-    template_name = 'vitrina/templates/base_form.html'
+    template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form = NewDatasetForm
-    fields = ('is_public', 'title', 'description', 'tags',
-              'category', 'licence', 'update_frequency',
-              'access_rights', 'distribution_conditions')
+    form_class = NewDatasetForm
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated and Dataset.objects.filter(manager=self.request.user).exists():
+            return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+        else:
+            return redirect('dataset-detail', self.kwargs['slug'])
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        object.save()
+        return super(DatasetUpdateView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})
+

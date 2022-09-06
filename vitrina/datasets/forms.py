@@ -35,9 +35,10 @@ class NewDatasetForm(forms.ModelForm):
                     css_class='control'), css_class='field'),
             Div(Div(Field('distribution_conditions', css_class='input', placeholder=_('Platinimo salygos')),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('manager', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('representative_id', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
-                    css_class='control'), css_class='field'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+        if not self.instance.slug:
+            self.helper.layout.insert(-1, Div(Div(Field('manager', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
+                                      css_class='control'), css_class='field'))
+            self.helper.layout.insert(-1, Div(Div(Field('representative_id', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
+                                      css_class='control'), css_class='field'))

@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from vitrina.datasets.views import DatasetListView, DatasetCreateView, DatasetUpdateView
@@ -9,8 +10,9 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('dataset/<slug:slug>/', DatasetDetailView.as_view(), name='dataset-detail'),
-    path('datasets/<int:Organization_kind>/<int:Organization_slug>/add', DatasetCreateView.as_view(), name='dataset-add'),
-    path('datasets/<int:Organization_kind>/<int:Organization_slug>/<int:Dataset_slug>/update', DatasetUpdateView.as_view(), name='dataset-change')
+    #TODO: change url according to task
+    path('datasets/<slug:org_slug>/add', DatasetCreateView.as_view(), name='dataset-add'),
+    path('datasets/<slug:org_slug>/<slug:dataset_slug>/update', DatasetUpdateView.as_view(), name='dataset-change')
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

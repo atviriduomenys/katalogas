@@ -53,40 +53,49 @@ def test_with_query_containing_special_characters(app: DjangoTestApp, datasets):
     assert list(resp.context['object_list']) == [datasets[1]]
 
 
-class DatasetStructureTest(WebTest):
-    def setUp(self):
-        self.organization = OrganizationFactory(slug="org")
-        self.dataset1 = DatasetFactory(slug="ds1", organization=self.organization)
-        self.dataset2 = DatasetFactory(slug="ds2", organization=self.organization)
-        self.dataset3 = DatasetFactory(slug="ds3", organization=self.organization)
-        self.structure1 = DatasetStructureFactory(dataset=self.dataset2)
-        self.structure2 = DatasetStructureFactory(
-            dataset=self.dataset3,
-            file=FileField(filename='file.csv', data=b'ab\0c')
-        )
+@pytest.fixture
+def dataset_structure_data():
+    organization = OrganizationFactory(slug="org")
+    dataset1 = DatasetFactory(slug="ds1", organization=organization)
+    dataset2 = DatasetFactory(slug="ds2", organization=organization)
+    dataset3 = DatasetFactory(slug="ds3", organization=organization)
+    DatasetStructureFactory(dataset=dataset2)
+    DatasetStructureFactory(dataset=dataset3, file=FileField(filename='file.csv', data=b'ab\0c'))
+    return {
+        'organization': organization,
+        'dataset1': dataset1,
+        'dataset2': dataset2,
+        'dataset3': dataset3
+    }
 
-    def test_without_structure(self):
-        resp = self.app.get(reverse('dataset-structure', kwargs={
-            'organization_kind': self.organization.kind,
-            'organization_slug': self.organization.slug,
-            'dataset_slug': self.dataset1.slug
-        }), expect_errors=True)
-        self.assertEqual(resp.status_code, 404)
 
-    def test_with_structure(self):
-        resp = self.app.get(reverse('dataset-structure', kwargs={
-            'organization_kind': self.organization.kind,
-            'organization_slug': self.organization.slug,
-            'dataset_slug': self.dataset2.slug
-        }))
-        self.assertEqual(resp.context['can_show'], True)
-        self.assertEqual(list(resp.context['structure_data']), [["Column"], ["Value"]])
+@pytest.mark.django_db
+def test_without_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(reverse('dataset-structure', kwargs={
+        'organization_kind': dataset_structure_data["organization"].kind,
+        'organization_slug': dataset_structure_data["organization"].slug,
+        'dataset_slug': dataset_structure_data["dataset1"].slug
+    }), expect_errors=True)
+    assert resp.status_code == 404
 
-    def test_with_non_readable_structure(self):
-        resp = self.app.get(reverse('dataset-structure', kwargs={
-            'organization_kind': self.organization.kind,
-            'organization_slug': self.organization.slug,
-            'dataset_slug': self.dataset3.slug
-        }))
-        self.assertEqual(resp.context['can_show'], False)
-        self.assertEqual(resp.context['structure_data'], [])
+
+@pytest.mark.django_db
+def test_with_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(reverse('dataset-structure', kwargs={
+        'organization_kind': dataset_structure_data["organization"].kind,
+        'organization_slug': dataset_structure_data["organization"].slug,
+        'dataset_slug': dataset_structure_data["dataset2"].slug
+    }))
+    assert resp.context['can_show'] is True
+    assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
+
+
+@pytest.mark.django_db
+def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(reverse('dataset-structure', kwargs={
+        'organization_kind': dataset_structure_data["organization"].kind,
+        'organization_slug': dataset_structure_data["organization"].slug,
+        'dataset_slug': dataset_structure_data["dataset3"].slug
+    }))
+    assert resp.context['can_show'] is False
+    assert resp.context['structure_data'] == []

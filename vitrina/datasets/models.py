@@ -337,9 +337,9 @@ class DatasetStructure(models.Model):
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     standardized = models.BooleanField(blank=True, null=True)
+    file = models.FileField(upload_to="files/datasets/%Y/%m/%d/", blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'dataset_structure'
 
 

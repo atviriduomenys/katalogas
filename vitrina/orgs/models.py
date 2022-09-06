@@ -62,6 +62,11 @@ class Organization(models.Model):
     objects = models.Manager()
     public = PublicOrganizationManager()
 
+    # will be deleted after 88 task
+    @property
+    def kind(self):
+        return "org"
+
 
 class Representative(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

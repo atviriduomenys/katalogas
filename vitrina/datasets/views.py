@@ -1,8 +1,11 @@
 from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
 
+from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 
@@ -42,3 +45,20 @@ class DatasetDetailView(DetailView):
         }
         context_data.update(extra_context_data)
         return context_data
+
+
+class DatasetCreateView(CreateView):
+    model = Dataset
+    template_name = 'vitrina/templates/base_form.html'
+    context_object_name = 'dataset'
+    form = NewDatasetForm
+
+
+class DatasetUpdateView(UpdateView):
+    model = Dataset
+    template_name = 'vitrina/templates/base_form.html'
+    context_object_name = 'dataset'
+    form = NewDatasetForm
+    fields = ('is_public', 'title', 'description', 'tags',
+              'category', 'licence', 'update_frequency',
+              'access_rights', 'distribution_conditions')

@@ -37,6 +37,5 @@ def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset):
 
     # hardcoded values, will need to change with later tasks
     assert resp.context['subscription'] == []
-    assert resp.context['views'] == -1
     assert resp.context['rating'] == 3.0
 

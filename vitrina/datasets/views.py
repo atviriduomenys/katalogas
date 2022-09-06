@@ -11,6 +11,9 @@ from django.db.models import Q
 from slugify import slugify
 
 from vitrina.datasets.forms import NewDatasetForm
+from vitrina.datasets.models import Dataset
+from django import forms
+from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.datasets.models import Dataset, DatasetStructure

@@ -142,9 +142,6 @@ DATABASES = {
         'PASSWORD': 'r00t',
         'HOST': '192.168.2.60',
         'PORT': '3306',
-        'TEST': {
-            'MIGRATE': False
-        }
     },
 }
 
@@ -236,6 +233,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 EMAIL_HOST = 'smtp.mailtrap.io'
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = '580ebad201dc0c'
+EMAIL_HOST_PASSWORD = '4cffbf4414cfab'
 EMAIL_PORT = '2525'

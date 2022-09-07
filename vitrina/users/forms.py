@@ -1,7 +1,7 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit, ButtonHolder
 from django.contrib.auth import authenticate
-from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm
+from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.core.exceptions import ValidationError
 from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField
 
@@ -108,35 +108,25 @@ class PasswordResetForm(BasePasswordResetForm):
         return cleaned_data
 
 
-class PasswordResetConfirmForm(Form):
-    new_password = CharField(label=_("Naujas slaptažodis"), widget=PasswordInput)
+class PasswordResetConfirmForm(SetPasswordForm):
+    new_password1 = CharField(
+        label=_("Naujas slaptažodis"),
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        strip=False
+    )
+    new_password2 = CharField(
+        label=_("Pakartokite slaptažodį"),
+        strip=False,
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+    )
 
     def __init__(self, user, *args, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
+        super().__init__(user, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.layout = Layout(
-            Div(Div(Field('new_password', css_class='input', placeholder=_("Naujas slaptažodis")),
+            Div(Div(Field('new_password1', css_class='input', placeholder=_("Naujas slaptažodis")),
+                    css_class='control'), css_class='field'),
+            Div(Div(Field('new_password2', css_class='input', placeholder=_("Pakartokite slaptažodį")),
                     css_class='control'), css_class='field'),
             Submit('submit', _("Atstatyti slaptažodį"), css_class='button is-primary'),
         )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        new_password = cleaned_data.get('new_password', "")
-
-        if self.user.check_password(new_password):
-            raise ValidationError(_("Slaptažodis negali būti toks pat"))
-        if len(new_password) < 8 or not any(i.isdigit() for i in new_password) \
-                or not any(i.isalpha() for i in new_password) \
-                or not any(not c.isalnum() for c in new_password):
-            raise ValidationError(_("Slaptažodis turi būti ne trupesnis nei 8 simboliai, "
-                                    "jį turi sudaryti raidės ir skaičiai bei specialus simbolis"))
-        return cleaned_data
-
-    def save(self, commit=True):
-        password = self.cleaned_data["new_password"]
-        self.user.set_password(password)
-        if commit:
-            self.user.save()
-        return self.user

@@ -19,91 +19,95 @@ def user():
 
 
 @pytest.mark.django_db
-def test_login_with_wrong_credentials(csrf_exempt_django_app: DjangoTestApp, user: User):
-    resp = csrf_exempt_django_app.post(reverse('login'), {
-        'email': "test@test.com",
-        'password': "wrongpassword"
-    })
+def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
+    form = app.get(reverse('login')).forms[0]
+    form['email'] = "test@test.com"
+    form['password'] = "wrongpassword"
+    resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[credentials_error]]
 
 
 @pytest.mark.django_db
-def test_login_with_correct_credentials(csrf_exempt_django_app: DjangoTestApp, user: User):
-    resp = csrf_exempt_django_app.post(reverse('login'), {
-        'email': "test@test.com",
-        'password': "test123"
-    })
+def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
+    form = app.get(reverse('login')).forms[0]
+    form['email'] = "test@test.com"
+    form['password'] = "test123"
+    resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
 
 
 @pytest.mark.django_db
-def test_register_with_short_name(csrf_exempt_django_app: DjangoTestApp):
-    resp = csrf_exempt_django_app.post(reverse('register'), {
-        'first_name': "T",
-        'last_name': 'User',
-        'email': "test_@test.com",
-        'password1': "test123?",
-        'password2': "test123?",
-        'agree_to_terms': True
-    })
+def test_register_with_short_name(app: DjangoTestApp):
+    form = app.get(reverse('register')).forms[0]
+    form['first_name'] = "T"
+    form['last_name'] = "User"
+    form['email'] = "test_@test.com"
+    form['password1'] = "test123?"
+    form['password2'] = "test123?"
+    form['agree_to_terms'] = True
+    resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[name_error]]
     assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_with_name_with_numbers(csrf_exempt_django_app: DjangoTestApp):
-    resp = csrf_exempt_django_app.post(reverse('register'), {
-        'first_name': "T3st",
-        'last_name': 'User',
-        'email': "test_@test.com",
-        'password1': "test123?",
-        'password2': "test123?",
-        'agree_to_terms': True
-    })
+def test_register_with_name_with_numbers(app: DjangoTestApp):
+    form = app.get(reverse('register')).forms[0]
+    form['first_name'] = "T3st"
+    form['last_name'] = "User"
+    form['email'] = "test_@test.com"
+    form['password1'] = "test123?"
+    form['password2'] = "test123?"
+    form['agree_to_terms'] = True
+    resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[name_error]]
     assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_without_agreeing_to_terms(csrf_exempt_django_app: DjangoTestApp):
-    resp = csrf_exempt_django_app.post(reverse('register'), {
-        'first_name': "Test",
-        'last_name': 'User',
-        'email': "test_@test.com",
-        'password1': "test123?",
-        'password2': "test123?",
-        'agree_to_terms': False
-    })
+def test_register_without_agreeing_to_terms(app: DjangoTestApp):
+    form = app.get(reverse('register')).forms[0]
+    form['first_name'] = "Test"
+    form['last_name'] = "User"
+    form['email'] = "test_@test.com"
+    form['password1'] = "test123?"
+    form['password2'] = "test123?"
+    form['agree_to_terms'] = False
+    resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[terms_error]]
     assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_with_correct_data(csrf_exempt_django_app: DjangoTestApp):
-    resp = csrf_exempt_django_app.post(reverse('register'), {
-        'first_name': "Test",
-        'last_name': 'User',
-        'email': "test_@test.com",
-        'password1': "test123?",
-        'password2': "test123?",
-        'agree_to_terms': True
-    })
+def test_register_with_correct_data(app: DjangoTestApp):
+    form = app.get(reverse('register')).forms[0]
+    form['first_name'] = "Test"
+    form['last_name'] = "User"
+    form['email'] = "test_@test.com"
+    form['password1'] = "test123?"
+    form['password2'] = "test123?"
+    form['agree_to_terms'] = True
+    resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
     assert User.objects.filter(email='test_@test.com').count() == 1
 
 
 @pytest.mark.django_db
-def test_reset_password_with_wrong_email(csrf_exempt_django_app: DjangoTestApp, user: User):
-    resp = csrf_exempt_django_app.post(reverse('reset'), {'email': "wrong.email@test.com"})
+def test_reset_password_with_wrong_email(app: DjangoTestApp, user: User):
+    form = app.get(reverse('reset')).forms[0]
+    form['email'] = "wrong.email@test.com"
+    resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[reset_error]]
     assert len(mail.outbox) == 0
 
 
 @pytest.mark.django_db
-def test_reset_password_with_correct_email(csrf_exempt_django_app: DjangoTestApp, user: User):
-    resp = csrf_exempt_django_app.post(reverse('reset'), {'email': "test@test.com"})
+def test_reset_password_with_correct_email(app: DjangoTestApp, user: User):
+    form = app.get(reverse('reset')).forms[0]
+    form['email'] = "test@test.com"
+    resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
     assert len(mail.outbox) == 1

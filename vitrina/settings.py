@@ -141,12 +141,12 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'adp',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'adp-dev',
         'USER': 'adp',
-        'PASSWORD': 'adp',
+        'PASSWORD': 'secret',
         'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'PORT': '5432',
     },
 }
 

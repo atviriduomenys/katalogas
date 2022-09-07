@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -12,6 +13,19 @@ from vitrina.datasets.managers import PublicDatasetManager
 
 
 class Dataset(models.Model):
+    HAS_DATA = "HAS_DATA"
+    INVENTORED = "INVENTORED"
+    METADATA = "METADATA"
+    PRIORITIZED = "PRIORITIZED"
+    FINANCING = "FINANCING"
+    STATUSES = {
+        (HAS_DATA, _("Atvertas")),
+        (INVENTORED, _("Inventorintas")),
+        (METADATA, _("Parengti metaduomenys")),
+        (PRIORITIZED, _("Įvertinti prioritetai")),
+        (FINANCING, _("Įvertintas finansavimas")),
+    }
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -49,7 +63,7 @@ class Dataset(models.Model):
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True)
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
 
@@ -93,7 +107,7 @@ class Dataset(models.Model):
     public = PublicDatasetManager()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset'
         unique_together = (('internal_id', 'organization_id'),)
 
@@ -102,6 +116,9 @@ class Dataset(models.Model):
 
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'slug': self.slug})
+
+    def get_tag_list(self):
+        return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
 
 # TODO: To be merged into Dataset:
@@ -117,7 +134,7 @@ class GeoportalLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'geoportal_lt_entry'
 
 
@@ -147,12 +164,12 @@ class OpenDataGovLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'open_data_gov_lt_entry'
 
 
 class HarvestingResult(models.Model):
-    published = models.TextField()  # This field type is a guess.
+    published = models.BooleanField()
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -170,7 +187,7 @@ class HarvestingResult(models.Model):
     category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'harvesting_result'
 # --------------------------->8-------------------------------------
 
@@ -215,7 +232,7 @@ class DatasetMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_migrate'
 
 
@@ -230,7 +247,7 @@ class DatasetRemark(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_remark'
 
 
@@ -255,7 +272,7 @@ class DatasetResource(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_resource'
 
 
@@ -274,7 +291,7 @@ class DatasetEvent(models.Model):
     user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_event'
 
 
@@ -301,7 +318,7 @@ class DatasetResourceMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_resource_migrate'
 
 
@@ -322,7 +339,7 @@ class DatasetStructure(models.Model):
     standardized = models.BooleanField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_structure'
 
 
@@ -343,7 +360,7 @@ class DatasetStructureField(models.Model):
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_structure_field'
 
 
@@ -359,7 +376,7 @@ class DatasetVisit(models.Model):
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'dataset_visit'
 
 
@@ -375,6 +392,6 @@ class HarvestedVisit(models.Model):
     harvesting_result = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'harvested_visit'
 # --------------------------->8-------------------------------------

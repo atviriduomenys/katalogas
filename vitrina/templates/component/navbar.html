@@ -109,7 +109,7 @@
                     </div>
                 </div>
                 <div class="navbar-item">
-                    {% if user %}
+                    {% if user.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
                             <a class="navbar-link"><strong>{{ user.firstName }} {{ user.lastName }}</strong></a>
                             <div class="navbar-dropdown">

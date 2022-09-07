@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=adp-dev
+      - POSTGRES_USER=adp
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - 5432:5432

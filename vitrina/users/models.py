@@ -48,7 +48,7 @@ class UserTablePreferences(models.Model):
     user_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_table_preferences'
 
 
@@ -62,7 +62,7 @@ class OldPassword(models.Model):
     user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'old_password'
 
 
@@ -78,7 +78,7 @@ class PasswordResetToken(models.Model):
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'password_reset_token'
 
 
@@ -93,5 +93,5 @@ class SsoToken(models.Model):
     user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'sso_token'

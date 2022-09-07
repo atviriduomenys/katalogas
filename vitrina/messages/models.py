@@ -18,7 +18,7 @@ class EmailTemplate(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'email_template'
 
 
@@ -32,7 +32,7 @@ class GlobalEmail(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'global_email'
 
 
@@ -43,10 +43,10 @@ class NewsletterSubscription(models.Model):
     email = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    is_active = models.TextField()  # This field type is a guess.
+    is_active = models.BooleanField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'newsletter_subscription'
 
 
@@ -59,7 +59,7 @@ class SentMail(models.Model):
     recipient = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'sent_mail'
 
 
@@ -80,5 +80,5 @@ class UserSubscription(models.Model):
     active = models.BooleanField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_dataset_subscription'

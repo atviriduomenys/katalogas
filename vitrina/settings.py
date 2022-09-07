@@ -10,13 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import environ
+import os
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 
+
+env = environ.Env()
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -62,6 +70,7 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'hitcount',
     'crispy_forms',
 
     'vitrina',
@@ -117,6 +126,8 @@ TEMPLATES = [
                 # Django CMS
                 'sekizai.context_processors.sekizai',
                 'cms.context_processors.cms_settings',
+
+                'vitrina.context_processors.current_domain'
             ],
         },
     },
@@ -135,14 +146,7 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'adp-dev',
-        'USER': 'root',
-        'PASSWORD': 'r00t',
-        'HOST': '192.168.2.60',
-        'PORT': '3306',
-    },
+    'default': env.db(),
 }
 
 
@@ -233,6 +237,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 EMAIL_HOST = 'smtp.mailtrap.io'
-EMAIL_HOST_USER = '580ebad201dc0c'
-EMAIL_HOST_PASSWORD = '4cffbf4414cfab'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'

@@ -47,7 +47,7 @@ class NationalFinancingPlan(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     confirmation_date = models.DateTimeField(blank=True, null=True)
-    confirmed = models.TextField(blank=True, null=True)  # This field type is a guess.
+    confirmed = models.BooleanField(blank=True, null=True)
     confirmed_budget = models.BigIntegerField(blank=True, null=True)
     confirmed_by = models.BigIntegerField(blank=True, null=True)
     estimated_budget = models.BigIntegerField(blank=True, null=True)

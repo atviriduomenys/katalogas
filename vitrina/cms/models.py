@@ -40,13 +40,13 @@ class CmsPage(models.Model):
     body = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     page_order = models.IntegerField(blank=True, null=True)
-    published = models.TextField()  # This field type is a guess.
+    published = models.BooleanField()
     slug = models.TextField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
     parent = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
     language = models.CharField(max_length=255, blank=True, null=True)
-    list_children = models.TextField()  # This field type is a guess.
+    list_children = models.BooleanField()
 
     class Meta:
         managed = True
@@ -60,7 +60,7 @@ class CssRuleOverride(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    active = models.TextField(blank=True, null=True)  # This field type is a guess.
+    active = models.BooleanField(blank=True, null=True)
     css_order = models.IntegerField(blank=True, null=True)
     css_override = models.TextField(blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
@@ -161,7 +161,7 @@ class NewsItem(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     author_name = models.TextField(blank=True, null=True)
-    is_public = models.TextField(blank=True, null=True)  # This field type is a guess.
+    is_public = models.BooleanField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)
 
     class Meta:

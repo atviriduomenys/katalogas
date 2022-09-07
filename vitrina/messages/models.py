@@ -43,7 +43,7 @@ class NewsletterSubscription(models.Model):
     email = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    is_active = models.TextField()  # This field type is a guess.
+    is_active = models.BooleanField()
 
     class Meta:
         managed = True

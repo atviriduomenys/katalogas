@@ -1,10 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from django.urls import reverse
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
+from vitrina.users.models import User
 
 
 class Request(models.Model):
@@ -19,7 +19,7 @@ class Request(models.Model):
     dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
-    is_existing = models.TextField()  # This field type is a guess.
+    is_existing = models.BooleanField()
     notes = models.TextField(blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
@@ -31,7 +31,7 @@ class Request(models.Model):
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
-    is_public = models.TextField()  # This field type is a guess.
+    is_public = models.BooleanField()
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 

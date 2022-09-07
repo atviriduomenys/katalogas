@@ -81,7 +81,7 @@ class DatasetUpdateView(UpdateView):
         if request.user.is_authenticated and Dataset.objects.filter(manager=self.request.user).exists():
             return super(DatasetUpdateView, self).get(request, *args, **kwargs)
         else:
-            return redirect('dataset-detail', self.kwargs['slug'])
+            return redirect('dataset-detail', self.kwargs['org_slug'])
 
     def form_valid(self, form):
         object = form.save(commit=False)

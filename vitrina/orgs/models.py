@@ -66,7 +66,7 @@ class Organization(MP_Node):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
 
-    node_order_by = ["pk"]
+    node_order_by = ["created"]
 
     class Meta:
         db_table = 'organization'

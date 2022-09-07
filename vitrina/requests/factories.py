@@ -1,15 +1,15 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.datasets.models import Dataset
+from vitrina.requests.models import Request
 
 
-class DatasetFactory(DjangoModelFactory):
+class RequestFactory(DjangoModelFactory):
     class Meta:
-        model = Dataset
+        model = Request
         django_get_or_create = ('title',)
 
     title = factory.Faker('catch_phrase')
-    slug = factory.Faker('word')
     version = 1
-    will_be_financed = False
+    is_existing = True
+    is_public = True

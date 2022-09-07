@@ -22,7 +22,7 @@ class Catalog(models.Model):
     licence = models.ForeignKey(Licence, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'catalog'
 
 
@@ -32,17 +32,17 @@ class HarvestingJob(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    indexed = models.TextField(blank=True, null=True)  # This field type is a guess.
+    indexed = models.BooleanField(blank=True, null=True)
     schedule = models.CharField(max_length=255, blank=True, null=True)
     started = models.DateTimeField(blank=True, null=True)
     stopped = models.DateTimeField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    translated = models.TextField(blank=True, null=True)  # This field type is a guess.
+    translated = models.BooleanField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
-    active = models.TextField(blank=True, null=True)  # This field type is a guess.
+    active = models.BooleanField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'harvesting_job'

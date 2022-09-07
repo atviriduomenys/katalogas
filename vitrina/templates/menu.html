@@ -1,6 +1,6 @@
 {% load menu_tags %}
 
-{# Nerenderiuojam rekursyviai, o renderiuojam viską iš karto, t.y. 0 lygį kaip navbarą ir pirmą lygį kaip itemo dropdowną #}
+{# Rendering is not recursive, we're rendering everything together - level 0 as navbar, level 1 as item dropdown #}
 
 {% for child in children %}
     {% if child.children %}

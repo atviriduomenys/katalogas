@@ -15,7 +15,7 @@ class DatasetListView(ListView):
         datasets = Dataset.public.order_by('-published')
         if self.kwargs.get('slug') and self.request.resolver_match.url_name == 'organization-datasets':
             organization = get_object_or_404(Organization, slug=self.kwargs['slug'])
-            datasets = Dataset.public.filter(organization=organization)
+            datasets = datasets.filter(organization=organization)
         return datasets
 
 

@@ -23,7 +23,7 @@ class Project(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'usecase'
 
     objects = models.Manager()
@@ -35,7 +35,7 @@ class UsecaseDatasetIds(models.Model):
     dataset_ids = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'usecase_dataset_ids'
 
 
@@ -49,7 +49,7 @@ class UsecaseLike(models.Model):
     user_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'usecase_like'
 
 
@@ -75,7 +75,7 @@ class PartnerApplication(models.Model):
     viisp_dob = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'partner_application'
 
 
@@ -91,7 +91,7 @@ class ApplicationSetting(models.Model):
     value = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'application_setting'
 
 
@@ -116,7 +116,7 @@ class ApplicationUseCase(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'application_usecase'
 
 
@@ -125,6 +125,6 @@ class ApplicationUsecaseDatasetIds(models.Model):
     dataset_ids = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'application_usecase_dataset_ids'
 # --------------------------->8-------------------------------------

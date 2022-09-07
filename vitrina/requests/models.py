@@ -19,7 +19,7 @@ class Request(models.Model):
     dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
-    is_existing = models.TextField()  # This field type is a guess.
+    is_existing = models.BooleanField()
     notes = models.TextField(blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
@@ -31,7 +31,7 @@ class Request(models.Model):
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
-    is_public = models.TextField()  # This field type is a guess.
+    is_public = models.BooleanField()
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 
@@ -39,7 +39,7 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request'
 
     def get_absolute_url(self):
@@ -59,7 +59,7 @@ class RequestEvent(models.Model):
     request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_event'
 
 
@@ -77,5 +77,5 @@ class RequestStructure(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_structure'

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/orgs/tabs.html' %}
+
+    <table class="table is-fullwidth">
+        <tbody>
+        <tr>
+            <th>{% translate "Pavadinimas" %}</th>
+            <th>{% translate "Aprašymas" %}</th>
+        </tr>
+        {% for d in datasets %}
+            <tr>
+                <td><a href="{{ d.get_absolute_url }}">{{ d.title }}</a></td>
+                <td>{{ d.description|truncatewords:12 }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

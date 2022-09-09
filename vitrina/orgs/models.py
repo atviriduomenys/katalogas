@@ -1,8 +1,12 @@
 from datetime import datetime
 
 from django.db import models
+from django.urls import reverse
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
+
+from django.utils.translation import gettext_lazy as _
 
 
 class Region(models.Model):
@@ -31,7 +35,16 @@ class Municipality(models.Model):
         db_table = 'municipality'
 
 
-class Organization(models.Model):
+class Organization(MP_Node):
+    GOV = "gov"
+    COM = "com"
+    ORG = "org"
+    ORGANIZATION_KINDS = {
+        (GOV, _("Valstybinė įstaiga")),
+        (COM, _("Verslo organizacija")),
+        (ORG, _("Nepelno ir nevalstybinė organizacija"))
+    }
+
     created = models.DateTimeField(blank=True, null=True, default=datetime.now)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -51,16 +64,21 @@ class Organization(models.Model):
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
+    kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
+
+    node_order_by = ["created"]
 
     class Meta:
-        managed = True
         db_table = 'organization'
 
     def __str__(self):
         return self.title
 
-    objects = models.Manager()
+    objects = MP_NodeManager()
     public = PublicOrganizationManager()
+
+    def get_absolute_url(self):
+        return reverse('organization-detail', kwargs={'kind': self.kind, 'slug': self.slug})
 
 
 class Representative(models.Model):

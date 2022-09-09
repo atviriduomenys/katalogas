@@ -1,6 +1,6 @@
 from django.views.generic import ListView
 
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 
 
 class OrganizationListView(ListView):
@@ -32,3 +32,16 @@ class OrganizationListView(ListView):
         context['selected_jurisdiction'] = self.request.GET.get('jurisdiction')
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
+
+
+class OrganizationMembersView(ListView):
+    model = Representative
+    template_name = 'vitrina/orgs/members_list.html'
+    paginate_by = 20
+
+    def get(self, request, *args, **kwargs):
+        org_slug = self.kwargs['org_slug']
+        org = Organization.objects.filter(slug=org_slug)[:1]
+        #TODO: change organization_id to organization when models are relevant
+        Representative.objects.filter(organization_id=org[0].id).order_by("first_name", 'last_name')
+        return super(OrganizationMembersView, self).get(request, *args, **kwargs)

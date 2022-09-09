@@ -241,3 +241,8 @@ EMAIL_HOST = 'smtp.mailtrap.io'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]

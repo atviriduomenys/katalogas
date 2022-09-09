@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+
+{% block head %}
+    <style>
+        .autocomplete {
+            /*the container must be positioned relative:*/
+            position: relative;
+            display: inline-block;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            /*position the autocomplete items to be the same width as the container:*/
+            top: 100%;
+            left: 0;
+            right: 0;
+            color: #4a4a4a;
+        }
+
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #d4d4d4;
+        }
+
+        .autocomplete-items div:hover {
+            /*when hovering an item:*/
+            background-color: #e9e9e9;
+        }
+
+        .autocomplete-active {
+            /*when navigating through the items using the arrow keys:*/
+            background-color: #007db2 !important;
+            color: #ffffff;
+        }
+    </style>
+{% endblock %}
+
+{% block current_title %}
+{% translate org.title %}
+{% translate "organizacijos narių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+    <table class="table is-fullwidth has-border-top has-border-bottom th-40 custom-table-padding">
+        <tbody>
+        {% for i in page_obj %}
+            <tr>
+                <table class="table is-fullwidth has-border-top has-border-bottom th-40 custom-table-padding">
+                    <th>{% translate "Narys" %}</th>
+                    <td>{{ i.user.first_name }} {{ i.user.last_name }}</td>
+                    <tbody>
+                        <tr>
+                            <th>{% translate "Nario rolė"%}</th>
+                            <td>{{ i.role }}</td>
+                        </tr>
+                        <tr>
+                            <th>{% translate "Organizacija"%}</th>
+                            <td>{{ i.organization.title }}</td>
+                        </tr>
+                        <tr style="margin-bottom:25px;padding-bottom:25px">
+                            <th>{% translate "Nario sukūrimo data"%}</th>
+                            <td>{{ i.created }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block extraContent %}
+    {% include '../component/requestBlock.twig' %}
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+
+            var query = $('#search-q-val').val();
+            if (query != null && query !== "") {
+                $('#search-input').val("{{ q }}");
+            }
+
+            $('.cats-more, .cats-more-inner').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "+" ? "-" : "+";
+                })
+            });
+
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "general.more" %}" ? "{% translate "general.less" %}" : "{% translate "general.more" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            var lang = "{{ locale }}";
+            var currentUrl = new URL(window.location);
+            var searchParams = new URLSearchParams(currentUrl.search);
+            var selectedDate = null;
+            var datasetTitles = {{ datasetSuggestions }};
+
+            $('.datepicker-from').datepicker({
+                language: lang,
+                dateFormat: 'yyyy-mm-dd',
+                autoClose: true,
+                clearButton: true,
+                onSelect: function (fd, d) {
+                    if (!d) return;
+                    selectedDate = fd;
+                },
+                onHide: function (dp, animationCompleted) {
+                    if (selectedDate != null) {
+                        if (animationCompleted) {
+                            searchParams.set('date_from', selectedDate);
+                            currentUrl.search = searchParams.toString();
+                            window.location = currentUrl.toString();
+                        }
+                    }
+                }
+            });
+            $('.datepicker-to').datepicker({
+                language: lang,
+                dateFormat: 'yyyy-mm-dd',
+                autoClose: true,
+                clearButton: true,
+                onSelect: function (fd, d) {
+                    if (!d) return;
+                    selectedDate = fd;
+                },
+                onHide: function (dp, animationCompleted) {
+                    if (selectedDate != null) {
+                        if (animationCompleted) {
+                            searchParams.set('date_to', selectedDate);
+                            currentUrl.search = searchParams.toString();
+                            window.location = currentUrl.toString();
+                        }
+                    }
+                }
+            });
+
+            function autocomplete(inp, arr) {
+                var currentFocus;
+
+                inp.addEventListener("input", function (e) {
+                    var a, b, i, val = this.value;
+                    closeAllLists();
+                    if (!val || val.length < 3) {
+                        return false;
+                    }
+                    currentFocus = -1;
+                    a = document.createElement("DIV");
+                    a.setAttribute("id", this.id + "autocomplete-list");
+                    a.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(a);
+                    for (i = 0; i < arr.length; i++) {
+                        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                            b = document.createElement("DIV");
+                            b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                            b.innerHTML += arr[i].substr(val.length);
+                            b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                            b.addEventListener("click", function (e) {
+                                inp.value = '"' + this.getElementsByTagName("input")[0].value + '"';
+                                closeAllLists();
+                                $('#dataset-filter').submit();
+                            });
+                            a.appendChild(b);
+                        }
+                    }
+                });
+
+                inp.addEventListener("keydown", function (e) {
+                    var x = document.getElementById(this.id + "autocomplete-list");
+                    if (x) x = x.getElementsByTagName("div");
+                    if (e.keyCode == 40) {
+                        currentFocus++;
+                        addActive(x);
+                    } else if (e.keyCode == 38) {
+                        currentFocus--;
+                        addActive(x);
+                    } else if (e.keyCode == 13) {
+                        // e.preventDefault();
+                        if (currentFocus > -1) {
+                            if (x) x[currentFocus].click();
+                        }
+                    }
+                });
+
+                function addActive(x) {
+                    if (!x) return false;
+                    removeActive(x);
+                    if (currentFocus >= x.length) currentFocus = 0;
+                    if (currentFocus < 0) currentFocus = (x.length - 1);
+                    x[currentFocus].classList.add("autocomplete-active");
+                }
+
+                function removeActive(x) {
+                    for (var i = 0; i < x.length; i++) {
+                        x[i].classList.remove("autocomplete-active");
+                    }
+                }
+
+                function closeAllLists(elmnt) {
+                    var x = document.getElementsByClassName("autocomplete-items");
+                    for (var i = 0; i < x.length; i++) {
+                        if (elmnt != x[i] && elmnt != inp) {
+                            x[i].parentNode.removeChild(x[i]);
+                        }
+                    }
+                }
+
+                document.addEventListener("click", function (e) {
+                    closeAllLists(e.target);
+                });
+            }
+
+            autocomplete(document.getElementById("search-input"), datasetTitles)
+
+            // var options = {
+            //     type: 'date',
+            //     dateFormat: 'YYYY-MM-DD',
+            //     color: '#62b9d4'
+            // };
+            // var calendars = bulmaCalendar.attach('[type="date"]', options);
+            // var from = document.querySelector('#from');
+            // var to = document.querySelector('#to');
+            //
+            // var currentUrl = new URL(window.location);
+            // var searchParams = new URLSearchParams(currentUrl.search);
+            //
+            // if (from) {
+            //     from.bulmaCalendar.on('select', function (datepicker) {
+            //         searchParams.set('date_from', datepicker.data.value());
+            //         currentUrl.search = searchParams.toString();
+            //         window.location = currentUrl.toString();
+            //     });
+            //     from.bulmaCalendar.on('clear', function (datepicker) {
+            //         searchParams.delete('date_from');
+            //         currentUrl.search = searchParams.toString();
+            //         window.location = currentUrl.toString();
+            //     });
+            // }
+            // if (to) {
+            //     to.bulmaCalendar.on('select', function (datepicker) {
+            //         searchParams.set('date_to', datepicker.data.value());
+            //         currentUrl.search = searchParams.toString();
+            //         window.location = currentUrl.toString();
+            //     });
+            //     to.bulmaCalendar.on('clear', function (datepicker) {
+            //         searchParams.delete('date_to');
+            //         currentUrl.search = searchParams.toString();
+            //         window.location = currentUrl.toString();
+            //     });
+            // }
+        });
+    </script>
+{% endblock %}

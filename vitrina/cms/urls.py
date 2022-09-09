@@ -1,12 +1,14 @@
 from django.urls import path
 
+from vitrina.cms.views import PolicyView
+
 urlpatterns = [
     # @RequestMapping("/page")
     # @GetMapping("/{slug}")
     # @GetMapping("/opening/addMaterial")
     # @PostMapping("/opening/addMaterial")
     # @GetMapping("/about")
-    # @GetMapping("/policy")
+    path('policy/', PolicyView.as_view(), name='policy'),
     # @GetMapping("/other")
     # @GetMapping("/opening")
     # @GetMapping("/opening/tips")

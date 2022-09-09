@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Naudotojo registracija" %}{% endblock %}
+
+{% block content %}
+<div class="columns">
+    <div class="column is-one-quarter"></div>
+    <div class="column is-half">
+        {% include "component/form.html" %}
+        <br/>
+        <div class="terms-div is-hidden">
+            <p><b>{% translate "Privatumo politika" %}</b></p>
+            <p>{% translate "Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios informacijos turi tik data.gov.lt. Bet kokią iš jūsų gautą informaciją portalas naudos tik pagal paskirtį." %}</p>
+            <p><a href="{% url 'policy' %}">{% translate "Plačiau apie privatumo politiką" %}</a></p>
+        </div>
+    </div>
+    <div class="column is-one-quarter"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let agree_to_terms_label =  $('#div_id_agree_to_terms').find('label');
+            agree_to_terms_label.append($( '<a id="btn-terms">naudojimo sąlygomis</a>' ));
+
+            $('#btn-terms').click(function () {
+                $('.terms-div').toggleClass('is-hidden');
+            });
+        });
+    </script>
+{% endblock %}

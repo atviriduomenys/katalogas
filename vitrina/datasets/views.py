@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
+
 from django.views import View
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url

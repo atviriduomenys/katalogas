@@ -181,7 +181,7 @@
     <tr>
         <th>{% translate "Duomenų rinkinio nariai" %}</th>
         <td>
-            <a href="{% url 'dataset-members' org_slug=dataset.organization.slug dataset_slug=dataset.slug%}">{% translate "Peržiūrėti narių sąrašą"%}</a>
+            <a href="{% url 'dataset-members' org_kind=dataset.organization.kind org_slug=dataset.organization.slug dataset_slug=dataset.slug%}">{% translate "Peržiūrėti narių sąrašą"%}</a>
         </td>
     </tr>
     </tbody>

@@ -1,5 +1,7 @@
 {% load static %}
 {% load i18n %}
+{% load menu_tags %}
+
 <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="container">
         <div class="navbar-brand">
@@ -24,6 +26,7 @@
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
             <div class="navbar-end">
+                {% show_menu 0 100 100 100 "menu.html" %}
                 {% for m in menu %}
                     {% if m.children %}
                         <div class="navbar-item has-dropdown is-hoverable">

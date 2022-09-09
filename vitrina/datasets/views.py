@@ -3,7 +3,7 @@ from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetMembers
 from vitrina.orgs.models import Organization
 
 
@@ -42,3 +42,20 @@ class DatasetDetailView(DetailView):
         }
         context_data.update(extra_context_data)
         return context_data
+
+
+class DatasetMembersView(ListView):
+    model = DatasetMembers
+    template_name = 'vitrina/datasets/members_list.html'
+    context_object_name = 'dataset_members'
+    paginate_by = 5
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['org'] = Organization.objects.get(kind=self.kwargs.get('org_kind'),
+                                                  slug=self.kwargs.get('org_slug'))
+        context['members'] = DatasetMembers.objects.filter(organization=context['org'], contact=True)
+        print(context)
+        return context
+
+

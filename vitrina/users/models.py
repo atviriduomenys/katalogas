@@ -74,7 +74,7 @@ class PasswordResetToken(models.Model):
     version = models.IntegerField()
     expiry_date = models.DateTimeField(blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey(User, models.DO_NOTHING, null=True)
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:

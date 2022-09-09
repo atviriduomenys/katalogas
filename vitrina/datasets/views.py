@@ -1,21 +1,19 @@
 import csv
 
-from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-from django.views import View
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
-
+from django.views import View
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMembers
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
     get_category_counts
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, FileResponse
 
 from django.utils.translation import gettext_lazy as _
 
@@ -205,3 +203,20 @@ class DatasetStructureDownloadView(View):
         structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
+
+
+class DatasetMembersView(ListView):
+    model = DatasetMembers
+    template_name = 'vitrina/datasets/members_list.html'
+    context_object_name = 'dataset_members'
+    paginate_by = 5
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['org'] = Organization.objects.get(kind=self.kwargs.get('org_kind'),
+                                                  slug=self.kwargs.get('org_slug'))
+        context['members'] = DatasetMembers.objects.filter(organization=context['org'], contact=True)
+        print(context)
+        return context
+
+

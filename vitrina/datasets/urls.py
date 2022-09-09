@@ -11,8 +11,8 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
-    #TODO: add organization kind when that task is done
-    path('datasets/<slug:org_slug>/<slug:dataset_slug>/members/', DatasetMembersView.as_view(), name='dataset-members'),
+    path('datasets/<str:org_kind>/<slug:org_slug>/<slug:dataset_slug>/members/',
+         DatasetMembersView.as_view(), name='dataset-members'),
     path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
          name='dataset-structure-download'),

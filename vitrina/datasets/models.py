@@ -171,6 +171,27 @@ class DatasetMembers(models.Model):
         db_table = 'dataset_members'
 
 
+class DatasetMembers(models.Model):
+    CREATOR = 'dct:creator'
+    CONTRIBUTOR = 'dct:contributor'
+    PUBLISHER = 'dct:publisher'
+
+    ROLE_CHOICES = (
+        (CREATOR, _('Creator')),
+        (CONTRIBUTOR, _('Contributor')),
+        (PUBLISHER, _('Publisher')),
+    )
+    user = models.ForeignKey(User, models.DO_NOTHING, blank=True)
+    organization = models.ForeignKey(Organization, models.DO_NOTHING)
+    role = models.CharField(max_length=255, choices=ROLE_CHOICES)
+    created = models.DateTimeField(null=True, auto_now_add=True)
+    contact = models.BooleanField(null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'dataset_members'
+
+
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
 # ---------------------------8<-------------------------------------

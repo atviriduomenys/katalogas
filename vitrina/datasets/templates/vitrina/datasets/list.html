@@ -48,6 +48,10 @@
 {% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {#<div style="text-align: center;">#}
@@ -88,7 +92,13 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
-            <form id="dataset-filter" class="field has-addons is-fullwidth" method="get">
+            <form id="dataset-filter" class="field has-addons is-fullwidth"
+                  action="{% if request.resolver_match.url_name == 'dataset-list' %}
+                              {% url 'dataset-list' %}
+                           {% else %}
+                               {% url 'organization-datasets' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}
+                           {% endif %}"
+                  method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
                            placeholder="{% translate "Ieškoti duomenų rinkinio" %}" value="{{ q | escape }}"/>

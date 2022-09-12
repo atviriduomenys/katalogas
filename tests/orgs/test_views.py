@@ -1,10 +1,49 @@
-from datetime import datetime
-
 import pytest
+from datetime import datetime
 from django.urls import reverse
+
 from django_webtest import DjangoTestApp
 
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+
+
+@pytest.fixture
+def data_for_tabs():
+    parent_organization = OrganizationFactory()
+    organization = parent_organization.add_child(**OrganizationFactory.stub().__dict__)
+    dataset = DatasetFactory(organization=organization)
+    representative = RepresentativeFactory(organization=organization)
+    return {
+        'parent': parent_organization,
+        'organization': organization,
+        'dataset': dataset,
+        'representative': representative
+    }
+
+
+@pytest.mark.django_db
+def test_organization_detail_tab(app: DjangoTestApp, data_for_tabs):
+    resp = app.get(reverse('organization-detail', args=[data_for_tabs["organization"].kind,
+                                                        data_for_tabs["organization"].slug]))
+    assert list(resp.context['ancestors']) == [data_for_tabs["parent"]]
+    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Informacija"]
+
+
+@pytest.mark.django_db
+def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
+    resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].kind,
+                                                         data_for_tabs["organization"].slug]))
+    assert list(resp.context['members']) == [data_for_tabs["representative"]]
+    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
+
+
+@pytest.mark.django_db
+def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
+    resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].kind,
+                                                          data_for_tabs["organization"].slug]))
+    assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
+    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
 
 
 @pytest.fixture
@@ -109,7 +148,7 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
 
 
 @pytest.mark.django_db
-def test_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
+def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
     assert resp.context['selected_jurisdiction'] == "doesnotexist"
@@ -128,7 +167,7 @@ def test_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
 
 
 @pytest.mark.django_db
-def test_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
+def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=1&jurisdiction=Jurisdiction1" % reverse('organization-list'))
     assert list(resp.context['object_list']) == [organizations[0]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction1"
@@ -147,7 +186,7 @@ def test_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
 
 
 @pytest.mark.django_db
-def test_with_query_containing_special_characters(app: DjangoTestApp):
+def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
     organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction="Jurisdiction\"<'>\\")
     resp = app.get("%s?q=\"<'>\\&jurisdiction=Jurisdiction\"<'>\\" % reverse('organization-list'))
     assert list(resp.context['object_list']) == [organization]

@@ -1,19 +1,13 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% load i18n %}
-{% load crispy_forms_tags %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
 
 {% block content %}
-    {% if form_title %}
-        <div class="columns no-margin-bottom">
-            <div class="column">
-                <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                    {{ form_title }}
-                </h3>
-            </div>
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% include "component/form.html" %}
         </div>
-    {% endif %}
-    <div class="column is-half">
-        {% crispy form %}
     </div>
+    <br/>
 {% endblock %}

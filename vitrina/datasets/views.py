@@ -1,14 +1,29 @@
+from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
+from django.db.models import Q
 
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Organization
 
 
 class DatasetListView(ListView):
     model = Dataset
-    queryset = Dataset.public.order_by('-published')
     template_name = 'vitrina/datasets/list.html'
     paginate_by = 20
+
+    def get_queryset(self):
+        datasets = Dataset.public.order_by('-published')
+        if self.kwargs.get('slug') and self.request.resolver_match.url_name == 'organization-datasets':
+            organization = get_object_or_404(Organization, slug=self.kwargs['slug'])
+            datasets = datasets.filter(organization=organization)
+
+        query = self.request.GET.get('q')
+        if query:
+            datasets = datasets.filter(
+                Q(title__icontains=query) | Q(title_en__icontains=query)
+            )
+        return datasets
 
 
 class DatasetDetailView(DetailView):
@@ -22,7 +37,6 @@ class DatasetDetailView(DetailView):
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
-            'views': -1,
             'rating': 3.0,
             'status': dataset.get_status_display()
         }

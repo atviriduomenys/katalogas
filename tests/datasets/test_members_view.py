@@ -23,6 +23,7 @@ def members_data():
         title="Testinis duomenų rinkinys",
         title_en="Test dataset",
         published=datetime(2022, 6, 1),
+        organization=org,
         slug='test_dataset_slug'
     )
     return [dataset, org]

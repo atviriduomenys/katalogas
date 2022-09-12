@@ -22,7 +22,7 @@ class FinancingPlan(models.Model):
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financing_plan'
         unique_together = (('organization', 'year'),)
 
@@ -38,7 +38,7 @@ class FinancingPlanState(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'financing_plan_state'
 
 
@@ -56,5 +56,5 @@ class NationalFinancingPlan(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'national_financing_plan'

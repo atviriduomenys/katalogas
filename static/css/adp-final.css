@@ -2251,29 +2251,6 @@ a.box:active {
     background-color: #ff3860;
     color: #fff; }
 
-ul.messages li{
-  background-color: whitesmoke;
-  border-radius: 4px;
-  padding: 1.25rem 2.5rem 1.25rem 1.5rem;
-  position: relative;
-}
-ul.messages li.warning {
-  background-color: #ffdd57;
-  color: rgba(0, 0, 0, 0.7);
-}
-ul.messages li.success {
-  background-color: #23d160;
-  color: #fff;
-}
-ul.messages li.error {
-  background-color: #ff3860;
-  color: #fff;
-}
-ul.messages li.info {
-  background-color: #62b9d4;
-  color: #fff;
-}
-
 .progress {
   -moz-appearance: none;
   -webkit-appearance: none;
@@ -9354,5 +9331,33 @@ table.th-40 th {
   .reverse-columns {
     flex-direction: column-reverse;
     display: flex; } }
+
+.asteriskField {
+    display: none;
+}
+
+.requiredField {
+    font-weight: 700;
+}
+
+.alert-error {
+    background-color: #fff5f7;
+    color: #ff3860;
+    padding: 1.25em 1.5em;
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 0 0 0 4px;
+    font-weight: 700;
+    margin-top: 1.5rem;
+}
+
+.control-group.error input {
+    border-color: #ff3860;
+}
+
+.control-group.error span.help-inline strong, .control-group.error label {
+    color: #ff3860;
+    font-weight: 500;
+}
 
 /*# sourceMappingURL=adp-final.css.map */

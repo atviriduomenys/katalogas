@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Privatumo politika" %}{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <p>
+            {% translate "Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios informacijos turi tik Lietuvos atvirų duomenų portalo atstovas. Bet kokią iš jūsų gautą informaciją portalas naudos tik pagal paskirtį. Patvirtinkite, kad susipažinote su šiomis naudojimo sąlygomis:" %}
+        </p>
+                <ul>
+            <li>{% translate "Naudotojas įsipareigoja naudoti atvirus duomenis pagal CC BY 4.0 licenciją, jeigu nenurodyta kitaip." %}
+            </li>
+            <li>{% translate "Asmeninius duomenis, kuriuos renkame iš prisijungusių prie Lietuvos atvirų duomenų portalo naudotojų, sudaro:" %}
+                <ul>
+                    <li>{% translate "Jūsų vardas, pavardė;" %}</li>
+                    <li>{% translate "Jūsų elektroninio pašto adresas;" %}</li>
+                </ul>
+            <li>{% translate "Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie paslaugų pakeitimus;" %}
+            <li>{% translate "Asmeninius duomenis, kuriuos renkame iš organizacijų atstovų, atsakingų už atvirų duomenų pateikimą, sudaro:" %}
+                <ul>
+                    <li>{% translate "Jūsų vardas, pavardė;" %}</li>
+                    <li>{% translate "Jūsų elektroninio pašto adresas;" %}</li>
+                    <li>{% translate "Jūsų organizacijos pavadinimas." %}</li>
+                </ul>
+            <li>{% translate "Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie paslaugų pakeitimus. El. pašto adresą ir vardą naudosime, kad galėtume patikrinti, ar dirbate nurodytoje organizacijoje." %}
+            <li>{% translate "Naudodamiesi Lietuvos atvirų duomenų portalu patvirtinate, kad jūsų pateikta asmeninė informacija yra teisinga." %}
+            <li>{% translate "Visi naudotojo nurodyti ir gauti asmens duomenys yra kaupiami, saugomi ir tvarkomi pagal Lietuvos Respublikos asmens duomenų apsaugos įstatyme numatytus reikalavimus bei kitus Lietuvos Respublikoje asmens duomenų apsaugą reglamentuojančius teisės aktus. Portalas užtikrina gautų duomenų apsaugą ir įsipareigoja šią informaciją panaudoti tik esant naudotojo sutikimui ir tik įstatymo numatytais atvejais, taip pat tais atvejais, kurie būtini naudotojo užsakytai paslaugai suteikti." %}
+        </ul>
+        <br/>
+    </div>
+{% endblock %}

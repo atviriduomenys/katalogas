@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/orgs/tabs.html' %}
+
+    <table class="table">
+        <tbody>
+        <tr>
+            <th>{% translate "Vardas" %}</th>
+            <th>{% translate "Pavardė" %}</th>
+            <th>{% translate "El. paštas" %}</th>
+            <th>{% translate "Telefonas" %}</th>
+        </tr>
+        {% for m in members %}
+            <tr>
+                <td>{{ m.first_name }}</td>
+                <td>{{ m.last_name }}</td>
+                <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+                <td>{{ m.phone }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -3,5 +3,19 @@
 /db.sqlite3
 *.pyc
 /pylsp-mypy.cfg
+.env
+
+# IntelliJ
+.idea
+
+# OS specific
+.DS_Store
+
+# dev DB
+/postgres
+/var
+
 *.mo
 *.css.map
+.idea/
+

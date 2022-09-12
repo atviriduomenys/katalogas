@@ -5,26 +5,40 @@ from django_webtest import DjangoTestApp
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request
+from vitrina.users.models import User
 
 
 @pytest.mark.django_db
-def test_request_create(csrf_exempt_django_app: DjangoTestApp):
-    resp = csrf_exempt_django_app.post(reverse("request-create"), {
-        'title': "Request",
-        'description': "Description"
-    })
+def test_request_create(app: DjangoTestApp):
+    form = app.get(reverse("request-create")).forms[0]
+    form['title'] = "Request"
+    form['description'] = "Description"
+    resp = form.submit()
     assert Request.objects.count() == 1
     assert resp.status_code == 302
     assert resp.url == reverse('request-detail', args=[Request.objects.first().pk])
 
 
 @pytest.mark.django_db
-def test_request_update(csrf_exempt_django_app: DjangoTestApp):
+def test_request_update_with_user_without_permission(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
     request = RequestFactory()
-    resp = csrf_exempt_django_app.post(reverse("request-update", args=[request.pk]), {
-        'title': "Updated title",
-        'description': "Updated description"
-    })
+
+    app.set_user(user)
+    resp = app.get(reverse("request-update", args=[request.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_request_update_with_permitted_user(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    request = RequestFactory(user=user)
+
+    app.set_user(user)
+    form = app.get(reverse("request-update", args=[request.pk])).forms[0]
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('request-detail', args=[request.pk])
     assert Request.objects.first().title == "Updated title"

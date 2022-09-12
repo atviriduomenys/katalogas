@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, CreateView, UpdateView
 from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -53,17 +54,37 @@ class RequestCreateView(CreateView):
     form_class = RequestForm
     template_name = 'base_form.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
         return context_data
 
 
-class RequestUpdateView(UpdateView):
+class RequestUpdateView(PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def has_permission(self):
+        try:
+            request = Request.objects.get(pk=self.kwargs['pk'])
+        except (ObjectDoesNotExist, KeyError):
+            request = None
+        if self.request.user.is_authenticated and request and request.user:
+            return self.request.user == request.user
+        return False
+
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio redagavimas')
+        return context_data

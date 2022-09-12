@@ -2,6 +2,7 @@ from django.db import models
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.models import HarvestingResult
+from vitrina.users.models import User
 
 
 # TODO: Make generic.

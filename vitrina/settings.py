@@ -76,11 +76,11 @@ INSTALLED_APPS = [
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
-    'vitrina.users',
     'vitrina.viisp',
     'vitrina.orgs',
     'vitrina.plans',
     'vitrina.tasks',
+    'vitrina.users',
     'vitrina.catalogs',
     'vitrina.datasets',
     'vitrina.structure',
@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     'vitrina.messages',
     'vitrina.translate',
     'vitrina.compat',
+    'vitrina.likes',
 ]
 
 MIDDLEWARE = [
@@ -234,3 +235,12 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+
+AUTH_USER_MODEL = 'vitrina_users.User'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+EMAIL_HOST = 'smtp.mailtrap.io'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = '2525'

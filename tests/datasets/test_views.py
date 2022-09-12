@@ -13,16 +13,19 @@ from vitrina.orgs.factories import OrganizationFactory
 @pytest.fixture
 def datasets():
     dataset1 = DatasetFactory(
+        slug="ds1",
         title="Duomenų rinkinys 1",
         title_en="Dataset 1",
         published=datetime(2022, 6, 1)
     )
     dataset2 = DatasetFactory(
+        slug="ds2",
         title="Duomenų rinkinys 2 \"<'>\\",
         title_en="Dataset 2",
         published=datetime(2022, 8, 1)
     )
     dataset3 = DatasetFactory(
+        slug="ds3",
         title="Duomenų rinkinys 3",
         title_en="Dataset 3",
         published=datetime(2022, 7, 1)
@@ -68,8 +71,8 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    dataset1 = DatasetFactory(status=Dataset.HAS_DATA)
-    dataset2 = DatasetFactory()
+    dataset1 = DatasetFactory(status=Dataset.HAS_DATA, slug="ds1")
+    dataset2 = DatasetFactory(slug="ds2")
     DatasetStructureFactory(dataset=dataset2)
     return [dataset1, dataset2]
 
@@ -98,8 +101,8 @@ def test_status_filter_has_structure(app: DjangoTestApp, status_filter_data):
 @pytest.fixture
 def organization_filter_data():
     organization = OrganizationFactory()
-    dataset_with_organization1 = DatasetFactory(organization=organization)
-    dataset_with_organization2 = DatasetFactory(organization=organization)
+    dataset_with_organization1 = DatasetFactory(organization=organization, slug="ds1")
+    dataset_with_organization2 = DatasetFactory(organization=organization, slug="ds2")
     return {
         "organization": organization,
         "datasets": [dataset_with_organization1, dataset_with_organization2]
@@ -127,10 +130,10 @@ def category_filter_data():
     category2 = CategoryFactory(parent_id=category1.pk)
     category3 = CategoryFactory(parent_id=category1.pk)
     category4 = CategoryFactory(parent_id=category2.pk)
-    dataset_with_category1 = DatasetFactory(category=category1)
-    dataset_with_category2 = DatasetFactory(category=category2)
-    dataset_with_category3 = DatasetFactory(category=category3)
-    dataset_with_category4 = DatasetFactory(category=category4)
+    dataset_with_category1 = DatasetFactory(category=category1, slug="ds1")
+    dataset_with_category2 = DatasetFactory(category=category2, slug="ds2")
+    dataset_with_category3 = DatasetFactory(category=category3, slug="ds3")
+    dataset_with_category4 = DatasetFactory(category=category4, slug="ds4")
     return {
         "categories": [category1, category2, category3, category4],
         "datasets": [dataset_with_category1, dataset_with_category2, dataset_with_category3, dataset_with_category4]
@@ -204,8 +207,8 @@ def test_category_filter_with_parent_and_child_category(app: DjangoTestApp, cate
 
 @pytest.fixture
 def tag_filter_data():
-    dataset1 = DatasetFactory(tags="tag1, tag2, tag3")
-    dataset2 = DatasetFactory(tags="tag3, tag4, tag5, tag1")
+    dataset1 = DatasetFactory(tags="tag1, tag2, tag3", slug="ds1")
+    dataset2 = DatasetFactory(tags="tag3, tag4, tag5, tag1", slug="ds2")
     return [dataset1, dataset2]
 
 
@@ -244,8 +247,8 @@ def test_tag_filter_with_multiple_tags(app: DjangoTestApp, tag_filter_data):
 @pytest.fixture
 def frequency_filter_data():
     frequency = FrequencyFactory()
-    dataset1 = DatasetFactory(frequency=frequency)
-    dataset2 = DatasetFactory(frequency=frequency)
+    dataset1 = DatasetFactory(frequency=frequency, slug="ds1")
+    dataset2 = DatasetFactory(frequency=frequency, slug="ds2")
     return {
         "frequency": frequency,
         "datasets": [dataset1, dataset2]
@@ -268,9 +271,9 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
 
 @pytest.fixture
 def date_filter_data():
-    dataset1 = DatasetFactory(published=datetime(2022, 3, 1))
-    dataset2 = DatasetFactory(published=datetime(2022, 2, 1))
-    dataset3 = DatasetFactory(published=datetime(2021, 12, 1))
+    dataset1 = DatasetFactory(published=datetime(2022, 3, 1), slug="ds1")
+    dataset2 = DatasetFactory(published=datetime(2022, 2, 1), slug="ds2")
+    dataset3 = DatasetFactory(published=datetime(2021, 12, 1), slug="ds3")
     return [dataset1, dataset2, dataset3]
 
 

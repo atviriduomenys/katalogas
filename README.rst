@@ -49,8 +49,9 @@ By default pgloader creates a schema with the same name as in source database. S
     COMMIT;
     EOF
 
-Then we can run migrations::
+Then we can run::
 
+    poetry install
     poetry run python manage.py migrate
     
 

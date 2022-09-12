@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: adp
       POSTGRES_PASSWORD: secret
     volumes:
-      - ./postgres:/var/lib/postgresql/data
+      - ./var/postgres:/var/lib/postgresql/data
     ports:
       - 127.0.0.1:5432:5432
 
@@ -28,7 +28,7 @@ services:
       MYSQL_PASSWORD: 'secret'
     command: --init-file /data/application/init.sql
     volumes:
-      - ./mysql:/var/lib/mysql
+      - ./var/mysql:/var/lib/mysql
       - ./resources/adp-dev.sql:/data/application/init.sql
     ports:
       - 127.0.0.1:3306:3306

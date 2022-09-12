@@ -156,7 +156,7 @@ optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-Django = ">=2.2,<5.0"
+Django = ">=2.2,<4.0"
 django-classy-tags = ">=0.7.2"
 django-formtools = ">=2.1"
 django-sekizai = ">=0.7"
@@ -175,6 +175,14 @@ python-versions = "*"
 django-appconf = ">=1.0.3"
 rcssmin = "1.1.0"
 rjsmin = "1.2.0"
+
+[[package]]
+name = "django-crispy-forms"
+version = "1.14.0"
+description = "Best way to have Django DRY forms"
+category = "main"
+optional = false
+python-versions = ">=3.7"
 
 [[package]]
 name = "django-environ"
@@ -196,14 +204,6 @@ description = "Tiny stuff for Django that won't fit into separate apps."
 category = "main"
 optional = false
 python-versions = "*"
-
-[[package]]
-name = "django-crispy-forms"
-version = "1.14.0"
-description = "Best way to have Django DRY forms"
-category = "main"
-optional = false
-python-versions = ">=3.7"
 
 [[package]]
 name = "django-filer"
@@ -626,14 +626,6 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
-name = "psycopg2"
-version = "2.9.3"
-description = "psycopg2 - Python-PostgreSQL Database Adapter"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "psycopg2-binary"
 version = "2.9.3"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
@@ -897,7 +889,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "8b685ef1bdf87f8abf4eb08500802358c219b5bee7a58e6e3de72e95eed5e3ec"
+content-hash = "13ad0bf00ac35766fa40ea87e4cc63d0b1e5c124803824b1789c7cad26654d64"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -914,12 +906,12 @@ django-appdata = []
 django-classy-tags = []
 django-cms = []
 django-compressor = []
+django-crispy-forms = []
 django-environ = []
 django-etc = []
-django-hitcount = []
-django-crispy-forms = []
 django-filer = []
 django-formtools = []
+django-hitcount = []
 django-js-asset = []
 django-libsass = []
 django-meta = []
@@ -951,7 +943,6 @@ mccabe = []
 packaging = []
 pillow = []
 pluggy = []
-psycopg2 = []
 psycopg2-binary = []
 py = []
 pycodestyle = []

@@ -26,4 +26,3 @@ class Task(models.Model):
 
     class Meta:
         db_table = 'task'
-        ordering = ('-created',)

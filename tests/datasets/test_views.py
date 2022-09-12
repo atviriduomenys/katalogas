@@ -68,46 +68,25 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 @pytest.fixture
 def dataset_structure_data():
     organization = OrganizationFactory(slug="org")
-    dataset1 = DatasetFactory(slug="ds1", organization=organization)
-    dataset2 = DatasetFactory(slug="ds2", organization=organization)
-    dataset3 = DatasetFactory(slug="ds3", organization=organization)
-    DatasetStructureFactory(dataset=dataset2)
-    DatasetStructureFactory(dataset=dataset3, file=FileField(filename='file.csv', data=b'ab\0c'))
+    dataset1 = DatasetFactory(slug="ds2", organization=organization)
+    dataset2 = DatasetFactory(slug="ds3", organization=organization)
+    structure1 = DatasetStructureFactory(dataset=dataset1)
+    structure2 = DatasetStructureFactory(dataset=dataset2, file=FileField(filename='file.csv', data=b'ab\0c'))
     return {
-        'organization': organization,
-        'dataset1': dataset1,
-        'dataset2': dataset2,
-        'dataset3': dataset3
+        'structure1': structure1,
+        'structure2': structure2
     }
 
 
 @pytest.mark.django_db
-def test_without_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(reverse('dataset-structure', kwargs={
-        'organization_kind': dataset_structure_data["organization"].kind,
-        'organization_slug': dataset_structure_data["organization"].slug,
-        'dataset_slug': dataset_structure_data["dataset1"].slug
-    }), expect_errors=True)
-    assert resp.status_code == 404
-
-
-@pytest.mark.django_db
 def test_with_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(reverse('dataset-structure', kwargs={
-        'organization_kind': dataset_structure_data["organization"].kind,
-        'organization_slug': dataset_structure_data["organization"].slug,
-        'dataset_slug': dataset_structure_data["dataset2"].slug
-    }))
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url())
     assert resp.context['can_show'] is True
     assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
 
 
 @pytest.mark.django_db
 def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(reverse('dataset-structure', kwargs={
-        'organization_kind': dataset_structure_data["organization"].kind,
-        'organization_slug': dataset_structure_data["organization"].slug,
-        'dataset_slug': dataset_structure_data["dataset3"].slug
-    }))
+    resp = app.get(dataset_structure_data['structure2'].get_absolute_url())
     assert resp.context['can_show'] is False
     assert resp.context['structure_data'] == []

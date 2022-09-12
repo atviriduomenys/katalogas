@@ -10,8 +10,8 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 @pytest.fixture
 def data_for_tabs():
-    parent_organization = OrganizationFactory()
-    organization = parent_organization.add_child(**OrganizationFactory.stub().__dict__)
+    parent_organization = OrganizationFactory(slug="org1")
+    organization = parent_organization.add_child(**OrganizationFactory.stub(slug="org2").__dict__)
     dataset = DatasetFactory(organization=organization)
     representative = RepresentativeFactory(organization=organization)
     return {
@@ -49,16 +49,19 @@ def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
 @pytest.fixture
 def organizations():
     organization1 = OrganizationFactory(
+        slug="org1",
         title="Organization 1",
         created=datetime(2022, 8, 22, 10, 30),
         jurisdiction="Jurisdiction1"
     )
     organization2 = OrganizationFactory(
+        slug="org2",
         title="Organization 2",
         created=datetime(2022, 10, 22, 10, 30),
         jurisdiction="Jurisdiction2"
     )
     organization3 = OrganizationFactory(
+        slug="org3",
         title="Organization 3",
         created=datetime(2022, 9, 22, 10, 30),
         jurisdiction="Jurisdiction2"

@@ -1,4 +1,5 @@
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
 from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -49,15 +50,16 @@ class RequestDetailView(DetailView):
         return context_data
         
         
-class RequestCreateView(CreateView):
+class RequestCreateView(LoginRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
+    def form_valid(self, form):
+        self.object = form.save()
+        if self.request.user.is_authenticated:
+            self.object.user = self.request.user
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -70,19 +72,11 @@ class RequestUpdateView(PermissionRequiredMixin, UpdateView):
     form_class = RequestForm
     template_name = 'base_form.html'
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
     def has_permission(self):
-        try:
-            request = Request.objects.get(pk=self.kwargs['pk'])
-        except (ObjectDoesNotExist, KeyError):
-            request = None
-        if self.request.user.is_authenticated and request and request.user:
+        request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
+        if self.request.user.is_authenticated:
             return self.request.user == request.user
-        return False
+        return super().has_permission()
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

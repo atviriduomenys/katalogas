@@ -12,6 +12,9 @@
 
 # dev DB
 /postgres
+/var
 
 *.mo
 *.css.map
+.idea/
+

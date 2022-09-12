@@ -15,3 +15,5 @@
 
 *.mo
 *.css.map
+.idea/
+

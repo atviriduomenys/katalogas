@@ -1,12 +1,29 @@
+from datetime import datetime
+
 import pytest
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import OrganizationFactory
 
 
 @pytest.fixture
 def dataset():
-    dataset = DatasetFactory(status="HAS_DATA")
+    org = OrganizationFactory(
+        title="test organization",
+        created=datetime(2022, 9, 22, 10, 30),
+        jurisdiction="test_jurisdiction",
+        kind='test_org_kind',
+        slug='test_org_slug'
+    )
+    dataset = DatasetFactory(
+        title="Testinis duomenų rinkinys",
+        title_en="Test dataset",
+        status="HAS_DATA",
+        published=datetime(2022, 6, 1),
+        organization=org,
+        slug='test_dataset_slug'
+    )
     return dataset
 
 

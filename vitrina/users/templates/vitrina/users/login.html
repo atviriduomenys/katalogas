@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-one-quarter">
+        <div class="content is-small">
+            <b>{% translate "Registruotis" %}</b>
+            <p>{% translate "Jeigu norite ne tik peržvelgti atvirų duomenų rinkinius skelbiamus šiame portale, bet ir pateikti panaudojimo atvejį, pateikti poreikį duomenų rinkiniui ir kt. rekomenduojame užsiregistruoti." %}</p>
+            <p>
+                <a href="{% url 'register' %}" class="button is-small is-primary">{% translate "Registruotis" %}</a>
+            </p>
+        </div>
+        <div class="content is-small">
+            <b>{% translate "Pamiršote slaptažodį?" %}</b>
+            <p>{% translate "Jeigu pamiršote slaptažodį, užpildykite formą ir naują slaptažodį gausite el. paštu." %}</p>
+            <p>
+                <a href="{% url 'reset' %}" class="button is-small is-primary">{% translate "Atstatyti slaptažodį" %}</a>
+            </p>
+        </div>
+    </div>
+    <div class="column is-half">
+        <div class="content">
+            <p>{% translate "Tai puslapis skirtas prisijungti arba užsiregistruoti naujam naudotojui, kuris nori neribotai, bei laisvai dalintis informacija, kurią vėliau savo tikslais galėtų naudoti bet kuris suinteresuotas asmuo ar organizacija. Jei kuriate naują naudotoją, svarbu pateikti teisingus duomenis (pvz. el. pašto adresas, kuris bus naudojamas pranešimams iš portalo siųsti). Jei susiduriate su problema parašykite adresu " %}
+                <a href="mailto:atviriduomenys@ivpk.lt">atviriduomenys@ivpk.lt</a>.
+            </p>
+        </div>
+        {% include "component/form.html" %}
+    </div>
+</div>
+{% endblock %}

@@ -1,34 +1,40 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from vitrina.orgs.models import Organization
+from vitrina.users.managers import UserManager
 
 
-# TODO: Replace with django.contrib.auth.models.User.
-class User(models.Model):
+class User(AbstractUser):
+    username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     email = models.CharField(unique=True, max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
-    password = models.CharField(max_length=60, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     role = models.CharField(max_length=255, blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
-    needs_password_change = models.BooleanField()
+    needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
-    disabled = models.BooleanField()
-    suspended = models.BooleanField()
+    disabled = models.BooleanField(default=False)
+    suspended = models.BooleanField(default=False)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
 
     class Meta:
-        managed = False
         db_table = 'user'
 
     def __str__(self):
-        return '%s %s' % (self.first_name, self.last_name)
+        return "%s %s" % (self.first_name, self.last_name)
 
 
 class UserTablePreferences(models.Model):
@@ -42,7 +48,7 @@ class UserTablePreferences(models.Model):
     user_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_table_preferences'
 
 
@@ -56,7 +62,7 @@ class OldPassword(models.Model):
     user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'old_password'
 
 
@@ -72,7 +78,7 @@ class PasswordResetToken(models.Model):
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'password_reset_token'
 
 
@@ -87,5 +93,5 @@ class SsoToken(models.Model):
     user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'sso_token'

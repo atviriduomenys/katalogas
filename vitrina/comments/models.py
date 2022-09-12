@@ -25,7 +25,7 @@ class Comment(models.Model):
 
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'comment'
 
 
@@ -41,5 +41,5 @@ class Suggestion(models.Model):
     email = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'suggestion'

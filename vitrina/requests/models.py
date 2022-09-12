@@ -1,14 +1,26 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
+from vitrina.users.models import User
 
 
 class Request(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
+    CREATED = "CREATED"
+    REJECTED = "REJECTED"
+    ALREADY_OPENED = "ALREADY_OPENED"
+    ANSWERED = "ANSWERED"
+    STATUSES = {
+        (CREATED, _("Pateiktas")),
+        (REJECTED, _("Atmestas")),
+        (ALREADY_OPENED, _("Jau atvertas")),
+        (ANSWERED, _("Atsakytas"))
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
@@ -19,19 +31,19 @@ class Request(models.Model):
     dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
-    is_existing = models.TextField()  # This field type is a guess.
+    is_existing = models.BooleanField()
     notes = models.TextField(blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
     planned_opening_date = models.DateField(blank=True, null=True)
     purpose = models.CharField(max_length=255, blank=True, null=True)
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
-    is_public = models.TextField()  # This field type is a guess.
+    is_public = models.BooleanField()
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 
@@ -39,7 +51,7 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request'
 
     def get_absolute_url(self):
@@ -59,7 +71,7 @@ class RequestEvent(models.Model):
     request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_event'
 
 
@@ -77,5 +89,5 @@ class RequestStructure(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'request_structure'

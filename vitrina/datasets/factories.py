@@ -10,6 +10,7 @@ class DatasetFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('catch_phrase')
+    slug = factory.Faker('word')
     version = 1
     will_be_financed = False
 

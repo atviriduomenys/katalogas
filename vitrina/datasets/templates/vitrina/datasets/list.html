@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
-{% load i18n %}    
+{% load i18n %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block head %}
     <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
-    
+
     <style>
         .autocomplete {
             /*the container must be positioned relative:*/
@@ -51,6 +51,10 @@
 {% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {#<div style="text-align: center;">#}
@@ -77,7 +81,13 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
-            <form id="dataset-filter" class="field has-addons is-fullwidth" action="{% url 'dataset-list' %}" method="get">
+            <form id="dataset-filter" class="field has-addons is-fullwidth"
+                  action="{% if request.resolver_match.url_name == 'dataset-list' %}
+                              {% url 'dataset-list' %}
+                           {% else %}
+                               {% url 'organization-datasets' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}
+                           {% endif %}"
+                  method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
                            placeholder="{% translate "Ieškoti duomenų rinkinio" %}" value="{{ q | escape }}"/>
@@ -143,20 +153,20 @@
                         <div class="content">
                             <div>
                                 <strong><a href="{{ i.get_absolute_url }}"
-                                           class="dataset-list-title">{% if locale == "lt" %}{{ i.title }}{% else %}{% if i.title_en != "" %}{{ i.title_en }}{% else %}{{ i.title }}{% endif %}{% endif %}</a></strong>
+                                           class="dataset-list-title">{{ i.title }}</a></strong>
                                 <div class="is-pulled-right">
                                     <a target="_blank"
-                                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt/{{ radix }}/{{ i.slug }}">
+                                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.get_absolute_url }}">
                                     <span class="icon">
                                         <i class="fab fa-facebook-square"></i>
                                     </span>
                                     </a>
-                                    {#<a target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&url=https://data.gov.lt/{{ radix }}/{{ i.slug }}&title={{ i.title }}">#}
+                                    {#<a target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}&title={{ i.title }}">#}
                                     {#<span class="icon">#}
                                     {#<i class="fab fa-linkedin"></i>#}
                                     {#</span>#}
                                     {#</a>#}
-                                    {#<a target="_blank" href="http://twitter.com/share?text={{ i.title }}&url=https://data.gov.lt/{{ radix }}/{{ i.slug }}">#}
+                                    {#<a target="_blank" href="http://twitter.com/share?text={{ i.title }}&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}">#}
                                     {#<span class="icon">#}
                                     {#<i class="fab fa-twitter-square"></i>#}
                                     {#</span>#}
@@ -169,7 +179,7 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% if locale == "lt" %}{{ i.description }}{% else %}{% if i.description_en != "" %}{{ i.description_en }}{% else %}{{ i.description }}{% endif %}{% endif %}
+                                {{ i.description }}
                             </p>
                             <div class="tags">
                                 {% if i.format %}

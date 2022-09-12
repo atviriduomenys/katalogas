@@ -49,7 +49,7 @@ class Licence(models.Model):
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'licence'
 
     def __str__(self):
@@ -69,7 +69,7 @@ class Frequency(models.Model):
     uri = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'frequency'
 
     def __str__(self):

@@ -17,5 +17,5 @@ class ApiKey(models.Model):
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'api_key'

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.redirects',
+    'vitrina.users',
 
     # Django CMS
     'sass_processor',
@@ -80,7 +81,6 @@ INSTALLED_APPS = [
     'vitrina.orgs',
     'vitrina.plans',
     'vitrina.tasks',
-    'vitrina.users',
     'vitrina.catalogs',
     'vitrina.datasets',
     'vitrina.structure',

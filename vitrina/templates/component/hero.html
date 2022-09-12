@@ -32,8 +32,8 @@
                 <div class="column is-half">
                     <div class="has-blue-background hero-column">
                         <div class="columns is-vcentered">
-                            <div class="column has-text-centered m-t-lg">
-                                <a href="/datasets" class="stats">
+                            <div class="column has-text-centered m-t-lg" id="counts">
+                                <a href="{% url 'dataset-list' %}" class="stats">
                                     <span class="icon"><i class="fas fa-sitemap fa-2x"></i></span>
                                     <h2>{{ counts.dataset }}</h2>
                                     <div class="span-container-front">
@@ -41,8 +41,8 @@
                                     </div>
                                 </a>
                             </div>
-                            <div class="column has-text-centered m-t-lg">
-                                <a href="/organizations" class="stats">
+                            <div class="column has-text-centered m-t-lg" id="counts">
+                                <a href="{% url 'organization-list' %}" class="stats">
                                     <span class="icon"><i class="fa fa-building fa-2x"></i></span>
                                     <h2>{{ counts.organization }}</h2>
                                     <div class="span-container-front">
@@ -50,8 +50,8 @@
                                     </div>
                                 </a>
                             </div>
-                            <div class="column has-text-centered m-t-lg">
-                                <a href="/projects" class="stats">
+                            <div class="column has-text-centered m-t-lg" id="counts">
+                                <a href="{% url 'project-list' %}" class="stats">
                                     <span class="icon"><i class="fa fa-briefcase fa-2x"></i></span>
                                     <h2>{{ counts.project }}</h2>
                                     <div class="span-container-front">

@@ -1,82 +1,60 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
+{% load hitcount_tags %}
 
-
-<h1>{{ object.title }}</h1>
-<p>{{ object.description|linebreaks }}</p>
-
-{% block pageTitle %} | {% if locale == "lt" %}{{ dataset.title }}{% else %}{% if dataset.titleEn != "" %}{{ dataset.titleEn }}{% else %}{{ dataset.title }}{% endif %}{% endif %}{% endblock %}
-{% block pageDescription %}{% if locale == "lt" %}{{ dataset.description | escape }}{% else %}{{ dataset.descriptionEn | escape }}{% endif %}{% endblock %}
+{% block pageTitle %} | {{ dataset.title }}{% endblock %}
+{% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
 {% block pageAuthor %}{{ organization.title }}{% endblock %}
 {% block pageOgTitle %} | {{ dataset.title }}{% endblock %}
-{% block pageOgDescription %}{% if locale == "lt" %}{{ dataset.description | escape }}{% else %}{{ dataset.descriptionEn | escape }}{% endif %}{% endblock %}
+{% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
-{% block current_title %}{% if locale == "lt" %}{{ dataset.title }}{% else %}{% if dataset.titleEn != "" %}{{ dataset.titleEn }}{% else %}{{ dataset.title }}{% endif %}{% endif %}{% endblock %}
+{% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block head %}
-    <link href="/css/datatables.min.css" rel="stylesheet">
-    <script src="/js/jquery-3.4.1.min.js"></script>
-    <script src="/js/datatables.min.js"></script>
-{% endblock %}
-
-{% block notification %}
-    {% if notification %}
-        {#<div id="top-bar">#}
-            {#<p>{{ translate(notification.type) }}#}
-                {#<span class="is-pulled-right message-close-button"
-                      onClick="HideMessage()">X</span>#}
-            {#</p>#}
-        {#</div>#}
-    {% endif %}
+    <link href="{% static '/css/datatables.min.css' %}" rel="stylesheet">
+    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/datatables.min.js' %}"></script>
+    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
 
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column">
-            {# aprašymas ir peržiūrų skaičius #}
+            {# description and view count #}
             <div class="columns no-margin-bottom">
                 <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ object.title }}</h3>
+                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
                 </div>
-                {#<div class="column">#}
-                    {#<p class="is-pulled-right">{% translate "dataset.views2" %}: <b>{{ views }}</b></p>#}
-                {#</div>#}
+                <div class="column">
+                    <p class="is-pulled-right">{% translate "Duomenų rinkinio peržiūros" %}: <b>{{ views }}</b></p>
+                </div>
+                <div class="column">
+                    {% get_hit_count for dataset as total_hits %}
+                    <p class="is-pulled-right">{% translate "Duomenų rinkinio peržiūros" %}:
+                        <b id="total_hits">{{ total_hits }}</b>
+                    </p>
+                </div>
             </div>
 
             <div class="content">
-                <p class="no-margin-bottom">{{ object.description | linebreaks }}</p>
-                {# tagai #}
-                {#{% include "dataset/tags.twig" %}#}
-                {# pagrindinė info #}
-                {#{% include "dataset/coretable4.twig" %}#}
+                <p class="no-margin-bottom">{{ dataset.description | linebreaks }}</p>
+                {# tags #}
+                {% include "./tags.html" %}
+                {# main info #}
+                {% include "./coretable.html" %}
             </div>
-            {#    {% include "dataset/coresimple.twig" %}#}
 
-            {#{% if (structure or newStructure) %}#}
-                {#<div class="content structure-block no-margin-bottom">#}
-                    {#                <div class="column">#}
-                    {#<h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "dataset.structure" %}</h4>#}
-                    {#<span class="icon info-icon has-tooltip-multiline m-r-md"#}
-                          {# data-tooltip="{% translate "tooltip.datasetStructure" %}"><i#}
-                                {# class="fas fa-info-circle"></i></span>#}
-                    {# {% include '../component/structuretable-3.twig' %}#}
-                    {#                <h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "dataset.structure" %}<span#}
-                    {#                            class="icon info-icon"><i class="fas fa-info-circle"></i></span></h4>#}
-                    {#                {% include '../component/structuretable-3.twig' %}#}
-                    {#                </div>#}
-                {#</div>#}
-            {#{% endif %}#}
-
-            {#            <br/>#}
-            {#            <h4 class="custom-title is-size-4-mobile">{% translate "dataset.resources" %}</h4>#}
-
-            {#            <br/>#}
-
-            {#            {% if preview %}#}
-            {#                <h4 class="custom-title is-size-4-mobile">{% translate "dataset.preview" %}</h4>#}
-            {#                {% include 'dataset/preview.twig' %}#}
-            {#            {% endif %}#}
+            {% if structure or new_structure %}
+                <div class="content structure-block no-margin-bottom">
+                    <h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "Rinkinio struktūra" %}</h4>
+                    <span class="icon info-icon has-tooltip-multiline m-r-md" data-tooltip="{% translate 'Informacija apie duomenų rinkinio duomenis' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                    {% include './structuretable.html' %}
+                </div>
+            {% endif %}
         </div>
         <div class="column is-one-third">
             <div class="dataset-organization">
@@ -88,25 +66,25 @@
 
                 <p class="dataset-meta-title">{% translate "Organizacija" %}</p>
                 <p class="dataset-meta-value organization-title"><a
-                            href="/organizations/{{ organization.slug }}">{{ organization.title }}</a></p>
+                            href="/organizations/{{ dataset.organization.slug }}">{{ dataset.organization.title }}</a></p>
 
                 <p class="dataset-meta-title">{% translate "El. paštas" %}</p>
-                <p class="dataset-meta-value"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
+                <p class="dataset-meta-value"><a href="mailto:{{ dataset.organization.email }}">{{ dataset.organization.email|default_if_none:"" }}</a></p>
 
                 <p class="dataset-meta-title">{% translate "Telefonas" %}</p>
-                <p class="dataset-meta-value">{{ organization.phone }}</p>
+                <p class="dataset-meta-value">{{ dataset.organization.phone|default_if_none:"" }}</p>
 
                 <p class="dataset-meta-title">{% translate "Tinklalapis" %}</p>
                 <p class="dataset-meta-value"><a href="{{ organization.website }}"
-                                                 target="_blank">{{ organization.website }}</a></p>
+                                                 target="_blank">{{ dataset.organization.website|default_if_none:"" }}</a></p>
 
-                {% if coordinator %}
-                    <p class="dataset-meta-title">{% translate "organization.coordinator" %}</p>
-                    {#<p class="dataset-meta-value"><span>{{ coordinator.getPrettyName() }}</span></p>#}
-                    <p class="dataset-meta-value"><a href="mailto:{{ coordinator.email }}">{{ coordinator.email }}</a>
+                {% if dataset.coordinator %}
+                    <p class="dataset-meta-title">{% translate "Koordinatorius" %}</p>
+                    <p class="dataset-meta-value"><span>{{ dataset.coordinator }}</span></p>
+                    <p class="dataset-meta-value"><a href="mailto:{{ dataset.coordinator.email }}">{{ dataset.coordinator.email|default_if_none:"" }}</a>
                     </p>
-                    {% if coordinator.phone %}
-                        <p class="dataset-meta-value"><span>{{ coordinator.phone }}</span></p>
+                    {% if dataset.coordinator.phone %}
+                        <p class="dataset-meta-value"><span>{{ dataset.coordinator.phone }}</span></p>
                     {% endif %}
                 {% endif %}
 
@@ -114,70 +92,44 @@
                 <p class="dataset-meta-title m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
                 <p class="social-icons m-t-md">
                     <a target="_blank"
-                       href="https://www.facebook.com/sharer/sharer.php?u=https://data.gov.lt/dataset/{{ dataset.slug }}"
+                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link">
                         <span class="icon is-gray">
                             <i class="fab fa-facebook-square fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="https://www.linkedin.com/sharing/share-offsite/?url=https://data.gov.lt/dataset/{{ dataset.slug }}&title={{ dataset.title }}"
+                       href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-linkedin fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
-                       href="http://twitter.com/share?text={{ dataset.title }}&url=https://data.gov.lt/dataset/{{ dataset.slug }}"
+                       href="http://twitter.com/share?text={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        class="dataset-meta-link m-l-sm">
                         <span class="icon is-gray">
                             <i class="fab fa-twitter-square fa-2x"></i>
                         </span>
                     </a>
                 </p>
-                {% if user %}
-                    {% if subscription %}
-                        <p class="dataset-meta-title">{% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" %}</p>
-                        <p>
-                            <a href="/dataset/{{ dataset.slug }}/unfollow"
-                               class="button is-primary is-small">{% translate "Atsisakyti prenumeratos" %}</a>
-                        </p>
-                    {% else %}
-                        <p class="dataset-meta-title">{% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" %}</p>
-                        <p>
-                            <a href="/dataset/{{ dataset.slug }}/follow"
-                               class="button is-primary is-small">{% translate "Prenumeruoti" %}</a>
-                        </p>
-                    {% endif %}
-                {% endif %}
             </div>
         </div>
     </div>
-    {#{% if (resources or newStructure or structure) %}#}
-        {#<div class="columns no-margin-bottom">#}
-            {#<div class="column is-full">#}
-                {#<h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "dataset.resources" %}</h4>#}
-                {#{% include '../component/datatable-4.twig' %}#}
-            {#</div>#}
-        {#</div>#}
-    {#{% endif %}#}
-    <div class="columns no-margin-bottom">
-        <div class="column is-three-quarters">
-            {#{% include 'dataset/comments.twig' %}#}
-        </div>
-    </div>
-    {#{% include '../component/requestBlockWide.twig' %}#}
 {% endblock %}
 {% block scripts %}
+    {% get_hit_count_js_variables for dataset as hitcount %}
     <script type="text/javascript">
         $(document).ready(function () {
+            $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
+
             $(function () {
                 var metaButton = $('.dataset-extra-meta-button');
                 $('.reply-button').click(function () {
                     $('#media-' + this.id).toggleClass('is-hidden');
                 });
                 metaButton.click(function () {
-                    $(this).text($(this).text() === "{% translate "dataset.showExtraMeta" %}" ? "{% translate "dataset.hideExtraMeta" %}" : "{% translate "dataset.showExtraMeta" %}");
+                    $(this).text($(this).text() === "{% translate "Peržiūrėti papildomą informaciją" %} +" ? "{% translate "Uždaryti papildomą informaciją" %} -" : "{% translate "Peržiūrėti papildomą informaciją" %} +");
                     $('#extra-table').toggleClass('is-hidden');
                 });
                 $('.preview-button').click(function () {

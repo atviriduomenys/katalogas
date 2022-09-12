@@ -2,6 +2,7 @@ from django.db import models
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.models import HarvestingResult
+from vitrina.users.models import User
 
 
 # TODO: Make generic.
@@ -15,7 +16,7 @@ class UserLike(models.Model):
     user_id = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_like'
 
 
@@ -32,5 +33,5 @@ class UserVote(models.Model):
     harvested = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_vote'

@@ -10,13 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import environ
+import os
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 
+
+env = environ.Env()
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -28,7 +36,7 @@ SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'data.gov.lt', 'staging.data.gov.lt']
 
 
 # Application definition
@@ -43,6 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.redirects',
+    'vitrina.users',
 
     # Django CMS
     'sass_processor',
@@ -61,12 +71,12 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'hitcount',
     'crispy_forms',
 
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
-    'vitrina.users',
     'vitrina.viisp',
     'vitrina.orgs',
     'vitrina.plans',
@@ -80,6 +90,8 @@ INSTALLED_APPS = [
     'vitrina.comments',
     'vitrina.messages',
     'vitrina.translate',
+    'vitrina.compat',
+    'vitrina.likes',
 ]
 
 MIDDLEWARE = [
@@ -89,6 +101,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
@@ -117,6 +130,8 @@ TEMPLATES = [
                 # Django CMS
                 'sekizai.context_processors.sekizai',
                 'cms.context_processors.cms_settings',
+
+                'vitrina.context_processors.current_domain'
             ],
         },
     },
@@ -135,14 +150,7 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'adp-dev',
-        'USER': 'root',
-        'PASSWORD': 'r00t',
-        'HOST': '192.168.2.60',
-        'PORT': '3306'
-    },
+    'default': env.db(),
 }
 
 
@@ -227,3 +235,12 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+
+AUTH_USER_MODEL = 'vitrina_users.User'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+EMAIL_HOST = 'smtp.mailtrap.io'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = '2525'

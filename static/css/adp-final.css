@@ -9332,4 +9332,32 @@ table.th-40 th {
     flex-direction: column-reverse;
     display: flex; } }
 
+.asteriskField {
+    display: none;
+}
+
+.requiredField {
+    font-weight: 700;
+}
+
+.alert-error {
+    background-color: #fff5f7;
+    color: #ff3860;
+    padding: 1.25em 1.5em;
+    border-radius: 4px;
+    border-style: solid;
+    border-width: 0 0 0 4px;
+    font-weight: 700;
+    margin-top: 1.5rem;
+}
+
+.control-group.error input {
+    border-color: #ff3860;
+}
+
+.control-group.error span.help-inline strong, .control-group.error label {
+    color: #ff3860;
+    font-weight: 500;
+}
+
 /*# sourceMappingURL=adp-final.css.map */

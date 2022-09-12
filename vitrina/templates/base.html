@@ -20,6 +20,7 @@
     <link type="text/css" href="{% sass_src 'css/adp-final.scss' %}" rel="stylesheet" media="screen">
     <link rel="stylesheet" href="{% static 'css/icons.css' %}">
     <script defer src="{% static 'js/all.js' %}"></script>
+    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
@@ -36,12 +37,35 @@
         </div>
     {% endif %}
 {% endblock %}
-{% block notification %}{% endblock %}
+{% block messages %}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %} <li class="{{ message.tags }}" id="message-list-{{ forloop.counter }}"> {% else %} <li> {% endif %}
+                    {{ message }}
+                    <span class="is-pulled-right message-close-button" onClick="HideMessage({{ forloop.counter }})">X</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock messages %}
 <header>
     {#<div class="container">#}
     {% include "component/navbar.html" %}
     {#</div>#}
 </header>
+
+{% block breadcrumbs %}
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
+        <div class="container needs-padding">
+            <ul class="p-t-sm">
+                <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
+            </ul>
+            <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</span>
+        </div>
+    </nav>
+{% endblock %}
+
 {% block root %}
     <section class="section">
         <div class="container">
@@ -56,6 +80,10 @@
         var nav = document.querySelector('#navbarBasic');
         burger.classList.toggle('is-active');
         nav.classList.toggle('is-active');
+    }
+    function HideMessage(counter){
+          var notificationBar = document.getElementById('message-list-' + counter);
+          notificationBar.classList.add('is-hidden');
     }
 </script>
 {% block scripts %}{% endblock %}

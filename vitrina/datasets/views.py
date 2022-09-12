@@ -90,6 +90,22 @@ class DatasetListView(ListView):
         for status in Dataset.FILTER_STATUSES.keys():
             status_counts[status] = filter_by_status(filtered_queryset, status).count()
 
+        search_form_params = {}
+        if selected_status:
+            search_form_params['status'] = [selected_status]
+        if selected_organization:
+            search_form_params['organization'] = [selected_organization]
+        if selected_categories:
+            search_form_params['category'] = selected_categories
+        if selected_tags:
+            search_form_params['tags'] = selected_tags
+        if selected_frequency:
+            search_form_params['frequency'] = [selected_frequency]
+        if selected_date_from:
+            search_form_params['date_from'] = [selected_date_from]
+        if selected_date_to:
+            search_form_params['date_to'] = [selected_date_to]
+
         extra_context = {
             'num_found': filtered_queryset.count(),
             'status_filters': [{
@@ -137,6 +153,7 @@ class DatasetListView(ListView):
 
             'selected_date_from': selected_date_from,
             'selected_date_to': selected_date_to,
+            'search_form_params': search_form_params.items()
         }
         context.update(extra_context)
         return context

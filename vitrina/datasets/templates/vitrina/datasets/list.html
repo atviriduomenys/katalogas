@@ -81,6 +81,7 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
+            {{ request.GET.urlencode }}
             <form id="dataset-filter" class="field has-addons is-fullwidth"
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
                               {% url 'dataset-list' %}
@@ -90,8 +91,8 @@
                   method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
-                           placeholder="{% translate "Ieškoti duomenų rinkinio" %}" value="{{ q | escape }}"/>
-                    {% for k, values in formParams %}
+                           placeholder="{% translate 'Ieškoti duomenų rinkinio' %}" value="{{ q | escape }}"/>
+                    {% for k, values in search_form_params %}
                         {% for v in values %}
                             <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
                         {% endfor %}

@@ -22,14 +22,6 @@ python-versions = ">=3.7"
 tests = ["pytest", "pytest-asyncio", "mypy (>=0.800)"]
 
 [[package]]
-name = "atomicwrites"
-version = "1.4.1"
-description = "Atomic file writes."
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[[package]]
 name = "attrs"
 version = "22.1.0"
 description = "Classes Without Boilerplate"
@@ -98,7 +90,7 @@ test = ["pytest", "pytest-cov", "pytest-flake8", "pytest-isort", "coverage"]
 
 [[package]]
 name = "django"
-version = "3.2.14"
+version = "3.2.15"
 description = "A high-level Python Web framework that encourages rapid development and clean, pragmatic design."
 category = "main"
 optional = false
@@ -149,7 +141,7 @@ django = ">=2.2"
 
 [[package]]
 name = "django-cms"
-version = "3.11.1"
+version = "3.11.0"
 description = "Lean enterprise content management powered by Django."
 category = "main"
 optional = false
@@ -177,6 +169,14 @@ rcssmin = "1.1.0"
 rjsmin = "1.2.0"
 
 [[package]]
+name = "django-crispy-forms"
+version = "1.14.0"
+description = "Best way to have Django DRY forms"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "django-environ"
 version = "0.9.0"
 description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
@@ -196,14 +196,6 @@ description = "Tiny stuff for Django that won't fit into separate apps."
 category = "main"
 optional = false
 python-versions = "*"
-
-[[package]]
-name = "django-crispy-forms"
-version = "1.14.0"
-description = "Best way to have Django DRY forms"
-category = "main"
-optional = false
-python-versions = ">=3.7"
 
 [[package]]
 name = "django-filer"
@@ -362,7 +354,7 @@ Django = ">=3.2"
 
 [[package]]
 name = "django-taggit-autosuggest"
-version = "0.4.0"
+version = "0.4.1"
 description = "Autosuggestions for django-taggit"
 category = "main"
 optional = false
@@ -509,7 +501,7 @@ doc = ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "13.15.1"
+version = "14.2.0"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -678,14 +670,13 @@ diagrams = ["railroad-diagrams", "jinja2"]
 
 [[package]]
 name = "pytest"
-version = "7.1.2"
+version = "7.1.3"
 description = "pytest: simple powerful testing with Python"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-atomicwrites = {version = ">=1.0", markers = "sys_platform == \"win32\""}
 attrs = ">=19.2.0"
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
 iniconfig = "*"
@@ -897,12 +888,11 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "8b685ef1bdf87f8abf4eb08500802358c219b5bee7a58e6e3de72e95eed5e3ec"
+content-hash = "4b00d4872ce42821fe160a52b0cf811a189b4ac59522c3cc8832b9acffc480bf"
 
 [metadata.files]
 aldryn-apphooks-config = []
 asgiref = []
-atomicwrites = []
 attrs = []
 beautifulsoup4 = []
 colorama = []
@@ -914,12 +904,12 @@ django-appdata = []
 django-classy-tags = []
 django-cms = []
 django-compressor = []
+django-crispy-forms = []
 django-environ = []
 django-etc = []
-django-hitcount = []
-django-crispy-forms = []
 django-filer = []
 django-formtools = []
+django-hitcount = []
 django-js-asset = []
 django-libsass = []
 django-meta = []

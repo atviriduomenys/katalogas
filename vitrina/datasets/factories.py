@@ -4,6 +4,7 @@ from factory.django import DjangoModelFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -18,6 +19,15 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
+
+
+class DatasetMemberFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetMember
+        django_get_or_create = ('role',)
+
+    role = factory.Faker('word')
+    contact = False
 
 
 class DatasetStructureFactory(DjangoModelFactory):

@@ -218,10 +218,12 @@ class DatasetCreateView(CreateView):
     form_class = NewDatasetForm
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.organization.slug == self.kwargs['org_slug']:
+        if request.user.is_authenticated and\
+                request.user.organization is not None and\
+                request.user.organization.slug == self.kwargs['slug']:
             return super(DatasetCreateView, self).get(request, *args, **kwargs)
         else:
-            return redirect('orgs', self.kwargs['org_slug'])
+            return redirect('organization-detail', self.kwargs['org_kind'], self.kwargs['slug'])
 
     def form_valid(self, form):
         object = form.save(commit=False)

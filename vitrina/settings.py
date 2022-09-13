@@ -244,3 +244,5 @@ EMAIL_HOST = 'smtp.mailtrap.io'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'
+
+MEDIA_ROOT = BASE_DIR / 'var/media/'

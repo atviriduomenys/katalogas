@@ -1,29 +1,12 @@
-from datetime import datetime
-
 import pytest
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.orgs.factories import OrganizationFactory
 
 
 @pytest.fixture
 def dataset():
-    org = OrganizationFactory(
-        title="test organization",
-        created=datetime(2022, 9, 22, 10, 30),
-        jurisdiction="test_jurisdiction",
-        kind='test_org_kind',
-        slug='test_org_slug'
-    )
-    dataset = DatasetFactory(
-        title="Testinis duomenų rinkinys",
-        title_en="Test dataset",
-        status="HAS_DATA",
-        published=datetime(2022, 6, 1),
-        organization=org,
-        slug='test_dataset_slug'
-    )
+    dataset = DatasetFactory(status="HAS_DATA")
     return dataset
 
 
@@ -54,4 +37,3 @@ def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset):
     # hardcoded values, will need to change with later tasks
     assert resp.context['subscription'] == []
     assert resp.context['rating'] == 3.0
-

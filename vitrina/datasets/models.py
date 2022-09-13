@@ -129,8 +129,17 @@ class Dataset(models.Model):
     def get_tag_list(self):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
+    def get_members_url(self):
+        return reverse('dataset-members', kwargs={'org_kind': str(self.organization.kind) if self.organization else None,
+                                                  'org_slug': self.organization.slug if self.organization else None,
+                                                  'slug': self.slug})
 
-class DatasetMembers(models.Model):
+    def dataset_member_set(self):
+        members = DatasetMember.objects.filter(dataset=self)
+        return members
+
+
+class DatasetMember(models.Model):
     CREATOR = 'dct:creator'
     CONTRIBUTOR = 'dct:contributor'
     PUBLISHER = 'dct:publisher'
@@ -141,14 +150,11 @@ class DatasetMembers(models.Model):
         (PUBLISHER, _('Publisher')),
     )
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING)
+    organization = models.ForeignKey(Organization, models.CASCADE)
+    dataset = models.ForeignKey(Dataset, models.CASCADE)
     role = models.CharField(max_length=255, choices=ROLE_CHOICES)
     created = models.DateTimeField(null=True, auto_now_add=True)
-    contact = models.BooleanField(null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'dataset_members'
+    contact = models.BooleanField(default=True)
 
 
 # TODO: To be merged into Dataset:

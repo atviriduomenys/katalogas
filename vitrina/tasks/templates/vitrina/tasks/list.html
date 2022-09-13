@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Užduotys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Užduotys" %}{% endblock %}
+
+{% block current_title %}{% translate "Užduotys" %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile"></div>
+        <div class="column is-three-quarters">
+            {% for i in page_obj %}
+                <article class="media is-expanded">
+                    <div class="media-content">
+                        <div class="content">
+                            <strong class="dataset-list-title">{{ i.title }}</strong>
+                            <p class="dataset-list-description">
+                                {% translate "Sukurta prieš" %}: {{ i.created|timesince }}
+                            </p>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+            <br/>
+            {% include "vitrina/common/pagination.html" %}
+        </div>
+    </div>
+    <br/>
+{% endblock %}
+

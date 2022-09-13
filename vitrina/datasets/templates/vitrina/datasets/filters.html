@@ -1,0 +1,208 @@
+{% load i18n %}
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
+    </p>
+    {% if selected_status %}
+        {% for sf in status_filters %}
+            {% if sf.key == selected_status %}
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ sf.title }}">
+                        <strong>{{ sf.title }}</strong>
+                    </span>
+                    <div class="stays-right">({{ sf.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for sf in status_filters %}
+            <div class="facet-data_status is-flex">
+                <a href="{{ sf.query }}" class="category-panel-block" title="{{ sf.title }}">
+                    {{ sf.title }}
+                </a>
+                <div class="stays-right">({{ sf.count }})</div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Organizacija" as orgTitle %} {{orgTitle|upper}}</strong>
+    </p>
+    {% if selected_organization %}
+        {% for of in organization_filters %}
+            {% if of.id == selected_organization %}
+                <div class="{% if forloop.counter > 10 %} facet-orgs is-hidden {% endif %} is-flex">
+                    <span class="category-panel-block" title="{{ of.title }}">
+                        <strong>{{ of.title }}</strong>
+                    </span>
+                    <div class="stays-right">({{ of.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for of in organization_filters %}
+            <div class="is-flex">
+                <a href="{{ of.query }}" class="category-panel-block" title="{{ of.title }}">{{ of.title }}</a>
+                <div class="stays-right">({{ of.count }})</div>
+            </div>
+        {% endfor %}
+            {% if organization_filters|length > 10 %}
+            <div>
+                <span class="facets-more" id="facet-orgs">{% translate "Išskleisti" %}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Kategorija" as catTitle %} {{catTitle|upper}}</strong>
+    </p>
+    {% if selected_categories %}
+        {% for cf in category_filters %}
+            {% if cf.id in selected_categories %}
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ cf.title }}">
+                        <strong>{{ cf.title }}</strong>
+                    </span>
+                    <div class="stays-right">({{ cf.count }})</div>
+                </div>
+            {% elif cf.id in related_categories %}
+                <div class="{% if forloop.counter > 10 %} facet-cats is-hidden {% endif %} is-flex">
+                    <a href="{{ cf.query }}" class="category-panel-block" title="{{ cf.title }}">{{ cf.title }}</a>
+                    <div class="stays-right">({{ cf.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for cf in category_filters %}
+            <div class="{% if forloop.counter > 10 %} facet-cats is-hidden {% endif %} is-flex">
+                <a href="{{ cf.query }}" class="category-panel-block" title="{{ cf.title }}">{{ cf.title }}</a>
+                <div class="stays-right">({{ cf.count }})</div>
+            </div>
+        {% endfor %}
+        {% if category_filters|length > 10 %}
+            <div>
+                <span class="facets-more" id="facet-cats">{% translate "Išskleisti" %}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+</nav>
+
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Žymė" as tagTitle %} {{tagTitle|upper}}</strong>
+    </p>
+
+    {% if selected_tags %}
+        {% for tf in tag_filters %}
+            {% if tf.title in selected_tags %}
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ tf.title }}">
+                        <strong>{{ tf.title }}</strong>
+                    </span>
+                    <div class="stays-right">({{ tf.count }})</div>
+                </div>
+            {% elif tf.title in related_tags %}
+                <div class="{% if forloop.counter > 10 %} facet-tags is-hidden {% endif %} is-flex">
+                    <a href="{{ tf.query }}" class="category-panel-block" title="{{ tf.title }}">{{ tf.title }}</a>
+                    <div class="stays-right">({{ tf.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if related_tags|length > 10 %}
+            <div>
+                <span class="facets-more" id="facet-tags">{% translate "Išskleisti" %}</span>
+            </div>
+        {% endif %}
+    {% else %}
+        {% for tf in tag_filters %}
+            <div class="{% if forloop.counter > 10 %} facet-tags is-hidden {% endif %} is-flex">
+                <a href="{{ tf.query }}" class="category-panel-block" title="{{ tf.title }}">{{ tf.title }}</a>
+                <div class="stays-right">({{ tf.count }})</div>
+            </div>
+        {% endfor %}
+        {% if tag_filters|length > 10 %}
+            <div>
+                <span class="facets-more" id="facet-tags">{% translate "Išskleisti" %}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Formatas" as formatTitle %} {{formatTitle|upper}}</strong>
+    </p>
+            
+    <div class="facet-format is-flex">
+        <a href="?q=&amp;format=DOC" class="category-panel-block" title="DOC">DOC</a>
+        
+    </div>
+
+    <div class="facet-format is-flex">
+        <a href="?q=&amp;format=OGS+WMS" class="category-panel-block" title="OGS WMS">OGS WMS</a>
+    </div>        
+    
+    <div>
+        <span class="facets-more" id="facet-format">{% translate "Išskleisti" %}</span>
+    </div>        
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Atnaujinama" as freqTitle %} {{freqTitle|upper}}</strong>
+    </p>
+    {% if selected_frequency %}
+        {% for ff in frequency_filters %}
+            {% if ff.id == selected_frequency %}
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ ff.title }}">
+                        <strong>{{ ff.title }}</strong>
+                    </span>
+                    <div class="stays-right">({{ ff.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% for ff in frequency_filters %}
+            <div class="{% if forloop.counter > 10 %} facet-frequency is-hidden {% endif %} is-flex">
+                <a href="{{ ff.query }}" class="category-panel-block" title="{{ ff.title }}">{{ ff.title }}</a>
+                <div class="stays-right">({{ ff.count }})</div>
+            </div>
+        {% endfor %}
+        {% if frequency_filters|length > 10 %}
+            <div>
+                <span class="facets-more" id="facet-frequency">{% translate "Išskleisti" %}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
+    </p>
+    <div class="field">
+        {% if selected_date_from %}
+            <input type="date" class="input date_from" name="date_from" id="from" value="{{ selected_date_from }}"
+                   placeholder="{% translate 'Data nuo' %}">
+        {% else %}
+            <input type="date" class="input date_from" name="date_from" id="from"
+                   placeholder="{% translate 'Data nuo' %}">
+        {% endif %}
+    </div>
+    <div class="field">
+        {% if selected_date_to %}
+            <input type="date" class="input date_to" name="date_to" id="to" value="{{ selected_date_to }}"
+                   placeholder="{% translate 'Data iki' %}">
+        {% else %}
+            <input type="date" class="input date_to" name="date_to" id="to"
+                   placeholder="{% translate 'Data iki' %}">
+        {% endif %}
+    </div>
+</nav>

@@ -70,6 +70,7 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
     assert list(resp.context['object_list']) == [datasets[1]]
 
 
+@pytest.fixture
 def status_filter_data():
     dataset1 = DatasetFactory(status=Dataset.HAS_DATA, slug="ds1")
     dataset2 = DatasetFactory(slug="ds2")
@@ -347,7 +348,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
 
 @pytest.fixture
 def dataset_structure_data():
-    organization = OrganizationFactory(slug="org")
+    organization = OrganizationFactory(slug="org", kind="gov")
     dataset1 = DatasetFactory(slug="ds2", organization=organization)
     dataset2 = DatasetFactory(slug="ds3", organization=organization)
     structure1 = DatasetStructureFactory(dataset=dataset1)
@@ -371,3 +372,18 @@ def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data)
     assert resp.context['can_show'] is False
     assert resp.context['structure_data'] == []
 
+
+@pytest.mark.django_db
+def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(reverse('dataset-structure-download', kwargs={
+        'organization_kind': "doesntexist",
+        'organization_slug': "doesntexist",
+        'dataset_slug': "doesntexist"
+    }), expect_errors=True)
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download")
+    assert resp.content == b'Column\nValue'

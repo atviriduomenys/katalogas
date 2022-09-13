@@ -201,8 +201,12 @@ class DatasetStructureView(TemplateView):
 
 
 class DatasetStructureDownloadView(View):
-    def get(self, **kwargs):
-        dataset_slug = kwargs.get('dataset_slug')
-        structure = get_object_or_404(DatasetStructure, dataset__slug=dataset_slug)
+    def get(self, request, organization_kind, organization_slug, dataset_slug):
+        structure = get_object_or_404(
+            DatasetStructure,
+            dataset__organization__kind=organization_kind,
+            dataset__organization__slug=organization_slug,
+            dataset__slug=dataset_slug,
+        )
         response = FileResponse(open(structure.file.path, 'rb'))
         return response

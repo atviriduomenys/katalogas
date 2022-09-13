@@ -20,7 +20,7 @@ def user():
 
 @pytest.mark.django_db
 def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
-    form = app.get(reverse('login')).forms[0]
+    form = app.get(reverse('login')).forms['login-form']
     form['email'] = "test@test.com"
     form['password'] = "wrongpassword"
     resp = form.submit()
@@ -29,7 +29,7 @@ def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
 
 @pytest.mark.django_db
 def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
-    form = app.get(reverse('login')).forms[0]
+    form = app.get(reverse('login')).forms['login-form']
     form['email'] = "test@test.com"
     form['password'] = "test123"
     resp = form.submit()
@@ -39,7 +39,7 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 @pytest.mark.django_db
 def test_register_with_short_name(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms[0]
+    form = app.get(reverse('register')).forms['register-form']
     form['first_name'] = "T"
     form['last_name'] = "User"
     form['email'] = "test_@test.com"
@@ -53,7 +53,7 @@ def test_register_with_short_name(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_register_with_name_with_numbers(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms[0]
+    form = app.get(reverse('register')).forms['register-form']
     form['first_name'] = "T3st"
     form['last_name'] = "User"
     form['email'] = "test_@test.com"
@@ -67,7 +67,7 @@ def test_register_with_name_with_numbers(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_register_without_agreeing_to_terms(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms[0]
+    form = app.get(reverse('register')).forms['register-form']
     form['first_name'] = "Test"
     form['last_name'] = "User"
     form['email'] = "test_@test.com"
@@ -81,7 +81,7 @@ def test_register_without_agreeing_to_terms(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_register_with_correct_data(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms[0]
+    form = app.get(reverse('register')).forms['register-form']
     form['first_name'] = "Test"
     form['last_name'] = "User"
     form['email'] = "test_@test.com"
@@ -96,7 +96,7 @@ def test_register_with_correct_data(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_reset_password_with_wrong_email(app: DjangoTestApp, user: User):
-    form = app.get(reverse('reset')).forms[0]
+    form = app.get(reverse('reset')).forms['password-reset-form']
     form['email'] = "wrong.email@test.com"
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[reset_error]]
@@ -105,7 +105,7 @@ def test_reset_password_with_wrong_email(app: DjangoTestApp, user: User):
 
 @pytest.mark.django_db
 def test_reset_password_with_correct_email(app: DjangoTestApp, user: User):
-    form = app.get(reverse('reset')).forms[0]
+    form = app.get(reverse('reset')).forms['password-reset-form']
     form['email'] = "test@test.com"
     resp = form.submit()
     assert resp.status_code == 302

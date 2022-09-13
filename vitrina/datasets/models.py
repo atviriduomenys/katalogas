@@ -11,6 +11,8 @@ from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
+from django.utils.translation import gettext_lazy as _
+
 
 class Dataset(models.Model):
     HAS_DATA = "HAS_DATA"
@@ -18,12 +20,19 @@ class Dataset(models.Model):
     METADATA = "METADATA"
     PRIORITIZED = "PRIORITIZED"
     FINANCING = "FINANCING"
+    HAS_STRUCTURE = "HAS_STRUCTURE"
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
         (METADATA, _("Parengti metaduomenys")),
         (PRIORITIZED, _("Įvertinti prioritetai")),
         (FINANCING, _("Įvertintas finansavimas")),
+    }
+    FILTER_STATUSES = {
+        HAS_DATA: _("Atverti duomenys"),
+        INVENTORED: _("Tik inventorintas"),
+        HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
+        METADATA: _("Tik metaduomenys")
     }
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59

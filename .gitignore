@@ -12,7 +12,7 @@
 
 # dev DB
 /postgres
-/var
+/var/
 
 *.mo
 *.css.map

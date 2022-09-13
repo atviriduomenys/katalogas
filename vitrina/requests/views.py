@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
 from vitrina.requests.forms import RequestForm
@@ -56,10 +57,10 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
     template_name = 'base_form.html'
 
     def form_valid(self, form):
-        self.object = form.save()
-        if self.request.user.is_authenticated:
-            self.object.user = self.request.user
-        return super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.save()
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -67,16 +68,14 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         return context_data
 
 
-class RequestUpdateView(PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        if self.request.user.is_authenticated:
-            return self.request.user == request.user
-        return super().has_permission()
+        return self.request.user == request.user
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

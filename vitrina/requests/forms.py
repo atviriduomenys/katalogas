@@ -18,7 +18,7 @@ class RequestForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request_instance = self.instance if self.instance and self.instance.pk else None
-        button = "Update" if request_instance else "Create"
+        button = _("Redaguoti") if request_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.form_id = "request-form"
         self.helper.layout = Layout(

@@ -20,9 +20,9 @@ class Task(models.Model):
 
     title = models.CharField(max_length=255)
     created = models.DateTimeField(default=datetime.now)
-    user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.PROTECT)
+    user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
     role = models.CharField(max_length=255, choices=ROLES, blank=True, null=True)
-    organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.PROTECT)
+    organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         db_table = 'task'

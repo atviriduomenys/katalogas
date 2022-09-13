@@ -148,7 +148,7 @@ optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-Django = ">=2.2,<5.0"
+Django = ">=2.2,<4.0"
 django-classy-tags = ">=0.7.2"
 django-formtools = ">=2.1"
 django-sekizai = ">=0.7"
@@ -618,14 +618,6 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
-name = "psycopg2"
-version = "2.9.3"
-description = "psycopg2 - Python-PostgreSQL Database Adapter"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "psycopg2-binary"
 version = "2.9.3"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
@@ -888,7 +880,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "4b00d4872ce42821fe160a52b0cf811a189b4ac59522c3cc8832b9acffc480bf"
+content-hash = "13ad0bf00ac35766fa40ea87e4cc63d0b1e5c124803824b1789c7cad26654d64"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -941,7 +933,6 @@ mccabe = []
 packaging = []
 pillow = []
 pluggy = []
-psycopg2 = []
 psycopg2-binary = []
 py = []
 pycodestyle = []

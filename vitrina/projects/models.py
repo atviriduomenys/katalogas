@@ -22,7 +22,7 @@ class Project(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
-    image = models.ImageField(upload_to='files/projects/%Y/%m/%d/', blank=True, null=True)
+    image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:

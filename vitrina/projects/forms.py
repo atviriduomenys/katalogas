@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 class ProjectForm(ModelForm):
     title = CharField(label=_('Pavadinimas'))
     description = CharField(label=_('Aprašymas'), widget=Textarea)
-    url = CharField(label="Nuoroda į panaudojimo atvejį", required=False)
+    url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
     image = ImageField(label=_("Paveiksliukas"))
 
     class Meta:
@@ -20,14 +20,15 @@ class ProjectForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         project_instance = self.instance if self.instance and self.instance.pk else None
-        button = "Update" if project_instance else "Create"
+        button = _("Redaguoti") if project_instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.form_id = "project-form"
         self.helper.layout = Layout(
             Div(Div(Field('title', css_class="input", placeholder=_("Pavadinimas"),),
                     css_class="control"), css_class="field"),
             Div(Div(Field('description', css_class="textarea", placeholder=_("Aprašymas")),
                     css_class="control"), css_class="field"),
-            Div(Div(Field('url', css_class="input", placeholder="Nuoroda į panaudojimo atvejį"),
+            Div(Div(Field('url', css_class="input", placeholder=_("Nuoroda į panaudojimo atvejį")),
                     css_class="control"), css_class="field"),
             Div(Div(Field('image'), css_class="control"), css_class="field"),
             Submit('submit', button, css_class='button is-primary')

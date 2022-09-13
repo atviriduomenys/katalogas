@@ -245,4 +245,4 @@ EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'var/media/')
+MEDIA_ROOT = BASE_DIR / 'var/media/'

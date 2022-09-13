@@ -36,7 +36,7 @@ SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'data.gov.lt', 'staging.data.gov.lt', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
 
 
 # Application definition
@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'vitrina.classifiers',
     'vitrina.projects',
     'vitrina.requests',
+    'vitrina.resources',
     'vitrina.comments',
     'vitrina.messages',
     'vitrina.translate',
@@ -239,8 +240,16 @@ PARLER_LANGUAGES = {
 AUTH_USER_MODEL = 'vitrina_users.User'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/login/'
 
 EMAIL_HOST = 'smtp.mailtrap.io'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
+MEDIA_ROOT = BASE_DIR / 'var/media/'

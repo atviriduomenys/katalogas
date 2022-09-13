@@ -3,7 +3,7 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView
 
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
@@ -14,6 +14,11 @@ from django.utils.translation import gettext_lazy as _
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     form_class = LoginForm
+
+    def get_success_url(self):
+        if self.request.user.organization:
+            return reverse('user-task-list', args=[self.request.user.pk])
+        return super().get_success_url()
 
 
 class RegisterView(CreateView):

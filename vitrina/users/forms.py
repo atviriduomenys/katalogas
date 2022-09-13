@@ -19,6 +19,7 @@ class LoginForm(Form):
         self.user_cache = None
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_id = "login-form"
         self.helper.layout = Layout(
             Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
                     css_class='control'), css_class='field'),
@@ -59,6 +60,7 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_id = "register-form"
         self.helper.layout = Layout(
             Div(Div(Field('first_name', css_class='input', placeholder=_("Vardas")),
                     css_class='control'), css_class='field'),
@@ -94,6 +96,7 @@ class PasswordResetForm(BasePasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_id = "password-reset-form"
         self.helper.layout = Layout(
             Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
                     css_class='control'), css_class='field'),
@@ -123,6 +126,7 @@ class PasswordResetConfirmForm(SetPasswordForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_id = "password-reset-confirm-form"
         self.helper.layout = Layout(
             Div(Div(Field('new_password1', css_class='input', placeholder=_("Naujas slaptažodis")),
                     css_class='control'), css_class='field'),

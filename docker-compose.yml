@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: adp
       POSTGRES_PASSWORD: secret
     volumes:
-      - ./postgres:/var/lib/postgresql/data
+      - ./var/postgres:/var/lib/postgresql/data
     ports:
       - 127.0.0.1:5432:5432
 
@@ -18,3 +18,17 @@ services:
     environment:
       ADMINER_PLUGINS: 'tables-filter'
       ADMINER_DEFAULT_SERVER: 'postgres'
+
+  mysql:
+    image: mysql:5
+    environment:
+      MYSQL_ROOT_PASSWORD: 'secret'
+      MYSQL_DATABASE: 'adp-dev'
+      MYSQL_USER: 'adp'
+      MYSQL_PASSWORD: 'secret'
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./var/mysql:/var/lib/mysql
+      - ./resources/adp-dev.sql:/data/application/init.sql
+    ports:
+      - 127.0.0.1:3306:3306

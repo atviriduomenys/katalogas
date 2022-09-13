@@ -10,9 +10,10 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('dataset/<slug:slug>/', DatasetDetailView.as_view(), name='dataset-detail'),
-    #TODO: change url according to task and create the add button in template once merging is complete
-    path('datasets/<slug:org_slug>/add', DatasetCreateView.as_view(), name='dataset-add'),
-    path('datasets/<slug:org_slug>/<slug:dataset_slug>/update', DatasetUpdateView.as_view(), name='dataset-change')
+    path('datasets/<str:org_kind>/<slug:slug>/add/',
+         DatasetCreateView.as_view(), name='dataset-add'),
+    path('datasets/<str:org_kind>/<slug:org_slug>/<slug:slug>/change/',
+         DatasetUpdateView.as_view(), name='dataset-change')
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

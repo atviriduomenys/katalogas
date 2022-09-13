@@ -16,6 +16,7 @@ class NewDatasetForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
             Div(Div(Field('is_public', css_class='input', placeholder=_('Ar duomenys vieši')),
                     css_class='control'), css_class='field'),

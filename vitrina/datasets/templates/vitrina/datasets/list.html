@@ -51,7 +51,11 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
-
+    {% if user.is_authenticated and user.organization == dataset.organization %}
+        <a href="{%url 'dataset-add' org_kind=view.kwargs.kind slug=view.kwargs.slug %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+            {% translate "Pridėti rinkinį" %}
+        </a>
+    {% endif %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {#<div style="text-align: center;">#}
@@ -75,11 +79,11 @@
                 </p>
                 <div class="field">
                     <input class="input datepicker-from" name="date_from" id="from" value="{{ dateFrom }}"
-                           placeholder="{% translate "Data nuo" %}">
+                           placeholder="{% translate 'Data nuo' %}">
                 </div>
                 <div class="field">
                     <input class="input datepicker-to" name="date_to" id="to" value="{{ dateTo }}"
-                           placeholder="{% translate "Data iki" %}">
+                           placeholder="{% translate 'Data iki' %}">
                 </div>
             </nav>
         </div>
@@ -101,7 +105,7 @@
                   method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
-                           placeholder="{% translate "Ieškoti duomenų rinkinio" %}" value="{{ q | escape }}"/>
+                           placeholder="{% translate 'Ieškoti duomenų rinkinio' %}" value="{{ q | escape }}"/>
                     {% for k, values in formParams %}
                         {% for v in values %}
                             <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
@@ -145,8 +149,8 @@
                 {% for filterType, filterList in filterMap %}
                     {#<p>{{ filterType }}</p>#}
                     {% for fltr in filterList %}
-                        <a href="concat(currentQuery, "&", "remove=", fltr.removeId | url_encode) }}"
-                           class="tag {% if filterType == "organization" %}is-success{% endif %}{% if filterType == "category" %}is-info{% endif %}">{{ fltr.title }}
+                        <a href="concat(currentQuery, '&', 'remove=', fltr.removeId | url_encode) }}"
+                           class="tag {% if filterType == 'organization' %}is-success{% endif %}{% if filterType == 'category' %}is-info{% endif %}">{{ fltr.title }}
                             <i class="fas fa-times"></i>
                         </a>
                     {% endfor %}

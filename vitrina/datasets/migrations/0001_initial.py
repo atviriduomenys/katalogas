@@ -10,10 +10,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('vitrina_classifiers', '0001_initial'),
-        ('vitrina_catalogs', '0001_initial'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_orgs', '0001_initial'),
     ]
 
     operations = [

@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from factory.django import FileField
 
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
@@ -343,3 +344,46 @@ def test_dataset_filter_all(app: DjangoTestApp):
     assert resp.context['selected_frequency'] == frequency.pk
     assert resp.context['selected_date_from'] == "2022-01-01"
     assert resp.context['selected_date_to'] == "2022-02-10"
+
+
+@pytest.fixture
+def dataset_structure_data():
+    organization = OrganizationFactory(slug="org", kind="gov")
+    dataset1 = DatasetFactory(slug="ds2", organization=organization)
+    dataset2 = DatasetFactory(slug="ds3", organization=organization)
+    structure1 = DatasetStructureFactory(dataset=dataset1)
+    structure2 = DatasetStructureFactory(dataset=dataset2, file=FileField(filename='file.csv', data=b'ab\0c'))
+    return {
+        'structure1': structure1,
+        'structure2': structure2
+    }
+
+
+@pytest.mark.django_db
+def test_with_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url())
+    assert resp.context['can_show'] is True
+    assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
+
+
+@pytest.mark.django_db
+def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(dataset_structure_data['structure2'].get_absolute_url())
+    assert resp.context['can_show'] is False
+    assert resp.context['structure_data'] == []
+
+
+@pytest.mark.django_db
+def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(reverse('dataset-structure-download', kwargs={
+        'organization_kind': "doesntexist",
+        'organization_slug': "doesntexist",
+        'dataset_slug': "doesntexist"
+    }), expect_errors=True)
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_structure(app: DjangoTestApp, dataset_structure_data):
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download")
+    assert resp.content == b'Column\nValue'

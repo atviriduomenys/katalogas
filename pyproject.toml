@@ -23,6 +23,7 @@ psycopg2-binary = "^2.9.3"
 pytest-cov = "^3.0.0"
 django-crispy-forms = "^1.14.0"
 python-slugify = "^6.1.2"
+bcrypt = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

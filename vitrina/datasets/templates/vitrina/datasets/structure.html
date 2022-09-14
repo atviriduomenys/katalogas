@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
+
+{% block content %}
+    <div class="columns no-margin-bottom">
+        <div class="column is-full">
+            {% if not can_show %}
+                <p class="has-margin-bottom">
+                    {% translate "Atsiprašome, šio duomenų rinkinio struktūra negali būti atvaizduota, tačiau galite atsisiųsti duomenų teikėjo pateiktą duomenų struktūros aprašo failą." %}
+                </p>
+                <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.organization_kind view.kwargs.organization_slug view.kwargs.dataset_slug %}">
+                    {% translate "Atsisiųsti" %}
+                </a>
+            {% else %}
+                <a class="button is-primary has-margin-bottom"
+                   href="{% url 'dataset-structure-download' view.kwargs.organization_kind view.kwargs.organization_slug view.kwargs.dataset_slug %}">
+                    {% translate "Atsisiųsti" %}
+                </a>
+                <div class="table-container">
+                    <table class="table is-striped is-fullwidth">
+                        <tbody class="info-table-body">
+                            {% for row in structure_data %}
+                                {% if forloop.counter == 1 %}
+                                    <tr class="preview-tr is-bold">
+                                {% else %}
+                                    <tr class="preview-tr">
+                                {% endif %}
+                                    {% for column in row %}
+                                        <td class="preview-td">{{ column }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

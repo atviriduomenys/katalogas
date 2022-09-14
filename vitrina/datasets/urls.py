@@ -1,8 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
-from vitrina.datasets.views import DatasetListView, DatasetCreateView, DatasetUpdateView
-from vitrina.datasets.views import DatasetDetailView
+from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView, DatasetCreateView, DatasetUpdateView, DatasetDetailView
 
 
 urlpatterns = [
@@ -14,6 +13,10 @@ urlpatterns = [
          DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<str:org_kind>/<slug:org_slug>/<slug:slug>/change/',
          DatasetUpdateView.as_view(), name='dataset-change')
+    path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/',
+         DatasetStructureView.as_view(), name='dataset-structure'),
+    path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/download',
+         DatasetStructureDownloadView.as_view(), name='dataset-structure-download'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

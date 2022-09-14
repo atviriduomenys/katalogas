@@ -1,10 +1,13 @@
 {% extends "base.html" %}
-{% load i18n %}    
+{% load static %}
+{% load i18n %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block head %}
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+
     <style>
         .autocomplete {
             /*the container must be positioned relative:*/
@@ -72,22 +75,7 @@
             {#<pre>{{ flt.id }}</pre>#}
             {#{% endfor %}#}
             {#{% endif %}#}
-
-            {#{% include "vitrina/datasets/facets.html" %}#}
-
-            <nav class="category-panel">
-                <p class="category-panel-heading">
-                    <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
-                </p>
-                <div class="field">
-                    <input class="input datepicker-from" name="date_from" id="from" value="{{ dateFrom }}"
-                           placeholder="{% translate 'Data nuo' %}">
-                </div>
-                <div class="field">
-                    <input class="input datepicker-to" name="date_to" id="to" value="{{ dateTo }}"
-                           placeholder="{% translate 'Data iki' %}">
-                </div>
-            </nav>
+            {% include "vitrina/datasets/filters.html" %}
         </div>
 
         <div class="column is-three-quarters">
@@ -98,6 +86,7 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
+            {{ request.GET.urlencode }}
             <form id="dataset-filter" class="field has-addons is-fullwidth"
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
                               {% url 'dataset-list' %}
@@ -108,7 +97,7 @@
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
                            placeholder="{% translate 'Ieškoti duomenų rinkinio' %}" value="{{ q | escape }}"/>
-                    {% for k, values in formParams %}
+                    {% for k, values in search_form_params %}
                         {% for v in values %}
                             <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
                         {% endfor %}
@@ -126,7 +115,7 @@
             <a href="/search"
                class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
 
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ num_found }}</h1>
 
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
@@ -262,7 +251,7 @@
             $('.facets-more').click(function () {
                 $('.' + this.id).toggleClass('is-hidden');
                 $(this).text(function (i, text) {
-                    return text === "{% translate "general.more" %}" ? "{% translate "general.less" %}" : "{% translate "general.more" %}";
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
                 })
             });
 
@@ -276,48 +265,26 @@
                 $('#facet-modal').toggleClass("is-active");
             });
 
-            var lang = "{{ locale }}";
+            var lang = "lt-LT";
             var currentUrl = new URL(window.location);
             var searchParams = new URLSearchParams(currentUrl.search);
             var selectedDate = null;
-            var datasetTitles = {{ datasetSuggestions }};
+            var datasetTitles = "datasetSuggestions";
 
-            $('.datepicker-from').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_from', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
+            $('.date_from').change(function() {
+                var date = $('.date_from').val();
+                if (date != null) {
+                    searchParams.set('date_from', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
                 }
             });
-            $('.datepicker-to').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_to', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
+            $('.date_to').change(function() {
+                var date = $('.date_to').val();
+                if (date != null) {
+                    searchParams.set('date_to', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
                 }
             });
 

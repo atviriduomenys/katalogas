@@ -3,7 +3,8 @@ from crispy_forms.layout import Div, Field, Submit, Layout
 from django import forms
 from .models import Dataset
 from django.utils.translation import gettext_lazy as _
-
+from django.forms import Form, CharField, DateTimeField, IntegerField
+from vitrina.fields import MultipleValueField, MultipleIntField
 
 class NewDatasetForm(forms.ModelForm):
     class Meta:
@@ -43,3 +44,15 @@ class NewDatasetForm(forms.ModelForm):
                                       css_class='control'), css_class='field'))
             self.helper.layout.insert(-1, Div(Div(Field('representative_id', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
                                       css_class='control'), css_class='field'))
+
+
+class DatasetFilterForm(Form):
+    q = CharField(required=False)
+    date_from = DateTimeField(required=False)
+    date_to = DateTimeField(required=False)
+    status = CharField(required=False)
+    tags = MultipleValueField(required=False)
+    category = MultipleIntField(required=False)
+    organization = IntegerField(required=False)
+    frequency = IntegerField(required=False)
+    

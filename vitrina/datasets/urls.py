@@ -12,7 +12,7 @@ urlpatterns = [
     path('datasets/<str:org_kind>/<slug:slug>/add/',
          DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<str:org_kind>/<slug:org_slug>/<slug:slug>/change/',
-         DatasetUpdateView.as_view(), name='dataset-change')
+         DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/',
          DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/download',

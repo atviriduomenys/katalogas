@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
@@ -12,6 +13,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
 from slugify import slugify
 
+from vitrina import settings
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.models import Dataset
 from django import forms
@@ -216,47 +218,65 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(CreateView):
+class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    login_url = settings.LOGIN_URL
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
     form_class = NewDatasetForm
 
+    def has_permission(self):
+        if self.request.user.organization:
+            return self.request.user.organization.slug == self.kwargs['slug']
+        else:
+            return False
+
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated and\
-                request.user.organization is not None and\
-                request.user.organization.slug == self.kwargs['slug']:
+        if self.has_permission():
             return super(DatasetCreateView, self).get(request, *args, **kwargs)
         else:
-            return redirect('organization-detail', self.kwargs['org_kind'], self.kwargs['slug'])
+            org = get_object_or_404(Organization, kind=self.kwargs['org_kind'], slug=self.kwargs['slug'])
+            url = org.get_absolute_url
+            return redirect(url)
 
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
-        object.save()
-        return super(DatasetCreateView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})
 
 
-class DatasetUpdateView(UpdateView):
+class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    login_url = settings.LOGIN_URL
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
     form_class = NewDatasetForm
 
+    def has_permission(self):
+        dataset = Dataset.objects.filter(slug=self.kwargs['slug'])
+        if self.request.user.organization:
+            if self.request.user.organization.slug == self.kwargs['org_slug'] or dataset.manager == self.request.user:
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated and Dataset.objects.filter(manager=self.request.user).exists():
+        if self.has_permission():
             return super(DatasetUpdateView, self).get(request, *args, **kwargs)
         else:
-            return redirect('dataset-detail', self.kwargs['org_slug'])
+            dataset = get_object_or_404(Dataset, slug=self.kwargs['org_slug'])
+            url = dataset.get_absolute_url()
+            return redirect(url)
 
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
-        object.save()
-        return super(DatasetUpdateView, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})

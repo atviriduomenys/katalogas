@@ -373,10 +373,18 @@ class DatasetStructure(models.Model):
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     standardized = models.BooleanField(blank=True, null=True)
+    file = models.FileField(upload_to="files/datasets/%Y/%m/%d/", blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'dataset_structure'
+
+    def get_absolute_url(self):
+        return reverse('dataset-structure', kwargs={
+            'organization_kind': self.dataset.organization.kind if self.dataset and self.dataset.organization else None,
+            'organization_slug': self.dataset.organization.slug if self.dataset and self.dataset.organization else None,
+            'dataset_slug': self.dataset.slug if self.dataset else None
+
+        })
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

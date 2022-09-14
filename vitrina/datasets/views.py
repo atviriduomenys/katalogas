@@ -1,6 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+import csv
+
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView
+from django.views import View
+from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 
@@ -8,7 +12,7 @@ from vitrina.datasets.models import Dataset, DatasetMember
 from vitrina.orgs.models import Organization, Representative
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
     get_category_counts
 from vitrina.orgs.models import Organization
@@ -195,3 +199,33 @@ class DatasetMembersView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
         return dataset.dataset_member_set().all()
+
+class DatasetStructureView(TemplateView):
+    template_name = 'vitrina/datasets/structure.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dataset_slug = kwargs.get('dataset_slug')
+        structure = get_object_or_404(DatasetStructure, dataset__slug=dataset_slug)
+        data = []
+        can_show = True
+        if structure and structure.file:
+            try:
+                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=";"))
+            except BaseException:
+                can_show = False
+        context['can_show'] = can_show
+        context['structure_data'] = data
+        return context
+
+
+class DatasetStructureDownloadView(View):
+    def get(self, request, organization_kind, organization_slug, dataset_slug):
+        structure = get_object_or_404(
+            DatasetStructure,
+            dataset__organization__kind=organization_kind,
+            dataset__organization__slug=organization_slug,
+            dataset__slug=dataset_slug,
+        )
+        response = FileResponse(open(structure.file.path, 'rb'))
+        return response

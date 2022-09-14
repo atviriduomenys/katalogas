@@ -12,8 +12,7 @@ from vitrina.users.models import User
 
 @pytest.mark.django_db
 def test_dataset_members_view_no_login(app: DjangoTestApp):
-    org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
+    dataset = DatasetFactory()
     resp = app.get(dataset.get_members_url())
     assert "/login/" in resp.location
 
@@ -22,8 +21,7 @@ def test_dataset_members_view_no_login(app: DjangoTestApp):
 def test_dataset_members_view_bad_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
+    dataset = DatasetFactory()
     resp = app.get(dataset.get_members_url(), expect_errors=True)
     assert resp.status_code == 403
 

@@ -1,6 +1,6 @@
 import csv
 
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import ListView, TemplateView
@@ -18,6 +18,8 @@ from vitrina.classifiers.models import Frequency
 from django.http import HttpResponseBadRequest
 
 from django.utils.translation import gettext_lazy as _
+
+from vitrina.resources.models import DatasetDistribution
 
 
 class DatasetListView(ListView):
@@ -175,10 +177,41 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'rating': 3.0,
-            'status': dataset.get_status_display()
+            'status': dataset.get_status_display(),
+            'resources': dataset.datasetdistribution_set.all(),
         }
         context_data.update(extra_context_data)
         return context_data
+
+
+class DatasetDistributionDownloadView(View):
+    def get(self, request, organization_kind, organization_slug, dataset_slug, pk, filename):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__organization__kind=organization_kind,
+            dataset__organization__slug=organization_slug,
+            dataset__slug=dataset_slug,
+            pk=pk,
+            filename__icontains=filename
+        )
+        response = FileResponse(open(distribution.filename.path, 'rb'))
+        return response
+
+
+class DatasetDistributionPreviewView(View):
+    def get(self, request, dataset_id, distribution_id):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__pk=dataset_id,
+            pk=distribution_id
+        )
+        data = []
+        if distribution.filename:
+            try:
+                data = list(csv.reader(open(distribution.filename.path, encoding='utf-8'), delimiter=";"))
+            except BaseException:
+                pass
+        return JsonResponse({'data': data})
 
 
 class DatasetStructureView(TemplateView):

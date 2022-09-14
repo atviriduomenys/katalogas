@@ -1,0 +1,88 @@
+{% load i18n %}
+
+<table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+    <thead>
+    <tr>
+        <th></th>
+        <th class="has-text-centered">{% translate "Versija" %}</th>
+        <th>{% translate "Teritorija" %}</th>
+        <th>{% translate "Pavadinimas" %}</th>
+        <th>{% translate "Periodo pradžia" %}</th>
+        <th>{% translate "Periodo pabaiga" %}</th>
+        <th>{% translate "Dydis" %}</th>
+        <th class="has-text-centered">{% translate "Formatas" %}</th>
+        <th>{% translate "Publikuota" %}</th>
+        <th>{% translate "Atnaujinta" %}</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in resources %}
+        <tr>
+            <td><span class="icon icon-is-small">
+                {% if r.type == "URL" %}
+                    <i class="fas fa-lg fa-file-export"></i>
+                {% else %}
+                    <i class="fas fa-lg fa-file-code"></i>
+                {% endif %}
+            </span></td>
+            <td class="has-text-centered">{{ r.distribution_version }}</td>
+            <td>{{ r.region }}</td>
+            <td class="has-fixed-width-130">{{ r.title }}</td>
+            <td><b>{{ r.period_start }}</b></td>
+            <td><b>{{ r.period_end }}</b></td>
+            <td>{{ r.size }}</td>
+            <td class="has-text-centered">
+                {% if r.type == "URL" %}
+                    {{ r.url_format }}
+                {% else %}
+                    {% if not r.filename %}
+                        {{ r.mime_type }}
+                    {% elif r.url_format %}
+                        {{ r.url_format }}
+                    {% else %}
+                        {{ r.extension }}
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td>{{ r.created|date:"Y-m-d" }}</td>
+            <td>{{ r.modified|date:"Y-m-d" }}</td>
+            {% if r.type == "URL" %}
+                <td>
+                    <a class="button is-primary is-small is-pulled-right" href="{{ r.url }}"
+                       target="_blank">{% translate "Atidaryti" %}</a>
+                </td>
+            {% else %}
+                <td>
+                    <div style="display:inline-flex; gap: 2px">
+                    {% if r.extension == "CSV" or r.extension == "XLSX" %}
+                        {% if r.filename.file.size > 0 %}
+                            <a class="button is-link is-small preview-button"
+                               id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
+                        {% endif %}
+                    {% endif %}
+                    <a href="{{ r.get_download_url }}"
+                       class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
+                    </div>
+                </td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">{% translate "Peržiūrėti" %}</p>
+            <button class="modal-button-close delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body" id="preview-content">
+            <table class="table is-striped is-fullwidth" id="info-table">
+                <tbody id="info-table-body"></tbody>
+            </table>
+        </section>
+    </div>
+</div>
+

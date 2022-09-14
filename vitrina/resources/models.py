@@ -1,4 +1,7 @@
+import os
+
 from django.db import models
+from django.urls import reverse
 
 from vitrina.datasets.models import Dataset
 
@@ -57,7 +60,7 @@ class DatasetDistribution(models.Model):
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     url_format = models.ForeignKey('Format', models.DO_NOTHING, blank=True, null=True)
 
-    filename = models.CharField(max_length=255, blank=True, null=True)
+    filename = models.FileField(upload_to='data/', max_length=255, blank=True, null=True)
     issued = models.CharField(max_length=255, blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
@@ -66,5 +69,23 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'dataset_distribution'
+
+    def extension(self):
+        if self.filename:
+            name, extension = os.path.splitext(self.filename.name)
+            return extension.replace(".", "").upper()
+        return ""
+
+    def filename_without_path(self):
+        return os.path.basename(self.filename.name) if self.filename else ""
+
+    def get_download_url(self):
+        return reverse('dataset-distribution-download', kwargs={
+            'organization_kind': self.dataset.organization.kind if self.dataset and self.dataset.organization else None,
+            'organization_slug': self.dataset.organization.slug if self.dataset and self.dataset.organization else None,
+            'dataset_slug': self.dataset.slug if self.dataset else None,
+            'pk': self.pk,
+            'filename': self.filename_without_path()
+        })
+

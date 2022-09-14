@@ -124,7 +124,11 @@ class Dataset(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('dataset-detail', kwargs={'slug': self.slug})
+        return reverse('dataset-detail', kwargs={
+            'organization_kind': self.organization.kind if self.organization else None,
+            'organization_slug': self.organization.slug if self.organization else None,
+            'slug': self.slug
+        })
 
     def get_tag_list(self):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []

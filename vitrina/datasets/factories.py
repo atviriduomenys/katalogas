@@ -1,8 +1,8 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.datasets.models import Dataset, DatasetMember
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets.models import Dataset, DatasetMember, DatasetStructure
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -24,3 +24,12 @@ class DatasetMemberFactory(DjangoModelFactory):
 
     role = DatasetMember.CREATOR
     contact = False
+
+
+class DatasetStructureFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetStructure
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('catch_phrase')
+    version = 1

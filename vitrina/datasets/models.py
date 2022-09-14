@@ -130,31 +130,27 @@ class Dataset(models.Model):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
     def get_members_url(self):
-        return reverse('dataset-members', kwargs={'org_kind': str(self.organization.kind) if self.organization else None,
-                                                  'org_slug': self.organization.slug if self.organization else None,
+        return reverse('dataset-members', kwargs={'org_kind': self.organization.kind,
+                                                  'org_slug': self.organization.slug,
                                                   'slug': self.slug})
-
-    def dataset_member_set(self):
-        members = DatasetMember.objects.filter(dataset=self)
-        return members
 
 
 class DatasetMember(models.Model):
-    CREATOR = 'dct:creator'
-    CONTRIBUTOR = 'dct:contributor'
-    PUBLISHER = 'dct:publisher'
+    CREATOR = 'creator'
+    CONTRIBUTOR = 'contributor'
+    PUBLISHER = 'publisher'
 
     ROLE_CHOICES = (
         (CREATOR, _('Creator')),
         (CONTRIBUTOR, _('Contributor')),
         (PUBLISHER, _('Publisher')),
     )
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True)
+    user = models.ForeignKey(User, models.CASCADE)
     organization = models.ForeignKey(Organization, models.CASCADE)
     dataset = models.ForeignKey(Dataset, models.CASCADE)
     role = models.CharField(max_length=255, choices=ROLE_CHOICES)
     created = models.DateTimeField(null=True, auto_now_add=True)
-    contact = models.BooleanField(default=True)
+    contact = models.BooleanField(default=False)
 
 
 # TODO: To be merged into Dataset:

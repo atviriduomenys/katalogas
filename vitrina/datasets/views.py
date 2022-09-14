@@ -1,4 +1,4 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 import csv
 
 from django.shortcuts import get_object_or_404
@@ -6,6 +6,7 @@ from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 
+from vitrina import settings
 from vitrina.orgs.models import Organization, Representative
 from django.views import View
 from vitrina.datasets.forms import DatasetFilterForm
@@ -207,18 +208,18 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetMembersView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    login_url = '/login/'
+class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    login_url = settings.LOGIN_URL
     model = DatasetMember
     template_name = 'vitrina/datasets/members_list.html'
     context_object_name = 'dataset_members'
     paginate_by = 20
 
-    def test_func(self):
+    def has_permission(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
         return Representative.objects.filter(organization_id=dataset.organization.id,
                                              email=self.request.user.email).exists()
 
     def get_queryset(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
-        return dataset.dataset_member_set().all()
+        return dataset.datasetmember_set.all()

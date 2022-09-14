@@ -9,7 +9,7 @@ urlpatterns = [
     # @GetMapping("/dataset/{slug}")
     path('dataset/<slug:slug>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<str:org_kind>/<slug:org_slug>/<slug:slug>/members/',
-         DatasetMembersView.as_view(), name='dataset-members')
+         DatasetMembersView.as_view(), name='dataset-members'),
     path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/',
          DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/download',

@@ -32,4 +32,5 @@ class DatasetStructureFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('catch_phrase')
+    file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1

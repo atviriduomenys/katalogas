@@ -28,9 +28,6 @@
                     <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
                 </div>
                 <div class="column">
-                    <p class="is-pulled-right">{% translate "Duomenų rinkinio peržiūros" %}: <b>{{ views }}</b></p>
-                </div>
-                <div class="column">
                     {% get_hit_count for dataset as total_hits %}
                     <p class="is-pulled-right">{% translate "Duomenų rinkinio peržiūros" %}:
                         <b id="total_hits">{{ total_hits }}</b>

@@ -5,6 +5,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
+from vitrina.orgs.factories import OrganizationFactory
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -24,9 +25,9 @@ class DatasetFactory(DjangoModelFactory):
 class DatasetMemberFactory(DjangoModelFactory):
     class Meta:
         model = DatasetMember
-        django_get_or_create = ('role',)
+        django_get_or_create = ('role', )
 
-    role = factory.Faker('word')
+    role = DatasetMember.CREATOR
     contact = False
 
 

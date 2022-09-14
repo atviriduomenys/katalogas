@@ -32,9 +32,8 @@ def test_dataset_members_view_bad_login(app: DjangoTestApp):
 def test_dataset_members_view_without_members(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
-    RepresentativeFactory(organization_id=dataset.organization.id, email=user.email)
+    dataset = DatasetFactory()
+    RepresentativeFactory(organization_id=dataset.organization.pk, email=user.email)
     resp = app.get(dataset.get_members_url())
     assert resp.status_code == 200
     assert list(resp.context['object_list']) == []
@@ -44,11 +43,12 @@ def test_dataset_members_view_without_members(app: DjangoTestApp):
 def test_dataset_members_view_with_members(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
-    RepresentativeFactory(organization_id=dataset.organization.id, email=user.email)
-    member1 = DatasetMemberFactory(organization_id=org.id, role=DatasetMember.CREATOR, dataset=dataset, user=user)
-    member2 = DatasetMemberFactory(organization_id=org.id, role=DatasetMember.PUBLISHER, dataset=dataset, user=user)
+    dataset = DatasetFactory()
+    RepresentativeFactory(organization_id=dataset.organization.pk, email=user.email)
+    member1 = DatasetMemberFactory(organization_id=dataset.organization.pk,
+                                   role=DatasetMember.CREATOR, dataset=dataset, user=user)
+    member2 = DatasetMemberFactory(organization_id=dataset.organization.pk,
+                                   role=DatasetMember.PUBLISHER, dataset=dataset, user=user)
 
     resp = app.get(dataset.get_members_url())
     assert resp.status_code == 200

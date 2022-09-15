@@ -192,7 +192,6 @@ class DatasetDetailView(DetailView):
 
 
 class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
-    login_url = settings.LOGIN_URL
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -205,24 +204,15 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
             return False
 
     def get(self, request, *args, **kwargs):
-        if self.has_permission():
-            return super(DatasetCreateView, self).get(request, *args, **kwargs)
-        else:
-            org = get_object_or_404(Organization, kind=self.kwargs['org_kind'], slug=self.kwargs['slug'])
-            url = org.get_absolute_url
-            return redirect(url)
+        return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
         return super().form_valid(form)
 
-    def get_success_url(self):
-        return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})
-
 
 class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-    login_url = settings.LOGIN_URL
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -238,21 +228,14 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         else:
             return False
 
+
     def get(self, request, *args, **kwargs):
-        if self.has_permission():
-            return super(DatasetUpdateView, self).get(request, *args, **kwargs)
-        else:
-            dataset = get_object_or_404(Dataset, slug=self.kwargs['org_slug'])
-            url = dataset.get_absolute_url()
-            return redirect(url)
+        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
         return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse_lazy('dataset-detail', kwargs={'slug': self.object.slug})
 
 
 class DatasetStructureView(TemplateView):

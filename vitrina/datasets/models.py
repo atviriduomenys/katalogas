@@ -108,7 +108,7 @@ class Dataset(models.Model):
     financing_priorities = models.TextField(blank=True, null=True)
     financing_received = models.BigIntegerField(blank=True, null=True)
     financing_required = models.BigIntegerField(blank=True, null=True)
-    will_be_financed = models.BooleanField(blank=True, null=True)
+    will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
 
     objects = models.Manager()

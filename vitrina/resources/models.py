@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from django.db import models
 from django.urls import reverse
@@ -72,20 +73,34 @@ class DatasetDistribution(models.Model):
         db_table = 'dataset_distribution'
 
     def extension(self):
-        if self.filename:
-            name, extension = os.path.splitext(self.filename.name)
-            return extension.replace(".", "").upper()
-        return ""
+        return pathlib.Path(self.filename.name).suffix.lstrip('.').upper() if self.filename else ""
 
     def filename_without_path(self):
-        return os.path.basename(self.filename.name) if self.filename else ""
+        return pathlib.Path(self.filename.name).name if self.filename else ""
+
+    def is_external_url(self):
+        return self.type == "URL"
 
     def get_download_url(self):
+        if self.is_external_url():
+            return self.url
         return reverse('dataset-distribution-download', kwargs={
-            'organization_kind': self.dataset.organization.kind if self.dataset and self.dataset.organization else None,
-            'organization_slug': self.dataset.organization.slug if self.dataset and self.dataset.organization else None,
-            'dataset_slug': self.dataset.slug if self.dataset else None,
-            'pk': self.pk,
+            'dataset_id': self.dataset.pk,
+            'distribution_id': self.pk,
             'filename': self.filename_without_path()
         })
+
+    def get_format(self):
+        if self.is_external_url():
+            return self.url_format
+        else:
+            if not self.filename:
+                return self.mime_type
+            elif self.url_format:
+                return self.url_format
+            else:
+                return self.extension()
+
+    def is_previewable(self):
+        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.filename.file.size > 0
 

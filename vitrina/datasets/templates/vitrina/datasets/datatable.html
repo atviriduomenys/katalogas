@@ -20,7 +20,7 @@
     {% for r in resources %}
         <tr>
             <td><span class="icon icon-is-small">
-                {% if r.type == "URL" %}
+                {% if r.is_external_url %}
                     <i class="fas fa-lg fa-file-export"></i>
                 {% else %}
                     <i class="fas fa-lg fa-file-code"></i>
@@ -33,34 +33,22 @@
             <td><b>{{ r.period_end }}</b></td>
             <td>{{ r.size }}</td>
             <td class="has-text-centered">
-                {% if r.type == "URL" %}
-                    {{ r.url_format }}
-                {% else %}
-                    {% if not r.filename %}
-                        {{ r.mime_type }}
-                    {% elif r.url_format %}
-                        {{ r.url_format }}
-                    {% else %}
-                        {{ r.extension }}
-                    {% endif %}
-                {% endif %}
+                {{ r.get_format }}
             </td>
             <td>{{ r.created|date:"Y-m-d" }}</td>
             <td>{{ r.modified|date:"Y-m-d" }}</td>
-            {% if r.type == "URL" %}
+            {% if r.is_external_url %}
                 <td>
-                    <a class="button is-primary is-small is-pulled-right" href="{{ r.url }}"
+                    <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"
                        target="_blank">{% translate "Atidaryti" %}</a>
                 </td>
             {% else %}
                 <td>
                     <div style="display:inline-flex; gap: 2px">
-                    {% if r.extension == "CSV" or r.extension == "XLSX" %}
-                        {% if r.filename.file.size > 0 %}
+                        {% if r.is_previewable %}
                             <a class="button is-link is-small preview-button"
                                id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
                         {% endif %}
-                    {% endif %}
                     <a href="{{ r.get_download_url }}"
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>

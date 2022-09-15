@@ -14,11 +14,9 @@ from vitrina.resources.factories import DatasetDistributionFactory
 
 @pytest.fixture
 def dataset_detail_data():
-    organization = OrganizationFactory()
-    dataset = DatasetFactory(status="HAS_DATA", organization=organization)
-    dataset_distribution = DatasetDistributionFactory(dataset=dataset)
+    dataset_distribution = DatasetDistributionFactory()
     return {
-        'dataset': dataset,
+        'dataset': dataset_distribution.dataset,
         'dataset_distribution': dataset_distribution
     }
 
@@ -61,10 +59,8 @@ def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset_detail_da
 @pytest.mark.django_db
 def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(reverse('dataset-distribution-download', kwargs={
-        'organization_kind': "doesntexist",
-        'organization_slug': "doesntexist",
-        'dataset_slug': "doesntexist",
-        'pk': 1000,
+        'dataset_id': 1000,
+        'distribution_id': 1000,
         'filename': "doesntexist",
     }), expect_errors=True)
     assert resp.status_code == 404
@@ -146,7 +142,7 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    dataset1 = DatasetFactory(status=Dataset.HAS_DATA, slug="ds1")
+    dataset1 = DatasetFactory(status=Dataset.INVENTORED, slug="ds1")
     dataset2 = DatasetFactory(slug="ds2")
     DatasetStructureFactory(dataset=dataset2)
     return [dataset1, dataset2]
@@ -161,9 +157,9 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
 
 @pytest.mark.django_db
 def test_status_filter_has_data(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.HAS_DATA))
+    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.INVENTORED))
     assert list(resp.context['object_list']) == [status_filter_data[0]]
-    assert resp.context['selected_status'] == Dataset.HAS_DATA
+    assert resp.context['selected_status'] == Dataset.INVENTORED
 
 
 @pytest.mark.django_db

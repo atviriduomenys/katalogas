@@ -1,4 +1,5 @@
 import csv
+import itertools
 
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -185,13 +186,11 @@ class DatasetDetailView(DetailView):
 
 
 class DatasetDistributionDownloadView(View):
-    def get(self, request, organization_kind, organization_slug, dataset_slug, pk, filename):
+    def get(self, request, dataset_id, distribution_id, filename):
         distribution = get_object_or_404(
             DatasetDistribution,
-            dataset__organization__kind=organization_kind,
-            dataset__organization__slug=organization_slug,
-            dataset__slug=dataset_slug,
-            pk=pk,
+            dataset__pk=dataset_id,
+            pk=distribution_id,
             filename__icontains=filename
         )
         response = FileResponse(open(distribution.filename.path, 'rb'))
@@ -206,11 +205,10 @@ class DatasetDistributionPreviewView(View):
             pk=distribution_id
         )
         data = []
-        if distribution.filename:
-            try:
-                data = list(csv.reader(open(distribution.filename.path, encoding='utf-8'), delimiter=";"))
-            except BaseException:
-                pass
+        if distribution.is_previewable():
+            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = itertools.islice(rows, 100)
+            data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 

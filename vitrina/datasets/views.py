@@ -203,6 +203,13 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         else:
             return False
 
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            org = get_object_or_404(Organization, kind=self.kwargs['org_kind'], slug=self.kwargs['slug'])
+            return redirect(org)
+
     def get(self, request, *args, **kwargs):
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
@@ -219,8 +226,8 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     form_class = NewDatasetForm
 
     def has_permission(self):
-        dataset = Dataset.objects.filter(slug=self.kwargs['slug'])
         if self.request.user.organization:
+            dataset = Dataset.objects.filter(slug=self.kwargs['slug'])
             if self.request.user.organization.slug == self.kwargs['org_slug'] or dataset.manager == self.request.user:
                 return True
             else:
@@ -228,6 +235,12 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         else:
             return False
 
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            dataset = get_object_or_404(Dataset, slug=self.kwargs['slug'])
+            return redirect(dataset)
 
     def get(self, request, *args, **kwargs):
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)

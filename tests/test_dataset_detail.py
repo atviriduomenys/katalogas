@@ -1,5 +1,4 @@
 import pytest
-from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
@@ -13,7 +12,7 @@ def dataset():
 
 @pytest.mark.django_db
 def test_dataset_detail_without_tags(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
+    resp = app.get(dataset.get_absolute_url())
     assert resp.context['tags'] == []
 
 
@@ -21,19 +20,19 @@ def test_dataset_detail_without_tags(app: DjangoTestApp, dataset):
 def test_dataset_detail_tags(app: DjangoTestApp, dataset):
     dataset.tags = "tag-1, tag-2, tag-3"
     dataset.save()
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
+    resp = app.get(dataset.get_absolute_url())
     assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
 
 
 @pytest.mark.django_db
 def test_dataset_detail_status(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
+    resp = app.get(dataset.get_absolute_url())
     assert resp.context['status'] == "Atvertas"
 
 
 @pytest.mark.django_db
 def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset):
-    resp = app.get(reverse('dataset-detail', args=[dataset.slug]))
+    resp = app.get(dataset.get_absolute_url())
 
     # hardcoded values, will need to change with later tasks
     assert resp.context['subscription'] == []

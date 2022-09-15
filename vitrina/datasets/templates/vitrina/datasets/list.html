@@ -86,7 +86,7 @@
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
                               {% url 'dataset-list' %}
                            {% else %}
-                               {% url 'organization-datasets' kind=request.resolver_match.kwargs.kind slug=request.resolver_match.kwargs.slug %}
+                               {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
                            {% endif %}"
                   method="get">
                 <div class="control is-expanded">

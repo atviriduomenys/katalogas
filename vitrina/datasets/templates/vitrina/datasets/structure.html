@@ -10,12 +10,12 @@
                 <p class="has-margin-bottom">
                     {% translate "Atsiprašome, šio duomenų rinkinio struktūra negali būti atvaizduota, tačiau galite atsisiųsti duomenų teikėjo pateiktą duomenų struktūros aprašo failą." %}
                 </p>
-                <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.organization_kind view.kwargs.organization_slug view.kwargs.dataset_slug %}">
+                <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
                     {% translate "Atsisiųsti" %}
                 </a>
             {% else %}
                 <a class="button is-primary has-margin-bottom"
-                   href="{% url 'dataset-structure-download' view.kwargs.organization_kind view.kwargs.organization_slug view.kwargs.dataset_slug %}">
+                   href="{% url 'dataset-structure-download' view.kwargs.pk %}">
                     {% translate "Atsisiųsti" %}
                 </a>
                 <div class="table-container">

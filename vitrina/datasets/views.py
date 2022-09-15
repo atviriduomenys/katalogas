@@ -33,8 +33,8 @@ class DatasetListView(ListView):
 
     def get_queryset(self):
         datasets = Dataset.public.order_by('-published')
-        if self.kwargs.get('slug') and self.request.resolver_match.url_name == 'organization-datasets':
-            organization = get_object_or_404(Organization, slug=self.kwargs['slug'])
+        if self.kwargs.get('pk') and self.request.resolver_match.url_name == 'organization-datasets':
+            organization = get_object_or_404(Organization, pk=self.kwargs['pk'])
             datasets = datasets.filter(organization=organization)
 
         filter_form = DatasetFilterForm(self.request.GET)
@@ -186,8 +186,8 @@ class DatasetStructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dataset_slug = kwargs.get('dataset_slug')
-        structure = get_object_or_404(DatasetStructure, dataset__slug=dataset_slug)
+        dataset_id = kwargs.get('pk')
+        structure = get_object_or_404(DatasetStructure, dataset__pk=dataset_id)
         data = []
         can_show = True
         if structure and structure.file:
@@ -201,12 +201,7 @@ class DatasetStructureView(TemplateView):
 
 
 class DatasetStructureDownloadView(View):
-    def get(self, request, organization_kind, organization_slug, dataset_slug):
-        structure = get_object_or_404(
-            DatasetStructure,
-            dataset__organization__kind=organization_kind,
-            dataset__organization__slug=organization_slug,
-            dataset__slug=dataset_slug,
-        )
+    def get(self, request, pk):
+        structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
         response = FileResponse(open(structure.file.path, 'rb'))
         return response

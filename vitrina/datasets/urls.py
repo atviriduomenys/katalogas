@@ -10,7 +10,7 @@ urlpatterns = [
     # @GetMapping("/dataset/{slug}")
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
-    path('datasets/<int:pk>/structure/download', DatasetStructureDownloadView.as_view(),
+    path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
          name='dataset-structure-download'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

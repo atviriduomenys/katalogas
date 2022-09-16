@@ -381,5 +381,5 @@ def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_d
 
 @pytest.mark.django_db
 def test_download_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download")
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'

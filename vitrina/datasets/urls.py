@@ -12,7 +12,7 @@ urlpatterns = [
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),
-    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>',
+    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>/',
          DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
     path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/',
          DatasetStructureView.as_view(), name='dataset-structure'),

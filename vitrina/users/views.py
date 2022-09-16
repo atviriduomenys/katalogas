@@ -16,7 +16,7 @@ class LoginView(BaseLoginView):
     form_class = LoginForm
 
     def get_success_url(self):
-        if self.request.user.organization:
+        if self.request.user.organization and not self.request.GET.get('next'):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 

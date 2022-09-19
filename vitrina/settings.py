@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'djangocms_blog',
     'hitcount',
     'crispy_forms',
+    'sorl.thumbnail',
 
     'vitrina',
     'vitrina.cms',

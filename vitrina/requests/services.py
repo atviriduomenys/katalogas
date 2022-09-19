@@ -10,7 +10,7 @@ def get_structure(request: Request) -> List[Dict[str, Any]]:
     structure = []
     for struct in structure_data:
         data = struct.split(",")
-        if data:
+        if data and len(data) == 4:
             structure.append({
                 "data_title": data[0],
                 "dictionary_title": data[1],

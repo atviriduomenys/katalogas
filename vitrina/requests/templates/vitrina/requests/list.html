@@ -9,25 +9,6 @@
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter">
-            <article class="panel">
-                <p class="panel-heading">
-                    {% translate "Poreikiai ir pasiūlymai" %}
-                </p>
-                <nav class="category-panel">
-                    <a class="panel-block is-active" href="{% url 'request-list' %}">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Gauti poreikiai duomenų rinkiniams" %}
-                    </a>
-                    <a class="panel-block" href="/requests/suggest">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Pateikti pasiūlymą / pastabą" %}
-                    </a>
-                </nav>
-            </article>
             <div class="content">
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
                 <a href="{% url 'request-create' %}"
@@ -39,20 +20,20 @@
                     </p>
                     <div class="field">
                         <input
+                                type="date"
                                 class="input datepicker-from"
                                 name="date_from"
                                 id="from"
                                 value="{{ dateFrom }}"
-                                placeholder="{% translate 'Data nuo' %}"
                         >
                     </div>
                     <div class="field">
                         <input
+                                type="date"
                                 class="input datepicker-to"
                                 name="date_to"
                                 id="to"
                                 value="{{ dateTo }}"
-                                placeholder="{% translate 'Data iki' %}"
                         >
                     </div>
                 </nav>
@@ -110,7 +91,7 @@
                                         {% if i.modified %}
                                             <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"Y-m-d H:i:s" }}</p>
                                         {% endif %}
-                                        {% if i.comment_count != 0 %}
+                                        {% if i.comment_count %}
                                             <p>{% translate "Komentarai" %}: {{ i.comment_count }}</p>
                                         {% endif %}
                                         {% if i.like_count %}
@@ -128,66 +109,4 @@
             <br>
         </div>
     </div>
-{% endblock %}
-{% block scripts %}
-    <script type="text/javascript">
-        function HideMessage(){
-            var notificationBar = document.getElementById('top-bar');
-            notificationBar.classList.add('is-hidden');
-        }
-        $(function () {
-            $('.show-mobile-facets').click(function () {
-                $('#facet-modal').toggleClass("is-hidden");
-                $('#facet-modal').toggleClass("is-active");
-            });
-            $('.modal-close').click(function () {
-                $('#facet-modal').toggleClass("is-hidden");
-                $('#facet-modal').toggleClass("is-active");
-            });
-
-            var lang = "{{ locale }}";
-            var currentUrl = new URL(window.location);
-            var searchParams = new URLSearchParams(currentUrl.search);
-            var selectedDate = null;
-
-            $('.datepicker-from').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_from', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
-                }
-            });
-            $('.datepicker-to').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_to', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
-                }
-            });
-        });
-    </script>
 {% endblock %}

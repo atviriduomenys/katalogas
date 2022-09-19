@@ -8,22 +8,36 @@
 
 	{% include 'vitrina/orgs/tabs.html' %}
 
-    <table class="table">
-        <tbody>
-        <tr>
-            <th>{% translate "Vardas" %}</th>
-            <th>{% translate "Pavardė" %}</th>
-            <th>{% translate "El. paštas" %}</th>
-            <th>{% translate "Telefonas" %}</th>
-        </tr>
-        {% for m in members %}
-            <tr>
-                <td>{{ m.first_name }}</td>
-                <td>{{ m.last_name }}</td>
-                <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
-                <td>{{ m.phone }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="columns">
+        <div class="column is-three-quarters">
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
+                {% translate "Pridėti narį" %}
+            </a>
+            <table class="table">
+                <tbody>
+                <tr>
+                    <th>{% translate "Vardas" %}</th>
+                    <th>{% translate "Pavardė" %}</th>
+                    <th>{% translate "El. paštas" %}</th>
+                    <th>{% translate "Telefonas" %}</th>
+                    <th></th>
+                </tr>
+                {% for m in members %}
+                    <tr>
+                        <td>{{ m.first_name }}</td>
+                        <td>{{ m.last_name }}</td>
+                        <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+                        <td>{{ m.phone }}</td>
+                        <td>
+                            <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary">
+                                {% translate "Redaguoti" %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

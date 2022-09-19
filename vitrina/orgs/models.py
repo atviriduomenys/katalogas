@@ -82,9 +82,16 @@ class Organization(MP_Node):
 
 
 class Representative(models.Model):
+    COORDINATOR = 'coordinator'
+    MANAGER = 'manager'
+    ROLES = {
+        (COORDINATOR, _("Koordinatorius")),
+        (MANAGER, _("Tvarkytojas"))
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     email = models.CharField(max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
@@ -92,9 +99,9 @@ class Representative(models.Model):
     phone = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
+    role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'representative'
 
 

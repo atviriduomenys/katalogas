@@ -6,6 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView
 
+from vitrina.orgs.models import Representative
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 
 from django.utils.translation import gettext_lazy as _
@@ -28,7 +29,16 @@ class RegisterView(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            if Representative.objects.filter(email=user.email).exists():
+                representative = Representative.objects.filter(email=user.email).first()
+                user.organization = representative.organization
+                user.role = representative.role
+
+                representative.first_name = user.first_name
+                representative.last_name = user.last_name
+                representative.save()
+            user.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})

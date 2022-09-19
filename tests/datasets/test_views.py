@@ -375,15 +375,11 @@ def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data)
 
 @pytest.mark.django_db
 def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(reverse('dataset-structure-download', kwargs={
-        'organization_kind': "doesntexist",
-        'organization_slug': "doesntexist",
-        'dataset_slug': "doesntexist"
-    }), expect_errors=True)
+    resp = app.get(reverse('dataset-structure-download', kwargs={'pk': 1000}), expect_errors=True)
     assert resp.status_code == 404
 
 
 @pytest.mark.django_db
 def test_download_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download")
+    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'

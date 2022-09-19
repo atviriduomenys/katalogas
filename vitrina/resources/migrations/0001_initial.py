@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'distribution_format',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'format',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_distribution',
-                'managed': True,
+                'managed': False,
             },
         ),
     ]

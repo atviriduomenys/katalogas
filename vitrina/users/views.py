@@ -34,11 +34,14 @@ class RegisterView(CreateView):
                 representative = Representative.objects.filter(email=user.email).first()
                 user.organization = representative.organization
                 user.role = representative.role
+                user.save()
 
+                representative.user = user
                 representative.first_name = user.first_name
                 representative.last_name = user.last_name
                 representative.save()
-            user.save()
+            else:
+                user.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})

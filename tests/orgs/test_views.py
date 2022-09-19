@@ -1,11 +1,15 @@
 import pytest
 from datetime import datetime
+
+from django.core import mail
 from django.urls import reverse
 
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import Representative
+from vitrina.users.models import User
 
 
 @pytest.fixture
@@ -198,3 +202,152 @@ def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
             'count': 1
         },
     ]
+
+
+@pytest.fixture
+def representative_data():
+    manager = User.objects.create_user(
+        email="manager@gmail.com",
+        password="manager123",
+        role="manager",
+        first_name="Manager",
+        last_name="User",
+        phone="861234567"
+    )
+    coordinator = User.objects.create_user(
+        email="coordinator@gmail.com",
+        password="coordinator123",
+        role="coordinator",
+        first_name="Coordinator",
+        last_name="User",
+        phone="869876543"
+    )
+    organization = OrganizationFactory()
+    representative_manager = RepresentativeFactory(role="manager", organization=organization)
+    representative_coordinator = RepresentativeFactory(role="coordinator", organization=organization)
+    return {
+        'manager': manager,
+        'coordinator': coordinator,
+        'organization': organization,
+        'representative_manager': representative_manager,
+        'representative_coordinator': representative_coordinator
+    }
+
+
+@pytest.mark.django_db
+def test_representative_create_without_permission(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['manager'])
+    resp = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    }), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_representative_create_with_existing_user(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "manager@gmail.com"
+    form['role'] = "coordinator"
+    resp = form.submit()
+    representative_data['manager'].refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert Representative.objects.filter(email="manager@gmail.com").count() == 1
+    assert Representative.objects.filter(email="manager@gmail.com").first().first_name == \
+           representative_data['manager'].first_name
+    assert Representative.objects.filter(email="manager@gmail.com").first().last_name == \
+           representative_data['manager'].last_name
+    assert Representative.objects.filter(email="manager@gmail.com").first().phone == \
+           representative_data['manager'].phone
+    assert Representative.objects.filter(email="manager@gmail.com").first().organization == \
+           representative_data['organization']
+    assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
+    assert representative_data['manager'].role == 'coordinator'
+
+
+@pytest.mark.django_db
+def test_representative_create_without_user(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert Representative.objects.filter(email="new@gmail.com").count() == 1
+    assert Representative.objects.filter(email="new@gmail.com").first().organization == \
+           representative_data['organization']
+    assert Representative.objects.filter(email="new@gmail.com").first().user is None
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["new@gmail.com"]
+
+
+@pytest.mark.django_db
+def test_register_after_adding_representative(app: DjangoTestApp, representative_data):
+    new_representative = RepresentativeFactory(
+        email="new@gmail.com",
+        organization=representative_data['organization']
+    )
+    form = app.get(reverse('register')).forms['register-form']
+    form['first_name'] = "New"
+    form['last_name'] = "User"
+    form['email'] = "new@gmail.com"
+    form['password1'] = "test123?"
+    form['password2'] = "test123?"
+    form['agree_to_terms'] = True
+    resp = form.submit()
+    new_representative.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('home')
+    assert User.objects.filter(email='new@gmail.com').count() == 1
+    assert User.objects.filter(email='new@gmail.com').first().role == new_representative.role
+    assert User.objects.filter(email='new@gmail.com').first().organization == new_representative.organization
+    assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
+    assert new_representative.first_name == User.objects.filter(email='new@gmail.com').first().first_name
+    assert new_representative.last_name == User.objects.filter(email='new@gmail.com').first().last_name
+
+
+@pytest.mark.django_db
+def test_representative_update_without_permission(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['manager'])
+    resp = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    }), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-update', kwargs={
+        'organization_id': representative_data['organization'].pk,
+        'pk': representative_data['representative_coordinator'].pk
+    })).forms['representative-form']
+    form['role'] = "manager"
+    resp = form.submit()
+    assert len(resp.context['form'].errors) == 1
+
+
+@pytest.mark.django_db
+def test_representative_update_with_correct_data(app: DjangoTestApp, representative_data):
+    representative_data['representative_manager'].user = representative_data['manager']
+    representative_data['representative_manager'].save()
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-update', kwargs={
+        'organization_id': representative_data['organization'].pk,
+        'pk': representative_data['representative_manager'].pk
+    })).forms['representative-form']
+    form['role'] = "coordinator"
+    resp = form.submit()
+    representative_data['representative_manager'].refresh_from_db()
+    representative_data['manager'].refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert representative_data['representative_manager'].role == "coordinator"
+    assert representative_data['manager'].role == "coordinator"
+

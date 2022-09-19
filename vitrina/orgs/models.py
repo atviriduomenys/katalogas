@@ -100,6 +100,7 @@ class Representative(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
+    user = models.ForeignKey("vitrina_users.User", models.SET_NULL, blank=True, null=True)
 
     class Meta:
         db_table = 'representative'

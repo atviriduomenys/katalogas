@@ -86,6 +86,7 @@ class RepresentativeCreateView(LoginRequiredMixin, PermissionRequiredMixin, Crea
             user.role = self.object.role
             user.save()
 
+            self.object.user = user
             self.object.first_name = user.first_name
             self.object.last_name = user.last_name
             self.object.phone = user.phone
@@ -111,3 +112,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def form_valid(self, form):
+        self.object: Representative = form.save()
+        if self.object.user:
+            user = self.object.user
+            user.role = self.object.role
+            user.save()
+        return HttpResponseRedirect(reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')}))

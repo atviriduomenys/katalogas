@@ -63,7 +63,7 @@
 
                 <p class="dataset-meta-title">{% translate "Organizacija" %}</p>
                 <p class="dataset-meta-value organization-title"><a
-                            href="/organizations/{{ dataset.organization.slug }}">{{ dataset.organization.title }}</a></p>
+                            href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a></p>
 
                 <p class="dataset-meta-title">{% translate "El. paštas" %}</p>
                 <p class="dataset-meta-value"><a href="mailto:{{ dataset.organization.email }}">{{ dataset.organization.email|default_if_none:"" }}</a></p>

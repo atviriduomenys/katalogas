@@ -14,10 +14,9 @@ urlpatterns = [
          name='dataset-distribution-preview'),
     path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>/',
          DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
-    path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/',
-         DatasetStructureView.as_view(), name='dataset-structure'),
-    path('datasets/<str:organization_kind>/<slug:organization_slug>/<slug:dataset_slug>/structure/download',
-         DatasetStructureDownloadView.as_view(), name='dataset-structure-download'),
+    path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
+    path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
+         name='dataset-structure-download'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

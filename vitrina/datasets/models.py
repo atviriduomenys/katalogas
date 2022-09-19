@@ -352,12 +352,7 @@ class DatasetStructure(models.Model):
         db_table = 'dataset_structure'
 
     def get_absolute_url(self):
-        return reverse('dataset-structure', kwargs={
-            'organization_kind': self.dataset.organization.kind if self.dataset and self.dataset.organization else None,
-            'organization_slug': self.dataset.organization.slug if self.dataset and self.dataset.organization else None,
-            'dataset_slug': self.dataset.slug if self.dataset else None
-
-        })
+        return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

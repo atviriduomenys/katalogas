@@ -54,12 +54,10 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
-    {% if view.kwargs.kind and view.kwargs.slug %}
-        {% if user.is_authenticated and user.organization.slug == view.kwargs.slug %}
-        <a href="{%url 'dataset-add' org_kind=view.kwargs.kind slug=view.kwargs.slug %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+    {% if can_create_dataset %}
+        <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
             {% translate "Pridėti rinkinį" %}
         </a>
-        {% endif %}
     {% endif %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">

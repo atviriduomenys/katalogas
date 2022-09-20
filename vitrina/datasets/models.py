@@ -47,13 +47,13 @@ class Dataset(models.Model):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/61
-    title = models.TextField(blank=True, null=True)
-    title_en = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    description_en = models.TextField(blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Pavadinimas'))
+    title_en = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Title'))
+    description = models.TextField(blank=True, null=True, verbose_name=_('Aprašymas'))
+    description_en = models.TextField(blank=True, null=True, verbose_name=_('Description'))
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)
+    category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
@@ -63,30 +63,30 @@ class Dataset(models.Model):
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     coordinator = models.ForeignKey(User, models.DO_NOTHING, db_column='coordinator', blank=True, null=True)
     # coordinator = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    representative_id = models.BigIntegerField(blank=True, null=True)
+    representative_id = models.BigIntegerField(blank=True, null=True, verbose_name=_('Rinkinio atstovas'))
     # TODO: Move this to orgs
     #       https://github.com/atviriduomenys/katalogas/issues/30
-    manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True)
+    manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True, verbose_name=_('Rinkinio tvarkytojas'))
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True)
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True, verbose_name=_('Licenzija'))
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(blank=True, null=True)
+    is_public = models.BooleanField(default=False, verbose_name=_('Ar duomenys vieši'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=True, null=True)
+    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=True, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
-    access_rights = models.TextField(blank=True, null=True)
-    distribution_conditions = models.TextField(blank=True, null=True)
+    access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
+    distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = models.TextField(blank=True, null=True)
+    tags = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Raktiniai žodžiai'))
 
     notes = models.TextField(blank=True, null=True)
 

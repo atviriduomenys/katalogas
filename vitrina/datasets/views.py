@@ -22,7 +22,7 @@ from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
-    get_category_counts
+    get_category_counts, can_update_dataset, can_create_dataset
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
@@ -168,7 +168,8 @@ class DatasetListView(ListView):
 
             'selected_date_from': selected_date_from,
             'selected_date_to': selected_date_to,
-            'search_form_params': search_form_params.items()
+            'search_form_params': search_form_params.items(),
+            'can_create_dataset': can_create_dataset(self.request.user, self.kwargs.get('pk'))
         }
         context.update(extra_context)
         return context
@@ -186,7 +187,8 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'rating': 3.0,
-            'status': dataset.get_status_display()
+            'status': dataset.get_status_display(),
+            'can_update_dataset': can_update_dataset(self.request.user, dataset)
         }
         context_data.update(extra_context_data)
         return context_data
@@ -225,17 +227,19 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     form_class = NewDatasetForm
 
     def has_permission(self):
-        if self.request.user.organization:
-            return self.request.user.organization.slug == self.kwargs['slug']
-        else:
-            return False
+        return can_create_dataset(self.request.user, self.kwargs['pk'])
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            org = get_object_or_404(Organization, kind=self.kwargs['org_kind'], slug=self.kwargs['slug'])
+            org = get_object_or_404(Organization, id=self.kwargs['pk'])
             return redirect(org)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Duomenų rinkinio pridėjimas')
+        return context
 
     def get(self, request, *args, **kwargs):
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
@@ -253,21 +257,20 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     form_class = NewDatasetForm
 
     def has_permission(self):
-        if self.request.user.organization:
-            dataset = Dataset.objects.filter(slug=self.kwargs['slug'])
-            if self.request.user.organization.slug == self.kwargs['org_slug'] or dataset.manager == self.request.user:
-                return True
-            else:
-                return False
-        else:
-            return False
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        return can_update_dataset(self.request.user, dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            dataset = get_object_or_404(Dataset, slug=self.kwargs['slug'])
+            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
             return redirect(dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Duomenų rinkinio redagavimas')
+        return context
 
     def get(self, request, *args, **kwargs):
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)

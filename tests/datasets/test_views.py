@@ -390,9 +390,7 @@ def test_download_structure(app: DjangoTestApp, dataset_structure_data):
 @pytest.mark.django_db
 def test_change_form_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()
-    response = app.get(reverse('dataset-change', kwargs={'org_kind': dataset.organization.kind,
-                                                         'org_slug': dataset.organization.slug,
-                                                         'slug': dataset.slug}))
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -402,11 +400,9 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('dataset-change', kwargs={'org_kind': dataset.organization.kind,
-                                                         'org_slug': dataset.organization.slug,
-                                                         'slug': dataset.slug}))
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
     assert response.status_code == 302
-    assert dataset.slug in response.location
+    assert str(dataset.id) in response.location
 
 
 @pytest.mark.django_db
@@ -422,24 +418,39 @@ def test_change_form_correct_login(app: DjangoTestApp):
                                     organization=dataset.organization)
     app.set_user(user)
     dataset.manager = user
-    form = app.get(reverse('dataset-change', kwargs={'org_kind': dataset.organization.kind,
-                                                     'org_slug': dataset.organization.slug,
-                                                     'slug': dataset.slug})).forms['dataset-form']
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
     form['title'] = 'Edited title'
     form['description'] = 'edited dataset description'
     resp = form.submit()
     dataset.refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('dataset-detail', kwargs={'slug': 'edited-title'})
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
     assert dataset.title == 'Edited title'
     assert dataset.description == 'edited dataset description'
 
 
 @pytest.mark.django_db
+def test_click_edit_button(app: DjangoTestApp):
+    dataset = DatasetFactory(
+        title="dataset_title",
+        title_en="dataset_title",
+        published=datetime(2022, 9, 7),
+        slug='test-dataset-slug',
+        description='test description',
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=dataset.organization)
+    app.set_user(user)
+    dataset.manager = user
+    response = app.get(reverse('dataset-detail', kwargs={'pk': dataset.id}))
+    response.click(linkid='change_dataset')
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
 def test_add_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
-    response = app.get(reverse('dataset-add', kwargs={'org_kind': org.kind,
-                                                      'slug': org.slug}))
+    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -449,11 +460,9 @@ def test_add_form_wrong_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
     org = OrganizationFactory()
-    response = app.get(reverse('dataset-add', kwargs={'org_kind': org.kind,
-                                                      'slug': org.slug}))
+    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
     assert response.status_code == 302
-    assert org.kind in response.location
-    assert org.slug in response.location
+    assert str(org.id) in response.location
 
 
 @pytest.mark.django_db
@@ -468,12 +477,29 @@ def test_add_form_correct_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=org)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'org_kind': org.kind,
-                                                  'slug': org.slug})).forms['dataset-form']
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
     form['manager'] = user.id
     resp = form.submit()
-    assert Dataset.objects.filter(title="Added title").count() == 1
+    added_dataset = Dataset.objects.filter(title="Added title")
+    assert added_dataset.count() == 1
     assert resp.status_code == 302
-    assert resp.url == reverse('dataset-detail', kwargs={'slug': 'added-title'})
+    assert str(added_dataset[0].id) in resp.url
+
+
+@pytest.mark.django_db
+def test_click_add_button(app: DjangoTestApp):
+    org = OrganizationFactory(
+        title="Org_title",
+        created=datetime(2022, 8, 22, 10, 30),
+        jurisdiction="Jurisdiction1",
+        slug='test-org-slug',
+        kind='test_org_kind'
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=org)
+    app.set_user(user)
+    response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
+    response.click(linkid='add_dataset')
+    assert response.status_code == 200

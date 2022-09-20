@@ -11,7 +11,7 @@ class NewDatasetForm(forms.ModelForm):
     class Meta:
         model = Dataset
         fields = ('is_public', 'title', 'description', 'tags',
-                  'category', 'licence', 'update_frequency',
+                  'category', 'licence', 'frequency',
                   'access_rights', 'distribution_conditions', 'manager',
                   'representative_id')
 
@@ -20,30 +20,30 @@ class NewDatasetForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
-            Div(Div(Field('is_public', css_class='input', placeholder=_('Ar duomenys vieši')),
+            Div(Div(Field('is_public', css_class='checkbox', placeholder=_('Ar duomenys vieši'),),
                     css_class='control'), css_class='field'),
             Div(Div(Field('title', css_class='input', placeholder=_('Duomenų rinkinio pavadinimas')),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('description', css_class='input', placeholder=_('Duomenų rinkinio aprašas')),
+            Div(Div(Field('description', css_class='input', placeholder=_('Detalus duomenų rinkinio aprašas')),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('tags', css_class='input', placeholder=_('Duomenų rinkinio raktiniai žodžiai')),
+            Div(Div(Field('tags', css_class='input', placeholder=_('Surašykite aktualius raktinius žodžius')),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('category', css_class='input', placeholder=_('Duomenų rinkinio kategorija')),
+            Div(Div(Field('category', css_class='input'),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('licence', css_class='input', placeholder=_('Licencija')),
+            Div(Div(Field('licence', css_class='input'),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('update_frequency', css_class='input', placeholder=_('Duomenų atnaujinimo periodiškumas')),
+            Div(Div(Field('frequency', css_class='input'),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('access_rights', css_class='input', placeholder=_('Prieigos teisės')),
+            Div(Div(Field('access_rights', css_class='input', placeholder=_('Pateikite visas prieigos teises kurios aktualios šiam duomenų rinkiniui')),
                     css_class='control'), css_class='field'),
-            Div(Div(Field('distribution_conditions', css_class='input', placeholder=_('Platinimo salygos')),
+            Div(Div(Field('distribution_conditions', css_class='input', placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
                     css_class='control'), css_class='field'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
-        if not self.instance.slug:
-            self.helper.layout.insert(-1, Div(Div(Field('manager', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
+        if not self.instance.pk:
+            self.helper.layout.insert(-1, Div(Div(Field('manager', css_class='input'),
                                       css_class='control'), css_class='field'))
-            self.helper.layout.insert(-1, Div(Div(Field('representative_id', css_class='input', placeholder=_('Rinkinio tvarkytojas')),
+            self.helper.layout.insert(-1, Div(Div(Field('representative_id', css_class='input'),
                                       css_class='control'), css_class='field'))
 
 

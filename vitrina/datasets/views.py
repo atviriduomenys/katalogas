@@ -1,14 +1,13 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 import csv
-
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
 
-from vitrina import settings
-from vitrina.orgs.models import Organization, Representative
 from django.views import View
+from vitrina import settings
+from vitrina.orgs.models import Organization
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember

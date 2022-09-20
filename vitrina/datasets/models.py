@@ -129,9 +129,7 @@ class Dataset(models.Model):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
     def get_members_url(self):
-        return reverse('dataset-members', kwargs={'org_kind': self.organization.kind,
-                                                  'org_slug': self.organization.slug,
-                                                  'slug': self.slug})
+        return reverse('dataset-members', kwargs={'pk': self.pk})
 
 
 class DatasetMember(models.Model):

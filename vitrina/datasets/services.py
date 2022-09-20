@@ -5,6 +5,8 @@ from django.db.models import QuerySet
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative
+from vitrina.users.models import User
 
 
 def filter_by_status(queryset: QuerySet, status: str) -> QuerySet:
@@ -79,3 +81,7 @@ def get_category_counts(selected_categories: List[Any], related_categories: List
                 count += queryset.filter(category=ch).count()
             category_counts[category.pk] = count
     return category_counts
+
+
+def can_see_dataset_members(user: User, dataset: Dataset) -> bool:
+    return Representative.objects.filter(organization_id=dataset.organization_id, email=user.email).exists()

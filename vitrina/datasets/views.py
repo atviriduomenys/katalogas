@@ -11,9 +11,9 @@ from vitrina.orgs.models import Organization, Representative
 from django.views import View
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMembers
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
-    get_category_counts
+    get_category_counts, can_see_dataset_members
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
 from django.http import HttpResponseBadRequest, FileResponse
@@ -217,8 +217,7 @@ class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
     def has_permission(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
-        return Representative.objects.filter(organization_id=dataset.organization.id,
-                                             email=self.request.user.email).exists()
+        return can_see_dataset_members(self.request.user, dataset)
 
     def get_queryset(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)

@@ -16,7 +16,6 @@ urlpatterns = [
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")
     # @PostMapping("/request/{id}/reply")
-    path('request/<int:pk>/like/', RequestDetailView.as_view(), name='request-like'),
     # @GetMapping("/requests/suggestions")
     # @GetMapping("/requests/suggest")
     # @PostMapping("/suggest")

@@ -29,12 +29,3 @@ def test_dataset_detail_status(app: DjangoTestApp, dataset):
     resp = app.get(dataset.get_absolute_url())
     assert resp.context['status'] == "Atvertas"
 
-
-@pytest.mark.django_db
-def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset):
-    resp = app.get(dataset.get_absolute_url())
-
-    # hardcoded values, will need to change with later tasks
-    assert resp.context['subscription'] == []
-    assert resp.context['rating'] == 3.0
-

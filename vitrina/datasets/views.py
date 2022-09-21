@@ -174,7 +174,6 @@ class DatasetDetailView(DetailView):
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
-            'rating': 3.0,
             'status': dataset.get_status_display()
         }
         context_data.update(extra_context_data)

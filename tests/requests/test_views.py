@@ -71,8 +71,6 @@ def test_request_detail_view(app: DjangoTestApp):
     assert resp.context['purposes'] == ['science', 'product']
     assert resp.context['changes'] == ['format']
     assert resp.context['formats'] == ['csv', 'json', 'rdf']
-    assert resp.context['like_count'] == 0
-    assert not resp.context['liked']
     assert resp.context['structure'] == [
         {
             "data_title": 'data1',

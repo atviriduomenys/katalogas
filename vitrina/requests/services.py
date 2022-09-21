@@ -18,12 +18,3 @@ def get_structure(request: Request) -> List[Dict[str, Any]]:
                 "data_notes": data[3],
             })
     return structure
-
-
-def get_is_liked(user: User, request: Request) -> bool:
-    liked = False
-    if user.is_authenticated:
-        user_like = UserLike.objects.filter(request_id=request.pk, user_id=user.pk)
-        if user_like.exists():
-            liked = True
-    return liked

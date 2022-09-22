@@ -3,9 +3,9 @@
     <tbody>
     <tr>
         <th>{% translate "Pasiūlymas organizacijai" %}</th>
-        <td>{% if request.organization.slug %}<a href="{{ request.organization.get_absolute_url }}">{{ request.organization }}</a>{% else %}{{ request.organization }}{% endif %}</td>
+        <td>{% if request_object.organization.slug %}<a href="{{ request_object.organization.get_absolute_url }}">{{ request_object.organization }}</a>{% else %}{{ request_object.organization }}{% endif %}</td>
     </tr>
-    {% if request.is_existing and dataset %}
+    {% if request_object.is_existing and dataset %}
         <tr>
             <th>{% translate "Norimas keisti duomenų rinkinys" %}</th>
             <td>{% if dataset.slug %}<a href="{{ dataset.get_absolute_url }}">{{ dataset.title }}</a>{% else %}{{ dataset.title }}{% endif %}</td>
@@ -17,19 +17,19 @@
     </tr>
     <tr>
         <th>{% translate "Registravimo data" %}</th>
-        <td>{{ request.created }}</td>
+        <td>{{ request_object.created }}</td>
     </tr>
-    {% if request.modified %}
+    {% if request_object.modified %}
         <tr>
             <th>{% translate "Atnaujinimo data" %}</th>
-            <td>{{ request.modified }}</td>
+            <td>{{ request_object.modified }}</td>
         </tr>
     {% endif %}
-    {% if request.planned_opening_date %}
-        {% if not request.is_existing %}
+    {% if request_object.planned_opening_date %}
+        {% if not request_object.is_existing %}
             <tr>
                 <th>{% translate "Planuojama atvėrimo data" %}</th>
-                <td>{{ request.planned_opening_date }}</td>
+                <td>{{ request_object.planned_opening_date }}</td>
             </tr>
         {% endif %}
     {% endif %}
@@ -41,7 +41,7 @@
     {% endif %}
     <tr>
         <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
-        <td>{{ request.periodicity }}</td>
+        <td>{{ request_object.periodicity }}</td>
     </tr>
     <tr>
         <th>{% translate "Patinka" %}:</th>
@@ -49,7 +49,7 @@
             {{ like_count }}
             {% if user.is_authenticated %}
                 {% if not liked %}
-                    <form action="{% url 'request-like' request.pk %}" method="post" class="rating-form">
+                    <form action="{% url 'request-like' request_object.pk %}" method="post" class="rating-form">
                         <input type="submit" class="button is-primary is-small m-l-md" value="{% translate 'Patinka' %}">
                     </form>
                 {% endif %}

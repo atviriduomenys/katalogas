@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from vitrina.users.models import User
@@ -82,3 +86,14 @@ class UserSubscription(models.Model):
     class Meta:
         managed = True
         db_table = 'user_dataset_subscription'
+
+
+class Subscription(models.Model):
+    created = models.DateTimeField(default=datetime.now)
+    user = models.ForeignKey(User, models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        db_table = 'subscription'

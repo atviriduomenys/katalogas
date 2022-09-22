@@ -48,13 +48,17 @@ class Category(MP_Node):
     featured = models.BooleanField()
     icon = models.CharField(choices=ICONS, max_length=255, blank=True, null=True)
 
-    node_order_by = ['pk']
+    node_order_by = ['numchild']
 
     class Meta:
         db_table = 'category'
 
     def __str__(self):
         return self.title
+
+    def get_family_objects(self):
+        yield from self.get_ancestors()
+        yield from self.get_descendants()
 
     objects = MP_NodeManager()
 

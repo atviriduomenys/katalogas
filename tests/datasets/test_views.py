@@ -128,9 +128,9 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
 @pytest.fixture
 def category_filter_data():
     category1 = CategoryFactory()
-    category2 = CategoryFactory(parent_id=category1.pk)
-    category3 = CategoryFactory(parent_id=category1.pk)
-    category4 = CategoryFactory(parent_id=category2.pk)
+    category2 = category1.add_child(instance=CategoryFactory.build())
+    category3 = category1.add_child(instance=CategoryFactory.build())
+    category4 = category2.add_child(instance=CategoryFactory.build())
     dataset_with_category1 = DatasetFactory(category=category1, slug="ds1")
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2")
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3")

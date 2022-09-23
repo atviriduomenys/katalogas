@@ -127,7 +127,7 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return self.tags.tag_model.objects.all()
+        return self.tags.all()
 
 
 # TODO: To be merged into Dataset:

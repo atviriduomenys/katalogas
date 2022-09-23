@@ -275,10 +275,10 @@
                     </tr>
                         {% for struct in structure %}
                             <tr>
-                                <td>{{ struct.data_title }}</td>
-                                <td>{{ struct.dictionary_title }}</td>
-                                <td>{{ struct.data_type }}</td>
-                                <td>{{ struct.data_notes }}</td>
+                                <td>{{ struct.data_title|default:"" }}</td>
+                                <td>{{ struct.dictionary_title|default:"" }}</td>
+                                <td>{{ struct.data_type|default:"" }}</td>
+                                <td>{{ struct.data_notes|default:"" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

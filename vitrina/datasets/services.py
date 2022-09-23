@@ -33,23 +33,20 @@ def get_related_categories(selected_categories: List[Any], only_children: bool =
 
 
 def get_tag_list() -> List[Any]:
-    # after task #118 tags filter should be redone
-    tags = Dataset.public.exclude(tags="").exclude(tags__isnull=True).values_list('tags', flat=True)
+    tags = Dataset.tags.tag_model.objects.all()
     tag_list = []
-    for dataset_tags in tags:
-        dataset_tags = dataset_tags.replace(" ", "").split(",")
-        tag_list.extend(dataset_tags)
+    for dataset_tag in tags:
+        tag_list.append(dataset_tag)
     tag_list = list(set(tag_list))
     return tag_list
 
 
-def get_related_tag_list(selected_tags: List[Any], queryset: QuerySet) -> List[Any]:
+def get_related_tag_list(selected_tags: List[Any], querysets: QuerySet) -> List[Any]:
     related_tag_list = []
     if selected_tags:
-        related_tags = queryset.exclude(tags="").exclude(tags__isnull=True).values_list('tags', flat=True)
         related_tag_list = []
-        for dataset_tags in related_tags:
-            dataset_tags = dataset_tags.replace(" ", "").split(",")
+        for queryset in querysets:
+            dataset_tags = queryset.tags.values_list('name', flat=True)
             related_tag_list.extend(dataset_tags)
         related_tag_list = list(set(related_tag_list))
         related_tag_list.sort()

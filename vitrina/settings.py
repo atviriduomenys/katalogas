@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'djangocms_blog',
     'hitcount',
     'crispy_forms',
+    'tagulous',
 
     'vitrina',
     'vitrina.cms',
@@ -94,6 +95,13 @@ INSTALLED_APPS = [
     'vitrina.compat',
     'vitrina.likes',
 ]
+
+SERIALIZATION_MODULES = {
+    'xml':    'tagulous.serializers.xml_serializer',
+    'json':   'tagulous.serializers.json',
+    'python': 'tagulous.serializers.python',
+    'yaml':   'tagulous.serializers.pyyaml',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

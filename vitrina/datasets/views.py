@@ -63,7 +63,7 @@ class DatasetListView(ListView):
         if status:
             datasets = filter_by_status(datasets, status)
         for tag in tags:
-            datasets = datasets.filter(tags__icontains=tag)
+            datasets = datasets.filter(tags__name=tag)
         if category:
             related_categories = get_related_categories(category, only_children=True)
             datasets = datasets.filter(category__pk__in=related_categories)
@@ -84,7 +84,6 @@ class DatasetListView(ListView):
         selected_tags = get_selected_value(self.request, 'tags', multiple=True, is_int=False)
         selected_date_from = get_selected_value(self.request, 'date_from', is_int=False)
         selected_date_to = get_selected_value(self.request, 'date_to', is_int=False)
-
         related_categories = get_related_categories(selected_categories)
         tag_list = get_tag_list()
         related_tag_list = get_related_tag_list(selected_tags, filtered_queryset)
@@ -150,8 +149,8 @@ class DatasetListView(ListView):
             'tag_filters': [{
                 'title': tag,
                 'query': get_filter_url(self.request, 'tags', tag, True),
-                'count': filtered_queryset.filter(tags__icontains=tag).count()
-            } for tag in tag_list if filtered_queryset.filter(tags__icontains=tag).count() > 0],
+                'count': filtered_queryset.filter(tags__name=tag).count()
+            } for tag in tag_list if filtered_queryset.filter(tags__name=tag).count() > 0],
             'selected_tags': selected_tags,
             'related_tags': related_tag_list,
 

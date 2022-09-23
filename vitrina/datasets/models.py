@@ -1,6 +1,6 @@
+import tagulous
 from django.db import models
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -87,7 +87,7 @@ class Dataset(models.Model):
     access_rights = models.TextField(blank=True, null=True)
     distribution_conditions = models.TextField(blank=True, null=True)
 
-    tags = models.TextField(blank=True, null=True)
+    tags = tagulous.models.TagField(blank=True)
 
     notes = models.TextField(blank=True, null=True)
 
@@ -127,7 +127,7 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return str(self.tags).replace(" ", "").split(',') if self.tags else []
+        return self.tags.tag_model.objects.all()
 
 
 # TODO: To be merged into Dataset:

@@ -91,13 +91,13 @@ class DatasetDistribution(models.Model):
         })
 
     def get_format(self):
-        if self.is_external_url():
-            return self.url_format
+        if self.is_external_url() and self.url_format:
+            return self.url_format.extension
         else:
             if not self.filename:
                 return self.mime_type
             elif self.url_format:
-                return self.url_format
+                return self.url_format.extension
             else:
                 return self.extension()
 

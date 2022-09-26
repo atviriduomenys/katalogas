@@ -79,7 +79,6 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
-            {{ request.GET.urlencode }}
             <form id="dataset-filter" class="field has-addons is-fullwidth"
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
                               {% url 'dataset-list' %}
@@ -145,7 +144,7 @@
 
             {#{% include '../component/pagination.twig' %}#}
 
-            {% if can_create_dataset %}
+            {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
                 <div class="buttons is-right">
                     <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
                         {% translate "Pridėti rinkinį" %}

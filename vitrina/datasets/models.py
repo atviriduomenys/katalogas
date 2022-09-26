@@ -42,12 +42,12 @@ class Dataset(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
     version = models.IntegerField(default=1)
-    slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    slug = models.CharField(unique=True, max_length=255, blank=False, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/61
-    title = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Pavadinimas'))
+    title = models.CharField(max_length=255, blank=False, null=True, verbose_name=_('Pavadinimas'))
     title_en = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Title'))
     description = models.TextField(blank=True, null=True, verbose_name=_('Aprašymas'))
     description_en = models.TextField(blank=True, null=True, verbose_name=_('Description'))

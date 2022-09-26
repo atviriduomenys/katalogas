@@ -5,7 +5,6 @@ import tagulous.models.fields
 import tagulous.models.models
 
 
-
 def remake_tags(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     datasets_with_tags = Dataset.objects.filter(tags_old__isnull=False)

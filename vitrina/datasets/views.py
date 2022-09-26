@@ -290,7 +290,7 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _('Duomenų rinkinio pridėjimas')
+        context['current_title'] = _('Naujas duomenų rinkinys')
         return context
 
     def get(self, request, *args, **kwargs):

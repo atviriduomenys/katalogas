@@ -73,7 +73,7 @@ class Dataset(models.Model):
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(default=False, verbose_name=_('Ar duomenys vieši'))
+    is_public = models.BooleanField(default=False, verbose_name=_('Duomenų rinkinys viešinamas'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)

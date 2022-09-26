@@ -54,11 +54,6 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
-    {% if can_create_dataset %}
-        <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
-            {% translate "Pridėti rinkinį" %}
-        </a>
-    {% endif %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {#<div style="text-align: center;">#}
@@ -149,6 +144,14 @@
             {% endif %}
 
             {#{% include '../component/pagination.twig' %}#}
+
+            {% if can_create_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Pridėti rinkinį" %}
+                    </a>
+                </div>
+            {% endif %}
 
             {% for i in page_obj %}
                 <article class="media">

@@ -50,7 +50,7 @@
                                 <a href="/user/profile" class="navbar-item">{% translate "auth.profile" %}</a>
                                 <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">{% translate "Užduotys" %}</a>
                                 {% if user.is_authenticated and user.is_staff %}
-                                    <a href="{% url 'admin:index' %}" class="navbar-item">{% translate "Administruoti" %}</a>
+                                    <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">{% translate "Administruoti" %}</a>
                                 {% endif %}
                                 <a href="{% url 'logout' %}" class="navbar-item">{% translate "Atsijungti" %}</a>
                             </div>

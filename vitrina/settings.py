@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import sys
 
 import environ
 import os
@@ -38,6 +39,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
 
+TEST = any(['test' in arg for arg in sys.argv])
 
 # Application definition
 
@@ -73,6 +75,7 @@ INSTALLED_APPS = [
     'djangocms_blog',
     'hitcount',
     'crispy_forms',
+    'haystack',
 
     'vitrina',
     'vitrina.cms',
@@ -253,3 +256,22 @@ PASSWORD_HASHERS = [
 ]
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
+
+if TEST:
+    HAYSTACK_CONNECTIONS = {
+        'default': {
+            'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
+            'URL': 'http://127.0.0.1:9200/',
+            'INDEX_NAME': 'test_default'
+        },
+    }
+else:
+    HAYSTACK_CONNECTIONS = {
+        'default': {
+            'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
+            'URL': 'http://127.0.0.1:9200/',
+            'INDEX_NAME': 'haystack'
+        },
+    }
+
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

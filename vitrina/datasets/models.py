@@ -129,6 +129,18 @@ class Dataset(models.Model):
     def get_tag_list(self):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
+    @property
+    def filter_status(self):
+        if self.datasetstructure_set.exists():
+            return self.HAS_STRUCTURE
+        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+            return self.status
+        return None
+
+    @property
+    def formats(self):
+        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

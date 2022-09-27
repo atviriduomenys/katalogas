@@ -1,14 +1,24 @@
-from django.forms import Form, CharField, DateTimeField, IntegerField
+from django.forms import DateField
+from haystack.forms import FacetedSearchForm
 
-from vitrina.fields import MultipleValueField, MultipleIntField
 
+class DatasetSearchForm(FacetedSearchForm):
+    date_from = DateField(required=False)
+    date_to = DateField(required=False)
 
-class DatasetFilterForm(Form):
-    q = CharField(required=False)
-    date_from = DateTimeField(required=False)
-    date_to = DateTimeField(required=False)
-    status = CharField(required=False)
-    tags = MultipleValueField(required=False)
-    category = MultipleIntField(required=False)
-    organization = IntegerField(required=False)
-    frequency = IntegerField(required=False)
+    def search(self):
+        sqs = super().search()
+
+        if not self.is_valid():
+            return self.no_query_found()
+
+        if self.cleaned_data.get('date_from'):
+            sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
+
+        if self.cleaned_data.get('date_to'):
+            sqs = sqs.filter(published__lte=self.cleaned_data['date_to'])
+
+        return sqs
+
+    def no_query_found(self):
+        return self.searchqueryset.all()

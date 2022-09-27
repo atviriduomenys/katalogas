@@ -7,3 +7,10 @@ services:
       - POSTGRES_PASSWORD=secret
     ports:
       - 5432:5432
+
+  elasticsearch:
+    image: elasticsearch:7.8.1
+    ports:
+      - 9200:9200
+    environment:
+      discovery.type: 'single-node'

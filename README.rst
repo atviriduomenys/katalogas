@@ -53,6 +53,7 @@ Then we can run::
 
     poetry install
     poetry run python manage.py migrate
+    poetry run python manage.py rebuild_index
     
 
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::

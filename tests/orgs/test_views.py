@@ -1,10 +1,14 @@
+import haystack
 import pytest
 from datetime import datetime
 from django.urls import reverse
 
 from django_webtest import DjangoTestApp
+from haystack.utils.loading import UnifiedIndex
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.search_indexes import DatasetIndex
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 
@@ -38,8 +42,16 @@ def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
 
 @pytest.mark.django_db
 def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
+    ui = UnifiedIndex()
+    index = DatasetIndex()
+    ui.build(indexes=[index])
+    haystack.connections["default"]._index = ui
+    backend = haystack.connections["default"].get_backend()
+    backend.clear()
+    backend.update(index, Dataset.objects.all())
+
     resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].pk]))
-    assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [data_for_tabs["dataset"].pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
 
 

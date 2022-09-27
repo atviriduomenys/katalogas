@@ -17,6 +17,7 @@ class DatasetFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
     version = 1
     will_be_financed = False
+    status = Dataset.HAS_DATA
 
 
 class DatasetStructureFactory(DjangoModelFactory):

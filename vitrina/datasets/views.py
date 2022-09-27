@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+import itertools
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 import csv
 from django.views import View
@@ -21,6 +23,8 @@ from vitrina.classifiers.models import Frequency
 from django.http import HttpResponseBadRequest, FileResponse
 
 from django.utils.translation import gettext_lazy as _
+
+from vitrina.resources.models import DatasetDistribution
 
 
 class DatasetListView(ListView):
@@ -180,7 +184,8 @@ class DatasetDetailView(DetailView):
             'subscription': [],
             'rating': 3.0,
             'status': dataset.get_status_display(),
-            'can_update_dataset': can_update_dataset(self.request.user, dataset)
+            'can_update_dataset': can_update_dataset(self.request.user, dataset),
+            'resources': dataset.datasetdistribution_set.all(),
         }
         context_data.update(extra_context_data)
         return context_data
@@ -244,6 +249,32 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         object = form.save(commit=False)
         object.slug = slugify(object.title)
         return super().form_valid(form)
+        
+class DatasetDistributionDownloadView(View):
+    def get(self, request, dataset_id, distribution_id, filename):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__pk=dataset_id,
+            pk=distribution_id,
+            filename__icontains=filename
+        )
+        response = FileResponse(open(distribution.filename.path, 'rb'))
+        return response
+
+
+class DatasetDistributionPreviewView(View):
+    def get(self, request, dataset_id, distribution_id):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__pk=dataset_id,
+            pk=distribution_id
+        )
+        data = []
+        if distribution.is_previewable():
+            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = itertools.islice(rows, 100)
+            data = list(csv.reader(rows, delimiter=";"))
+        return JsonResponse({'data': data})
 
 
 class DatasetStructureView(TemplateView):

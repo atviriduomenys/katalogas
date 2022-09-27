@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from parler.models import TranslatedFields, TranslatableModel
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -14,7 +14,7 @@ from vitrina.datasets.managers import PublicDatasetManager
 from django.utils.translation import gettext_lazy as _
 
 
-class Dataset(models.Model):
+class Dataset(TranslatableModel):
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
     METADATA = "METADATA"
@@ -35,6 +35,13 @@ class Dataset(models.Model):
         METADATA: _("Tik metaduomenys")
     }
 
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), blank=True, null=True),
+        title_en=models.CharField(_("Title_en"), blank=True, null=True),
+        description=models.TextField(_("Description"), blank=True, null=True),
+        description_en=models.TextField(_("Description_en"), blank=True, null=True),
+    )
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -46,12 +53,6 @@ class Dataset(models.Model):
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
-
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/61
-    title = models.TextField(blank=True, null=True)
-    title_en = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    description_en = models.TextField(blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
     category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)

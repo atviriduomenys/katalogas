@@ -387,3 +387,16 @@ def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_d
 def test_download_structure(app: DjangoTestApp, dataset_structure_data):
     resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download")
     assert resp.content == b'Column\nValue'
+
+
+@pytest.mark.django_db
+def test_public_manager_filtering(app: DjangoTestApp):
+    DatasetFactory(is_public=None)
+    DatasetFactory(deleted=True, deleted_on=datetime.now())
+    DatasetFactory(deleted=True, deleted_on=None)
+    DatasetFactory(deleted=None, deleted_on=None)
+    DatasetFactory(organization=None)
+    DatasetFactory()
+
+    public_datasets = Dataset.public.all()
+    assert public_datasets.count() == 2

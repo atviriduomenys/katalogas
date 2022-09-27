@@ -549,7 +549,6 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
-    form['manager'] = user.id
     resp = form.submit()
     added_dataset = Dataset.objects.filter(title="Added title")
     assert added_dataset.count() == 1

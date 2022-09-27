@@ -160,7 +160,7 @@ optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-Django = ">=2.2,<4.0"
+Django = ">=2.2,<5.0"
 django-classy-tags = ">=0.7.2"
 django-formtools = ">=2.1"
 django-sekizai = ">=0.7"
@@ -562,6 +562,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "itsdangerous"
+version = "2.1.2"
+description = "Safely pass data to untrusted environments and back."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "libsass"
 version = "0.21.0"
 description = "Sass for Python: A straightforward binding of libsass for Python."
@@ -892,7 +900,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "13ad0bf00ac35766fa40ea87e4cc63d0b1e5c124803824b1789c7cad26654d64"
+content-hash = "7193d44f2f15aa4491ad243b83bb1e7b9c76ca6303ee3dfe75e7552da79931af"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -940,6 +948,7 @@ faker = []
 flake8 = []
 html5lib = []
 iniconfig = []
+itsdangerous = []
 libsass = []
 lxml = []
 mccabe = []

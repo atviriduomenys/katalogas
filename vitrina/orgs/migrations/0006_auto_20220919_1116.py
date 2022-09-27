@@ -7,15 +7,16 @@ def update_user_field(apps, schema_editor):
     User = apps.get_model('vitrina_users', 'User')
     Representative = apps.get_model('vitrina_orgs', 'Representative')
 
-    for rep in Representative.objects.all():
-        if rep.email:
+    for user in User.objects.all():
+        if user.email:
             try:
-                user = User.objects.get(email=rep.email)
+                reps = Representative.objects.filter(email=user.email)
+            except ObjectDoesNotExist:
+                reps = []
+            for rep in reps:
                 rep.user = user
                 rep.role = user.role
                 rep.save()
-            except ObjectDoesNotExist:
-                pass
 
 
 class Migration(migrations.Migration):

@@ -29,19 +29,7 @@ class RegisterView(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            if Representative.objects.filter(email=user.email).exists():
-                representative = Representative.objects.filter(email=user.email).first()
-                user.organization = representative.organization
-                user.role = representative.role
-                user.save()
-
-                representative.user = user
-                representative.first_name = user.first_name
-                representative.last_name = user.last_name
-                representative.save()
-            else:
-                user.save()
+            user = form.save()
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})

@@ -5,7 +5,9 @@ from django.core import mail
 from django.urls import reverse
 
 from django_webtest import DjangoTestApp
+from itsdangerous import URLSafeSerializer
 
+from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -223,8 +225,15 @@ def representative_data():
         phone="869876543"
     )
     organization = OrganizationFactory()
-    representative_manager = RepresentativeFactory(role="manager", organization=organization)
-    representative_coordinator = RepresentativeFactory(role="coordinator", organization=organization)
+    representative_manager = RepresentativeFactory(
+        role="manager",
+        organization=organization
+    )
+    representative_coordinator = RepresentativeFactory(
+        role="coordinator",
+        organization=organization,
+        user=coordinator
+    )
     return {
         'manager': manager,
         'coordinator': coordinator,
@@ -252,20 +261,12 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     form['email'] = "manager@gmail.com"
     form['role'] = "coordinator"
     resp = form.submit()
-    representative_data['manager'].refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert Representative.objects.filter(email="manager@gmail.com").count() == 1
-    assert Representative.objects.filter(email="manager@gmail.com").first().first_name == \
-           representative_data['manager'].first_name
-    assert Representative.objects.filter(email="manager@gmail.com").first().last_name == \
-           representative_data['manager'].last_name
-    assert Representative.objects.filter(email="manager@gmail.com").first().phone == \
-           representative_data['manager'].phone
     assert Representative.objects.filter(email="manager@gmail.com").first().organization == \
            representative_data['organization']
     assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
-    assert representative_data['manager'].role == 'coordinator'
 
 
 @pytest.mark.django_db
@@ -293,7 +294,9 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
         email="new@gmail.com",
         organization=representative_data['organization']
     )
-    form = app.get(reverse('register')).forms['register-form']
+    serializer = URLSafeSerializer(settings.SECRET_KEY)
+    token = serializer.dumps({"representative_id": new_representative.pk})
+    form = app.get(reverse('representative-register', kwargs={'token': token})).forms['register-form']
     form['first_name'] = "New"
     form['last_name'] = "User"
     form['email'] = "new@gmail.com"
@@ -305,11 +308,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     assert resp.status_code == 302
     assert resp.url == reverse('home')
     assert User.objects.filter(email='new@gmail.com').count() == 1
-    assert User.objects.filter(email='new@gmail.com').first().role == new_representative.role
-    assert User.objects.filter(email='new@gmail.com').first().organization == new_representative.organization
     assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
-    assert new_representative.first_name == User.objects.filter(email='new@gmail.com').first().first_name
-    assert new_representative.last_name == User.objects.filter(email='new@gmail.com').first().last_name
 
 
 @pytest.mark.django_db
@@ -345,9 +344,7 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     form['role'] = "coordinator"
     resp = form.submit()
     representative_data['representative_manager'].refresh_from_db()
-    representative_data['manager'].refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
-    assert representative_data['manager'].role == "coordinator"
 

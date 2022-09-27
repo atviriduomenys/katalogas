@@ -246,7 +246,7 @@ EMAIL_HOST = 'smtp.mailtrap.io'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = '2525'
-DEFAULT_FROM_EMAIL = 'Test Domain <noreply@testdomain.com>'
+DEFAULT_FROM_EMAIL = 'Test Domain <noreply@example.com>'
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',

@@ -458,7 +458,7 @@ def test_download_structure(app: DjangoTestApp, dataset_structure_data):
 
 @pytest.mark.django_db
 def test_public_manager_filtering(app: DjangoTestApp):
-    DatasetFactory(is_public=None)
+    DatasetFactory(is_public=False)
     DatasetFactory(deleted=True, deleted_on=datetime.now())
     DatasetFactory(deleted=True, deleted_on=None)
     DatasetFactory(deleted=None, deleted_on=None)

@@ -97,3 +97,6 @@ class Subscription(models.Model):
 
     class Meta:
         db_table = 'subscription'
+
+    def __str__(self):
+        return str(self.user)

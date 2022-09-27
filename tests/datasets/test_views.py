@@ -9,6 +9,76 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.resources.factories import DatasetDistributionFactory
+
+
+@pytest.fixture
+def dataset_detail_data():
+    dataset_distribution = DatasetDistributionFactory()
+    return {
+        'dataset': dataset_distribution.dataset,
+        'dataset_distribution': dataset_distribution
+    }
+
+
+@pytest.mark.django_db
+def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['tags'] == []
+
+
+@pytest.mark.django_db
+def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
+    dataset_detail_data['dataset'].tags = "tag-1, tag-2, tag-3"
+    dataset_detail_data['dataset'].save()
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+
+
+@pytest.mark.django_db
+def test_dataset_detail_status(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['status'] == "Atvertas"
+
+
+@pytest.mark.django_db
+def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert list(resp.context['resources']) == [dataset_detail_data['dataset_distribution']]
+
+
+@pytest.mark.django_db
+def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+
+    # hardcoded values, will need to change with later tasks
+    assert resp.context['subscription'] == []
+    assert resp.context['rating'] == 3.0
+
+
+@pytest.mark.django_db
+def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(reverse('dataset-distribution-download', kwargs={
+        'dataset_id': 1000,
+        'distribution_id': 1000,
+        'filename': "doesntexist",
+    }), expect_errors=True)
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_distribution(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset_distribution'].get_download_url())
+    assert resp.content == b'Column\nValue'
+
+
+@pytest.mark.django_db
+def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(reverse('dataset-distribution-preview', kwargs={
+        'dataset_id': dataset_detail_data['dataset'].pk,
+        'distribution_id': dataset_detail_data['dataset_distribution'].pk
+    }))
+    assert resp.json == {'data': [['Column'], ['Value']]}
 
 
 @pytest.fixture
@@ -72,7 +142,7 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    dataset1 = DatasetFactory(status=Dataset.HAS_DATA, slug="ds1")
+    dataset1 = DatasetFactory(status=Dataset.INVENTORED, slug="ds1")
     dataset2 = DatasetFactory(slug="ds2")
     DatasetStructureFactory(dataset=dataset2)
     return [dataset1, dataset2]
@@ -87,9 +157,9 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
 
 @pytest.mark.django_db
 def test_status_filter_has_data(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.HAS_DATA))
+    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.INVENTORED))
     assert list(resp.context['object_list']) == [status_filter_data[0]]
-    assert resp.context['selected_status'] == Dataset.HAS_DATA
+    assert resp.context['selected_status'] == Dataset.INVENTORED
 
 
 @pytest.mark.django_db

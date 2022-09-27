@@ -1,6 +1,7 @@
 from django.urls import path
 
-from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView
+from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView, \
+    DatasetDistributionDownloadView, DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetDetailView
 
 
@@ -9,6 +10,10 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
+    path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
+         name='dataset-distribution-preview'),
+    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>/',
+         DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
     path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
          name='dataset-structure-download'),

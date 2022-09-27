@@ -81,7 +81,6 @@
             {#            {% endfor %}#}
             {#            </pre>#}
 
-            {{ request.GET.urlencode }}
             <form id="dataset-filter" class="field has-addons is-fullwidth"
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
                               {% url 'dataset-list' %}

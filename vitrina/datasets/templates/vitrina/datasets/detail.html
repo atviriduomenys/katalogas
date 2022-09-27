@@ -14,7 +14,7 @@
 
 {% block head %}
     <link href="{% static '/css/datatables.min.css' %}" rel="stylesheet">
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static '/js/datatables.min.js' %}"></script>
     <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
@@ -113,6 +113,14 @@
             </div>
         </div>
     </div>
+    {% if resources %}
+        <div class="columns no-margin-bottom">
+            <div class="column is-full">
+                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
+                {% include 'vitrina/datasets/datatable.html' %}
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 {% block scripts %}
     {% get_hit_count_js_variables for dataset as hitcount %}
@@ -132,10 +140,11 @@
                 $('.preview-button').click(function () {
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
-                    $.getJSON('/dataset/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
+                    $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
+                        data = json_data.data;
                         var table_obj = document.getElementById('info-table-body');
                         $("#info-table-body").empty();
-                        $.each(json_data, function (index, item) {
+                        $.each(data, function (index, item) {
                             var newRow = table_obj.insertRow(index);
                             if (index === 0) {
                                 newRow.classList.add("preview-tr", "is-bold");

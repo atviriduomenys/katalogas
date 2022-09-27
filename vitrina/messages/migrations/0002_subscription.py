@@ -10,8 +10,9 @@ def migrate_subscriptions(apps, schema_editor):
     UserSubscription = apps.get_model('vitrina_messages', 'UserSubscription')
     Subscription = apps.get_model('vitrina_messages', 'Subscription')
     ContentType = apps.get_model('contenttypes', 'ContentType')
+    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
     for subscription in UserSubscription.objects.all():
-        content_type = ContentType.objects.get(app_label='vitrina_datasets', model='dataset')
+        content_type = ContentType.objects.get_for_model(Dataset)
         Subscription.objects.create(
             created=subscription.created or datetime.now(),
             content_type=content_type,

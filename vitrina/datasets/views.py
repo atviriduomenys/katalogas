@@ -27,6 +27,7 @@ class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
     form_class = DatasetSearchForm
+    paginate_by = 20
 
     def get_queryset(self):
         queryset = super().get_queryset()

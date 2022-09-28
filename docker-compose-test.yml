@@ -14,3 +14,4 @@ services:
       - 127.0.0.1:9200:9200
     environment:
       discovery.type: 'single-node'
+    network_mode: "host"

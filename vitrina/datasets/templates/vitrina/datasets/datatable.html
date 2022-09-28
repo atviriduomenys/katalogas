@@ -1,5 +1,9 @@
 {% load i18n %}
-
+{% if can_add_resource %}
+    <a href="{%url 'resource-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="add_resource">
+        {% translate "Naujas šaltinis" %}
+    </a>
+{% endif %}
 <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
     <thead>
     <tr>
@@ -12,6 +16,8 @@
         <th class="has-text-centered">{% translate "Formatas" %}</th>
         <th>{% translate "Publikuota" %}</th>
         <th>{% translate "Atnaujinta" %}</th>
+        <th></th>
+        <th></th>
         <th></th>
     </tr>
     </thead>
@@ -51,6 +57,21 @@
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>
                 </td>
+            {% endif %}
+            {% if can_add_resource %}
+            <td>
+                <a href="{%url 'resource-change' pk=r.id %}"
+                   class="button is-link is-small is-pulled-right"
+                   id="change_resource">{% translate "Redaguoti" %}</a>
+                </div>
+            </td>
+            <td>
+                <a href="{%url 'resource-delete' pk=r.id %}"
+                   onclick="return confirm('Ar jūs tikrai norite trinti šį šaltinį?')"
+                   class="button is-link is-small is-pulled-right"
+                   id="delete_resource">{% translate "Trinti" %}</a>
+                </div>
+            </td>
             {% endif %}
         </tr>
     {% endfor %}

@@ -2,6 +2,7 @@ import os
 import pathlib
 
 from django.db import models
+from django.shortcuts import redirect
 from django.urls import reverse
 
 from vitrina.datasets.models import Dataset
@@ -40,17 +41,17 @@ class DatasetDistribution(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     identifier = models.CharField(max_length=255, blank=True, null=True)
 
-    title = models.TextField(blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    period_end = models.CharField(max_length=255, blank=True, null=True)
     period_start = models.CharField(max_length=255, blank=True, null=True)
+    period_end = models.CharField(max_length=255, blank=True, null=True)
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
@@ -103,4 +104,3 @@ class DatasetDistribution(models.Model):
 
     def is_previewable(self):
         return (self.extension() == "CSV" or self.extension() == "XLSX") and self.filename.file.size > 0
-

@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
 
 {% block pageTitle %} | {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
@@ -120,6 +121,10 @@
                         </span>
                     </a>
                 </p>
+                <div class="dataset-meta-title" id="dataset_subscription">
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" as description %}
+                    {% subscription obj=dataset user=request.user description=description %}
+                </div>
             </div>
         </div>
     </div>

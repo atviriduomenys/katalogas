@@ -23,6 +23,7 @@ class RequestListView(ListView):
 class RequestDetailView(DetailView):
     model = Request
     template_name = 'vitrina/requests/detail.html'
+    context_object_name = 'request_object'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

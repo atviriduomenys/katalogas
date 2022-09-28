@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.requests.models import Request
+from vitrina.requests.models import Request, RequestStructure
 
 
 class RequestFactory(DjangoModelFactory):
@@ -13,3 +13,15 @@ class RequestFactory(DjangoModelFactory):
     version = 1
     is_existing = True
     is_public = True
+
+
+class RequestStructureFactory(DjangoModelFactory):
+    class Meta:
+        model = RequestStructure
+        django_get_or_create = ('data_title', 'data_notes', 'data_type', 'dictionary_title',)
+
+    version = 1
+    data_title = factory.Faker('catch_phrase')
+    data_notes = factory.Faker('catch_phrase')
+    data_type = factory.Faker('catch_phrase')
+    dictionary_title = factory.Faker('catch_phrase')

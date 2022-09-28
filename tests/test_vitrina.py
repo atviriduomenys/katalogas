@@ -18,11 +18,11 @@ def test_home(app: DjangoTestApp):
     assert resp.status == '200 OK'
     assert resp.context['counts'] == {
         'dataset': 1,
-        'organization': 1,
+        'organization': 2,
         'project': 1,
     }
     assert [list(elem.stripped_strings) for elem in resp.html.find_all(id="counts")] == [
         ['1', 'Rinkinių'],
-        ['1', 'Organizacijų'],
+        ['2', 'Organizacijų'],
         ['1', 'Panaudojimo atvejų'],
     ]

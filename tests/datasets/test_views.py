@@ -1,14 +1,76 @@
 from datetime import datetime
-
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
 
+from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.users.models import User
+from vitrina.resources.factories import DatasetDistributionFactory
+
+
+@pytest.fixture
+def dataset_detail_data():
+    dataset_distribution = DatasetDistributionFactory()
+    return {
+        'dataset': dataset_distribution.dataset,
+        'dataset_distribution': dataset_distribution
+    }
+
+
+@pytest.mark.django_db
+def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['tags'] == []
+
+
+@pytest.mark.django_db
+def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
+    dataset_detail_data['dataset'].tags = "tag-1, tag-2, tag-3"
+    dataset_detail_data['dataset'].save()
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+
+
+@pytest.mark.django_db
+def test_dataset_detail_status(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert resp.context['status'] == "Atvertas"
+
+
+@pytest.mark.django_db
+def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    assert list(resp.context['resources']) == [dataset_detail_data['dataset_distribution']]
+
+
+@pytest.mark.django_db
+def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(reverse('dataset-distribution-download', kwargs={
+        'dataset_id': 1000,
+        'distribution_id': 1000,
+        'filename': "doesntexist",
+    }), expect_errors=True)
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_download_distribution(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(dataset_detail_data['dataset_distribution'].get_download_url())
+    assert resp.content == b'Column\nValue'
+
+
+@pytest.mark.django_db
+def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
+    resp = app.get(reverse('dataset-distribution-preview', kwargs={
+        'dataset_id': dataset_detail_data['dataset'].pk,
+        'distribution_id': dataset_detail_data['dataset_distribution'].pk
+    }))
+    assert resp.json == {'data': [['Column'], ['Value']]}
 
 
 @pytest.fixture
@@ -72,7 +134,7 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    dataset1 = DatasetFactory(status=Dataset.HAS_DATA, slug="ds1")
+    dataset1 = DatasetFactory(status=Dataset.INVENTORED, slug="ds1")
     dataset2 = DatasetFactory(slug="ds2")
     DatasetStructureFactory(dataset=dataset2)
     return [dataset1, dataset2]
@@ -87,9 +149,9 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
 
 @pytest.mark.django_db
 def test_status_filter_has_data(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.HAS_DATA))
+    resp = app.get("%s?status=%s" % (reverse('dataset-list'), Dataset.INVENTORED))
     assert list(resp.context['object_list']) == [status_filter_data[0]]
-    assert resp.context['selected_status'] == Dataset.HAS_DATA
+    assert resp.context['selected_status'] == Dataset.INVENTORED
 
 
 @pytest.mark.django_db
@@ -383,3 +445,120 @@ def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_d
 def test_download_structure(app: DjangoTestApp, dataset_structure_data):
     resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'
+
+
+@pytest.mark.django_db
+def test_change_form_no_login(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
+    assert response.status_code == 302
+    assert settings.LOGIN_URL in response.location
+
+
+@pytest.mark.django_db
+def test_change_form_wrong_login(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
+    assert response.status_code == 302
+    assert str(dataset.id) in response.location
+
+
+@pytest.mark.django_db
+def test_change_form_correct_login(app: DjangoTestApp):
+    dataset = DatasetFactory(
+        title="dataset_title",
+        title_en="dataset_title",
+        published=datetime(2022, 9, 7),
+        slug='test-dataset-slug',
+        description='test description',
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=dataset.organization)
+    app.set_user(user)
+    dataset.manager = user
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'edited dataset description'
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
+    assert dataset.title == 'Edited title'
+    assert dataset.description == 'edited dataset description'
+
+
+@pytest.mark.django_db
+def test_click_edit_button(app: DjangoTestApp):
+    dataset = DatasetFactory(
+        title="dataset_title",
+        title_en="dataset_title",
+        published=datetime(2022, 9, 7),
+        slug='test-dataset-slug',
+        description='test description',
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=dataset.organization)
+    app.set_user(user)
+    dataset.manager = user
+    response = app.get(reverse('dataset-detail', kwargs={'pk': dataset.id}))
+    response.click(linkid='change_dataset')
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_add_form_no_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert settings.LOGIN_URL in response.location
+
+
+@pytest.mark.django_db
+def test_add_form_wrong_login(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    org = OrganizationFactory()
+    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert str(org.id) in response.location
+
+
+@pytest.mark.django_db
+def test_add_form_correct_login(app: DjangoTestApp):
+    org = OrganizationFactory(
+        title="Org_title",
+        created=datetime(2022, 8, 22, 10, 30),
+        jurisdiction="Jurisdiction1",
+        slug='test-org-slug',
+        kind='test_org_kind'
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=org)
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form['title'] = 'Added title'
+    form['description'] = 'Added new dataset description'
+    resp = form.submit()
+    added_dataset = Dataset.objects.filter(title="Added title")
+    assert added_dataset.count() == 1
+    assert resp.status_code == 302
+    assert str(added_dataset[0].id) in resp.url
+
+
+@pytest.mark.django_db
+def test_click_add_button(app: DjangoTestApp):
+    org = OrganizationFactory(
+        title="Org_title",
+        created=datetime(2022, 8, 22, 10, 30),
+        jurisdiction="Jurisdiction1",
+        slug='test-org-slug',
+        kind='test_org_kind'
+    )
+    user = User.objects.create_user(email="test@test.com", password="test123",
+                                    organization=org)
+    app.set_user(user)
+    response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
+    response.click(linkid='add_dataset')
+    assert response.status_code == 200

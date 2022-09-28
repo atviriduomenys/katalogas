@@ -11,7 +11,12 @@ def migrate_subscriptions(apps, schema_editor):
     Subscription = apps.get_model('vitrina_messages', 'Subscription')
     ContentType = apps.get_model('contenttypes', 'ContentType')
     Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    seen = set()
     for subscription in UserSubscription.objects.all():
+        key = (subscription.dataset.pk, subscription.user)
+        if key in seen:
+            # Skip duplicates
+            continue
         content_type = ContentType.objects.get_for_model(Dataset)
         Subscription.objects.create(
             created=subscription.created or datetime.now(),
@@ -19,6 +24,7 @@ def migrate_subscriptions(apps, schema_editor):
             object_id=subscription.dataset.pk,
             user=subscription.user
         )
+        seen.add(key)
 
 
 class Migration(migrations.Migration):

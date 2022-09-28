@@ -21,7 +21,7 @@ def migrate_likes(apps, schema_editor):
             user_id=user_like.user_id
         )
 
-    for user_vote in UserVote.objects.all():
+    for user_vote in UserVote.objects.filter(user__isnull=False):
         if user_vote.dataset:
             content_type = ContentType.objects.get_for_model(Dataset)
             Like.objects.create(

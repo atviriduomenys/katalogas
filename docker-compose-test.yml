@@ -10,10 +10,11 @@ services:
 
   elasticsearch:
     image: elasticsearch:7.8.1
-    ports:
-      - 0.0.0.0:9200:9200
-      - 0.0.0.0:9300:9300
+#    ports:
+#      - 0.0.0.0:9200:9200
+#      - 0.0.0.0:9300:9300
     environment:
       discovery.type: 'single-node'
       network.publish_host: 0.0.0.0
       transport.tcp.port: 9200
+    network_mode: "host"

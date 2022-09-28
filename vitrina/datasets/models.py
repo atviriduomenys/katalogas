@@ -170,26 +170,26 @@ class DatasetMembers(models.Model):
         managed = True
         db_table = 'dataset_members'
 
+    def get_members_url(self):
+        return reverse('dataset-members', kwargs={'pk': self.pk})
 
-class DatasetMembers(models.Model):
-    CREATOR = 'dct:creator'
-    CONTRIBUTOR = 'dct:contributor'
-    PUBLISHER = 'dct:publisher'
+
+class DatasetMember(models.Model):
+    CREATOR = 'creator'
+    CONTRIBUTOR = 'contributor'
+    PUBLISHER = 'publisher'
 
     ROLE_CHOICES = (
         (CREATOR, _('Creator')),
         (CONTRIBUTOR, _('Contributor')),
         (PUBLISHER, _('Publisher')),
     )
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING)
+    user = models.ForeignKey(User, models.CASCADE)
+    organization = models.ForeignKey(Organization, models.CASCADE)
+    dataset = models.ForeignKey(Dataset, models.CASCADE)
     role = models.CharField(max_length=255, choices=ROLE_CHOICES)
     created = models.DateTimeField(null=True, auto_now_add=True)
-    contact = models.BooleanField(null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'dataset_members'
+    contact = models.BooleanField(default=False)
 
 
 # TODO: To be merged into Dataset:

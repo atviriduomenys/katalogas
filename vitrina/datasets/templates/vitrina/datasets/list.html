@@ -54,7 +54,6 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
-
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {% include "vitrina/datasets/filters.html" %}
@@ -90,6 +89,13 @@
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
             </div>
+            {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Pridėti rinkinį" %}
+                    </a>
+                </div>
+            {% endif %}
             {% for i in page_obj %}
                 <article class="media">
                     <div class="media-content">

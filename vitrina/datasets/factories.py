@@ -1,18 +1,21 @@
 import factory
 from factory.django import DjangoModelFactory
 
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 
 
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
-        django_get_or_create = ('title',)
+        django_get_or_create = ('title', 'slug', 'organization')
 
     title = factory.Faker('catch_phrase')
     slug = factory.Faker('word')
+    organization = factory.SubFactory(OrganizationFactory)
     version = 1
     will_be_financed = False
+    status = Dataset.HAS_DATA
 
 
 class DatasetStructureFactory(DjangoModelFactory):

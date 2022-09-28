@@ -3,6 +3,8 @@ from typing import List, Any, Dict, Type
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
 
+from vitrina.datasets.models import Dataset
+from vitrina.users.models import User
 from vitrina.helpers import get_filter_url
 
 
@@ -28,3 +30,28 @@ def update_facet_data(request: WSGIRequest, facet_fields: List[str],
             }
             updated_facet_data.append(data)
     return updated_facet_data
+
+
+def can_update_dataset(user: User, dataset: Dataset) -> bool:
+    permission = False
+    if user.is_authenticated:
+        if user.organization_id:
+            if user.organization_id == dataset.organization_id:
+                permission = True
+        if dataset.manager_id:
+            if user.id == dataset.manager_id:
+                permission = True
+        if user.is_staff:
+            permission = True
+    return permission
+
+
+def can_create_dataset(user: User, org_id) -> bool:
+    permission = False
+    if user.is_authenticated:
+        if user.organization_id:
+            if user.organization_id == org_id:
+                permission = True
+        if user.is_staff:
+            permission = True
+    return permission

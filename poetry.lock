@@ -775,6 +775,20 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 six = ">=1.5"
 
 [[package]]
+name = "python-slugify"
+version = "6.1.2"
+description = "A Python slugify application that also handles Unicode"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+
+[package.dependencies]
+text-unidecode = ">=1.3"
+
+[package.extras]
+unidecode = ["Unidecode (>=1.1.1)"]
+
+[[package]]
 name = "pytz"
 version = "2022.2.1"
 description = "World timezone definitions, modern and historical"
@@ -849,6 +863,14 @@ cssselect2 = ">=0.2.0"
 lxml = "*"
 reportlab = "*"
 tinycss2 = ">=0.6.0"
+
+[[package]]
+name = "text-unidecode"
+version = "1.3"
+description = "The most basic Text::Unidecode port"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "tinycss2"
@@ -946,7 +968,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "2bf4fbe91d3b93c13a65130198d60968f7098178bb22d777e41f2e2dfd11fdf5"
+content-hash = "4002d749ffa114d4e4dd53449c8cb09b9ca488a302af72ea9cdf2f5df69cebde"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -1012,6 +1034,7 @@ pytest = []
 pytest-cov = []
 pytest-django = []
 python-dateutil = []
+python-slugify = []
 pytz = []
 rcssmin = []
 reportlab = []
@@ -1020,6 +1043,7 @@ six = []
 soupsieve = []
 sqlparse = []
 svglib = []
+text-unidecode = []
 tinycss2 = []
 tomli = []
 unidecode = []

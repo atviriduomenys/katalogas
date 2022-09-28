@@ -1,19 +1,26 @@
-import csv
-
-from django.http import FileResponse
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+import itertools
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
+import csv
 from django.views import View
 from django.views.generic import TemplateView
+from django.shortcuts import redirect
+from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, UpdateView
 from haystack.generic_views import FacetedSearchView
-
+from slugify import slugify
+from vitrina import settings
+from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data
+from vitrina.datasets.services import update_facet_data, can_update_dataset, can_create_dataset
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
+from vitrina.resources.models import DatasetDistribution
 
 
 class DatasetListView(FacetedSearchView):
@@ -37,7 +44,6 @@ class DatasetListView(FacetedSearchView):
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
-
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
@@ -46,6 +52,7 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
+            'can_create_dataset': can_create_dataset(self.request.user, self.kwargs.get('pk'))
         }
         context.update(extra_context)
         return context
@@ -63,10 +70,39 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'rating': 3.0,
-            'status': dataset.get_status_display()
+            'status': dataset.get_status_display(),
+            'can_update_dataset': can_update_dataset(self.request.user, dataset),
+            'resources': dataset.datasetdistribution_set.all(),
         }
         context_data.update(extra_context_data)
         return context_data
+
+
+class DatasetDistributionDownloadView(View):
+    def get(self, request, dataset_id, distribution_id, filename):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__pk=dataset_id,
+            pk=distribution_id,
+            filename__icontains=filename
+        )
+        response = FileResponse(open(distribution.filename.path, 'rb'))
+        return response
+
+
+class DatasetDistributionPreviewView(View):
+    def get(self, request, dataset_id, distribution_id):
+        distribution = get_object_or_404(
+            DatasetDistribution,
+            dataset__pk=dataset_id,
+            pk=distribution_id
+        )
+        data = []
+        if distribution.is_previewable():
+            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = itertools.islice(rows, 100)
+            data = list(csv.reader(rows, delimiter=";"))
+        return JsonResponse({'data': data})
 
 
 class DatasetStructureView(TemplateView):
@@ -93,3 +129,65 @@ class DatasetStructureDownloadView(View):
         structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
+
+
+class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Dataset
+    template_name = 'base_form.html'
+    context_object_name = 'dataset'
+    form_class = NewDatasetForm
+
+    def has_permission(self):
+        return can_create_dataset(self.request.user, self.kwargs['pk'])
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            org = get_object_or_404(Organization, id=self.kwargs['pk'])
+            return redirect(org)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Naujas duomenų rinkinys')
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super(DatasetCreateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        return super().form_valid(form)
+
+
+class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Dataset
+    template_name = 'base_form.html'
+    context_object_name = 'dataset'
+    form_class = NewDatasetForm
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        return can_update_dataset(self.request.user, dataset)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+            return redirect(dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Duomenų rinkinio redagavimas')
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        return super().form_valid(form)
+

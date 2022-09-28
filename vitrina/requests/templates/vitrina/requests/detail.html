@@ -4,7 +4,7 @@
 {% load hitcount_tags %}
 
 {% block head %}
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
 
@@ -14,28 +14,9 @@
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
-            <article class="panel">
-                <p class="panel-heading">
-                    {% translate "Poreikiai ir pasiūlymai" %}
-                </p>
-                <nav class="category-panel">
-                    <a class="panel-block is-active" href="/requests/submitted">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Gauti poreikiai duomenų rinkiniams" %}
-                    </a>
-                    <a class="panel-block" href="/requests/suggest">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Pateikti pasiūlymą / pastabą" %}
-                    </a>
-                </nav>
-            </article>
             <div class="content">
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkiniui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
-                <a href="/requests/new"
+                <a href="{% url 'request-create' %}"
                    class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
             </div>
         </div>
@@ -294,10 +275,10 @@
                     </tr>
                         {% for struct in structure %}
                             <tr>
-                                <td>{{ struct.data_title }}</td>
-                                <td>{{ struct.dictionary_title }}</td>
-                                <td>{{ struct.data_type }}</td>
-                                <td>{{ struct.data_notes }}</td>
+                                <td>{{ struct.data_title|default:"" }}</td>
+                                <td>{{ struct.dictionary_title|default:"" }}</td>
+                                <td>{{ struct.data_type|default:"" }}</td>
+                                <td>{{ struct.data_notes|default:"" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

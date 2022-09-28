@@ -1,36 +1,17 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block pageTitle %} | {% translate "requests.submittedRequests" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "requests.submittedRequests" %}{% endblock %}
+{% block pageTitle %} | {% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 
-{% block current_title %}{% translate "requests.submittedRequests" %}{% endblock %}
+{% block current_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter">
-            <article class="panel">
-                <p class="panel-heading">
-                    {% translate "Poreikiai ir pasiūlymai" %}
-                </p>
-                <nav class="category-panel">
-                    <a class="panel-block is-active" href="/requests/submitted">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Gauti poreikiai duomenų rinkiniams" %}
-                    </a>
-                    <a class="panel-block" href="/requests/suggest">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Pateikti pasiūlymą / pastabą" %}
-                    </a>
-                </nav>
-            </article>
             <div class="content">
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
-                <a href="/requests/new"
+                <a href="{% url 'request-create' %}"
                    class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
 
                 <nav class="category-panel">
@@ -39,20 +20,20 @@
                     </p>
                     <div class="field">
                         <input
+                                type="date"
                                 class="input datepicker-from"
                                 name="date_from"
                                 id="from"
                                 value="{{ dateFrom }}"
-                                placeholder="{% translate "Data nuo" %}"
                         >
                     </div>
                     <div class="field">
                         <input
+                                type="date"
                                 class="input datepicker-to"
                                 name="date_to"
                                 id="to"
                                 value="{{ dateTo }}"
-                                placeholder="{% translate "Data iki" %}"
                         >
                     </div>
                 </nav>
@@ -64,7 +45,7 @@
             </div>
             <form class="field has-addons is-fullwidth" method="get">
                 <div class="control is-expanded">
-                    <input class="input" type="text" name="q" placeholder="{% translate "Ieškoti poreikio duomenų rinkiniui" %}"
+                    <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
                            value="{{ query | escape }}"/>
                 </div>
                 <p class="control">
@@ -76,12 +57,10 @@
                 </p>
             </form>
 
-            {#<a href="/search" class="button is-text advanced-search is-pulled-right">{% translate "search.advanced" %}</a>#}
-
             <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
 
             <div class="show-mobile m-b-md">
-                <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
+                <button class="button is-primary is-small show-mobile-facets">{% translate "Filtruoti rezultatus" %}</button>
             </div>
 
             {% for i in page_obj %}
@@ -92,14 +71,14 @@
                                 <strong><a href="{{ i.get_absolute_url }}" class="dataset-list-title">{{ i.title | escape }}</a></strong>
                                 <div class="columns">
                                     <div class="column">
-                                        <p>{% translate "Būsena" %}: <span><b>{{ i.status }}</b></span></p>
+                                        <p>{% translate "Būsena" %}: <span><b>{{ i.get_status_display }}</b></span></p>
                                         {% if i.organization_title %}
-                                            <p>{% translate "request.forOrganization" %}:
+                                            <p>{% translate "Pasiūlymas organizacijai" %}:
                                                 <span><b>{{ i.organization_title }}</b></span></p>
                                         {% endif %}
                                         <p class="dataset-list-description">
                                             {% if i.existing == 'true' %}
-                                                {% translate "request.existingModification" %}
+                                                <b>{% translate "Poreikis papildyti ar pakeisti esamą duomenų rinkinį" %}</b>
                                             {% else %}
                                                 {{ i.description }}
                                             {% endif %}
@@ -107,33 +86,20 @@
                                     </div>
                                     <div class="column is-one-third">
                                         {% if i.registered %}
-                                            <p>{% translate "request.registered" %}: {{ i.registered|date("Y-MM-dd HH:mm:ss", "UTC" %}</p>
+                                            <p>{% translate "Registravimo data" %}: {{ i.registered|date:"Y-m-d H:i:s" }}</p>
                                         {% endif %}
                                         {% if i.modified %}
-                                            <p>{% translate "request.updated" %}: {{ i.modified|date("Y-MM-dd HH:mm:ss", "UTC" %}</p>
+                                            <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"Y-m-d H:i:s" }}</p>
                                         {% endif %}
-                                        {% if i.comment_count != 0 %}
-                                            <p>{% translate "dataset.comments" %}: {{ i.comment_count }}</p>
+                                        {% if i.comment_count %}
+                                            <p>{% translate "Komentarai" %}: {{ i.comment_count }}</p>
                                         {% endif %}
                                         {% if i.like_count %}
-                                            <p>{% translate "request.likes" %}: {{ i.like_count }}</p>
+                                            <p>{% translate "Patinka" %}: {{ i.like_count }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
-                            {#<div class="tags">#}
-                            {#{% for t in i.format %}#}
-                            {#{% if t == "api" %}#}
-                            {#<a href="{{ radix }}/{{ i.slug }}" class="tag is-success">{{ t }}</a>#}
-                            {#{% elseif t == "csv" %}#}
-                            {#<a href="{{ radix }}/{{ i.slug }}" class="tag is-warning">{{ t }}</a>#}
-                            {#{% elseif t == "xml" %}#}
-                            {#<a href="{{ radix }}/{{ i.slug }}" class="tag is-info">{{ t }}</a>#}
-                            {#{% else %}#}
-                            {#<a href="{{ radix }}/{{ i.slug }}" class="tag">{{ t }}</a>#}
-                            {#{% endif %}#}
-                            {#{% endfor %}#}
-                            {#</div>#}
                         </div>
                     </div>
                 </article>
@@ -143,69 +109,4 @@
             <br>
         </div>
     </div>
-{% endblock %}
-{#{% block extraContent %}#}
-    {#{% include '../component/requestBlock.twig' %}#}
-{#{% endblock %}#}
-{% block scripts %}
-    <script type="text/javascript">
-        function HideMessage(){
-            var notificationBar = document.getElementById('top-bar');
-            notificationBar.classList.add('is-hidden');
-        }
-        $(function () {
-            $('.show-mobile-facets').click(function () {
-                $('#facet-modal').toggleClass("is-hidden");
-                $('#facet-modal').toggleClass("is-active");
-            });
-            $('.modal-close').click(function () {
-                $('#facet-modal').toggleClass("is-hidden");
-                $('#facet-modal').toggleClass("is-active");
-            });
-
-            var lang = "{{ locale }}";
-            var currentUrl = new URL(window.location);
-            var searchParams = new URLSearchParams(currentUrl.search);
-            var selectedDate = null;
-
-            $('.datepicker-from').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_from', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
-                }
-            });
-            $('.datepicker-to').datepicker({
-                language: lang,
-                dateFormat: 'yyyy-mm-dd',
-                autoClose: true,
-                clearButton: true,
-                onSelect: function (fd, d) {
-                    if (!d) return;
-                    selectedDate = fd;
-                },
-                onHide: function (dp, animationCompleted) {
-                    if (selectedDate != null) {
-                        if (animationCompleted) {
-                            searchParams.set('date_to', selectedDate);
-                            currentUrl.search = searchParams.toString();
-                            window.location = currentUrl.toString();
-                        }
-                    }
-                }
-            });
-        });
-    </script>
 {% endblock %}

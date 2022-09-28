@@ -3,7 +3,13 @@
     <tbody>
     <tr>
         <th>{% translate "Pasiūlymas organizacijai" %}</th>
-        <td>{% if request.organization.slug %}<a href="{{ request.organization.get_absolute_url }}">{{ request.organization }}</a>{% else %}{{ request.organization }}{% endif %}</td>
+        <td>
+            {% if request.organization %}
+            <a href="{{ request.organization.get_absolute_url }}">{{ request.organization }}</a>
+            {% else %}
+            -
+            {% endif %}
+        </td>
     </tr>
     {% if request.is_existing and dataset %}
         <tr>
@@ -39,10 +45,12 @@
             <td>{{ user_count }}</td>
         </tr>
     {% endif %}
+    {% if request.periodicity %}
     <tr>
         <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
         <td>{{ request.periodicity }}</td>
     </tr>
+    {% endif %}
     <tr>
         <th>{% translate "Patinka" %}:</th>
         <td>

@@ -11,6 +11,7 @@ class OrganizationFactory(DjangoModelFactory):
 
     title = factory.Faker('company')
     slug = factory.Faker('word')
+    kind = factory.Faker('word')
     version = 1
 
     @classmethod

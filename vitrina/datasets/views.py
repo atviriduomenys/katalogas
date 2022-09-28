@@ -14,9 +14,9 @@ from vitrina import settings
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetFilterForm
 from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
-    get_category_counts, can_update_dataset, can_create_dataset
+    get_category_counts, can_update_dataset, can_create_dataset, can_see_dataset_members
 from vitrina.orgs.models import Organization
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
@@ -190,65 +190,6 @@ class DatasetDetailView(DetailView):
         context_data.update(extra_context_data)
         return context_data
 
-
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
-    model = Dataset
-    template_name = 'base_form.html'
-    context_object_name = 'dataset'
-    form_class = NewDatasetForm
-
-    def has_permission(self):
-        if self.request.user.organization:
-            return self.request.user.organization.slug == self.kwargs['slug']
-        else:
-            return False
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            org = get_object_or_404(Organization, kind=self.kwargs['org_kind'], slug=self.kwargs['slug'])
-            return redirect(org)
-
-    def get(self, request, *args, **kwargs):
-        return super(DatasetCreateView, self).get(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        return super().form_valid(form)
-
-
-class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-    model = Dataset
-    template_name = 'base_form.html'
-    context_object_name = 'dataset'
-    form_class = NewDatasetForm
-
-    def has_permission(self):
-        if self.request.user.organization:
-            dataset = Dataset.objects.filter(slug=self.kwargs['slug'])
-            if self.request.user.organization.slug == self.kwargs['org_slug'] or dataset.manager == self.request.user:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            dataset = get_object_or_404(Dataset, slug=self.kwargs['slug'])
-            return redirect(dataset)
-
-    def get(self, request, *args, **kwargs):
-        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        return super().form_valid(form)
         
 class DatasetDistributionDownloadView(View):
     def get(self, request, dataset_id, distribution_id, filename):
@@ -363,3 +304,18 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         object.slug = slugify(object.title)
         return super().form_valid(form)
 
+
+class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    login_url = settings.LOGIN_URL
+    model = DatasetMember
+    template_name = 'vitrina/datasets/members_list.html'
+    context_object_name = 'dataset_members'
+    paginate_by = 20
+
+    def has_permission(self):
+        dataset = Dataset.public.get_from_url_args(**self.kwargs)
+        return can_see_dataset_members(self.request.user, dataset)
+
+    def get_queryset(self):
+        dataset = Dataset.public.get_from_url_args(**self.kwargs)
+        return dataset.datasetmember_set.all()

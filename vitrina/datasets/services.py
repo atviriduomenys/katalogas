@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative
 from vitrina.users.models import User
 
 
@@ -105,3 +106,7 @@ def can_create_dataset(user: User, org_id) -> bool:
         if user.is_staff:
             permission = True
     return permission
+
+
+def can_see_dataset_members(user: User, dataset: Dataset) -> bool:
+    return Representative.objects.filter(organization_id=dataset.organization_id, email=user.email).exists()

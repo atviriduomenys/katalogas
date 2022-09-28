@@ -1,30 +1,22 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 import itertools
-from django.http import FileResponse, JsonResponse
-import csv
+from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 import csv
-from django.views import View
-from django.views.generic import ListView, TemplateView
-from django.shortcuts import redirect
+from django.views.generic import ListView, TemplateView, UpdateView, CreateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
-from slugify import slugify
-from vitrina import settings
-from vitrina.datasets.forms import NewDatasetForm
 
 from django.views import View
+from slugify import slugify
+
 from vitrina import settings
-from vitrina.orgs.models import Organization
-from vitrina.datasets.forms import DatasetFilterForm
+from vitrina.datasets.forms import DatasetFilterForm, NewDatasetForm
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
 from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
     get_category_counts, can_update_dataset, can_create_dataset, can_see_dataset_members
 from vitrina.orgs.models import Organization
-    get_category_counts, can_see_dataset_members
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
 from django.http import HttpResponseBadRequest, FileResponse
@@ -249,6 +241,67 @@ class DatasetStructureDownloadView(View):
         structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
+
+
+class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Dataset
+    template_name = 'base_form.html'
+    context_object_name = 'dataset'
+    form_class = NewDatasetForm
+
+    def has_permission(self):
+        return can_create_dataset(self.request.user, self.kwargs['pk'])
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            org = get_object_or_404(Organization, id=self.kwargs['pk'])
+            return redirect(org)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Naujas duomenų rinkinys')
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super(DatasetCreateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        return super().form_valid(form)
+
+
+class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Dataset
+    template_name = 'base_form.html'
+    context_object_name = 'dataset'
+    form_class = NewDatasetForm
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        return can_update_dataset(self.request.user, dataset)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+            return redirect(dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Duomenų rinkinio redagavimas')
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        object = form.save(commit=False)
+        object.slug = slugify(object.title)
+        return super().form_valid(form)
 
 
 class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):

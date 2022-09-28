@@ -8,9 +8,12 @@ def migrate_likes(apps, schema_editor):
     UserVote = apps.get_model('vitrina_likes', 'UserVote')
     Like = apps.get_model('vitrina_likes', 'Like')
     ContentType = apps.get_model('contenttypes', 'ContentType')
+    Request = apps.get_model('vitrina_requests', 'request')
+    Dataset = apps.get_model('vitrina_datasets', 'dataset')
+    HarvestingResult = apps.get_model('vitrina_datasets', 'harvestingresult')
 
     for user_like in UserLike.objects.all():
-        content_type = ContentType.objects.get(app_label='vitrina_requests', model='request')
+        content_type = ContentType.objects.get_for_model(Request)
         Like.objects.create(
             created=user_like.created or datetime.now(),
             content_type=content_type,
@@ -20,7 +23,7 @@ def migrate_likes(apps, schema_editor):
 
     for user_vote in UserVote.objects.all():
         if user_vote.dataset:
-            content_type = ContentType.objects.get(app_label='vitrina_datasets', model='dataset')
+            content_type = ContentType.objects.get_for_model(Dataset)
             Like.objects.create(
                 created=user_vote.created or datetime.now(),
                 content_type=content_type,
@@ -28,7 +31,7 @@ def migrate_likes(apps, schema_editor):
                 user=user_vote.user
             )
         elif user_vote.harvested:
-            content_type = ContentType.objects.get(app_label='vitrina_datasets', model='harvestingresult')
+            content_type = ContentType.objects.get_for_model(HarvestingResult)
             Like.objects.create(
                 created=user_vote.created or datetime.now(),
                 content_type=content_type,

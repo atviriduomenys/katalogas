@@ -97,6 +97,7 @@ class Subscription(models.Model):
 
     class Meta:
         db_table = 'subscription'
+        unique_together = ['user', 'content_type', 'object_id']
 
     def __str__(self):
         return str(self.user)

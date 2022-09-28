@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic import DetailView
 from itsdangerous import URLSafeSerializer
 
@@ -119,6 +119,19 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
     model = Representative
     form_class = RepresentativeUpdateForm
     template_name = 'base_form.html'
+
+    def has_permission(self):
+        organization_id = self.kwargs.get('organization_id')
+        organization = get_object_or_404(Organization, pk=organization_id)
+        return has_coordinator_permission(self.request.user, organization)
+
+    def get_success_url(self):
+        return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
+
+
+class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Representative
+    template_name = 'confirm_delete.html'
 
     def has_permission(self):
         organization_id = self.kwargs.get('organization_id')

@@ -1,7 +1,8 @@
 from django.urls import path
 
 from vitrina.datasets.views import DatasetListView
-from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView
+from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
+    RepresentativeDeleteView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, RepresentativeRegisterView
 
 urlpatterns = [
@@ -14,6 +15,8 @@ urlpatterns = [
          name='representative-create'),
     path('orgs/<int:organization_id>/members/<int:pk>/change/', RepresentativeUpdateView.as_view(),
          name='representative-update'),
+    path('orgs/<int:organization_id>/members/<int:pk>/delete/', RepresentativeDeleteView.as_view(),
+         name='representative-delete'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")

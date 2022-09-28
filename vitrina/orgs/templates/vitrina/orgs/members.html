@@ -24,7 +24,10 @@
                         <th>{% translate "El. paštas" %}</th>
                         <th>{% translate "Telefonas" %}</th>
                         <th>{% translate "Rolė" %}</th>
-                        {% if has_permission %}<th></th>{% endif %}
+                        {% if has_permission %}
+                            <th></th>
+                            <th></th>
+                        {% endif %}
                     </tr>
                     {% for m in members %}
                         <tr>
@@ -40,8 +43,13 @@
                             <td>{{ m.get_role_display|default:"-" }}</td>
                             {% if has_permission %}
                                 <td>
-                                    <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary">
+                                    <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
                                         {% translate "Redaguoti" %}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
+                                        {% translate "Pašalinti" %}
                                     </a>
                                 </td>
                             {% endif %}

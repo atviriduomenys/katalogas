@@ -8,11 +8,11 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
-        django_get_or_create = ('title', 'slug', 'organization')
+        django_get_or_create = ('title', 'organization', 'is_public')
 
     title = factory.Faker('catch_phrase')
     slug = factory.Faker('word')
-    organization = factory.SubFactory(OrganizationFactory)
+    is_public = True
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA

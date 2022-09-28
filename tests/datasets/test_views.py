@@ -448,6 +448,19 @@ def test_download_structure(app: DjangoTestApp, dataset_structure_data):
 
 
 @pytest.mark.django_db
+def test_public_manager_filtering(app: DjangoTestApp):
+    DatasetFactory(is_public=False)
+    DatasetFactory(deleted=True, deleted_on=datetime.now())
+    DatasetFactory(deleted=True, deleted_on=None)
+    DatasetFactory(deleted=None, deleted_on=None)
+    DatasetFactory(organization=None)
+    DatasetFactory()
+
+    public_datasets = Dataset.public.all()
+    assert public_datasets.count() == 2
+    
+    
+@pytest.mark.django_db
 def test_change_form_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))

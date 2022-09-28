@@ -46,7 +46,7 @@
                     <article class="has-margin-bottom has-line-bottom">
     <div class="columns single-item reverse-columns">
         <div class="column {% if i.getImageUUID %}is-10{% else %}is-12{% endif %}">
-            <p><a href="{{ i.url }}" class="usecase-url" target="_blank">{{ i.url }}</a></p>
+            <p><a href="{{ i.get_absolute_url }}" class="usecase-url" target="_blank">{{ i.get_title }}</a></p>
 
             <p><b>{% translate "Panaudojimo atvejo/paslaugos aprašymas" %}:</b></p>
             <p>{{ i.description }}</p>

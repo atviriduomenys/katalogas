@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
 
 {% block head %}
     <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
@@ -10,10 +11,16 @@
 
 {% block content %}
     <div class="columns no-margin-bottom">
+        <div class="column is-one-third">
+            <div class="content" id="project_subscription">
+                {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
+                {% subscription obj=project user=request.user description=description %}
+            </div>
+        </div>
         <div class="column is-three-quarters">
             <div class="columns no-margin-bottom">
                 <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.title }}</h3>
+                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.get_title }}</h3>
                 </div>
                 <div class="column">
                     {% get_hit_count for project as total_hits %}

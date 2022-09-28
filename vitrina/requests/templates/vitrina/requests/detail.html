@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
 
 {% block head %}
     <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
@@ -18,6 +19,11 @@
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkiniui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
                 <a href="{% url 'request-create' %}"
                    class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
+
+                <div id="request_subscription">
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su poreikiu" as description %}
+                    {% subscription obj=request_object user=request.user description=description %}
+                </div>
             </div>
         </div>
         <div class="column is-three-quarters">

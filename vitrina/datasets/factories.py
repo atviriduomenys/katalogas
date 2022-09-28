@@ -12,6 +12,7 @@ class DatasetFactory(DjangoModelFactory):
 
     title = factory.Faker('catch_phrase')
     slug = factory.Faker('word')
+    organization = factory.SubFactory(OrganizationFactory)
     is_public = True
     version = 1
     will_be_financed = False

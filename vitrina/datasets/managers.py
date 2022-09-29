@@ -10,3 +10,6 @@ class PublicDatasetManager(models.Manager):
             deleted_on__isnull=True,
             organization_id__isnull=False,
         )
+
+    def get_from_url_args(self, **kwargs):
+        return self.get(id=kwargs.get('pk'))

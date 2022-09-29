@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinio narių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+    <table class="table is-fullwidth has-border-top has-border-bottom th-40 custom-table-padding">
+        <tbody>
+            <tr>
+                <th>{% translate "Narys" %}</th>
+                <th>{% translate "Nario rolė"%}</th>
+                <th>{% translate "Organizacija"%}</th>
+                <th>{% translate "Nario sukūrimo data"%}</th>
+            </tr>
+        {% for i in page_obj %}
+            <tr>
+                <td>{{ i.user.first_name }} {{ i.user.last_name }}</td>
+                <td>{{ i.role }}</td>
+                <td>{{ i.organization.title }}</td>
+                <td>{{ i.created }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% include "vitrina/common/pagination.html" %}
+{% endblock %}

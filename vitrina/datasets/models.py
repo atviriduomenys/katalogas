@@ -128,6 +128,27 @@ class Dataset(models.Model):
     def get_tag_list(self):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
 
+    def get_members_url(self):
+        return reverse('dataset-members', kwargs={'pk': self.pk})
+
+
+class DatasetMember(models.Model):
+    CREATOR = 'creator'
+    CONTRIBUTOR = 'contributor'
+    PUBLISHER = 'publisher'
+
+    ROLE_CHOICES = (
+        (CREATOR, _('Creator')),
+        (CONTRIBUTOR, _('Contributor')),
+        (PUBLISHER, _('Publisher')),
+    )
+    user = models.ForeignKey(User, models.CASCADE)
+    organization = models.ForeignKey(Organization, models.CASCADE)
+    dataset = models.ForeignKey(Dataset, models.CASCADE)
+    role = models.CharField(max_length=255, choices=ROLE_CHOICES)
+    created = models.DateTimeField(null=True, auto_now_add=True)
+    contact = models.BooleanField(default=False)
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

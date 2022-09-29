@@ -44,8 +44,9 @@ class RepresentativeCreateForm(ModelForm):
         model = Representative
         fields = ('email', 'role',)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, organization_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.organization_id = organization_id
         self.helper = FormHelper()
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
@@ -56,3 +57,8 @@ class RepresentativeCreateForm(ModelForm):
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )
 
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        if Representative.objects.filter(organization_id=self.organization_id, email=email).exists():
+            self.add_error('email', _("Organizacijos narys su šiuo el. pašto adresu jau egzistuoja "))
+        return self.cleaned_data

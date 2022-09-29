@@ -78,6 +78,11 @@ class RepresentativeCreateView(LoginRequiredMixin, PermissionRequiredMixin, Crea
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization_id'] = self.kwargs.get('organization_id')
+        return kwargs
+
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
 

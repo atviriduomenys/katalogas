@@ -104,6 +104,10 @@ class Representative(models.Model):
 
     class Meta:
         db_table = 'representative'
+        unique_together = [['organization', 'user'], ['organization', 'email']]
+
+    def __str__(self):
+        return self.email
 
 
 class PublishedReport(models.Model):

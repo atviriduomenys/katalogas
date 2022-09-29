@@ -21,6 +21,18 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
 
+      - name: Configure sysctl limits
+        run: |
+          sudo swapoff -a
+          sudo sysctl -w vm.swappiness=1
+          sudo sysctl -w fs.file-max=262144
+          sudo sysctl -w vm.max_map_count=262144
+
+      - name: Runs Elasticsearch
+        uses: elastic/elastic-github-actions/elasticsearch@master
+        with:
+          stack-version: 7.8.1
+
       - name: Install dependencies
         run: poetry install
 
@@ -29,9 +41,6 @@ jobs:
 
       - name: Check ports
         run: netstat -tulpn
-
-      - name: Check if elasticsearch is up
-        run: curl http://localhost:9200/_cluster/health
 
       - name: Test with pytest
         run: poetry run pytest -vvra --no-migrations --tb=short --cov=vitrina --cov=report=term-missing tests

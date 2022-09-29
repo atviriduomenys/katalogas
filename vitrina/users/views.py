@@ -2,10 +2,12 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView
 
+from vitrina.tasks.models import Task
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 
 from django.utils.translation import gettext_lazy as _
@@ -16,7 +18,12 @@ class LoginView(BaseLoginView):
     form_class = LoginForm
 
     def get_success_url(self):
-        if self.request.user.organization and not self.request.GET.get('next'):
+        user_tasks = Task.objects.filter(Q(user=self.request.user) |
+                                         (Q(role__isnull=False) & Q(role=self.request.user.role)) |
+                                         (Q(organization__isnull=False) &
+                                          Q(organization=self.request.user.organization)))
+        redirect_url = self.request.GET.get('next')
+        if user_tasks.exists() and redirect_url == reverse('home'):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 

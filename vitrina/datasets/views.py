@@ -183,7 +183,6 @@ class DatasetDetailView(DetailView):
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
-            'rating': 3.0,
             'status': dataset.get_status_display(),
             'can_update_dataset': can_update_dataset(self.request.user, dataset),
             'can_add_resource': can_add_resource(self.request.user, dataset.id),
@@ -305,4 +304,3 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         object = form.save(commit=False)
         object.slug = slugify(object.title)
         return super().form_valid(form)
-

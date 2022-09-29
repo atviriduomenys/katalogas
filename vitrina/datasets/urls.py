@@ -1,14 +1,15 @@
-from django.contrib.auth.decorators import login_required
 from django.urls import path
-from vitrina.datasets.views import DatasetListView, DatasetCreateView, DatasetUpdateView, DatasetStructureView, DatasetStructureDownloadView, DatasetCreateView, DatasetUpdateView, DatasetDetailView, DatasetDistributionDownloadView, DatasetDistributionPreviewView
+from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView, \
+    DatasetCreateView, DatasetUpdateView, DatasetDetailView, DatasetDistributionDownloadView, \
+    DatasetDistributionPreviewView
 
 
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
-    path('datasets/<int:pk>/add', DatasetCreateView.as_view(), name='dataset-add'),
-    path('datasets/<int:pk>/update', DatasetUpdateView.as_view(), name='dataset-change'),
+    path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
+    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),

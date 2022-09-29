@@ -2,6 +2,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.orgs.factories import OrganizationFactory
 
 
 class DatasetFactory(DjangoModelFactory):

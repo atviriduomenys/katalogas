@@ -61,18 +61,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='category',
-            options={},
-        ),
-        migrations.AlterModelOptions(
-            name='frequency',
-            options={'managed': True},
-        ),
-        migrations.AlterModelOptions(
-            name='licence',
-            options={'managed': True},
-        ),
         migrations.AlterField(
             model_name='category',
             name='icon',

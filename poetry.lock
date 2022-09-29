@@ -389,6 +389,17 @@ django-taggit = ">=0.8"
 django-templatetag-sugar = ">=0.1"
 
 [[package]]
+name = "django-tagulous"
+version = "1.3.3"
+description = "Fabulous Tagging for Django"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+Django = ">=2.2"
+
+[[package]]
 name = "django-templatetag-sugar"
 version = "1.0"
 description = "A library to make Django's template tags sweet."
@@ -914,7 +925,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "ae1496e5725966f04279af7dd625a50c2ee229eb9e009730d237d2fa0ac4f2a3"
+content-hash = "d3c5bce27cf081a4bf85f3d949f8d5e985b8d612092d3209a508936283b9d78e"
 
 [metadata.files]
 aldryn-apphooks-config = [
@@ -1101,6 +1112,10 @@ django-taggit-autosuggest = [
 django-taggit-templatetags = [
     {file = "django-taggit-templatetags-0.2.5.tar.gz", hash = "sha256:9c5eea1d6e4f350176cdc86e6cbdbb26b6efd64b22b43ca89cae6357a9af829e"},
     {file = "django-taggit-templatetags-0.2.5.zip", hash = "sha256:20441941d1316a4347e21f2aabef177d982f2d5394e4deefefde219bdd7c4a77"},
+]
+django-tagulous = [
+    {file = "django-tagulous-1.3.3.tar.gz", hash = "sha256:d445590ae1b5cb9b8c5a425f97bf5f01148a33419c19edeb721ebd9fdd6792fe"},
+    {file = "django_tagulous-1.3.3-py3-none-any.whl", hash = "sha256:ad3bb85f4cce83a47e4c0257143229cb92a294defa02fe661823b0442b35d478"},
 ]
 django-templatetag-sugar = [
     {file = "django-templatetag-sugar-1.0.tar.gz", hash = "sha256:e9f630549f6c174cf328b385190e18bfe308f74dc7eca13458163d316ed29a5e"},

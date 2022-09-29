@@ -25,15 +25,18 @@ def dataset_detail_data():
 @pytest.mark.django_db
 def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
-    assert resp.context['tags'] == []
+    assert len(resp.context['tags']) == 0
 
 
 @pytest.mark.django_db
 def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
-    dataset_detail_data['dataset'].tags = "tag-1, tag-2, tag-3"
-    dataset_detail_data['dataset'].save()
-    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
-    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+    dataset = DatasetFactory(status="HAS_DATA")
+    tag_str = "tag-1, tag-2, tag-3"
+    dataset.tags = tag_str
+    dataset.save()
+    resp = app.get(dataset.get_absolute_url())
+    assert len(resp.context['tags']) == 3
+    assert str(resp.context['tags']) == tag_str
 
 
 @pytest.mark.django_db

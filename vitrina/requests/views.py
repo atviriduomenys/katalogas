@@ -6,9 +6,7 @@ from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.detail import DetailView
 from vitrina.datasets.models import Dataset
-from vitrina.likes.models import UserLike
 from vitrina.requests.models import Request, RequestStructure
-from vitrina.requests.services import get_is_liked
 
 from django.utils.translation import gettext_lazy as _
 
@@ -43,8 +41,6 @@ class RequestDetailView(DetailView):
             "structure": RequestStructure.objects.filter(request_id=request.pk),
             "dataset": dataset,
             "status": request.get_status_display(),
-            "like_count": UserLike.objects.filter(request_id=request.pk).count(),
-            "liked": get_is_liked(self.request.user, request),
             "user_count": 0,
             "history": None,
         }

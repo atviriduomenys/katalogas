@@ -1,4 +1,6 @@
 {% load i18n %}
+{% load like_tags %}
+
 <table class="table custom-table-padding">
     <tbody>
     <tr>
@@ -53,15 +55,8 @@
     {% endif %}
     <tr>
         <th>{% translate "Patinka" %}:</th>
-        <td>
-            {{ like_count }}
-            {% if user.is_authenticated %}
-                {% if not liked %}
-                    <form action="{% url 'request-like' request_object.pk %}" method="post" class="rating-form">
-                        <input type="submit" class="button is-primary is-small m-l-md" value="{% translate 'Patinka' %}">
-                    </form>
-                {% endif %}
-            {% endif %}
+        <td id="request_likes">
+            {% like obj=request_object user=request.user %}
         </td>
     </tr>
     </tbody>

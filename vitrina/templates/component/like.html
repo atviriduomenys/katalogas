@@ -1,0 +1,8 @@
+{{ like_count }}
+{% if user.is_authenticated %}
+    <form action="{% if liked %}{% url 'unlike' content_type_id obj_id user.pk %}{% else %}{% url 'like' content_type_id obj_id user.pk %}{% endif %}"
+          method="post" class="rating-form" id="like-form">
+        {% csrf_token %}
+        <input type="submit" class="button is-primary is-small m-l-md" value="{{ button_text }}">
+    </form>
+{% endif %}

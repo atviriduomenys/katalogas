@@ -3,6 +3,7 @@
 {% load static %}
 {% load hitcount_tags %}
 {% load subscription_tags %}
+{% load like_tags %}
 
 {% block head %}
     <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
@@ -12,6 +13,10 @@
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column is-one-third">
+            <div class="content" id="project_likes">
+                <p>{% translate "Ar jums patinka šis projektas?" %}</p>
+                {% like obj=project user=request.user %}
+            </div>
             <div class="content" id="project_subscription">
                 {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
                 {% subscription obj=project user=request.user description=description %}

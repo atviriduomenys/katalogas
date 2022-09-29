@@ -49,15 +49,6 @@ def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
 
 
 @pytest.mark.django_db
-def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
-
-    # hardcoded values, will need to change with later tasks
-    assert resp.context['subscription'] == []
-    assert resp.context['rating'] == 3.0
-
-
-@pytest.mark.django_db
 def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(reverse('dataset-distribution-download', kwargs={
         'dataset_id': 1000,

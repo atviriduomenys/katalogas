@@ -3,7 +3,6 @@ from factory.django import DjangoModelFactory
 
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.orgs.factories import OrganizationFactory
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -13,7 +12,6 @@ class DatasetFactory(DjangoModelFactory):
 
     organization = factory.SubFactory(OrganizationFactory)
     title = factory.Faker('catch_phrase')
-    slug = factory.Faker('word')
     is_public = True
     version = 1
     will_be_financed = False

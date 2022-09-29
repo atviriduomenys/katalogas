@@ -54,6 +54,9 @@ class Request(models.Model):
         managed = True
         db_table = 'request'
 
+    def __str__(self):
+        return self.title
+
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
 

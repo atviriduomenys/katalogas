@@ -5,6 +5,7 @@ from django.db.models import QuerySet
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
+from vitrina.users.models import User
 
 
 def filter_by_status(queryset: QuerySet, status: str) -> QuerySet:
@@ -76,3 +77,28 @@ def get_category_counts(selected_categories: List[Any], related_categories: List
                 count += queryset.filter(category=ch).count()
             category_counts[category.pk] = count
     return category_counts
+
+
+def can_update_dataset(user: User, dataset: Dataset) -> bool:
+    permission = False
+    if user.is_authenticated:
+        if user.organization_id:
+            if user.organization_id == dataset.organization_id:
+                permission = True
+        if dataset.manager_id:
+            if user.id == dataset.manager_id:
+                permission = True
+        if user.is_staff:
+            permission = True
+    return permission
+
+
+def can_create_dataset(user: User, org_id) -> bool:
+    permission = False
+    if user.is_authenticated:
+        if user.organization_id:
+            if user.organization_id == org_id:
+                permission = True
+        if user.is_staff:
+            permission = True
+    return permission

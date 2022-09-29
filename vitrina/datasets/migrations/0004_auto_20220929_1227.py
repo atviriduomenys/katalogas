@@ -8,7 +8,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0004_auto_20220929_1227'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('vitrina_datasets', '0003_auto_20220905_0914'),
     ]

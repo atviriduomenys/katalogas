@@ -78,7 +78,7 @@ class Organization(MP_Node):
     public = PublicOrganizationManager()
 
     def get_absolute_url(self):
-        return reverse('organization-detail', kwargs={'kind': self.kind, 'slug': self.slug})
+        return reverse('organization-detail', kwargs={'pk': self.pk})
 
 
 class Representative(models.Model):

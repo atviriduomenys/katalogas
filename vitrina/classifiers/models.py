@@ -1,7 +1,8 @@
 from django.db import models
+from treebeard.al_tree import AL_Node
 
 
-class Category(models.Model):
+class Category(AL_Node):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -14,18 +15,23 @@ class Category(models.Model):
     edp_title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    parent_id = models.BigIntegerField(blank=True, null=True)
+    parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
 
     featured = models.BooleanField()
 
     icon = models.CharField(max_length=255, blank=True, null=True)
 
+    node_order_by = ['pk']
+
     class Meta:
-        managed = True
         db_table = 'category'
 
     def __str__(self):
         return self.title
+
+    def get_family_objects(self):
+        yield from self.get_ancestors()
+        yield from self.get_descendants()
 
 
 class Licence(models.Model):

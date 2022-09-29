@@ -1,4 +1,8 @@
+import os
+import pathlib
+
 from django.db import models
+from django.urls import reverse
 
 from vitrina.datasets.models import Dataset
 
@@ -57,7 +61,7 @@ class DatasetDistribution(models.Model):
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     url_format = models.ForeignKey('Format', models.DO_NOTHING, blank=True, null=True)
 
-    filename = models.CharField(max_length=255, blank=True, null=True)
+    filename = models.FileField(upload_to='data/', max_length=255, blank=True, null=True)
     issued = models.CharField(max_length=255, blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
@@ -66,5 +70,37 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'dataset_distribution'
+
+    def extension(self):
+        return pathlib.Path(self.filename.name).suffix.lstrip('.').upper() if self.filename else ""
+
+    def filename_without_path(self):
+        return pathlib.Path(self.filename.name).name if self.filename else ""
+
+    def is_external_url(self):
+        return self.type == "URL"
+
+    def get_download_url(self):
+        if self.is_external_url():
+            return self.url
+        return reverse('dataset-distribution-download', kwargs={
+            'dataset_id': self.dataset.pk,
+            'distribution_id': self.pk,
+            'filename': self.filename_without_path()
+        })
+
+    def get_format(self):
+        if self.is_external_url() and self.url_format:
+            return self.url_format.extension
+        else:
+            if not self.filename:
+                return self.mime_type
+            elif self.url_format:
+                return self.url_format.extension
+            else:
+                return self.extension()
+
+    def is_previewable(self):
+        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.filename.file.size > 0
+

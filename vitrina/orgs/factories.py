@@ -10,7 +10,7 @@ class OrganizationFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('company')
-    slug = factory.Faker('word')
+    kind = factory.Faker('word')
     version = 1
 
     @classmethod

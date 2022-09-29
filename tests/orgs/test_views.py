@@ -10,8 +10,8 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 @pytest.fixture
 def data_for_tabs():
-    parent_organization = OrganizationFactory()
-    organization = parent_organization.add_child(**OrganizationFactory.stub().__dict__)
+    parent_organization = OrganizationFactory(slug="org1")
+    organization = parent_organization.add_child(instance=OrganizationFactory.build(slug="org2"))
     dataset = DatasetFactory(organization=organization)
     representative = RepresentativeFactory(organization=organization)
     return {
@@ -24,24 +24,21 @@ def data_for_tabs():
 
 @pytest.mark.django_db
 def test_organization_detail_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(reverse('organization-detail', args=[data_for_tabs["organization"].kind,
-                                                        data_for_tabs["organization"].slug]))
+    resp = app.get(data_for_tabs["organization"].get_absolute_url())
     assert list(resp.context['ancestors']) == [data_for_tabs["parent"]]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Informacija"]
 
 
 @pytest.mark.django_db
 def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].kind,
-                                                         data_for_tabs["organization"].slug]))
+    resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].pk]))
     assert list(resp.context['members']) == [data_for_tabs["representative"]]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
 
 
 @pytest.mark.django_db
 def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].kind,
-                                                          data_for_tabs["organization"].slug]))
+    resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].pk]))
     assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
 
@@ -49,16 +46,19 @@ def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
 @pytest.fixture
 def organizations():
     organization1 = OrganizationFactory(
+        slug="org1",
         title="Organization 1",
         created=datetime(2022, 8, 22, 10, 30),
         jurisdiction="Jurisdiction1"
     )
     organization2 = OrganizationFactory(
+        slug="org2",
         title="Organization 2",
         created=datetime(2022, 10, 22, 10, 30),
         jurisdiction="Jurisdiction2"
     )
     organization3 = OrganizationFactory(
+        slug="org3",
         title="Organization 3",
         created=datetime(2022, 9, 22, 10, 30),
         jurisdiction="Jurisdiction2"

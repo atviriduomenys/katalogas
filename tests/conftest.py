@@ -1,6 +1,12 @@
+from functools import partial
+
+import psycopg2
 import pytest
 
 from django.apps import apps
+from django.core.management import call_command
+from django.db import connection, connections
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -21,3 +27,39 @@ def app(django_app):
 @pytest.fixture
 def csrf_exempt_django_app(django_app_factory):
     return django_app_factory(csrf_checks=False)
+
+
+def _run_sql(settings, sql):
+    conn = psycopg2.connect(
+        dbname='postgres',
+        host=settings['HOST'],
+        port=settings['PORT'],
+        user=settings['USER'],
+        password=settings['PASSWORD'],
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+    cur.execute(sql)
+    conn.close()
+
+
+@pytest.yield_fixture(scope='session')
+def django_db_setup(django_db_blocker):
+    from django.conf import settings
+    test_db_name = settings.DATABASES['default']['TESTNAME']
+    settings.DATABASES['default']['NAME'] = test_db_name
+    run_sql = partial(_run_sql, settings.DATABASES['default'])
+    run_sql(f'DROP DATABASE IF EXISTS {test_db_name}')
+    run_sql(f'CREATE DATABASE {test_db_name}')
+    fd = open('resources/static/db/adp-dev.sql', 'r')
+    sqlFile = fd.read()
+    fd.close()
+    with django_db_blocker.unblock():
+        with connection.cursor() as cursor:
+            cursor.execute(sqlFile)
+        call_command('migrate')
+
+    yield
+
+    for conn in connections.all():
+        conn.close()

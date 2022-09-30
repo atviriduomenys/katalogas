@@ -51,7 +51,7 @@ def django_db_setup(django_db_blocker):
     run_sql = partial(_run_sql, settings.DATABASES['default'])
     run_sql(f'DROP DATABASE IF EXISTS {test_db_name}')
     run_sql(f'CREATE DATABASE {test_db_name}')
-    with open('resources/static/db/adp-dev.sql', 'r') as file:
+    with open(settings.BASE_DB_PATH, 'r') as file:
         sqlFile = file.read()
         with django_db_blocker.unblock():
             with connection.cursor() as cursor:

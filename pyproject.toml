@@ -32,6 +32,9 @@ WebTest = "^3.0.0"
 django-webtest = "^1.9.10"
 factory-boy = "^3.2.1"
 
+[tool.poetry.group.dev.dependencies]
+tqdm = "^4.64.1"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

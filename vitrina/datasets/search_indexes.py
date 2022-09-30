@@ -21,7 +21,7 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
-        return self.get_model().public.all()
+        return self.get_model().public.filter(title__isnull=False)
 
     def prepare_tags(self, obj):
         return [tag.strip() for tag in obj.tags.split(',')] if obj.tags else []

@@ -11,8 +11,6 @@ from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
-from django.utils.translation import gettext_lazy as _
-
 
 class Dataset(models.Model):
     HAS_DATA = "HAS_DATA"

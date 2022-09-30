@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Naudotojo profilis" %}{% endblock %}
+
+{% block notification %}
+    {% if notification %}
+        <div id="top-bar">
+            <p>{% translate "notification.type" %}<span class="is-pulled-right message-close-button"
+                                                       onClick="HideMessage()">X</span></p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {#<section class="section section-padding-small">#}
+    <div class="columns">
+        <div class="column is-one-quarter">
+            <span class="icon is-large is-pulled-right">
+                <i class="fas fa-user fa-3x"></i>
+            </span>
+        </div>
+        <div class="column is-half">
+            <div class="field" style="display: flex;">
+                <h1 class="title">{{ user.first_name }} {{ user.last_name }}</h1>
+                {% if can_edit_profile %}
+                    <a href="{%url 'user-profile-change' pk=user.id %}"
+                       class="button is-primary is-normal is-size-6-mobile"
+                       id="change_profile" style="margin-left: 10px;">
+                        {% translate "Redaguoti profilį" %}
+                    </a>
+                {% endif %}
+            </div>
+            <div class="field">
+                <strong>{% translate "registracijos data: " %}:</strong> {{ user.created }}
+            </div>
+            {% if user.email %}
+                <div class="field">
+                    <strong>{% translate "el. paštas" %}:</strong> {{ user.email }}
+                </div>
+            {% endif %}
+            {% if user.phone %}
+                <div class="field">
+                    <strong>{% translate "telefonas" %}:</strong> {{ user.phone }}
+                </div>
+            {% endif %}
+            {% if user.organization %}
+                <div class="field">
+                    <strong>{% translate "organizacija" %}:</strong> {{ user.organization }}
+                </div>
+            {% endif %}
+            <br>
+        </div>
+    </div>
+    {#</section>#}
+    <br/>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        function HideMessage() {
+            var notificationBar = document.getElementById('top-bar');
+            notificationBar.classList.add('is-hidden');
+        }
+
+        $(document).ready(function () {
+            $('.pass-input').hover(function () {
+                $(this).attr('type', 'text');
+            }, function () {
+                $(this).attr('type', 'password');
+            })
+        })
+    </script>
+{% endblock %}

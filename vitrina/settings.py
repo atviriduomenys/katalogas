@@ -242,7 +242,6 @@ AUTH_USER_MODEL = 'vitrina_users.User'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/login/'
 
 EMAIL_HOST = 'smtp.mailtrap.io'
 EMAIL_HOST_USER = ''

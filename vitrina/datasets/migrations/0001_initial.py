@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -109,7 +109,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_migrate',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -137,7 +137,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_resource',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -167,7 +167,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_resource_migrate',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -184,7 +184,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'geoportal_lt_entry',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -217,7 +217,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'open_data_gov_lt_entry',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -243,7 +243,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'harvesting_result',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -261,7 +261,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'harvested_visit',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -279,7 +279,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_visit',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -302,7 +302,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_structure_field',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -326,6 +326,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_structure',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -343,7 +344,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_remark',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -364,7 +365,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'dataset_event',
-                'managed': True,
+                'managed': False,
             },
         ),
         migrations.AddField(

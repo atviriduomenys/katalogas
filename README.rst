@@ -29,6 +29,11 @@ From project root directory run::
 
     docker-compose up -d
 
+If elasticsearch does not start and raises `AccessDeniedException` on
+`createDirectory()`, try this::
+
+    sudo chown -R $UID:$GID var/elasticsearch
+
 Then we need to install pgloader (https://pgloader.readthedocs.io/en/latest/install.html#docker-images) and migrate MySQL database to PostgreSQL::
 
     docker run -it --rm \
@@ -53,9 +58,8 @@ Then we can run::
 
     poetry install
     poetry run python manage.py migrate
-    poetry run python manage.py rebuild_index
+    poetry run python manage.py rebuild_index --noinput
     
-
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
     System: PostgreSQL

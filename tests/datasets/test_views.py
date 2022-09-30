@@ -5,7 +5,7 @@ from django_webtest import DjangoTestApp
 from factory.django import FileField
 
 from vitrina import settings
-from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
+from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
@@ -575,3 +575,19 @@ def test_click_add_button(app: DjangoTestApp):
     response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
     response.click(linkid='add_dataset')
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_dataset_add_form_initial_values(app: DjangoTestApp):
+    default_licence = LicenceFactory(is_default=True)
+    default_frequency = FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    user = User.objects.create_user(
+        email="test@test.com",
+        password="test123",
+        organization=organization
+    )
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
+    assert form['licence'].value == str(default_licence.pk)
+    assert form['frequency'].value == str(default_frequency.pk)

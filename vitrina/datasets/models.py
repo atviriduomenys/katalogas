@@ -36,8 +36,8 @@ class Dataset(TranslatableModel):
     }
 
     translations = TranslatedFields(
-        title=models.CharField(_("Title"), blank=True, null=True),
-        title_en=models.CharField(_("Title_en"), blank=True, null=True),
+        title=models.CharField(_("Title"), max_length=255, blank=True, null=True),
+        title_en=models.CharField(_("Title_en"), max_length=255, blank=True, null=True),
         description=models.TextField(_("Description"), blank=True, null=True),
         description_en=models.TextField(_("Description_en"), blank=True, null=True),
     )

@@ -6,7 +6,15 @@ import django.db.models.deletion
 import parler.fields
 import parler.models
 
-def remake_translated():
+
+def remake_translated(apps, schema_editor):
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    datasets = Dataset.objects.all()
+    for dataset in datasets:
+        dataset.description = dataset.description_old
+        dataset.description_en = dataset.description_en_old
+        dataset.title = dataset.title_old
+        dataset.title_en = dataset.title_en_old
 
 
 class Migration(migrations.Migration):
@@ -62,5 +70,20 @@ class Migration(migrations.Migration):
             bases=(parler.models.TranslatedFieldsModelMixin, models.Model, parler.models.TranslatableModel),
         ),
         migrations.RunPython(remake_translated),
-
+        migrations.RemoveField(
+            model_name='dataset',
+            name='description_old',
+        ),
+        migrations.RemoveField(
+            model_name='dataset',
+            name='description_en_old',
+        ),
+        migrations.RemoveField(
+            model_name='dataset',
+            name='title_old',
+        ),
+        migrations.RemoveField(
+            model_name='dataset',
+            name='title_en_old',
+        )
     ]

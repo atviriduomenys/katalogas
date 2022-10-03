@@ -383,3 +383,19 @@ def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_d
 def test_download_structure(app: DjangoTestApp, dataset_structure_data):
     resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'
+
+
+@pytest.mark.django_db
+def test_translations_default_language(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    default_language = dataset.get_current_language()
+    assert default_language == 'lt'
+
+
+@pytest.mark.django_db
+def test_translations_change_language(app: DjangoTestApp):
+    dataset = DatasetFactory(title='pavadinimas')
+    dataset.set_current_language('en')
+    dataset.save()
+    assert dataset.title != 'pavadinimas'
+

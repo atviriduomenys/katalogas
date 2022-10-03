@@ -39,8 +39,5 @@ jobs:
       - name: Create DB image
         run: docker-compose -f docker-compose-test.yml up -d
 
-      - name: Check ports
-        run: netstat -tulpn
-
       - name: Test with pytest
         run: poetry run pytest -vvra --no-migrations --tb=short --cov=vitrina --cov=report=term-missing tests

@@ -39,8 +39,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
 
-TEST = any(['test' in arg for arg in sys.argv])
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -259,21 +257,8 @@ PASSWORD_HASHERS = [
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
 
-if TEST:
-    HAYSTACK_CONNECTIONS = {
-        'default': {
-            'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-            'URL': 'http://127.0.0.1:9200/',
-            'INDEX_NAME': 'test_default'
-        },
-    }
-else:
-    HAYSTACK_CONNECTIONS = {
-        'default': {
-            'ENGINE': 'haystack.backends.elasticsearch7_backend.Elasticsearch7SearchEngine',
-            'URL': 'http://127.0.0.1:9200/',
-            'INDEX_NAME': 'haystack'
-        },
-    }
+HAYSTACK_CONNECTIONS = {
+    'default': env.search_url(),
+}
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

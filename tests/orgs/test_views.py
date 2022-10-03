@@ -40,16 +40,8 @@ def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
 
 
-@pytest.mark.django_db
+@pytest.mark.haystack
 def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
-    ui = UnifiedIndex()
-    index = DatasetIndex()
-    ui.build(indexes=[index])
-    haystack.connections["default"]._index = ui
-    backend = haystack.connections["default"].get_backend()
-    backend.clear()
-    backend.update(index, Dataset.objects.all())
-
     resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].pk]))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [data_for_tabs["dataset"].pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]

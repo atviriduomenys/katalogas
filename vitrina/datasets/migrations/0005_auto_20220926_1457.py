@@ -15,9 +15,15 @@ def forwards_func(apps, schema_editor):
     for dataset in Dataset.objects.all():
         DatasetTranslation.objects.create(
             master_id=dataset.pk,
-            language_code=settings.LANGUAGE_CODE,
+            language_code='lt',
             title=dataset.title,
             description=dataset.description
+        )
+        DatasetTranslation.objects.create(
+            master_id=dataset.pk,
+            language_code='en',
+            title=dataset.title_en,
+            description=dataset.description_en
         )
 
 

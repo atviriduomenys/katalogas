@@ -28,4 +28,4 @@ jobs:
         run: docker-compose -f docker-compose-test.yml up -d
 
       - name: Test with pytest
-        run: poetry run pytest -vvra --reuse-db --tb=short --cov=vitrina --cov=report=term-missing tests
+        run: poetry run pytest -vvra --tb=short --cov=vitrina --cov=report=term-missing tests

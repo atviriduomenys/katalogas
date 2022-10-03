@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-BASE_DB_PATH = os.path.join(BASE_DIR, 'tests/resources/static/db/adp-dev.sql')
+BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -152,15 +152,7 @@ WSGI_APPLICATION = 'vitrina.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'adp-dev',
-        'TESTNAME': 'test_adp_dev',
-        'USER': 'adp',
-        'PASSWORD': 'secret',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-    },
+    'default': env.db(),
 }
 
 

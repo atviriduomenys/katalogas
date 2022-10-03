@@ -46,7 +46,7 @@ def _run_sql(settings, sql):
 @pytest.yield_fixture(scope='session')
 def django_db_setup(django_db_blocker):
     from django.conf import settings
-    test_db_name = settings.DATABASES['default']['TESTNAME']
+    test_db_name = 'test_adp_dev'
     settings.DATABASES['default']['NAME'] = test_db_name
     run_sql = partial(_run_sql, settings.DATABASES['default'])
     run_sql(f'DROP DATABASE IF EXISTS {test_db_name}')
@@ -58,8 +58,3 @@ def django_db_setup(django_db_blocker):
                 cursor.execute(sqlFile)
             call_command('migrate')
         file.close()
-
-    yield
-
-    for conn in connections.all():
-        conn.close()

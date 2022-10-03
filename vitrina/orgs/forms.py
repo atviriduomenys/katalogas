@@ -52,7 +52,7 @@ class RepresentativeCreateForm(ModelForm):
         self.helper.layout = Layout(
             Div(Div(Field('email', css_class="input", placeholder=_("El. paštas"), ),
                     css_class="control"), css_class="field"),
-            Div(Div(Field('role', css_class="select is-fullwidth"),
+            Div(Div(Field('role', css_class="select is-fullwidth input"),
                     css_class="control is-expanded"), css_class="field"),
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )

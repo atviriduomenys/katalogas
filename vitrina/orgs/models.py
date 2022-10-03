@@ -92,19 +92,18 @@ class Representative(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(max_length=255, blank=True, null=True)
+    email = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.PROTECT)
     phone = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
-    user = models.ForeignKey("vitrina_users.User", models.SET_NULL, blank=True, null=True)
+    role = models.CharField(choices=ROLES, max_length=255)
+    user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
 
     class Meta:
         db_table = 'representative'
-        unique_together = [['organization', 'user'], ['organization', 'email']]
 
     def __str__(self):
         return self.email

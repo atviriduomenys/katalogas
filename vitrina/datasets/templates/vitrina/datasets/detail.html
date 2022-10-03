@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
 
 {% block pageTitle %} | {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
@@ -14,18 +15,28 @@
 
 {% block head %}
     <link href="{% static '/css/datatables.min.css' %}" rel="stylesheet">
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static '/js/datatables.min.js' %}"></script>
     <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
 
 {% block content %}
     <div class="columns no-margin-bottom">
+        {% if user.is_authenticated and user == dataset.manager %}
+            <a href="{%url 'dataset-change' org_kind=dataset.organization.kind org_slug=dataset.organization.slug slug=dataset.slug %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                {% translate "Redaguoti rinkinį" %}
+            </a>
+        {% endif %}
         <div class="column">
             {# description and view count #}
             <div class="columns no-margin-bottom">
                 <div class="column">
                     <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
+                    {% if can_update_dataset %}
+                        <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
+                            {% translate "Redaguoti rinkinį" %}
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="column">
                     {% get_hit_count for dataset as total_hits %}
@@ -110,9 +121,21 @@
                         </span>
                     </a>
                 </p>
+                <div class="dataset-meta-title" id="dataset_subscription">
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" as description %}
+                    {% subscription obj=dataset user=request.user description=description %}
+                </div>
             </div>
         </div>
     </div>
+    {% if resources %}
+        <div class="columns no-margin-bottom">
+            <div class="column is-full">
+                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
+                {% include 'vitrina/datasets/datatable.html' %}
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 {% block scripts %}
     {% get_hit_count_js_variables for dataset as hitcount %}
@@ -132,10 +155,11 @@
                 $('.preview-button').click(function () {
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
-                    $.getJSON('/dataset/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
+                    $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
+                        data = json_data.data;
                         var table_obj = document.getElementById('info-table-body');
                         $("#info-table-body").empty();
-                        $.each(json_data, function (index, item) {
+                        $.each(data, function (index, item) {
                             var newRow = table_obj.insertRow(index);
                             if (index === 0) {
                                 newRow.classList.add("preview-tr", "is-bold");

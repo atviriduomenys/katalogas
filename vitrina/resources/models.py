@@ -102,5 +102,8 @@ class DatasetDistribution(models.Model):
                 return self.extension()
 
     def is_previewable(self):
-        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.filename.file.size > 0
-
+        return (
+            (self.extension() == "CSV" or self.extension() == "XLSX") and
+            self.filename.storage.exists(self.filename.name) and
+            self.filename.file.size > 0
+        )

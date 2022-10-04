@@ -42,8 +42,8 @@
     <tr>
         <th>{% translate "Atnaujinama" %}</th>
         <td>
-            {% if dataset.update_frequency %}
-                {{ update_frequency }}
+            {% if dataset.frequency %}
+                {{ dataset.frequency }}
             {% endif %}
         </td>
     </tr>

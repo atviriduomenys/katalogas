@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
 from vitrina.users.models import User
@@ -110,16 +111,17 @@ class Dataset(TranslatableModel):
     will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
 
-    objects = models.Manager()
+    objects = TranslatableManager()
     public = PublicDatasetManager()
 
     class Meta:
         managed = True
         db_table = 'dataset'
+        verbose_name = _('Dataset')
         unique_together = (('internal_id', 'organization_id'),)
 
     def __str__(self):
-        return self.title
+        return str(self.translations)
 
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})

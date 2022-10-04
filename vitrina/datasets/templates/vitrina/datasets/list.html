@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load i18n %}
+{% load i18n parler_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -158,8 +158,9 @@
                     <div class="media-content">
                         <div class="content">
                             <div>
-                                <strong><a href="{{ i.get_absolute_url }}"
-                                           class="dataset-list-title">{{ i.title }}</a></strong>
+                                <strong>
+                                    <a href="{{ i.get_absolute_url }}" class="dataset-list-title">{{ i|get_translated_field:'title' }}</a>
+                                </strong>
                                 <div class="is-pulled-right">
                                     <a target="_blank"
                                        href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.get_absolute_url }}">
@@ -185,7 +186,7 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {{ i.description }}
+                                {{ i|get_translated_field:'description' }}
                             </p>
                             <div class="tags">
                                 {% if i.format %}

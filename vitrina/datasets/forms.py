@@ -1,19 +1,21 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Submit, Layout
-from django import forms
+from parler.forms import TranslatableModelForm, TranslatedField
+
 from .models import Dataset
 from django.utils.translation import gettext_lazy as _
-from django.forms import Form, CharField, DateTimeField, IntegerField
+from django.forms import Form, CharField, DateTimeField, IntegerField, TextInput
 from vitrina.fields import MultipleValueField, MultipleIntField
 
 
-class NewDatasetForm(forms.ModelForm):
+class NewDatasetForm(TranslatableModelForm):
+    title = TranslatedField(label=_('Pavadinimas'), required=True)
+    description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
+
     class Meta:
         model = Dataset
         fields = (
             'is_public',
-            'title',
-            'description',
             'tags',
             'category',
             'licence',

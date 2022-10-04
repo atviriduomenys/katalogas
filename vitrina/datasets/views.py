@@ -1,14 +1,15 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 import itertools
-from django.http import FileResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 import csv
+
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from django.shortcuts import redirect
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
 from django.db.models import Q
+from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin
 from slugify import slugify
 from vitrina import settings
 from vitrina.datasets.forms import NewDatasetForm
@@ -59,8 +60,8 @@ class DatasetListView(ListView):
 
         if query:
             datasets = datasets.filter(
-                Q(title__icontains=query) | Q(title_en__icontains=query)
-            )
+                Q(translations__title__icontains=query)
+            ).distinct()
         if date_from and date_to:
             datasets = datasets.filter(published__range=(date_from, date_to))
         elif date_from:
@@ -82,7 +83,7 @@ class DatasetListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        filtered_queryset = self.get_queryset()
+        filtered_queryset = self.get_queryset().prefetch_related('translations')
 
         selected_status = get_selected_value(self.request, 'status', is_int=False)
         selected_organization = get_selected_value(self.request, 'organization')
@@ -96,7 +97,6 @@ class DatasetListView(ListView):
         tag_list = get_tag_list()
         related_tag_list = get_related_tag_list(selected_tags, filtered_queryset)
         category_counts = get_category_counts(selected_categories, related_categories, filtered_queryset)
-
         status_counts = {}
         for status in Dataset.FILTER_STATUSES.keys():
             status_counts[status] = filter_by_status(filtered_queryset, status).count()
@@ -126,7 +126,6 @@ class DatasetListView(ListView):
                 'count': status_counts.get(key, 0)
             } for key, value in Dataset.FILTER_STATUSES.items() if status_counts.get(key, 0) > 0],
             'selected_status': selected_status,
-
             'organization_filters': [{
                 'id': org.pk,
                 'title': org.title,
@@ -171,7 +170,7 @@ class DatasetListView(ListView):
         return context
 
 
-class DatasetDetailView(DetailView):
+class DatasetDetailView(LanguageChoiceMixin, DetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -243,7 +242,7 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -273,7 +272,7 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         return super().form_valid(form)
 
 
-class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'

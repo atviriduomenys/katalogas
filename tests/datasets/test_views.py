@@ -6,7 +6,7 @@ from factory.django import FileField
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetTranslationFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.models import User
@@ -77,22 +77,22 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
 def datasets():
     dataset1 = DatasetFactory(
         slug="ds1",
-        title="Duomenų rinkinys 1",
-        title_en="Dataset 1",
         published=datetime(2022, 6, 1)
     )
+    DatasetTranslationFactory(master=dataset1, title="Duomenų rinkinys 1", language_code='lt')
+    DatasetTranslationFactory(master=dataset1, title="Dataset 1", language_code='en')
     dataset2 = DatasetFactory(
         slug="ds2",
-        title="Duomenų rinkinys 2 \"<'>\\",
-        title_en="Dataset 2",
         published=datetime(2022, 8, 1)
     )
+    DatasetTranslationFactory(master=dataset2, title="Duomenų rinkinys 2 \"<'>\\", language_code='lt')
+    DatasetTranslationFactory(master=dataset2, title="Dataset 2 \"<'>\\", language_code='en')
     dataset3 = DatasetFactory(
         slug="ds3",
-        title="Duomenų rinkinys 3",
-        title_en="Dataset 3",
         published=datetime(2022, 7, 1)
     )
+    DatasetTranslationFactory(master=dataset3, title="Duomenų rinkinys 3", language_code='lt')
+    DatasetTranslationFactory(master=dataset3, title="Dataset 3", language_code='en')
     return [dataset1, dataset2, dataset3]
 
 
@@ -161,30 +161,22 @@ def test_status_filter_has_structure(app: DjangoTestApp, status_filter_data):
     assert resp.context['selected_status'] == Dataset.HAS_STRUCTURE
 
 
-@pytest.fixture
-def organization_filter_data():
-    organization = OrganizationFactory()
-    dataset_with_organization1 = DatasetFactory(organization=organization, slug="ds1")
-    dataset_with_organization2 = DatasetFactory(organization=organization, slug="ds2")
-    return {
-        "organization": organization,
-        "datasets": [dataset_with_organization1, dataset_with_organization2]
-    }
-
-
 @pytest.mark.django_db
-def test_organization_filter_without_query(app: DjangoTestApp, organization_filter_data):
+def test_organization_filter_without_query(app: DjangoTestApp):
+    dataset_with_organization1 = DatasetFactory(slug="ds1")
+    dataset_with_organization2 = DatasetFactory(slug="ds2")
     resp = app.get(reverse('dataset-list'))
-    assert list(resp.context['object_list']) == organization_filter_data["datasets"]
+    assert list(resp.context['object_list']) == [dataset_with_organization1, dataset_with_organization2]
     assert resp.context['selected_organization'] is None
 
 
 @pytest.mark.django_db
-def test_organization_filter_with_organization(app: DjangoTestApp, organization_filter_data):
-    resp = app.get("%s?organization=%s" % (reverse("dataset-list"),
-                                           organization_filter_data["organization"].pk))
-    assert list(resp.context['object_list']) == organization_filter_data["datasets"]
-    assert resp.context['selected_organization'] == organization_filter_data["organization"].pk
+def test_organization_filter_with_organization(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    dataset_with_organization1 = DatasetFactory(organization=organization, slug="ds1")
+    resp = app.get("%s?organization=%s" % (reverse("dataset-list"), organization.pk))
+    assert list(resp.context['object_list']) == [dataset_with_organization1]
+    assert resp.context['selected_organization'] == organization.pk
 
 
 @pytest.fixture
@@ -422,15 +414,19 @@ def dataset_structure_data():
 
 
 @pytest.mark.django_db
-def test_with_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url())
+def test_with_structure(app: DjangoTestApp):
+    dataset1 = DatasetFactory(slug="ds3")
+    structure1 = DatasetStructureFactory(dataset=dataset1)
+    resp = app.get(structure1.get_absolute_url())
     assert resp.context['can_show'] is True
     assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
 
 
 @pytest.mark.django_db
-def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure2'].get_absolute_url())
+def test_with_non_readable_structure(app: DjangoTestApp):
+    dataset2 = DatasetFactory(slug="ds3")
+    structure2 = DatasetStructureFactory(dataset=dataset2, file=FileField(filename='file.csv', data=b'ab\0c'))
+    resp = app.get(structure2.get_absolute_url())
     assert resp.context['can_show'] is False
     assert resp.context['structure_data'] == []
 
@@ -442,8 +438,10 @@ def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_d
 
 
 @pytest.mark.django_db
-def test_download_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
+def test_download_structure(app: DjangoTestApp):
+    dataset1 = DatasetFactory(slug="ds3")
+    structure1 = DatasetStructureFactory(dataset=dataset1)
+    resp = app.get(structure1.get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'
 
 
@@ -481,12 +479,10 @@ def test_change_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory(
-        title="dataset_title",
-        title_en="dataset_title",
         published=datetime(2022, 9, 7),
         slug='test-dataset-slug',
-        description='test description',
     )
+    DatasetTranslationFactory(master=dataset, title="dataset_title", description='test description',)
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
     app.set_user(user)
@@ -505,12 +501,10 @@ def test_change_form_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
     dataset = DatasetFactory(
-        title="dataset_title",
-        title_en="dataset_title",
         published=datetime(2022, 9, 7),
         slug='test-dataset-slug',
-        description='test description',
     )
+    DatasetTranslationFactory(master=dataset, title="dataset_title", description='test description',)
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
     app.set_user(user)
@@ -554,7 +548,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
     resp = form.submit()
-    added_dataset = Dataset.objects.filter(title="Added title")
+    added_dataset = Dataset.objects.filter(translations__title="Added title")
     assert added_dataset.count() == 1
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
@@ -586,8 +580,9 @@ def test_translations_default_language(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_translations_change_language(app: DjangoTestApp):
-    dataset = DatasetFactory(title='pavadinimas')
+    dataset = DatasetFactory()
+    DatasetTranslationFactory(master=dataset, title='title')
     dataset.set_current_language('en')
     dataset.save()
-    assert dataset.title != 'pavadinimas'
+    assert dataset.get_current_language() == 'en'
 

@@ -13,15 +13,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
+            model_name='representative',
+            name='email',
+            field=models.CharField(default='', max_length=255),
+            preserve_default=False,
+        ),
+        migrations.AlterField(
             model_name='representative',
             name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_orgs.organization'),
+            field=models.ForeignKey(default=None, on_delete=django.db.models.deletion.PROTECT, to='vitrina_orgs.organization'),
+            preserve_default=False,
+        ),
+        migrations.AlterField(
+            model_name='representative',
+            name='role',
+            field=models.CharField(choices=[('coordinator', 'Koordinatorius'), ('manager', 'Tvarkytojas')], default='', max_length=255),
+            preserve_default=False,
+        ),
+        migrations.AlterField(
+            model_name='representative',
+            name='user',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
         ),
     ]
-
-    def apply(self, project_state, schema_editor, collect_sql=False):
-        return project_state.clone()
-
-    def unapply(self, project_state, schema_editor, collect_sql=False):
-        return project_state.clone()

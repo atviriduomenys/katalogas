@@ -59,21 +59,42 @@ class OrganizationDetailView(DetailView):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
         context_data['ancestors'] = organization.get_ancestors()
+        context_data['can_view_members'] = has_coordinator_permission(
+            self.request.user,
+            self.object,
+        )
         return context_data
 
 
-class OrganizationMembersView(OrganizationDetailView):
+class OrganizationMembersView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    OrganizationDetailView,
+):
     template_name = 'vitrina/orgs/members.html'
+
+    def has_permission(self):
+        # TODO: We are getting this twice.
+        org = self.get_object()
+        return has_coordinator_permission(self.request.user, org)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
         context_data['members'] = organization.representative_set.all()
-        context_data['has_permission'] = has_coordinator_permission(self.request.user, self.object)
+        context_data['has_permission'] = has_coordinator_permission(
+            self.request.user,
+            self.object,
+        )
+        context_data['can_view_members'] = context_data['has_permission']
         return context_data
 
 
-class RepresentativeCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class RepresentativeCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView,
+):
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'

@@ -1207,7 +1207,7 @@ CREATE TABLE `user` (
   `first_name` varchar(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `last_login` datetime(6) DEFAULT NULL,
   `last_name` varchar(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
-  `password` char(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
+  `password` char(60) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `role` varchar(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `organization_id` bigint(20) DEFAULT NULL,
   `deleted` bit(1) DEFAULT NULL,

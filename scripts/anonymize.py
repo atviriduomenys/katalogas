@@ -39,7 +39,7 @@ else:
                 'last_name': fake.last_name,
                 'email': fake.email,
                 'phone': fake.phone,
-                'password': make_password("secret")
+                'password': make_password("secret").split("$", 1)[1]
             }
             db['user'].update(data, ['id'])
             pbar.update(1)

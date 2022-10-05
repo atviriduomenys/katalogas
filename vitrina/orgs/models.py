@@ -21,6 +21,9 @@ class Region(models.Model):
         managed = True
         db_table = 'region'
 
+    def __str__(self):
+        return self.title
+
 
 class Municipality(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -33,6 +36,9 @@ class Municipality(models.Model):
     class Meta:
         managed = True
         db_table = 'municipality'
+
+    def __str__(self):
+        return self.title
 
 
 class Organization(MP_Node):

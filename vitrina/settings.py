@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'djangocms_blog',
     'hitcount',
     'crispy_forms',
+    'crispy_bulma',
 
     'vitrina',
     'vitrina.cms',
@@ -255,3 +256,8 @@ PASSWORD_HASHERS = [
 ]
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = (
+    'bulma',
+)
+CRISPY_TEMPLATE_PACK = 'bulma'

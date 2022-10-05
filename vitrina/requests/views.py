@@ -52,6 +52,7 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
+    context_object_name = 'request_object'
 
     def form_valid(self, form):
         self.object = form.save(commit=False)

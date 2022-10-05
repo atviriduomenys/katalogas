@@ -41,8 +41,8 @@ def csrf_exempt_django_app(django_app_factory):
 #     cur = conn.cursor()
 #     cur.execute(sql)
 #     conn.close()
-#
-#
+
+
 # @pytest.yield_fixture(scope='session')
 # def django_db_setup(django_db_blocker):
 #     from django.conf import settings

@@ -37,6 +37,8 @@ def test_organization_detail_tab(app: DjangoTestApp, data_for_tabs):
 
 @pytest.mark.django_db
 def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
+    admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
+    app.set_user(admin)
     resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].pk]))
     assert list(resp.context['members']) == [data_for_tabs["representative"]]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]

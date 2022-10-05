@@ -53,15 +53,6 @@ def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
 
 
 @pytest.mark.django_db
-def test_dataset_detail_other_context_data(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
-
-    # hardcoded values, will need to change with later tasks
-    assert resp.context['subscription'] == []
-    assert resp.context['rating'] == 3.0
-
-
-@pytest.mark.django_db
 def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(reverse('dataset-distribution-download', kwargs={
         'dataset_id': 1000,
@@ -463,6 +454,19 @@ def test_download_structure(app: DjangoTestApp, dataset_structure_data):
     assert resp.content == b'Column\nValue'
 
 
+@pytest.mark.django_db
+def test_public_manager_filtering(app: DjangoTestApp):
+    DatasetFactory(is_public=False)
+    DatasetFactory(deleted=True, deleted_on=datetime.now())
+    DatasetFactory(deleted=True, deleted_on=None)
+    DatasetFactory(deleted=None, deleted_on=None)
+    DatasetFactory(organization=None)
+    DatasetFactory()
+
+    public_datasets = Dataset.public.all()
+    assert public_datasets.count() == 2
+    
+    
 @pytest.mark.django_db
 def test_change_form_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()

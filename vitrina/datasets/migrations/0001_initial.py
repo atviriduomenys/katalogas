@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('vitrina_catalogs', '__first__'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('vitrina_orgs', '0001_initial'),
     ]
 
     operations = [

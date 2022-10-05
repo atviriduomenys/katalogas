@@ -1,22 +1,12 @@
 {% load i18n %}
+{% load like_tags %}
 
 <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
     <tbody>
     <tr>
-        <th>{% translate "Naudotojų įvertinimas" %}</th>
-        <td>
-            {% if rating %}
-                <span>{{ rating }}</span>
-                {% for item in '12345'|make_list %}
-                    {% if forloop.counter <= rating %}
-                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
-                    {% else %}
-                        <span class="icon"><i class="fas fa-star"></i></span>
-                    {% endif %}
-                {% endfor %}
-            {% else %}
-                {% translate "Dar nevertinta" %}
-            {% endif %}
+        <th>{% translate "Patinka" %}</th>
+        <td id="dataset_likes">
+            {% like obj=dataset user=request.user %}
         </td>
     </tr>
     <tr title="{{ rating.description }}">

@@ -6,11 +6,13 @@
                 {% translate "Informacija" %}
             </a>
         </li>
+        {% if can_view_members %}
         <li class="{%if request.resolver_match.url_name == 'organization-members' %} is-active {% endif %}">
             <a href="{% url 'organization-members' request.resolver_match.kwargs.pk %}">
                 {% translate "Organizacijos nariai" %}
             </a>
         </li>
+        {% endif %}
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
             <a href="{% url 'organization-datasets' request.resolver_match.kwargs.pk %}">
                 {% translate "Duomenų rinkiniai" %}

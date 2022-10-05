@@ -26,4 +26,6 @@ class RepresentativeFactory(DjangoModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     version = 1
+    role = Representative.COORDINATOR
+    email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")
 

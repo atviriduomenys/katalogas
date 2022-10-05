@@ -1,15 +1,13 @@
 import os
 import django
-from django.contrib.auth.hashers import make_password
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
 import dataset as dataset
 from tqdm import tqdm
-
-from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.users.factories import UserFactory
+from faker import Faker
+from django.contrib.auth.hashers import make_password
 
 
 db = dataset.connect('postgresql://adp:secret@127.0.0.1:5432/adp-dev')
@@ -31,27 +29,44 @@ else:
 
     with pbar:
         users = {}
+        fake = Faker()
+        Faker.seed(0)
+
         for user in db['user'].all():
-            fake = users[user['email']] = UserFactory.build()
+            first_name = fake.first_name()
+            last_name = fake.last_name()
+            email = f'{first_name}.{last_name}{fake.random_number(digits=3)}@example.com'
+            phone = fake.phone_number()
             data = {
                 'id': user['id'],
-                'first_name': fake.first_name,
-                'last_name': fake.last_name,
-                'email': fake.email,
-                'phone': fake.phone,
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'phone': phone,
                 'password': make_password("secret").split("$", 1)[1]
             }
+            users[user['email']] = data
             db['user'].update(data, ['id'])
             pbar.update(1)
 
         for rep in db['representative'].all():
-            fake = users.get(rep['email']) or RepresentativeFactory.build()
+            related_user = users.get(rep['email'])
+            if related_user:
+                first_name = related_user['first_name']
+                last_name = related_user['last_name']
+                email = related_user['email']
+                phone = related_user['phone']
+            else:
+                first_name = fake.first_name()
+                last_name = fake.last_name()
+                email = f'{first_name}.{last_name}{fake.random_number(digits=3)}@example.com'
+                phone = fake.phone_number()
             data = {
                 'id': rep['id'],
-                'first_name': fake.first_name,
-                'last_name': fake.last_name,
-                'email': fake.email,
-                'phone': fake.phone,
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'phone': phone,
             }
             db['representative'].update(data, ['id'])
             pbar.update(1)

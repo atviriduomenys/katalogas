@@ -188,6 +188,7 @@ class DatasetListView(ListView):
                 Organization,
                 pk=self.kwargs['pk'],
             )
+            extra_context['organization'] = org
             extra_context['can_view_members'] = has_coordinator_permission(
                 self.request.user,
                 org,

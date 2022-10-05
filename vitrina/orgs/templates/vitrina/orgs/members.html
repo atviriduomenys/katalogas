@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block parent_title %}{% translate "nav.orgs" %}{% endblock %}
+{% block parent_title %}{% translate "Organizacija" %}{% endblock %}
 {% block current_title %}{{ organization.title }}{% endblock %}
 
 {% block content %}
@@ -11,13 +11,15 @@
     <div class="columns">
         <div class="column is-three-quarters">
             {% if has_permission %}
-                <a class="button is-primary m-t-xs m-b-lg"
-                   href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
-                    {% translate "Pridėti narį" %}
-                </a>
+                <div class="buttons is-right">
+                    <a class="button is-primary m-t-xs m-b-lg"
+                       href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
+                        {% translate "Pridėti narį" %}
+                    </a>
+                </div>
             {% endif %}
             {% if members %}
-                <table class="table">
+                <table class="table is-fullwidth">
                     <tbody>
                     <tr>
                         <th>{% translate "Vardas" %}</th>

@@ -128,11 +128,22 @@ class RepresentativeCreateView(
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
             token = serializer.dumps({"representative_id": self.object.pk})
-            url = "%s%s" % (get_current_domain(self.request),
-                            reverse('representative-register', kwargs={'token': token}))
+            url = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('representative-register', kwargs={'token': token})
+            )
             send_mail(
-                subject=_('Užsiregistruokite'),
-                message=_('Prašome užsiregistruoti adresu ') + url,
+                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
+                message=_(
+                    f'Buvote įtraukti į „{organization}“ organizacijos '
+                    'narių sąrašo, tačiau nesate registruotas Lietuvos '
+                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
+                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
+                    'organizacijoje:\n'
+                    '\n'
+                    f'{url}\n'
+                    '\n'
+                ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.object.email],
             )

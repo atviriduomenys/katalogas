@@ -8,6 +8,9 @@ services:
       - POSTGRES_PASSWORD=secret
     volumes:
       - ./resources/adp-pg.sql:/docker-entrypoint-initdb.d/10-init.sql
-      - ./var/postgres:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
     ports:
       - 127.0.0.1:5432:5432
+
+volumes:
+  postgres:

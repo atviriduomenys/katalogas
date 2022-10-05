@@ -21,6 +21,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
 
+      # https://github.com/elastic/elastic-github-actions/tree/master/elasticsearch
       - name: Configure sysctl limits
         run: |
           sudo swapoff -a

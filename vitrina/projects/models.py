@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.utils.text import Truncator
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
@@ -31,8 +32,17 @@ class Project(models.Model):
     objects = models.Manager()
     public = PublicProjectManager()
 
+    def __str__(self):
+        return self.get_title()
+
     def get_absolute_url(self):
         return reverse('project-detail', kwargs={'pk': self.pk})
+
+    def get_title(self):
+        if self.title:
+            return self.title
+        else:
+            return Truncator(self.url).chars(42)
 
 
 class UsecaseDatasetIds(models.Model):

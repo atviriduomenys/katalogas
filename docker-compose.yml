@@ -6,8 +6,10 @@ services:
       POSTGRES_DB: adp-dev
       POSTGRES_USER: adp
       POSTGRES_PASSWORD: secret
+    command: --init-file /data/application/init.sql
     volumes:
       - ./var/postgres:/var/lib/postgresql/data
+      - ./resources/adp-pg.sql:/data/application/init.sql
     ports:
       - 127.0.0.1:5432:5432
 

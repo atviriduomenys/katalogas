@@ -28,4 +28,6 @@ class RepresentativeFactory(DjangoModelFactory):
     email = factory.LazyAttributeSequence(lambda o, n: '%s.%s%d@example.com' % (o.first_name, o.last_name, n))
     phone = factory.Sequence(lambda n: '+3706%07d' % n)
     version = 1
+    role = Representative.COORDINATOR
+    email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")
 

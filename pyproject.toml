@@ -26,6 +26,8 @@ python-slugify = "^6.1.2"
 bcrypt = "^4.0.0"
 tqdm = "^4.64.1"
 dataset = "^1.5.2"
+typer = "^0.6.1"
+itsdangerous = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
@@ -33,9 +35,6 @@ pytest-django = "^4.5.2"
 WebTest = "^3.0.0"
 django-webtest = "^1.9.10"
 factory-boy = "^3.2.1"
-
-[tool.poetry.group.dev.dependencies]
-typer = "^0.6.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -107,7 +107,7 @@ def _anonymize_representative(db, fake, pbar, users):
         pbar.update(1)
 
 
-def _anonymize_old_passwrod(db, fake, pbar, users):
+def _anonymize_old_password(db, fake, pbar, users):
     passwd = _hash_password("secret")
     for user in db['old_password'].all():
         data = {

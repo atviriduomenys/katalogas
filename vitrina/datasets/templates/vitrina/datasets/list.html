@@ -46,7 +46,17 @@
     </style>
 {% endblock %}
 
-{% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
+{% if request.resolver_match.url_name == 'organization-datasets' %}
+    {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
+{% endif %}
+
+{% block current_title %}
+{% if request.resolver_match.url_name == 'organization-datasets' %}
+    {{ organization }}
+{% else %}
+    {% translate "Duomenų rinkiniai" %}
+{% endif %}
+{% endblock %}
 
 {% block content %}
     {% if request.resolver_match.url_name == 'organization-datasets' %}

@@ -1,6 +1,7 @@
 from typing import Optional, List, Any
 from urllib.parse import urlencode
 
+from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.translation import gettext_lazy as _
 
@@ -53,3 +54,9 @@ def buttons(*args):
 def submit(title=None):
     title = title or _("Patvirtinti")
     return Submit('submit', title, css_class='button is-primary'),
+
+
+def get_current_domain(request: WSGIRequest) -> str:
+    protocol = "https" if request.is_secure() else "http"
+    domain = Site.objects.get_current().domain
+    return request.build_absolute_uri("%s://%s" % (protocol, domain))

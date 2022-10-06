@@ -1,29 +1,38 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-import itertools
-from django.http import FileResponse, JsonResponse
-from django.shortcuts import get_object_or_404
 import csv
+import itertools
+
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Q
+from django.http import FileResponse, JsonResponse
+from django.http import HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, TemplateView
-from django.shortcuts import redirect
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
-from django.db.models import Q
+
+# TODO: I think, Django has this built-in.
 from slugify import slugify
-from vitrina import settings
-from vitrina.datasets.forms import NewDatasetForm
-from vitrina.datasets.forms import DatasetFilterForm
-from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import filter_by_status, get_related_categories, get_tag_list, get_related_tag_list, \
-    get_category_counts, can_update_dataset, can_create_dataset
-from vitrina.orgs.models import Organization
+
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from django.http import HttpResponseBadRequest, FileResponse
-
-from django.utils.translation import gettext_lazy as _
-
+from vitrina.datasets.forms import DatasetFilterForm
+from vitrina.datasets.forms import NewDatasetForm
+from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.services import can_create_dataset
+from vitrina.datasets.services import can_update_dataset
+from vitrina.datasets.services import filter_by_status
+from vitrina.datasets.services import get_category_counts
+from vitrina.datasets.services import get_related_categories
+from vitrina.datasets.services import get_related_tag_list
+from vitrina.datasets.services import get_tag_list
+from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.orgs.helpers import is_org_dataset_list
+from vitrina.orgs.models import Organization
+from vitrina.orgs.services import has_coordinator_permission
 from vitrina.resources.models import DatasetDistribution
 from vitrina.resources.services import can_add_resource, can_change_resource
 
@@ -41,8 +50,11 @@ class DatasetListView(ListView):
 
     def get_queryset(self):
         datasets = Dataset.public.order_by('-published')
-        if self.kwargs.get('pk') and self.request.resolver_match.url_name == 'organization-datasets':
-            organization = get_object_or_404(Organization, pk=self.kwargs['pk'])
+        if is_org_dataset_list(self.request):
+            organization = get_object_or_404(
+                Organization,
+                pk=self.kwargs['pk'],
+            )
             datasets = datasets.filter(organization=organization)
 
         filter_form = DatasetFilterForm(self.request.GET)
@@ -166,8 +178,22 @@ class DatasetListView(ListView):
             'selected_date_from': selected_date_from,
             'selected_date_to': selected_date_to,
             'search_form_params': search_form_params.items(),
-            'can_create_dataset': can_create_dataset(self.request.user, self.kwargs.get('pk'))
+            'can_create_dataset': can_create_dataset(
+                self.request.user,
+                self.kwargs.get('pk'),
+            )
         }
+        if is_org_dataset_list(self.request):
+            # TODO: We get org two times.
+            org = get_object_or_404(
+                Organization,
+                pk=self.kwargs['pk'],
+            )
+            extra_context['organization'] = org
+            extra_context['can_view_members'] = has_coordinator_permission(
+                self.request.user,
+                org,
+            )
         context.update(extra_context)
         return context
 

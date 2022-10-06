@@ -71,7 +71,6 @@ class OrganizationMembersView(
     PermissionRequiredMixin,
     OrganizationDetailView,
 ):
-    model = Representative
     template_name = 'vitrina/orgs/members.html'
     paginate_by = 20
 
@@ -83,20 +82,13 @@ class OrganizationMembersView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
-        context_data['members'] = organization.representative_set.all()
+        context_data['members'] = organization.representative_set.all().order_by("role", "first_name", 'last_name')
         context_data['has_permission'] = has_coordinator_permission(
             self.request.user,
             self.object,
         )
         context_data['can_view_members'] = context_data['has_permission']
         return context_data
-
-    def get(self, request, *args, **kwargs):
-        org_slug = self.kwargs['org_slug']
-        org = Organization.objects.filter(slug=org_slug)[:1]
-        #TODO: change organization_id to organization when models are relevant
-        Representative.objects.filter(organization_id=org[0].id).order_by("first_name", 'last_name')
-        return super(OrganizationMembersView, self).get(request, *args, **kwargs)
 
 
 class RepresentativeCreateView(

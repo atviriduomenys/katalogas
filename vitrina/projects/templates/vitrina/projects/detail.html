@@ -2,18 +2,30 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
+{% load like_tags %}
 
 {% block head %}
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
 
 {% block content %}
     <div class="columns no-margin-bottom">
+        <div class="column is-one-third">
+            <div class="content" id="project_likes">
+                <p>{% translate "Ar jums patinka šis projektas?" %}</p>
+                {% like obj=project user=request.user %}
+            </div>
+            <div class="content" id="project_subscription">
+                {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
+                {% subscription obj=project user=request.user description=description %}
+            </div>
+        </div>
         <div class="column is-three-quarters">
             <div class="columns no-margin-bottom">
                 <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.pk }}</h3>
+                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.get_title }}</h3>
                 </div>
                 <div class="column">
                     {% get_hit_count for project as total_hits %}

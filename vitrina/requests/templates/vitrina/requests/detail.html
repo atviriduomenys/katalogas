@@ -2,61 +2,48 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
+{% load subscription_tags %}
 
 {% block head %}
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
 {% endblock %}
 
 {% block parent_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
-{% block current_title %}{{ request.title }}{% endblock %}
+{% block current_title %}{{ request_object.title }}{% endblock %}
 
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
-            <article class="panel">
-                <p class="panel-heading">
-                    {% translate "Poreikiai ir pasiūlymai" %}
-                </p>
-                <nav class="category-panel">
-                    <a class="panel-block is-active" href="/requests/submitted">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Gauti poreikiai duomenų rinkiniams" %}
-                    </a>
-                    <a class="panel-block" href="/requests/suggest">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Pateikti pasiūlymą / pastabą" %}
-                    </a>
-                </nav>
-            </article>
             <div class="content">
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkiniui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
-                <a href="/requests/new"
+                <a href="{% url 'request-create' %}"
                    class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
+
+                <div id="request_subscription">
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su poreikiu" as description %}
+                    {% subscription obj=request_object user=request.user description=description %}
+                </div>
             </div>
         </div>
         <div class="column is-three-quarters">
             <div class="content">
                 <div class="request-title">
-                    {% if not request.is_existing %}
+                    {% if not request_object.is_existing %}
                         <p class="is-size-4">{% translate "Naujų duomenų atvėrimo poreikis" %}: </p>
                     {% else %}
                         <p class="is-size-4">{% translate "Esamo duomenų rinkinio papildymo poreikis" %}: </p>
                     {% endif %}
-                    {% get_hit_count for request as total_hits %}
+                    {% get_hit_count for request_object as total_hits %}
                     <p class="is-pulled-right">{% translate "Poreikio peržiūros" %}:
                         <b id="total_hits">{{ total_hits }}</b>
                     </p>
-                    <h1 class="is-size-4">{{ request.title | escape }}</h1>
+                    <h1 class="is-size-4">{{ request_object.title | escape }}</h1>
                 </div>
             </div>
-            <div class="content">{{ request.description | escape }}</div>
+            <div class="content">{{ request_object.description | escape }}</div>
             {% include "vitrina/requests/requestCoretable.html" %}
-            {% if not request.is_existing %}
+            {% if not request_object.is_existing %}
                 {% if purposes %}
                     <div class="field">
                         <label class="label">{% translate "Duomenų panaudojimo tikslas" %}</label>
@@ -294,33 +281,33 @@
                     </tr>
                         {% for struct in structure %}
                             <tr>
-                                <td>{{ struct.data_title }}</td>
-                                <td>{{ struct.dictionary_title }}</td>
-                                <td>{{ struct.data_type }}</td>
-                                <td>{{ struct.data_notes }}</td>
+                                <td>{{ struct.data_title|default:"" }}</td>
+                                <td>{{ struct.dictionary_title|default:"" }}</td>
+                                <td>{{ struct.data_type|default:"" }}</td>
+                                <td>{{ struct.data_notes|default:"" }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
                 <div class="structure-wrapper m-b-sm"></div>
             {% endif %}
-            {% if request.structure_file %}
-                <p class="label">{% translate "request.structure_file" %}</p>
+            {% if request_object.structure_file %}
+                <p class="label">{% translate "request_object.structure_file" %}</p>
                 <div class="content">
-                    <a href="{{ request.structure_file }}">{{ request.structure_file }}</a>
+                    <a href="{{ request_object.structure_file }}">{{ request_object.structure_file }}</a>
                 </div>
             {% endif %}
-            {% if request.notes %}
+            {% if request_object.notes %}
                 <p class="label">{% translate "Papildoma informacija" %}</p>
                 <div class="content">
-                    {{ request.notes }}
+                    {{ request_object.notes }}
                 </div>
                 <br>
             {% endif %}
-            {% if request.comment %}
+            {% if request_object.comment %}
                 <div class="organization-comment">
                     <h3 class="organization-comment-title">{% translate "Organizacijos atsakymas" %}:</h3>
-                    <div class="content">{{ request.comment | escape }}</div>
+                    <div class="content">{{ request_object.comment | escape }}</div>
                 </div>
                 <br>
             {% endif %}
@@ -332,7 +319,7 @@
     </div>
 {% endblock %}
 {% block scripts %}
-    {% get_hit_count_js_variables for request as hitcount %}
+    {% get_hit_count_js_variables for request_object as hitcount %}
     <script type="text/javascript">
         $(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });

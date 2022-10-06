@@ -1,14 +1,23 @@
 from django.urls import path
-
-from vitrina.datasets.views import DatasetListView
-from vitrina.datasets.views import DatasetDetailView
+from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView, \
+    DatasetCreateView, DatasetUpdateView, DatasetDetailView, DatasetDistributionDownloadView, \
+    DatasetDistributionPreviewView
 
 
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
-    path('dataset/<slug:slug>/', DatasetDetailView.as_view(), name='dataset-detail'),
+    path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
+    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
+    path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
+    path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
+         name='dataset-distribution-preview'),
+    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>/',
+         DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
+    path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
+    path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
+         name='dataset-structure-download'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

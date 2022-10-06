@@ -1,5 +1,7 @@
 {% load static %}
 {% load i18n %}
+{% load menu_tags %}
+
 <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="container">
         <div class="navbar-brand">
@@ -24,6 +26,7 @@
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
             <div class="navbar-end">
+                {% show_menu 0 100 100 100 "menu.html" %}
                 {% for m in menu %}
                     {% if m.children %}
                         <div class="navbar-item has-dropdown is-hoverable">
@@ -42,18 +45,19 @@
                 <div class="navbar-item">
                     {% if user.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
-                            <a class="navbar-link"><strong>{{ user.firstName }} {{ user.lastName }}</strong></a>
+                            <a class="navbar-link"><strong>{{ user }}</strong></a>
                             <div class="navbar-dropdown">
                                 <a href="/user/profile" class="navbar-item">{% translate "auth.profile" %}</a>
-                                {% if user.role is not empty %}
-                                    <a href="/sso/admin" class="navbar-item">Administruoti</a>
+                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">{% translate "Užduotys" %}</a>
+                                {% if user.is_authenticated and user.is_staff %}
+                                    <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">{% translate "Administruoti" %}</a>
                                 {% endif %}
-                                <a href="/logout" class="navbar-item">{% translate "auth.logout" %}</a>
+                                <a href="{% url 'logout' %}" class="navbar-item">{% translate "Atsijungti" %}</a>
                             </div>
                         </div>
                     {% else %}
                         <div class="buttons">
-                            <a href="/login" class="button is-primary">{% translate auth.login %}</a>
+                            <a href="{% url 'login' %}" class="button is-primary">{% translate "Prisijungti" %}</a>
                         </div>
                     {% endif %}
                 </div>

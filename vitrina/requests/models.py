@@ -23,7 +23,7 @@ class Request(models.Model):
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
@@ -31,7 +31,7 @@ class Request(models.Model):
     dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
-    is_existing = models.BooleanField()
+    is_existing = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
@@ -43,7 +43,7 @@ class Request(models.Model):
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
-    is_public = models.BooleanField()
+    is_public = models.BooleanField(default=True)
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 
@@ -53,6 +53,9 @@ class Request(models.Model):
     class Meta:
         managed = True
         db_table = 'request'
+
+    def __str__(self):
+        return self.title
 
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})

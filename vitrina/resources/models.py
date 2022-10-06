@@ -31,7 +31,7 @@ class Format(models.Model):
 class DistributionFormat(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     title = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -133,11 +133,13 @@ class DatasetDistribution(models.Model):
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
-    type = models.CharField(max_length=255, blank=True, null=True)
-    mime_type = models.CharField(max_length=255, blank=True, null=True)
     issued = models.CharField(max_length=255, blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
+
+    # Deprecated fields bellow
+    type = models.CharField(max_length=255, blank=True, null=True)
+    mime_type = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_distribution'

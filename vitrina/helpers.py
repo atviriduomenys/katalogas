@@ -5,8 +5,7 @@ from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.translation import gettext_lazy as _
 
-from crispy_forms.layout import Div
-from crispy_forms.layout import Submit
+from crispy_forms.layout import Div, Submit
 
 
 def get_selected_value(

@@ -4,31 +4,20 @@ import itertools
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Q
-from django.http import FileResponse, JsonResponse
-from django.http import HttpResponseBadRequest
-from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
+from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 
-# TODO: I think, Django has this built-in.
-from slugify import slugify
-
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import DatasetFilterForm
-from vitrina.datasets.forms import NewDatasetForm
+from vitrina.classifiers.models import Category, Frequency
+from vitrina.datasets.forms import DatasetFilterForm, DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import can_create_dataset
-from vitrina.datasets.services import can_update_dataset
-from vitrina.datasets.services import filter_by_status
-from vitrina.datasets.services import get_category_counts
-from vitrina.datasets.services import get_related_categories
-from vitrina.datasets.services import get_related_tag_list
-from vitrina.datasets.services import get_tag_list
+from vitrina.datasets.services import can_update_dataset, can_create_dataset, filter_by_status, get_category_counts
+from vitrina.datasets.services import get_related_categories, get_related_tag_list, get_tag_list
 from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
@@ -275,7 +264,7 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         return can_create_dataset(self.request.user, self.kwargs['pk'])
@@ -305,7 +294,7 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])

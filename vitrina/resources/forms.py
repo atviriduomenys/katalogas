@@ -4,11 +4,8 @@ from django.forms import DateField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field
-from crispy_forms.layout import Layout
+from crispy_forms.layout import Field, Submit, Layout
 
-from vitrina.helpers import buttons
-from vitrina.helpers import submit
 from vitrina.resources.models import DatasetDistribution
 
 
@@ -80,7 +77,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('municipality'),
             Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
             Field('period_end', placeholder=_("Pasirinkite pabaigos datą")),
-            buttons(submit()),
+            Submit('submit', _("Patvirtinti"), css_class='button is-primary'),
         )
 
     def clean(self):

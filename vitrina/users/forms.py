@@ -1,5 +1,5 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit, ButtonHolder
+from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.core.exceptions import ValidationError
@@ -8,6 +8,7 @@ from django.forms import Form, EmailField, CharField, PasswordInput, BooleanFiel
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
+from vitrina.helpers import buttons, submit
 
 
 class LoginForm(Form):
@@ -21,11 +22,9 @@ class LoginForm(Form):
         self.helper = FormHelper()
         self.helper.form_id = "login-form"
         self.helper.layout = Layout(
-            Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('password', css_class='input', placeholder=_("Slaptažodis")),
-                    css_class='control'), css_class='field'),
-            ButtonHolder(Submit('submit', _("Prisijungti"), css_class='button is-primary'))
+            Field('email', placeholder=_("El. paštas")),
+            Field('password', placeholder=_("Slaptažodis")),
+            Submit('submit', _("Prisijungti"), css_class='button is-primary'),
         )
 
     def clean(self):
@@ -62,17 +61,13 @@ class RegisterForm(UserCreationForm):
         self.helper = FormHelper()
         self.helper.form_id = "register-form"
         self.helper.layout = Layout(
-            Div(Div(Field('first_name', css_class='input', placeholder=_("Vardas")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('last_name', css_class='input', placeholder=_("Pavardė")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('password1', css_class='input', placeholder=_("Slaptažodis")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('password2', css_class='input', placeholder=_("Pakartokite slaptažodį")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('agree_to_terms'), css_class='control'), css_class='field'),
+            Field('first_name', placeholder=_("Vardas")),
+            Field('last_name', placeholder=_("Pavardė")),
+            Field('last_name', placeholder=_("Pavardė")),
+            Field('email', placeholder=_("El. paštas")),
+            Field('password1', placeholder=_("Slaptažodis")),
+            Field('password2', placeholder=_("Pakartokite slaptažodį")),
+            Field('agree_to_terms'),
             Submit('submit', _("Registruotis"), css_class='button is-primary'),
         )
 
@@ -98,8 +93,7 @@ class PasswordResetForm(BasePasswordResetForm):
         self.helper = FormHelper()
         self.helper.form_id = "password-reset-form"
         self.helper.layout = Layout(
-            Div(Div(Field('email', css_class='input', placeholder=_("El. paštas")),
-                    css_class='control'), css_class='field'),
+            Field('email', placeholder=_("El. paštas")),
             Submit('submit', _("Atstatyti slaptažodį"), css_class='button is-primary'),
         )
 
@@ -128,9 +122,7 @@ class PasswordResetConfirmForm(SetPasswordForm):
         self.helper = FormHelper()
         self.helper.form_id = "password-reset-confirm-form"
         self.helper.layout = Layout(
-            Div(Div(Field('new_password1', css_class='input', placeholder=_("Naujas slaptažodis")),
-                    css_class='control'), css_class='field'),
-            Div(Div(Field('new_password2', css_class='input', placeholder=_("Pakartokite slaptažodį")),
-                    css_class='control'), css_class='field'),
+            Field('new_password1', placeholder=_("Naujas slaptažodis")),
+            Field('new_password2', placeholder=_("Pakartokite slaptažodį")),
             Submit('submit', _("Atstatyti slaptažodį"), css_class='button is-primary'),
         )

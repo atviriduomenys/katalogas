@@ -24,12 +24,9 @@ class ProjectForm(ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "project-form"
         self.helper.layout = Layout(
-            Div(Div(Field('title', css_class="input", placeholder=_("Pavadinimas"),),
-                    css_class="control"), css_class="field"),
-            Div(Div(Field('description', css_class="textarea", placeholder=_("Aprašymas")),
-                    css_class="control"), css_class="field"),
-            Div(Div(Field('url', css_class="input", placeholder=_("Nuoroda į panaudojimo atvejį")),
-                    css_class="control"), css_class="field"),
-            Div(Div(Field('image'), css_class="control"), css_class="field"),
+            Field('title', placeholder=_("Pavadinimas")),
+            Field('description', placeholder=_("Aprašymas")),
+            Field('url', placeholder=_("Nuoroda į panaudojimo atvejį")),
+            Field('image', placeholder=_("Pavadinimas")),
             Submit('submit', button, css_class='button is-primary')
         )

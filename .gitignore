@@ -16,5 +16,5 @@
 
 *.mo
 *.css.map
-.idea/
-
+.idea/s
+./webpack/node_modules/

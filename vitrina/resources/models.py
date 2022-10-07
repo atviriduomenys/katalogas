@@ -104,21 +104,12 @@ class DatasetDistribution(models.Model):
         ),
     )
 
-    region = models.ForeignKey(
-        Region,
-        models.SET_NULL,
+    geo_location = models.CharField(
+        max_length=255,
         blank=True,
         null=True,
-        verbose_name=_('Regionas'),
+        verbose_name=_('Geografinė aprėptis'),
     )
-    municipality = models.ForeignKey(
-        Municipality,
-        models.SET_NULL,
-        blank=True,
-        null=True,
-        verbose_name=_('Savivaldybė'),
-    )
-
     period_start = models.CharField(
         max_length=255,
         blank=True,

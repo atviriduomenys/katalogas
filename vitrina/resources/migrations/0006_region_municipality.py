@@ -1,20 +1,19 @@
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 def remake_region_and_municipality(apps, schema_editor):
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
-    Region = apps.get_model("vitrina_orgs", "Region")
-    Municipality = apps.get_model("vitrina_orgs", "Municipality")
 
     for resource in DatasetDistribution.objects.all():
-        if resource.region_old:
-            region = Region.objects.filter(title=resource.region_old).first()
-            resource.region = region
-        if resource.municipality_old:
-            municipality = Municipality.objects.filter(title=resource.municipality_old).first()
-            resource.municipality = municipality
-        resource.save(update_fields=['region', 'municipality'])
+        if resource.region and not resource.municipality:
+            resource.geo_location = resource.region
+        elif not resource.region and resource.municipality:
+            resource.geo_location = resource.municipality
+        elif resource.region and resource.municipality:
+            resource.geo_location = str(resource.region + " " + resource.municipality)
+        else:
+            resource.geo_location = ''
+        resource.save(update_fields=['geo_location'])
 
 
 class Migration(migrations.Migration):
@@ -24,35 +23,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='region',
-            new_name='region_old',
-        ),
-        migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='municipality',
-            new_name='municipality_old',
-        ),
         migrations.AddField(
             model_name='datasetdistribution',
-            name='municipality',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='vitrina_orgs.municipality', verbose_name='Savivaldybė'),
-        ),
-        migrations.AddField(
-            model_name='datasetdistribution',
-            name='region',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='vitrina_orgs.region', verbose_name='Regionas'),
+            name='geo_location',
+            field=models.CharField(blank=True, max_length=255, verbose_name='Geografinė aprėptis'),
         ),
         migrations.RunPython(remake_region_and_municipality),
         migrations.RemoveField(
             model_name='datasetdistribution',
-            name='region_old',
+            name='region',
         ),
         migrations.RemoveField(
             model_name='datasetdistribution',
-            name='municipality_old',
+            name='municipality',
         ),
     ]

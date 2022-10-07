@@ -54,6 +54,7 @@ class DatasetDistribution(models.Model):
     identifier = models.CharField(max_length=255, blank=True, null=True)
 
     title = models.CharField(
+        blank=True,
         max_length=255,
         verbose_name=_('Pavadinimas'),
     )

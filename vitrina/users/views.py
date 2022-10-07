@@ -47,7 +47,8 @@ class PasswordResetView(BasePasswordResetView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
-        messages.info(self.request, _("Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
+        messages.info(self.request, _(
+            "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
         return super().form_valid(form)
 
 
@@ -80,7 +81,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
         extra_context_data = {
-            'can_update_dataset': can_edit_profile(self.request.user, user),
+            'can_edit_profile': can_edit_profile(self.request.user, user),
         }
         context_data.update(extra_context_data)
         return context_data

@@ -14,9 +14,8 @@
 {% endblock %}
 
 {% block content %}
-    {#<section class="section section-padding-small">#}
     <div class="columns">
-        <div class="column is-one-quarter">
+        <div class="column is-one-fifth">
             <span class="icon is-large is-pulled-right">
                 <i class="fas fa-user fa-3x"></i>
             </span>
@@ -24,33 +23,71 @@
         <div class="column is-half">
             <div class="field" style="display: flex;">
                 <h1 class="title">{{ user.first_name }} {{ user.last_name }}</h1>
-                {% if can_edit_profile %}
+            </div>
+
+            <div class="columns">
+                <div class="column is-one-third has-text-right">
+                    <strong>{% translate "Užsiregistravo prieš" %}</strong>
+                </div>
+                <div class="column">
+                    {{ user.created|timesince }}
+                </div>
+            </div>
+
+            <div class="columns">
+                <div class="column is-one-third has-text-right">
+                    <strong>{% translate "Prisijungė prieš" %}</strong>
+                </div>
+                <div class="column">
+                    {{ user.last_login|timesince }}
+                </div>
+            </div>
+
+            {% if user.email %}
+            <div class="columns">
+                <div class="column is-one-third has-text-right">
+                    <strong>{% translate "El. paštas" %}</strong>
+                </div>
+                <div class="column">
+                    {{ user.email|urlize }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.phone %}
+            <div class="columns">
+                <div class="column is-one-third has-text-right">
+                    <strong>{% translate "Telefonas" %}</strong>
+                </div>
+                <div class="column">
+                    {{ user.phone }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.organization %}
+            <div class="columns">
+                <div class="column is-one-third has-text-right">
+                    <strong>{% translate "Organizacija" %}</strong>
+                </div>
+                <div class="column">
+                    <a href="{{ user.organization.get_absolute_url }}">{{ user.organization }}</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_edit_profile %}
+            <div class="columns">
+                <div class="column is-one-third has-text-right"></div>
+                <div class="column">
                     <a href="{%url 'user-profile-change' pk=user.id %}"
                        class="button is-primary is-normal is-size-6-mobile"
-                       id="change_profile" style="margin-left: 10px;">
-                        {% translate "Redaguoti profilį" %}
+                       id="change_profile">
+                        {% translate "Keisti duomenis" %}
                     </a>
-                {% endif %}
+                </div>
             </div>
-            <div class="field">
-                <strong>{% translate "registracijos data: " %}:</strong> {{ user.created }}
-            </div>
-            {% if user.email %}
-                <div class="field">
-                    <strong>{% translate "el. paštas" %}:</strong> {{ user.email }}
-                </div>
             {% endif %}
-            {% if user.phone %}
-                <div class="field">
-                    <strong>{% translate "telefonas" %}:</strong> {{ user.phone }}
-                </div>
-            {% endif %}
-            {% if user.organization %}
-                <div class="field">
-                    <strong>{% translate "organizacija" %}:</strong> {{ user.organization }}
-                </div>
-            {% endif %}
-            <br>
         </div>
     </div>
     {#</section>#}

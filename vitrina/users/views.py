@@ -6,15 +6,14 @@ from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetV
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView
-
-from vitrina import settings
-from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm, \
-    UserProfileEditForm
-
 from django.utils.translation import gettext_lazy as _
 
+from vitrina import settings
+from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
+from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
 from vitrina.users.services import can_edit_profile
+from vitrina.orgs.models import Representative
 
 
 class LoginView(BaseLoginView):

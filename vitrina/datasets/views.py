@@ -1,8 +1,10 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+import csv
 import itertools
+
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-import csv
 from django.views import View
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
@@ -10,16 +12,20 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from haystack.generic_views import FacetedSearchView
+
+# TODO: I think, Django has this built-in.
 from slugify import slugify
-from vitrina import settings
+
+from vitrina.classifiers.models import Category
+from vitrina.classifiers.models import Frequency
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.datasets.services import update_facet_data, can_update_dataset, can_create_dataset
+from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Frequency
+from vitrina.orgs.services import has_coordinator_permission
 from vitrina.resources.models import DatasetDistribution
 
 
@@ -53,8 +59,22 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
-            'can_create_dataset': can_create_dataset(self.request.user, self.kwargs.get('pk'))
+            'can_create_dataset': can_create_dataset(
+                self.request.user,
+                self.kwargs.get('pk'),
+            )
         }
+        if is_org_dataset_list(self.request):
+            # TODO: We get org two times.
+            org = get_object_or_404(
+                Organization,
+                pk=self.kwargs['pk'],
+            )
+            extra_context['organization'] = org
+            extra_context['can_view_members'] = has_coordinator_permission(
+                self.request.user,
+                org,
+            )
         context.update(extra_context)
         return context
 

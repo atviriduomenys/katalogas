@@ -8,14 +8,12 @@ from django.http import FileResponse, JsonResponse
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
-
-# TODO: I think, Django has this built-in.
-from slugify import slugify
 
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency

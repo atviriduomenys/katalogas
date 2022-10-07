@@ -257,6 +257,7 @@ MEDIA_ROOT = BASE_DIR / 'var/media/'
 
 HAYSTACK_CONNECTIONS = {
     'default': env.search_url(),
+    'test': env.search_url(var="SEARCH_URL_TEST"),
 }
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

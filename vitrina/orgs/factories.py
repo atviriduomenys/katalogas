@@ -21,8 +21,11 @@ class OrganizationFactory(DjangoModelFactory):
 class RepresentativeFactory(DjangoModelFactory):
     class Meta:
         model = Representative
-        django_get_or_create = ('first_name', 'last_name',)
+        django_get_or_create = ('first_name', 'last_name', 'email', 'phone')
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
+    phone = factory.Sequence(lambda n: '+3706%07d' % n)
     version = 1
+    role = Representative.COORDINATOR
+    email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")

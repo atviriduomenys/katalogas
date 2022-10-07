@@ -1,17 +1,14 @@
 from datetime import datetime, date
 
-import haystack
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
-from haystack.utils.loading import UnifiedIndex
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.search_indexes import DatasetIndex
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -138,24 +135,28 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    dataset = DatasetFactory(status=Dataset.INVENTORED, slug="ds1")
-    return dataset
+    dataset1 = DatasetFactory()
+    dataset2 = DatasetFactory(status=Dataset.INVENTORED, slug="ds1")
+    return [dataset1, dataset2]
 
 
 @pytest.mark.haystack
 def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [status_filter_data.pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [
+        status_filter_data[0].pk,
+        status_filter_data[1].pk
+    ]
     assert resp.context['selected_status'] is None
 
 
 @pytest.mark.haystack
-def test_status_filter_has_data(app: DjangoTestApp, status_filter_data):
+def test_status_filter_inventored(app: DjangoTestApp, status_filter_data):
     resp = app.get("%s?selected_facets=filter_status_exact:%s" % (
         reverse('dataset-list'),
         Dataset.INVENTORED
     ))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [status_filter_data.pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [status_filter_data[1].pk]
     assert resp.context['selected_status'] == Dataset.INVENTORED
 
 

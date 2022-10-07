@@ -36,8 +36,14 @@ class DatasetListView(FacetedSearchView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.order_by('-published')
+        datasets = super().get_queryset()
+        if is_org_dataset_list(self.request):
+            organization = get_object_or_404(
+                Organization,
+                pk=self.kwargs['pk'],
+            )
+            datasets = datasets.filter(organization=organization.pk)
+        return datasets.order_by('-published')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

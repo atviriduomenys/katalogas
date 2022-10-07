@@ -415,6 +415,22 @@ def test_dataset_filter_all(app: DjangoTestApp):
     assert resp.context['selected_date_to'] == date(2022, 2, 10)
 
 
+@pytest.mark.haystack
+def test_dataset_filter_with_pages(app: DjangoTestApp):
+    inventored_dataset = None
+    for i in range(25):
+        if i == 0:
+            inventored_dataset = DatasetFactory(status=Dataset.INVENTORED)
+        else:
+            DatasetFactory()
+
+    resp = app.get("%s?page=2" % (reverse('dataset-list')))
+    assert 'page' not in resp.html.find(id="%s_id" % Dataset.INVENTORED).attrs['href']
+    resp = resp.click(linkid="%s_id" % Dataset.INVENTORED)
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [inventored_dataset.pk]
+    assert resp.context['selected_status'] == Dataset.INVENTORED
+
+
 @pytest.fixture
 def dataset_structure_data():
     organization = OrganizationFactory(slug="org", kind="gov")

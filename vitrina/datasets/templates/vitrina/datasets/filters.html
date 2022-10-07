@@ -14,7 +14,7 @@
             </div>
         {% else %}
             <div class="is-flex">
-                <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+                <a href="{{ obj.url }}" class="category-panel-block" id="{{ obj.filter_value }}_id">{{ obj.display_value }}</a>
                 <div class="stays-right">({{ obj.count }})</div>
             </div>
         {% endif %}

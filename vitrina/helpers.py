@@ -26,6 +26,8 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
 
 def get_filter_url(request: WSGIRequest, key: str, value: str) -> str:
     query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
     if "selected_facets" in query_dict:
         query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
     else:

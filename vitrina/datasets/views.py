@@ -330,7 +330,6 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
 
 
 class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    login_url = settings.LOGIN_URL
     model = DatasetMember
     template_name = 'vitrina/datasets/members_list.html'
     context_object_name = 'dataset_members'

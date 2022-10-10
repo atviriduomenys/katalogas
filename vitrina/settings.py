@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import sys
 
 import environ
 import os
@@ -37,7 +38,6 @@ SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
-
 
 # Application definition
 
@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'hitcount',
     'crispy_forms',
     'tagulous',
+    'haystack',
 
     'vitrina',
     'vitrina.cms',
@@ -250,7 +251,6 @@ AUTH_USER_MODEL = 'vitrina_users.User'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/login/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'Test Domain <noreply@example.com>'
@@ -261,3 +261,10 @@ PASSWORD_HASHERS = [
 ]
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
+
+HAYSTACK_CONNECTIONS = {
+    'default': env.search_url(),
+    'test': env.search_url(var="SEARCH_URL_TEST"),
+}
+
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

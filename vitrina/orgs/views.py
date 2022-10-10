@@ -72,6 +72,7 @@ class OrganizationMembersView(
     OrganizationDetailView,
 ):
     template_name = 'vitrina/orgs/members.html'
+    paginate_by = 20
 
     def has_permission(self):
         # TODO: We are getting this twice.
@@ -81,7 +82,7 @@ class OrganizationMembersView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
-        context_data['members'] = organization.representative_set.all()
+        context_data['members'] = organization.representative_set.all().order_by("role", "first_name", 'last_name')
         context_data['has_permission'] = has_coordinator_permission(
             self.request.user,
             self.object,

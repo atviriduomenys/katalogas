@@ -1,15 +1,20 @@
 from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView
-
-from vitrina.orgs.models import Representative
-from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
-
+from django.views.generic import CreateView, DetailView, UpdateView
 from django.utils.translation import gettext_lazy as _
+
+from vitrina import settings
+from vitrina.tasks.services import get_active_tasks
+from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
+from vitrina.users.forms import UserProfileEditForm
+from vitrina.users.models import User
+from vitrina.users.services import can_edit_profile
+from vitrina.orgs.models import Representative
 
 
 class LoginView(BaseLoginView):
@@ -17,7 +22,9 @@ class LoginView(BaseLoginView):
     form_class = LoginForm
 
     def get_success_url(self):
-        if self.request.user.organization and not self.request.GET.get('next'):
+        tasks = get_active_tasks(self.request.user)
+        redirect_url = self.request.GET.get('next')
+        if tasks.exists() and redirect_url == reverse('home'):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 
@@ -43,7 +50,8 @@ class PasswordResetView(BasePasswordResetView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
-        messages.info(self.request, _("Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
+        messages.info(self.request, _(
+            "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
         return super().form_valid(form)
 
 
@@ -55,3 +63,57 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     def form_valid(self, form):
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
+
+
+class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    model = User
+    template_name = 'vitrina/users/profile.html'
+    context_object_name = 'user'
+
+    def has_permission(self):
+        users_profile = get_object_or_404(User, id=self.kwargs['pk'])
+        return can_edit_profile(self.request.user, users_profile)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            return redirect('user-profile', pk=self.request.user.id)
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        user = context_data.get('user')
+        extra_context_data = {
+            'can_edit_profile': can_edit_profile(self.request.user, user),
+        }
+        context_data.update(extra_context_data)
+        return context_data
+
+
+class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = User
+    template_name = 'base_form.html'
+    context_object_name = 'user'
+    form_class = UserProfileEditForm
+
+    def has_permission(self):
+        users_profile = get_object_or_404(User, id=self.kwargs['pk'])
+        return can_edit_profile(self.request.user, users_profile)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            return redirect('user-profile', pk=self.request.user.id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Naudotojo profilio redagavimas')
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super(ProfileEditView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.save()
+        return redirect('user-profile', pk=self.request.user.id)

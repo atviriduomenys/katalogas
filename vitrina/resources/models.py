@@ -4,8 +4,6 @@ from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.orgs.models import Region
-from vitrina.orgs.models import Municipality
 from vitrina.datasets.models import Dataset
 
 
@@ -166,3 +164,4 @@ class DatasetDistribution(models.Model):
 
     def is_previewable(self):
         return (self.extension() == "CSV" or self.extension() == "XLSX") and self.file.__sizeof__() > 0
+

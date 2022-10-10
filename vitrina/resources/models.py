@@ -75,7 +75,7 @@ class DatasetDistribution(models.Model):
         models.SET_NULL,
         blank=False,
         null=True,
-        verbose_name=_('Šaltinio formatas'),
+        verbose_name=_('Duomenų formatas'),
     )
 
     download_url = models.TextField(

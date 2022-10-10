@@ -208,14 +208,14 @@ class DatasetDetailView(DetailView):
 
 
 class DatasetDistributionDownloadView(View):
-    def get(self, request, dataset_id, distribution_id, filename):
+    def get(self, request, dataset_id, distribution_id, file):
         distribution = get_object_or_404(
             DatasetDistribution,
             dataset__pk=dataset_id,
             pk=distribution_id,
-            filename__icontains=filename
+            file__icontains=file
         )
-        response = FileResponse(open(distribution.filename.path, 'rb'))
+        response = FileResponse(open(distribution.file.path, 'rb'))
         return response
 
 
@@ -228,7 +228,7 @@ class DatasetDistributionPreviewView(View):
         )
         data = []
         if distribution.is_previewable():
-            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = open(distribution.file.path, encoding='utf-8')
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})

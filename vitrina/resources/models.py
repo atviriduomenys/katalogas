@@ -83,7 +83,7 @@ class DatasetDistribution(models.Model):
     download_url = models.TextField(
         blank=True,
         null=True,
-        verbose_name=_('Atsisniuntimo nuoroda'),
+        verbose_name=_('Atsisiuntimo nuoroda'),
         help_text=_(
             'Tiesioginė duomenų atsisiuntimo nuoroda.'
         ),
@@ -154,23 +154,15 @@ class DatasetDistribution(models.Model):
 
     def get_download_url(self):
         if self.is_external_url():
-            return self.url
+            return self.download_url
         return reverse('dataset-distribution-download', kwargs={
             'dataset_id': self.dataset.pk,
             'distribution_id': self.pk,
-            'filename': self.filename_without_path()
+            'file': self.filename_without_path()
         })
 
     def get_format(self):
-        if self.is_external_url() and self.url_format:
-            return self.url_format.extension
-        else:
-            if not self.file:
-                return self.mime_type
-            elif self.url_format:
-                return self.url_format.extension
-            else:
-                return self.extension()
+        return self.format
 
     def is_previewable(self):
-        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.file.file.size > 0
+        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.file.__sizeof__() > 0

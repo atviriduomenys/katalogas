@@ -63,7 +63,6 @@ class RegisterForm(UserCreationForm):
         self.helper.layout = Layout(
             Field('first_name', placeholder=_("Vardas")),
             Field('last_name', placeholder=_("Pavardė")),
-            Field('last_name', placeholder=_("Pavardė")),
             Field('email', placeholder=_("El. paštas")),
             Field('password1', placeholder=_("Slaptažodis")),
             Field('password2', placeholder=_("Pakartokite slaptažodį")),

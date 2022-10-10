@@ -4,8 +4,9 @@ from django.forms import DateField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Submit, Layout
+from crispy_forms.layout import Field, Submit, Layout, Fieldset, Div
 
+from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
 
 
@@ -65,27 +66,40 @@ class DatasetResourceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "resource-form"
+        resource = self.instance if self.instance and self.instance.pk else None
         self.helper.layout = Layout(
-            Field('title', placeholder=_("Šaltinio pavadinimas")),
-            Field('description', placeholder=_("Detalus šaltinio aprašas")),
-            Field('access_url'),
-            Field('format'),
-            Field('download_url'),
-            Field('file', placeholder=_("Šaltinio failas")),
+            inline_fields(
+                Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),
+                Field('description', placeholder=_("Detalus šaltinio aprašas"), rows="2"),
+            ),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
-            Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
-            Field('period_end', placeholder=_("Pasirinkite pabaigos datą")),
+            inline_fields(
+                Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
+                Field('period_end', placeholder=_("Pasirinkite pabaigos datą")),
+            ),
+            inline_fields(
+                Field('format'),
+                Field('access_url'),
+            ),
             Submit('submit', _("Patvirtinti"), css_class='button is-primary'),
         )
 
+        if not resource:
+            self.helper.layout.insert(len(self.helper)-1, Field('download_url')),
+            self.helper.layout.insert(len(self.helper)-1, Field('file', placeholder=_("Šaltinio failas")))
+        elif resource.download_url:
+            self.helper.layout.insert(len(self.helper)-1, Field('download_url')),
+        elif resource.file:
+            self.helper.layout.insert(len(self.helper)-1, Field('file', placeholder=_("Šaltinio failas")))
+
     def clean(self):
-        filename = self.cleaned_data.get('filename')
-        url = self.cleaned_data.get('url')
-        if filename and url:
+        file = self.cleaned_data.get('file')
+        url = self.cleaned_data.get('download_url')
+        if file and url:
             raise ValidationError(_(
                 "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
                 "įkelkit failą, ne abu"
             ))
-        if not filename and not url:
+        if not file and not url:
             raise ValidationError(_("Užpildykit URL lauką arba įkelkit failą"))
         return self.cleaned_data

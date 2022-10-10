@@ -15,5 +15,5 @@ class DatasetDistributionFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('catch_phrase')
     dataset = factory.SubFactory(DatasetFactory)
-    filename = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
+    file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1

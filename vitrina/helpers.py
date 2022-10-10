@@ -43,6 +43,15 @@ def get_filter_url(
     return "?" + urlencode(query_dict, True)
 
 
+def inline_fields(*args):
+    return Div(
+        Div(
+            *args,
+            css_class="field-body",
+        ), css_class="field is-horizontal",
+    )
+
+
 def buttons(*args):
     return Div(
         Div(*args),

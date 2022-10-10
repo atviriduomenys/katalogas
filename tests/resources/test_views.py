@@ -77,7 +77,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new resource description'
-    form['url'] = "www.google.lt"
+    form['download_url'] = "www.google.lt"
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1

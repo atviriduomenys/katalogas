@@ -12,10 +12,26 @@
 
 {% block content %}
     <div class="columns no-margin-bottom">
-        <div class="column is-one-third">
+        <div class="column is-one-forth">
+            {% if total_hits %}
+            <div class="content">
+                {% get_hit_count for project as total_hits %}
+                <p>
+                    {% translate "Peržiūrėjo:" %}:
+                    <b id="total_hits">{{ total_hits }}</b>
+                </p>
+            </div>
+            {% endif %}
             <div class="content" id="project_likes">
-                <p>{% translate "Ar jums patinka šis projektas?" %}</p>
-                {% like obj=project user=request.user %}
+                {% if user.is_authenticated %}
+                    <p>{% translate "Ar jums patinka šis projektas?" %}</p>
+                    
+                {% else %}
+                    <p>
+                        {% translate "Patinka:" %}:
+                        <b>{% like obj=project user=request.user %}</b>
+                    </p>
+                {% endif %}
             </div>
             <div class="content" id="project_subscription">
                 {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
@@ -23,23 +39,57 @@
             </div>
         </div>
         <div class="column is-three-quarters">
-            <div class="columns no-margin-bottom">
-                <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.get_title }}</h3>
-                </div>
-                <div class="column">
-                    {% get_hit_count for project as total_hits %}
-                    <p class="is-pulled-right">{% translate "Panaudojimo atvejo peržiūros" %}:
-                        <b id="total_hits">{{ total_hits }}</b>
-                    </p>
-                </div>
+            <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
+            <p>{{ project.description|linebreaks }} </p>
+
+            {% if project.benefit %}
+            <br/>
+            <p><b>{% translate "Teikiama nauda" %}:</b></p>
+            <p>{{ project.benefit|linebreaks }}</p>
+            {% endif %}
+
+            {% if project.beneficiaryGroup %}
+            <br/>
+            <p><b>{% translate "Naudos gavėjų grupė" %}:</b></p>
+            <p>{{ project.beneficiaryGroup|linebreaks }}</p>
+            {% endif %}
+
+            {% if project.extraInformation %}
+            <br/>
+            <p><b>{% translate "Papildoma informacija" %}:</b></p>
+            <p>{{ project.extraInformation|linebreaks }}</p>
+            {% endif %}
+
+            {% if project.url %}
+            <br/>
+            <p><b>{% translate "Nuoroda" %}:</b></p>
+            <p>{{ project.url|urlizetrunc:72 }}</p>
+            {% endif %}
+
+            {% if datasets %}
+            <br/>
+            <p><b>{% translate "Panaudoti duomenų rinkiniai" %}:</b></p>
+            {# TODO: Add datasets. #}
+            {% endif %}
+        </div>
+        {% if i.getImageUUID %}
+            <div class="column is-2">
+                <figure class="image">
+                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                </figure>
             </div>
-            <div class="columns no-margin-bottom">
-                <div class="column">
-                    <p><b>{% translate "Panaudojimo atvejo/paslaugos aprašymas" %}:</b></p>
-                    <p>{{ project.description }} </p>
-                </div>
-            </div>
+        {% endif %}
+    </div>
+    <hr>
+</article>
+
+
+
+
+
+
+
+
         </div>
     </div>
 {% endblock %}

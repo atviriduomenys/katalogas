@@ -57,7 +57,7 @@
                         </div>
                     {% else %}
                         <div class="buttons">
-                            <a href="{% url 'login' %}" class="button is-primary">{% translate "Prisijungti" %}</a>
+                            <a href="{% url 'login' %}?next={{ request.path|urlencode }}" class="button is-primary">{% translate "Prisijungti" %}</a>
                         </div>
                     {% endif %}
                 </div>

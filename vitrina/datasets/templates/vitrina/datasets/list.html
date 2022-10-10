@@ -66,28 +66,10 @@
     {% endif %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
-            {#<div style="text-align: center;">#}
-            {#<span class="icon is-huge">#}
-            {#<i class="far fa-10x fa-folder-open"></i>#}
-            {#</span>#}
-            {#</div>#}
-            {#<br/>#}
-            {#{%  if filterMap %}#}
-            {#{% for flt in filterMap["organization"] %}#}
-            {#<pre>{{ flt.title }}</pre>#}
-            {#<pre>{{ flt.id }}</pre>#}
-            {#{% endfor %}#}
-            {#{% endif %}#}
             {% include "vitrina/datasets/filters.html" %}
         </div>
 
         <div class="column is-three-quarters">
-
-            {#            <pre>#}
-            {#            {% for f in selectedFacets %}#}
-            {#                {{ f }}<br/>#}
-            {#            {% endfor %}#}
-            {#            </pre>#}
 
             <form id="dataset-filter" class="field has-addons is-fullwidth"
                   action="{% if request.resolver_match.url_name == 'dataset-list' %}
@@ -99,11 +81,6 @@
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
                            placeholder="{% translate 'Ieškoti duomenų rinkinio' %}" value="{{ q | escape }}"/>
-                    {% for k, values in search_form_params %}
-                        {% for v in values %}
-                            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
-                        {% endfor %}
-                    {% endfor %}
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -117,43 +94,11 @@
             <a href="/search"
                class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
 
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ num_found }}</h1>
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
 
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
             </div>
-
-            <div id="facet-modal" class="modal is-hidden">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    {#<div class="container needs-padding">#}
-                    <div class="container modal-facets needs-padding">
-                        {#{% include "vitrina/datasets/facets.html" %}#}
-                    </div>
-                    {#</div>#}
-                </div>
-                <button class="modal-close is-primary is-large" aria-label="close"></button>
-            </div>
-
-            {% if filterMap %}
-                <a href="/datasets" class="tag is-warning">{% translate "search.removefilters" %}<span
-                            class="icon"><i class="fas fa-times"></i></span>
-                </a>
-                {% for filterType, filterList in filterMap %}
-                    {#<p>{{ filterType }}</p>#}
-                    {% for fltr in filterList %}
-                        <a href="concat(currentQuery, '&', 'remove=', fltr.removeId | url_encode) }}"
-                           class="tag {% if filterType == 'organization' %}is-success{% endif %}{% if filterType == 'category' %}is-info{% endif %}">{{ fltr.title }}
-                            <i class="fas fa-times"></i>
-                        </a>
-                    {% endfor %}
-                {% endfor %}
-                <br/>
-                <br/>
-            {% endif %}
-
-            {#{% include '../component/pagination.twig' %}#}
-
             {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
                 <div class="buttons is-right">
                     <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
@@ -161,45 +106,33 @@
                     </a>
                 </div>
             {% endif %}
-
             {% for i in page_obj %}
                 <article class="media">
-                    {#<div class="media-content single-item">#}
                     <div class="media-content">
                         <div class="content">
                             <div>
-                                <strong><a href="{{ i.get_absolute_url }}"
-                                           class="dataset-list-title">{{ i.title }}</a></strong>
+                                <strong><a href="{{ i.object.get_absolute_url }}"
+                                           class="dataset-list-title">{{ i.object.title }}</a></strong>
                                 <div class="is-pulled-right">
                                     <a target="_blank"
-                                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.get_absolute_url }}">
+                                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.object.get_absolute_url }}">
                                     <span class="icon">
                                         <i class="fab fa-facebook-square"></i>
                                     </span>
                                     </a>
-                                    {#<a target="_blank" href="https://www.linkedin.com/shareArticle?mini=true&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}&title={{ i.title }}">#}
-                                    {#<span class="icon">#}
-                                    {#<i class="fab fa-linkedin"></i>#}
-                                    {#</span>#}
-                                    {#</a>#}
-                                    {#<a target="_blank" href="http://twitter.com/share?text={{ i.title }}&url={{ current_domain_full }}{{ radix }}/{{ i.slug }}">#}
-                                    {#<span class="icon">#}
-                                    {#<i class="fab fa-twitter-square"></i>#}
-                                    {#</span>#}
-                                    {#</a>#}
                                 </div>
                             </div>
-                            {% if i.organization_title %}
+                            {% if i.object.organization_title %}
                                 <p>
-                                    <small class="dataset-list-organization">{{ i.organization_title }}</small>
+                                    <small class="dataset-list-organization">{{ i.object.organization_title }}</small>
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {{ i.description }}
+                                {{ i.object.description }}
                             </p>
                             <div class="tags">
-                                {% if i.format %}
-                                    {% for t in i.format %}
+                                {% if i.object.format %}
+                                    {% for t in i.object.format %}
                                         {% if t == "API" %}
                                             <span class="tag is-success">{{ t }}</span>
                                         {% elif t == "CSV" %}
@@ -213,29 +146,11 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <nav class="level is-mobile">
-                            <div class="level-left">
-                                {#                        <a class="level-item">#}
-                                {#                            <span class="icon is-small"><i class="fas fa-reply"></i></span>#}
-                                {#                        </a>#}
-                                {#                        <a class="level-item">#}
-                                {#                            <span class="icon is-small"><i class="fas fa-retweet"></i></span>#}
-                                {#                        </a>#}
-                                {#                        <a class="level-item">#}
-                                {#                            <span class="icon is-small"><i class="fas fa-heart"></i></span>#}
-                                {#                        </a>#}
-                            </div>
-                        </nav>
                     </div>
-                    {#            <div class="media-right">#}
-                    {#                <button class="delete"></button>#}
-                    {#            </div>#}
                 </article>
             {% endfor %}
             <br/>
-            {#{% if lastPage > 1 %}#}
-                {% include "vitrina/common/pagination.html" %}
-            {#{% endif %}#}
+            {% include "vitrina/common/pagination.html" %}
         </div>
     </div>
 {% endblock %}

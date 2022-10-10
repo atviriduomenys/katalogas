@@ -6,7 +6,7 @@ from django_webtest import DjangoTestApp
 from factory.django import FileField
 
 from vitrina import settings
-from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
+from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
@@ -504,12 +504,18 @@ def test_change_form_wrong_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
+    licence = LicenceFactory(is_default=True)
+    frequency = FrequencyFactory(is_default=True)
+    category = CategoryFactory()
     dataset = DatasetFactory(
         title="dataset_title",
         title_en="dataset_title",
         published=datetime(2022, 9, 7),
         slug='test-dataset-slug',
         description='test description',
+        category=category,
+        licence=licence,
+        frequency=frequency
     )
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
@@ -564,6 +570,9 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
+    LicenceFactory(is_default=True)
+    FrequencyFactory(is_default=True)
+    category = CategoryFactory()
     org = OrganizationFactory(
         title="Org_title",
         created=datetime(2022, 8, 22, 10, 30),
@@ -577,6 +586,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
+    form['category'] = category.pk
     resp = form.submit()
     added_dataset = Dataset.objects.filter(title="Added title")
     assert added_dataset.count() == 1
@@ -599,3 +609,19 @@ def test_click_add_button(app: DjangoTestApp):
     response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
     response.click(linkid='add_dataset')
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_dataset_add_form_initial_values(app: DjangoTestApp):
+    default_licence = LicenceFactory(is_default=True)
+    default_frequency = FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    user = User.objects.create_user(
+        email="test@test.com",
+        password="test123",
+        organization=organization
+    )
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
+    assert form['licence'].value == str(default_licence.pk)
+    assert form['frequency'].value == str(default_frequency.pk)

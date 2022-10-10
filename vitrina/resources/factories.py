@@ -4,7 +4,15 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
+
+
+class FileFormat(DjangoModelFactory):
+    class Meta:
+        model = Format
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('word')
 
 
 class DatasetDistributionFactory(DjangoModelFactory):
@@ -15,5 +23,6 @@ class DatasetDistributionFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('catch_phrase')
     dataset = factory.SubFactory(DatasetFactory)
+    format = factory.SubFactory(FileFormat)
     file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1

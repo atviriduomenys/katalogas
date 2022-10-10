@@ -38,7 +38,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         resource = form.save(commit=False)
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
         resource.dataset = dataset
-        if resource.url:
+        if resource.download_url:
             resource.type = 'URL'
         resource.save()
         return redirect(resource.dataset)

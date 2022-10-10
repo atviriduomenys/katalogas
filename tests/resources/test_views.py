@@ -4,7 +4,7 @@ from django_webtest import DjangoTestApp
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 
@@ -27,8 +27,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
     app.set_user(user)
     resource.dataset.manager = user
     form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
-    form['title'] = 'Edited title'
-    form['description'] = 'edited resource description'
+    form['title'] = "Edited title"
+    form['description'] = "edited resource description"
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
@@ -70,6 +70,7 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
+    file_format = FileFormat()
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
     app.set_user(user)
@@ -77,6 +78,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new resource description'
+    form['format'] = file_format.id
     form['download_url'] = "www.google.lt"
     resp = form.submit()
     assert resp.status_code == 302

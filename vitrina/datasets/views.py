@@ -316,6 +316,6 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
+        dataset = form.save(commit=False)
+        dataset.slug = slugify(dataset.title)
         return super().form_valid(form)

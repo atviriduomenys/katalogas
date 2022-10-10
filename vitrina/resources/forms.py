@@ -4,7 +4,7 @@ from django.forms import DateField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Submit, Layout, Fieldset, Div
+from crispy_forms.layout import Field, Submit, Layout
 
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
@@ -40,7 +40,7 @@ class DatasetResourceForm(forms.ModelForm):
     download_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
-        label=_("Atsisniuntimo nuoroda"),
+        label=_("Atsisiuntimo nuoroda"),
         help_text=_(
             "Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti "
             "tiesiogiai į CSV, JSON ar kito formato duomenų failą."
@@ -64,9 +64,10 @@ class DatasetResourceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        resource = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if resource else _("Sukurti")
         self.helper = FormHelper()
         self.helper.form_id = "resource-form"
-        resource = self.instance if self.instance and self.instance.pk else None
         self.helper.layout = Layout(
             inline_fields(
                 Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),
@@ -81,7 +82,7 @@ class DatasetResourceForm(forms.ModelForm):
                 Field('format'),
                 Field('access_url'),
             ),
-            Submit('submit', _("Patvirtinti"), css_class='button is-primary'),
+            Submit('submit', button, css_class='button is-primary'),
         )
 
         if not resource:

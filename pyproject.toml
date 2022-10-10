@@ -28,7 +28,7 @@ dataset = "^1.5.2"
 typer = "^0.6.1"
 itsdangerous = "^2.1.2"
 django-haystack = {extras = ["elasticsearch"], version = "^3.2.1"}
-django-crispy-forms = "1.7.2"
+django-crispy-forms = "^1.7.2"
 crispy-bulma = "^0.8.0"
 
 [tool.poetry.dev-dependencies]

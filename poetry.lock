@@ -130,6 +130,21 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
+name = "crispy-bulma"
+version = "0.8.0"
+description = "Bulma template pack for django-crispy-forms"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+Django = ">=2.2"
+django-crispy-forms = ">=1.12.0"
+
+[package.extras]
+test = ["pytest", "pytest-django"]
+
+[[package]]
 name = "cssselect2"
 version = "0.7.0"
 description = "CSS selectors for Python ElementTree"
@@ -242,27 +257,12 @@ rcssmin = "1.1.0"
 rjsmin = "1.2.0"
 
 [[package]]
-name = "django-crispy-bulma"
-version = "0.2"
-description = "Django application to add 'django-crispy-forms' layout objects for Bulma.io"
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-Django = ">=2.0"
-django-crispy-forms = "1.7.2"
-
-[package.extras]
-dev = ["PyGithub (>=1.43,<2.0)", "flake8 (>=3.7,<4.0)", "flake8-bugbear (>=19.8,<20.0)", "flake8-import-order (>=0.18,<1.0)", "flake8-string-format (>=0.2,<1.0)", "flake8-tidy-imports (>=2.0,<3.0)", "flake8-todo (>=0.7,<1.0)", "pdoc (>=0.3,<1.0)", "pre-commit (>=1.18,<2.0)", "wheel (>=0.33,<1.0)"]
-
-[[package]]
 name = "django-crispy-forms"
-version = "1.7.2"
+version = "1.14.0"
 description = "Best way to have Django DRY forms"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 
 [[package]]
 name = "django-environ"
@@ -1145,7 +1145,7 @@ tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-c
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "ee74773612c0ae9b81194bb2e49c721e9ccbbd82aaa3798b1b42a075f89d424c"
+content-hash = "f080c4712631dada1fa93cad35a657fdf0c25d3482b6e0af83c0a5ead8fbf096"
 
 [metadata.files]
 aldryn-apphooks-config = [
@@ -1259,6 +1259,10 @@ coverage = [
     {file = "coverage-6.5.0-pp36.pp37.pp38-none-any.whl", hash = "sha256:1431986dac3923c5945271f169f59c45b8802a114c8f548d611f2015133df77a"},
     {file = "coverage-6.5.0.tar.gz", hash = "sha256:f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84"},
 ]
+crispy-bulma = [
+    {file = "crispy-bulma-0.8.0.tar.gz", hash = "sha256:d9bfb56636038becc3971fbd24c464cd9ee810db04667e9fd86fc58d299cc2b7"},
+    {file = "crispy_bulma-0.8.0-py3-none-any.whl", hash = "sha256:4f80291dfa38b738e44c21be43bffc9bb35540e54d9558186ea2fe958179b27f"},
+]
 cssselect2 = [
     {file = "cssselect2-0.7.0-py3-none-any.whl", hash = "sha256:fd23a65bfd444595913f02fc71f6b286c29261e354c41d722ca7a261a49b5969"},
     {file = "cssselect2-0.7.0.tar.gz", hash = "sha256:1ccd984dab89fc68955043aca4e1b03e0cf29cad9880f6e28e3ba7a74b14aa5a"},
@@ -1290,13 +1294,9 @@ django-compressor = [
     {file = "django_compressor-4.1-py2.py3-none-any.whl", hash = "sha256:61f313852b4c8d4ef2534cda3d2366f45ca3e399b3cbe10590e516cc6b45542d"},
     {file = "django_compressor-4.1.tar.gz", hash = "sha256:8ece621d2a98f6c6635480cb8b3701db890a99f793f95ca20cb00abc194d331d"},
 ]
-django-crispy-bulma = [
-    {file = "django-crispy-bulma-0.2.tar.gz", hash = "sha256:6ce8f6df87442040fbba39baede7aba7026d71359376e3ce7eecb7695b09c02b"},
-    {file = "django_crispy_bulma-0.2-py3-none-any.whl", hash = "sha256:72a61a1ed87611c87347553f57879dd05e21b4cedffaf9c676971488a0f065b2"},
-]
 django-crispy-forms = [
-    {file = "django-crispy-forms-1.7.2.tar.gz", hash = "sha256:5952bab971110d0b86c278132dae0aa095beee8f723e625c3d3fa28888f1675f"},
-    {file = "django_crispy_forms-1.7.2-py2.py3-none-any.whl", hash = "sha256:705ededc554ad8736157c666681165fe22ead2dec0d5446d65fc9dd976a5a876"},
+    {file = "django-crispy-forms-1.14.0.tar.gz", hash = "sha256:35887b8851a931374dd697207a8f56c57a9c5cb9dbf0b9fa54314da5666cea5b"},
+    {file = "django_crispy_forms-1.14.0-py3-none-any.whl", hash = "sha256:bc4d2037f6de602d39c0bc452ac3029d1f5d65e88458872cc4dbc01c3a400604"},
 ]
 django-environ = [
     {file = "django-environ-0.9.0.tar.gz", hash = "sha256:bff5381533056328c9ac02f71790bd5bf1cea81b1beeb648f28b81c9e83e0a21"},

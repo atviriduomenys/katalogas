@@ -3,38 +3,28 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import FileResponse, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
-from django.shortcuts import redirect
-from django.db.models import Q
-from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
+
 from haystack.generic_views import FacetedSearchView
 
-# TODO: I think, Django has this built-in.
-from slugify import slugify
-
-from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
-from vitrina.helpers import get_selected_value
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.datasets.forms import DatasetFilterForm, DatasetForm
+from vitrina.datasets.forms import DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data, can_update_dataset, can_create_dataset
-from vitrina.datasets.services import can_update_dataset, can_create_dataset, filter_by_status, get_category_counts
-from vitrina.datasets.services import get_related_categories, get_related_tag_list, get_tag_list
-from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.datasets.services import can_update_dataset, can_create_dataset, update_facet_data
+from vitrina.helpers import get_selected_value
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_coordinator_permission
 from vitrina.resources.models import DatasetDistribution
-from vitrina.resources.services import can_add_resource, can_change_resource
+from vitrina.resources.services import can_add_resource
 
 
 class DatasetListView(FacetedSearchView):

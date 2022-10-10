@@ -137,7 +137,7 @@ class Dataset(models.Model):
 
     @property
     def formats(self):
-        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
 
 # TODO: To be merged into Dataset:

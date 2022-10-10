@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DetailView, UpdateView
 from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
+from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
@@ -21,7 +22,9 @@ class LoginView(BaseLoginView):
     form_class = LoginForm
 
     def get_success_url(self):
-        if self.request.user.organization and not self.request.GET.get('next'):
+        tasks = get_active_tasks(self.request.user)
+        redirect_url = self.request.GET.get('next')
+        if tasks.exists() and redirect_url == reverse('home'):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 

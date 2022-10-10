@@ -14,40 +14,36 @@ from vitrina.orgs.models import Representative
 from vitrina.users.models import User
 
 
-@pytest.fixture
-def data_for_tabs():
-    parent_organization = OrganizationFactory(slug="org1")
-    organization = parent_organization.add_child(instance=OrganizationFactory.build(slug="org2"))
-    dataset = DatasetFactory(organization=organization)
-    representative = RepresentativeFactory(organization=organization)
-    return {
-        'parent': parent_organization,
-        'organization': organization,
-        'dataset': dataset,
-        'representative': representative
-    }
-
-
 @pytest.mark.django_db
-def test_organization_detail_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(data_for_tabs["organization"].get_absolute_url())
-    assert list(resp.context['ancestors']) == [data_for_tabs["parent"]]
+def test_organization_detail_tab(app: DjangoTestApp):
+    parent_organization = OrganizationFactory()
+    organization = parent_organization.add_child(instance=OrganizationFactory.build())
+    resp = app.get(organization.get_absolute_url())
+    assert list(resp.context['ancestors']) == [parent_organization]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Informacija"]
 
 
 @pytest.mark.django_db
-def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
+def test_organization_members_tab(app: DjangoTestApp):
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    representative1 = RepresentativeFactory(organization=organization1)
+    representative2 = RepresentativeFactory(organization=organization2)
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     app.set_user(admin)
-    resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].pk]))
-    assert list(resp.context['members']) == [data_for_tabs["representative"]]
+    resp = app.get(reverse('organization-members', args=[organization1.pk]))
+    assert list(resp.context['members']) == [representative1]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
 
 
-@pytest.mark.django_db
-def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].pk]))
-    assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
+@pytest.mark.haystack
+def test_organization_dataset_tab(app: DjangoTestApp):
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    dataset1 = DatasetFactory(organization=organization1)
+    dataset2 = DatasetFactory(organization=organization2)
+    resp = app.get(reverse('organization-datasets', args=[organization1.pk]))
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
 
 

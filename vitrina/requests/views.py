@@ -2,13 +2,17 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
+from reversion import set_comment
+
 from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
-from django.views.generic.detail import DetailView
+from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request, RequestStructure
 
 from django.utils.translation import gettext_lazy as _
+
+from vitrina.views import HistoryView, HistoryDetailView
 
 
 class RequestListView(ListView):
@@ -18,10 +22,12 @@ class RequestListView(ListView):
     paginate_by = 20
 
 
-class RequestDetailView(DetailView):
+class RequestDetailView(HistoryDetailView):
     model = Request
     template_name = 'vitrina/requests/detail.html'
     context_object_name = 'request_object'
+    detail_url_name = 'request-detail'
+    history_url_name = 'request-history'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -42,13 +48,12 @@ class RequestDetailView(DetailView):
             "dataset": dataset,
             "status": request.get_status_display(),
             "user_count": 0,
-            "history": None,
         }
         context_data.update(extra_context_data)
         return context_data
 
 
-class RequestCreateView(LoginRequiredMixin, CreateView):
+class RequestCreateView(LoginRequiredMixin, RevisionMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
@@ -58,6 +63,7 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         self.object.user = self.request.user
         self.object.status = Request.CREATED
         self.object.save()
+        set_comment(Request.CREATED)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -66,10 +72,15 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         return context_data
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        set_comment(Request.EDITED)
+        return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
@@ -79,3 +90,9 @@ class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio redagavimas')
         return context_data
+
+
+class RequestHistoryView(HistoryView):
+    model = Request
+    detail_url_name = "request-detail"
+    history_url_name = "request-history"

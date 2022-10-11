@@ -4,17 +4,18 @@ import itertools
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Q
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, TemplateView
-from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 
 # TODO: I think, Django has this built-in.
+from reversion import set_comment
+from reversion.views import RevisionMixin
 from slugify import slugify
 
 from vitrina.classifiers.models import Category
@@ -29,11 +30,12 @@ from vitrina.datasets.services import get_category_counts
 from vitrina.datasets.services import get_related_categories
 from vitrina.datasets.services import get_related_tag_list
 from vitrina.datasets.services import get_tag_list
-from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.helpers import get_selected_value, get_filter_url, can_manage_history
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_coordinator_permission
 from vitrina.resources.models import DatasetDistribution
+from vitrina.views import HistoryView, HistoryDetailView
 
 
 class DatasetListView(ListView):
@@ -197,10 +199,12 @@ class DatasetListView(ListView):
         return context
 
 
-class DatasetDetailView(DetailView):
+class DatasetDetailView(HistoryDetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -269,7 +273,7 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class DatasetCreateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -296,10 +300,12 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
-        return super().form_valid(form)
+        super().form_valid(form)
+        set_comment(Dataset.CREATED)
+        return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class DatasetUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -327,4 +333,12 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
-        return super().form_valid(form)
+        super().form_valid(form)
+        set_comment(Dataset.EDITED)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class DatasetHistoryView(HistoryView):
+    model = Dataset
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-history"

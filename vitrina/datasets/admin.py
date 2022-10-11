@@ -1,9 +1,10 @@
 from django.contrib import admin
+from reversion.admin import VersionAdmin
 
 from vitrina.datasets.models import Dataset
 
 
-class DatasetAdmin(admin.ModelAdmin):
+class DatasetAdmin(VersionAdmin):
     list_filter = ('organization',)
 
 

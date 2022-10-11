@@ -1,0 +1,16 @@
+{% load i18n %}
+
+<div class="tabs">
+    <ul>
+        <li class="{%if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
+            <a href="{% url detail_url_name request.resolver_match.kwargs.pk %}">
+                {% translate "Informacija" %}
+            </a>
+        </li>
+        <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+            <a href="{% url history_url_name request.resolver_match.kwargs.pk %}">
+                {% translate "Istorija" %}
+            </a>
+        </li>
+    </ul>
+</div>

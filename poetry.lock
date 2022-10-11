@@ -376,6 +376,17 @@ python-versions = "*"
 Django = ">=2.1"
 
 [[package]]
+name = "django-reversion"
+version = "5.0.3"
+description = "An extension to the Django web framework that provides version control for model instances."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+django = ">=3.2"
+
+[[package]]
 name = "django-sass-processor"
 version = "1.2.1"
 description = "SASS processor to compile SCSS files into *.css, while rendering, or offline."
@@ -1076,7 +1087,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "66d8e6998bf297b12e08b7887702ac4436c5505c4b69dafb5ac47ab08d70006c"
+content-hash = "170f050e8deb3af173bd18abb5db0e906075d88d15263f30d5e12f01a5bbe9b0"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -1109,6 +1120,7 @@ django-meta = []
 django-mptt = []
 django-parler = []
 django-polymorphic = []
+django-reversion = []
 django-sass-processor = []
 django-sekizai = []
 django-sortedm2m = []

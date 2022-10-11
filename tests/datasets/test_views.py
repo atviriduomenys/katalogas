@@ -3,6 +3,7 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
+from reversion.models import Version
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
@@ -500,6 +501,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
     assert dataset.title == 'Edited title'
     assert dataset.description == 'edited dataset description'
+    assert Version.objects.get_for_object(dataset).count() == 1
+    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
 
 
 @pytest.mark.django_db
@@ -558,6 +561,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert added_dataset.count() == 1
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
+    assert Version.objects.get_for_object(added_dataset.first()).count() == 1
+    assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
 
 
 @pytest.mark.django_db
@@ -575,3 +580,32 @@ def test_click_add_button(app: DjangoTestApp):
     response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
     response.click(linkid='add_dataset')
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_without_permission(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-history', args=[dataset.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_with_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=organization)
+    dataset = DatasetFactory(organization=organization)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    form.submit()
+
+    resp = app.get(reverse('dataset-history', args=[dataset.pk]))
+    assert resp.context['detail_url_name'] == 'dataset-detail'
+    assert resp.context['history_url_name'] == 'dataset-history'
+    assert len(resp.context['history']) == 1
+    assert resp.context['history'][0]['action'] == "Redaguota"
+    assert resp.context['history'][0]['user'] == user

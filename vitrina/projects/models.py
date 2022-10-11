@@ -1,12 +1,22 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 
 
 class Project(models.Model):
+    CREATED = "CREATED"
+    EDITED = "EDITED"
+    DELETED = "DELETED"
+    HISTORY_MESSAGES = {
+        CREATED: _("Sukurta"),
+        EDITED: _("Redaguota"),
+        DELETED: _("Ištrinta"),
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)

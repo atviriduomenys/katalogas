@@ -11,6 +11,10 @@
 {% endblock %}
 
 {% block content %}
+    {% if can_manage_history %}
+        {% include 'component/tabs.html' %}
+    {% endif %}
+
     <div class="columns no-margin-bottom">
         <div class="column is-one-third">
             <div class="content" id="project_likes">

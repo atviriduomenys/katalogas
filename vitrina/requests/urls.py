@@ -1,6 +1,6 @@
 from django.urls import path
 
-from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView
+from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView, RequestHistoryView
 from vitrina.requests.views import RequestDetailView
 
 urlpatterns = [
@@ -12,6 +12,7 @@ urlpatterns = [
     # @GetMapping("/requests/request")
     path('requests/add/', RequestCreateView.as_view(), name='request-create'),
     path('requests/<int:pk>/change/', RequestUpdateView.as_view(), name='request-update'),
+    path('requests/<int:pk>/history/', RequestHistoryView.as_view(), name='request-history'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")

@@ -36,7 +36,7 @@ class Dataset(TranslatableModel):
     }
 
     translations = TranslatedFields(
-        title=models.CharField(_("Title"), max_length=255, blank=True, null=True),
+        title=models.CharField(_("Title"), max_length=500, blank=True, null=True),
         description=models.TextField(_("Description"), blank=True, null=True),
     )
 
@@ -114,7 +114,6 @@ class Dataset(TranslatableModel):
     public = PublicDatasetManager()
 
     class Meta:
-        managed = True
         db_table = 'dataset'
         verbose_name = _('Dataset')
         unique_together = (('internal_id', 'organization_id'),)

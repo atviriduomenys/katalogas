@@ -14,7 +14,6 @@ from vitrina.datasets.managers import PublicDatasetManager
 
 from django.utils.translation import gettext_lazy as _
 
-
 class Dataset(TranslatableModel):
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
@@ -53,7 +52,7 @@ class Dataset(TranslatableModel):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True, verbose_name=_('Kategorija'))
+    category = models.ForeignKey(Category, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
@@ -68,7 +67,7 @@ class Dataset(TranslatableModel):
     #       https://github.com/atviriduomenys/katalogas/issues/30
     manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True, verbose_name=_('Rinkinio tvarkytojas'))
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True, verbose_name=_('Licenzija'))
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
@@ -80,7 +79,7 @@ class Dataset(TranslatableModel):
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=True, null=True, verbose_name=_('Atnaujinimo dažnumas'))
+    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
@@ -128,6 +127,18 @@ class Dataset(TranslatableModel):
 
     def get_tag_list(self):
         return str(self.tags).replace(" ", "").split(',') if self.tags else []
+
+    @property
+    def filter_status(self):
+        if self.datasetstructure_set.exists():
+            return self.HAS_STRUCTURE
+        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+            return self.status
+        return None
+
+    @property
+    def formats(self):
+        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
 
 # TODO: To be merged into Dataset:

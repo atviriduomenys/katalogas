@@ -1,9 +1,11 @@
 {% load i18n %}
+{% load pagination_tags %}
+
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; {% translate "Pradinis" %}</a>
-            <a href="?page={{ page_obj.previous_page_number }}">{% translate "Atgal" %}</a>
+            <a href="?{% query_transform page=1 %}">{% translate "Pradinis" %}</a>
+            <a href="?{% query_transform page=page_obj.previous_page_number %}">{% translate "Atgal" %}</a>
         {% endif %}
 
         <span class="current">
@@ -13,8 +15,8 @@
         </span>
 
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">{% translate "Pirmyn" %}</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">{% translate "Paskutinis" %} &raquo;</a>
+        <a href="?{% query_transform page=page_obj.next_page_number %}">{% translate "Pirmyn" %}</a>
+            <a href="?{% query_transform page=page_obj.paginator.num_pages %}">{% translate "Paskutinis" %} &raquo;</a>
         {% endif %}
     </span>
 </div>

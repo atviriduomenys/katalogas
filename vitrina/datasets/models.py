@@ -36,8 +36,8 @@ class Dataset(TranslatableModel):
     }
 
     translations = TranslatedFields(
-        title=models.CharField(_("Title"), max_length=500, blank=True, null=True),
-        description=models.TextField(_("Description"), blank=True, null=True),
+        title=models.TextField(_("Title"), blank=True),
+        description=models.TextField(_("Description"), blank=True),
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59

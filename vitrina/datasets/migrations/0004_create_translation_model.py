@@ -41,8 +41,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('language_code', models.CharField(db_index=True, max_length=15, verbose_name='Language')),
-                ('title', models.CharField(blank=True, max_length=500, null=True, verbose_name='Title')),
-                ('description', models.TextField(blank=True, null=True, verbose_name='Description')),
+                ('title', models.TextField(blank=True, verbose_name='Title')),
+                ('description', models.TextField(blank=True, verbose_name='Description')),
                 ('master', parler.fields.TranslationsForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='vitrina_datasets.dataset')),
             ],
             options={

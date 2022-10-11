@@ -2,33 +2,36 @@
 from django.db import migrations, models
 
 
+def fix_null_fields(apps, schema_editor):
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    for object in Dataset.objects.all():
+        if not object.description_old:
+            object.description_old = ''
+        if not object.title_old:
+            object.title_old = ''
+        if not object.title_en_old:
+            object.title_en_old = ''
+        if not object.description_en_old:
+            object.description_en_old = ''
+        object.save()
+
+
 def create_translations(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
-    print("hi i am here")
-    print(Dataset)
-    print(DatasetTranslation)
     for object in Dataset.objects.all():
-        print('loop')
-        print(object.pk)
-        print('title lt: ', object.title_old)
-        print('description en: ', object.description_old)
         DatasetTranslation.objects.create(
             master_id=object.pk,
             language_code='lt',
             title=object.title_old,
             description=object.description_old
         )
-        print('created lt')
-        print('en title: ', object.title_en_old)
-        print('en description: ', object.description_en_old)
         DatasetTranslation.objects.create(
             master_id=object.pk,
             language_code='en',
             title=object.title_en_old,
             description=object.description_en_old
         )
-        print('created en')
 
 
 class Migration(migrations.Migration):
@@ -38,5 +41,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(fix_null_fields),
         migrations.RunPython(create_translations),
     ]

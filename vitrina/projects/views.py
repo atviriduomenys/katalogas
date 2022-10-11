@@ -1,13 +1,14 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
 from django.views.generic import ListView, CreateView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.utils.translation import gettext_lazy as _
+from django.http import HttpResponseRedirect
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
-
-from django.utils.translation import gettext_lazy as _
+from vitrina.projects.services import can_update_project
 
 from vitrina.views import HistoryDetailView, HistoryView
 
@@ -25,8 +26,20 @@ class ProjectDetailView(HistoryDetailView):
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_update_project'] = can_update_project(
+            self.request.user,
+            self.object,
+        )
+        return context
 
-class ProjectCreateView(RevisionMixin, LoginRequiredMixin, CreateView):
+
+class ProjectCreateView(
+    RevisionMixin,
+    LoginRequiredMixin,
+    CreateView
+):
     model = Project
     form_class = ProjectForm
     template_name = 'base_form.html'
@@ -44,10 +57,19 @@ class ProjectCreateView(RevisionMixin, LoginRequiredMixin, CreateView):
         return context_data
 
 
-class ProjectUpdateView(RevisionMixin, LoginRequiredMixin, UpdateView):
+class ProjectUpdateView(
+    RevisionMixin,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UpdateView,
+):
     model = Project
     form_class = ProjectForm
     template_name = 'base_form.html'
+
+    def has_permission(self):
+        project = self.get_object()
+        return can_update_project(self.request.user, project)
 
     def form_valid(self, form):
         super().form_valid(form)

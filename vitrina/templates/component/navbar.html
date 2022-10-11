@@ -47,17 +47,28 @@
                         <div class="navbar-item has-dropdown is-hoverable">
                             <a class="navbar-link"><strong>{{ user }}</strong></a>
                             <div class="navbar-dropdown">
-                                <a href="/user/profile" class="navbar-item">{% translate "auth.profile" %}</a>
-                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">{% translate "Užduotys" %}</a>
-                                {% if user.is_authenticated and user.is_staff %}
-                                    <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">{% translate "Administruoti" %}</a>
+                                <a href="{% url 'user-profile' pk=user.pk %}" class="navbar-item">
+                                    {% translate "Profilis" %}
+                                </a>
+                                {% if user.organization %}
+                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
+                                    {% translate "Užduotys" %}
+                                </a>
+                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
+                                    {% translate "Rinkiniai" %}
+                                </a>
+                                {% endif %}
+                                {% if user.is_staff or user.is_superuser %}
+                                <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">
+                                    {% translate "Administravimas" %}
+                                </a>
                                 {% endif %}
                                 <a href="{% url 'logout' %}" class="navbar-item">{% translate "Atsijungti" %}</a>
                             </div>
                         </div>
                     {% else %}
                         <div class="buttons">
-                            <a href="{% url 'login' %}" class="button is-primary">{% translate "Prisijungti" %}</a>
+                            <a href="{% url 'login' %}?next={{ request.path|urlencode }}" class="button is-primary">{% translate "Prisijungti" %}</a>
                         </div>
                     {% endif %}
                 </div>

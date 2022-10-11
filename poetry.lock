@@ -89,6 +89,14 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
+name = "certifi"
+version = "2022.9.24"
+description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
@@ -256,7 +264,7 @@ develop = ["sphinx-notfound-page", "sphinx (>=3.5.0)", "furo (>=2021.8.17b43,<20
 
 [[package]]
 name = "django-etc"
-version = "1.3.1"
+version = "1.4.0"
 description = "Tiny stuff for Django that won't fit into separate apps."
 category = "main"
 optional = false
@@ -287,6 +295,21 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 Django = ">=2.2"
+
+[[package]]
+name = "django-haystack"
+version = "3.2.1"
+description = "Pluggable search for Django."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Django = ">=2.2"
+elasticsearch = {version = ">=5,<8", optional = true, markers = "extra == \"elasticsearch\""}
+
+[package.extras]
+elasticsearch = ["elasticsearch (>=5,<8)"]
 
 [[package]]
 name = "django-hitcount"
@@ -561,6 +584,24 @@ svglib = {version = "*", optional = true, markers = "extra == \"svg\""}
 svg = ["svglib", "reportlab"]
 
 [[package]]
+name = "elasticsearch"
+version = "7.8.1"
+description = "Python client for Elasticsearch"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
+
+[package.dependencies]
+certifi = "*"
+urllib3 = ">=1.21.1"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)", "yarl"]
+develop = ["requests (>=2.0.0,<3.0.0)", "coverage", "mock", "pyyaml", "pytest", "pytest-cov", "sphinx (<1.7)", "sphinx-rtd-theme", "black", "jinja2"]
+docs = ["sphinx (<1.7)", "sphinx-rtd-theme"]
+requests = ["requests (>=2.4.0,<3.0.0)"]
+
+[[package]]
 name = "factory-boy"
 version = "3.2.1"
 description = "A versatile test fixtures replacement based on thoughtbot's factory_bot for Ruby."
@@ -738,7 +779,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "psycopg2-binary"
-version = "2.9.3"
+version = "2.9.4"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
 category = "main"
 optional = false
@@ -1036,6 +1077,19 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
+name = "urllib3"
+version = "1.26.12"
+description = "HTTP library with thread-safe connection pooling, file post, and more."
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+
+[package.extras]
+brotli = ["brotlicffi (>=0.8.0)", "brotli (>=1.0.9)", "brotlipy (>=0.6.0)"]
+secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "urllib3-secure-extra", "ipaddress"]
+socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+
+[[package]]
 name = "waitress"
 version = "2.1.2"
 description = "Waitress WSGI server"
@@ -1087,7 +1141,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "170f050e8deb3af173bd18abb5db0e906075d88d15263f30d5e12f01a5bbe9b0"
+content-hash = "1df3a51984d04f9e01ba44143f2da0b7f71b9b058d2456ff645e80b95193991d"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -1097,6 +1151,7 @@ attrs = []
 banal = []
 bcrypt = []
 beautifulsoup4 = []
+certifi = []
 click = []
 colorama = []
 coverage = []
@@ -1113,6 +1168,7 @@ django-environ = []
 django-etc = []
 django-filer = []
 django-formtools = []
+django-haystack = []
 django-hitcount = []
 django-js-asset = []
 django-libsass = []
@@ -1135,6 +1191,7 @@ djangocms-apphook-setup = []
 djangocms-blog = []
 djangocms-text-ckeditor = []
 easy-thumbnails = []
+elasticsearch = []
 factory-boy = []
 faker = []
 flake8 = []
@@ -1175,6 +1232,7 @@ tomli = []
 tqdm = []
 typer = []
 unidecode = []
+urllib3 = []
 waitress = []
 webencodings = []
 webob = []

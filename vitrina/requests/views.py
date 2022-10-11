@@ -1,6 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
 from reversion import set_comment
 
@@ -9,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request, RequestStructure
+from vitrina.requests.services import can_update_request
 
 from django.utils.translation import gettext_lazy as _
 
@@ -48,6 +48,10 @@ class RequestDetailView(HistoryDetailView):
             "dataset": dataset,
             "status": request.get_status_display(),
             "user_count": 0,
+            'can_update_request': can_update_request(
+                self.request.user,
+                request,
+            )
         }
         context_data.update(extra_context_data)
         return context_data
@@ -72,7 +76,9 @@ class RequestCreateView(LoginRequiredMixin, RevisionMixin, CreateView):
         return context_data
 
 
-class RequestUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(
+    RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView,
+):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
@@ -83,8 +89,8 @@ class RequestUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMix
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):
-        request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        return self.request.user == request.user
+        request = self.get_object()
+        return can_update_request(self.request.user, request)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

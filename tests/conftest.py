@@ -1,6 +1,9 @@
 import pytest
 
 from django.apps import apps
+from django.core.management import call_command
+
+from pytest_django.lazy_django import skip_if_no_django
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -21,3 +24,27 @@ def app(django_app):
 @pytest.fixture
 def csrf_exempt_django_app(django_app_factory):
     return django_app_factory(csrf_checks=False)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "haystack: use a search index"
+    )
+
+
+@pytest.fixture(autouse=True)
+def _haystack_marker(request):
+    if request.keywords.get('haystack'):
+        # Skip if Django is not configured
+        skip_if_no_django()
+
+        # Haystack requires database
+        request.getfixturevalue('db')
+
+        # Switch to test index
+        settings = request.getfixturevalue('settings')
+        settings.HAYSTACK_CONNECTIONS = {
+            'default': settings.HAYSTACK_CONNECTIONS['test'],
+        }
+
+        call_command('clear_index', interactive=False, using=['default'])

@@ -9,6 +9,14 @@ from vitrina.projects.managers import PublicProjectManager
 
 class Project(models.Model):
     CREATED = "CREATED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    STATUSES = {
+        (CREATED, _("Pateiktas")),
+        (APPROVED, _("Patvirtintas")),
+        (REJECTED, _("Atmestas")),
+    }
+
     EDITED = "EDITED"
     DELETED = "DELETED"
     HISTORY_MESSAGES = {
@@ -25,7 +33,7 @@ class Project(models.Model):
     description = models.TextField(blank=True, null=True)
     extra_information = models.TextField(blank=True, null=True)
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=False, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)

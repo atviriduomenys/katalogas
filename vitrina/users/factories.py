@@ -1,5 +1,3 @@
-from datetime import date, timedelta
-
 import factory
 from factory.django import DjangoModelFactory
 

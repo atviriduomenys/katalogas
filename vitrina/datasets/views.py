@@ -161,7 +161,12 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class DatasetCreateView(
+    RevisionMixin,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -186,14 +191,19 @@ class DatasetCreateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMix
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class DatasetUpdateView(
+    RevisionMixin,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UpdateView
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -219,9 +229,9 @@ class DatasetUpdateView(RevisionMixin, LoginRequiredMixin, PermissionRequiredMix
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
 

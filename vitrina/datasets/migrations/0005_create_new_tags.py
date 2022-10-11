@@ -5,27 +5,13 @@ import tagulous.models.fields
 import tagulous.models.models
 
 
-def remake_tags(apps, schema_editor):
-    Dataset = apps.get_model("vitrina_datasets", "Dataset")
-    datasets_with_tags = Dataset.objects.filter(tags_old__isnull=False)
-    for dataset in datasets_with_tags:
-        old_tags = dataset.tags_old.replace(" ", "").split(",")
-        for tag in old_tags:
-            dataset.tags.add(tag)
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0003_auto_20220905_0914'),
+        ('vitrina_datasets', '0004_rename_old_tags'),
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='dataset',
-            old_name='tags',
-            new_name='tags_old',
-        ),
         migrations.CreateModel(
             name='Tagulous_Dataset_tags',
             fields=[
@@ -50,10 +36,5 @@ class Migration(migrations.Migration):
             field=tagulous.models.fields.TagField(_set_tag_meta=True, blank=True,
                                                   help_text='Enter a comma-separated tag string',
                                                   to='vitrina_datasets.Tagulous_Dataset_tags'),
-        ),
-        migrations.RunPython(remake_tags),
-        migrations.RemoveField(
-            model_name='dataset',
-            name='tags_old',
         ),
     ]

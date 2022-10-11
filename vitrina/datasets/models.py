@@ -10,6 +10,7 @@ from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
+from django.utils.translation import gettext_lazy as _
 
 
 class Dataset(models.Model):
@@ -113,7 +114,6 @@ class Dataset(models.Model):
     public = PublicDatasetManager()
 
     class Meta:
-        managed = True
         db_table = 'dataset'
         unique_together = (('internal_id', 'organization_id'),)
 

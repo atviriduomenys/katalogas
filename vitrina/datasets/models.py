@@ -124,7 +124,10 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return self.tags.all()
+        names = []
+        for tag in self.tags.all():
+            names.append(tag.name)
+        return names
 
     @property
     def filter_status(self):

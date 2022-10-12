@@ -13,7 +13,8 @@ from pprintpp import pprint as pp
 
 def main(
         token: str = Argument(..., help='https://github.com/settings/tokens'),
-        project_id: Optional[str] = Argument(None)
+        project_id: Optional[str] = Argument(None, help='Argument to specify a project id.'
+                                                        'Project id can be found in the printed output data by node id')
 ):
     session = requests.Session()
     session.headers['Authorization'] = f'Bearer {token}'
@@ -92,6 +93,10 @@ def main(
 
         with open('/tmp/data.json', 'a') as f:
             json.dump(project, f, indent=2)
+        
+        if project['data']['node'] is None:
+            pp(project['errors'])
+            exit()
 
         if project['data']['node']['items']['edges']:
             cursor = project['data']['node']['items']['edges'][-1]['cursor']

@@ -8775,7 +8775,7 @@ body {
 .has-image {
   width: auto;
   height: auto;
-  background: url("../../../vitrina/static/img/header-bg.png");
+  background: url('images/header-bg.png');
   background-repeat: no-repeat;
   background-position-x: -50px;
   background-position-y: -7em; }

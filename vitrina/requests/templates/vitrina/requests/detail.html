@@ -4,10 +4,6 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 
-{% block head %}
-    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
-{% endblock %}
-
 {% block parent_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 {% block current_title %}{{ request_object.title }}{% endblock %}
 

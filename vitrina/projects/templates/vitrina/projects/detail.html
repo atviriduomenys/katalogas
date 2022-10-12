@@ -5,18 +5,14 @@
 {% load subscription_tags %}
 {% load like_tags %}
 
-{% block head %}
-    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
-{% endblock %}
-
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column is-one-forth">
+            {% get_hit_count for project as total_hits %}
             {% if total_hits %}
             <div class="content">
-                {% get_hit_count for project as total_hits %}
                 <p>
-                    {% translate "Peržiūrėjo:" %}:
+                    {% translate "Peržiūrėjo" %}:
                     <b id="total_hits">{{ total_hits }}</b>
                 </p>
             </div>

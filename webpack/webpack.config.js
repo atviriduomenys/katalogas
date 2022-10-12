@@ -29,11 +29,18 @@ module.exports = {
   },
   plugins: [
     new MiniCssExtractPlugin({
-      filename: 'css/adp-final.css'
+      filename: 'css/bundle.css'
     }),
     new webpack.ProvidePlugin({
       jQuery: 'jquery',
       $: 'jquery',
     })
   ],
+  resolve: {
+    alias: {
+      images: path.resolve(__dirname, '../vitrina/static/img/'),
+      fonts: path.resolve(__dirname, 'src/fonts/'),
+    },
+     modules: [path.resolve(__dirname, '../var/static/'), path.resolve(__dirname, 'node_modules')],
+  },
 };

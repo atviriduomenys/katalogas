@@ -31,8 +31,7 @@ def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.mark.django_db
 def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
-    tag_str = "tag-1, tag-2, tag-3"
-    dataset = DatasetFactory(tags=tag_str, status="HAS_DATA")
+    dataset = DatasetFactory(tags=('tag-1', 'tag-2', 'tag-3'), status="HAS_DATA")
     resp = app.get(dataset.get_absolute_url())
     assert len(resp.context['tags']) == 3
     assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']

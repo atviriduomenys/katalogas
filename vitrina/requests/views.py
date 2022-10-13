@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.http import HttpResponseRedirect
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from reversion import set_comment
 
 from vitrina.requests.forms import RequestForm
@@ -12,7 +12,7 @@ from vitrina.requests.services import can_update_request
 
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.views import HistoryView, HistoryDetailView
+from vitrina.views import HistoryView, HistoryMixin
 
 
 class RequestListView(ListView):
@@ -22,7 +22,7 @@ class RequestListView(ListView):
     paginate_by = 20
 
 
-class RequestDetailView(HistoryDetailView):
+class RequestDetailView(HistoryMixin, DetailView):
     model = Request
     template_name = 'vitrina/requests/detail.html'
     context_object_name = 'request_object'
@@ -77,7 +77,10 @@ class RequestCreateView(LoginRequiredMixin, RevisionMixin, CreateView):
 
 
 class RequestUpdateView(
-    RevisionMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
 ):
     model = Request
     form_class = RequestForm

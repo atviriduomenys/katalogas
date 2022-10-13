@@ -10,7 +10,6 @@ from webtest import Upload
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.users.factories import UserFactory
-from vitrina.users.models import User
 
 
 def generate_photo_file() -> bytes:
@@ -64,7 +63,7 @@ def test_project_update(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_project_history_view_without_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     project = ProjectFactory()
     app.set_user(user)
     resp = app.get(reverse('project-history', args=[project.pk]), expect_errors=True)
@@ -73,8 +72,8 @@ def test_project_history_view_without_permission(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_project_history_view_with_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
-    project = ProjectFactory(user=user)
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
     app.set_user(user)
 
     form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']

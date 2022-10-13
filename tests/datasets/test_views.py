@@ -11,6 +11,7 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, Lic
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
 
@@ -634,7 +635,7 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_history_view_without_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     dataset = DatasetFactory()
     app.set_user(user)
     resp = app.get(reverse('dataset-history', args=[dataset.pk]), expect_errors=True)
@@ -643,9 +644,8 @@ def test_dataset_history_view_without_permission(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_history_view_with_permission(app: DjangoTestApp):
-    organization = OrganizationFactory()
-    user = User.objects.create_user(email="test@test.com", password="test123", organization=organization)
-    dataset = DatasetFactory(organization=organization)
+    user = ManagerFactory()
+    dataset = DatasetFactory(organization=user.organization)
     app.set_user(user)
 
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']

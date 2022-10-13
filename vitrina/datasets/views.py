@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from haystack.generic_views import FacetedSearchView
 from reversion import set_comment
@@ -28,7 +28,7 @@ from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_coordinator_permission
 from vitrina.resources.models import DatasetDistribution
-from vitrina.views import HistoryView, HistoryDetailView
+from vitrina.views import HistoryView, HistoryMixin
 
 
 class DatasetListView(FacetedSearchView):
@@ -87,7 +87,7 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(HistoryDetailView):
+class DatasetDetailView(HistoryMixin, DetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -162,9 +162,9 @@ class DatasetStructureDownloadView(View):
 
 
 class DatasetCreateView(
-    RevisionMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    RevisionMixin,
     CreateView
 ):
     model = Dataset
@@ -199,9 +199,9 @@ class DatasetCreateView(
 
 
 class DatasetUpdateView(
-    RevisionMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    RevisionMixin,
     UpdateView
 ):
     model = Dataset

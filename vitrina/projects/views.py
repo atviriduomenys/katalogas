@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +10,7 @@ from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
 from vitrina.projects.services import can_update_project
 
-from vitrina.views import HistoryDetailView, HistoryView
+from vitrina.views import HistoryMixin, HistoryView
 
 
 class ProjectListView(ListView):
@@ -20,7 +20,7 @@ class ProjectListView(ListView):
     paginate_by = 20
 
 
-class ProjectDetailView(HistoryDetailView):
+class ProjectDetailView(HistoryMixin, DetailView):
     model = Project
     template_name = 'vitrina/projects/detail.html'
     detail_url_name = 'project-detail'
@@ -36,8 +36,8 @@ class ProjectDetailView(HistoryDetailView):
 
 
 class ProjectCreateView(
-    RevisionMixin,
     LoginRequiredMixin,
+    RevisionMixin,
     CreateView
 ):
     model = Project
@@ -58,10 +58,10 @@ class ProjectCreateView(
 
 
 class ProjectUpdateView(
-    RevisionMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    UpdateView,
+    RevisionMixin,
+    UpdateView
 ):
     model = Project
     form_class = ProjectForm

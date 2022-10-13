@@ -6,6 +6,7 @@ from reversion.models import Version
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory
 from vitrina.requests.models import Request
+from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 
 
@@ -80,7 +81,7 @@ def test_request_detail_view(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_history_view_without_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     request = RequestFactory()
     app.set_user(user)
     resp = app.get(reverse('request-history', args=[request.pk]), expect_errors=True)
@@ -89,8 +90,8 @@ def test_request_history_view_without_permission(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_history_view_with_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
-    request = RequestFactory(user=user)
+    user = ManagerFactory()
+    request = RequestFactory(user=user, organization=user.organization)
     app.set_user(user)
 
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']

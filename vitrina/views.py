@@ -1,10 +1,10 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView
 from reversion.models import Version
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import can_manage_history
+from vitrina.services import can_manage_history
 from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
 
@@ -42,6 +42,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 'user': version.revision.user,
                 'action': self.model.HISTORY_MESSAGES.get(version.revision.comment),
             } for version in Version.objects.get_for_object(obj).order_by('-revision__date_created')],
+            'can_manage_history': can_manage_history(obj, self.request.user),
         }
         context.update(extra_context)
         return context
@@ -53,7 +54,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         return self.history_url_name
 
 
-class HistoryDetailView(DetailView):
+class HistoryMixin:
     detail_url_name = None
     history_url_name = None
 

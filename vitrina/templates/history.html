@@ -19,7 +19,7 @@
                     </tr>
                     {% for h in history %}
                         <tr>
-                            <td>{{ h.date|date:"Y-m-d H:i:s" }}</td>
+                            <td>{{ h.date|date:"SHORT_DATETIME_FORMAT" }}</td>
                             <td>{{ h.user|default_if_none:"-" }}</td>
                             <td>{{ h.action|default_if_none:"-" }}</td>
                         </tr>

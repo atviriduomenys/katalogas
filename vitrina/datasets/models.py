@@ -85,7 +85,14 @@ class Dataset(models.Model):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = tagulous.models.TagField(blank=True)
+    tags = tagulous.models.TagField(
+        blank=True,
+        force_lowercase=True,
+        space_delimiter=False,
+        autocomplete_limit=20,
+        verbose_name="Žymės",
+        help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+    )
 
     notes = models.TextField(blank=True, null=True)
 
@@ -124,10 +131,7 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        names = []
-        for tag in self.tags.all():
-            names.append(tag.name)
-        return names
+        return list(self.tags.all().values_list('name', flat=True))
 
     @property
     def filter_status(self):

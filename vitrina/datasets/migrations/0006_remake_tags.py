@@ -10,7 +10,9 @@ def remake_tags(apps, schema_editor):
     for dataset in datasets_with_tags:
         old_tags = re.split(';|,', dataset.tags_old)
         for tag in old_tags:
-            dataset.tags.add(tag.strip())
+            tag.strip().strip('"').strip("'").strip('.').lower()
+            if len(str(tag)) > 0:
+                dataset.tags.add(tag)
 
 
 class Migration(migrations.Migration):

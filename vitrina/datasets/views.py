@@ -94,12 +94,18 @@ class DatasetDetailView(LanguageChoiceMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
+        language = self.request.GET.get('language', '')
+        if language:
+            dataset.set_current_language(language)
+        else:
+            dataset.set_current_language(settings.LANGUAGE_CODE)
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
             'can_update_dataset': can_update_dataset(self.request.user, dataset),
             'resources': dataset.datasetdistribution_set.all(),
+            'LANGUAGE_CODE': dataset.get_current_language(),
         }
         context_data.update(extra_context_data)
         return context_data

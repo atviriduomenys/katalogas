@@ -25,7 +25,7 @@ class DatasetTranslationFactory(DjangoModelFactory):
         django_get_or_create = ('master', 'title', 'description', 'language_code')
 
     master = factory.SubFactory(DatasetFactory)
-    language_code = 'en'
+    language_code = settings.LANGUAGE_CODE
     title = factory.Faker('catch_phrase')
     description = factory.Faker('catch_phrase')
 

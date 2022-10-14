@@ -113,7 +113,9 @@
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">
-                                        {{ i.object|get_translated_field:'title' }}
+                                        {% objectlanguage i.object LANGUAGE_CODE %}
+                                          {{ i.object.title }}
+                                        {% endobjectlanguage %}
                                     </a>
                                 </strong>
                                 <div class="is-pulled-right">
@@ -131,7 +133,9 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {{ i.object|get_translated_field:'description' }}
+                                {% objectlanguage i.object LANGUAGE_CODE %}
+                                    {{ i.object.description }}
+                                {% endobjectlanguage %}
                             </p>
                             <div class="tags">
                                 {% if i.object.format %}

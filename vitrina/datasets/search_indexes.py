@@ -2,13 +2,13 @@ from haystack.constants import Indexable
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
 from haystack.indexes import SearchIndex
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset
 
 
 class DatasetIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
     title = CharField(model_attr='title')
-    title_en = CharField(model_attr='title_en', null=True)
     organization = IntegerField(model_attr='organization__pk', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
     tags = MultiValueField(model_attr='tags', faceted=True, null=True)
@@ -21,7 +21,8 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
-        return self.get_model().public.filter(title__isnull=False)
+        return self.get_model().public.filter(translations__title__isnull=False,
+                                              translations__language_code=settings.LANGUAGE_CODE)
 
     def prepare_tags(self, obj):
         return [tag.strip() for tag in obj.tags.split(',')] if obj.tags else []

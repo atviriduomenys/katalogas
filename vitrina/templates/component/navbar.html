@@ -63,15 +63,15 @@
                 </div>
                 <div class="navbar-item">
                     <div class="navbar-item has-dropdown is-hoverable">
-                        <a class="navbar-link"><strong>language</strong></a>
+                        <a class="navbar-link"><strong>{{ LANGUAGE_CODE }}</strong></a>
                         <div class="navbar-dropdown">
                             {% for lang_code, title in LANGUAGES %}
                                 {% get_language_info for lang_code as lang %}
                                 {% get_translated_url lang_code as tr_url %}
                                 {% if tr_url %}
                                     <a class="navbar-item {% if lang_code == LANGUAGE_CODE %} is-selected {% endif %}"
-                                       href="{{ tr_url }}"
-                                       hreflang="{{ lang_code }}">
+                                       href="?language={{ lang_code }}"
+                                       hreflang="?language={{ lang_code }}">
                                         {{ lang.name_local|capfirst }}
                                     </a>
                                 {% endif %}

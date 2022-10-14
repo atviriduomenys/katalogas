@@ -1,5 +1,4 @@
 {{ object.title }}
-{{ object.title_en }}
 {{ object.filter_status }}
 {{ object.organization.title }}
 {{ object.category.title }}

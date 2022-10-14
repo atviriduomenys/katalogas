@@ -120,6 +120,7 @@ class Migration(migrations.Migration):
                 ('phone', models.CharField(blank=True, max_length=255, null=True)),
                 ('deleted', models.BooleanField(blank=True, null=True)),
                 ('deleted_on', models.DateTimeField(blank=True, null=True)),
+                ('organization', models.ForeignKey(blank=True, null=True, on_delete=models.deletion.DO_NOTHING, to='vitrina_orgs.organization'),)
             ],
             options={
                 'db_table': 'representative',

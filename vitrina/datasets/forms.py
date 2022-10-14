@@ -5,6 +5,7 @@ from .models import Dataset
 from django.utils.translation import gettext_lazy as _
 from django.forms import DateField
 from haystack.forms import FacetedSearchForm
+from ..classifiers.models import Licence, Frequency
 
 
 class NewDatasetForm(forms.ModelForm):
@@ -47,6 +48,15 @@ class NewDatasetForm(forms.ModelForm):
                     css_class='control'), css_class='field'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+        instance = self.instance if self.instance and self.instance.pk else None
+        if not instance:
+            if Licence.objects.filter(is_default=True).exists():
+                default_licence = Licence.objects.filter(is_default=True).first()
+                self.initial['licence'] = default_licence
+            if Frequency.objects.filter(is_default=True).exists():
+                default_frequency = Frequency.objects.filter(is_default=True).first()
+                self.initial['frequency'] = default_frequency
 
 
 class DatasetSearchForm(FacetedSearchForm):

@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.detail import DetailView
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request, RequestStructure
+from vitrina.requests.services import can_update_request
 
 from django.utils.translation import gettext_lazy as _
 
@@ -45,6 +46,10 @@ class RequestDetailView(DetailView):
             "status": request.get_status_display(),
             "user_count": 0,
             "history": None,
+            'can_update_request': can_update_request(
+                self.request.user,
+                request,
+            )
         }
         context_data.update(extra_context_data)
         return context_data
@@ -72,7 +77,11 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         return context_data
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UpdateView,
+):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'

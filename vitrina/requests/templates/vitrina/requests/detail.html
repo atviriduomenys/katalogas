@@ -4,11 +4,6 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 
-{% block head %}
-    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
-    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
-{% endblock %}
-
 {% block parent_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 {% block current_title %}{{ request_object.title }}{% endblock %}
 
@@ -41,7 +36,16 @@
                     <h1 class="is-size-4">{{ request_object.title | escape }}</h1>
                 </div>
             </div>
-            <div class="content">{{ request_object.description | escape }}</div>
+
+            {% if can_update_request %}
+            <div class="buttons is-right">
+                <a href="{%url 'request-update' pk=request_object.pk %}" class="button is-primary">
+                    {% translate "Keisti" %}
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="content">{{ request_object.description|linebreaks|urlizetrunc:72 }}</div>
             {% include "vitrina/requests/requestCoretable.html" %}
             {% if not request_object.is_existing %}
                 {% if purposes %}
@@ -300,7 +304,7 @@
             {% if request_object.notes %}
                 <p class="label">{% translate "Papildoma informacija" %}</p>
                 <div class="content">
-                    {{ request_object.notes }}
+                    {{ request_object.notes|linebreaks|urlizetrunc:72 }}
                 </div>
                 <br>
             {% endif %}

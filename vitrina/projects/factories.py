@@ -13,3 +13,4 @@ class ProjectFactory(DjangoModelFactory):
     version = 1
     title = factory.Faker('catch_phrase')
     image = ImageField(filename="example.png")
+    status = Project.APPROVED

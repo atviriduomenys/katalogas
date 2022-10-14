@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
@@ -15,7 +16,7 @@ from vitrina import settings
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm, RepresentativeCreateForm
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_coordinator_permission
+from vitrina.orgs.services import has_coordinator_permission, has_perm, Action
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 
@@ -82,9 +83,14 @@ class OrganizationMembersView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
-        context_data['members'] = organization.representative_set.all().order_by("role", "first_name", 'last_name')
-        context_data['has_permission'] = has_coordinator_permission(
+        context_data['members'] = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk
+        ).order_by("role", "first_name", 'last_name')
+        context_data['has_permission'] = has_perm(
             self.request.user,
+            Action.CREATE,
+            Representative,
             self.object,
         )
         context_data['can_view_members'] = context_data['has_permission']
@@ -111,13 +117,14 @@ class RepresentativeCreateView(
     def has_permission(self):
         organization_id = self.kwargs.get('organization_id')
         organization = get_object_or_404(Organization, pk=organization_id)
-        return has_coordinator_permission(self.request.user, organization)
+        return has_perm(self.request.user, Action.CREATE, Representative, organization)
 
     def form_valid(self, form):
         self.object: Representative = form.save(commit=False)
         organization_id = self.kwargs.get('organization_id')
         organization = get_object_or_404(Organization, pk=organization_id)
-        self.object.organization = organization
+        self.object.object_id = organization_id
+        self.object.content_type = ContentType.objects.get_for_model(organization)
         try:
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
@@ -159,9 +166,8 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
     template_name = 'base_form.html'
 
     def has_permission(self):
-        organization_id = self.kwargs.get('organization_id')
-        organization = get_object_or_404(Organization, pk=organization_id)
-        return has_coordinator_permission(self.request.user, organization)
+        representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
@@ -172,9 +178,8 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
     template_name = 'confirm_delete.html'
 
     def has_permission(self):
-        organization_id = self.kwargs.get('organization_id')
-        organization = get_object_or_404(Organization, pk=organization_id)
-        return has_coordinator_permission(self.request.user, organization)
+        representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.DELETE, representative)
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})

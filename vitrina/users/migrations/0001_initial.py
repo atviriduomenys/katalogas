@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('vitrina_orgs', '0001_initial'),
     ]
 
     operations = [
@@ -82,6 +83,7 @@ class Migration(migrations.Migration):
                 ('year_of_birth', models.IntegerField(blank=True, null=True)),
                 ('disabled', models.BooleanField()),
                 ('suspended', models.BooleanField()),
+                ('organization',  models.ForeignKey(to='vitrina_orgs.organization', on_delete=models.DO_NOTHING, blank=True, null=True))
             ],
             options={
                 'db_table': 'user',

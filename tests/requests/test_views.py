@@ -5,12 +5,12 @@ from django_webtest import DjangoTestApp
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory
 from vitrina.requests.models import Request
-from vitrina.users.models import User
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
 def test_request_create(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory(is_staff=True)
 
     app.set_user(user)
     form = app.get(reverse("request-create")).forms['request-form']
@@ -24,7 +24,7 @@ def test_request_create(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_update_with_user_without_permission(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     request = RequestFactory()
 
     app.set_user(user)
@@ -34,7 +34,7 @@ def test_request_update_with_user_without_permission(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_update_with_permitted_user(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory(is_staff=True)
     request = RequestFactory(user=user)
 
     app.set_user(user)

@@ -22,10 +22,10 @@ from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data, can_update_dataset, can_create_dataset
+from vitrina.datasets.services import update_facet_data, can_create_dataset
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import has_coordinator_permission
+from vitrina.orgs.services import has_coordinator_permission, has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
 
@@ -65,10 +65,6 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
-            'can_create_dataset': can_create_dataset(
-                self.request.user,
-                self.kwargs.get('pk'),
-            )
         }
         if is_org_dataset_list(self.request):
             # TODO: We get org two times.
@@ -79,6 +75,12 @@ class DatasetListView(FacetedSearchView):
             extra_context['organization'] = org
             extra_context['can_view_members'] = has_coordinator_permission(
                 self.request.user,
+                org,
+            )
+            extra_context['can_create_dataset'] = has_perm(
+                self.request.user,
+                Action.CREATE,
+                Dataset,
                 org,
             )
         context.update(extra_context)
@@ -97,7 +99,7 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
-            'can_update_dataset': can_update_dataset(self.request.user, dataset),
+            'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
         }
         context_data.update(extra_context_data)
@@ -164,7 +166,8 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     form_class = NewDatasetForm
 
     def has_permission(self):
-        return can_create_dataset(self.request.user, self.kwargs['pk'])
+        organization = get_object_or_404(Organization, id=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -184,6 +187,7 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     def form_valid(self, form):
         object = form.save(commit=False)
         object.slug = slugify(object.title)
+        object.organization_id = self.kwargs.get('pk')
         return super().form_valid(form)
 
 
@@ -195,7 +199,7 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-        return can_update_dataset(self.request.user, dataset)
+        return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

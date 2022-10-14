@@ -27,34 +27,3 @@ def app(django_app):
 @pytest.fixture
 def csrf_exempt_django_app(django_app_factory):
     return django_app_factory(csrf_checks=False)
-
-
-def _run_sql(settings, sql):
-    conn = psycopg2.connect(
-        dbname='postgres',
-        host=settings['HOST'],
-        port=settings['PORT'],
-        user=settings['USER'],
-        password=settings['PASSWORD'],
-    )
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cur = conn.cursor()
-    cur.execute(sql)
-    conn.close()
-
-
-@pytest.yield_fixture(scope='session')
-def django_db_setup(django_db_blocker):
-    from django.conf import settings
-    test_db_name = 'test_adp_dev'
-    settings.DATABASES['default']['NAME'] = test_db_name
-    run_sql = partial(_run_sql, settings.DATABASES['default'])
-    run_sql(f'DROP DATABASE IF EXISTS {test_db_name}')
-    run_sql(f'CREATE DATABASE {test_db_name}')
-    with open(settings.BASE_DB_PATH, 'r') as file:
-        sqlFile = file.read()
-        with django_db_blocker.unblock():
-            with connection.cursor() as cursor:
-                cursor.execute(sqlFile)
-            call_command('migrate')
-        file.close()

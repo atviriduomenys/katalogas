@@ -122,6 +122,14 @@ class Dataset(TranslatableModel):
     def __str__(self):
         return self.get_translation(self.get_current_language()).title
 
+    @property
+    def lt_title(self):
+        return self.get_translation('lt').title
+
+    @property
+    def en_title(self):
+        return self.get_translation('en').title
+
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 

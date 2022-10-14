@@ -5,6 +5,7 @@ from django_webtest import DjangoTestApp
 from hitcount.models import HitCount
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.users.models import User
@@ -12,7 +13,13 @@ from vitrina.users.models import User
 
 @pytest.mark.django_db
 def test_view_count_dataset(csrf_exempt_django_app: DjangoTestApp):
-    dataset = DatasetFactory()
+    org = OrganizationFactory()
+    dataset = DatasetFactory.build(organization=org)
+    dataset.set_current_language('en')
+    dataset.title = 'test'
+    dataset.set_current_language('lt')
+    dataset.title = 'testas'
+    dataset.save()
     hit_count = HitCount.objects.create(content_object=dataset)
 
     user1 = User.objects.create_user(email='user1@test.com', password='12345')

@@ -48,13 +48,13 @@ jobs:
         run: docker-compose -f docker-compose-test.yml up -d
 
       - name: Load initial db schema
-        run: psql -h localhost -U adp -d adp-dev < resources/adp-pg.sql
+        run: psql -h test_db -U adp -d adp-dev < resources/adp-pg.sql
 
       - name: Run migrations
         run: poetry run python manage.py migrate
 
       - name: Rename database to test
-        run: psql -h localhost -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
+        run: psql -h test_db -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
 
       - name: Test with pytest with `--reuse-db`
         run: poetry run pytest -vvxra --tb=short --reuse-db tests

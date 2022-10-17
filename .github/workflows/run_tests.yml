@@ -48,7 +48,7 @@ jobs:
         run: docker-compose -f docker-compose-test.yml up -d
 
       - name: Load initial db schema
-        run: docker exec katalogas_postgres_1 psql -h localhost -U adp -d adp-dev < resources/adp-pg.sql
+        run: docker-compose exec -T katalogas_postgres_1 psql -h localhost -U adp -d adp-dev < resources/adp-pg.sql
 
       - name: Run migrations
         run: poetry run python manage.py migrate

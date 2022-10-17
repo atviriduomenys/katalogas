@@ -16,6 +16,21 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
 
+    services:
+      db:
+        image: postgres
+        env:
+          POSTGRES_USER: adp
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: adp-dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
@@ -44,17 +59,14 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Create DB image
-        run: docker-compose -f docker-compose-test.yml up -d
-
       - name: Load initial db schema
-        run: psql -h test_db -U adp -d adp-dev < resources/adp-pg.sql
+        run: psql -h db -U adp -d adp-dev < resources/adp-pg.sql
 
       - name: Run migrations
         run: poetry run python manage.py migrate
 
       - name: Rename database to test
-        run: psql -h test_db -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
+        run: psql -h db -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
 
       - name: Test with pytest with `--reuse-db`
         run: poetry run pytest -vvxra --tb=short --reuse-db tests

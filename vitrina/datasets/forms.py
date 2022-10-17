@@ -1,18 +1,18 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Submit, Layout
 from parler.forms import TranslatableModelForm, TranslatedField
+from parler.views import TranslatableModelFormMixin
 
 from .models import Dataset
 from django.utils.translation import gettext_lazy as _
-from django.forms import Form, CharField, DateTimeField, IntegerField, TextInput
-from vitrina.fields import MultipleValueField, MultipleIntField
+from django.forms import TextInput, CharField
 from django.forms import DateField
 from haystack.forms import FacetedSearchForm
 from ..classifiers.models import Licence, Frequency
 
 
-class NewDatasetForm(TranslatableModelForm):
-    title = TranslatedField(label=_('Pavadinimas'), required=True)
+class NewDatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
+    title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
     description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
 
     class Meta:

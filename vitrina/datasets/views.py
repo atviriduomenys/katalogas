@@ -164,7 +164,7 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView):
+class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView, LanguageChoiceMixin):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'

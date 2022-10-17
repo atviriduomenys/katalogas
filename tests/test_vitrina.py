@@ -11,13 +11,7 @@ from vitrina.projects.factories import ProjectFactory
 @pytest.mark.django_db
 def test_home(app: DjangoTestApp):
     ProjectFactory()
-
-    org = OrganizationFactory()
-    dataset = DatasetFactory.build(organization=org)
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = 'test'
-    dataset.save()
-
+    DatasetFactory()
     resp = app.get('/')
 
     assert resp.status == '200 OK'

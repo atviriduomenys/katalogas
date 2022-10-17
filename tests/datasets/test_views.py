@@ -17,11 +17,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 
 @pytest.fixture
 def dataset_detail_data():
-    org = OrganizationFactory()
-    dataset = DatasetFactory.build(organization=org)
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = 'test'
-    dataset.save()
+    dataset = DatasetFactory()
     dataset_distribution = DatasetDistributionFactory(dataset=dataset)
     return {
         'dataset': dataset_distribution.dataset,
@@ -82,36 +78,28 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.fixture
 def datasets():
-    org = OrganizationFactory()
-
-    dataset1 = DatasetFactory.build(organization=org)
+    dataset1 = DatasetFactory(slug='ds1', published=datetime(2022, 6, 1))
     dataset1.set_current_language('en')
     dataset1.title = 'Dataset 1'
     dataset1.save()
     dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.slug = 'ds1'
     dataset1.title = "Duomenų rinkinys vienas"
-    dataset1.published = datetime(2022, 6, 1)
     dataset1.save()
 
-    dataset2 = DatasetFactory.build(organization=org)
+    dataset2 = DatasetFactory(slug='ds2', published=datetime(2022, 8, 1))
     dataset2.set_current_language('en')
     dataset2.title = 'Dataset 2'
     dataset2.save()
     dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.slug = 'ds2'
     dataset2.title = "Duomenų rinkinys du\"<'>\\"
-    dataset2.published = datetime(2022, 8, 1)
     dataset2.save()
 
-    dataset3 = DatasetFactory.build(organization=org)
+    dataset3 = DatasetFactory(slug='ds3', published=datetime(2022, 7, 1))
     dataset3.set_current_language('en')
     dataset3.title = 'Dataset 3'
     dataset3.save()
     dataset3.set_current_language(settings.LANGUAGE_CODE)
-    dataset3.slug = 'ds3'
     dataset3.title = "Duomenų rinkinys trys"
-    dataset3.slug = datetime(2022, 7, 1)
     dataset3.save()
     return [dataset1, dataset2, dataset3]
 
@@ -119,7 +107,7 @@ def datasets():
 @pytest.mark.haystack
 def test_search_without_query(app: DjangoTestApp, datasets):
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[0].pk, datasets[2].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -137,7 +125,7 @@ def test_search_with_query_that_matches_one(app: DjangoTestApp, datasets):
 @pytest.mark.haystack
 def test_search_with_query_that_matches_all(app: DjangoTestApp, datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "rinkinys"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[0].pk, datasets[2].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -145,7 +133,7 @@ def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestAp
     for dataset in datasets:
         dataset.set_current_language('en')
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "Dataset"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[2].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -156,17 +144,8 @@ def test_search_with_query_containing_special_characters(app: DjangoTestApp, dat
 
 @pytest.fixture
 def status_filter_data():
-    org = OrganizationFactory()
-    dataset1 = DatasetFactory.build(organization=org)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.title = 'test'
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(status=Dataset.INVENTORED, organization=org)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.title = 'testas'
-    dataset2.slug = 'ds1'
-    dataset2.save()
+    dataset1 = DatasetFactory()
+    dataset2 = DatasetFactory(status=Dataset.INVENTORED)
     return [dataset1, dataset2]
 
 
@@ -194,17 +173,8 @@ def test_status_filter_inventored(app: DjangoTestApp, status_filter_data):
 def organization_filter_data():
     organization = OrganizationFactory()
 
-    dataset1 = DatasetFactory.build(organization=organization)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.title = factory.Faker('catch_phrase')
-    dataset1.slug = 'ds1'
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(organization=organization)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.title = factory.Faker('catch_phrase')
-    dataset2.slug = 'ds2'
-    dataset2.save()
+    dataset1 = DatasetFactory(organization=organization, slug='ds1')
+    dataset2 = DatasetFactory(organization=organization, slug='ds2')
 
     return {
         "organization": organization,
@@ -215,8 +185,6 @@ def organization_filter_data():
 @pytest.mark.haystack
 def test_organization_filter_without_query(app: DjangoTestApp, organization_filter_data):
     resp = app.get(reverse('dataset-list'))
-    assert list(resp.context['object_list']) == [organization_filter_data['datasets'][0],
-                                                 organization_filter_data['datasets'][1]]
     assert [int(obj.pk) for obj in resp.context['object_list']] == [
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
@@ -246,32 +214,17 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
 
 @pytest.fixture
 def category_filter_data():
+    organization = OrganizationFactory()
+
     category1 = CategoryFactory()
     category2 = CategoryFactory(parent_id=category1.pk)
     category3 = CategoryFactory(parent_id=category1.pk)
     category4 = CategoryFactory(parent_id=category2.pk)
 
-    organization = OrganizationFactory()
-
-    dataset1 = DatasetFactory.build(category=category1, organization=organization)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.slug = 'ds1'
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(category=category2, organization=organization)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.slug = 'ds2'
-    dataset2.save()
-
-    dataset3 = DatasetFactory.build(category=category3, organization=organization)
-    dataset3.set_current_language(settings.LANGUAGE_CODE)
-    dataset3.slug = 'ds3'
-    dataset3.save()
-
-    dataset4 = DatasetFactory.build(category=category4, organization=organization)
-    dataset4.set_current_language(settings.LANGUAGE_CODE)
-    dataset4.slug = 'ds4'
-    dataset4.save()
+    dataset1 = DatasetFactory(category=category1, organization=organization)
+    dataset2 = DatasetFactory(category=category2, organization=organization)
+    dataset3 = DatasetFactory(category=category3, organization=organization)
+    dataset4 = DatasetFactory(category=category4, organization=organization)
 
     return {
         "categories": [category1, category2, category3, category4],
@@ -342,17 +295,8 @@ def test_category_filter_with_parent_and_child_category(app: DjangoTestApp, cate
 def tag_filter_data():
     organization = OrganizationFactory()
 
-    dataset1 = DatasetFactory.build(organization=organization)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.slug = 'ds1'
-    dataset1.tags = "tag1, tag2, tag3"
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(organization=organization)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.slug = 'ds2'
-    dataset2.tags = "tag3, tag4, tag5, tag1"
-    dataset2.save()
+    dataset1 = DatasetFactory(tags="tag1, tag2, tag3", organization=organization)
+    dataset2 = DatasetFactory(tags="tag3, tag4, tag5, tag1", organization=organization)
 
     return [dataset1, dataset2]
 
@@ -390,15 +334,8 @@ def frequency_filter_data():
     frequency = FrequencyFactory()
     organization = OrganizationFactory()
 
-    dataset1 = DatasetFactory.build(frequency=frequency, organization=organization)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.slug = 'ds1'
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(frequency=frequency, organization=organization)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.slug = 'ds2'
-    dataset2.save()
+    dataset1 = DatasetFactory(frequency=frequency, organization=organization)
+    dataset2 = DatasetFactory(frequency=frequency, organization=organization)
 
     return {
         "frequency": frequency,
@@ -432,25 +369,9 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
 @pytest.fixture
 def date_filter_data():
     org = OrganizationFactory()
-
-    dataset1 = DatasetFactory.build(organization=org)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
-    dataset1.slug = 'ds1'
-    dataset1.published = datetime(2022, 3, 1)
-    dataset1.save()
-
-    dataset2 = DatasetFactory.build(organization=org)
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
-    dataset2.slug = 'ds2'
-    dataset2.published = datetime(2022, 2, 1)
-    dataset2.save()
-
-    dataset3 = DatasetFactory.build(organization=org)
-    dataset3.set_current_language(settings.LANGUAGE_CODE)
-    dataset3.slug = 'ds3'
-    dataset3.slug = datetime(2021, 12, 1)
-    dataset3.save()
-
+    dataset1 = DatasetFactory(organization=org, slug='ds1', published=datetime(2022, 3, 1))
+    dataset2 = DatasetFactory(organization=org, slug='ds2', published=datetime(2022, 2, 1))
+    dataset3 = DatasetFactory(organization=org, slug='ds3', published=datetime(2021, 12, 1))
     return [dataset1, dataset2, dataset3]
 
 
@@ -495,7 +416,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     organization = OrganizationFactory()
     category = CategoryFactory()
     frequency = FrequencyFactory()
-    dataset_with_all_filters = DatasetFactory.build(
+    dataset_with_all_filters = DatasetFactory(
         status=Dataset.HAS_DATA,
         tags="tag1, tag2, tag3",
         published=datetime(2022, 2, 9),
@@ -548,16 +469,14 @@ def test_dataset_filter_with_pages(app: DjangoTestApp):
 def dataset_structure_data():
     organization = OrganizationFactory(slug="org", kind="gov")
 
-    dataset1 = DatasetFactory.build(organization=organization)
+    dataset1 = DatasetFactory(slug='ds2', organization=organization)
     dataset1.set_current_language(settings.LANGUAGE_CODE)
     dataset1.title = 'dataset1'
-    dataset1.slug = 'ds2'
     dataset1.save()
 
-    dataset2 = DatasetFactory.build(organization=organization)
+    dataset2 = DatasetFactory(slug='ds3', organization=organization)
     dataset2.set_current_language(settings.LANGUAGE_CODE)
     dataset2.title = 'dataset2'
-    dataset2.slug = 'ds3'
     dataset2.save()
 
     structure1 = DatasetStructureFactory(dataset=dataset1)
@@ -598,44 +517,12 @@ def test_download_structure(app: DjangoTestApp, dataset_structure_data):
 def test_public_manager_filtering(app: DjangoTestApp):
     organization = OrganizationFactory(slug="org", kind="gov")
 
-    dataset_not_public = DatasetFactory.build(is_public=False, organization=organization)
-    dataset_not_public.set_current_language(settings.LANGUAGE_CODE)
-    dataset_not_public.title = factory.Faker('catch_phrase')
-    dataset_not_public.save()
-
-    dataset_deleted_date = DatasetFactory.build(deleted=True,
-                                                deleted_on=datetime.now(),
-                                                organization=organization)
-    dataset_deleted_date.set_current_language(settings.LANGUAGE_CODE)
-    dataset_deleted_date.title = factory.Faker('catch_phrase')
-    dataset_deleted_date.save()
-
-    dataset_deleted_no_date = DatasetFactory.build(deleted=True,
-                                                   deleted_on=None,
-                                                   organization=organization)
-    dataset_deleted_no_date.set_current_language(settings.LANGUAGE_CODE)
-    dataset_deleted_no_date.title = factory.Faker('catch_phrase')
-    dataset_deleted_no_date.save()
-
-    dataset_not_delete = DatasetFactory.build(deleted=None,
-                                              deleted_on=None,
-                                              organization=organization)
-    dataset_not_delete.set_current_language(settings.LANGUAGE_CODE)
-    dataset_not_delete.title = factory.Faker('catch_phrase')
-    dataset_not_delete.save()
-
-
-    dataset_no_org = DatasetFactory.build(deleted=None,
-                                          deleted_on=None,
-                                          organization=None)
-    dataset_no_org.set_current_language(settings.LANGUAGE_CODE)
-    dataset_no_org.title = factory.Faker('catch_phrase')
-    dataset_no_org.save()
-
-    dataset = DatasetFactory.build(organization=organization)
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = factory.Faker('catch_phrase')
-    dataset.save()
+    DatasetFactory(is_public=False, organization=organization)
+    DatasetFactory(deleted=True, deleted_on=datetime.now(), organization=organization)
+    DatasetFactory(deleted=True, deleted_on=None, organization=organization)
+    DatasetFactory(deleted=None, deleted_on=None, organization=organization)
+    DatasetFactory(deleted=None, deleted_on=None, organization=None)
+    DatasetFactory(organization=organization)
 
     public_datasets = Dataset.public.all()
     assert public_datasets.count() == 2
@@ -644,12 +531,7 @@ def test_public_manager_filtering(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
-
-    dataset = DatasetFactory.build(organization=org)
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = factory.Faker('catch_phrase')
-    dataset.save()
-
+    dataset = DatasetFactory(organization=org)
     response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
@@ -658,12 +540,7 @@ def test_change_form_no_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_form_wrong_login(app: DjangoTestApp):
     org = OrganizationFactory()
-
-    dataset = DatasetFactory.build(organization=org)
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = factory.Faker('catch_phrase')
-    dataset.save()
-
+    dataset = DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
     response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
@@ -677,7 +554,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     frequency = FrequencyFactory(is_default=True)
     category = CategoryFactory()
     org = OrganizationFactory()
-    dataset = DatasetFactory.build(
+    dataset = DatasetFactory(
         published=datetime(2022, 9, 7),
         slug='test-dataset-slug',
         description='test description',
@@ -686,9 +563,6 @@ def test_change_form_correct_login(app: DjangoTestApp):
         frequency=frequency,
         organization=org
     )
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = factory.Faker('catch_phrase')
-    dataset.save()
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
     app.set_user(user)
@@ -707,15 +581,11 @@ def test_change_form_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
     org = OrganizationFactory()
-    dataset = DatasetFactory.build(
+    dataset = DatasetFactory(
         published=datetime(2022, 9, 7),
         slug='test-dataset-slug',
         organization=org
     )
-    dataset.set_current_language(settings.LANGUAGE_CODE)
-    dataset.title = factory.Faker('catch_phrase')
-    dataset.save()
-
     user = User.objects.create_user(email="test@test.com", password="test123",
                                     organization=dataset.organization)
     app.set_user(user)
@@ -789,12 +659,14 @@ def test_click_add_button(app: DjangoTestApp):
 @pytest.fixture
 def dataset():
     organization = OrganizationFactory(slug="org", kind="gov")
-
-    dataset1 = DatasetFactory.build(organization=organization)
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
+    dataset1 = DatasetFactory(slug='ds2', organization=organization)
+    dataset1.set_current_language('en')
     dataset1.title = 'dataset1'
-    dataset1.slug = 'ds2'
     dataset1.save()
+    dataset1.set_current_language('lt')
+    dataset1.title = 'dataset1'
+    dataset1.save()
+
     return dataset1
 
 
@@ -805,10 +677,10 @@ def test_translations_default_language(app: DjangoTestApp, dataset):
 
 
 @pytest.mark.django_db
-def test_translations_change_language(app: DjangoTestApp, dataset):
+def test_language_change(app: DjangoTestApp, dataset):
     dataset.set_current_language('en')
-    dataset.save()
-    assert dataset.get_current_language() == 'en'
+    current = dataset.get_current_language()
+    assert current == 'en'
 
 
 @pytest.mark.django_db

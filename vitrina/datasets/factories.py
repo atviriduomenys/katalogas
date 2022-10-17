@@ -1,21 +1,9 @@
 import factory
-from django.apps import apps
 from factory.django import DjangoModelFactory
 
 from vitrina import settings
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
-
-
-class DatasetTranslationFactory(DjangoModelFactory):
-    class Meta:
-        model = apps.get_model('vitrina_datasets', 'DatasetTranslation')
-        django_get_or_create = ('master', 'title', 'description', 'language_code')
-
-    master = factory.SubFactory('vitrina.datasets.factories.DatasetFactory', translations=None)
-    language_code = settings.LANGUAGE_CODE
-    title = factory.Faker('catch_phrase')
-    description = factory.Faker('catch_phrase')
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -28,7 +16,16 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
-    translations = factory.RelatedFactory(DatasetTranslationFactory, factory_related_name='master')
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        dataset = model_class(*args, **kwargs)
+        for lang in reversed(settings.LANGUAGES):
+            dataset.set_current_language(lang[0])
+            dataset.title = factory.Faker('catch_phrase')
+            dataset.description = factory.Faker('catch_phrase')
+        dataset.save()
+        return dataset
 
 
 class DatasetStructureFactory(DjangoModelFactory):

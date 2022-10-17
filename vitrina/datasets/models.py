@@ -3,6 +3,7 @@ from django.urls import reverse
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
+from vitrina import settings
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog
@@ -120,15 +121,13 @@ class Dataset(TranslatableModel):
         unique_together = (('internal_id', 'organization_id'),)
 
     def __str__(self):
-        return self.get_translation(self.get_current_language()).title
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
-    @property
     def lt_title(self):
-        return self.get_translation('lt').title
+        return self.safe_translation_getter('title', language_code='lt')
 
-    @property
     def en_title(self):
-        return self.get_translation('en').title
+        return self.safe_translation_getter('title', language_code='en')
 
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})

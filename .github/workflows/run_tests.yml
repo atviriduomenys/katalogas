@@ -8,7 +8,7 @@ on:
       - devel
 
 env:
-  DB_HOST: db
+  DB_HOST: localhost
   DB_USERNAME: adp
   DB_PASSWORD: secret
 
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      db:
+      localhost:
         image: postgres
         env:
           POSTGRES_USER: adp
@@ -60,13 +60,13 @@ jobs:
         run: poetry install
 
       - name: Load initial db schema
-        run: psql -h db -U adp -d adp-dev < resources/adp-pg.sql
+        run: psql -h localhost -U adp -d adp-dev < resources/adp-pg.sql
 
       - name: Run migrations
         run: poetry run python manage.py migrate
 
       - name: Rename database to test
-        run: psql -h db -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
+        run: psql -h localhost -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
 
       - name: Test with pytest with `--reuse-db`
         run: poetry run pytest -vvxra --tb=short --reuse-db tests

@@ -7,11 +7,33 @@ on:
     branches:
       - devel
 
+env:
+  DB_HOST: localhost
+  DB_USERNAME: adp
+  DB_PASSWORD: secret
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres
+        env:
+          POSTGRES_USER: adp
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: adp-dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v2
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v2

@@ -1,5 +1,5 @@
 services:
-  postgres:
+  test_db:
     image: postgres:14
     restart: always
     environment:

@@ -1,13 +1,12 @@
 services:
   db:
-    image: postgres:14
+    image: postgres
     restart: always
     environment:
       POSTGRES_DB: adp-dev
       POSTGRES_USER: adp
       POSTGRES_PASSWORD: secret
     volumes:
-      - ./resources/adp-pg.sql:/docker-entrypoint-initdb.d/create_tables.sql
       - ./var/postgres:/var/lib/postgresql/data
     ports:
       - 127.0.0.1:5432:5432

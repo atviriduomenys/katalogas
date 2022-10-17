@@ -82,6 +82,7 @@ class Migration(migrations.Migration):
                 ('year_of_birth', models.IntegerField(blank=True, null=True)),
                 ('disabled', models.BooleanField()),
                 ('suspended', models.BooleanField()),
+                ('organization_id', models.BigIntegerField(blank=True, null=True)),
             ],
             options={
                 'db_table': 'user',

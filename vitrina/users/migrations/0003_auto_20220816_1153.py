@@ -51,4 +51,10 @@ class Migration(migrations.Migration):
             name='password',
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
+        migrations.AlterField(
+            model_name='user',
+            name='organization_id',
+            field=models.ForeignKey(blank=True, null=True, on_delete=models.deletion.SET_NULL, to='vitrina_orgs.organization'),
+        ),
+
     ]

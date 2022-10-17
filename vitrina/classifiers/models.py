@@ -44,9 +44,13 @@ class Category(MP_Node):
     title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', related_name='children_set',
+                               null=True, db_index=True, on_delete=models.SET_NULL)
     featured = models.BooleanField()
-    icon = models.CharField(choices=ICONS, max_length=255, blank=True, null=True)
+    icon = models.CharField(max_length=255,
+                            blank=True,
+                            null=True,
+                            help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos')
 
     node_order_by = ['numchild']
 

@@ -1,12 +1,9 @@
 services:
   db:
     image: postgres
-    restart: always
     environment:
-      POSTGRES_DB: adp-dev
-      POSTGRES_USER: adp
-      POSTGRES_PASSWORD: secret
-    volumes:
-      - ./var/postgres:/var/lib/postgresql/data
+      - POSTGRES_DB=adp-dev
+      - POSTGRES_USER=adp
+      - POSTGRES_PASSWORD=secret
     ports:
-      - 127.0.0.1:5432:5432
+      - 5432:5432

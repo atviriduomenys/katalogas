@@ -8,7 +8,7 @@ on:
       - devel
 
 env:
-  DB_HOST: localhost
+  DB_HOST: db
   DB_USERNAME: adp
   DB_PASSWORD: secret
 

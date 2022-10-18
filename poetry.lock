@@ -753,6 +753,14 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pprintpp"
+version = "0.4.0"
+description = "A drop-in replacement for pprint that's actually pretty"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "psycopg2-binary"
 version = "2.9.3"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
@@ -1134,7 +1142,7 @@ tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-c
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "f57bd1aee7e244c20c2a6da7ac03c935e8dfbd2560da4323464d3afd8974b651"
+content-hash = "689a70ed58f7eb41d59768570e1b5053aa83b22e7c4b17f178f066a2f41061cf"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -1199,6 +1207,7 @@ mccabe = []
 packaging = []
 pillow = []
 pluggy = []
+pprintpp = []
 psycopg2-binary = []
 py = []
 pycodestyle = []

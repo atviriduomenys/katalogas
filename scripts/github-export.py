@@ -13,8 +13,8 @@ from pprintpp import pprint as pp
 
 def main(
         token: str = Argument(..., help='https://github.com/settings/tokens'),
-        project_id: Optional[str] = Argument(None, help='Argument to specify a project id.'
-                                                        'Project id can be found in the printed output data by node id')
+        project_id: Optional[str] = Argument(None, help='Argument to specify a project id.\n'
+                                                        'Project id can be found in the printed output data by node id.')
 ):
     session = requests.Session()
     session.headers['Authorization'] = f'Bearer {token}'
@@ -124,10 +124,10 @@ def main(
                         if value in options:
                             value = options[value]
                 data[name] = value
-            pp(data)
 
             for key in data.keys():
                 writer.writerow([key, data[key]])
+            writer.writerow([''])
 
 
 if __name__ == '__main__':

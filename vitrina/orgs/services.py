@@ -1,52 +1,62 @@
+import functools
+import operator
 from enum import Enum
 from typing import Type
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model
+from django.db.models import Model, Q
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative, Organization
+from vitrina.projects.models import Project
 from vitrina.requests.models import Request
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
-
-
-def has_coordinator_permission(user, organization):
-    if user.is_authenticated:
-        if user.is_staff:
-            return True
-        content_type = ContentType.objects.get_for_model(Organization)
-        if user.representative_set.filter(object_id=organization.pk, content_type=content_type).exists():
-            representative = (
-                user.
-                representative_set.
-                filter(object_id=organization.pk, content_type=content_type).
-                first()
-            )
-            return representative.role == Representative.COORDINATOR
-    return False
 
 
 class Action(Enum):
     CREATE = 'create'
     UPDATE = 'update'
     DELETE = 'delete'
+    VIEW = 'view'
 
 
-def representative_exists(
-        user: User,
-        content_type: ContentType,
-        object_id: int,
-        role: str = None
-) -> bool:
-    representatives = Representative.objects.filter(
-        user=user,
-        object_id=object_id,
-        content_type=content_type
-    )
-    if role:
-        representatives = representatives.filter(role=role)
-    return representatives.exists()
+class Role(Enum):
+    COORDINATOR = Representative.COORDINATOR
+    MANAGER = Representative.MANAGER
+    AUTHOR = "author"
+    ALL = "all"
+
+
+acl = {
+    (Organization, Action.UPDATE): [Role.COORDINATOR],
+    (Representative, Action.CREATE): [Role.COORDINATOR],
+    (Representative, Action.UPDATE): [Role.COORDINATOR],
+    (Representative, Action.DELETE): [Role.COORDINATOR],
+    (Representative, Action.VIEW): [Role.COORDINATOR],
+    (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
+    (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
+    (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (Request, Action.CREATE): [Role.ALL],
+    (Request, Action.UPDATE): [Role.AUTHOR],
+    (Request, Action.DELETE): [Role.AUTHOR],
+    (Project, Action.CREATE): [Role.ALL],
+    (Project, Action.UPDATE): [Role.AUTHOR],
+    (Project, Action.DELETE): [Role.AUTHOR],
+}
+
+
+def is_author(user: User, node: Model) -> bool:
+    return hasattr(node, "user") and getattr(node, "user") == user
+
+
+def get_parents(obj: Model) -> list:
+    if hasattr(obj, "get_acl_parents"):
+        return obj.get_acl_parents()
+    return []
 
 
 def has_perm(
@@ -58,93 +68,33 @@ def has_perm(
     ),
     parent: Model | None = None,  # when action is create, object based on which a new objects is created
 ) -> bool:
-    if user.is_authenticated:
-        if user.is_staff or user.is_superuser:
-            return True
+    if not user.is_authenticated:
+        return False
 
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
-        organization_ct = ContentType.objects.get_for_model(Organization)
+    if user.is_staff or user.is_superuser:
+        return True
 
-        if action == Action.CREATE:
-            if not parent:
-                return False
+    if isinstance(obj, Type):
+        model = obj
+        nodes = get_parents(parent)
+    else:
+        model = type(obj)
+        nodes = get_parents(obj)
 
-            # if user is organization manager or coordinator, user can create dataset or request
-            if (obj == Dataset or obj == Request) and isinstance(parent, Organization) \
-                    and representative_exists(user, organization_ct, parent.pk):
+    where = []
+    if acl.get((model, action)):
+        for role in acl[(model, action)]:
+            if role == Role.ALL:
                 return True
-
-            # if user is organization coordinator, user can create organization representative
-            if obj == Representative and isinstance(parent, Organization) \
-                    and representative_exists(user, organization_ct, parent.pk, Representative.COORDINATOR):
-                return True
-
-            # if user is dataset/request and dataset/request organization coordinator,
-            # user can create dataset/request representative
-            if obj == Representative and isinstance(parent, (Dataset, Request)):
-                ct = ContentType.objects.get_for_model(parent)
-                if representative_exists(user, ct, parent.pk, Representative.COORDINATOR) and \
-                        representative_exists(user, organization_ct,
-                                              parent.organization.pk, Representative.COORDINATOR):
-                    return True
-                # if user is only dataset/request coordinator, user can create dataset/request representative
-                # only from organizations where user is coordinator
-                elif representative_exists(user, ct, parent.pk, Representative.COORDINATOR):
-                    # TODO: need to check if representative is from specific organization
-                    # maybe this could go to form validation
-                    pass
-
-            # if user is dataset or dataset organization manager or coordinator, user can create dataset distribution
-            if obj == DatasetDistribution and isinstance(parent, Dataset):
-                if representative_exists(user, dataset_ct, parent.pk):
-                    return True
-                elif representative_exists(user, organization_ct, parent.organization.pk):
-                    return True
-        else:
-            # if user is dataset/request or dataset/request organization manager or coordinator
-            # user can manage dataset/request
-            if isinstance(obj, (Dataset, Request)):
-                ct = ContentType.objects.get_for_model(obj)
-                if representative_exists(user, ct, obj.pk):
-                    return True
-                elif representative_exists(user, organization_ct, obj.organization.pk):
-                    return True
-
-            # if user is organization coordinator, user can manage organization
-            if isinstance(obj, Organization) and \
-                    representative_exists(user, organization_ct, obj.pk, Representative.COORDINATOR):
-                return True
-
-            # if user is organization representative, user can manage organization representative
-            if isinstance(obj, Representative) and isinstance(obj.content_object, Organization) and \
-                    representative_exists(user, organization_ct, obj.object_id, Representative.COORDINATOR):
-                return True
-
-            # if user is dataset/request and dataset/request organization coordinator,
-            # user can manage dataset/request representative
-            if isinstance(obj, Representative) and isinstance(obj.content_object, (Dataset, Request)):
-                ct = ContentType.objects.get_for_model(obj.content_object)
-                if representative_exists(user, ct, obj.object_id, Representative.COORDINATOR) and \
-                    representative_exists(user, organization_ct,
-                                          obj.content_object.organization.pk, Representative.COORDINATOR):
-                    return True
-                # if user is only dataset/request coordinator, user can manage dataset/request representative
-                # if it is from organizations where user is coordinator
-                elif representative_exists(user, ct, obj.object_id, Representative.COORDINATOR):
-                    # TODO: need to check if representative is from specific organization
-                    # if we don't remove organization attribute from representative, then need to check if
-                    # obj.organization.pk in Representative.objects.filter(
-                    #                         user=user,
-                    #                         object_id=obj.object_id,
-                    #                         content_type=organization_ct,
-                    #                         role=Representative.COORDINATOR
-                    #                 ).values_list('organization_id', flat=True)
-                    pass
-
-            # if user is dataset or dataset organization manager or coordinator, user can manage dataset distribution
-            if isinstance(obj, DatasetDistribution):
-                if representative_exists(user, dataset_ct, obj.dataset.pk):
-                    return True
-                if representative_exists(user, organization_ct, obj.dataset.organization.pk):
-                    return True
+            else:
+                for node in nodes:
+                    if role == Role.AUTHOR:
+                        if is_author(user, node):
+                            return True
+                    else:
+                        ct = ContentType.objects.get_for_model(node)
+                        where.append(Q(content_type=ct, object_id=node.pk, role=role.value))
+    if where:
+        where = functools.reduce(operator.or_, where)
+        return Representative.objects.filter(where, user=user).exists()
     return False

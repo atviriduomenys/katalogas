@@ -16,7 +16,7 @@ from vitrina import settings
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm, RepresentativeCreateForm
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_coordinator_permission, has_perm, Action
+from vitrina.orgs.services import has_perm, Action
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 
@@ -60,9 +60,11 @@ class OrganizationDetailView(DetailView):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
         context_data['ancestors'] = organization.get_ancestors()
-        context_data['can_view_members'] = has_coordinator_permission(
+        context_data['can_view_members'] = has_perm(
             self.request.user,
-            self.object,
+            Action.VIEW,
+            Representative,
+            organization
         )
         return context_data
 
@@ -76,9 +78,8 @@ class OrganizationMembersView(
     paginate_by = 20
 
     def has_permission(self):
-        # TODO: We are getting this twice.
-        org = self.get_object()
-        return has_coordinator_permission(self.request.user, org)
+        organization = get_object_or_404(Organization, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.VIEW, Representative, organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -87,13 +88,8 @@ class OrganizationMembersView(
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk
         ).order_by("role", "first_name", 'last_name')
-        context_data['has_permission'] = has_perm(
-            self.request.user,
-            Action.CREATE,
-            Representative,
-            self.object,
-        )
-        context_data['can_view_members'] = context_data['has_permission']
+        context_data['has_permission'] = has_perm(self.request.user, Action.CREATE, Representative, organization)
+        context_data['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, organization)
         return context_data
 
 

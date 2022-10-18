@@ -9,7 +9,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.detail import DetailView
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request, RequestStructure
-from vitrina.requests.services import can_update_request
 
 from django.utils.translation import gettext_lazy as _
 
@@ -46,9 +45,10 @@ class RequestDetailView(DetailView):
             "status": request.get_status_display(),
             "user_count": 0,
             "history": None,
-            'can_update_request': can_update_request(
+            'can_update_request': has_perm(
                 self.request.user,
-                request,
+                Action.UPDATE,
+                request
             )
         }
         context_data.update(extra_context_data)
@@ -61,7 +61,6 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     template_name = 'base_form.html'
 
     def has_permission(self):
-        # TODO: add something as parent object to check permission
         return has_perm(self.request.user, Action.CREATE, Request)
 
     def form_valid(self, form):

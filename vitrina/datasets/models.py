@@ -129,6 +129,12 @@ class Dataset(models.Model):
     def formats(self):
         return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
+    def get_acl_parents(self):
+        parents = [self]
+        if self.organization:
+            parents.extend(self.organization.get_acl_parents())
+        return parents
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

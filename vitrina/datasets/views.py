@@ -22,10 +22,10 @@ from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data, can_create_dataset
+from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
-from vitrina.orgs.models import Organization
-from vitrina.orgs.services import has_coordinator_permission, has_perm, Action
+from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
 
@@ -73,9 +73,11 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             extra_context['organization'] = org
-            extra_context['can_view_members'] = has_coordinator_permission(
+            extra_context['can_view_members'] = has_perm(
                 self.request.user,
-                org,
+                Action.VIEW,
+                Representative,
+                org
             )
             extra_context['can_create_dataset'] = has_perm(
                 self.request.user,

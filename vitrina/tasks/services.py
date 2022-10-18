@@ -13,16 +13,9 @@ def get_active_tasks(
     queryset: Optional[QuerySet] = None,
 ) -> QuerySet:
     queryset = queryset or Task.objects.all()
-    if user.organization:
-        content_type = ContentType.objects.get_for_model(user.organization)
-        if user.representative_set.filter(object_id=user.organization.pk, content_type=content_type).exists():
-            rep = user.representative_set.filter(object_id=user.organization.pk, content_type=content_type).first()
-            return queryset.filter(
-                Q(user=user) |
-                (Q(role__isnull=False) & Q(role=rep.role)) |
-                (Q(organization__isnull=False) & Q(organization=user.organization))
-            )
+    roles = user.representative_set.values_list('role', flat=True).distinct()
     return queryset.filter(
         Q(user=user) |
+        (Q(role__isnull=False) & Q(role__in=roles)) |
         (Q(organization__isnull=False) & Q(organization=user.organization))
     )

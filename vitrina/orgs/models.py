@@ -82,6 +82,9 @@ class Organization(MP_Node):
     def get_absolute_url(self):
         return reverse('organization-detail', kwargs={'pk': self.pk})
 
+    def get_acl_parents(self):
+        return [self]
+
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
@@ -112,6 +115,11 @@ class Representative(models.Model):
 
     def __str__(self):
         return self.email
+
+    def get_acl_parents(self):
+        parents = [self]
+        parents.extend(self.content_object.get_acl_parents())
+        return parents
 
 
 class PublishedReport(models.Model):

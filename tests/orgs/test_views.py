@@ -294,7 +294,8 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     new_representative = RepresentativeFactory(
         email="new@gmail.com",
         content_type=ContentType.objects.get_for_model(Organization),
-        object_id=representative_data['organization'].pk
+        object_id=representative_data['organization'].pk,
+        user=None
     )
     serializer = URLSafeSerializer(settings.SECRET_KEY)
     token = serializer.dumps({"representative_id": new_representative.pk})

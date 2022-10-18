@@ -32,9 +32,9 @@ def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.mark.django_db
 def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
-    dataset_detail_data['dataset'].tags = "tag-1, tag-2, tag-3"
-    dataset_detail_data['dataset'].save()
-    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    dataset = DatasetFactory(tags=('tag-1', 'tag-2', 'tag-3'), status="HAS_DATA")
+    resp = app.get(dataset.get_absolute_url())
+    assert len(resp.context['tags']) == 3
     assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
 
 
@@ -270,38 +270,40 @@ def test_category_filter_with_parent_and_child_category(app: DjangoTestApp, cate
     ]
 
 
-@pytest.fixture
-def tag_filter_data():
-    dataset1 = DatasetFactory(tags="tag1, tag2, tag3", slug="ds1")
-    dataset2 = DatasetFactory(tags="tag3, tag4, tag5, tag1", slug="ds2")
-    return [dataset1, dataset2]
-
-
 @pytest.mark.haystack
-def test_tag_filter_without_query(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_without_query(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk, tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk, dataset2.pk]
     assert resp.context['selected_tags'] == []
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_one_tag(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_one_tag(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
+    print(dataset1.get_tag_list())
     resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert resp.context['selected_tags'] == ['tag2']
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_shared_tag(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_shared_tag(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get("%s?selected_facets=tags_exact:tag3" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk, tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk, dataset2.pk]
     assert resp.context['selected_tags'] == ['tag3']
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_multiple_tags(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_multiple_tags(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get("%s?selected_facets=tags_exact:tag4&selected_facets=tags_exact:tag3" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset2.pk]
     assert resp.context['selected_tags'] == ['tag4', 'tag3']
 
 
@@ -390,7 +392,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     frequency = FrequencyFactory()
     dataset_with_all_filters = DatasetFactory(
         status=Dataset.HAS_DATA,
-        tags="tag1, tag2, tag3",
+        tags=('tag1', 'tag2', 'tag3'),
         published=datetime(2022, 2, 9),
         organization=organization,
         category=category,

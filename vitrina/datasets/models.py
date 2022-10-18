@@ -1,6 +1,6 @@
+import tagulous
 from django.db import models
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -10,6 +10,7 @@ from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
+from django.utils.translation import gettext_lazy as _
 
 
 class Dataset(models.Model):
@@ -76,7 +77,14 @@ class Dataset(models.Model):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Raktiniai žodžiai'))
+    tags = tagulous.models.TagField(
+        blank=True,
+        force_lowercase=True,
+        space_delimiter=False,
+        autocomplete_limit=20,
+        verbose_name="Žymės",
+        help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+    )
 
     notes = models.TextField(blank=True, null=True)
 
@@ -115,7 +123,7 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return str(self.tags).replace(" ", "").split(',') if self.tags else []
+        return list(self.tags.all().values_list('name', flat=True))
 
     @property
     def filter_status(self):

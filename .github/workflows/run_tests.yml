@@ -10,7 +10,8 @@ on:
 env:
   DB_HOST: localhost
   DB_USERNAME: adp
-  DB_PASSWORD: secret
+  PGPASSWORD: secret
+
 
 jobs:
   run-tests:
@@ -21,7 +22,6 @@ jobs:
         image: postgres
         env:
           POSTGRES_USER: adp
-          POSTGRES_PASSWORD: secret
           POSTGRES_DB: adp-dev
         ports:
           - 5432:5432

@@ -63,7 +63,7 @@ dev = ["wheel", "mypy"]
 
 [[package]]
 name = "bcrypt"
-version = "4.0.0"
+version = "4.0.1"
 description = "Modern password hashing for your software and your servers"
 category = "main"
 optional = false
@@ -476,6 +476,17 @@ django-taggit = ">=0.8"
 django-templatetag-sugar = ">=0.1"
 
 [[package]]
+name = "django-tagulous"
+version = "1.3.3"
+description = "Fabulous Tagging for Django"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+Django = ">=2.2"
+
+[[package]]
 name = "django-templatetag-sugar"
 version = "1.0"
 description = "A library to make Django's template tags sweet."
@@ -618,7 +629,7 @@ doc = ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "15.0.0"
+version = "15.1.1"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
@@ -642,7 +653,7 @@ pyflakes = ">=2.4.0,<2.5.0"
 
 [[package]]
 name = "greenlet"
-version = "1.1.3"
+version = "1.1.3.post0"
 description = "Lightweight in-process concurrent programming"
 category = "main"
 optional = false
@@ -951,7 +962,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sqlalchemy"
-version = "1.4.41"
+version = "1.4.42"
 description = "Database Abstraction Library"
 category = "main"
 optional = false
@@ -1013,18 +1024,18 @@ python-versions = "*"
 
 [[package]]
 name = "tinycss2"
-version = "1.1.1"
+version = "1.2.1"
 description = "A tiny CSS parser"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 webencodings = ">=0.4"
 
 [package.extras]
-doc = ["sphinx", "sphinx-rtd-theme"]
-test = ["pytest", "pytest-cov", "pytest-flake8", "pytest-isort", "coverage"]
+test = ["flake8", "isort", "pytest"]
+doc = ["sphinx-rtd-theme", "sphinx"]
 
 [[package]]
 name = "tomli"
@@ -1141,7 +1152,7 @@ tests = ["coverage", "pastedeploy", "pyquery", "pytest", "pytest-cov", "wsgiprox
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "1df3a51984d04f9e01ba44143f2da0b7f71b9b058d2456ff645e80b95193991d"
+content-hash = "7fb5f7cc58d1e66f70c20599428e85abb23227df96b488fe87e6b5481636714e"
 
 [metadata.files]
 aldryn-apphooks-config = []
@@ -1183,6 +1194,7 @@ django-sortedm2m = []
 django-taggit = []
 django-taggit-autosuggest = []
 django-taggit-templatetags = []
+django-tagulous = []
 django-templatetag-sugar = []
 django-treebeard = []
 django-webtest = []

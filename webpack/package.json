@@ -1,0 +1,27 @@
+{
+  "name": "vitrina",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/preset-env": "^7.19.3",
+    "@fortawesome/fontawesome-free": "^5.3.1",
+    "babel-loader": "^8.2.5",
+    "bulma": "^0.9.4",
+    "css-loader": "^6.7.1",
+    "expose-loader": "^4.0.0",
+    "jquery": "^3.6.1",
+    "mini-css-extract-plugin": "^2.6.1",
+    "node-sass": "^7.0.3",
+    "sass-loader": "^13.0.2",
+    "style-loader": "^3.3.1",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
+  }
+}

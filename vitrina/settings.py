@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'djangocms_blog',
     'hitcount',
     'crispy_forms',
+    'tagulous',
     'haystack',
 
     'vitrina',
@@ -95,6 +96,13 @@ INSTALLED_APPS = [
     'vitrina.compat',
     'vitrina.likes',
 ]
+
+SERIALIZATION_MODULES = {
+    'xml':    'tagulous.serializers.xml_serializer',
+    'json':   'tagulous.serializers.json',
+    'python': 'tagulous.serializers.python',
+    'yaml':   'tagulous.serializers.pyyaml',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -197,7 +205,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATIC_ROOT = 'static/'
+STATIC_ROOT = 'var/static/'
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 

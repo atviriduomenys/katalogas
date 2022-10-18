@@ -1,6 +1,8 @@
 from django.contrib import admin
 from parler.admin import TranslatableAdmin
 
+import tagulous
+
 from vitrina.datasets.models import Dataset
 
 
@@ -10,3 +12,5 @@ class DatasetAdmin(TranslatableAdmin):
 
 
 admin.site.register(Dataset, DatasetAdmin)
+
+tagulous.admin.register(Dataset.tags)

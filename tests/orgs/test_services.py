@@ -336,6 +336,32 @@ def test_organization_representative_edit_permission_coordinator():
 
 
 @pytest.mark.django_db
+def test_organization_representative_view_permission_manager():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.MANAGER
+    )
+    res = has_perm(manager.user, Action.VIEW, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_representative_view_permission_coordinator():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.COORDINATOR
+    )
+    res = has_perm(coordinator.user, Action.VIEW, Representative, organization)
+    assert res is True
+
+
+@pytest.mark.django_db
 def test_dataset_representative_create_permission_organization_manager():
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
@@ -454,4 +480,56 @@ def test_dataset_representative_edit_permission_dataset_coordinator():
         object_id=dataset.pk
     )
     res = has_perm(manager.user, Action.UPDATE, representative)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_representative_view_permission_organization_manager():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+        role=Representative.MANAGER
+    )
+    res = has_perm(manager.user, Action.VIEW, Representative, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_view_permission_organization_coordinator():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+        role=Representative.COORDINATOR
+    )
+    res = has_perm(coordinator.user, Action.VIEW, Representative, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_representative_view_permission_dataset_manager():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER
+    )
+    res = has_perm(manager.user, Action.VIEW, Representative, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_view_permission_dataset_coordinator():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR
+    )
+    res = has_perm(coordinator.user, Action.VIEW, Representative, dataset)
     assert res is True

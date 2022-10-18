@@ -79,9 +79,8 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
-    form.submit()
-
-    resp = app.get(reverse('project-history', args=[project.pk]))
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
     assert resp.context['detail_url_name'] == 'project-detail'
     assert resp.context['history_url_name'] == 'project-history'
     assert len(resp.context['history']) == 1

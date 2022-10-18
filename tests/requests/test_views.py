@@ -97,9 +97,8 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
-    form.submit()
-
-    resp = app.get(reverse('request-history', args=[request.pk]))
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
     assert resp.context['detail_url_name'] == 'request-detail'
     assert resp.context['history_url_name'] == 'request-history'
     assert len(resp.context['history']) == 1

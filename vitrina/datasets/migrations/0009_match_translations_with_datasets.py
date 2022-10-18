@@ -33,7 +33,7 @@ def _get_translation(dataset, DatasetTranslation):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0005_create_translations'),
+        ('vitrina_datasets', '0008_create_translations'),
     ]
 
     operations = [

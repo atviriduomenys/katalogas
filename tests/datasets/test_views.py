@@ -77,12 +77,12 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
 
 
 @pytest.fixture
-def datasets():
+def search_datasets():
     dataset1 = DatasetFactory(slug='ds1', published=datetime(2022, 6, 1))
     dataset1.set_current_language('en')
     dataset1.title = 'Dataset 1'
     dataset1.save()
-    dataset1.set_current_language(settings.LANGUAGE_CODE)
+    dataset1.set_current_language('lt')
     dataset1.title = "Duomenų rinkinys vienas"
     dataset1.save()
 
@@ -90,7 +90,7 @@ def datasets():
     dataset2.set_current_language('en')
     dataset2.title = 'Dataset 2'
     dataset2.save()
-    dataset2.set_current_language(settings.LANGUAGE_CODE)
+    dataset2.set_current_language('lt')
     dataset2.title = "Duomenų rinkinys du\"<'>\\"
     dataset2.save()
 
@@ -98,48 +98,48 @@ def datasets():
     dataset3.set_current_language('en')
     dataset3.title = 'Dataset 3'
     dataset3.save()
-    dataset3.set_current_language(settings.LANGUAGE_CODE)
+    dataset3.set_current_language('lt')
     dataset3.title = "Duomenų rinkinys trys"
     dataset3.save()
     return [dataset1, dataset2, dataset3]
 
 
 @pytest.mark.haystack
-def test_search_without_query(app: DjangoTestApp, datasets):
+def test_search_without_query(app: DjangoTestApp, search_datasets):
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_doesnt_match(app: DjangoTestApp, datasets):
+def test_search_with_query_that_doesnt_match(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "doesnt-match"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == []
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_one(app: DjangoTestApp, datasets):
+def test_search_with_query_that_matches_one(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "vienas"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[0].pk]
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_all(app: DjangoTestApp, datasets):
+def test_search_with_query_that_matches_all(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "rinkinys"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestApp, datasets):
-    for dataset in datasets:
+def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestApp, search_datasets):
+    for dataset in search_datasets:
         dataset.set_current_language('en')
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "Dataset"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk, datasets[2].pk, datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
 
 
 @pytest.mark.haystack
-def test_search_with_query_containing_special_characters(app: DjangoTestApp, datasets):
+def test_search_with_query_containing_special_characters(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "du\"<'>\\"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk]
 
 
 @pytest.fixture

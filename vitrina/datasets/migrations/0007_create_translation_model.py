@@ -8,7 +8,7 @@ import parler.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0003_auto_20220905_0914'),
+        ('vitrina_datasets', '0006_remake_tags'),
     ]
 
     operations = [

@@ -94,11 +94,7 @@ class DatasetDetailView(LanguageChoiceMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
-        language = self.request.GET.get('language', '')
-        if language:
-            dataset.set_current_language(language)
-        else:
-            dataset.set_current_language(settings.LANGUAGE_CODE)
+        dataset.set_current_language(self.request.session.get('LANGUAGE_CODE'))
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],

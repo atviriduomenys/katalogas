@@ -74,7 +74,7 @@
                 </div>
                 <div class="navbar-item">
                     <div class="navbar-item has-dropdown is-hoverable">
-                        <a class="navbar-link"><strong>{{ LANGUAGE_CODE }}</strong></a>
+                        <a class="navbar-link"><strong>{{ request.session.LANGUAGE_CODE }}</strong></a>
                         <div class="navbar-dropdown">
                             {% for lang_code, title in LANGUAGES %}
                                 {% get_language_info for lang_code as lang %}

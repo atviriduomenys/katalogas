@@ -37,7 +37,7 @@ def create_translations(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0004_create_translation_model'),
+        ('vitrina_datasets', '0007_create_translation_model'),
     ]
 
     operations = [

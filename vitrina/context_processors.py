@@ -15,9 +15,12 @@ def current_domain(request):
 def current_language(request):
     if request.GET.get('language'):
         language = request.GET.get('language')
-        settings.LANGUAGE_CODE = language
+    elif request.session.get('LANGUAGE_CODE'):
+        language = request.session.get('LANGUAGE_CODE')
     else:
         language = settings.LANGUAGE_CODE
+    request.session['LANGUAGE_CODE'] = language
+    request.session.modified = True
     return {
         "LANGUAGE_CODE": language
     }

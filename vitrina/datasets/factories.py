@@ -1,4 +1,5 @@
 import factory
+import faker
 from factory.django import DjangoModelFactory
 
 from vitrina import settings
@@ -20,10 +21,11 @@ class DatasetFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
         dataset = model_class(*args, **kwargs)
+        fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             dataset.set_current_language(lang[0])
-            dataset.title = factory.Faker('catch_phrase')
-            dataset.description = factory.Faker('catch_phrase')
+            dataset.title = fake.word
+            dataset.description = fake.catch_phrase
         dataset.save()
         return dataset
 

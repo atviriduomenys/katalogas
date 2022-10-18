@@ -5,7 +5,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0006_match_translations_with_datasets'),
+        ('vitrina_datasets', '0009_match_translations_with_datasets'),
     ]
 
     operations = [

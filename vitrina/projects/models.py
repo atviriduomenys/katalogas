@@ -1,11 +1,22 @@
 from django.db import models
 from django.urls import reverse
+from django.utils.text import Truncator
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 
 
 class Project(models.Model):
+    CREATED = "CREATED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    STATUSES = {
+        (CREATED, _("Pateiktas")),
+        (APPROVED, _("Patvirtintas")),
+        (REJECTED, _("Atmestas")),
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -14,7 +25,7 @@ class Project(models.Model):
     description = models.TextField(blank=True, null=True)
     extra_information = models.TextField(blank=True, null=True)
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, blank=False, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
@@ -31,8 +42,17 @@ class Project(models.Model):
     objects = models.Manager()
     public = PublicProjectManager()
 
+    def __str__(self):
+        return self.get_title()
+
     def get_absolute_url(self):
         return reverse('project-detail', kwargs={'pk': self.pk})
+
+    def get_title(self):
+        if self.title:
+            return self.title
+        else:
+            return Truncator(self.url).chars(42)
 
 
 class UsecaseDatasetIds(models.Model):

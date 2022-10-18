@@ -9,93 +9,44 @@
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter">
-            <article class="panel">
-                <p class="panel-heading">
-                    {% translate "Panaudojimo atvejai" %}
-                </p>
-                <nav class="category-panel">
-                    <a class="panel-block is-active" href="/projects">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Duomenų naudojimo pavyzdžiai" %}
-                    </a>
-                    <a class="panel-block" href="/usecases/applications">
-                        <span class="panel-icon">
-                            <i class="fas fa-book" aria-hidden="true"></i>
-                        </span>
-                        {% translate "Sukurtos aplikacijos" %}
-                    </a>
-                    {#<a class="panel-block" href="/usecases/submitusecase">#}
-                    {#<span class="panel-icon">#}
-                    {#<i class="fas fa-book" aria-hidden="true"></i>#}
-                    {#</span>#}
-                    {#Pateikti panaudojimo atvejį#}
-                    {#</a>#}
-                </nav>
-            </article>
             <div class="content">
-                <p>{% translate "Dalinimasis geraisiais atvirų duomenų naudojimo pavyzdžiais didina jų vertę ir gali įkvėpti kitus duomenų vartotojus pasekti Jūsų pavyzdžiu ir sukuriant naujas paslaugas ar kitais būdais padidinti atvertų duomenų pakartotino naudojimo vertę." %}</p>
-                <a href="/usecase" class="button is-primary m-t-xs m-b-lg">{% translate "Pateikti naują panaudojimo atvejį" %}</a>
+                <p>
+                {% blocktranslate %}
+                Dalinimasis geraisiais atvirų duomenų naudojimo pavyzdžiais
+                didina jų vertę ir gali įkvėpti kitus duomenų vartotojus
+                pasekti Jūsų pavyzdžiu kuriant naujas paslaugas ar kitais
+                būdais didinti atvertų duomenų pakartotino naudojimo vertę.
+                {% endblocktranslate %}
+                </p>
+                <a href="{% url "project-create" %}" class="button is-primary m-t-xs m-b-lg">
+                    {% translate "Pateikti naują panaudojimo atvejį" %}
+                </a>
             </div>
         </div>
         <div class="column is-three-quarters">
             {#<h1 class="title">{% translate "usecases.examples" %}</h1>#}
             {% if page_obj %}
                 {% for i in page_obj %}
-                    <article class="has-margin-bottom has-line-bottom">
-    <div class="columns single-item reverse-columns">
-        <div class="column {% if i.getImageUUID %}is-10{% else %}is-12{% endif %}">
-            <p><a href="{{ i.url }}" class="usecase-url" target="_blank">{{ i.url }}</a></p>
-
-            <p><b>{% translate "Panaudojimo atvejo/paslaugos aprašymas" %}:</b></p>
-            <p>{{ i.description }}</p>
-
-            <p><b>{% translate "Teikiama nauda" %}:</b></p>
-            <p>{{ i.benefit }}</p>
-
-            <p><b>{% translate "Naudos gavėjų grupė" %}:</b></p>
-            <p>{{ i.beneficiaryGroup }}</p>
-
-            <p><b>{% translate "Papildoma informacija" %}:</b></p>
-            <p>{{ i.extraInformation }}</p>
-
-            {% if datasets %}
-                <p><b>{% translate "application.labelUsedDatasets" %}:</b></p>
-                <p class="tags">
-                    {#{% for d in datasets[i.id] %}#}
-                      {#  <span class="tag"><a href="/dataset/{{ d.slug }}"
-                                             class="tag-has-ellipsis">{{ d.title }}</a></span>#}
-                    {#{% endfor %}#}
-                </p>
-            {% endif %}
-            <div>
-                {# <b>{% translate "request.likes" %}</b>: #} 
-                {# {% if likes[i.uuid] %} #}
-                   {#  {{ likes[i.uuid] }} #}
-                {# {% else %} #}
-                   {#  0 #}
-                {# {% endif %} #}
-                {# {% if user %} #}
-                   {#  {% if userlikes[i.uuid] is null %} #}
-                      {#   {% include "../../component/usecaselike.twig" %} #}
-                   {#  {% else %} #}
-
-                {#     {% endif %} #}
-                {# {% endif %} #}
-            </div>
-        </div>
-        {% if i.getImageUUID %}
-            <div class="column is-2">
-                <figure class="image">
-                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
-                </figure>
-            </div>
-        {% endif %}
-    </div>
-    <hr>
-</article>
-
+                <article class="has-margin-bottom has-line-bottom">
+                    <div class="columns single-item reverse-columns">
+                        <div class="column {% if i.getImageUUID %}is-10{% else %}is-12{% endif %}">
+                            <p>
+                                <a href="{{ i.get_absolute_url }}" class="usecase-url">
+                                    {{ i.get_title }}
+                                </a>
+                            </p>
+                            <p>{{ i.description|truncatewords:42 }}</p>
+                        </div>
+                        {% if i.getImageUUID %}
+                            <div class="column is-2">
+                                <figure class="image">
+                                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                                </figure>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                </article>
                 {% endfor %}
                 <br>
                 {% include "vitrina/common/pagination.html" %}

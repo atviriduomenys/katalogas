@@ -1,6 +1,6 @@
+import tagulous
 from django.db import models
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -10,7 +10,6 @@ from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
-
 from django.utils.translation import gettext_lazy as _
 
 
@@ -41,20 +40,19 @@ class Dataset(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField()
-
-    slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    version = models.IntegerField(default=1)
+    slug = models.CharField(unique=True, max_length=255, blank=False, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/61
-    title = models.TextField(blank=True, null=True)
-    title_en = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    description_en = models.TextField(blank=True, null=True)
+    title = models.CharField(max_length=255, blank=False, null=True, verbose_name=_('Pavadinimas'))
+    title_en = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Title'))
+    description = models.TextField(blank=False, null=True, verbose_name=_('Aprašymas'))
+    description_en = models.TextField(blank=True, null=True, verbose_name=_('Description'))
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)
+    category = models.ForeignKey(Category, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
@@ -64,30 +62,37 @@ class Dataset(models.Model):
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     coordinator = models.ForeignKey(User, models.DO_NOTHING, db_column='coordinator', blank=True, null=True)
     # coordinator = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    representative_id = models.BigIntegerField(blank=True, null=True)
+    representative_id = models.BigIntegerField(blank=True, null=True, verbose_name=_('Rinkinio atstovas'))
     # TODO: Move this to orgs
     #       https://github.com/atviriduomenys/katalogas/issues/30
-    manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True)
+    manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True, verbose_name=_('Rinkinio tvarkytojas'))
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=True, null=True)
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
     # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(blank=True, null=True)
+    is_public = models.BooleanField(default=False, verbose_name=_('Duomenų rinkinys viešinamas'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=True, null=True)
+    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
-    access_rights = models.TextField(blank=True, null=True)
-    distribution_conditions = models.TextField(blank=True, null=True)
+    access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
+    distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = models.TextField(blank=True, null=True)
+    tags = tagulous.models.TagField(
+        blank=True,
+        force_lowercase=True,
+        space_delimiter=False,
+        autocomplete_limit=20,
+        verbose_name="Žymės",
+        help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+    )
 
     notes = models.TextField(blank=True, null=True)
 
@@ -109,14 +114,13 @@ class Dataset(models.Model):
     financing_priorities = models.TextField(blank=True, null=True)
     financing_received = models.BigIntegerField(blank=True, null=True)
     financing_required = models.BigIntegerField(blank=True, null=True)
-    will_be_financed = models.BooleanField()
+    will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
 
     objects = models.Manager()
     public = PublicDatasetManager()
 
     class Meta:
-        managed = True
         db_table = 'dataset'
         unique_together = (('internal_id', 'organization_id'),)
 
@@ -127,7 +131,19 @@ class Dataset(models.Model):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return str(self.tags).replace(" ", "").split(',') if self.tags else []
+        return list(self.tags.all().values_list('name', flat=True))
+
+    @property
+    def filter_status(self):
+        if self.datasetstructure_set.exists():
+            return self.HAS_STRUCTURE
+        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+            return self.status
+        return None
+
+    @property
+    def formats(self):
+        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
 
 # TODO: To be merged into Dataset:

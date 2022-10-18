@@ -2,32 +2,96 @@
 {% load i18n %}
 {% load static %}
 {% load hitcount_tags %}
-
-{% block head %}
-    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
-    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
-{% endblock %}
+{% load subscription_tags %}
+{% load like_tags %}
 
 {% block content %}
     <div class="columns no-margin-bottom">
-        <div class="column is-three-quarters">
-            <div class="columns no-margin-bottom">
-                <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ project.title }}</h3>
-                </div>
-                <div class="column">
-                    {% get_hit_count for project as total_hits %}
-                    <p class="is-pulled-right">{% translate "Panaudojimo atvejo peržiūros" %}:
-                        <b id="total_hits">{{ total_hits }}</b>
+        <div class="column is-one-forth">
+            {% get_hit_count for project as total_hits %}
+            {% if total_hits %}
+            <div class="content">
+                <p>
+                    {% translate "Peržiūrėjo" %}:
+                    <b id="total_hits">{{ total_hits }}</b>
+                </p>
+            </div>
+            {% endif %}
+            <div class="content" id="project_likes">
+                {% if user.is_authenticated %}
+                    <p>{% translate "Ar jums patinka šis projektas?" %}</p>
+                    
+                {% else %}
+                    <p>
+                        {% translate "Patinka:" %}:
+                        <b>{% like obj=project user=request.user %}</b>
                     </p>
-                </div>
+                {% endif %}
             </div>
-            <div class="columns no-margin-bottom">
-                <div class="column">
-                    <p><b>{% translate "Panaudojimo atvejo/paslaugos aprašymas" %}:</b></p>
-                    <p>{{ project.description }} </p>
-                </div>
+            <div class="content" id="project_subscription">
+                {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
+                {% subscription obj=project user=request.user description=description %}
             </div>
+        </div>
+        <div class="column is-three-quarters">
+            <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
+
+            {% if can_update_project %}
+            <div class="buttons is-right">
+                <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
+                    {% translate "Keisti" %}
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="content">
+                <p>{{ project.description|linebreaks|urlizetrunc:72 }} </p>
+
+                {% if project.benefit %}
+                <p class=" no-margin-bottom"><b>{% translate "Teikiama nauda" %}:</b></p>
+                {{ project.benefit|linebreaks|urlizetrunc:72 }}
+                {% endif %}
+
+                {% if project.beneficiaryGroup %}
+                <p class=" no-margin-bottom"><b>{% translate "Naudos gavėjų grupė" %}:</b></p>
+                {{ project.beneficiaryGroup|linebreaks|urlizetrunc:72 }}
+                {% endif %}
+
+                {% if project.extraInformation %}
+                <p class=" no-margin-bottom"><b>{% translate "Papildoma informacija" %}:</b></p>
+                {{ project.extraInformation|linebreaks|urlizetrunc:72 }}
+                {% endif %}
+
+                {% if project.url %}
+                <p class=" no-margin-bottom"><b>{% translate "Nuoroda" %}:</b></p>
+                <p>{{ project.url|urlizetrunc:72 }}</p>
+                {% endif %}
+            </div>
+
+            {% if datasets %}
+            <br/>
+            <p><b>{% translate "Panaudoti duomenų rinkiniai" %}:</b></p>
+            {# TODO: Add datasets. #}
+            {% endif %}
+        </div>
+        {% if i.getImageUUID %}
+            <div class="column is-2">
+                <figure class="image">
+                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                </figure>
+            </div>
+        {% endif %}
+    </div>
+    <hr>
+</article>
+
+
+
+
+
+
+
+
         </div>
     </div>
 {% endblock %}

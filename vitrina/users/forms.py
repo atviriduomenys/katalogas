@@ -3,7 +3,7 @@ from crispy_forms.layout import Layout, Div, Field, Submit, ButtonHolder
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.core.exceptions import ValidationError
-from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField
+from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm
 
 from django.utils.translation import gettext_lazy as _
 
@@ -133,4 +133,32 @@ class PasswordResetConfirmForm(SetPasswordForm):
             Div(Div(Field('new_password2', css_class='input', placeholder=_("Pakartokite slaptažodį")),
                     css_class='control'), css_class='field'),
             Submit('submit', _("Atstatyti slaptažodį"), css_class='button is-primary'),
+        )
+
+
+class UserProfileEditForm(ModelForm):
+    class Meta:
+        model = User
+        fields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'organization',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "user-profile-form"
+        self.helper.layout = Layout(
+                Div(Div(Field('first_name', css_class='input', placeholder=_('Vardas')),
+                        css_class='control'), css_class='field'),
+                Div(Div(Field('last_name', css_class='input', placeholder=_('Pavardė')),
+                        css_class='control'), css_class='field'),
+                Div(Div(Field('email', css_class='input', placeholder=_('El. paštas')),
+                        css_class='control'), css_class='field'),
+                Div(Div(Field('phone', css_class='input', placeholder=_('Telefonas')),
+                        css_class='control'), css_class='field'),
+                Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )

@@ -1,0 +1,12 @@
+{% load i18n %}
+{% if user.is_authenticated %}
+    {% if description %}
+        <p>{{ description }}</p>
+    {% endif %}
+    <form action="{% if subscribed %}{% url 'unsubscribe' content_type_id obj_id user.pk %}{% else %}{% url 'subscribe' content_type_id obj_id user.pk %}{% endif %}"
+          method="post" class="rating-form" id="subscribe-form">
+        {% csrf_token %}
+        <input type="submit" class="button is-primary" value="{{ button_text }}">
+    </form>
+{% endif %}
+<p>{% translate "Prenumeruoja:" %} <strong id="number-of-subscribers">{{ subscription_count }}</strong></p>

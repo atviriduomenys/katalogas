@@ -71,7 +71,7 @@ class Licence(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
@@ -80,9 +80,9 @@ class Licence(models.Model):
 
     title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
-        managed = True
         db_table = 'licence'
 
     def __str__(self):
@@ -93,16 +93,16 @@ class Frequency(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     title = models.TextField(blank=True, null=True)
     title_en = models.TextField(blank=True, null=True)
     uri = models.CharField(max_length=255, blank=True, null=True)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
-        managed = True
         db_table = 'frequency'
 
     def __str__(self):

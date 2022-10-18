@@ -6,9 +6,8 @@ from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.detail import DetailView
 from vitrina.datasets.models import Dataset
-from vitrina.likes.models import UserLike
-from vitrina.requests.models import Request
-from vitrina.requests.services import get_structure, get_is_liked
+from vitrina.requests.models import Request, RequestStructure
+from vitrina.requests.services import can_update_request
 
 from django.utils.translation import gettext_lazy as _
 
@@ -23,6 +22,7 @@ class RequestListView(ListView):
 class RequestDetailView(DetailView):
     model = Request
     template_name = 'vitrina/requests/detail.html'
+    context_object_name = 'request_object'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -39,18 +39,20 @@ class RequestDetailView(DetailView):
             "formats": request.format.replace(" ", "").split(",") if request.format else [],
             "changes": request.changes.replace(" ", "").split(",") if request.changes else [],
             "purposes": request.purpose.replace(" ", "").split(",") if request.purpose else [],
-            "structure": get_structure(request),
+            "structure": RequestStructure.objects.filter(request_id=request.pk),
             "dataset": dataset,
             "status": request.get_status_display(),
-            "like_count": UserLike.objects.filter(request_id=request.pk).count(),
-            "liked": get_is_liked(self.request.user, request),
             "user_count": 0,
             "history": None,
+            'can_update_request': can_update_request(
+                self.request.user,
+                request,
+            )
         }
         context_data.update(extra_context_data)
         return context_data
-        
-        
+
+
 class RequestCreateView(LoginRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
@@ -59,6 +61,7 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.user = self.request.user
+        self.object.status = Request.CREATED
         self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -68,14 +71,18 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         return context_data
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UpdateView,
+):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
 
     def has_permission(self):
-        request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        return self.request.user == request.user
+        request = self.get_object()
+        return can_update_request(self.request.user, request)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

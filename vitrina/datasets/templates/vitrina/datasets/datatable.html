@@ -1,0 +1,74 @@
+{% load i18n %}
+
+<table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+    <thead>
+    <tr>
+        <th></th>
+        <th>{% translate "Teritorija" %}</th>
+        <th>{% translate "Pavadinimas" %}</th>
+        <th>{% translate "Periodo pradžia" %}</th>
+        <th>{% translate "Periodo pabaiga" %}</th>
+        <th>{% translate "Dydis" %}</th>
+        <th class="has-text-centered">{% translate "Formatas" %}</th>
+        <th>{% translate "Publikuota" %}</th>
+        <th>{% translate "Atnaujinta" %}</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in resources %}
+        <tr>
+            <td><span class="icon icon-is-small">
+                {% if r.is_external_url %}
+                    <i class="fas fa-lg fa-file-export"></i>
+                {% else %}
+                    <i class="fas fa-lg fa-file-code"></i>
+                {% endif %}
+            </span></td>
+            <td>{{ r.region|default:"-" }}</td>
+            <td class="has-fixed-width-130">{{ r.title|default:"-" }}</td>
+            <td><b>{{ r.period_start|default:"-" }}</b></td>
+            <td><b>{{ r.period_end|default:"-" }}</b></td>
+            <td>{{ r.size|default:"-" }}</td>
+            <td class="has-text-centered">
+                {{ r.get_format|default:"-" }}
+            </td>
+            <td>{{ r.created|date:"Y-m-d"|default:"-" }}</td>
+            <td>{{ r.modified|date:"Y-m-d"|default:"-" }}</td>
+            {% if r.is_external_url %}
+                <td>
+                    <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"
+                       target="_blank">{% translate "Atidaryti" %}</a>
+                </td>
+            {% else %}
+                <td>
+                    <div style="display:inline-flex; gap: 2px">
+                        {% if r.is_previewable %}
+                            <a class="button is-link is-small preview-button"
+                               id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
+                        {% endif %}
+                    <a href="{{ r.get_download_url }}"
+                       class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
+                    </div>
+                </td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">{% translate "Peržiūrėti" %}</p>
+            <button class="modal-button-close delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body" id="preview-content">
+            <table class="table is-striped is-fullwidth" id="info-table">
+                <tbody id="info-table-body"></tbody>
+            </table>
+        </section>
+    </div>
+</div>
+

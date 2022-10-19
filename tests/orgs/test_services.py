@@ -30,6 +30,13 @@ def test_organization_add_permission_superuser():
 
 
 @pytest.mark.django_db
+def test_has_perm__is_staff():
+    user = UserFactory(is_staff=True)
+    res = has_perm(user, Action.CREATE, Organization)
+    assert res is True
+
+
+@pytest.mark.django_db
 def test_organization_edit_permission_manager():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)

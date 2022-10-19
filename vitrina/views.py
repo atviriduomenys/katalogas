@@ -7,12 +7,15 @@ from vitrina.projects.models import Project
 
 
 def home(request):
-    categories = Category.objects.filter(featured=True).order_by('title')
     return render(request, 'landing.html', {
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),
             'project': Project.public.count(),
         },
-        'categories': categories
+        'categories': (
+            Category.objects.
+            filter(featured=True).
+            order_by('title')
+        )
     })

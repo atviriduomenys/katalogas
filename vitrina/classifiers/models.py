@@ -6,21 +6,27 @@ class Category(MP_Node):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1, blank=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    parent = models.ForeignKey('self', related_name='children_set',
-                               null=True, db_index=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey(
+        'self',
+        related_name='children_set',
+        null=True,
+        db_index=True,
+        on_delete=models.SET_NULL,
+        editable=False,
+    )
     featured = models.BooleanField()
     icon = models.CharField(max_length=255,
                             blank=True,
                             help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search')
 
-    node_order_by = ['numchild']
+    node_order_by = ['title']
 
     class Meta:
         db_table = 'category'

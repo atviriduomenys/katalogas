@@ -5,16 +5,16 @@
                 <div class="column is-2-fullhd is-3-desktop is-4-tablet">
                     <div class="category-box has-text-centered">
                        
-                            <a href="/datasets?category_id={{ cat.id }}"
-                                    title="{{ cat.description }}"
-                                    class="{% if cat.numchild == 0 %} category-empty {% endif %} category-icon">
-                                {% if cat.icon %}
-                                    <span class="icon is-large">
-                                        <i class="fas fa-4x {{ cat.icon }}"></i>
-                                    </span>
-                                {% endif %}
-                                <p class="category-icon-text">{{ cat.title }}</p>
-                            </a>
+                        <a href="{% url "dataset-list" %}?selected_facets=category_exact:{{ cat.id }}"
+                                title="{{ cat.description }}"
+                                class="category-icon">
+                            {% if cat.icon %}
+                                <span class="icon is-large">
+                                    <i class="fas fa-4x {{ cat.icon }}"></i>
+                                </span>
+                            {% endif %}
+                            <p class="category-icon-text">{{ cat.title }}</p>
+                        </a>
                         
                     </div>
                 </div>

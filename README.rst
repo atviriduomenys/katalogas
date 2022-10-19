@@ -59,7 +59,14 @@ Then we can run::
     poetry install
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput
-    
+
+To generate static files run::
+
+    poetry run python manage.py collectstatic
+    cd webpack
+    npm install
+    npm run build
+
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
     System: PostgreSQL

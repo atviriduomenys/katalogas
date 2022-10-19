@@ -11,7 +11,7 @@ class ProjectForm(ModelForm):
     title = CharField(label=_('Pavadinimas'))
     description = CharField(label=_('Aprašymas'), widget=Textarea)
     url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
-    image = ImageField(label=_("Paveiksliukas"))
+    image = ImageField(label=_("Paveiksliukas"), required=False)
 
     class Meta:
         model = Project

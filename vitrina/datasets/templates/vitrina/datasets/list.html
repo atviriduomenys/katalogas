@@ -6,8 +6,6 @@
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 
 {% block head %}
-    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
-
     <style>
         .autocomplete {
             /*the container must be positioned relative:*/
@@ -85,7 +83,7 @@
                 <p class="control">
                     <button class="button is-primary" type="submit">
                         <span class="icon is-large">
-                            <i class="fas fa-search"></i>
+                            <i class="fa fa-search"></i>
                         </span>
                     </button>
                 </p>
@@ -289,43 +287,6 @@
             }
 
             autocomplete(document.getElementById("search-input"), datasetTitles)
-
-            // var options = {
-            //     type: 'date',
-            //     dateFormat: 'YYYY-MM-DD',
-            //     color: '#62b9d4'
-            // };
-            // var calendars = bulmaCalendar.attach('[type="date"]', options);
-            // var from = document.querySelector('#from');
-            // var to = document.querySelector('#to');
-            //
-            // var currentUrl = new URL(window.location);
-            // var searchParams = new URLSearchParams(currentUrl.search);
-            //
-            // if (from) {
-            //     from.bulmaCalendar.on('select', function (datepicker) {
-            //         searchParams.set('date_from', datepicker.data.value());
-            //         currentUrl.search = searchParams.toString();
-            //         window.location = currentUrl.toString();
-            //     });
-            //     from.bulmaCalendar.on('clear', function (datepicker) {
-            //         searchParams.delete('date_from');
-            //         currentUrl.search = searchParams.toString();
-            //         window.location = currentUrl.toString();
-            //     });
-            // }
-            // if (to) {
-            //     to.bulmaCalendar.on('select', function (datepicker) {
-            //         searchParams.set('date_to', datepicker.data.value());
-            //         currentUrl.search = searchParams.toString();
-            //         window.location = currentUrl.toString();
-            //     });
-            //     to.bulmaCalendar.on('clear', function (datepicker) {
-            //         searchParams.delete('date_to');
-            //         currentUrl.search = searchParams.toString();
-            //         window.location = currentUrl.toString();
-            //     });
-            // }
         });
     </script>
 {% endblock %}

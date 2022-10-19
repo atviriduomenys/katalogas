@@ -17,6 +17,14 @@ class DatasetFactory(DjangoModelFactory):
     will_be_financed = False
     status = Dataset.HAS_DATA
 
+    @factory.post_generation
+    def tags(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for tag in extracted:
+                self.tags.add(tag)
+
 
 class DatasetStructureFactory(DjangoModelFactory):
     class Meta:

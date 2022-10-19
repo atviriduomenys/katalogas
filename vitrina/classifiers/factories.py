@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.classifiers.models import Category, Frequency
+from vitrina.classifiers.models import Category, Frequency, Licence
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -20,4 +20,11 @@ class FrequencyFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('word')
-    version = 1
+
+
+class LicenceFactory(DjangoModelFactory):
+    class Meta:
+        model = Licence
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('word')

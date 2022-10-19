@@ -13,13 +13,6 @@
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block current_title %}{{ dataset.title }}{% endblock %}
 
-{% block head %}
-    <link href="{% static '/css/datatables.min.css' %}" rel="stylesheet">
-    <script src="{% static '/js/jquery-3.6.0.min.js' %}"></script>
-    <script src="{% static '/js/datatables.min.js' %}"></script>
-    <script src="{% static 'hitcount/jquery.postcsrf.js' %}"></script>
-{% endblock %}
-
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column">

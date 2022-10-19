@@ -9,12 +9,11 @@ from django.views.generic import CreateView, DetailView, UpdateView
 from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
+from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
-from vitrina.users.services import can_edit_profile
-from vitrina.orgs.models import Representative
 
 
 class LoginView(BaseLoginView):
@@ -72,7 +71,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
 
     def has_permission(self):
         users_profile = get_object_or_404(User, id=self.kwargs['pk'])
-        return can_edit_profile(self.request.user, users_profile)
+        return has_perm(self.request.user, Action.VIEW, users_profile)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -84,7 +83,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
         extra_context_data = {
-            'can_edit_profile': can_edit_profile(self.request.user, user),
+            'can_edit_profile': has_perm(self.request.user, Action.UPDATE, user),
         }
         context_data.update(extra_context_data)
         return context_data
@@ -98,7 +97,7 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
     def has_permission(self):
         users_profile = get_object_or_404(User, id=self.kwargs['pk'])
-        return can_edit_profile(self.request.user, users_profile)
+        return has_perm(self.request.user, Action.UPDATE, users_profile)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

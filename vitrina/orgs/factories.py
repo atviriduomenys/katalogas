@@ -2,6 +2,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.orgs.models import Organization, Representative
+from vitrina.users.factories import UserFactory
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -29,4 +30,11 @@ class RepresentativeFactory(DjangoModelFactory):
     version = 1
     role = Representative.COORDINATOR
     email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")
+    user = factory.SubFactory(
+        UserFactory,
+        first_name=factory.SelfAttribute('..first_name'),
+        last_name=factory.SelfAttribute('..last_name'),
+        phone=factory.SelfAttribute('..phone'),
+        email=factory.SelfAttribute('..email'),
+    )
 

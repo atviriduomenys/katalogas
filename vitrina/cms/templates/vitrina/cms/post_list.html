@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Naujienos" %}{% endblock %}
+
+{% block content %}
+{% if post_list %}
+    {% for i in post_list %}
+        <div class="columns">
+            {% if i.main_image %}
+                <div class="column is-3">
+                    <figure class="image">
+                        <p class="newsitem-thumb-image">
+                            <img src="{{ i.main_image.url }}" />
+                        </p>
+                    </figure>
+                </div>
+            {% endif %}
+            <div class="column {% if i.main_image %}is-9{% else %}is-12{% endif %}">
+                <div class="media-content single-item">
+                    <div class="content">
+                        <div class="m-b-sm">
+                            <p><a href="{{ i.get_absolute_url }}" class="usecase-url">{{ i.title }}</a></p>
+                            <p>
+                                <span>{% translate "Publikavimo data" %}: <i>{{ i.date_published|date:"SHORT_DATE_FORMAT" }}</i></span>
+                                {% if i.author %}<br/><span>{% translate "Autorius" %}: <i>{{ i.author }}</i></span>{% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="dataset-list-description">{{ i.abstract }}</p>
+                            <p><a href="{{ i.get_absolute_url }}">{% translate "Skaityti daugiau" %}...</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <br/>
+    {% include "vitrina/common/pagination.html" %}
+{% else %}
+    <div class="columns">
+        <div class="column is-12">
+            {% translate "Naujienų nėra" %}
+        </div>
+    </div>
+{% endif %}
+<br/>
+{% endblock %}

@@ -11,6 +11,7 @@ class VitrinaMenu(Menu):
             NavigationNode(_('Duomenys'), reverse('dataset-list'), 1),
             NavigationNode(_('Poreikis'), reverse('request-list'), 1),
             NavigationNode(_('Projektai'), reverse('project-list'), 1),
+            NavigationNode(_('Naujienos'), reverse('djangocms_blog:posts-latest'), 1),
         ]
 
 

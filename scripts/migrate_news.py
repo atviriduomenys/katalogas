@@ -44,7 +44,7 @@ def main(
             if item.imageuuid:
                 try:
                     # TODO: change filtering to fit images that are saved for NewsItem now
-                    image = Image.objects.get(original_filename__startswith="5ef3cf47-b0fd-4e9a-bebd-ab0f8ec08ca8")
+                    image = Image.objects.get(original_filename__startswith=item.imageuuid)
                 except ObjectDoesNotExist:
                     pass
 

@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('vitrina_orgs', '0001_initial')
+        ('vitrina_orgs', '0001_initial'),
     ]
 
     operations = [

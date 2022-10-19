@@ -1,6 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.requests.models import Request, RequestStructure
 
 
@@ -13,6 +14,7 @@ class RequestFactory(DjangoModelFactory):
     version = 1
     is_existing = True
     is_public = True
+    organization = factory.SubFactory(OrganizationFactory)
 
 
 class RequestStructureFactory(DjangoModelFactory):

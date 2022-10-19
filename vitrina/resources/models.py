@@ -107,3 +107,9 @@ class DatasetDistribution(models.Model):
             self.filename.storage.exists(self.filename.name) and
             self.filename.file.size > 0
         )
+
+    def get_acl_parents(self):
+        parents = [self]
+        if self.dataset:
+            parents.extend(self.dataset.get_acl_parents())
+        return parents

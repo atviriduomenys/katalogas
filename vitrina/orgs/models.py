@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
 from treebeard.mp_tree import MP_Node, MP_NodeManager
@@ -80,6 +82,9 @@ class Organization(MP_Node):
     def get_absolute_url(self):
         return reverse('organization-detail', kwargs={'pk': self.pk})
 
+    def get_acl_parents(self):
+        return [self]
+
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
@@ -95,18 +100,26 @@ class Representative(models.Model):
     email = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.PROTECT)
     phone = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     role = models.CharField(choices=ROLES, max_length=255)
     user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         db_table = 'representative'
+        unique_together = ['content_type', 'object_id', 'user']
 
     def __str__(self):
         return self.email
+
+    def get_acl_parents(self):
+        parents = [self]
+        parents.extend(self.content_object.get_acl_parents())
+        return parents
 
 
 class PublishedReport(models.Model):

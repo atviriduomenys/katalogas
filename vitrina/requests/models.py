@@ -92,6 +92,9 @@ class Request(models.Model):
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
 
+    def get_acl_parents(self):
+        return [self]
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

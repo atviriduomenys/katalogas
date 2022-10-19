@@ -62,6 +62,9 @@ class Project(models.Model):
         else:
             return Truncator(self.url).chars(42)
 
+    def get_acl_parents(self):
+        return [self]
+
 
 class UsecaseDatasetIds(models.Model):
     project = models.ForeignKey(Project, models.DO_NOTHING)

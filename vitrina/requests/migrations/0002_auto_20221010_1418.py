@@ -3,6 +3,7 @@
 import collections
 
 from django.db import migrations
+from django.db.models import Q
 
 
 def create_history_objects(apps, schema_editor):
@@ -19,23 +20,43 @@ def create_history_objects(apps, schema_editor):
         user_name = f'{user.first_name} {user.last_name}'
         users[org][user_name] = user
 
-    for event in RequestEvent.objects.all():
-        if event.request_id:
-            content_type = ContentType.objects.get_for_model(Request)
-            request = Request.objects.get(pk=event.request_id)
-            revision = Revision.objects.create(
-                date_created=event.created,
-                comment=event.type or "",
-                user=users.get(request.organization_id, {}).get(event.meta)
-            )
-            Version.objects.create(
-                object_id=event.request_id,
-                content_type=content_type,
-                object_repr=str(request),
-                format="json",
-                db="default",
-                revision=revision
-            )
+    events = RequestEvent.objects.exclude(
+        Q(request__isnull=True) |
+        Q(type='CREATED')
+    )
+    for event in events:
+        content_type = ContentType.objects.get_for_model(Request)
+        request = Request.objects.get(pk=event.request_id)
+        user = users.get(request.organization_id, {}).get(event.meta)
+        revision = Revision.objects.create(
+            date_created=event.created,
+            comment=event.type or "",
+            user=user
+        )
+        Version.objects.create(
+            object_id=event.request_id,
+            content_type=content_type,
+            object_repr=str(request),
+            format="json",
+            db="default",
+            revision=revision
+        )
+
+    for request in Request.objects.all():
+        content_type = ContentType.objects.get_for_model(Request)
+        revision = Revision.objects.create(
+            date_created=request.created,
+            comment="CREATED",
+            user=request.user,
+        )
+        Version.objects.create(
+            object_id=request.id,
+            content_type=content_type,
+            object_repr=str(request),
+            format="json",
+            db="default",
+            revision=revision,
+        )
 
 
 class Migration(migrations.Migration):

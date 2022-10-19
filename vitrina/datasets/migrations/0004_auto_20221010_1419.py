@@ -10,23 +10,22 @@ def create_history_objects(apps, schema_editor):
     Version = apps.get_model('reversion', 'Version')
     ContentType = apps.get_model('contenttypes', 'ContentType')
 
-    for event in DatasetEvent.objects.all():
-        if event.dataset_id:
-            content_type = ContentType.objects.get_for_model(Dataset)
-            dataset = Dataset.objects.get(pk=event.dataset_id)
-            revision = Revision.objects.create(
-                date_created=event.created,
-                user=event.user_0,
-                comment=event.type or "",
-            )
-            Version.objects.create(
-                object_id=event.dataset_id,
-                content_type=content_type,
-                object_repr=str(dataset),
-                format="json",
-                db="default",
-                revision=revision
-            )
+    for event in DatasetEvent.objects.exclude(dataset_id__isnull=True)[:10]:
+        content_type = ContentType.objects.get_for_model(Dataset)
+        dataset = Dataset.objects.get(pk=event.dataset_id)
+        revision = Revision.objects.create(
+            date_created=event.created,
+            user=event.user_0,
+            comment=event.type or "",
+        )
+        Version.objects.create(
+            object_id=event.dataset_id,
+            content_type=content_type,
+            object_repr=str(dataset),
+            format="json",
+            db="default",
+            revision=revision
+        )
 
 
 class Migration(migrations.Migration):

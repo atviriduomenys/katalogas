@@ -35,6 +35,9 @@ class User(AbstractUser):
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
 
+    def get_acl_parents(self):
+        return [self]
+
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

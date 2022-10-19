@@ -540,3 +540,33 @@ def test_dataset_representative_view_permission_dataset_coordinator():
     )
     res = has_perm(coordinator.user, Action.VIEW, Representative, dataset)
     assert res is True
+
+
+@pytest.mark.django_db
+def test_user_edit_permission_non_author():
+    user = UserFactory()
+    non_author = UserFactory()
+    res = has_perm(non_author, Action.UPDATE, user)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_user_edit_permission_author():
+    user = UserFactory()
+    res = has_perm(user, Action.UPDATE, user)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_user_view_permission_non_author():
+    user = UserFactory()
+    non_author = UserFactory()
+    res = has_perm(non_author, Action.VIEW, user)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_user_view_permission_author():
+    user = UserFactory()
+    res = has_perm(user, Action.VIEW, user)
+    assert res is True

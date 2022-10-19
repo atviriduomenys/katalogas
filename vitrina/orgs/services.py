@@ -46,17 +46,21 @@ acl = {
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
+    (User, Action.UPDATE): [Role.AUTHOR],
+    (User, Action.VIEW): [Role.AUTHOR],
 }
 
 
 def is_author(user: User, node: Model) -> bool:
-    return hasattr(node, "user") and getattr(node, "user") == user
+    if isinstance(node, (Dataset, Request, Project)):
+        return node.user == user
+    elif isinstance(node, User):
+        return node == user
+    raise NotImplementedError(f"Don't know how to get author of {type(node)}.")
 
 
 def get_parents(obj: Model) -> list:
-    if hasattr(obj, "get_acl_parents"):
-        return obj.get_acl_parents()
-    return []
+    return obj.get_acl_parents()
 
 
 def has_perm(
@@ -76,7 +80,10 @@ def has_perm(
 
     if isinstance(obj, Type):
         model = obj
-        nodes = get_parents(parent)
+        if parent:
+            nodes = get_parents(parent)
+        else:
+            nodes = []
     else:
         model = type(obj)
         nodes = get_parents(obj)

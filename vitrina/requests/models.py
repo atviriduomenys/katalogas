@@ -61,10 +61,7 @@ class Request(models.Model):
         return reverse('request-detail', kwargs={'pk': self.pk})
 
     def get_acl_parents(self):
-        parents = [self]
-        if self.organization:
-            parents.extend(self.organization.get_acl_parents())
-        return parents
+        return [self]
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

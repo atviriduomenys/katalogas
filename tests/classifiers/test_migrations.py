@@ -9,7 +9,7 @@ from django_webtest import DjangoTestApp
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.classifiers.models import Category
 
-data_migration = import_module('vitrina.classifiers.migrations.0005_auto_20220919_1047')
+data_migration = import_module('vitrina.classifiers.migrations.0007_remake_categories')
 
 
 def reset_mp_fields(category):

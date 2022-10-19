@@ -7,12 +7,11 @@
                        
                             <a href="/datasets?category_id={{ cat.id }}"
                                     title="{{ cat.description }}"
-                                    {# make it so it checks for child categories if activeCategories[cat.title] in place for cat.title #}
-                                    class="{% if cat.title == null %} category-empty {% endif%} category-icon">
+                                    class="{% if cat.numchild == 0 %} category-empty {% endif %} category-icon">
                                 {% if cat.icon %}
-                                    <p>
-                                        <span class="category-custom-icon icon-{{ cat.icon }}"></span>
-                                    </p>
+                                    <span class="icon is-large">
+                                        <i class="fas fa-4x {{ cat.icon }}"></i>
+                                    </span>
                                 {% endif %}
                                 <p class="category-icon-text">{{ cat.title }}</p>
                             </a>

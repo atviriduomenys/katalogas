@@ -3,37 +3,6 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 
 class Category(MP_Node):
-    BOOKS = 'books'
-    ANALYSIS = 'analysis'
-    ELECTRICITY = 'electricity'
-    CITYSCAPE = 'cityscape'
-    ACCOUNTING = 'accounting'
-    AIRPLANE = 'airplane'
-    BALANCE = 'balance'
-    MARKETING = 'marketing'
-    NATURE = 'nature'
-    OIL = 'oil'
-    PANTHEON = 'pantheon'
-    RETIREMENT = 'retirement'
-    TRUMPET = 'trumpet'
-    VACCINE = 'vaccine'
-    ICONS = [
-        (BOOKS, 'books'),
-        (ANALYSIS, 'analysis'),
-        (ELECTRICITY, 'electricity'),
-        (CITYSCAPE, 'cityscape'),
-        (ACCOUNTING, 'accounting'),
-        (AIRPLANE, 'airplane'),
-        (BALANCE, 'balance'),
-        (MARKETING, 'marketing'),
-        (NATURE, 'nature'),
-        (OIL, 'oil'),
-        (PANTHEON, 'pantheon'),
-        (RETIREMENT, 'retirement'),
-        (TRUMPET, 'trumpet'),
-        (VACCINE, 'vaccine'),
-    ]
-
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -49,8 +18,7 @@ class Category(MP_Node):
     featured = models.BooleanField()
     icon = models.CharField(max_length=255,
                             blank=True,
-                            null=True,
-                            help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos')
+                            help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search')
 
     node_order_by = ['numchild']
 

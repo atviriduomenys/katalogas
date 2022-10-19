@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0005_auto_20220930_0838'),
+        ('vitrina_classifiers', '0009_auto_20220930_0838'),
     ]
 
     operations = [

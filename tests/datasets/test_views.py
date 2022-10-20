@@ -4,13 +4,13 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
-import factory
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
 
@@ -210,14 +210,13 @@ def category_filter_data():
     organization = OrganizationFactory()
 
     category1 = CategoryFactory()
-    category2 = CategoryFactory(parent_id=category1.pk)
-    category3 = CategoryFactory(parent_id=category1.pk)
-    category4 = CategoryFactory(parent_id=category2.pk)
-
-    dataset1 = DatasetFactory(category=category1, organization=organization)
-    dataset2 = DatasetFactory(category=category2, organization=organization)
-    dataset3 = DatasetFactory(category=category3, organization=organization)
-    dataset4 = DatasetFactory(category=category4, organization=organization)
+    category2 = category1.add_child(instance=CategoryFactory.build())
+    category3 = category1.add_child(instance=CategoryFactory.build())
+    category4 = category2.add_child(instance=CategoryFactory.build())
+    dataset1 = DatasetFactory(category=category1, slug="ds1", organization=organization)
+    dataset2 = DatasetFactory(category=category2, slug="ds2", organization=organization)
+    dataset3 = DatasetFactory(category=category3, slug="ds3", organization=organization)
+    dataset4 = DatasetFactory(category=category4, slug="ds4", organization=organization)
 
     return {
         "categories": [category1, category2, category3, category4],
@@ -554,8 +553,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
         frequency=frequency,
         organization=org
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=dataset.organization)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
@@ -577,8 +575,7 @@ def test_click_edit_button(app: DjangoTestApp):
         slug='test-dataset-slug',
         organization=org
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=dataset.organization)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
     response = app.get(reverse('dataset-detail', kwargs={'pk': dataset.id}))
@@ -616,8 +613,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
         slug='test-org-slug',
         kind='test_org_kind'
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=org)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
@@ -639,8 +635,7 @@ def test_click_add_button(app: DjangoTestApp):
         slug='test-org-slug',
         kind='test_org_kind'
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=org)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
     response.click(linkid='add_dataset')
@@ -679,11 +674,7 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     default_licence = LicenceFactory(is_default=True)
     default_frequency = FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
-    user = User.objects.create_user(
-        email="test@test.com",
-        password="test123",
-        organization=organization
-    )
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     assert form['licence'].value == str(default_licence.pk)

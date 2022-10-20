@@ -13,6 +13,10 @@ class CategoryFactory(DjangoModelFactory):
     version = 1
     featured = False
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        return model_class.add_root(**kwargs)
+
 
 class FrequencyFactory(DjangoModelFactory):
     class Meta:

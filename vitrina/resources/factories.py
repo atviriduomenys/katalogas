@@ -24,5 +24,7 @@ class DatasetDistributionFactory(DjangoModelFactory):
     description = factory.Faker('catch_phrase')
     dataset = factory.SubFactory(DatasetFactory)
     format = factory.SubFactory(FileFormat)
+    period_start = date(2022, 1, 1)
+    period_end = date(2022, 12, 31)
     file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1

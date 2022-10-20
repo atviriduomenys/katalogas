@@ -80,6 +80,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['description'] = 'Added new resource description'
     form['format'] = file_format.id
     form['download_url'] = "www.google.lt"
+    form['period_start'] = '2022-10-20'
+    form['period_end'] = '2022-12-20'
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1

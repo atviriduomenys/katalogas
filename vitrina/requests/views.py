@@ -2,6 +2,8 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView
+
+from vitrina.orgs.services import has_perm, Action
 from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic.detail import DetailView
@@ -43,15 +45,23 @@ class RequestDetailView(DetailView):
             "status": request.get_status_display(),
             "user_count": 0,
             "history": None,
+            'can_update_request': has_perm(
+                self.request.user,
+                Action.UPDATE,
+                request
+            )
         }
         context_data.update(extra_context_data)
         return context_data
 
 
-class RequestCreateView(LoginRequiredMixin, CreateView):
+class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.CREATE, Request)
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -66,14 +76,18 @@ class RequestCreateView(LoginRequiredMixin, CreateView):
         return context_data
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class RequestUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UpdateView,
+):
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        return self.request.user == request.user
+        return has_perm(self.request.user, Action.UPDATE, request)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

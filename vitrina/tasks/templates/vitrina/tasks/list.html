@@ -7,6 +7,7 @@
 {% block current_title %}{% translate "Užduotys" %}{% endblock %}
 
 {% block content %}
+    {% if page_obj %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile"></div>
         <div class="column is-three-quarters">
@@ -27,5 +28,8 @@
         </div>
     </div>
     <br/>
+    {% else %}
+    <p>{% translate "Užduočių nėra!" %}</p>
+    {% endif %}
 {% endblock %}
 

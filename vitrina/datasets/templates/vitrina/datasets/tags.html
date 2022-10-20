@@ -1,7 +1,7 @@
 {% if tags %}
     <div class="tags m-t-md no-margin-bottom">
         {% for t in tags %}
-            <a href="https://data.gov.lt/datasets?q=&tags={{ t }}" class="tag">{{ t }}</a>
+            <a href='{% url "dataset-list" %}?q=&selected_facets=tags_exact:{{ t }}' class="tag">{{ t }}</a>
         {% endfor %}
     </div>
 {% endif %}

@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+import tagulous
+
 from vitrina.datasets.models import Dataset
 
 
@@ -8,3 +10,5 @@ class DatasetAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Dataset, DatasetAdmin)
+
+tagulous.admin.register(Dataset.tags)

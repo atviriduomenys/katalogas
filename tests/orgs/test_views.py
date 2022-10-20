@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime
 
+from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
 
@@ -10,44 +11,41 @@ from itsdangerous import URLSafeSerializer
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 from vitrina.users.models import User
 
 
-@pytest.fixture
-def data_for_tabs():
-    parent_organization = OrganizationFactory(slug="org1")
-    organization = parent_organization.add_child(instance=OrganizationFactory.build(slug="org2"))
-    dataset = DatasetFactory(organization=organization)
-    representative = RepresentativeFactory(organization=organization)
-    return {
-        'parent': parent_organization,
-        'organization': organization,
-        'dataset': dataset,
-        'representative': representative
-    }
-
-
 @pytest.mark.django_db
-def test_organization_detail_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(data_for_tabs["organization"].get_absolute_url())
-    assert list(resp.context['ancestors']) == [data_for_tabs["parent"]]
+def test_organization_detail_tab(app: DjangoTestApp):
+    parent_organization = OrganizationFactory()
+    organization = parent_organization.add_child(instance=OrganizationFactory.build())
+    resp = app.get(organization.get_absolute_url())
+    assert list(resp.context['ancestors']) == [parent_organization]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Informacija"]
 
 
 @pytest.mark.django_db
-def test_organization_members_tab(app: DjangoTestApp, data_for_tabs):
+def test_organization_members_tab(app: DjangoTestApp):
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    content_type = ContentType.objects.get_for_model(Organization)
+    representative1 = RepresentativeFactory(content_type=content_type, object_id=organization1.pk)
+    representative2 = RepresentativeFactory(content_type=content_type, object_id=organization2.pk)
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     app.set_user(admin)
-    resp = app.get(reverse('organization-members', args=[data_for_tabs["organization"].pk]))
-    assert list(resp.context['members']) == [data_for_tabs["representative"]]
+    resp = app.get(reverse('organization-members', args=[organization1.pk]))
+    assert list(resp.context['members']) == [representative1]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
 
 
-@pytest.mark.django_db
-def test_organization_dataset_tab(app: DjangoTestApp, data_for_tabs):
-    resp = app.get(reverse('organization-datasets', args=[data_for_tabs["organization"].pk]))
-    assert list(resp.context['object_list']) == [data_for_tabs["dataset"]]
+@pytest.mark.haystack
+def test_organization_dataset_tab(app: DjangoTestApp):
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    dataset1 = DatasetFactory(organization=organization1)
+    dataset2 = DatasetFactory(organization=organization2)
+    resp = app.get(reverse('organization-datasets', args=[organization1.pk]))
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
 
 
@@ -213,7 +211,6 @@ def representative_data():
     manager = User.objects.create_user(
         email="manager@gmail.com",
         password="manager123",
-        role="manager",
         first_name="Manager",
         last_name="User",
         phone="861234567"
@@ -221,19 +218,21 @@ def representative_data():
     coordinator = User.objects.create_user(
         email="coordinator@gmail.com",
         password="coordinator123",
-        role="coordinator",
         first_name="Coordinator",
         last_name="User",
         phone="869876543"
     )
     organization = OrganizationFactory()
+    content_type = ContentType.objects.get_for_model(Organization)
     representative_manager = RepresentativeFactory(
         role="manager",
-        organization=organization
+        content_type=content_type,
+        object_id=organization.pk
     )
     representative_coordinator = RepresentativeFactory(
         role="coordinator",
-        organization=organization,
+        content_type=content_type,
+        object_id=organization.pk,
         user=coordinator
     )
     return {
@@ -266,7 +265,7 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert Representative.objects.filter(email="manager@gmail.com").count() == 1
-    assert Representative.objects.filter(email="manager@gmail.com").first().organization == \
+    assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
 
@@ -283,7 +282,7 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert Representative.objects.filter(email="new@gmail.com").count() == 1
-    assert Representative.objects.filter(email="new@gmail.com").first().organization == \
+    assert Representative.objects.filter(email="new@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="new@gmail.com").first().user is None
     assert len(mail.outbox) == 1
@@ -294,7 +293,9 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
 def test_register_after_adding_representative(app: DjangoTestApp, representative_data):
     new_representative = RepresentativeFactory(
         email="new@gmail.com",
-        organization=representative_data['organization']
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=representative_data['organization'].pk,
+        user=None
     )
     serializer = URLSafeSerializer(settings.SECRET_KEY)
     token = serializer.dumps({"representative_id": new_representative.pk})

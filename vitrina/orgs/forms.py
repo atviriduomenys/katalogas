@@ -1,11 +1,12 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import ModelForm, EmailField, ChoiceField
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 
 
 class RepresentativeUpdateForm(ModelForm):
@@ -20,17 +21,19 @@ class RepresentativeUpdateForm(ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
-            Div(Div(Field('role', css_class="select is-fullwidth"),
+            Div(Div(Field('role', css_class="select is-fullwidth input"),
                     css_class="control is-expanded"), css_class="field"),
             Submit('submit', _("Redaguoti"), css_class='button is-primary')
         )
 
     def clean_role(self):
         role = self.cleaned_data.get('role')
-        organization = self.instance.organization
+        content_type = ContentType.objects.get_for_model(Organization)
         if role != Representative.COORDINATOR and not Representative.objects.filter(
-                Q(organization=organization) & Q(role=Representative.COORDINATOR)).\
-                exclude(pk=self.instance.pk).exists():
+                Q(content_type=content_type) &
+                Q(object_id=self.instance.object_id) &
+                Q(role=Representative.COORDINATOR)
+        ).exclude(pk=self.instance.pk).exists():
             raise ValidationError(_("Negalima panaikinti koordinatoriaus rolės naudotojui, "
                                     "jei tai yra vienintelis koordinatoriaus rolės atstovas."))
         return role
@@ -59,6 +62,11 @@ class RepresentativeCreateForm(ModelForm):
 
     def clean(self):
         email = self.cleaned_data.get('email')
-        if Representative.objects.filter(organization_id=self.organization_id, email=email).exists():
+        content_type = ContentType.objects.get_for_model(Organization)
+        if Representative.objects.filter(
+                content_type=content_type,
+                object_id=self.organization_id,
+                email=email
+        ).exists():
             self.add_error('email', _("Organizacijos narys su šiuo el. pašto adresu jau egzistuoja "))
         return self.cleaned_data

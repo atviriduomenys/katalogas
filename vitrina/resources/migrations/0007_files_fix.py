@@ -1,20 +1,51 @@
 import mimetypes
 from django.db import migrations, models
 import django.db.models.deletion
+import requests
 
 
 def fix_type_field_for_files(apps, schema_editor):
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
     Format = apps.get_model("vitrina_resources", "Format")
-
+    formats = {
+        'text/html': 'HTML',
+        'application/pdf': 'PDF',
+        'application/vnd.ms-excel': 'XLSX',
+        'application/zip': 'URL',
+        'text/csv': 'CSV',
+        'application/x-download': 'URL',
+        'application/json': 'JSON',
+        'text/xml': 'XML',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+        'application/xml': 'XML',
+        'application/rdf+xml': 'RDF',
+        'text/plain': 'URL',
+        'application/geo+json': 'JSON',
+        'multipart/x-zip': 'URL',
+        'application/octet-stream': 'SHAPE'
+    }
+    url_format = Format.objects.filter(extension='URL').first()
     for resource in DatasetDistribution.objects.all():
         if resource.file:
             mime_type = mimetypes.guess_type(str(resource.file))
             detected_format = Format.objects.filter(mimetype=mime_type).first()
             resource.format = detected_format
         if resource.type == 'URL':
-            url_format = Format.objects.filter(extension='URL').first()
-            resource.format = url_format
+            try:
+                response = requests.get(resource.url, stream=True, timeout=1)
+            except requests.RequestException:
+                resource.format = url_format
+                pass
+            else:
+                if response.status_code == 200:
+                    content_type = response.headers.get('content-type')
+                    if ';' in content_type:
+                        content_type = content_type.split(';', 1)[0]
+                    extension = formats[content_type]
+                    file_format = Format.objects.filter(extension=extension).first()
+                    resource.format = file_format
+                else:
+                    resource.format = url_format
         resource.save(update_fields=['format'])
 
 

@@ -3,6 +3,16 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def fix_null(apps, schema_editor):
+    DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
+    for resource in DatasetDistribution.objects.all():
+        if resource.period_end is None:
+            resource.period_end = ''
+        if resource.period_start is None:
+            resource.period_start = ''
+        resource.save(update_fields=['period_start', 'period_end'])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,14 +20,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(fix_null),
         migrations.AlterField(
             model_name='datasetdistribution',
             name='period_end',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Periodo pabaiga'),
+            field=models.CharField(blank=True, max_length=255, verbose_name='Periodo pabaiga'),
         ),
         migrations.AlterField(
             model_name='datasetdistribution',
             name='period_start',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Periodo pradžia'),
+            field=models.CharField(blank=True, max_length=255, verbose_name='Periodo pradžia'),
         ),
     ]

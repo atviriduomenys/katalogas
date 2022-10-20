@@ -105,19 +105,16 @@ class DatasetDistribution(models.Model):
     geo_location = models.CharField(
         max_length=255,
         blank=True,
-        null=True,
         verbose_name=_('Geografinė aprėptis'),
     )
     period_start = models.CharField(
         max_length=255,
         blank=True,
-        null=True,
         verbose_name=_('Periodo pradžia'),
     )
     period_end = models.CharField(
         max_length=255,
         blank=True,
-        null=True,
         verbose_name=_('Periodo pabaiga'),
     )
 

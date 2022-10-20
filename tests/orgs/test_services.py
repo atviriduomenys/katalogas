@@ -141,6 +141,32 @@ def test_dataset_edit_permission_dataset_coordinator():
 
 
 @pytest.mark.django_db
+def test_dataset_history_view_permission_manager():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER
+    )
+    res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_permission_coordinator():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR
+    )
+    res = has_perm(coordinator.user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
 def test_request_create_permission_authenticated():
     user = UserFactory()
     res = has_perm(user, Action.CREATE, Request)
@@ -164,6 +190,22 @@ def test_request_edit_permission_author():
 
 
 @pytest.mark.django_db
+def test_request_history_view_permission_non_author():
+    user = UserFactory()
+    request = RequestFactory()
+    res = has_perm(user, Action.HISTORY_VIEW, request)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_request_history_view_permission_author():
+    user = UserFactory()
+    request = RequestFactory(user=user)
+    res = has_perm(user, Action.HISTORY_VIEW, request)
+    assert res is True
+
+
+@pytest.mark.django_db
 def test_project_create_permission_authenticated():
     user = UserFactory()
     res = has_perm(user, Action.CREATE, Project)
@@ -183,6 +225,22 @@ def test_project_edit_permission_author():
     user = UserFactory()
     project = ProjectFactory(user=user)
     res = has_perm(user, Action.UPDATE, project)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_project_history_view_permission_non_author():
+    user = UserFactory()
+    project = ProjectFactory()
+    res = has_perm(user, Action.HISTORY_VIEW, project)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_project_history_view_permission_author():
+    user = UserFactory()
+    project = ProjectFactory(user=user)
+    res = has_perm(user, Action.HISTORY_VIEW, project)
     assert res is True
 
 

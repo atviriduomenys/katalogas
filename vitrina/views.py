@@ -4,8 +4,8 @@ from django.views.generic import TemplateView
 from reversion.models import Version
 
 from vitrina.datasets.models import Dataset
-from vitrina.services import can_manage_history
 from vitrina.orgs.models import Organization
+from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 
 
@@ -28,7 +28,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def has_permission(self):
         obj_id = self.kwargs.get('pk')
         obj = get_object_or_404(self.model, pk=obj_id)
-        return can_manage_history(obj, self.request.user)
+        return has_perm(self.request.user, Action.HISTORY_VIEW, obj)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,7 +42,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 'user': version.revision.user,
                 'action': self.model.HISTORY_MESSAGES.get(version.revision.comment),
             } for version in Version.objects.get_for_object(obj).order_by('-revision__date_created')],
-            'can_manage_history': can_manage_history(obj, self.request.user),
+            'can_manage_history': has_perm(self.request.user, Action.HISTORY_VIEW, obj),
         }
         context.update(extra_context)
         return context
@@ -63,7 +63,7 @@ class HistoryMixin:
         extra_context = {
             'detail_url_name': self.get_detail_url_name(),
             'history_url_name': self.get_history_url_name(),
-            'can_manage_history': can_manage_history(self.object, self.request.user)
+            'can_manage_history': has_perm(self.request.user, Action.HISTORY_VIEW, self.object)
         }
         context.update(extra_context)
         return context

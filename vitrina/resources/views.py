@@ -4,9 +4,9 @@ from django.views.generic import CreateView, UpdateView, DeleteView
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from vitrina.resources.services import can_add_resource, can_change_resource
 from django.utils.translation import gettext_lazy as _
 
 
@@ -17,7 +17,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     form_class = DatasetResourceForm
 
     def has_permission(self):
-        return can_add_resource(self.request.user, self.kwargs['pk'])
+        return has_perm(self.request.user, Action.CREATE, DatasetDistribution)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -52,7 +52,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
 
     def has_permission(self):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
-        return can_change_resource(self.request.user, resource.id)
+        return has_perm(self.request.user, Action.UPDATE, resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -79,7 +79,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
 
     def has_permission(self):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
-        return can_change_resource(self.request.user, resource.id)
+        return has_perm(self.request.user, Action.DELETE, resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

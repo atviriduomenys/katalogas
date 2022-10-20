@@ -6,6 +6,7 @@ from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 
@@ -22,10 +23,8 @@ def test_change_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=resource.dataset.organization)
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resource.dataset.manager = user
     form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
     form['title'] = "Edited title"
     form['description'] = "edited resource description"
@@ -40,10 +39,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=resource.dataset.organization)
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resource.dataset.manager = user
     response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
     response.click(linkid='change_resource')
     assert response.status_code == 200
@@ -59,7 +56,7 @@ def test_add_form_no_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_add_form_wrong_login(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     app.set_user(user)
     resource = DatasetDistributionFactory()
     response = app.get(reverse('resource-add', kwargs={'pk': resource.dataset_id}))
@@ -71,10 +68,8 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 def test_add_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     file_format = FileFormat()
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=dataset.organization)
+    user = UserFactory(is_staff=True, organization=dataset.organization)
     app.set_user(user)
-    dataset.manager = user
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new resource description'
@@ -90,8 +85,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_click_add_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=resource.dataset.organization)
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
     response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
     response.click(linkid='add_resource')
@@ -108,7 +102,7 @@ def test_delete_no_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_delete_wrong_login(app: DjangoTestApp):
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = UserFactory()
     app.set_user(user)
     resource = DatasetDistributionFactory()
     response = app.get(reverse('resource-delete', kwargs={'pk': resource.id}))
@@ -119,10 +113,8 @@ def test_delete_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_delete_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=resource.dataset.organization)
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resource.dataset.manager = user
     resp = app.get(reverse('resource-delete', kwargs={'pk': resource.pk}))
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 0
@@ -131,8 +123,7 @@ def test_delete_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_click_delete_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=resource.dataset.organization)
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
     response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
     response.click(linkid='delete_resource')

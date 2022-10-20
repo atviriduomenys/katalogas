@@ -18,14 +18,12 @@ from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.datasets.forms import DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import can_update_dataset, can_create_dataset, update_facet_data
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
-from vitrina.resources.services import can_add_resource
 
 
 class DatasetListView(FacetedSearchView):
@@ -100,7 +98,7 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
-            'can_add_resource': can_add_resource(self.request.user, dataset.id),
+            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
         }

@@ -141,6 +141,21 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli"]
 
 [[package]]
+name = "crispy-bulma"
+version = "0.8.0"
+description = "Bulma template pack for django-crispy-forms"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+Django = ">=2.2"
+django-crispy-forms = ">=1.12.0"
+
+[package.extras]
+test = ["pytest", "pytest-django"]
+
+[[package]]
 name = "cssselect2"
 version = "0.7.0"
 description = "CSS selectors for Python ElementTree"
@@ -1178,7 +1193,7 @@ tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-c
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "5a7d823652cd36d9cff8c41ecf9ff334cbb912daf6f3aff7c6bdc94bad745d26"
+content-hash = "832e42c6987925101ab702866e12f74757c38056b5028d51f75f259623cf329f"
 
 [metadata.files]
 aldryn-apphooks-config = [
@@ -1295,6 +1310,10 @@ coverage = [
     {file = "coverage-6.5.0-cp39-cp39-win_amd64.whl", hash = "sha256:fc2af30ed0d5ae0b1abdb4ebdce598eafd5b35397d4d75deb341a614d333d987"},
     {file = "coverage-6.5.0-pp36.pp37.pp38-none-any.whl", hash = "sha256:1431986dac3923c5945271f169f59c45b8802a114c8f548d611f2015133df77a"},
     {file = "coverage-6.5.0.tar.gz", hash = "sha256:f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84"},
+]
+crispy-bulma = [
+    {file = "crispy-bulma-0.8.0.tar.gz", hash = "sha256:d9bfb56636038becc3971fbd24c464cd9ee810db04667e9fd86fc58d299cc2b7"},
+    {file = "crispy_bulma-0.8.0-py3-none-any.whl", hash = "sha256:4f80291dfa38b738e44c21be43bffc9bb35540e54d9558186ea2fe958179b27f"},
 ]
 cssselect2 = [
     {file = "cssselect2-0.7.0-py3-none-any.whl", hash = "sha256:fd23a65bfd444595913f02fc71f6b286c29261e354c41d722ca7a261a49b5969"},

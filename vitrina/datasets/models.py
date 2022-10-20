@@ -57,19 +57,11 @@ class Dataset(models.Model):
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
-    # catalog = models.ForeignKey(Catalog, models.DO_NOTHING, blank=True, null=True)
     origin = models.CharField(max_length=255, blank=True, null=True)
 
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
-    coordinator = models.ForeignKey(User, models.DO_NOTHING, db_column='coordinator', blank=True, null=True)
-    # coordinator = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    representative_id = models.BigIntegerField(blank=True, null=True, verbose_name=_('Rinkinio atstovas'))
-    # TODO: Move this to orgs
-    #       https://github.com/atviriduomenys/katalogas/issues/30
-    manager = models.ForeignKey(User, models.DO_NOTHING, related_name='manager_datasets', blank=True, null=True, verbose_name=_('Rinkinio tvarkytojas'))
 
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
-    # licence = models.ForeignKey('Licence', models.DO_NOTHING, blank=True, null=True)
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
@@ -146,6 +138,12 @@ class Dataset(models.Model):
     def formats(self):
         return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
+    def get_acl_parents(self):
+        parents = [self]
+        if self.organization:
+            parents.extend(self.organization.get_acl_parents())
+        return parents
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
@@ -160,7 +158,7 @@ class GeoportalLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'geoportal_lt_entry'
 
 
@@ -190,7 +188,7 @@ class OpenDataGovLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'open_data_gov_lt_entry'
 
 
@@ -213,7 +211,7 @@ class HarvestingResult(models.Model):
     category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'harvesting_result'
 # --------------------------->8-------------------------------------
 
@@ -258,7 +256,7 @@ class DatasetMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_migrate'
 
 
@@ -273,7 +271,7 @@ class DatasetRemark(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_remark'
 
 
@@ -298,7 +296,7 @@ class DatasetResource(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_resource'
 
 
@@ -317,7 +315,7 @@ class DatasetEvent(models.Model):
     user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_event'
 
 
@@ -344,7 +342,7 @@ class DatasetResourceMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_resource_migrate'
 
 
@@ -389,7 +387,7 @@ class DatasetStructureField(models.Model):
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_structure_field'
 
 
@@ -405,7 +403,7 @@ class DatasetVisit(models.Model):
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'dataset_visit'
 
 
@@ -421,6 +419,6 @@ class HarvestedVisit(models.Model):
     harvesting_result = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'harvested_visit'
 # --------------------------->8-------------------------------------

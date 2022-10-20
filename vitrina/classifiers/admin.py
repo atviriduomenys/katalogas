@@ -1,8 +1,44 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
+
+from treebeard.admin import TreeAdmin
+from treebeard.forms import movenodeform_factory
 
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
+
+
+class RootCategoryFilter(admin.SimpleListFilter):
+    # Human-readable title which will be displayed in the
+    # right admin sidebar just above the filter options.
+    title = _('kategoriją')
+
+    parameter_name = 'root'
+
+    def lookups(self, request, model_admin):
+        for cat in Category.objects.filter(depth=1):
+            yield (cat.id, cat.title)
+
+    def queryset(self, request, queryset):
+        cat_id = self.value()
+        if cat_id:
+            cat = Category.objects.get(id=cat_id)
+            return queryset.filter(path__startswith=cat.path)
+
+
+class CategoryAdmin(TreeAdmin):
+    form = movenodeform_factory(Category)
+    list_display = [
+        'title',
+        'numchild',
+    ]
+    list_filter = [
+        RootCategoryFilter,
+    ]
+    search_fields = (
+        'title',
+    )
 
 
 class LicenceAdmin(admin.ModelAdmin):
@@ -25,6 +61,6 @@ class FrequencyAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-admin.site.register(Category)
+admin.site.register(Category, CategoryAdmin)
 admin.site.register(Licence, LicenceAdmin)
 admin.site.register(Frequency, FrequencyAdmin)

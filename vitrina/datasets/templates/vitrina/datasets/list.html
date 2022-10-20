@@ -106,13 +106,14 @@
                 </div>
             {% endif %}
             {% for i in page_obj %}
+            {% get_current_language as LANGUAGE_CODE %}
                 <article class="media">
                     <div class="media-content">
                         <div class="content">
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">
-                                        {% objectlanguage i.object request.session.LANGUAGE_CODE %}
+                                        {% objectlanguage i.object LANGUAGE_CODE %}
                                           {{ i.object.title }}
                                         {% endobjectlanguage %}
                                     </a>
@@ -132,7 +133,7 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% objectlanguage i.object request.session.LANGUAGE_CODE %}
+                                {% objectlanguage i.object LANGUAGE_CODE %}
                                     {{ i.object.description }}
                                 {% endobjectlanguage %}
                             </p>

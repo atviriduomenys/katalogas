@@ -10,12 +10,10 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from django.views import View
-from django.views.generic import ListView, TemplateView
+from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
 from haystack.generic_views import FacetedSearchView
 
-from django.db.models import Q
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
@@ -98,14 +96,12 @@ class DatasetDetailView(LanguageChoiceMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
-        dataset.set_current_language(self.request.session.get('LANGUAGE_CODE'))
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
-            'LANGUAGE_CODE': dataset.get_current_language(),
         }
         context_data.update(extra_context_data)
         return context_data

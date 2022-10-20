@@ -10,7 +10,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.views.generic.detail import DetailView
 from haystack.generic_views import FacetedSearchView
 

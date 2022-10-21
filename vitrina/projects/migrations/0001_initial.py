@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
         migrations.AlterModelOptions(
             name='ApplicationUseCase',
             options={
-                'db_table': 'usecase_dataset_ids',
+                'db_table': 'application_usecase',
             }
         ),
         migrations.AddField(

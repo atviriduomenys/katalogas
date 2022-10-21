@@ -190,22 +190,6 @@ def test_request_edit_permission_author():
 
 
 @pytest.mark.django_db
-def test_request_history_view_permission_non_author():
-    user = UserFactory()
-    request = RequestFactory()
-    res = has_perm(user, Action.HISTORY_VIEW, request)
-    assert res is False
-
-
-@pytest.mark.django_db
-def test_request_history_view_permission_author():
-    user = UserFactory()
-    request = RequestFactory(user=user)
-    res = has_perm(user, Action.HISTORY_VIEW, request)
-    assert res is True
-
-
-@pytest.mark.django_db
 def test_project_create_permission_authenticated():
     user = UserFactory()
     res = has_perm(user, Action.CREATE, Project)
@@ -225,22 +209,6 @@ def test_project_edit_permission_author():
     user = UserFactory()
     project = ProjectFactory(user=user)
     res = has_perm(user, Action.UPDATE, project)
-    assert res is True
-
-
-@pytest.mark.django_db
-def test_project_history_view_permission_non_author():
-    user = UserFactory()
-    project = ProjectFactory()
-    res = has_perm(user, Action.HISTORY_VIEW, project)
-    assert res is False
-
-
-@pytest.mark.django_db
-def test_project_history_view_permission_author():
-    user = UserFactory()
-    project = ProjectFactory(user=user)
-    res = has_perm(user, Action.HISTORY_VIEW, project)
     assert res is True
 
 

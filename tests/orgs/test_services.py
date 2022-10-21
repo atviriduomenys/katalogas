@@ -141,6 +141,32 @@ def test_dataset_edit_permission_dataset_coordinator():
 
 
 @pytest.mark.django_db
+def test_dataset_history_view_permission_manager():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER
+    )
+    res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_permission_coordinator():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR
+    )
+    res = has_perm(coordinator.user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
 def test_request_create_permission_authenticated():
     user = UserFactory()
     res = has_perm(user, Action.CREATE, Request)

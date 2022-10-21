@@ -12,6 +12,8 @@ from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 from django.utils.translation import gettext_lazy as _
 
+from django.utils.translation import gettext_lazy as _
+
 
 class Dataset(models.Model):
     HAS_DATA = "HAS_DATA"
@@ -32,6 +34,23 @@ class Dataset(models.Model):
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
         METADATA: _("Tik metaduomenys")
+    }
+
+    CREATED = "CREATED"
+    EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
+    TRANSFERRED = "TRANSFERRED"
+    DATA_ADDED = "DATA_ADDED"
+    DATA_UPDATED = "DATA_UPDATED"
+    DELETED = "DELETED"
+    HISTORY_MESSAGES = {
+        CREATED: _("Sukurta"),
+        EDITED: _("Redaguota"),
+        STATUS_CHANGED: _("Pakeistas statusas"),
+        TRANSFERRED: _("Perkelta"),
+        DATA_ADDED: _("Pridėti duomenys"),
+        DATA_UPDATED: _("Redaguoti duomenys"),
+        DELETED: _("Ištrinta"),
     }
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59

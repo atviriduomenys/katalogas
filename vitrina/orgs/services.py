@@ -19,6 +19,7 @@ class Action(Enum):
     UPDATE = 'update'
     DELETE = 'delete'
     VIEW = 'view'
+    HISTORY_VIEW = 'history_view'
 
 
 class Role(Enum):
@@ -37,6 +38,7 @@ acl = {
     (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],

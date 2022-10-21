@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'reversion',
     'hitcount',
     'crispy_forms',
     'tagulous',

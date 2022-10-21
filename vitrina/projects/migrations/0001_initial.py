@@ -123,7 +123,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('dataset_ids', models.BigIntegerField(blank=True, null=True)),
                 ('project', models.ForeignKey(on_delete=models.deletion.DO_NOTHING,
-                                              db_column='usecase_id',
+                                              db_column='id',
                                               to='vitrina_projects.usecase_id'))
             ],
             options={

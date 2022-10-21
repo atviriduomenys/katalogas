@@ -45,11 +45,9 @@ acl = {
     (Request, Action.CREATE): [Role.ALL],
     (Request, Action.UPDATE): [Role.AUTHOR],
     (Request, Action.DELETE): [Role.AUTHOR],
-    (Request, Action.HISTORY_VIEW): [Role.AUTHOR],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
-    (Project, Action.HISTORY_VIEW): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
 }

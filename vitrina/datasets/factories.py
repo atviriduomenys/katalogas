@@ -2,7 +2,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
+from vitrina.datasets.models import Dataset, DatasetStructure
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -34,12 +34,3 @@ class DatasetStructureFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1
-
-
-class DatasetMemberFactory(DjangoModelFactory):
-    class Meta:
-        model = DatasetMember
-        django_get_or_create = ('role', )
-
-    role = DatasetMember.CREATOR
-    contact = False

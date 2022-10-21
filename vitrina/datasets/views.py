@@ -3,10 +3,11 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.shortcuts import redirect
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -19,10 +20,9 @@ from vitrina.classifiers.models import Frequency
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.datasets.services import update_facet_data
-from vitrina.datasets.services import can_see_dataset_members
 from vitrina.helpers import get_selected_value
 from vitrina.orgs.helpers import is_org_dataset_list
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetMember
+from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
@@ -224,15 +224,24 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
 
 
 class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    model = DatasetMember
+    model = Representative
     template_name = 'vitrina/datasets/members_list.html'
     context_object_name = 'dataset_members'
     paginate_by = 20
 
     def has_permission(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
-        return can_see_dataset_members(self.request.user, dataset)
+        return has_perm(self.request.user, Action.UPDATE, dataset)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+            return redirect(dataset)
 
     def get_queryset(self):
         dataset = Dataset.public.get_from_url_args(**self.kwargs)
-        return dataset.datasetmember_set.all()
+        members = Representative.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
+                                                object_id=dataset.id)
+        return members

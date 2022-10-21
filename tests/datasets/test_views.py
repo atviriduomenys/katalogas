@@ -1,6 +1,7 @@
 from datetime import datetime, date
 
 import pytest
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
@@ -9,7 +10,8 @@ from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import Representative
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -620,3 +622,33 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     assert form['licence'].value == str(default_licence.pk)
     assert form['frequency'].value == str(default_frequency.pk)
+
+
+@pytest.mark.django_db
+def test_dataset_members_view_bad_login(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('dataset-members', kwargs={'pk': representative.object_id}))
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
+def test_dataset_members_view_no_login(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER
+    )
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(reverse('dataset-members', kwargs={'pk': representative.object_id}))
+    assert response.status_code == 200

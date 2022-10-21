@@ -31,7 +31,3 @@ def update_facet_data(request: WSGIRequest, facet_fields: List[str],
             }
             updated_facet_data.append(data)
     return updated_facet_data
-
-
-def can_see_dataset_members(user: User, dataset: Dataset) -> bool:
-    return Representative.objects.filter(organization_id=dataset.organization_id, user=user).exists()

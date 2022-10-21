@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Veiksmų istorija" %}{% endblock %}
+
+{% block content %}
+
+	{% include 'component/tabs.html' %}
+
+    <div class="columns">
+        <div class="column is-three-quarters">
+            {% if history %}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Data/laikas" %}</th>
+                        <th>{% translate "Naudotojas" %}</th>
+                        <th>{% translate "Veiksmas" %}</th>
+                    </tr>
+                    {% for h in history %}
+                        <tr>
+                            <td>{{ h.date|date:"SHORT_DATETIME_FORMAT" }}</td>
+                            <td>{{ h.user|default_if_none:"-" }}</td>
+                            <td>{{ h.action|default_if_none:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

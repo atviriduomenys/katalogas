@@ -15,8 +15,7 @@ class User(AbstractUser):
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128, blank=True, null=True)
-    role = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.SET_NULL, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
@@ -35,6 +34,9 @@ class User(AbstractUser):
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
+
+    def get_acl_parents(self):
+        return [self]
 
 
 class UserTablePreferences(models.Model):

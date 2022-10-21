@@ -17,6 +17,14 @@ class Project(models.Model):
         (REJECTED, _("Atmestas")),
     }
 
+    EDITED = "EDITED"
+    DELETED = "DELETED"
+    HISTORY_MESSAGES = {
+        CREATED: _("Sukurta"),
+        EDITED: _("Redaguota"),
+        DELETED: _("Ištrinta"),
+    }
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -53,6 +61,9 @@ class Project(models.Model):
             return self.title
         else:
             return Truncator(self.url).chars(42)
+
+    def get_acl_parents(self):
+        return [self]
 
 
 class UsecaseDatasetIds(models.Model):

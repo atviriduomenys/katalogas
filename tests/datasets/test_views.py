@@ -4,12 +4,14 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
+from reversion.models import Version
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
 
@@ -31,9 +33,9 @@ def test_dataset_detail_without_tags(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.mark.django_db
 def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
-    dataset_detail_data['dataset'].tags = "tag-1, tag-2, tag-3"
-    dataset_detail_data['dataset'].save()
-    resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
+    dataset = DatasetFactory(tags=('tag-1', 'tag-2', 'tag-3'), status="HAS_DATA")
+    resp = app.get(dataset.get_absolute_url())
+    assert len(resp.context['tags']) == 3
     assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
 
 
@@ -197,9 +199,9 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
 @pytest.fixture
 def category_filter_data():
     category1 = CategoryFactory()
-    category2 = CategoryFactory(parent_id=category1.pk)
-    category3 = CategoryFactory(parent_id=category1.pk)
-    category4 = CategoryFactory(parent_id=category2.pk)
+    category2 = category1.add_child(instance=CategoryFactory.build())
+    category3 = category1.add_child(instance=CategoryFactory.build())
+    category4 = category2.add_child(instance=CategoryFactory.build())
     dataset_with_category1 = DatasetFactory(category=category1, slug="ds1")
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2")
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3")
@@ -269,38 +271,40 @@ def test_category_filter_with_parent_and_child_category(app: DjangoTestApp, cate
     ]
 
 
-@pytest.fixture
-def tag_filter_data():
-    dataset1 = DatasetFactory(tags="tag1, tag2, tag3", slug="ds1")
-    dataset2 = DatasetFactory(tags="tag3, tag4, tag5, tag1", slug="ds2")
-    return [dataset1, dataset2]
-
-
 @pytest.mark.haystack
-def test_tag_filter_without_query(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_without_query(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk, tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk, dataset2.pk]
     assert resp.context['selected_tags'] == []
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_one_tag(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_one_tag(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
+    print(dataset1.get_tag_list())
     resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert resp.context['selected_tags'] == ['tag2']
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_shared_tag(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_shared_tag(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get("%s?selected_facets=tags_exact:tag3" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[0].pk, tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk, dataset2.pk]
     assert resp.context['selected_tags'] == ['tag3']
 
 
 @pytest.mark.haystack
-def test_tag_filter_with_multiple_tags(app: DjangoTestApp, tag_filter_data):
+def test_tag_filter_with_multiple_tags(app: DjangoTestApp):
+    dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
+    dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
     resp = app.get("%s?selected_facets=tags_exact:tag4&selected_facets=tags_exact:tag3" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [tag_filter_data[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset2.pk]
     assert resp.context['selected_tags'] == ['tag4', 'tag3']
 
 
@@ -389,7 +393,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     frequency = FrequencyFactory()
     dataset_with_all_filters = DatasetFactory(
         status=Dataset.HAS_DATA,
-        tags="tag1, tag2, tag3",
+        tags=('tag1', 'tag2', 'tag3'),
         published=datetime(2022, 2, 9),
         organization=organization,
         category=category,
@@ -517,8 +521,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
         licence=licence,
         frequency=frequency
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=dataset.organization)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
@@ -530,6 +533,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
     assert dataset.title == 'Edited title'
     assert dataset.description == 'edited dataset description'
+    assert Version.objects.get_for_object(dataset).count() == 1
+    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
 
 
 @pytest.mark.django_db
@@ -541,8 +546,7 @@ def test_click_edit_button(app: DjangoTestApp):
         slug='test-dataset-slug',
         description='test description',
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=dataset.organization)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
     response = app.get(reverse('dataset-detail', kwargs={'pk': dataset.id}))
@@ -580,8 +584,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
         slug='test-org-slug',
         kind='test_org_kind'
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=org)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
@@ -592,6 +595,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert added_dataset.count() == 1
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
+    assert Version.objects.get_for_object(added_dataset.first()).count() == 1
+    assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
 
 
 @pytest.mark.django_db
@@ -603,8 +608,7 @@ def test_click_add_button(app: DjangoTestApp):
         slug='test-org-slug',
         kind='test_org_kind'
     )
-    user = User.objects.create_user(email="test@test.com", password="test123",
-                                    organization=org)
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     response = app.get(reverse('organization-datasets', kwargs={'pk': org.id}))
     response.click(linkid='add_dataset')
@@ -616,12 +620,35 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     default_licence = LicenceFactory(is_default=True)
     default_frequency = FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
-    user = User.objects.create_user(
-        email="test@test.com",
-        password="test123",
-        organization=organization
-    )
+    user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     assert form['licence'].value == str(default_licence.pk)
     assert form['frequency'].value == str(default_frequency.pk)
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-history', args=[dataset.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_with_permission(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    dataset = DatasetFactory(organization=user.organization)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
+    assert resp.context['detail_url_name'] == 'dataset-detail'
+    assert resp.context['history_url_name'] == 'dataset-history'
+    assert len(resp.context['history']) == 1
+    assert resp.context['history'][0]['action'] == "Redaguota"
+    assert resp.context['history'][0]['user'] == user

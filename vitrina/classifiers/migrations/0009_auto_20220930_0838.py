@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0004_rename_parent_id_category_parent'),
+        ('vitrina_classifiers', '0008_alter_path_depth'),
     ]
 
     operations = [

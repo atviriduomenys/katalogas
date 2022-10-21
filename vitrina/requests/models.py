@@ -8,17 +8,49 @@ from vitrina.requests.managers import PublicRequestManager
 from vitrina.users.models import User
 
 
+CREATED = "CREATED"
+REJECTED = "REJECTED"
+APPROVED = "APPROVED"
+EDITED = "EDITED"
+STATUS_CHANGED = "STATUS_CHANGED"
+ASSIGNED = "ASSIGNED"
+REQUEST_HISTORY_STATUSES = {
+    CREATED: _("Sukurta"),
+    REJECTED: _("Atmesta"),
+    APPROVED: _("Patvirtinta"),
+    EDITED: _("Redaguota"),
+    STATUS_CHANGED: _("Pakeistas statusas"),
+    ASSIGNED: _("Priskirta")
+}
+
+
 class Request(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     CREATED = "CREATED"
     REJECTED = "REJECTED"
     ALREADY_OPENED = "ALREADY_OPENED"
     ANSWERED = "ANSWERED"
+    APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
         (ALREADY_OPENED, _("Jau atvertas")),
-        (ANSWERED, _("Atsakytas"))
+        (ANSWERED, _("Atsakytas")),
+        (APPROVED, _("Patvirtintas"))
+    }
+
+    EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
+    ASSIGNED = "ASSIGNED"
+    DELETED = "DELETED"
+    HISTORY_MESSAGES = {
+        CREATED: _("Sukurta"),
+        REJECTED: _("Atmesta"),
+        APPROVED: _("Patvirtinta"),
+        EDITED: _("Redaguota"),
+        STATUS_CHANGED: _("Pakeistas statusas"),
+        ASSIGNED: _("Priskirta"),
+        DELETED: _("Ištrinta"),
     }
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -59,6 +91,9 @@ class Request(models.Model):
 
     def get_absolute_url(self):
         return reverse('request-detail', kwargs={'pk': self.pk})
+
+    def get_acl_parents(self):
+        return [self]
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

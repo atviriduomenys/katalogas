@@ -3,15 +3,16 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.views import View
-from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.detail import DetailView
+from django.views import View
+from django.views.generic import TemplateView, DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from haystack.generic_views import FacetedSearchView
+from reversion import set_comment
+from reversion.views import RevisionMixin
 
 # TODO: I think, Django has this built-in.
 from slugify import slugify
@@ -22,11 +23,12 @@ from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data, can_update_dataset, can_create_dataset
+from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
-from vitrina.orgs.models import Organization
-from vitrina.orgs.services import has_coordinator_permission
+from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
+from vitrina.views import HistoryView, HistoryMixin
 
 
 class DatasetListView(FacetedSearchView):
@@ -65,10 +67,6 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
-            'can_create_dataset': can_create_dataset(
-                self.request.user,
-                self.kwargs.get('pk'),
-            )
         }
         if is_org_dataset_list(self.request):
             # TODO: We get org two times.
@@ -77,18 +75,28 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             extra_context['organization'] = org
-            extra_context['can_view_members'] = has_coordinator_permission(
+            extra_context['can_view_members'] = has_perm(
                 self.request.user,
+                Action.VIEW,
+                Representative,
+                org
+            )
+            extra_context['can_create_dataset'] = has_perm(
+                self.request.user,
+                Action.CREATE,
+                Dataset,
                 org,
             )
         context.update(extra_context)
         return context
 
 
-class DatasetDetailView(DetailView):
+class DatasetDetailView(HistoryMixin, DetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -97,7 +105,7 @@ class DatasetDetailView(DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
-            'can_update_dataset': can_update_dataset(self.request.user, dataset),
+            'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
         }
         context_data.update(extra_context_data)
@@ -157,14 +165,20 @@ class DatasetStructureDownloadView(View):
         return response
 
 
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class DatasetCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    CreateView
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
     form_class = NewDatasetForm
 
     def has_permission(self):
-        return can_create_dataset(self.request.user, self.kwargs['pk'])
+        organization = get_object_or_404(Organization, id=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -182,12 +196,20 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        return super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.organization_id = self.kwargs.get('pk')
+        self.object.save()
+        set_comment(Dataset.CREATED)
+        return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class DatasetUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
@@ -195,7 +217,7 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-        return can_update_dataset(self.request.user, dataset)
+        return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -213,6 +235,14 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        return super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
+        set_comment(Dataset.EDITED)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class DatasetHistoryView(HistoryView):
+    model = Dataset
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-history"

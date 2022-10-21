@@ -67,6 +67,11 @@ To generate static files run::
     npm install
     npm run build
 
+
+To migrate news posts to Django CMS rerun server and run::
+
+    poetry run python scripts/migrate_news.py "path/to/news/images"
+
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
     System: PostgreSQL

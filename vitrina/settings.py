@@ -72,8 +72,10 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'reversion',
     'hitcount',
     'crispy_forms',
+    'tagulous',
     'haystack',
 
     'vitrina',
@@ -96,6 +98,13 @@ INSTALLED_APPS = [
     'vitrina.compat',
     'vitrina.likes',
 ]
+
+SERIALIZATION_MODULES = {
+    'xml':    'tagulous.serializers.xml_serializer',
+    'json':   'tagulous.serializers.json',
+    'python': 'tagulous.serializers.python',
+    'yaml':   'tagulous.serializers.pyyaml',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -254,6 +263,7 @@ PASSWORD_HASHERS = [
 ]
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
+MEDIA_URL = '/media/'
 
 HAYSTACK_CONNECTIONS = {
     'default': env.search_url(),
@@ -261,3 +271,6 @@ HAYSTACK_CONNECTIONS = {
 }
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
+BLOG_USE_PLACEHOLDER = False
+META_USE_SITES = True

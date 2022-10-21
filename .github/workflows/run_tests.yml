@@ -26,7 +26,7 @@ jobs:
           POSTGRES_DB: adp-dev
         ports:
           - 5432:5432
-        options: >-
+        options:
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
@@ -65,9 +65,6 @@ jobs:
 
       - name: Run migrations
         run: poetry run python manage.py migrate
-
-      - name: Rename database to test
-        run: PGPASSWORD=secret psql -h localhost -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
 
       - name: Test with pytest with `--reuse-db`
         run: poetry run pytest -vvxra --tb=short --reuse-db tests

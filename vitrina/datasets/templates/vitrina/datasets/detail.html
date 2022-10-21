@@ -42,15 +42,13 @@
                 {% include "./coretable.html" %}
             </div>
 
-            {% if structure or new_structure %}
                 <div class="content structure-block no-margin-bottom">
                     <h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "Rinkinio struktūra" %}</h4>
                     <span class="icon info-icon has-tooltip-multiline m-r-md" data-tooltip="{% translate 'Informacija apie duomenų rinkinio duomenis' %}">
                         <i class="fas fa-info-circle"></i>
                     </span>
-                    {% include './structuretable.html' %}
+                     <a href="{% url 'dataset-structure' dataset.pk %}" class="button is-primary structure-button">{% translate "Peržiūrėti" %}</a>
                 </div>
-            {% endif %}
         </div>
         <div class="column is-one-third">
             <div class="dataset-organization">

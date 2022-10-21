@@ -351,7 +351,7 @@ class DatasetStructure(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     distribution_version = models.IntegerField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
@@ -360,7 +360,11 @@ class DatasetStructure(models.Model):
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     standardized = models.BooleanField(blank=True, null=True)
-    file = models.FileField(upload_to="files/datasets/%Y/%m/%d/", blank=True, null=True)
+
+    def get_file_path(self, filename):
+        return f'datasets/{self.dataset.organization.kind}/{self.dataset.organization.slug}/{filename}'
+
+    file = models.FileField(upload_to=get_file_path, blank=True, null=True, max_length=512)
 
     class Meta:
         db_table = 'dataset_structure'

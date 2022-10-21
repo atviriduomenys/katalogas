@@ -6,18 +6,19 @@
 {% block content %}
     <div class="columns no-margin-bottom">
         <div class="column is-full">
+
             {% if not can_show %}
                 <p class="has-margin-bottom">
                     {% translate "Atsiprašome, šio duomenų rinkinio struktūra negali būti atvaizduota, tačiau galite atsisiųsti duomenų teikėjo pateiktą duomenų struktūros aprašo failą." %}
                 </p>
-                <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
-                    {% translate "Atsisiųsti" %}
-                </a>
-            {% else %}
-                <a class="button is-primary has-margin-bottom"
-                   href="{% url 'dataset-structure-download' view.kwargs.pk %}">
-                    {% translate "Atsisiųsti" %}
-                </a>
+            {% endif %}
+            <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
+                {% translate "Atsisiųsti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
+                {% translate "Importuoti" %}
+            </a>
+            {% if can_show %}
                 <div class="table-container">
                     <table class="table is-striped is-fullwidth">
                         <tbody class="info-table-body">

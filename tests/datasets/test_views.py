@@ -4,11 +4,12 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
+from webtest import Upload
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
@@ -435,42 +436,41 @@ def test_dataset_filter_with_pages(app: DjangoTestApp):
     assert resp.context['selected_status'] == Dataset.INVENTORED
 
 
-@pytest.fixture
-def dataset_structure_data():
-    organization = OrganizationFactory(slug="org", kind="gov")
-    dataset1 = DatasetFactory(slug="ds2", organization=organization)
-    dataset2 = DatasetFactory(slug="ds3", organization=organization)
-    structure1 = DatasetStructureFactory(dataset=dataset1)
-    structure2 = DatasetStructureFactory(dataset=dataset2, file=FileField(filename='file.csv', data=b'ab\0c'))
-    return {
-        'structure1': structure1,
-        'structure2': structure2
-    }
-
-
 @pytest.mark.django_db
-def test_with_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url())
+def test_with_structure(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    dataset.current_structure = DatasetStructureFactory(dataset=dataset)
+    dataset.save()
+    resp = app.get(dataset.current_structure.get_absolute_url())
     assert resp.context['can_show'] is True
     assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
 
 
 @pytest.mark.django_db
-def test_with_non_readable_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure2'].get_absolute_url())
+def test_with_non_readable_structure(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    dataset.current_structure = DatasetStructureFactory(
+        dataset=dataset,
+        file=FileField(filename='file.csv', data=b'ab\0c')
+    )
+    dataset.save()
+    resp = app.get(dataset.current_structure.get_absolute_url())
     assert resp.context['can_show'] is False
     assert resp.context['structure_data'] == []
 
 
 @pytest.mark.django_db
-def test_download_non_existent_structure(app: DjangoTestApp, dataset_structure_data):
+def test_download_non_existent_structure(app: DjangoTestApp):
     resp = app.get(reverse('dataset-structure-download', kwargs={'pk': 1000}), expect_errors=True)
     assert resp.status_code == 404
 
 
 @pytest.mark.django_db
-def test_download_structure(app: DjangoTestApp, dataset_structure_data):
-    resp = app.get(dataset_structure_data['structure1'].get_absolute_url() + "download/")
+def test_download_structure(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    dataset.current_structure = DatasetStructureFactory(dataset=dataset)
+    dataset.save()
+    resp = app.get(dataset.current_structure.get_absolute_url() + "download/")
     assert resp.content == b'Column\nValue'
 
 
@@ -620,3 +620,41 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     assert form['licence'].value == str(default_licence.pk)
     assert form['frequency'].value == str(default_frequency.pk)
+
+
+@pytest.mark.django_db
+def test_dataset_structure_import_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk}), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+    app.set_user(user)
+    form = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk})).forms['dataset-structure-form']
+    form['file'] = Upload('file.csv', b'Column\nValue')
+    form.submit()
+    dataset.refresh_from_db()
+    assert DatasetStructure.objects.filter(dataset=dataset).count() == 1
+    assert DatasetStructure.objects.filter(dataset=dataset).first().standardized is False
+    assert DatasetStructure.objects.filter(dataset=dataset).first() == dataset.current_structure
+
+
+@pytest.mark.django_db
+def test_dataset_structure_import_standardized(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+    app.set_user(user)
+    form = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk})).forms['dataset-structure-form']
+    form['file'] = Upload('file.csv', b'id,dataset,resource,base,model,property,type,'
+                                      b'ref,source,prepare,level,access,uri,title,description')
+    form.submit()
+    dataset.refresh_from_db()
+    assert DatasetStructure.objects.filter(dataset=dataset).count() == 1
+    assert DatasetStructure.objects.filter(dataset=dataset).first().standardized is True
+    assert DatasetStructure.objects.filter(dataset=dataset).first() == dataset.current_structure

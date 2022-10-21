@@ -3,7 +3,7 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
@@ -18,11 +18,11 @@ from slugify import slugify
 
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import NewDatasetForm
+from vitrina.datasets.forms import NewDatasetForm, DatasetStructureImportForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data
+from vitrina.datasets.services import update_facet_data, is_standardized
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
@@ -140,13 +140,13 @@ class DatasetStructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dataset_id = kwargs.get('pk')
-        structure = get_object_or_404(DatasetStructure, dataset__pk=dataset_id)
+        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        structure = dataset.current_structure
         data = []
         can_show = True
         if structure and structure.file:
             try:
-                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=";"))
+                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=","))
             except BaseException:
                 can_show = False
         context['can_show'] = can_show
@@ -156,7 +156,8 @@ class DatasetStructureView(TemplateView):
 
 class DatasetStructureDownloadView(View):
     def get(self, request, pk):
-        structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
+        dataset = get_object_or_404(Dataset, pk=pk)
+        structure = dataset.current_structure
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
 
@@ -222,3 +223,37 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         object = form.save(commit=False)
         object.slug = slugify(object.title)
         return super().form_valid(form)
+
+
+class DatasetStructureImportView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = DatasetStructure
+    form_class = DatasetStructureImportForm
+    template_name = 'base_form.html'
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.CREATE, DatasetStructure, dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        extra_context = {
+            'current_title': _("Struktūros importas"),
+            'parent_title': dataset.title,
+            'parent_url': dataset.get_absolute_url(),
+        }
+        context.update(extra_context)
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        self.object.save()
+
+        self.object.standardized = is_standardized(self.object.file)
+        self.object.save()
+
+        self.object.dataset.current_structure = self.object
+        self.object.dataset.save()
+        return HttpResponseRedirect(self.get_success_url())
+

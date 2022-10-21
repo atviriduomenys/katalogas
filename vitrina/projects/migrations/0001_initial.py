@@ -32,7 +32,6 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ApplicationUseCase',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True, null=True)),
                 ('modified', models.DateTimeField(auto_now=True, null=True)),
                 ('version', models.IntegerField()),
@@ -53,6 +52,17 @@ class Migration(migrations.Migration):
                 'db_table': 'application_usecase',
                 'managed': False,
             },
+        ),
+        migrations.AlterModelOptions(
+            name='ApplicationUseCase',
+            options={
+                'db_table': 'usecase_dataset_ids',
+            }
+        ),
+        migrations.AddField(
+            model_name='ApplicationUseCase',
+            name='id',
+            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
         ),
         migrations.CreateModel(
             name='ApplicationUsecaseDatasetIds',

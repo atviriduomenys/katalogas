@@ -61,7 +61,7 @@ jobs:
         run: poetry install
 
       - name: Load initial db schema
-        run: PGPASSWORD=secret psql -h localhost -U adp -d adp-dev < resources/adp-pg.sql
+        run: PGPASSWORD=secret psql -h localhost -U adp -d adp-dev < resources/adp-dev-fresh.sql
 
       - name: Run migrations
         run: poetry run python manage.py migrate

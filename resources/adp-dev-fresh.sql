@@ -1405,7 +1405,6 @@ CREATE INDEX "idx_696989_fku1uqn07hiom0uhv2fg22d6ou" ON "public"."usecase" USING
 
 DROP TABLE IF EXISTS "usecase_dataset_ids";
 CREATE TABLE "public"."usecase_dataset_ids" (
-    "id" bigint DEFAULT nextval('usecase_dataset_ids_id_seq') NOT NULL,
     "usecase_id" bigint NOT NULL,
     "dataset_ids" bigint
 ) WITH (oids = false);

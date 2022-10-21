@@ -13,7 +13,7 @@ from vitrina.resources.models import DatasetDistribution
 class DatasetResourceForm(forms.ModelForm):
     period_start = DateField(
         widget=forms.TextInput(attrs={'type': 'date'}),
-        required=True,
+        required=False,
         label=_("Periodo pradžia"),
         help_text=_(
             "Data nuo kada duomenys yra aktualūs."
@@ -21,7 +21,7 @@ class DatasetResourceForm(forms.ModelForm):
     )
     period_end = DateField(
         widget=forms.TextInput(attrs={'type': 'date'}),
-        required=True,
+        required=False,
         label=_("Periodo pabaiga"),
         help_text=_(
             "Data nuo kada duomenys nebėra aktualūs."

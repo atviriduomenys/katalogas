@@ -16,7 +16,7 @@ def replace_null_values(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_resources', '0011_alter_periods'),
+        ('vitrina_resources', '0010_alter_dataset_field'),
     ]
 
     operations = [

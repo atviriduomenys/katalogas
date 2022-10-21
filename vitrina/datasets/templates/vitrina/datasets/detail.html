@@ -31,7 +31,7 @@
             {% endif %}
 
             <div class="content">
-                <p class="no-margin-bottom">{{ dataset.description | linebreaks }}</p>
+                <p class="no-margin-bottom">{{ dataset.description|linebreaks|urlizetrunc:42 }}</p>
                 {# tags #}
                 {% include "./tags.html" %}
                 {# main info #}

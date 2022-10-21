@@ -1,27 +1,32 @@
 from django.db import models
-from treebeard.al_tree import AL_Node
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 
-class Category(AL_Node):
+class Category(MP_Node):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1, blank=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-
     title = models.CharField(max_length=255, blank=True, null=True)
     title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-
-    parent = models.ForeignKey('self', related_name='children_set', null=True, db_index=True, on_delete=models.SET_NULL)
-
+    parent = models.ForeignKey(
+        'self',
+        related_name='children_set',
+        null=True,
+        db_index=True,
+        on_delete=models.SET_NULL,
+        editable=False,
+    )
     featured = models.BooleanField()
+    icon = models.CharField(max_length=255,
+                            blank=True,
+                            help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search')
 
-    icon = models.CharField(max_length=255, blank=True, null=True)
-
-    node_order_by = ['pk']
+    node_order_by = ['title']
 
     class Meta:
         db_table = 'category'
@@ -32,6 +37,8 @@ class Category(AL_Node):
     def get_family_objects(self):
         yield from self.get_ancestors()
         yield from self.get_descendants()
+
+    objects = MP_NodeManager()
 
 
 class Licence(models.Model):

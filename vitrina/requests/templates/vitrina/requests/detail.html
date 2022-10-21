@@ -8,6 +8,8 @@
 {% block current_title %}{{ request_object.title }}{% endblock %}
 
 {% block content %}
+    {% include 'component/tabs.html' %}
+
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             <div class="content">

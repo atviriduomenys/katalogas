@@ -1,6 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
+from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 
@@ -16,6 +17,9 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
+    category = factory.SubFactory(CategoryFactory)
+    licence = factory.SubFactory(LicenceFactory)
+    frequency = factory.SubFactory(FrequencyFactory)
 
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):

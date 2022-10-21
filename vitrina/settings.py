@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'meta',
     'sortedm2m',
     'djangocms_blog',
+    'reversion',
     'hitcount',
     'crispy_forms',
     'tagulous',
@@ -261,6 +262,7 @@ PASSWORD_HASHERS = [
 ]
 
 MEDIA_ROOT = BASE_DIR / 'var/media/'
+MEDIA_URL = '/media/'
 
 HAYSTACK_CONNECTIONS = {
     'default': env.search_url(),
@@ -268,3 +270,6 @@ HAYSTACK_CONNECTIONS = {
 }
 
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
+BLOG_USE_PLACEHOLDER = False
+META_USE_SITES = True

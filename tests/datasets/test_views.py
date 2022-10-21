@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
+from reversion.models import Version
 from webtest import Upload
 
 from vitrina import settings
@@ -11,7 +12,7 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, Lic
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.users.factories import UserFactory
+from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
 
@@ -199,9 +200,9 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
 @pytest.fixture
 def category_filter_data():
     category1 = CategoryFactory()
-    category2 = CategoryFactory(parent_id=category1.pk)
-    category3 = CategoryFactory(parent_id=category1.pk)
-    category4 = CategoryFactory(parent_id=category2.pk)
+    category2 = category1.add_child(instance=CategoryFactory.build())
+    category3 = category1.add_child(instance=CategoryFactory.build())
+    category4 = category2.add_child(instance=CategoryFactory.build())
     dataset_with_category1 = DatasetFactory(category=category1, slug="ds1")
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2")
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3")
@@ -532,6 +533,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
     assert dataset.title == 'Edited title'
     assert dataset.description == 'edited dataset description'
+    assert Version.objects.get_for_object(dataset).count() == 1
+    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
 
 
 @pytest.mark.django_db
@@ -592,6 +595,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert added_dataset.count() == 1
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
+    assert Version.objects.get_for_object(added_dataset.first()).count() == 1
+    assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
 
 
 @pytest.mark.django_db
@@ -620,6 +625,33 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     assert form['licence'].value == str(default_licence.pk)
     assert form['frequency'].value == str(default_frequency.pk)
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-history', args=[dataset.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_with_permission(app: DjangoTestApp):
+    user = ManagerFactory(is_staff=True)
+    dataset = DatasetFactory(organization=user.organization)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
+    assert resp.context['detail_url_name'] == 'dataset-detail'
+    assert resp.context['history_url_name'] == 'dataset-history'
+    assert len(resp.context['history']) == 1
+    assert resp.context['history'][0]['action'] == "Redaguota"
+    assert resp.context['history'][0]['user'] == user
 
 
 @pytest.mark.django_db

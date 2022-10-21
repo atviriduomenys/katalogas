@@ -70,4 +70,4 @@ jobs:
         run: PGPASSWORD=secret psql -h localhost -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'
 
       - name: Test with pytest with
-        run: poetry run pytest -vvxra --tb=short --keep-db tests
+        run: poetry run pytest -vvxra --tb=short --reuse-db tests

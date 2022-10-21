@@ -285,7 +285,6 @@ def test_tag_filter_without_query(app: DjangoTestApp):
 def test_tag_filter_with_one_tag(app: DjangoTestApp):
     dataset1 = DatasetFactory(tags=('tag1', 'tag2', 'tag3'), slug="ds1")
     dataset2 = DatasetFactory(tags=('tag3', 'tag4', 'tag5'), slug="ds2")
-    print(dataset1.get_tag_list())
     resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert resp.context['selected_tags'] == ['tag2']

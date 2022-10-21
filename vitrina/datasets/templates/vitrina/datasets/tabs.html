@@ -1,0 +1,17 @@
+{% load i18n %}
+<div class="tabs">
+    <ul>
+        <li class="{%if request.resolver_match.url_name == 'dataset-detail' %} is-active {% endif %}">
+            <a href="{% url 'dataset-detail' request.resolver_match.kwargs.pk %}">
+                {% translate "Informacija" %}
+            </a>
+        </li>
+        {% if can_view_members %}
+            <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
+                <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
+                    {% translate "Duomenų rinkinio nariai" %}
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</div>

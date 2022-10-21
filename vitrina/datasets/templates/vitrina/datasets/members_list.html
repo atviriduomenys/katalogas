@@ -9,6 +9,9 @@
 {% endblock %}
 
 {% block content %}
+
+	{% include 'vitrina/datasets/tabs.html' %}
+
     <table class="table is-fullwidth">
         <tbody>
         <tr>
@@ -17,7 +20,7 @@
             <th>{% translate "Telefonas" %}</th>
             <th>{% translate "Rolė" %}</th>
         </tr>
-        {% for m in page_obj %}
+        {% for m in members %}
             <tr>
                 {% if m.user %}
                 <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>

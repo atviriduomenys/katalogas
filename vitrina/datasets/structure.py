@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
@@ -22,6 +23,37 @@ XDIMS = [
     'enum',
     'param',
     'lang',
+]
+
+ATTRS = [
+    'id',
+    'type',
+    'ref',
+    'source',
+    'prepare',
+    'level',
+    'access',
+    'uri',
+    'title',
+    'description',
+]
+
+HEADER = [
+    'id',
+    'dataset',
+    'resource',
+    'base',
+    'model',
+    'property',
+    'type',
+    'ref',
+    'source',
+    'prepare',
+    'level',
+    'access',
+    'uri',
+    'title',
+    'description',
 ]
 
 
@@ -318,6 +350,77 @@ def precedes(a: str, b: str) -> bool:
     return False
 
 
+def detect_read_errors(path: str) -> list[str]:
+    path = pathlib.Path(path)
+    if not path.exists():
+        return ["File does not exist."]
+
+    with path.open('rb') as f:
+        sample = f.readline(200).rstrip()
+
+        if error := _detect_separator_errors(sample):
+            return [error]
+
+        sample = sample.decode('utf-8', errors='replace')
+        errors = []
+        for name in sample.split(','):
+            if error := _detect_header_errors(name):
+                errors.append(error)
+        if errors:
+            return errors
+
+    return []
+
+
+def _detect_separator_errors(sample: bytes) -> str | None:
+    if b',' in sample:
+        return
+
+    if b';' in sample:
+        return (
+            "Incorrect value separator. Must be ',', but ';' "
+            "is given."
+        )
+
+    elif b'\t' in sample:
+        return (
+            "Incorrect value separator. Must be ',', but 'TAB' "
+            "is given."
+        )
+
+    else:
+        header = ','.join(HEADER)
+        return f"Unrecognized CSV file header. Header must be: {header}."
+
+
+def _detect_header_errors(name: str) -> str | None:
+    if name in HEADER:
+        return
+
+    elif name.lower() in HEADER:
+        return (
+            "Header names bus be given in lower case. Expected "
+            f"{name.lower()!r}, received {name!r}."
+        )
+
+    elif name.strip() in HEADER:
+        return (
+            "Header names must not have spaces. Expected "
+            f"{name.strip()!r}, received {name!r}."
+        )
+
+    elif name.strip().lower() in HEADER:
+        return (
+            "Header names must not have spaces and must be in lower "
+            f"case. Expected {name.strip().lower()!r}, received {name!r}."
+        )
+
+    else:
+        return (
+            f"Unrecognized header name {name!r}."
+        )
+
+
 def read(reader: Iterable[Row]) -> State:
     state = State()
     state.manifest = Manifest()
@@ -339,14 +442,10 @@ def read(reader: Iterable[Row]) -> State:
             else:
                 dim = state.last.dim
 
-                if dim in DIMS:
-                    state.error("'type' is required.")
-                    continue
-
             if row['ref']:
                 name = row['ref']
             else:
-                name = state.last.name
+                name = ''
 
         # Clean stack of lower precedence metadata
         state.clean(dim)
@@ -528,6 +627,7 @@ def _read_prefix(
     row: Row,
     name: str,
 ) -> None:
+    print(row)
     prefix = Prefix(
         id=row['id'],
         name=name,

@@ -1,10 +1,35 @@
-import io
 import csv
+import io
+import pathlib
 
 import pytest
 
+from vitrina.datasets.structure import detect_read_errors
 from vitrina.datasets.structure import precedes
 from vitrina.datasets.structure import read
+
+
+@pytest.mark.parametrize('content, errors_expected', [
+    (b'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description', False),
+    (b'id ,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description', True),
+    (b'id,DATASET,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description', True),
+    (b'id,DATASET ,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description', True),
+    (b'id,datast,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description', True),
+    (b'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description;;;', True),
+    (b'', True),
+    (bytes.fromhex('00010203ff'), True),
+])
+def test_detect_read_errors(
+    content: bytes,
+    errors_expected: bool,
+    tmp_path: pathlib.Path,
+):
+    path = tmp_path / 'manifest.csv'
+    path.write_bytes(content)
+    if errors_expected:
+        assert detect_read_errors(path) != []
+    else:
+        assert detect_read_errors(path) == []
 
 
 @pytest.mark.parametrize('a, b, res', [

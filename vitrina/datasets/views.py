@@ -29,6 +29,8 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.views import HistoryView, HistoryMixin
+from vitrina.datasets.structure import detect_read_errors
+from vitrina.datasets.structure import read
 
 
 class DatasetListView(FacetedSearchView):
@@ -146,15 +148,21 @@ class DatasetStructureView(TemplateView):
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
         structure = dataset.current_structure
-        data = []
-        can_show = True
+        context['errors'] = []
+        context['manifest'] = None
         if structure and structure.file:
-            try:
-                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=","))
-            except BaseException:
-                can_show = False
-        context['can_show'] = can_show
-        context['structure_data'] = data
+            if errors := detect_read_errors(structure.file.path):
+                context['errors'] = errors
+            else:
+                with open(
+                    structure.file.path,
+                    encoding='utf-8',
+                    errors='replace',
+                ) as f:
+                    reader = csv.DictReader(f)
+                    state = read(reader)
+                context['errors'] = state.errors
+                context['manifest'] = state.manifest
         return context
 
 

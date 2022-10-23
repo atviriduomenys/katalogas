@@ -3,8 +3,6 @@ from pathlib import Path
 
 from django.db import migrations, models
 
-import vitrina.datasets.models
-
 
 def fix_dataset_structure_files(apps, schema_editor):
     DatasetStructure = apps.get_model('vitrina_datasets', 'DatasetStructure')
@@ -35,7 +33,7 @@ class Migration(migrations.Migration):
             model_name='datasetstructure',
             name='file',
             field=models.FileField(blank=True, max_length=512, null=True,
-                                   upload_to=vitrina.datasets.models.DatasetStructure.get_file_path),
+                                   upload_to='manifest/%Y/%m-%d'),
         ),
         migrations.RunPython(fix_dataset_structure_files)
     ]

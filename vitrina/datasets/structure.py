@@ -437,10 +437,10 @@ def read(reader: Iterable[Row]) -> State:
         else:
             if row['type']:
                 dim = row['type']
-            elif all(v == '' for v in row):
-                continue  # empty row
-            else:
+            elif any(row.values()):
                 dim = state.last.dim
+            else:
+                continue  # empty row
 
             if row['ref']:
                 name = row['ref']
@@ -627,7 +627,6 @@ def _read_prefix(
     row: Row,
     name: str,
 ) -> None:
-    print(row)
     prefix = Prefix(
         id=row['id'],
         name=name,

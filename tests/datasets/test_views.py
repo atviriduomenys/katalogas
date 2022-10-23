@@ -443,8 +443,8 @@ def test_with_structure(app: DjangoTestApp):
     dataset.current_structure = DatasetStructureFactory(dataset=dataset)
     dataset.save()
     resp = app.get(dataset.current_structure.get_absolute_url())
-    assert resp.context['can_show'] is True
-    assert list(resp.context['structure_data']) == [["Column"], ["Value"]]
+    assert resp.context['errors'] == []
+    assert list(resp.context['manifest'].datasets) == ['datasets/gov/ivpk/adk']
 
 
 @pytest.mark.django_db
@@ -456,8 +456,8 @@ def test_with_non_readable_structure(app: DjangoTestApp):
     )
     dataset.save()
     resp = app.get(dataset.current_structure.get_absolute_url())
-    assert resp.context['can_show'] is False
-    assert resp.context['structure_data'] == []
+    assert len(resp.context['errors']) > 0
+    assert resp.context['manifest'] is None
 
 
 @pytest.mark.django_db
@@ -472,7 +472,7 @@ def test_download_structure(app: DjangoTestApp):
     dataset.current_structure = DatasetStructureFactory(dataset=dataset)
     dataset.save()
     resp = app.get(dataset.current_structure.get_absolute_url() + "download/")
-    assert resp.content == b'Column\nValue'
+    assert resp.content == dataset.current_structure.file.read()
 
 
 @pytest.mark.django_db
@@ -486,8 +486,8 @@ def test_public_manager_filtering(app: DjangoTestApp):
 
     public_datasets = Dataset.public.all()
     assert public_datasets.count() == 2
-    
-    
+
+
 @pytest.mark.django_db
 def test_change_form_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()

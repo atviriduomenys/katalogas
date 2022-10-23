@@ -10,6 +10,7 @@ from webtest import Upload
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
@@ -658,8 +659,11 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
 def test_dataset_structure_import_without_permission(app: DjangoTestApp):
     user = UserFactory()
     dataset = DatasetFactory()
+
     app.set_user(user)
-    resp = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk}), expect_errors=True)
+    url = reverse('dataset-structure-import', args=[dataset.pk])
+    resp = app.get(url, expect_errors=True)
+
     assert resp.status_code == 403
 
 
@@ -667,26 +671,29 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
 def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     dataset = DatasetFactory()
+
     app.set_user(user)
-    form = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk})).forms['dataset-structure-form']
-    form['file'] = Upload('file.csv', b'Column\nValue')
+    resp = app.get(reverse('dataset-structure-import', args=[dataset.pk]))
+    form = resp.forms['dataset-structure-form']
+    form['file'] = Upload('manifest.csv', b'Column\nValue')
     form.submit()
+
     dataset.refresh_from_db()
-    assert DatasetStructure.objects.filter(dataset=dataset).count() == 1
-    assert DatasetStructure.objects.filter(dataset=dataset).first().standardized is False
-    assert DatasetStructure.objects.filter(dataset=dataset).first() == dataset.current_structure
+    structure = DatasetStructure.objects.get(dataset=dataset)
+    assert dataset.current_structure == structure
 
 
 @pytest.mark.django_db
 def test_dataset_structure_import_standardized(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     dataset = DatasetFactory()
+
     app.set_user(user)
-    form = app.get(reverse('dataset-structure-import', kwargs={'pk': dataset.pk})).forms['dataset-structure-form']
-    form['file'] = Upload('file.csv', b'id,dataset,resource,base,model,property,type,'
-                                      b'ref,source,prepare,level,access,uri,title,description')
+    resp = app.get(reverse('dataset-structure-import', args=[dataset.pk]))
+    form = resp.forms['dataset-structure-form']
+    form['file'] = Upload('file.csv', MANIFEST.encode())
     form.submit()
+
     dataset.refresh_from_db()
-    assert DatasetStructure.objects.filter(dataset=dataset).count() == 1
-    assert DatasetStructure.objects.filter(dataset=dataset).first().standardized is True
-    assert DatasetStructure.objects.filter(dataset=dataset).first() == dataset.current_structure
+    structure = DatasetStructure.objects.get(dataset=dataset)
+    assert dataset.current_structure == structure

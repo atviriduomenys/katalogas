@@ -29,33 +29,3 @@ def update_facet_data(request: WSGIRequest, facet_fields: List[str],
             }
             updated_facet_data.append(data)
     return updated_facet_data
-
-
-STANDARDIZED_HEADER_FIELDS = [
-    'id',
-    'dataset',
-    'resource',
-    'base',
-    'model',
-    'property',
-    'type',
-    'ref',
-    'source',
-    'prepare',
-    'level',
-    'access',
-    'uri',
-    'title',
-    'description'
-]
-
-
-def is_standardized(file) -> bool:
-    try:
-        reader = csv.reader(open(file.path, encoding='utf-8'), delimiter=",")
-        header = next(reader)
-    except BaseException:
-        return False
-    if header == STANDARDIZED_HEADER_FIELDS:
-        return True
-    return False

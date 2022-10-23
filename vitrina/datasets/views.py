@@ -23,7 +23,7 @@ from vitrina.datasets.forms import NewDatasetForm, DatasetStructureImportForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data, is_standardized
+from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
@@ -257,34 +257,41 @@ class DatasetHistoryView(HistoryView):
     history_url_name = "dataset-history"
 
 
-class DatasetStructureImportView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class DatasetStructureImportView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView,
+):
     model = DatasetStructure
     form_class = DatasetStructureImportForm
     template_name = 'base_form.html'
 
+    dataset: Dataset | None = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        return has_perm(self.request.user, Action.CREATE, DatasetStructure, dataset)
+        return has_perm(
+            self.request.user,
+            Action.CREATE,
+            DatasetStructure,
+            self.dataset,
+        )
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        extra_context = {
+        return {
+            **super().get_context_data(**kwargs),
             'current_title': _("Struktūros importas"),
-            'parent_title': dataset.title,
-            'parent_url': dataset.get_absolute_url(),
+            'parent_title': self.dataset.title,
+            'parent_url': self.dataset.get_absolute_url(),
         }
-        context.update(extra_context)
-        return context
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        self.object.dataset = self.dataset
         self.object.save()
-
-        self.object.standardized = is_standardized(self.object.file)
-        self.object.save()
-
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())

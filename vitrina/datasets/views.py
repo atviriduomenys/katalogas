@@ -3,16 +3,23 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import FileResponse, JsonResponse
+from django.utils.text import slugify
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+from django.views import View
+from django.views.generic import TemplateView, DetailView
+from django.views.generic.edit import CreateView, UpdateView
+
 
 from django.views import View
 from django.views.generic import TemplateView, ListView
 from django.views.generic.detail import DetailView
 from haystack.generic_views import FacetedSearchView
+from reversion import set_comment
+from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin
 from vitrina.classifiers.models import Category
@@ -20,12 +27,19 @@ from vitrina.classifiers.models import Frequency
 from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
+from vitrina.classifiers.models import Category, Frequency
+from vitrina.datasets.forms import DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.helpers import get_selected_value
 from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
+from vitrina.views import HistoryView, HistoryMixin
+from vitrina.datasets.structure import detect_read_errors
+from vitrina.datasets.structure import read
 
 
 class DatasetListView(FacetedSearchView):
@@ -88,10 +102,12 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(LanguageChoiceMixin, DetailView):
+class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -100,6 +116,7 @@ class DatasetDetailView(LanguageChoiceMixin, DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
+            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
         }
@@ -108,14 +125,14 @@ class DatasetDetailView(LanguageChoiceMixin, DetailView):
 
 
 class DatasetDistributionDownloadView(View):
-    def get(self, request, dataset_id, distribution_id, filename):
+    def get(self, request, dataset_id, distribution_id, file):
         distribution = get_object_or_404(
             DatasetDistribution,
             dataset__pk=dataset_id,
             pk=distribution_id,
-            filename__icontains=filename
+            file__icontains=file
         )
-        response = FileResponse(open(distribution.filename.path, 'rb'))
+        response = FileResponse(open(distribution.file.path, 'rb'))
         return response
 
 
@@ -128,7 +145,7 @@ class DatasetDistributionPreviewView(View):
         )
         data = []
         if distribution.is_previewable():
-            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = open(distribution.file.path, encoding='utf-8')
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
@@ -139,32 +156,46 @@ class DatasetStructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dataset_id = kwargs.get('pk')
-        structure = get_object_or_404(DatasetStructure, dataset__pk=dataset_id)
-        data = []
-        can_show = True
+        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        structure = dataset.current_structure
+        context['errors'] = []
+        context['manifest'] = None
         if structure and structure.file:
-            try:
-                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=";"))
-            except BaseException:
-                can_show = False
-        context['can_show'] = can_show
-        context['structure_data'] = data
+            if errors := detect_read_errors(structure.file.path):
+                context['errors'] = errors
+            else:
+                with open(
+                    structure.file.path,
+                    encoding='utf-8',
+                    errors='replace',
+                ) as f:
+                    reader = csv.DictReader(f)
+                    state = read(reader)
+                context['errors'] = state.errors
+                context['manifest'] = state.manifest
         return context
 
 
 class DatasetStructureDownloadView(View):
     def get(self, request, pk):
-        structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
+        dataset = get_object_or_404(Dataset, pk=pk)
+        structure = dataset.current_structure
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
 
 
-class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView, LanguageChoiceMixin):
+class DatasetCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    CreateView,
+    TranslatableCreateView,
+    LanguageChoiceMixin
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         organization = get_object_or_404(Organization, id=self.kwargs.get('pk'))
@@ -186,17 +217,25 @@ class DatasetCreateView(LoginRequiredMixin, PermissionRequiredMixin, Translatabl
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        object.organization_id = self.kwargs.get('pk')
-        return super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.organization_id = self.kwargs.get('pk')
+        self.object.save()
+        set_comment(Dataset.CREATED)
+        return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView):
+class DatasetUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView,
+    TranslatableUpdateView
+):
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
@@ -218,6 +257,55 @@ class DatasetUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatabl
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        object = form.save(commit=False)
-        object.slug = slugify(object.title)
-        return super().form_valid(form)
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
+        set_comment(Dataset.EDITED)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class DatasetHistoryView(HistoryView):
+    model = Dataset
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-history"
+
+
+class DatasetStructureImportView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView,
+):
+    model = DatasetStructure
+    form_class = DatasetStructureImportForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset | None = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.CREATE,
+            DatasetStructure,
+            self.dataset,
+        )
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            'current_title': _("Struktūros importas"),
+            'parent_title': self.dataset.title,
+            'parent_url': self.dataset.get_absolute_url(),
+        }
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.dataset = self.dataset
+        self.object.save()
+        self.object.dataset.current_structure = self.object
+        self.object.dataset.save()
+        return HttpResponseRedirect(self.get_success_url())
+

@@ -1,14 +1,14 @@
 from django.contrib import admin
 from parler.admin import TranslatableAdmin
+from reversion.admin import VersionAdmin
 
 import tagulous
 
 from vitrina.datasets.models import Dataset
 
 
-class DatasetAdmin(TranslatableAdmin):
+class DatasetAdmin(TranslatableAdmin, VersionAdmin):
     list_display = ('title', 'description', 'is_public')
-    list_filter = ('organization',)
 
 
 admin.site.register(Dataset, DatasetAdmin)

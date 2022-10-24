@@ -1,15 +1,19 @@
+import csv
 from typing import List, Any, Dict, Type
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.handlers.wsgi import WSGIRequest
+from django.core.handlers.wsgi import HttpRequest
 
-from vitrina.datasets.models import Dataset
-from vitrina.users.models import User
 from vitrina.helpers import get_filter_url
 
 
-def update_facet_data(request: WSGIRequest, facet_fields: List[str],
-                      field_name: str, model_class: Type = None, choices: Dict = None) -> List[Any]:
+def update_facet_data(
+    request: HttpRequest,
+    facet_fields: List[str],
+    field_name: str,
+    model_class: Type = None,
+    choices: Dict = None,
+) -> List[Any]:
     updated_facet_data = []
     if facet_fields and field_name in facet_fields:
         for facet in facet_fields[field_name]:

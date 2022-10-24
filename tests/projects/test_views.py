@@ -4,6 +4,7 @@ import pytest
 from PIL import Image
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from reversion.models import Version
 from webtest import Upload
 
 from vitrina.projects.factories import ProjectFactory
@@ -31,25 +32,57 @@ def test_project_create(app: DjangoTestApp):
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
     resp = form.submit()
 
-    assert Project.objects.filter(title='Project').exists()
+    added_project = Project.objects.filter(title='Project')
+    assert added_project.exists()
     assert resp.status_code == 302
-    assert resp.url == Project.objects.filter(title='Project').first().get_absolute_url()
+    assert resp.url == added_project.first().get_absolute_url()
+    assert Version.objects.get_for_object(added_project.first()).count() == 1
+    assert Version.objects.get_for_object(added_project.first()).first().revision.comment == Project.CREATED
 
 
 @pytest.mark.django_db
 def test_project_update(app: DjangoTestApp):
     user = UserFactory()
-    request = ProjectFactory(user=user)
+    project = ProjectFactory(user=user)
 
     app.set_user(user)
 
-    form = app.get(reverse("project-update", args=[request.pk])).forms['project-form']
+    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit()
 
-    request.refresh_from_db()
+    project.refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == request.get_absolute_url()
-    assert request.title == "Updated title"
-    assert request.description == "Updated description"
+    assert resp.url == project.get_absolute_url()
+    assert project.title == "Updated title"
+    assert project.description == "Updated description"
+    assert Version.objects.get_for_object(project).count() == 1
+    assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+
+
+@pytest.mark.django_db
+def test_project_history_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+    app.set_user(user)
+    resp = app.get(reverse('project-history', args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_project_history_view_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    app.set_user(user)
+
+    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
+    assert resp.context['detail_url_name'] == 'project-detail'
+    assert resp.context['history_url_name'] == 'project-history'
+    assert len(resp.context['history']) == 1
+    assert resp.context['history'][0]['action'] == "Redaguota"
+    assert resp.context['history'][0]['user'] == user

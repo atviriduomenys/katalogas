@@ -44,6 +44,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_likes', '0001_initial'),
+        ('vitrina_requests', '0001_initial'),
     ]
 
     operations = [

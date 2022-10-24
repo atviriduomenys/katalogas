@@ -3,7 +3,10 @@ from urllib.parse import urlencode
 
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
+from django.utils.translation import gettext_lazy as _
 from haystack.forms import FacetedSearchForm
+
+from crispy_forms.layout import Div, Submit
 
 
 def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \
@@ -33,6 +36,27 @@ def get_filter_url(request: WSGIRequest, key: str, value: str) -> str:
     else:
         query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
     return "?" + urlencode(query_dict, True)
+
+
+def inline_fields(*args):
+    return Div(
+        Div(
+            *args,
+            css_class="field-body",
+        ), css_class="field is-horizontal",
+    )
+
+
+def buttons(*args):
+    return Div(
+        Div(*args),
+        css_class="field is-grouped is-grouped-centered",
+    )
+
+
+def submit(title=None):
+    title = title or _("Patvirtinti")
+    return Submit('submit', title, css_class='button is-primary'),
 
 
 def get_current_domain(request: WSGIRequest) -> str:

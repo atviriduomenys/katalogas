@@ -4,13 +4,8 @@ import itertools
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.http import FileResponse, JsonResponse
-from django.utils.text import slugify
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
-from django.views import View
-from django.views.generic import TemplateView, ListView
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views import View
@@ -21,14 +16,8 @@ from haystack.generic_views import FacetedSearchView
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.datasets.forms import DatasetForm
-from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.helpers import get_selected_value
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import NewDatasetForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.datasets.services import update_facet_data
 from vitrina.helpers import get_selected_value
@@ -38,8 +27,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.structure import detect_read_errors
-from vitrina.datasets.structure import read
+from vitrina.datasets.structure import detect_read_errors, read
 
 
 class DatasetListView(FacetedSearchView):
@@ -267,6 +255,11 @@ class DatasetHistoryView(HistoryView):
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, context)
+        return context
+
 
 class DatasetStructureImportView(
     LoginRequiredMixin,
@@ -306,7 +299,6 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
-
 
 
 class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, DatasetDetailView):

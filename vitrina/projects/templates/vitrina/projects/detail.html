@@ -6,6 +6,9 @@
 {% load like_tags %}
 
 {% block content %}
+
+    {% include 'component/tabs.html' %}
+
     <div class="columns no-margin-bottom">
         <div class="column is-one-forth">
             {% get_hit_count for project as total_hits %}

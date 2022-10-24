@@ -6,7 +6,7 @@ from typing import Type
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model, Q
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request
@@ -19,6 +19,7 @@ class Action(Enum):
     UPDATE = 'update'
     DELETE = 'delete'
     VIEW = 'view'
+    HISTORY_VIEW = 'history_view'
 
 
 class Role(Enum):
@@ -37,9 +38,11 @@ acl = {
     (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (DatasetStructure, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.CREATE): [Role.ALL],
     (Request, Action.UPDATE): [Role.AUTHOR],
     (Request, Action.DELETE): [Role.AUTHOR],

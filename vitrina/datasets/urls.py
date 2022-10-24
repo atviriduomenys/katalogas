@@ -1,6 +1,7 @@
 from django.urls import path
 from vitrina.datasets.views import DatasetListView, DatasetStructureView, DatasetStructureDownloadView, \
     DatasetCreateView, DatasetUpdateView, DatasetDetailView, DatasetDistributionDownloadView, \
+    DatasetDistributionPreviewView, DatasetHistoryView, DatasetStructureImportView
     DatasetDistributionPreviewView, DatasetMembersView
 
 urlpatterns = [
@@ -12,11 +13,14 @@ urlpatterns = [
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),
-    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:filename>/',
+    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:file>/',
          DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
     path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
          name='dataset-structure-download'),
+    path('datasets/<int:pk>/structure/import/', DatasetStructureImportView.as_view(),
+         name='dataset-structure-import'),
+    path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),
     path('datasets/<int:pk>/members/', DatasetMembersView.as_view(), name='dataset-members'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

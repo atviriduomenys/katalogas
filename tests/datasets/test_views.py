@@ -58,7 +58,7 @@ def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_d
     resp = app.get(reverse('dataset-distribution-download', kwargs={
         'dataset_id': 1000,
         'distribution_id': 1000,
-        'filename': "doesntexist",
+        'file': "doesntexist",
     }), expect_errors=True)
     assert resp.status_code == 404
 

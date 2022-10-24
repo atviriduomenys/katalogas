@@ -1,12 +1,13 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.contenttypes.models import ContentType
+from crispy_forms.layout import Layout, Field, Submit
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import ModelForm, EmailField, ChoiceField
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.orgs.models import Representative, Organization
+from vitrina.orgs.models import Organization, Representative
 
 
 class RepresentativeUpdateForm(ModelForm):
@@ -21,9 +22,8 @@ class RepresentativeUpdateForm(ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
-            Div(Div(Field('role', css_class="select is-fullwidth input"),
-                    css_class="control is-expanded"), css_class="field"),
-            Submit('submit', _("Redaguoti"), css_class='button is-primary')
+            Field('role'),
+            Submit('submit', _("Redaguoti"), css_class='button is-primary'),
         )
 
     def clean_role(self):
@@ -53,11 +53,9 @@ class RepresentativeCreateForm(ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
-            Div(Div(Field('email', css_class="input", placeholder=_("El. paštas"), ),
-                    css_class="control"), css_class="field"),
-            Div(Div(Field('role', css_class="select is-fullwidth input"),
-                    css_class="control is-expanded"), css_class="field"),
-            Submit('submit', _("Sukurti"), css_class='button is-primary')
+            Field('email'),
+            Field('role'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
         )
 
     def clean(self):

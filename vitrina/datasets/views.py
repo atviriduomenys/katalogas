@@ -3,6 +3,7 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.utils.text import slugify
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -10,19 +11,16 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.edit import CreateView, UpdateView
+
 from haystack.generic_views import FacetedSearchView
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-# TODO: I think, Django has this built-in.
-from slugify import slugify
-
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import NewDatasetForm, DatasetStructureImportForm
-from vitrina.datasets.forms import DatasetSearchForm
-from vitrina.helpers import get_selected_value
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
+from vitrina.classifiers.models import Category, Frequency
+from vitrina.datasets.forms import DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.helpers import get_selected_value
 from vitrina.datasets.services import update_facet_data
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
@@ -107,6 +105,7 @@ class DatasetDetailView(HistoryMixin, DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
+            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'resources': dataset.datasetdistribution_set.all(),
         }
@@ -115,14 +114,14 @@ class DatasetDetailView(HistoryMixin, DetailView):
 
 
 class DatasetDistributionDownloadView(View):
-    def get(self, request, dataset_id, distribution_id, filename):
+    def get(self, request, dataset_id, distribution_id, file):
         distribution = get_object_or_404(
             DatasetDistribution,
             dataset__pk=dataset_id,
             pk=distribution_id,
-            filename__icontains=filename
+            file__icontains=file
         )
-        response = FileResponse(open(distribution.filename.path, 'rb'))
+        response = FileResponse(open(distribution.file.path, 'rb'))
         return response
 
 
@@ -135,7 +134,7 @@ class DatasetDistributionPreviewView(View):
         )
         data = []
         if distribution.is_previewable():
-            rows = open(distribution.filename.path, encoding='utf-8')
+            rows = open(distribution.file.path, encoding='utf-8')
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
@@ -183,7 +182,7 @@ class DatasetCreateView(
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         organization = get_object_or_404(Organization, id=self.kwargs.get('pk'))
@@ -222,7 +221,7 @@ class DatasetUpdateView(
     model = Dataset
     template_name = 'base_form.html'
     context_object_name = 'dataset'
-    form_class = NewDatasetForm
+    form_class = DatasetForm
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])

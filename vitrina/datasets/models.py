@@ -154,7 +154,11 @@ class Dataset(models.Model):
 
     @property
     def formats(self):
-        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+
+    @property
+    def distinct_formats(self):
+        return sorted(set(self.formats))
 
     def get_acl_parents(self):
         parents = [self]

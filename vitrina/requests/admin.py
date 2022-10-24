@@ -1,9 +1,10 @@
 from django.contrib import admin
 
 from vitrina.requests.models import Request
+from reversion.admin import VersionAdmin
 
 
-class RequestAdmin(admin.ModelAdmin):
+class RequestAdmin(VersionAdmin):
     list_filter = ('organization',)
 
 

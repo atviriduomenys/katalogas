@@ -1,7 +1,7 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from django import forms
-from .models import Dataset
+from .models import Dataset, DatasetStructure
 from django.utils.translation import gettext_lazy as _
 from django.forms import DateField
 from haystack.forms import FacetedSearchForm
@@ -76,3 +76,19 @@ class DatasetSearchForm(FacetedSearchForm):
     def no_query_found(self):
         return self.searchqueryset.all()
 
+
+class DatasetStructureImportForm(forms.ModelForm):
+    file = forms.FileField(label=_("Failas"), required=True)
+
+    class Meta:
+        model = DatasetStructure
+        fields = ('file',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-structure-form"
+        self.helper.layout = Layout(
+            Div(Div(Field('file'), css_class="control"), css_class="field"),
+            Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
+        )

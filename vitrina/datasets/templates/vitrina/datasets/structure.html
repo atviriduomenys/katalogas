@@ -4,38 +4,126 @@
 {% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
 
 {% block content %}
-    <div class="columns no-margin-bottom">
-        <div class="column is-full">
-            {% if not can_show %}
-                <p class="has-margin-bottom">
-                    {% translate "Atsiprašome, šio duomenų rinkinio struktūra negali būti atvaizduota, tačiau galite atsisiųsti duomenų teikėjo pateiktą duomenų struktūros aprašo failą." %}
-                </p>
-                <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
-                    {% translate "Atsisiųsti" %}
-                </a>
-            {% else %}
-                <a class="button is-primary has-margin-bottom"
-                   href="{% url 'dataset-structure-download' view.kwargs.pk %}">
-                    {% translate "Atsisiųsti" %}
-                </a>
-                <div class="table-container">
-                    <table class="table is-striped is-fullwidth">
-                        <tbody class="info-table-body">
-                            {% for row in structure_data %}
-                                {% if forloop.counter == 1 %}
-                                    <tr class="preview-tr is-bold">
-                                {% else %}
-                                    <tr class="preview-tr">
-                                {% endif %}
-                                    {% for column in row %}
-                                        <td class="preview-td">{{ column }}</td>
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
+<div class="columns no-margin-bottom">
+    <div class="column is-full">
+
+        {% if errors %}
+        <div class="message is-danger">
+            <div class="message-body">
+                {% for error in errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
         </div>
+        {% endif %}
+
+        <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
+            {% translate "Atsisiųsti" %}
+        </a>
+        <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
+            {% translate "Importuoti" %}
+        </a>
+
+        {% if manifest %}
+        {% for model in manifest.models.values %}
+        <div class="columns">
+            <div class="column">
+                <span class="is-family-monospace has-text-weight-semibold">
+                    {{ model.name }}
+                </span>
+
+                {% if model.ref %}
+                <span class="tag is-success is-light">{{ model.ref }}</span>
+                {% endif %}
+
+                {% if model.uri %}
+                <span class="tag is-link is-light">{{ model.uri }}</span>
+                {% endif %}
+
+                {{ model.title }}
+            </div>
+        </div>
+
+        {% if model.description %}
+        <div class="columns ml-4">
+            <div class="column">
+                {% if model.description %}
+                <div class="is-size-6 has-text-grey">
+                    {{ model.description|linebreaks }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% for prop in model.properties.values %}
+        <div class="columns ml-4">
+            <div class="column">
+                <span class="is-family-monospace">
+                    {{ prop.name }}
+                </span>
+
+                {% if prop.type %}
+                <span class="tag is-warning is-light">{{ prop.type }}</span>
+                {% endif %}
+
+                {% if prop.ref %}
+                <span class="tag is-success is-light">{{ prop.ref }}</span>
+                {% endif %}
+
+                {% if prop.level %}
+                <span class="tag is-info is-light">{{ prop.level }}</span>
+                {% endif %}
+
+                {% if prop.uri %}
+                <span class="tag is-link is-light">{{ prop.uri }}</span>
+                {% endif %}
+
+                {{ prop.title }}
+            </div>
+        </div>
+
+        {% if prop.description or prop.comments %}
+        <div class="columns ml-6">
+            <div class="column pt-0">
+                {% if prop.description %}
+                <div class="is-size-6 has-text-grey pb-3">
+                    {{ prop.description|linebreaks }}
+                </div>
+                {% endif %}
+
+                {% if prop.comments %}
+                {% for comment in prop.comments %}
+                <div class="message is-warning">
+                    <div class="message-body is-size-6">
+                        {{ comment.title }}
+                        {{ comment.source }}
+                        {% if comment.ref %}
+                        <span class="tag is-warning is-light">{{ comment.ref }}</span>
+                        {% endif %}
+                        {% if comment.level %}
+                        <span class="tag is-info is-light">{{ comment.level }}</span>
+                        {% endif %}
+                        {% if comment.uri %}
+                        <span class="tag is-link is-light">{{ comment.uri }}</span>
+                        {% endif %}
+                        {% if comment.prepare %}
+                        <div class="is-size-7 has-text-grey pt-2">
+                            <p>{{ comment.prepare }}</p>
+                            {{ comment.description|linebreaks }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        {% endfor %}
+        {% endif %}
     </div>
+</div>
 {% endblock %}

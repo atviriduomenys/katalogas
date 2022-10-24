@@ -19,7 +19,7 @@ from slugify import slugify
 
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import NewDatasetForm
+from vitrina.datasets.forms import NewDatasetForm, DatasetStructureImportForm
 from vitrina.datasets.forms import DatasetSearchForm
 from vitrina.helpers import get_selected_value
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -29,6 +29,8 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.views import HistoryView, HistoryMixin
+from vitrina.datasets.structure import detect_read_errors
+from vitrina.datasets.structure import read
 
 
 class DatasetListView(FacetedSearchView):
@@ -144,23 +146,30 @@ class DatasetStructureView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dataset_id = kwargs.get('pk')
-        structure = get_object_or_404(DatasetStructure, dataset__pk=dataset_id)
-        data = []
-        can_show = True
+        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        structure = dataset.current_structure
+        context['errors'] = []
+        context['manifest'] = None
         if structure and structure.file:
-            try:
-                data = list(csv.reader(open(structure.file.path, encoding='utf-8'), delimiter=";"))
-            except BaseException:
-                can_show = False
-        context['can_show'] = can_show
-        context['structure_data'] = data
+            if errors := detect_read_errors(structure.file.path):
+                context['errors'] = errors
+            else:
+                with open(
+                    structure.file.path,
+                    encoding='utf-8',
+                    errors='replace',
+                ) as f:
+                    reader = csv.DictReader(f)
+                    state = read(reader)
+                context['errors'] = state.errors
+                context['manifest'] = state.manifest
         return context
 
 
 class DatasetStructureDownloadView(View):
     def get(self, request, pk):
-        structure = get_object_or_404(DatasetStructure, dataset__pk=pk)
+        dataset = get_object_or_404(Dataset, pk=pk)
+        structure = dataset.current_structure
         response = FileResponse(open(structure.file.path, 'rb'))
         return response
 
@@ -246,3 +255,44 @@ class DatasetHistoryView(HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
+
+
+class DatasetStructureImportView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView,
+):
+    model = DatasetStructure
+    form_class = DatasetStructureImportForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset | None = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.CREATE,
+            DatasetStructure,
+            self.dataset,
+        )
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            'current_title': _("Struktūros importas"),
+            'parent_title': self.dataset.title,
+            'parent_url': self.dataset.get_absolute_url(),
+        }
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.dataset = self.dataset
+        self.object.save()
+        self.object.dataset.current_structure = self.object
+        self.object.dataset.save()
+        return HttpResponseRedirect(self.get_success_url())
+

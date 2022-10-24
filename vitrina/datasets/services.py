@@ -1,10 +1,9 @@
+import csv
 from typing import List, Any, Dict, Type
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
 
-from vitrina.datasets.models import Dataset
-from vitrina.users.models import User
 from vitrina.helpers import get_filter_url
 
 

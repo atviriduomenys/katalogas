@@ -89,6 +89,6 @@ class DatasetStructureImportForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
-            Div(Div(Field('file'), css_class="control"), css_class="field"),
+            Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )

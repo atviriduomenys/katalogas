@@ -16,11 +16,7 @@ from haystack.generic_views import FacetedSearchView
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-# TODO: I think, Django has this built-in.
-from slugify import slugify
-
-from vitrina.datasets.forms import NewDatasetForm, DatasetStructureImportForm
-from vitrina.datasets.forms import DatasetSearchForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.datasets.forms import DatasetForm
 from vitrina.datasets.models import Dataset, DatasetStructure

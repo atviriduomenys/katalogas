@@ -59,11 +59,6 @@ class Migration(migrations.Migration):
                 'db_table': 'application_usecase',
             }
         ),
-        migrations.AddField(
-            model_name='ApplicationUseCase',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
-        ),
         migrations.CreateModel(
             name='ApplicationUsecaseDatasetIds',
             fields=[

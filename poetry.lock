@@ -1207,7 +1207,7 @@ tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-c
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "6b7eae7c22a13cb50a49dc86bb3a0f8eb13bbd81b6dccd576462da78c3b8a02a"
+content-hash = "ede2a5ed8322a92a5ed5fa18263cd58f750382aabf591d5938337048fbeda355"
 
 [metadata.files]
 aldryn-apphooks-config = [

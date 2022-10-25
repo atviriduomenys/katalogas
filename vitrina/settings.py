@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
+    'requests',
 
     'vitrina',
     'vitrina.cms',

@@ -77,6 +77,10 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
 
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
@@ -146,6 +150,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 STATICFILES_FINDERS = (
@@ -219,6 +228,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.django-cms.org/en/latest/how_to/install.html
 # https://docs.django-cms.org/en/latest/reference/configuration.html
 SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        # For each OAuth based provider, either add a ``SocialApp``
+        # (``socialaccount`` app) containing the required client
+        # credentials, or list them here:
+        'APP': {
+            'client_id': '123',
+            'secret': '456',
+            'key': ''
+        }
+    }
+}
+
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
     ('page.html', _("Home page")),

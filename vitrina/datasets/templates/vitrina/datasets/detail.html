@@ -19,41 +19,35 @@
 
     <div class="columns no-margin-bottom">
         <div class="column">
-            {# description and view count #}
-            <div class="columns no-margin-bottom">
-                <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
-                    {% if can_update_dataset %}
-                        <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
-                            {% translate "Redaguoti rinkinį" %}
-                        </a>
-                    {% endif %}
+            <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
+            <p>
+                {% translate "Duomenų rinkinio peržiūros" %}:
+                {% get_hit_count for dataset as total_hits %}
+                <b id="total_hits">{{ total_hits }}</b>
+            </p>
+            {% if can_update_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
+                        {% translate "Redaguoti rinkinį" %}
+                    </a>
                 </div>
-                <div class="column">
-                    {% get_hit_count for dataset as total_hits %}
-                    <p class="is-pulled-right">{% translate "Duomenų rinkinio peržiūros" %}:
-                        <b id="total_hits">{{ total_hits }}</b>
-                    </p>
-                </div>
-            </div>
+            {% endif %}
 
             <div class="content">
-                <p class="no-margin-bottom">{{ dataset.description | linebreaks }}</p>
+                <p class="no-margin-bottom">{{ dataset.description|linebreaks|urlizetrunc:42 }}</p>
                 {# tags #}
                 {% include "./tags.html" %}
                 {# main info #}
                 {% include "./coretable.html" %}
             </div>
 
-            {% if structure or new_structure %}
                 <div class="content structure-block no-margin-bottom">
                     <h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "Rinkinio struktūra" %}</h4>
                     <span class="icon info-icon has-tooltip-multiline m-r-md" data-tooltip="{% translate 'Informacija apie duomenų rinkinio duomenis' %}">
                         <i class="fas fa-info-circle"></i>
                     </span>
-                    {% include './structuretable.html' %}
+                     <a href="{% url 'dataset-structure' dataset.pk %}" class="button is-primary structure-button">{% translate "Peržiūrėti" %}</a>
                 </div>
-            {% endif %}
         </div>
         <div class="column is-one-third">
             <div class="dataset-organization">

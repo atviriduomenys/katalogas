@@ -72,7 +72,7 @@ _mime_types = {
 def _detect_format(
     formats: dict[str, models.Model],
     executor: ThreadPoolExecutor,
-    client: requests.session(),
+    client: requests.Session,
     dist: models.Model,
 ) -> str | None:
 

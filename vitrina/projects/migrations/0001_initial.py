@@ -32,6 +32,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ApplicationUseCase',
             fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True, null=True)),
                 ('modified', models.DateTimeField(auto_now=True, null=True)),
                 ('version', models.IntegerField()),

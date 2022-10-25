@@ -154,7 +154,11 @@ class Dataset(models.Model):
 
     @property
     def formats(self):
-        return [obj.get_format().upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+
+    @property
+    def distinct_formats(self):
+        return sorted(set(self.formats))
 
     def get_acl_parents(self):
         parents = [self]
@@ -370,16 +374,28 @@ class DatasetStructure(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
-    distribution_version = models.IntegerField(blank=True, null=True)
+    version = models.IntegerField(default=1)
     filename = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
-    mime_type = models.CharField(max_length=255, blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(
+        Dataset,
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+    )
+    file = models.FileField(
+        upload_to='manifest/%Y/%m-%d',
+        blank=True,
+        null=True,
+        max_length=512,
+    )
+
+    # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
-    file = models.FileField(upload_to="files/datasets/%Y/%m/%d/", blank=True, null=True)
+    mime_type = models.CharField(max_length=255, blank=True, null=True)
+    distribution_version = models.IntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_structure'

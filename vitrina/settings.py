@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'tagulous',
     'haystack',
+    'crispy_bulma',
 
     'allauth',
     'allauth.account',
@@ -297,3 +298,8 @@ HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 BLOG_USE_PLACEHOLDER = False
 META_USE_SITES = True
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = (
+    'bulma',
+)
+CRISPY_TEMPLATE_PACK = 'bulma'

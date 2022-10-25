@@ -6,6 +6,28 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 
 
+MANIFEST = '''\
+id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
+,datasets/gov/ivpk/adk,,,,,,,,,,,,Opend Data Portal,
+,,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,
+,,,,,,,dct,,,,,http://purl.org/dc/terms/,,
+,,,,,,,spinta,,,,,https://github.com/atviriduomenys/spinta/issues/,,
+,,,,,,,,,,,,,,
+,,,,Dataset,,,id,,,5,,dcat:Dataset,Dataset,
+,,,,,id,integer,,,,5,open,dct:identifier,,
+,,,,,title,string,,,,2,open,dct:title,,
+,,,,,,comment,type,,"update(property: ""title@lt"", type: ""text"")",4,open,spinta:204,2022-10-23 11:00,
+,,,,,description,string,,,,2,open,dct:description,,
+,,,,,,comment,type,,"update(property: ""description@lt"", type: ""text"")",4,open,spinta:204,2022-10-23 11:00,
+,,,,,licence,ref,Licence,,,2,open,dct:license,,
+,,,,,,,,,,,,,,
+,,,,Licence,,,id,,,,,,Licence,
+,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,
+,,,,,title,string,,,,2,open,dct:title,,
+,,,,,,comment,type,,"update(property: ""title@lt"", type: ""text"")",4,open,spinta:204,2022-10-23 11:00,
+'''
+
+
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
@@ -35,6 +57,6 @@ class DatasetStructureFactory(DjangoModelFactory):
         model = DatasetStructure
         django_get_or_create = ('title',)
 
-    title = factory.Faker('catch_phrase')
-    file = factory.django.FileField(filename='file.csv', data=b'Column\nValue')
     version = 1
+    title = factory.Faker('catch_phrase')
+    file = factory.django.FileField(filename='manifest.csv', data=MANIFEST)

@@ -111,14 +111,6 @@
                             <div>
                                 <strong><a href="{{ i.object.get_absolute_url }}"
                                            class="dataset-list-title">{{ i.object.title }}</a></strong>
-                                <div class="is-pulled-right">
-                                    <a target="_blank"
-                                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ i.object.get_absolute_url }}">
-                                    <span class="icon">
-                                        <i class="fab fa-facebook-square"></i>
-                                    </span>
-                                    </a>
-                                </div>
                             </div>
                             {% if i.object.organization_title %}
                                 <p>
@@ -129,19 +121,11 @@
                                 {{ i.object.description }}
                             </p>
                             <div class="tags">
-                                {% if i.object.format %}
-                                    {% for t in i.object.format %}
-                                        {% if t == "API" %}
-                                            <span class="tag is-success">{{ t }}</span>
-                                        {% elif t == "CSV" %}
-                                            <span class="tag is-warning">{{ t }}</span>
-                                        {% elif t == "XML" %}
-                                            <span class="tag is-info">{{ t }}</span>
-                                        {% else %}
-                                            <span class="tag is-primary">{{ t }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
+                                {% for t in i.object.distinct_formats %}
+                                <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
+                                    {{ t }}
+                                </a>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>

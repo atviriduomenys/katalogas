@@ -28,7 +28,7 @@ def fix_type_field_for_files(apps, schema_editor):
         for f in Format.objects.all()
     }
 
-    client = requests.session()
+    client = requests.Session()
 
     with ThreadPoolExecutor(100) as executor:
         futures = []
@@ -72,7 +72,7 @@ _mime_types = {
 def _detect_format(
     formats: dict[str, models.Model],
     executor: ThreadPoolExecutor,
-    client: requests.session,
+    client: requests.Session,
     dist: models.Model,
 ) -> str | None:
 
@@ -100,7 +100,7 @@ def _detect_format(
 
 
 def _detect_url_format(
-    client: requests.session,
+    client: requests.Session,
     dist: models.Model,
 ) -> _Result | None:
     try:

@@ -3,30 +3,25 @@ import itertools
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.utils.text import slugify
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from django.views import View
-from django.views.generic import TemplateView, DetailView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView
 
 
 from django.views import View
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
 from haystack.generic_views import FacetedSearchView
+from parler.utils.context import switch_language
+from parler.utils.i18n import get_language
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Frequency
-from vitrina.datasets.forms import NewDatasetForm
-from vitrina.datasets.forms import DatasetSearchForm
-from vitrina.helpers import get_selected_value
+from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.datasets.forms import DatasetForm
@@ -188,7 +183,6 @@ class DatasetCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
-    CreateView,
     TranslatableCreateView,
     LanguageChoiceMixin
 ):
@@ -229,11 +223,12 @@ class DatasetUpdateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
-    UpdateView,
-    TranslatableUpdateView
+    TranslatableUpdateView,
+    ViewUrlMixin
 ):
     model = Dataset
     template_name = 'base_form.html'
+    view_url_name = 'dataset:edit'
     context_object_name = 'dataset'
     form_class = DatasetForm
 
@@ -251,6 +246,7 @@ class DatasetUpdateView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Duomenų rinkinio redagavimas')
+        switch_language(self.object, get_language())
         return context
 
     def get(self, request, *args, **kwargs):

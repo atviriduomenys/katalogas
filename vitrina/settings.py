@@ -143,8 +143,7 @@ TEMPLATES = [
                 'sekizai.context_processors.sekizai',
                 'cms.context_processors.cms_settings',
 
-                'vitrina.context_processors.current_domain',
-                'vitrina.context_processors.current_language'
+                'vitrina.context_processors.current_domain'
             ],
         },
     },

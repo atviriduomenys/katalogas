@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n parler_tags %}
 
 {% block current_title %}{{ current_title }}{% endblock %}
 {% block parent_title %}{{ parent_title }}{% endblock %}
@@ -8,6 +8,16 @@
 {% block content %}
     <div class="columns is-centered">
         <div class="column is-half">
+            {% if language_tabs %}
+                <h>{% translate "choose language to edit" %}</h>
+                <div class="parler-language-tabs" style="padding-bottom: 2em">
+                    {% for tab in language_tabs %}
+                        <span class="{{tab.3}}">
+                            <a class="button" href="{{tab.0}}">{{tab.1}}</a>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% include "component/form.html" %}
         </div>
     </div>

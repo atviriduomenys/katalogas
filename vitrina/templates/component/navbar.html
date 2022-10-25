@@ -73,21 +73,24 @@
                     {% endif %}
                 </div>
                 <div class="navbar-item">
-                    <div class="navbar-item has-dropdown is-hoverable">
-                        <a class="navbar-link"><strong>{{ LANGUAGE_CODE }}</strong></a>
-                        <div class="navbar-dropdown">
-                            {% for lang_code, title in LANGUAGES %}
-                                {% get_language_info for lang_code as lang %}
-                                {% get_translated_url lang_code as tr_url %}
-                                {% if tr_url %}
-                                    <a class="navbar-item {% if lang_code == LANGUAGE_CODE %} is-selected {% endif %}"
-                                       href="?language={{ lang_code }}"
-                                       hreflang="?language={{ lang_code }}">
-                                        {{ lang.name_local|capfirst }}
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
+                    <div class="navbar-item has-dropdown">
+                        <form action="{% url 'set_language' %}" method="post" id="languageChange">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ redirect_to }}">
+                            <div class="select is-rounded">
+                                <select name="language"
+                                        onchange="languageChange.submit()">
+                                    {% get_current_language as LANGUAGE_CODE %}
+                                    {% get_available_languages as LANGUAGES %}
+                                    {% get_language_info_list for LANGUAGES as languages %}
+                                    {% for language in languages %}
+                                        <option class="navbar-item" value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %} selected {% endif %}>
+                                            {{ language.name_local }} ({{ language.code }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

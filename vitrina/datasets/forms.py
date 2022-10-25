@@ -14,8 +14,7 @@ from haystack.forms import FacetedSearchForm
 from ..classifiers.models import Licence, Frequency
 
 
-class DatasetForm(forms.ModelForm):
-class NewDatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
+class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
     description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
 

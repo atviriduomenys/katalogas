@@ -62,6 +62,31 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
+
+    <div class="columns">
+        <div class="column">
+            <script>
+            unemployment = [
+                {
+                    division: "Test",
+                    date: "2000-01-01",
+                    unemployment: 2.6
+                }
+            ];
+            chart = window.vitrina.d3.LineChart(unemployment, {
+              x: d => d.date,
+              y: d => d.unemployment,
+              z: d => d.division,
+              yLabel: "↑ Unemployment (%)",
+              width,
+              height: 500,
+              color: "steelblue",
+              voronoi // if true, show Voronoi overlay
+            })
+            </script>
+        </div>
+    </div>
+
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {% include "vitrina/datasets/filters.html" %}

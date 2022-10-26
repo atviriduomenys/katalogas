@@ -7,7 +7,11 @@ module.exports = {
   entry: path.resolve(__dirname, './src/index.js'),
   output: {
     path: path.resolve(__dirname, '../vitrina/static'),
-    filename: 'js/bundle.js'
+    filename: 'js/bundle.js',
+    library: {
+        name: 'vitrina',
+        type: 'umd'
+    }
   },
   module: {
     rules: [{

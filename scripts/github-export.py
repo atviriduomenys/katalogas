@@ -2,6 +2,7 @@ import csv
 import json
 import operator
 import os
+import sys
 from functools import reduce
 from itertools import groupby
 from pathlib import Path
@@ -59,10 +60,19 @@ def main(
 
     cards = _extract_cached_cards(session, project_id, update=update)
     cards = _transform_cards(cards)
+    cards = list(cards)
     if export:
-        with export.open('w') as f:
-            cards = _cards_to_csv(f, cards)
-    _summary(list(cards), level)
+        if export.name == '-':
+            _cards_to_csv(sys.stdout, cards, level)
+        elif export.suffix == '.csv':
+            with export.open('w') as f:
+                _cards_to_csv(f, cards, level)
+        else:
+            raise NotImplementedError(
+                f"Don't know how to export to {export.suffix}"
+            )
+    else:
+        _cards_to_ascii(cards, level)
 
 
 def _list_projects(session: requests.Session) -> None:
@@ -307,7 +317,7 @@ def _get_iteration(value: str, settings: _IterationSettings) -> _Iteration:
             return it
 
 
-def _cards_to_csv(f: TextIO, cards: Iterable[Card]) -> None:
+def _cards_to_csv__old(f: TextIO, cards: Iterable[Card]) -> None:
     header = [
         'id',
         'number',
@@ -332,7 +342,36 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card]) -> None:
             'labels': ', '.join(card['labels'])
         }
         writer.writerow(row)
-        yield card
+
+
+def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
+    header = [
+        'epic.estimate',
+        'epic.spent',
+        'epic.%',
+        'task.estimate',
+        'task.spent',
+        'task.%',
+        '#',
+        'level',
+        'title',
+    ]
+    writer = csv.DictWriter(f, header)
+    writer.writeheader()
+    for row in _summary_totals(cards):
+        if row.level - 1 > level:
+            continue
+        writer.writerow({
+            'epic.estimate': row.estimate.epic,
+            'epic.spent': row.spent.epic,
+            'epic.%': _get_epic_spent_percent(row),
+            'task.estimate': row.estimate.task,
+            'task.spent': row.spent.task,
+            'task.%': _get_task_spent_percent(row),
+            '#': row.number,
+            'level': row.level,
+            'title': row.title,
+        })
 
 
 class Hours(NamedTuple):
@@ -348,45 +387,49 @@ class Summary(NamedTuple):
     spent: Hours
 
 
-def _header():
+def _ascii_header():
     print()
     print('+------ EPIC --------+-------- TASK -------+-----+-----------------------------------------------+')
-    print('| Estim : Spent    % | Estim : Spent     % |   # | Repozitory > Milestone > Epic > Sprint > Task |')
+    print('| Estim : Spent    % | Estim : Spent     % |   # | Repository > Milestone > Epic > Sprint > Task |')
     print('+--------------------+---------------------+-----+-----------------------------------------------+')
 
 
-def _summary(cards: list[Card], level: int = 4) -> None:
-    _header()
+def _cards_to_ascii(cards: list[Card], level: int = 4) -> None:
+    _ascii_header()
     for row in _summary_totals(cards):
         if row.level - 1 > level:
             continue
         indent = '  ' * row.level
-        epic_spent_percent = None
-        if (
-            row.estimate.epic is not None and
-            row.spent.epic is not None and
-            row.estimate.epic > 0
-        ):
-            epic_spent_percent = int(row.spent.epic / row.estimate.epic * 100)
-        task_spent_percent = None
-        if (
-            row.estimate.task is not None and
-            row.spent.task is not None and
-            row.spent.task > 0
-        ):
-            task_spent_percent = int(row.spent.task / row.estimate.task * 100)
         print(
             '|',
             f'{_cell(row.estimate.epic):>6}  ',
             f'{_cell(row.spent.epic):>6}  ',
-            f'{_cell(epic_spent_percent):>3} |',
+            f'{_cell(_get_epic_spent_percent(row)):>3} |',
             f'{_cell(row.estimate.task):>6}  ',
             f'{_cell(row.spent.task):>6}  ',
-            f'{_cell(task_spent_percent):>4} |',
+            f'{_cell(_get_task_spent_percent(row)):>4} |',
             f'{_cell(row.number):>4} | ',
             f'{indent}{_cell(row.title)}',
             sep='',
         )
+
+
+def _get_epic_spent_percent(row: Card) -> int | None:
+    if (
+        row.estimate.epic is not None and
+        row.spent.epic is not None and
+        row.estimate.epic > 0
+    ):
+        return int(row.spent.epic / row.estimate.epic * 100)
+
+
+def _get_task_spent_percent(row: Card) -> int | None:
+    if (
+        row.estimate.task is not None and
+        row.spent.task is not None and
+        row.spent.task > 0
+    ):
+        return int(row.spent.task / row.estimate.task * 100)
 
 
 def _cell(value: Any | None) -> str:

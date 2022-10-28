@@ -1,24 +1,26 @@
+from allauth.account.forms import LoginForm
+from allauth.account.views import LoginView, SignupView
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
+from django.contrib.auth.views import PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DetailView, UpdateView
+from django.views.generic import DetailView, UpdateView
 from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
-from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
+from vitrina.users.forms import RegisterForm, PasswordResetForm, PasswordResetConfirmForm, CustomLoginForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
 
 
-class LoginView(BaseLoginView):
+class CustomLoginView(LoginView):
+    form_class = CustomLoginForm
     template_name = 'vitrina/users/login.html'
-    form_class = LoginForm
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -28,17 +30,13 @@ class LoginView(BaseLoginView):
         return super().get_success_url()
 
 
-class RegisterView(CreateView):
-    template_name = 'vitrina/users/register.html'
+class RegisterView(SignupView):
     form_class = RegisterForm
+    template_name = 'vitrina/users/register.html'
 
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect('home')
-        return render(request=request, template_name=self.template_name, context={"form": form})
+    def save(self, request):
+        user = super(RegisterView, self).save(request)
+        return user
 
 
 class PasswordResetView(BasePasswordResetView):

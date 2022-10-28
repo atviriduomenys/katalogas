@@ -182,7 +182,7 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 
 class RepresentativeRegisterView(RegisterView):
-    def post(self, request, *args, **kwargs):
+    def save(self, request):
         form = self.form_class(request.POST)
         if form.is_valid():
             user = form.save()

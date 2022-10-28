@@ -1,11 +1,11 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 
-from vitrina.users.views import LoginView, RegisterView, PasswordResetView, PasswordResetConfirmView, ProfileView, \
+from vitrina.users.views import CustomLoginView, RegisterView, PasswordResetView, PasswordResetConfirmView, ProfileView, \
     ProfileEditView
 
 urlpatterns = [
-    path('login/', LoginView.as_view(), name='login'),
+    path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('reset/', PasswordResetView.as_view(), name='reset'),

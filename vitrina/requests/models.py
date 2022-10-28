@@ -28,13 +28,13 @@ class Request(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     CREATED = "CREATED"
     REJECTED = "REJECTED"
-    ALREADY_OPENED = "ALREADY_OPENED"
+    OPENED = "OPENED"
     ANSWERED = "ANSWERED"
     APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
-        (ALREADY_OPENED, _("Jau atvertas")),
+        (OPENED, _("Atvertas")),
         (ANSWERED, _("Atsakytas")),
         (APPROVED, _("Patvirtintas"))
     }
@@ -93,7 +93,10 @@ class Request(models.Model):
         return reverse('request-detail', kwargs={'pk': self.pk})
 
     def get_acl_parents(self):
-        return [self]
+        parents = [self]
+        if self.organization:
+            parents.extend(self.organization.get_acl_parents())
+        return parents
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

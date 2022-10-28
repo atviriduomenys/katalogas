@@ -1,0 +1,87 @@
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% if comment.deleted %}
+    {% if is_child %}
+        <div class="columns m-t-xs no-margin-bottom">
+        <div class="column is-11 is-offset-1">
+    {% else %}
+        <div class="comment-entry">
+    {% endif %}
+        <article class="media">
+            <figure class="media-left">
+                <img class="comment-profile-icon" src="{% static 'img/user_profile_picture.png' %}">
+            </figure>
+            <div class="media-content">
+                <div class="content">
+                    <div class="columns">
+                        <div class="column">
+                            {% if comment.parent %}
+                                <p class="is-italic">
+                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created }} {{ comment.parent.body_text|truncatechars:20 }}
+                                </p>
+                            {% endif %}
+                            <p>
+                                {% translate "Komentaras pašalintas" %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+    {% if is_child %}</div></div>{% else %}</div>{% endif %}
+{% else %}
+   {% if is_child %}
+        <div class="columns m-t-xs no-margin-bottom">
+        <div class="column is-11 is-offset-1">
+    {% else %}
+        <div class="comment-entry">
+    {% endif %}
+        <article class="media">
+            <figure class="media-left">
+                <img class="comment-profile-icon" src="{% static 'img/user_profile_picture.png' %}">
+            </figure>
+            <div class="media-content">
+                <div class="content">
+                    <div class="columns">
+                        <div class="column {% if user.is_authenticated %}is-10{% endif %}">
+                            {% if comment.parent %}
+                                <p class="is-italic">
+                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created }} {{ comment.parent.body_text|truncatechars:20 }}
+                                </p>
+                            {% endif %}
+                            <p>
+                                <strong>{{ comment.user | escape }}</strong>
+                                <br>
+                                {{ comment.body_text | escape }}
+                                <br>
+                                <small>{{ comment.created|date:"SHORT_DATETIME_FORMAT" }}</small>
+                            </p>
+                        </div>
+                        {% if user.is_authenticated %}
+                            <div class="column">
+                                <a class="button is-primary is-pulled-right reply-button"
+                                   id="{{ comment.id }}">{% translate "Atsakyti" %}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </article>
+    {% if is_child %}</div></div>{% else %}</div>{% endif %}
+    <article class="media is-hidden m-t-sm" id="media-{{ comment.id }}">
+        <div class="media-content">
+            <div class="columns no-margin-bottom">
+                <div class="column is-11 is-offset-1">
+                    <form action="{% url 'reply' content_type.pk object.pk comment.id %}" method="post" id="reply-form">
+                        {% csrf_token %}
+                        {{ reply_form|crispy }}
+                        <button type="submit"
+                                class="button is-primary is-pulled-right m-t-sm reply-button">{% translate "Atsakyti" %}</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </article>
+{% endif %}

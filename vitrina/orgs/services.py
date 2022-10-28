@@ -20,6 +20,7 @@ class Action(Enum):
     DELETE = 'delete'
     VIEW = 'view'
     HISTORY_VIEW = 'history_view'
+    COMMENT = "comment_with_status"
 
 
 class Role(Enum):
@@ -46,6 +47,7 @@ acl = {
     (Request, Action.CREATE): [Role.ALL],
     (Request, Action.UPDATE): [Role.AUTHOR],
     (Request, Action.DELETE): [Role.AUTHOR],
+    (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
@@ -59,6 +61,8 @@ def is_author(user: User, node: Model) -> bool:
         return node.user == user
     elif isinstance(node, User):
         return node == user
+    elif isinstance(node, Organization):
+        return False
     raise NotImplementedError(f"Don't know how to get author of {type(node)}.")
 
 

@@ -714,20 +714,23 @@ def test_dataset_members_view_bad_login(app: DjangoTestApp):
     )
     user = UserFactory()
     app.set_user(user)
-    response = app.get(reverse('dataset-members', kwargs={'pk': representative.object_id}))
-    assert response.status_code == 302
+    url = reverse('dataset-members', kwargs={
+        'pk': representative.object_id,
+    })
+    response = app.get(url, expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
 def test_dataset_members_view_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
-    representative = RepresentativeFactory(
+    RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
         role=Representative.MANAGER
     )
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    response = app.get(reverse('dataset-members', kwargs={'pk': representative.object_id}))
+    response = app.get(reverse('dataset-members', kwargs={'pk': dataset.pk}))
     assert response.status_code == 200

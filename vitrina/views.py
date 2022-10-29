@@ -1,3 +1,6 @@
+from typing import Type
+
+from django.db.models import Model
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView
@@ -27,21 +30,24 @@ def home(request):
 
 class HistoryView(PermissionRequiredMixin, TemplateView):
     template_name = 'history.html'
-    model = None
+    model: Type[Model] = None
     detail_url_name = None
     history_url_name = None
     tabs_template_name: str
 
+    object: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        object_id = self.kwargs.get('pk')
+        self.object = get_object_or_404(self.model, pk=object_id)
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        obj_id = self.kwargs.get('pk')
-        obj = get_object_or_404(self.model, pk=obj_id)
-        return has_perm(self.request.user, Action.HISTORY_VIEW, obj)
+        return has_perm(self.request.user, Action.HISTORY_VIEW, self.object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        obj_id = self.kwargs.get('pk')
-        obj = get_object_or_404(self.model, pk=obj_id)
-        extra_context = {
+        context.update({
             "detail_url_name": self.get_detail_url_name(),
             "history_url_name": self.get_history_url_name(),
             "history": [
@@ -54,18 +60,17 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 }
                 for version in (
                     Version.objects.
-                    get_for_object(obj).
+                    get_for_object(self.object).
                     order_by('-revision__date_created')
                 )
             ],
             'can_manage_history': has_perm(
                 self.request.user,
                 Action.HISTORY_VIEW,
-                obj,
+                self.object,
             ),
             'tabs_template_name': self.tabs_template_name,
-        }
-        context.update(extra_context)
+        })
         return context
 
     def get_detail_url_name(self):
@@ -81,12 +86,15 @@ class HistoryMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        extra_context = {
+        context.update({
             'detail_url_name': self.get_detail_url_name(),
             'history_url_name': self.get_history_url_name(),
-            'can_manage_history': has_perm(self.request.user, Action.HISTORY_VIEW, self.object)
-        }
-        context.update(extra_context)
+            'can_manage_history': has_perm(
+                self.request.user,
+                Action.HISTORY_VIEW,
+                self.object,
+            )
+        })
         return context
 
     def get_detail_url_name(self):

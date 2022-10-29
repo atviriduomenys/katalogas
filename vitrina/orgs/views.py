@@ -14,7 +14,8 @@ from itsdangerous import URLSafeSerializer
 
 from vitrina import settings
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm, RepresentativeCreateForm
+from vitrina.orgs.forms import RepresentativeUpdateForm
+from vitrina.orgs.forms import RepresentativeCreateForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.users.models import User

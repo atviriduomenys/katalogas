@@ -73,7 +73,8 @@ def has_perm(
         Model |            # when action is update, delete
         Type[Model]        # when action is create
     ),
-    parent: Model | None = None,  # when action is create, object based on which a new objects is created
+    # when action is create, object based on which a new objects is created
+    parent: Model | None = None,
 ) -> bool:
     if not user.is_authenticated:
         return False

@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView, DetailView
+from django.views.generic import ListView
 from django.views.generic.edit import CreateView, UpdateView
 
 from haystack.generic_views import FacetedSearchView
@@ -254,10 +255,16 @@ class DatasetHistoryView(HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
+    tabs_template_name = 'vitrina/datasets/tabs.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, context)
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
         return context
 
 
@@ -301,27 +308,50 @@ class DatasetStructureImportView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetMembersView(LoginRequiredMixin, PermissionRequiredMixin, DatasetDetailView):
+class DatasetMembersView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    HistoryMixin,
+    ListView,
+):
+    model = Representative
     template_name = 'vitrina/datasets/members_list.html'
+    context_object_name = 'members'
     paginate_by = 20
 
-    def has_permission(self):
-        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        return has_perm(self.request.user, Action.VIEW, Representative, dataset)
+    # HistroyMixin
+    object: Dataset
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-            return redirect(dataset)
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+
+    def get_queryset(self):
+        return (
+            Representative.objects.
+            filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                object_id=self.object.pk,
+            ).
+            order_by("role", "first_name", 'last_name')
+        )
 
     def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        dataset: Dataset = self.object
-        context_data['members'] = Representative.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
-                                                                object_id=dataset.pk).order_by("role",
-                                                                                               "first_name",
-                                                                                               'last_name')
-        context_data['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, dataset)
-        return context_data
+        context = super().get_context_data(**kwargs)
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        return context

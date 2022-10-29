@@ -7,6 +7,13 @@
                 {% translate "Informacija" %}
             </a>
         </li>
+        {% if can_view_members %}
+            <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
+                <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
+                    {% translate "Tvarkytojai" %}
+                </a>
+            </li>
+        {% endif %}
         {% if can_manage_history %}
             <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
                 <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">

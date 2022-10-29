@@ -93,3 +93,4 @@ class ProjectHistoryView(HistoryView):
     model = Project
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
+    tabs_template_name = 'component/tabs.html'

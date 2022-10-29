@@ -30,6 +30,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     model = None
     detail_url_name = None
     history_url_name = None
+    tabs_template_name: str
 
     def has_permission(self):
         obj_id = self.kwargs.get('pk')
@@ -43,12 +44,26 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         extra_context = {
             "detail_url_name": self.get_detail_url_name(),
             "history_url_name": self.get_history_url_name(),
-            "history": [{
-                'date': version.revision.date_created,
-                'user': version.revision.user,
-                'action': self.model.HISTORY_MESSAGES.get(version.revision.comment),
-            } for version in Version.objects.get_for_object(obj).order_by('-revision__date_created')],
-            'can_manage_history': has_perm(self.request.user, Action.HISTORY_VIEW, obj),
+            "history": [
+                {
+                    'date': version.revision.date_created,
+                    'user': version.revision.user,
+                    'action': self.model.HISTORY_MESSAGES.get(
+                        version.revision.comment,
+                    ),
+                }
+                for version in (
+                    Version.objects.
+                    get_for_object(obj).
+                    order_by('-revision__date_created')
+                )
+            ],
+            'can_manage_history': has_perm(
+                self.request.user,
+                Action.HISTORY_VIEW,
+                obj,
+            ),
+            'tabs_template_name': self.tabs_template_name,
         }
         context.update(extra_context)
         return context

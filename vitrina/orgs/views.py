@@ -72,24 +72,50 @@ class OrganizationDetailView(DetailView):
 class OrganizationMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    OrganizationDetailView,
+    ListView,
 ):
     template_name = 'vitrina/orgs/members.html'
+    context_object_name = 'members'
     paginate_by = 20
 
+    object: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Organization, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        organization = get_object_or_404(Organization, pk=self.kwargs.get('pk'))
-        return has_perm(self.request.user, Action.VIEW, Representative, organization)
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+
+    def get_queryset(self):
+        return (
+            Representative.objects.
+            filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id=self.object.pk
+            ).
+            order_by("role", "first_name", 'last_name')
+        )
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        organization: Organization = self.object
-        context_data['members'] = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(organization),
-            object_id=organization.pk
-        ).order_by("role", "first_name", 'last_name')
-        context_data['has_permission'] = has_perm(self.request.user, Action.CREATE, Representative, organization)
-        context_data['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, organization)
+        context_data['has_permission'] = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Representative,
+            self.object,
+        )
+        context_data['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
         return context_data
 
 

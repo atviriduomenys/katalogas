@@ -39,8 +39,8 @@ from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm
-from vitrina.orgs.forms import RepresentativeCreateForm
+from vitrina.datasets.forms import DatasetMemberUpdateForm
+from vitrina.datasets.forms import DatasetMemberCreateForm
 
 
 class DatasetListView(FacetedSearchView):
@@ -382,7 +382,7 @@ class CreateMemberView(
     CreateView,
 ):
     model = Representative
-    form_class = RepresentativeCreateForm
+    form_class = DatasetMemberCreateForm
     template_name = 'base_form.html'
 
     dataset: Dataset
@@ -403,6 +403,11 @@ class CreateMemberView(
         return reverse('dataset-members', kwargs={
             'pk': self.dataset.pk,
         })
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object_id'] = self.dataset.pk
+        return kwargs
 
     def form_valid(self, form):
         self.object: Representative = form.save(commit=False)
@@ -429,10 +434,9 @@ class CreateMemberView(
                     f'Buvote įtraukti į „{self.dataset}“ duomenų rinkinio '
                     'narių sąrašą, tačiau nesate registruotas Lietuvos '
                     'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę:\n'
-                    '\n'
-                    f'{url}\n'
-                    '\n'
+                    'kad užsiregistruotumėte ir patvirtintumėte savo '
+                    'narystę:\n\n'
+                    f'{url}\n\n'
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.object.email],
@@ -449,7 +453,7 @@ class UpdateMemberView(
     UpdateView,
 ):
     model = Representative
-    form_class = RepresentativeUpdateForm
+    form_class = DatasetMemberUpdateForm
     template_name = 'base_form.html'
 
     def has_permission(self):
@@ -460,8 +464,8 @@ class UpdateMemberView(
         return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
-        return reverse('organization-members', kwargs={
-            'pk': self.kwargs.get('organization_id'),
+        return reverse('dataset-members', kwargs={
+            'pk': self.kwargs.get('dataset_id'),
         })
 
 
@@ -481,6 +485,6 @@ class DeleteMemberView(
         return has_perm(self.request.user, Action.DELETE, representative)
 
     def get_success_url(self):
-        return reverse('organization-members', kwargs={
-            'pk': self.kwargs.get('organization_id'),
+        return reverse('dataset-members', kwargs={
+            'pk': self.kwargs.get('dataset_id'),
         })

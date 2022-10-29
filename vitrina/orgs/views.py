@@ -131,7 +131,7 @@ class RepresentativeCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['organization_id'] = self.kwargs.get('organization_id')
+        kwargs['object_id'] = self.kwargs.get('object_id')
         return kwargs
 
     def get_success_url(self):

@@ -1,26 +1,27 @@
 from datetime import datetime, date
 
-import pytest
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+
+import pytest
 from factory.django import FileField
 from reversion.models import Version
 from webtest import Upload
 
-from vitrina import settings
-from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, LicenceFactory
+from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
+from vitrina.classifiers.factories import LicenceFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.users.factories import UserFactory, ManagerFactory
-from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
-from vitrina.users.factories import UserFactory
-from vitrina.users.models import User
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.users.factories import UserFactory, ManagerFactory
+from vitrina.users.models import User
 
 
 @pytest.fixture
@@ -734,3 +735,152 @@ def test_dataset_members_view_no_login(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('dataset-members', kwargs={'pk': dataset.pk}))
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_dataset_members_create_member(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    url = reverse('dataset-members', kwargs={'pk': dataset.pk})
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+
+    resp = app.get(url)
+
+    resp = resp.click(linkid="add-member-btn")
+
+    form = resp.forms['representative-form']
+    form['email'] = 'test@example.com'
+    form['role'] = Representative.MANAGER
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+
+    rep = Representative.objects.get(
+        content_type=ct,
+        object_id=dataset.id,
+        email='test@example.com',
+    )
+    assert rep.role == Representative.MANAGER
+    assert rep.user is None
+
+    assert len(mail.outbox) == 1
+    assert '/register/' in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+def test_dataset_members_add_member(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    url = reverse('dataset-members', kwargs={'pk': dataset.pk})
+    user = UserFactory(email='test@example.com')
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+
+    resp = app.get(url)
+
+    resp = resp.click(linkid="add-member-btn")
+
+    form = resp.forms['representative-form']
+    form['email'] = 'test@example.com'
+    form['role'] = Representative.MANAGER
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+
+    rep = Representative.objects.get(
+        content_type=ct,
+        object_id=dataset.id,
+        email='test@example.com',
+    )
+    assert rep.user == user
+    assert rep.role == Representative.MANAGER
+
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_dataset_members_update_member(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    url = reverse('dataset-members', kwargs={'pk': dataset.pk})
+
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+
+    resp = app.get(url)
+
+    resp = resp.click(linkid=f"update-member-{manager.pk}-btn")
+
+    form = resp.forms['representative-form']
+    form['role'] = Representative.MANAGER
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+
+    manager.refresh_from_db()
+    assert manager.role == Representative.MANAGER
+
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_dataset_members_delete_member(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    url = reverse('dataset-members', kwargs={'pk': dataset.pk})
+
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+
+    resp = app.get(url)
+
+    resp = resp.click(linkid=f"delete-member-{manager.pk}-btn")
+
+    form = resp.forms['delete-form']
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+
+    qs = Representative.objects.filter(
+        content_type=ct,
+        object_id=dataset.id,
+        user=manager.user,
+    )
+    assert not qs.exists()
+
+    assert len(mail.outbox) == 0

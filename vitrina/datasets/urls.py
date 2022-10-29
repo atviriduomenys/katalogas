@@ -38,12 +38,12 @@ urlpatterns = [
         name='dataset-representative-create',
     ),
     path(
-        'orgs/<int:dataset_id>/members/<int:pk>/change/',
+        'datasets/<int:dataset_id>/members/<int:pk>/change/',
         UpdateMemberView.as_view(),
         name='dataset-representative-update',
     ),
     path(
-        'orgs/<int:dataset_id>/members/<int:pk>/delete/',
+        'datasets/<int:dataset_id>/members/<int:pk>/delete/',
         DeleteMemberView.as_view(),
         name='dataset-representative-delete',
     ),

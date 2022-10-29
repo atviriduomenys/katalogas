@@ -14,7 +14,7 @@
 
     {% if has_permission %}
         <div class="buttons is-right">
-            <a class="button is-primary m-t-xs m-b-lg"
+            <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
                href="{% url 'dataset-representative-create' dataset.pk %}">
                 {% translate "Pridėti narį" %}
             </a>
@@ -47,10 +47,12 @@
                 {% if has_permission %}
                     <td>
                         <div class="buttons is-right">
-                            <a href="{% url 'dataset-representative-update' dataset_id=dataset.pk pk=m.pk %}" class="button is-primary is-small">
+                            <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
+                               href="{% url 'dataset-representative-update' dataset_id=dataset.pk pk=m.pk %}">
                                 {% translate "Redaguoti" %}
                             </a>
-                            <a href="{% url 'dataset-representative-delete' dataset_id=dataset.pk pk=m.pk %}" class="button is-danger is-small">
+                            <a id="delete-member-{{ m.pk }}-btn"  class="button is-danger is-small"
+                               href="{% url 'dataset-representative-delete' dataset_id=dataset.pk pk=m.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>
                         </div>

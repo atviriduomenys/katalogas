@@ -1,9 +1,7 @@
-import csv
 from typing import List, Any, Dict, Type
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
-
 from vitrina.helpers import get_filter_url
 
 

@@ -2,7 +2,6 @@ from haystack.constants import Indexable
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
 from haystack.indexes import SearchIndex
 
-from vitrina import settings
 from vitrina.datasets.models import Dataset
 
 

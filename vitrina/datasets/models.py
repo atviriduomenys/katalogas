@@ -4,17 +4,12 @@ from django.urls import reverse
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
-from vitrina import settings
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
-from vitrina.catalogs.models import Catalog
-from vitrina.catalogs.models import HarvestingJob
-from vitrina.classifiers.models import Category
-from vitrina.classifiers.models import Licence
-from vitrina.classifiers.models import Frequency
+from vitrina.catalogs.models import Catalog, HarvestingJob
+from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 from django.utils.translation import gettext_lazy as _
-
 
 
 class Dataset(TranslatableModel):

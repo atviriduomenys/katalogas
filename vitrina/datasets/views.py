@@ -2,31 +2,19 @@ import csv
 import itertools
 
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.utils.text import slugify
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.edit import CreateView
 
 
 from django.views import View
-from django.views.generic import TemplateView
-from django.views.generic.detail import DetailView
-from django.views.generic import ListView
-from django.views.generic import TemplateView, DetailView
-from django.views.generic.edit import CreateView
-from django.views.generic.edit import UpdateView
-from django.views.generic.edit import DeleteView
+from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 
@@ -38,23 +26,20 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetSearchForm
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm
-from vitrina.classifiers.models import Category, Frequency
-from vitrina.datasets.forms import DatasetSearchForm
+from vitrina.views import HistoryView, HistoryMixin
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
+from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data
+from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.structure import detect_read_errors, read
+from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
 from vitrina.orgs.helpers import is_org_dataset_list
-from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
-from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from vitrina.datasets.forms import DatasetMemberUpdateForm
-from vitrina.datasets.forms import DatasetMemberCreateForm
 
 
 class DatasetListView(FacetedSearchView):

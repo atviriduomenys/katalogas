@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinio narių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'dataset-representative-create' dataset.pk %}">
+                {% translate "Pridėti narį" %}
+            </a>
+        </div>
+    {% endif %}
+
+    <table class="table is-fullwidth">
+        <tbody>
+        <tr>
+            <th>{% translate "Vardas" %}</th>
+            <th>{% translate "El. paštas" %}</th>
+            <th>{% translate "Telefonas" %}</th>
+            <th>{% translate "Rolė" %}</th>
+            {% if has_permission %}
+                <th></th>
+            {% endif %}
+        </tr>
+        {% for m in members %}
+            <tr>
+                {% if m.user %}
+                <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
+                <td><a href="mailto:{{ m.user.email }}">{{ m.user.email }}</a></td>
+                <td>{{ m.user.phone|default:"-" }}</td>
+                {% else %}
+                <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
+                <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+                <td>-</td>
+                {% endif %}
+                <td>{{ m.get_role_display|default:"-" }}</td>
+                {% if has_permission %}
+                    <td>
+                        <div class="buttons is-right">
+                            <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
+                               href="{% url 'dataset-representative-update' dataset_id=dataset.pk pk=m.pk %}">
+                                {% translate "Redaguoti" %}
+                            </a>
+                            <a id="delete-member-{{ m.pk }}-btn"  class="button is-danger is-small"
+                               href="{% url 'dataset-representative-delete' dataset_id=dataset.pk pk=m.pk %}">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </div>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% include "vitrina/common/pagination.html" %}
+{% endblock %}

@@ -174,6 +174,9 @@ class Dataset(TranslatableModel):
             parents.extend(self.organization.get_acl_parents())
         return parents
 
+    def get_members_url(self):
+        return reverse('dataset-members', kwargs={'pk': self.pk})
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

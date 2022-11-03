@@ -117,3 +117,4 @@ class RequestHistoryView(HistoryView):
     model = Request
     detail_url_name = "request-detail"
     history_url_name = "request-history"
+    tabs_template_name = 'component/tabs.html'

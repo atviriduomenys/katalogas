@@ -49,7 +49,14 @@
                     <strong>{% translate "El. paštas" %}</strong>
                 </div>
                 <div class="column">
-                    {{ user.email|urlize }}
+                    {{ user.get_primary_email|urlize }}
+                </div>
+                <div class="column">
+                    <a href="{%url 'account_email' %}"
+                       class="button is-primary is-normal is-size-6-mobile"
+                       id="show_emails">
+                        {% translate "Tvarkyti el. paštus" %}
+                    </a>
                 </div>
             </div>
             {% endif %}

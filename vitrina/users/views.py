@@ -1,11 +1,9 @@
-from allauth.account.forms import LoginForm
-from allauth.account.views import LoginView, SignupView
+from allauth.account.views import LoginView, SignupView, EmailVerificationSentView, EmailView, ConfirmEmailView
 from django.contrib import messages
-from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView, UpdateView
 from django.utils.translation import gettext_lazy as _
@@ -37,6 +35,14 @@ class RegisterView(SignupView):
     def save(self, request):
         user = super(RegisterView, self).save(request)
         return user
+
+
+class EmailConfirmView(ConfirmEmailView):
+    template_name = 'vitrina/users/email_confirm.html'
+
+
+class EmailListView(EmailView):
+    template_name = 'vitrina/users/email.html'
 
 
 class PasswordResetView(BasePasswordResetView):

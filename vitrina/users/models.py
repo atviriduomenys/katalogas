@@ -38,6 +38,9 @@ class User(AbstractUser):
     def get_acl_parents(self):
         return [self]
 
+    def get_primary_email(self):
+        return self.emailaddress_set.get(primary=True).email
+
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

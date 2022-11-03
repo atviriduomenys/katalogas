@@ -133,7 +133,7 @@ ROOT_URLCONF = 'vitrina.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -316,3 +316,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = (
     'bulma',
 )
 CRISPY_TEMPLATE_PACK = 'bulma'
+
+EMAIL_HOST = 'smtp.mailtrap.io'
+EMAIL_HOST_USER = 'd8e9f220534b5c'
+EMAIL_HOST_PASSWORD = 'c86855c57979d3'
+EMAIL_PORT = '2525'

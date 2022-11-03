@@ -1,11 +1,18 @@
+from django import forms
+from django.forms import DateField
+from django.utils.translation import gettext_lazy as _
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
-from django import forms
-from .models import Dataset, DatasetStructure
-from django.utils.translation import gettext_lazy as _
-from django.forms import DateField
 from haystack.forms import FacetedSearchForm
-from ..classifiers.models import Licence, Frequency
+
+from vitrina.classifiers.models import Frequency
+from vitrina.classifiers.models import Licence
+from vitrina.orgs.forms import RepresentativeCreateForm
+from vitrina.orgs.forms import RepresentativeUpdateForm
+
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import DatasetStructure
 
 
 class DatasetForm(forms.ModelForm):
@@ -92,3 +99,11 @@ class DatasetStructureImportForm(forms.ModelForm):
             Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+
+class DatasetMemberUpdateForm(RepresentativeUpdateForm):
+    object_model = Dataset
+
+
+class DatasetMemberCreateForm(RepresentativeCreateForm):
+    object_model = Dataset

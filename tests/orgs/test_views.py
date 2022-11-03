@@ -29,13 +29,21 @@ def test_organization_members_tab(app: DjangoTestApp):
     organization1 = OrganizationFactory()
     organization2 = OrganizationFactory()
     content_type = ContentType.objects.get_for_model(Organization)
-    representative1 = RepresentativeFactory(content_type=content_type, object_id=organization1.pk)
-    representative2 = RepresentativeFactory(content_type=content_type, object_id=organization2.pk)
+    representative1 = RepresentativeFactory(
+        content_type=content_type,
+        object_id=organization1.pk,
+    )
+    RepresentativeFactory(
+        content_type=content_type,
+        object_id=organization2.pk,
+    )
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     app.set_user(admin)
     resp = app.get(reverse('organization-members', args=[organization1.pk]))
     assert list(resp.context['members']) == [representative1]
-    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Organizacijos nariai"]
+    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == [
+        "Tvarkytojai",
+    ]
 
 
 @pytest.mark.haystack

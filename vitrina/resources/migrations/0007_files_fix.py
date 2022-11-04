@@ -66,6 +66,7 @@ _mime_types = {
     'video/mp4': 'URL',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOC',
     'application/msword': 'DOC',
+    'application/x-zip-compressed': 'ZIP',
 }
 
 

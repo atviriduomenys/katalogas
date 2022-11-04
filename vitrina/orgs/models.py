@@ -111,6 +111,7 @@ class Representative(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     role = models.CharField(choices=ROLES, max_length=255)
     user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
+    has_api_access = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')

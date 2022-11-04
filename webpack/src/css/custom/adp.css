@@ -9383,4 +9383,8 @@ table.th-40 th {
     font-weight: 500;
 }
 
+.is-borderless {
+    border: none;
+}
+
 /*# sourceMappingURL=adp-final.css.map */

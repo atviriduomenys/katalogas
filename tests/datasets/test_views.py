@@ -341,7 +341,7 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
     assert resp.context['selected_tags'] == []
 
-
+@pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
     resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk]
@@ -887,7 +887,6 @@ def test_dataset_members_add_member(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(Dataset)
     url = reverse('dataset-members', kwargs={'pk': dataset.pk})
     user = UserFactory(email='test@example.com')
-
     coordinator = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,

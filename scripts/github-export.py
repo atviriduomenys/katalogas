@@ -26,6 +26,7 @@ class Card(TypedDict):
     id: str
     number: int
     title: str
+    body: str
     state: str
     status: str
     repo: str
@@ -135,6 +136,7 @@ def _extract_cards(
                         ... on Issue {
                           id
                           title
+                          body
                           number
                           state
                           repository {
@@ -202,6 +204,7 @@ def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
             'id': None,
             'number': None,
             'title': None,
+            'body': None,
             'state': None,
             'status': None,
             'repo': None,
@@ -217,6 +220,7 @@ def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
             row['id'] = card['content']['id']
             row['number'] = card['content']['number']
             row['title'] = card['content']['title']
+            row['body'] = card['content']['body']
             row['state'] = card['content']['state']
             row['repo'] = card['content']['repository']['name']
             row['labels'] = [
@@ -345,6 +349,15 @@ def _cards_to_csv__old(f: TextIO, cards: Iterable[Card]) -> None:
 
 
 def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
+    cols = [
+        'total',
+        'repository',
+        'milestone',
+        'epic',
+        'sprint',
+        'task',
+    ]
+    titles = {col: '' for col in cols}
     header = [
         'epic.estimate',
         'epic.spent',
@@ -354,14 +367,17 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
         'task.%',
         '#',
         'level',
-        'title',
-    ]
+    ] + cols + ['body']
     writer = csv.DictWriter(f, header)
     writer.writeheader()
     for row in _summary_totals(cards):
+        titles = {
+            col: _get_csv_title(row, col, _level, titles)
+            for _level, col in enumerate(cols)
+        }
         if row.level - 1 > level:
             continue
-        writer.writerow({
+        row = {
             'epic.estimate': row.estimate.epic,
             'epic.spent': row.spent.epic,
             'epic.%': _get_epic_spent_percent(row),
@@ -370,8 +386,19 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
             'task.%': _get_task_spent_percent(row),
             '#': row.number,
             'level': row.level,
-            'title': row.title,
-        })
+            **titles,
+            'body': row.body,
+        }
+        writer.writerow(row)
+
+
+def _get_csv_title(row, col, level, titles):
+    if row.level == level:
+        return row.title
+    elif row.level > level:
+        return titles[col]
+    else:
+        return ''
 
 
 class Hours(NamedTuple):
@@ -382,6 +409,7 @@ class Hours(NamedTuple):
 class Summary(NamedTuple):
     number: int | None
     title: str | None
+    body: str | None
     level: int
     estimate: Hours
     spent: Hours
@@ -563,6 +591,7 @@ def _summary_by_task(tasks: list[Card]) -> Iterator[Summary]:
         yield Summary(
             number=task['number'],
             title=task['title'],
+            body=task['body'],
             level=5,
             estimate=Hours(
                 epic=None,
@@ -581,6 +610,7 @@ def _sum(
     level: int,
     estimate: int | None = 0,
     spent: int | None = 0,
+    body: str = '',
     **kwargs,
 ) -> Summary:
     estimate_epic = estimate or 0
@@ -603,6 +633,7 @@ def _sum(
             task=spent_task
         ),
         level=level,
+        body=body,
         **kwargs
     )
 

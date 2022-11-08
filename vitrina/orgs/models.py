@@ -2,7 +2,6 @@ from datetime import datetime
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.utils.timezone import utc
 from django.db import models
 from django.urls import reverse
 from treebeard.mp_tree import MP_Node, MP_NodeManager
@@ -10,8 +9,6 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
-
-now = datetime.utcnow().replace(tzinfo=utc)
 
 
 class Region(models.Model):

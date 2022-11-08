@@ -37,6 +37,13 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
+      - name: Build static files
+        run: |
+          poetry run python manage.py collectstatic --noinput
+          cd webpack
+          npm install
+          npm run build
+
       - name: Create DB image
         run: docker-compose -f docker-compose-test.yml up -d
 

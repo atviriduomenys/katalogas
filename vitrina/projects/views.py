@@ -1,16 +1,17 @@
-from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, get_object_or_404
+from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponseRedirect
+
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
-
 from vitrina.views import HistoryMixin, HistoryView
 
 
@@ -94,3 +95,17 @@ class ProjectHistoryView(HistoryView):
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
     tabs_template_name = 'component/tabs.html'
+
+
+class ChangeStatus(LoginRequiredMixin, PermissionRequiredMixin, View):
+    def has_permission(self):
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return True
+        else:
+            return False
+
+    def get(self, request, pk, status):
+        project = get_object_or_404(Project, pk=pk)
+        project.status = status
+        project.save()
+        return redirect(project.get_absolute_url())

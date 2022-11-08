@@ -7,6 +7,7 @@ from django_webtest import DjangoTestApp
 from reversion.models import Version
 from webtest import Upload
 
+from vitrina import settings
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.users.factories import UserFactory
@@ -86,3 +87,39 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     assert len(resp.context['history']) == 1
     assert resp.context['history'][0]['action'] == "Redaguota"
     assert resp.context['history'][0]['user'] == user
+
+
+@pytest.mark.django_db
+def test_approve_project_staff(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory(status='CREATED')
+    app.set_user(user)
+
+    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
+                                             'status': 'APPROVED'}))
+    project.refresh_from_db()
+
+    assert project.status == "APPROVED"
+    assert resp.url == project.get_absolute_url()
+
+
+@pytest.mark.django_db
+def test_approve_project_no_login(app: DjangoTestApp):
+    project = ProjectFactory(status='CREATED')
+    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
+                                                    'status': 'APPROVED'}))
+
+    assert resp.status_code == 302
+    assert settings.LOGIN_URL in resp.url
+
+
+@pytest.mark.django_db
+def test_approve_project_not_staff(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(status='CREATED')
+    app.set_user(user)
+
+    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
+                                                    'status': 'APPROVED'}), expect_errors=True)
+
+    assert resp.status_code == 403

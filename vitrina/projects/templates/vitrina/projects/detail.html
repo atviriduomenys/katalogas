@@ -20,6 +20,23 @@
                 </p>
             </div>
             {% endif %}
+            {% if request.user.is_staff or request.user.is_superuser %}
+                <div class="content">
+                    {% if project.status == "CREATED" or project.status == "REJECTED" %}
+                        <p>{% translate "Norite patvirtinti šį projektą?" %}</p>
+                        <a href="{%url 'change_status' pk=project.pk status='APPROVED' %}"
+                           class="button is-primary" id="change_status_approve">
+                            {% translate "Patvirtinti" %}
+                        </a>
+                    {% elif project.status == "APPROVED" %}
+                        <p>{% translate "Norite atmesti šį projektą?" %}</p>
+                        <a href="{%url 'change_status' pk=project.pk status='REJECTED' %}"
+                           class="button is-primary" id="change_status_reject">
+                            {% translate "Atmesti" %}
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
             <div class="content" id="project_likes">
                 {% if user.is_authenticated %}
                     <p>{% translate "Ar jums patinka šis projektas?" %}</p>
@@ -38,13 +55,12 @@
         </div>
         <div class="column is-three-quarters">
             <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
-
             {% if can_update_project %}
-            <div class="buttons is-right">
-                <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
-                    {% translate "Keisti" %}
-                </a>
-            </div>
+                <div class="buttons is-right">
+                    <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
+                        {% translate "Keisti" %}
+                    </a>
+                </div>
             {% endif %}
 
             <div class="content">

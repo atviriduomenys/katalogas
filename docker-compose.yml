@@ -1,7 +1,7 @@
 services:
-
   postgres:
     image: postgres:14
+    restart: always
     environment:
       POSTGRES_DB: adp-dev
       POSTGRES_USER: adp

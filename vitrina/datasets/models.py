@@ -1,6 +1,7 @@
 import tagulous
 from django.db import models
 from django.urls import reverse
+from tagulous.models import TagField
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -10,8 +11,6 @@ from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.datasets.managers import PublicDatasetManager
-from django.utils.translation import gettext_lazy as _
-
 from django.utils.translation import gettext_lazy as _
 
 
@@ -96,13 +95,14 @@ class Dataset(models.Model):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = tagulous.models.TagField(
+    tags = TagField(
         blank=True,
         force_lowercase=True,
         space_delimiter=False,
         autocomplete_limit=20,
         verbose_name="Žymės",
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+        autocomplete_settings={"width": "100%"}
     )
 
     notes = models.TextField(blank=True, null=True)

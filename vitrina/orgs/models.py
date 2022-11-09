@@ -55,7 +55,7 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=datetime.now)
+    created = models.DateTimeField(blank=True, null=True, default=now)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     description = models.TextField(blank=True, null=True)

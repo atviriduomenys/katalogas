@@ -1,13 +1,17 @@
 import pytest
+import pytz
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 
+from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
+
+timezone = pytz.timezone(settings.TIME_ZONE)
 
 
 @pytest.mark.django_db

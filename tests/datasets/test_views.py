@@ -27,6 +27,7 @@ from vitrina.users.models import User
 
 timezone = pytz.timezone(settings.TIME_ZONE)
 
+
 @pytest.fixture
 def dataset_detail_data():
     dataset_distribution = DatasetDistributionFactory()

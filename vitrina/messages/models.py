@@ -2,15 +2,18 @@ from datetime import datetime
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import utc
 from django.db import models
 
 from vitrina.users.models import User
 from vitrina.datasets.models import Dataset
 
+now = datetime.utcnow().replace(tzinfo=utc)
+
 
 # TODO: https://github.com/jazzband/django-newsletter
 class EmailTemplate(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -27,7 +30,7 @@ class EmailTemplate(models.Model):
 
 
 class GlobalEmail(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -41,7 +44,7 @@ class GlobalEmail(models.Model):
 
 
 class NewsletterSubscription(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     email = models.CharField(max_length=255, blank=True, null=True)
@@ -55,7 +58,7 @@ class NewsletterSubscription(models.Model):
 
 
 class SentMail(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -69,7 +72,7 @@ class SentMail(models.Model):
 
 # TODO: Make generic.
 class UserSubscription(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     deleted = models.BooleanField(blank=True, null=True)
@@ -89,7 +92,7 @@ class UserSubscription(models.Model):
 
 
 class Subscription(models.Model):
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=now, editable=False)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

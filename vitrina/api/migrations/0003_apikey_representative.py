@@ -34,12 +34,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL('DROP INDEX IF EXISTS idx_20799_ukr6ixjob39jj0hsrmet0wqg14c'),
-        migrations.RunSQL('DROP INDEX IF EXISTS idx_696624_ukr6ixjob39jj0hsrmet0wqg14c'),
         migrations.AddField(
             model_name='apikey',
             name='representative',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_orgs.representative'),
+        ),
+        migrations.AlterField(
+            model_name='apikey',
+            name='api_key',
+            field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.RunPython(create_representative_api_keys)
     ]

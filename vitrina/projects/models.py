@@ -30,7 +30,7 @@ class Project(models.Model):
     }
 
     created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
-    modified = models.DateTimeField(blank=True, null=True, default=now)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     beneficiary_group = models.CharField(max_length=255, blank=True, null=True)
     benefit = models.TextField(blank=True, null=True)

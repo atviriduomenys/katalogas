@@ -30,7 +30,7 @@ class Region(models.Model):
 
 
 class Municipality(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     title = models.TextField(blank=True, null=True)
@@ -55,7 +55,7 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=now)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     description = models.TextField(blank=True, null=True)
@@ -102,7 +102,7 @@ class Representative(models.Model):
         (MANAGER, _("Tvarkytojas"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     email = models.CharField(max_length=255)
@@ -131,7 +131,7 @@ class Representative(models.Model):
 
 
 class PublishedReport(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -145,7 +145,7 @@ class PublishedReport(models.Model):
 
 
 class Report(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.CharField(max_length=255, blank=True, null=True)

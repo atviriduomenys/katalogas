@@ -85,7 +85,7 @@
                                     {% get_language_info_list for LANGUAGES as languages %}
                                     {% for language in languages %}
                                         <option class="navbar-item" value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %} selected {% endif %}>
-                                            {{ language.name_local }} ({{ language.code }})
+                                            {{ language.code|upper }}
                                         </option>
                                     {% endfor %}
                                 </select>

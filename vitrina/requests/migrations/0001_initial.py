@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('planned_opening_date', models.DateField(blank=True, null=True)),
                 ('purpose', models.CharField(blank=True, max_length=255, null=True)),
                 ('slug', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('status', models.CharField(blank=True, choices=[('CREATED', 'Pateiktas'), ('REJECTED', 'Atmestas'), ('ALREADY_OPENED', 'Jau atvertas'), ('ANSWERED', 'Atsakytas')], max_length=255, null=True)),
+                ('status', models.CharField(blank=True, choices=[('CREATED', 'Pateiktas'), ('REJECTED', 'Atmestas'), ('OPENED', 'Atvertas'), ('ANSWERED', 'Atsakytas')], max_length=255, null=True)),
                 ('title', models.CharField(blank=True, max_length=255, null=True)),
                 ('uuid', models.CharField(blank=True, max_length=36, null=True, unique=True)),
                 ('changes', models.CharField(blank=True, max_length=255, null=True)),

@@ -5,6 +5,10 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
+import datetime
+from django.utils.timezone import utc
+
+now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Project(models.Model):
@@ -25,8 +29,8 @@ class Project(models.Model):
         DELETED: _("Ištrinta"),
     }
 
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    modified = models.DateTimeField(blank=True, null=True, default=now)
     version = models.IntegerField(default=1)
     beneficiary_group = models.CharField(max_length=255, blank=True, null=True)
     benefit = models.TextField(blank=True, null=True)

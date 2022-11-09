@@ -54,6 +54,12 @@ class Migration(migrations.Migration):
                 'managed': False,
             },
         ),
+        migrations.AlterModelOptions(
+            name='ApplicationUseCase',
+            options={
+                'db_table': 'application_usecase',
+            }
+        ),
         migrations.CreateModel(
             name='ApplicationUsecaseDatasetIds',
             fields=[
@@ -121,13 +127,25 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UsecaseDatasetIds',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('dataset_ids', models.BigIntegerField(blank=True, null=True)),
+                ('usecase', models.ForeignKey(on_delete=models.deletion.DO_NOTHING,
+                                              to='vitrina_projects.Project'))
             ],
             options={
                 'db_table': 'usecase_dataset_ids',
                 'managed': False,
             },
+        ),
+        migrations.AlterModelOptions(
+            name='UsecaseDatasetIds',
+            options={
+                'db_table': 'usecase_dataset_ids',
+            }
+        ),
+        migrations.AddField(
+            model_name='UsecaseDatasetIds',
+            name='id',
+            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
         ),
         migrations.CreateModel(
             name='UsecaseLike',

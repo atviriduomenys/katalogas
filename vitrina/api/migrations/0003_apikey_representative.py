@@ -34,7 +34,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL('DROP INDEX idx_20799_ukr6ixjob39jj0hsrmet0wqg14c;'),
+        migrations.RunSQL('DROP INDEX IF EXISTS idx_20799_ukr6ixjob39jj0hsrmet0wqg14c'),
+        migrations.RunSQL('DROP INDEX IF EXISTS idx_696624_ukr6ixjob39jj0hsrmet0wqg14c'),
         migrations.AddField(
             model_name='apikey',
             name='representative',

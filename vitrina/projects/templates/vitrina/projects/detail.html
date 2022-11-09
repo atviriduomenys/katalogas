@@ -4,6 +4,7 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 {% load like_tags %}
+{% load comment_tags %}
 
 {% block content %}
 
@@ -85,18 +86,14 @@
             </div>
         {% endif %}
     </div>
-    <hr>
-</article>
 
-
-
-
-
-
-
-
+    <div class="columns no-margin-bottom">
+        <div class="column is-one-quarter"></div>
+        <div class="column is-three-quarters">
+            {% comments obj=project user=request.user %}
         </div>
     </div>
+
 {% endblock %}
 
 {% block scripts %}

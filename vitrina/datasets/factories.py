@@ -50,8 +50,8 @@ class DatasetFactory(DjangoModelFactory):
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
             dataset.set_current_language(lang[0])
-            dataset.title = fake.word
-            dataset.description = fake.catch_phrase
+            dataset.title = fake.word()
+            dataset.description = fake.catch_phrase()
         dataset.save()
         return dataset
 

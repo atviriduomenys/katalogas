@@ -1,7 +1,6 @@
 from datetime import datetime, date
-from django.utils.timezone import utc
-from django.utils import timezone
 
+import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -26,8 +25,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 
-now = datetime.utcnow().replace(tzinfo=utc)
-
+timezone = pytz.timezone(settings.TIME_ZONE)
 
 @pytest.fixture
 def dataset_detail_data():
@@ -95,19 +93,19 @@ def datasets():
         slug="ds1",
         title="Duomenų rinkinys vienas",
         title_en="Dataset 1",
-        published=now
+        published=timezone.localize(datetime(2022, 6, 1))
     )
     dataset2 = DatasetFactory(
         slug="ds2",
         title="Duomenų rinkinys du\"<'>\\",
         title_en="Dataset 2",
-        published=now
+        published=timezone.localize(datetime(2022, 8, 1))
     )
     dataset3 = DatasetFactory(
         slug="ds3",
         title="Duomenų rinkinys trys",
         title_en="Dataset 3",
-        published=now
+        published=timezone.localize(datetime(2022, 7, 1))
     )
     return [dataset1, dataset2, dataset3]
 
@@ -402,9 +400,9 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
 
 @pytest.fixture
 def date_filter_data():
-    dataset1 = DatasetFactory(published=now, slug="ds1")
-    dataset2 = DatasetFactory(published=now, slug="ds2")
-    dataset3 = DatasetFactory(published=now, slug="ds3")
+    dataset1 = DatasetFactory(published=timezone.localize(datetime(2022, 3, 1)), slug="ds1")
+    dataset2 = DatasetFactory(published=timezone.localize(datetime(2022, 2, 1)), slug="ds2")
+    dataset3 = DatasetFactory(published=timezone.localize(datetime(2021, 12, 1)), slug="ds3")
     return [dataset1, dataset2, dataset3]
 
 
@@ -452,7 +450,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     dataset_with_all_filters = DatasetFactory(
         status=Dataset.HAS_DATA,
         tags=('tag1', 'tag2', 'tag3'),
-        published=now,
+        published=timezone.localize(datetime(2022, 2, 9)),
         organization=organization,
         category=category,
         frequency=frequency
@@ -535,7 +533,7 @@ def test_download_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_public_manager_filtering(app: DjangoTestApp):
     DatasetFactory(is_public=False)
-    DatasetFactory(deleted=True, deleted_on=now)
+    DatasetFactory(deleted=True, deleted_on=timezone.localize(datetime.now()))
     DatasetFactory(deleted=True, deleted_on=None)
     DatasetFactory(deleted=None, deleted_on=None)
     DatasetFactory(organization=None)
@@ -571,7 +569,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory(
         title="dataset_title",
         title_en="dataset_title",
-        published=now,
+        published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         description='test description',
         category=category,
@@ -599,7 +597,7 @@ def test_click_edit_button(app: DjangoTestApp):
     dataset = DatasetFactory(
         title="dataset_title",
         title_en="dataset_title",
-        published=now,
+        published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         description='test description',
     )
@@ -636,7 +634,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     category = CategoryFactory()
     org = OrganizationFactory(
         title="Org_title",
-        created=now,
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
         jurisdiction="Jurisdiction1",
         slug='test-org-slug',
         kind='test_org_kind'
@@ -660,7 +658,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
-        created=now,
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
         jurisdiction="Jurisdiction1",
         slug='test-org-slug',
         kind='test_org_kind'

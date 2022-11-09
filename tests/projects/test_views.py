@@ -2,12 +2,13 @@ import io
 
 import pytest
 from PIL import Image
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 from webtest import Upload
 
-from vitrina import settings
+from vitrina.comments.models import Comment
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.users.factories import UserFactory
@@ -90,36 +91,20 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_approve_project_staff(app: DjangoTestApp):
+def test_request_comment_with_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    project = ProjectFactory(status='CREATED')
+    project = ProjectFactory()
+    project_ct = ContentType.objects.get_for_model(project)
     app.set_user(user)
-
-    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
-                                             'status': 'APPROVED'}))
-    project.refresh_from_db()
-
-    assert project.status == "APPROVED"
-    assert resp.url == project.get_absolute_url()
-
-
-@pytest.mark.django_db
-def test_approve_project_no_login(app: DjangoTestApp):
-    project = ProjectFactory(status='CREATED')
-    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
-                                                    'status': 'APPROVED'}))
-
-    assert resp.status_code == 302
-    assert settings.LOGIN_URL in resp.url
-
-
-@pytest.mark.django_db
-def test_approve_project_not_staff(app: DjangoTestApp):
-    user = UserFactory()
-    project = ProjectFactory(status='CREATED')
-    app.set_user(user)
-
-    resp = app.get(reverse('change_status', kwargs={'pk': project.pk,
-                                                    'status': 'APPROVED'}), expect_errors=True)
-
-    assert resp.status_code == 403
+    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form['is_public'] = True
+    form['status'] = Comment.APPROVED
+    form['body'] = "Approving this project"
+    resp = form.submit().follow()
+    created_comment = Comment.objects.filter(content_type=project_ct, object_id=project.pk)
+    assert created_comment.count() == 1
+    assert list(resp.context['comments']) == [created_comment.first()]
+    assert created_comment.first().type == Comment.STATUS
+    assert created_comment.first().status == Comment.APPROVED
+    assert Version.objects.get_for_object(project).count() == 1
+    assert Version.objects.get_for_object(project).first().revision.comment == Project.STATUS_CHANGED

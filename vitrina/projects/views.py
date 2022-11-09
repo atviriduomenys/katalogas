@@ -95,17 +95,3 @@ class ProjectHistoryView(HistoryView):
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
     tabs_template_name = 'component/tabs.html'
-
-
-class ChangeStatus(LoginRequiredMixin, PermissionRequiredMixin, View):
-    def has_permission(self):
-        if self.request.user.is_staff or self.request.user.is_superuser:
-            return True
-        else:
-            return False
-
-    def get(self, request, pk, status):
-        project = get_object_or_404(Project, pk=pk)
-        project.status = status
-        project.save()
-        return redirect(project.get_absolute_url())

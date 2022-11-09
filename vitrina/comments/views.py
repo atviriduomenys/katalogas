@@ -51,7 +51,7 @@ class CommentView(
                 obj.status = form.cleaned_data.get('status')
                 obj.comment = comment.body
                 obj.save()
-                set_comment(Request.STATUS_CHANGED)
+                set_comment(type(obj).STATUS_CHANGED)
             else:
                 comment.type = Comment.USER
             comment.save()

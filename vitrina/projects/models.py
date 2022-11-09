@@ -18,6 +18,7 @@ class Project(models.Model):
     }
 
     EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
     DELETED = "DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load i18n %}
+{% load i18n parler_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -78,7 +78,8 @@
                   method="get">
                 <div class="control is-expanded">
                     <input class="input" id="search-input" type="text" name="q"
-                           placeholder="{% translate 'Ieškoti duomenų rinkinio' %}" value="{{ q | escape }}"/>
+                           placeholder="{% translate 'Ieškoti duomenų rinkinio' %}"
+                           value="{{ q | escape }}"/>
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -105,12 +106,18 @@
                 </div>
             {% endif %}
             {% for i in page_obj %}
+            {% get_current_language as LANGUAGE_CODE %}
                 <article class="media">
                     <div class="media-content">
                         <div class="content">
                             <div>
-                                <strong><a href="{{ i.object.get_absolute_url }}"
-                                           class="dataset-list-title">{{ i.object.title }}</a></strong>
+                                <strong>
+                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                        {% objectlanguage i.object LANGUAGE_CODE %}
+                                            {{ i.object.title }}
+                                        {% endobjectlanguage %}
+                                    </a>
+                                </strong>
                             </div>
                             {% if i.object.organization_title %}
                                 <p>
@@ -118,7 +125,9 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {{ i.object.description }}
+                                {% objectlanguage i.object LANGUAGE_CODE %}
+                                    {{ i.object.description }}
+                                {% endobjectlanguage %}
                             </p>
                             <div class="tags">
                                 {% for t in i.object.distinct_formats %}

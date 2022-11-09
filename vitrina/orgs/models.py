@@ -57,7 +57,7 @@ class Organization(MP_Node):
 
     created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     description = models.TextField(blank=True, null=True)
     municipality = models.CharField(max_length=255, blank=True, null=True)
     region = models.CharField(max_length=255, blank=True, null=True)

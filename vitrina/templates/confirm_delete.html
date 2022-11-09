@@ -6,7 +6,7 @@
 {% block content %}
     <div class="columns">
         <div class="column is-half">
-            <form method="post">
+            <form id="delete-form" method="post">
                 {% csrf_token %}
                 <strong>
                     <p >{% translate "Ar tikrai norite ištrinti" %} "{{ object }}"?</p>

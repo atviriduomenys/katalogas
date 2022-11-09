@@ -54,6 +54,12 @@ class Migration(migrations.Migration):
                 'managed': False,
             },
         ),
+        migrations.AlterModelOptions(
+            name='ApplicationUseCase',
+            options={
+                'db_table': 'application_usecase',
+            }
+        ),
         migrations.CreateModel(
             name='ApplicationUsecaseDatasetIds',
             fields=[

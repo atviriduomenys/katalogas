@@ -4,7 +4,8 @@ from enum import Enum
 from typing import Type
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model, Q
+from django.db.models import Model
+from django.db.models import Q
 
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Representative, Organization
@@ -77,7 +78,8 @@ def has_perm(
         Model |            # when action is update, delete
         Type[Model]        # when action is create
     ),
-    parent: Model | None = None,  # when action is create, object based on which a new objects is created
+    # when action is create, object based on which a new objects is created
+    parent: Model | None = None,
 ) -> bool:
     if not user.is_authenticated:
         return False
@@ -107,8 +109,25 @@ def has_perm(
                             return True
                     else:
                         ct = ContentType.objects.get_for_model(node)
-                        where.append(Q(content_type=ct, object_id=node.pk, role=role.value))
+                        where.append(Q(
+                            content_type=ct,
+                            object_id=node.pk,
+                            role=role.value,
+                        ))
     if where:
         where = functools.reduce(operator.or_, where)
         return Representative.objects.filter(where, user=user).exists()
     return False
+
+
+def get_coordinators_count(model: Type[Model], object_id: int) -> int:
+    ct = ContentType.objects.get_for_model(model)
+    return (
+        Representative.objects.
+        filter(
+            content_type=ct,
+            object_id=object_id,
+            role=Representative.COORDINATOR,
+        ).
+        count()
+    )

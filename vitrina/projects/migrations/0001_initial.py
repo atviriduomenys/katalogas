@@ -128,7 +128,7 @@ class Migration(migrations.Migration):
             name='UsecaseDatasetIds',
             fields=[
                 ('dataset_ids', models.BigIntegerField(blank=True, null=True)),
-                ('project', models.ForeignKey(on_delete=models.deletion.DO_NOTHING,
+                ('usecase', models.ForeignKey(on_delete=models.deletion.DO_NOTHING,
                                               to='vitrina_projects.Project'))
             ],
             options={

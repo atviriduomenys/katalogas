@@ -1,5 +1,6 @@
 from datetime import datetime, date
 
+import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -23,6 +24,8 @@ from vitrina.orgs.models import Representative
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
+
+timezone = pytz.timezone(settings.TIME_ZONE)
 
 
 @pytest.fixture
@@ -88,7 +91,7 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.fixture
 def search_datasets():
-    dataset1 = DatasetFactory(slug='ds1', published=datetime(2022, 6, 1))
+    dataset1 = DatasetFactory(slug='ds1', published=timezone.localize(datetime(2022, 6, 1)))
     dataset1.set_current_language('en')
     dataset1.title = 'Dataset 1'
     dataset1.save()
@@ -96,7 +99,7 @@ def search_datasets():
     dataset1.title = "Duomenų rinkinys vienas"
     dataset1.save()
 
-    dataset2 = DatasetFactory(slug='ds2', published=datetime(2022, 8, 1))
+    dataset2 = DatasetFactory(slug='ds2', published=timezone.localize(datetime(2022, 8, 1)))
     dataset2.set_current_language('en')
     dataset2.title = 'Dataset 2'
     dataset2.save()
@@ -104,7 +107,7 @@ def search_datasets():
     dataset2.title = "Duomenų rinkinys du\"<'>\\"
     dataset2.save()
 
-    dataset3 = DatasetFactory(slug='ds3', published=datetime(2022, 7, 1))
+    dataset3 = DatasetFactory(slug='ds3', published=timezone.localize(datetime(2022, 7, 1)))
     dataset3.set_current_language('en')
     dataset3.title = 'Dataset 3'
     dataset3.save()
@@ -402,9 +405,9 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
 @pytest.fixture
 def date_filter_data():
     org = OrganizationFactory()
-    dataset1 = DatasetFactory(organization=org, slug='ds1', published=datetime(2022, 3, 1))
-    dataset2 = DatasetFactory(organization=org, slug='ds2', published=datetime(2022, 2, 1))
-    dataset3 = DatasetFactory(organization=org, slug='ds3', published=datetime(2021, 12, 1))
+    dataset1 = DatasetFactory(organization=org, slug='ds1', published=timezone.localize(datetime(2022, 3, 1)))
+    dataset2 = DatasetFactory(organization=org, slug='ds2', published=timezone.localize(datetime(2022, 2, 1)))
+    dataset3 = DatasetFactory(organization=org, slug='ds3', published=timezone.localize(datetime(2021, 12, 1)))
     return [dataset1, dataset2, dataset3]
 
 
@@ -452,7 +455,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     dataset_with_all_filters = DatasetFactory(
         status=Dataset.HAS_DATA,
         tags=('tag1', 'tag2', 'tag3'),
-        published=datetime(2022, 2, 9),
+        published=timezone.localize(datetime(2022, 2, 9)),
         organization=organization,
         category=category,
         frequency=frequency
@@ -563,7 +566,7 @@ def test_public_manager_filtering(app: DjangoTestApp):
     organization = OrganizationFactory(slug="org", kind="gov")
 
     DatasetFactory(is_public=False, organization=organization)
-    DatasetFactory(deleted=True, deleted_on=datetime.now(), organization=organization)
+    DatasetFactory(deleted=True, deleted_on=timezone.localize(datetime.now()), organization=organization)
     DatasetFactory(deleted=True, deleted_on=None, organization=organization)
     DatasetFactory(deleted=None, deleted_on=None, organization=organization)
     DatasetFactory(deleted=None, deleted_on=None, organization=None)
@@ -600,7 +603,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     category = CategoryFactory()
     org = OrganizationFactory()
     dataset = DatasetFactory(
-        published=datetime(2022, 9, 7),
+        published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         description='test description',
         category=category,
@@ -628,7 +631,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
 def test_click_edit_button(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(
-        published=datetime(2022, 9, 7),
+        published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         organization=org
     )
@@ -665,7 +668,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     category = CategoryFactory()
     org = OrganizationFactory(
         title="Org_title",
-        created=datetime(2022, 8, 22, 10, 30),
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
         jurisdiction="Jurisdiction1",
         slug='test-org-slug',
         kind='test_org_kind'
@@ -689,7 +692,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
-        created=datetime(2022, 8, 22, 10, 30),
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
         jurisdiction="Jurisdiction1",
         slug='test-org-slug',
         kind='test_org_kind'

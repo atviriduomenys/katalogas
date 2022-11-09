@@ -10,7 +10,7 @@ def create_history_objects(apps, schema_editor):
     Version = apps.get_model('reversion', 'Version')
     ContentType = apps.get_model('contenttypes', 'ContentType')
 
-    for event in DatasetEvent.objects.exclude(dataset_id__isnull=True):
+    for event in DatasetEvent.objects.exclude(dataset_id__isnull=True)[:10]:
         content_type = ContentType.objects.get_for_model(Dataset)
         dataset = Dataset.objects.get(pk=event.dataset_id)
         revision = Revision.objects.create(

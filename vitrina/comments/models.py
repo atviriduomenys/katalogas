@@ -1,9 +1,13 @@
 from django.db import models
+import datetime
+from django.utils.timezone import utc
+
+now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Comment(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     deleted = models.BooleanField(blank=True, null=True)

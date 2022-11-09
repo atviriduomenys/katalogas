@@ -1,7 +1,10 @@
+import datetime
+
 from django.db import models
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import utc
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
@@ -22,6 +25,8 @@ REQUEST_HISTORY_STATUSES = {
     STATUS_CHANGED: _("Pakeistas statusas"),
     ASSIGNED: _("Priskirta")
 }
+
+now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Request(models.Model):
@@ -53,7 +58,7 @@ class Request(models.Model):
         DELETED: _("Ištrinta"),
     }
 
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
@@ -101,7 +106,7 @@ class Request(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -118,7 +123,7 @@ class RequestEvent(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class RequestStructure(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     data_notes = models.CharField(max_length=255, blank=True, null=True)

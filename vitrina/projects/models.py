@@ -67,7 +67,7 @@ class Project(models.Model):
 
 
 class UsecaseDatasetIds(models.Model):
-    project = models.ForeignKey(Project, models.DO_NOTHING)
+    usecase = models.ForeignKey(Project, models.DO_NOTHING)
     dataset_ids = models.BigIntegerField(blank=True, null=True)
 
     class Meta:

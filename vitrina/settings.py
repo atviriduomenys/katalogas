@@ -280,3 +280,5 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = (
     'bulma',
 )
 CRISPY_TEMPLATE_PACK = 'bulma'
+
+SYSTEM_USER_EMAIL = "system.user@example.com"

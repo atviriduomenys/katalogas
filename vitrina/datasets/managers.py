@@ -1,7 +1,7 @@
-from django.db import models
+from parler.managers import TranslatableManager
 
 
-class PublicDatasetManager(models.Manager):
+class PublicDatasetManager(TranslatableManager):
 
     def get_queryset(self):
         return super().get_queryset().filter(

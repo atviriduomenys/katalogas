@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import pathlib
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Iterable
-from typing import NamedTuple
-from typing import TypedDict
+from dataclasses import dataclass, field
+from typing import Any, Iterable, NamedTuple, TypedDict
 
 
 DIMS = [

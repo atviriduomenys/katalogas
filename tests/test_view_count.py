@@ -5,6 +5,8 @@ from django_webtest import DjangoTestApp
 from hitcount.models import HitCount
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.users.models import User

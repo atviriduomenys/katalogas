@@ -3,44 +3,43 @@ import itertools
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+
+
 from django.views import View
-from django.views.generic import ListView
-from django.views.generic import TemplateView, DetailView
-from django.views.generic.edit import CreateView
-from django.views.generic.edit import UpdateView
-from django.views.generic.edit import DeleteView
+from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 
 from haystack.generic_views import FacetedSearchView
+from parler.utils.context import switch_language
+from parler.utils.i18n import get_language
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm
-from vitrina.classifiers.models import Category, Frequency
-from vitrina.datasets.forms import DatasetSearchForm
+from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
+from vitrina.views import HistoryView, HistoryMixin
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
+from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data
+from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.structure import detect_read_errors, read
+from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
 from vitrina.orgs.helpers import is_org_dataset_list
-from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
-from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from vitrina.datasets.forms import DatasetMemberUpdateForm
-from vitrina.datasets.forms import DatasetMemberCreateForm
 
 
 class DatasetListView(FacetedSearchView):
@@ -103,7 +102,7 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(HistoryMixin, DetailView):
+class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -190,7 +189,8 @@ class DatasetCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
-    CreateView
+    TranslatableCreateView,
+    LanguageChoiceMixin
 ):
     model = Dataset
     template_name = 'base_form.html'
@@ -229,10 +229,12 @@ class DatasetUpdateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
-    UpdateView
+    TranslatableUpdateView,
+    ViewUrlMixin
 ):
     model = Dataset
     template_name = 'base_form.html'
+    view_url_name = 'dataset:edit'
     context_object_name = 'dataset'
     form_class = DatasetForm
 
@@ -250,6 +252,7 @@ class DatasetUpdateView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Duomenų rinkinio redagavimas')
+        switch_language(self.object, get_language())
         return context
 
     def get(self, request, *args, **kwargs):

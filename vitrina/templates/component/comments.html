@@ -1,0 +1,79 @@
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+<h4 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h4>
+
+{% for c in comments %}
+    {% include "component/comment.html" with comment=c %}
+
+    {% for child in c.descendants %}
+        {% include "component/comment.html" with comment=child is_child=True %}
+    {% endfor %}
+{% endfor %}
+
+{% if user.is_authenticated %}
+    <article class="media">
+        <figure class="media-left">
+            <p class="image is-64x64">
+                <img src="{% static 'img/placeholder/128x128.png' %}">
+            </p>
+        </figure>
+        <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
+            {% csrf_token %}
+            {{ comment_form|crispy }}
+            <div class="field">
+                <p class="control">
+                    <button type="submit" hidden="true"></button>
+                    <button class="button is-primary is-pulled-right comment-button" id="id_submit_button"
+                            type="button">{% translate "Teikti komentarą" %}</button>
+                </p>
+            </div>
+        </form>
+    </article>
+{% else %}
+    <article class="message is-warning">
+        <div class="message-body">
+            <strong>{% translate "Komentuoti gali tik prisijungę naudotojai" %}</strong>
+        </div>
+    </article>
+{% endif %}
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        $(function () {
+            $('.reply-button').click(function () {
+                $('#media-' + this.id).toggleClass('is-hidden');
+            });
+
+            $('#reply-form').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+
+            $('#comment-form').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+
+            $('#id_submit_button').click( function () {
+
+                const status_field = $(this).closest('#comment-form').find('#id_status')[0];
+                const body_field = $(this).closest('#comment-form').find('#id_body')[0];
+
+                if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED" )) {
+                    body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
+                    body_field.reportValidity();
+                }
+                else {
+                    $('#comment-form').trigger('submit');
+                }
+            });
+
+            $('input#id_register_request').click( function () {
+                $("#div_id_increase_frequency").toggle(this.checked);
+            });
+            $("#div_id_increase_frequency").toggle(false);
+        });
+    });
+</script>

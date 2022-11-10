@@ -96,6 +96,7 @@ class RequestUpdateView(
     model = Request
     form_class = RequestForm
     template_name = 'base_form.html'
+    context_object_name = 'request_object'
 
     def form_valid(self, form):
         super().form_valid(form)

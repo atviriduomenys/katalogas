@@ -3,6 +3,7 @@
 {% load static %}
 {% load hitcount_tags %}
 {% load subscription_tags %}
+{% load comment_tags %}
 
 {% block parent_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 {% block current_title %}{{ request_object.title }}{% endblock %}
@@ -320,7 +321,12 @@
             {% if history %}
                 {% include 'request/history.twig' %}
             {% endif %}
-            <br>
+        </div>
+    </div>
+    <div class="columns no-margin-bottom">
+        <div class="column is-one-quarter"></div>
+        <div class="column is-three-quarters">
+            {% comments obj=request_object user=request.user %}
         </div>
     </div>
 {% endblock %}
@@ -329,18 +335,6 @@
     <script type="text/javascript">
         $(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
-
-            $('.reply-button').click(function () {
-                $('#media-' + this.id).toggleClass('is-hidden');
-            });
-
-            $('#form-comment').submit(function () {
-                $(this).find(":submit").attr('disabled', 'disabled');
-            });
-
-            $('#form-reply').submit(function () {
-                $(this).find(":submit").attr('disabled', 'disabled');
-            });
         });
     </script>
 {% endblock %}

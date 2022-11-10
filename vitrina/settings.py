@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -240,6 +241,10 @@ META_SITE_PROTOCOL = 'https'
 META_SITE_DOMAIN = 'data.gov.lt'
 
 PARLER_LANGUAGES = {
+    None: (
+        {'code': 'lt'},
+        {'code': 'en'},
+    ),
     1: (
         {'code': 'lt'},
         {'code': 'en'},
@@ -248,6 +253,10 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+PARLER_ENABLE_CACHING = True
+PARLER_CACHE_PREFIX = ''
+PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = False
+PARLER_DEFAULT_ACTIVATE = True
 
 AUTH_USER_MODEL = 'vitrina_users.User'
 LOGIN_URL = '/login/'
@@ -279,3 +288,5 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = (
     'bulma',
 )
 CRISPY_TEMPLATE_PACK = 'bulma'
+
+SYSTEM_USER_EMAIL = "system.user@example.com"

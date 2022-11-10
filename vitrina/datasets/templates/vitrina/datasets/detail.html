@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n parler_tags %}
 {% load static %}
 {% load hitcount_tags %}
 {% load subscription_tags %}
+{% load comment_tags %}
 
 {% block pageTitle %} | {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
@@ -19,7 +20,11 @@
 
     <div class="columns no-margin-bottom">
         <div class="column">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ dataset.title }}</h3>
+            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
+                {% objectlanguage dataset LANGUAGE_CODE %}
+                    {{ dataset.title }}
+                {% endobjectlanguage %}
+            </h3>
             <p>
                 {% translate "Duomenų rinkinio peržiūros" %}:
                 {% get_hit_count for dataset as total_hits %}
@@ -34,7 +39,11 @@
             {% endif %}
 
             <div class="content">
-                <p class="no-margin-bottom">{{ dataset.description|linebreaks|urlizetrunc:42 }}</p>
+                <p class="no-margin-bottom">
+                    {% objectlanguage dataset LANGUAGE_CODE %}
+                        {{ dataset.description | linebreaks | urlizetrunc:42 }}
+                    {% endobjectlanguage %}
+                </p>
                 {# tags #}
                 {% include "./tags.html" %}
                 {# main info #}
@@ -121,6 +130,11 @@
             </div>
         </div>
     {% endif %}
+    <div class="columns no-margin-bottom">
+        <div class="column is-three-quarters">
+            {% comments obj=dataset user=request.user %}
+        </div>
+    </div>
 {% endblock %}
 {% block scripts %}
     {% get_hit_count_js_variables for dataset as hitcount %}
@@ -130,9 +144,6 @@
 
             $(function () {
                 var metaButton = $('.dataset-extra-meta-button');
-                $('.reply-button').click(function () {
-                    $('#media-' + this.id).toggleClass('is-hidden');
-                });
                 metaButton.click(function () {
                     $(this).text($(this).text() === "{% translate "Peržiūrėti papildomą informaciją" %} +" ? "{% translate "Uždaryti papildomą informaciją" %} -" : "{% translate "Peržiūrėti papildomą informaciją" %} +");
                     $('#extra-table').toggleClass('is-hidden');
@@ -185,14 +196,6 @@
                 $('.modal-button-close').click(function () {
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
-                });
-
-                $('#reply-form').submit(function () {
-                    $(this).find(":submit").attr('disabled', 'disabled');
-                });
-
-                $('#comment-form').submit(function () {
-                    $(this).find(":submit").attr('disabled', 'disabled');
                 });
             });
         });

@@ -1,14 +1,9 @@
-from datetime import datetime
-
 from django.db import models
 
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import utc
-
-now = datetime.utcnow().replace(tzinfo=utc)
 
 
 class Task(models.Model):

@@ -1,10 +1,6 @@
-import datetime
-
 from django.db import models
-
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import utc
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
@@ -25,8 +21,6 @@ REQUEST_HISTORY_STATUSES = {
     STATUS_CHANGED: _("Pakeistas statusas"),
     ASSIGNED: _("Priskirta")
 }
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Request(models.Model):

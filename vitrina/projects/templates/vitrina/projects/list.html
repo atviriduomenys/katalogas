@@ -33,7 +33,7 @@
                             <p>
                                 <a href="{{ i.get_absolute_url }}" class="usecase-url">
                                     {{ i.get_title }}
-                                    {% if request.user.is_staff or request.user.is_superuser %}
+                                    {% if can_see_status %}
                                         {% if i.status == "CREATED" %}
                                             <span style="color: green;">{% translate "naujas" %}</span>
                                         {% elif i.status == "REJECTED" %}

@@ -76,8 +76,7 @@ class ProjectCommentForm(CommentForm):
     def clean(self):
         body = self.cleaned_data.get('body')
         status = self.cleaned_data.get('status')
-        if not status or (status and status == Comment.REJECTED):
-            if not body:
-                self.add_error('body', _("Šis laukas yra privalomas"))
+        if not status and not body:
+            self.add_error('body', _("Šis laukas yra privalomas"))
         return self.cleaned_data
 

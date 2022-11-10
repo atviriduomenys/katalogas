@@ -6,8 +6,10 @@
 {% load like_tags %}
 {% load comment_tags %}
 
-{% block content %}
+{% block parent_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
+{% block current_title %}{{ project.get_title }}{% endblock %}
 
+{% block content %}
     {% include 'component/tabs.html' %}
 
     <div class="columns no-margin-bottom">

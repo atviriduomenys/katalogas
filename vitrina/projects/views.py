@@ -21,6 +21,15 @@ class ProjectListView(ListView):
     template_name = 'vitrina/projects/list.html'
     paginate_by = 20
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_see_status'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            Project
+        )
+        return context
+
 
 class ProjectDetailView(HistoryMixin, DetailView):
     model = Project

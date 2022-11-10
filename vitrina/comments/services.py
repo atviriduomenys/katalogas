@@ -15,6 +15,6 @@ def get_comment_form_class(obj: Model, user: User) -> Type:
         return DatasetCommentForm
     elif isinstance(obj, Request) and has_perm(user, Action.COMMENT, obj):
         return RequestCommentForm
-    elif isinstance(obj, Project) and user.is_staff or user.is_superuser:
+    elif isinstance(obj, Project) and has_perm(user, Action.COMMENT, obj):
         return ProjectCommentForm
     return CommentForm

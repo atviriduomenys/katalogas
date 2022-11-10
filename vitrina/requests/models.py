@@ -52,7 +52,7 @@ class Request(models.Model):
         DELETED: _("Ištrinta"),
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
@@ -100,7 +100,7 @@ class Request(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -117,7 +117,7 @@ class RequestEvent(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class RequestStructure(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     data_notes = models.CharField(max_length=255, blank=True, null=True)

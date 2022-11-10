@@ -17,7 +17,7 @@ class Task(models.Model):
     }
 
     title = models.CharField(max_length=255)
-    created = models.DateTimeField(default=now)
+    created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
     role = models.CharField(max_length=255, choices=ROLES, blank=True, null=True)
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)

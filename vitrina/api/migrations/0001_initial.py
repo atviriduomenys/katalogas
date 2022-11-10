@@ -32,8 +32,4 @@ class Migration(migrations.Migration):
                 'managed': False,
             },
         ),
-        migrations.AddConstraint(
-            model_name='apikey',
-            constraint=models.UniqueConstraint(fields=('api_key',), name='uniq_api_key'),
-        ),
     ]

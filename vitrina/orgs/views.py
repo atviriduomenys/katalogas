@@ -1,4 +1,4 @@
-import uuid
+import secrets
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -186,7 +186,7 @@ class RepresentativeCreateView(
 
         if self.object.has_api_access:
             ApiKey.objects.create(
-                api_key=str(uuid.uuid4()),
+                api_key=secrets.token_urlsafe(),
                 enabled=True,
                 representative=self.object
             )
@@ -211,13 +211,13 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 ApiKey.objects.create(
-                    api_key=str(uuid.uuid4()),
+                    api_key=secrets.token_urlsafe(),
                     enabled=True,
                     representative=self.object
                 )
             elif form.cleaned_data.get('regenerate_api_key'):
                 api_key = self.object.apikey_set.first()
-                api_key.api_key = str(uuid.uuid4())
+                api_key.api_key = secrets.token_urlsafe()
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()

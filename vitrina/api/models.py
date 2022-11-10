@@ -14,7 +14,6 @@ class ApiKey(models.Model):
     api_key = models.CharField(max_length=255, blank=True, null=True)
     enabled = models.BooleanField(blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     representative = models.ForeignKey(Representative, models.CASCADE, blank=True, null=True)
 
     class Meta:

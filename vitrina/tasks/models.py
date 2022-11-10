@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
@@ -17,7 +18,7 @@ class Task(models.Model):
     }
 
     title = models.CharField(max_length=255)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
     role = models.CharField(max_length=255, choices=ROLES, blank=True, null=True)
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)

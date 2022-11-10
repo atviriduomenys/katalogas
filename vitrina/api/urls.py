@@ -5,9 +5,9 @@ from vitrina.api.services import get_partner_schema_view
 from vitrina.api.views import CatalogViewSet, CategoryViewSet, LicenceViewSet
 
 router = DefaultRouter()
-router.register(r'catalogs', CatalogViewSet, basename="catalog")
-router.register(r'categories', CategoryViewSet, basename="category")
-router.register(r'licences', LicenceViewSet, basename="licence")
+router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
+router.register(r'categories', CategoryViewSet, basename="api-category")
+router.register(r'licences', LicenceViewSet, basename="api-licence")
 
 urlpatterns = [
     path('partner/api/1/', get_partner_schema_view().with_ui('redoc'), name='partner-api'),

@@ -11,7 +11,7 @@ from vitrina.classifiers.factories import CategoryFactory, LicenceFactory
 
 @pytest.mark.django_db
 def test_retrieve_catalog_list_without_api_key(app: DjangoTestApp):
-    res = app.get(reverse("catalog-list"), expect_errors=True)
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -21,7 +21,7 @@ def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("catalog-list"), expect_errors=True)
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -31,7 +31,7 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("catalog-list"), expect_errors=True)
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -42,7 +42,7 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("catalog-list"), expect_errors=True)
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.json == [{
         'description': catalog.description,
         'id': str(catalog.pk),
@@ -57,7 +57,7 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_retrieve_category_list_without_api_key(app: DjangoTestApp):
-    res = app.get(reverse("category-list"), expect_errors=True)
+    res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -67,7 +67,7 @@ def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("category-list"), expect_errors=True)
+    res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -77,7 +77,7 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("category-list"), expect_errors=True)
+    res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -88,7 +88,7 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("category-list"), expect_errors=True)
+    res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.json == [{
         'description': category.description,
         'id': str(category.pk),
@@ -98,7 +98,7 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_retrieve_licence_list_without_api_key(app: DjangoTestApp):
-    res = app.get(reverse("licence-list"), expect_errors=True)
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -108,7 +108,7 @@ def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("licence-list"), expect_errors=True)
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -118,7 +118,7 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("licence-list"), expect_errors=True)
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -129,7 +129,7 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': api_key.api_key
     })
-    res = app.get(reverse("licence-list"), expect_errors=True)
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.json == [{
         'description': licence.description,
         'id': str(licence.pk),

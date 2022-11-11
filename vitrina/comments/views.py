@@ -47,11 +47,15 @@ class CommentView(
                 comment.rel_object_id = new_request.pk
 
             elif form.cleaned_data.get('status'):
-                comment.type = Comment.STATUS
-                obj.status = form.cleaned_data.get('status')
-                obj.comment = comment.body
-                obj.save()
-                set_comment(type(obj).STATUS_CHANGED)
+                if obj.status == form.cleaned_data.get('status'):
+                    messages.error(request, 'Dabartinė būsena sutampa su jūsų pateikta')
+                    return redirect(obj.get_absolute_url())
+                else:
+                    comment.type = Comment.STATUS
+                    obj.status = form.cleaned_data.get('status')
+                    obj.comment = comment.body
+                    obj.save()
+                    set_comment(type(obj).STATUS_CHANGED)
             else:
                 comment.type = Comment.USER
             comment.save()

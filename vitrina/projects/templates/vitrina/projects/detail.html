@@ -23,6 +23,18 @@
                 </p>
             </div>
             {% endif %}
+            <div class="content">
+                <p>
+                    {% translate "Būsena" %}:
+                    {% if project.status == "APPROVED"%}
+                        <b id="status_approved">{% translate "PATVIRTINTAS" %}</b>
+                    {% elif project.status == "REJECTED" %}
+                        <b id="status_rejected">{% translate "ATMESTAS" %}</b>
+                    {% else %}
+                        <b id="status_created">{% translate "SUKURTAS" %}</b>
+                    {% endif %}
+                </p>
+            </div>
             <div class="content" id="project_likes">
                 {% if user.is_authenticated %}
                     <p>{% translate "Ar jums patinka šis projektas?" %}</p>

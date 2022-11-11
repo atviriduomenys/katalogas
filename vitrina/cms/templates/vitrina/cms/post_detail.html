@@ -19,7 +19,7 @@
                 <div class="content">
                     <div class="m-b-sm">
                         {% if post.author %}<span>{% translate "Autorius" %}: {{ post.author }}</span></br>{% endif %}
-                        <span>{% translate "Publikavimo data" %}: {{ post.date_published|date:"SHORT_DATE_FORMAT" }}</span>
+                        <span>{% translate "Publikavimo data" %}: {{ post.date_published|date:"SHORT_DATETIME_FORMAT" }}</span>
                     </div>
                     <div>
                         {{ post.post_text }}

@@ -29,9 +29,7 @@ def create_representative_api_keys(apps, schema_editor):
 def delete_non_representative_api_keys(apps, schema_editor):
     ApiKey = apps.get_model('vitrina_api', 'ApiKey')
 
-    for key in ApiKey.objects.all():
-        if not key.representative:
-            key.delete()
+    ApiKey.objects.filter(representative__isnull=True).delete()
 
 
 class Migration(migrations.Migration):

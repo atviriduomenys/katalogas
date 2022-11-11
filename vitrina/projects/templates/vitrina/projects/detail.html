@@ -27,9 +27,9 @@
                 <p>
                     {% translate "Būsena" %}:
                     {% if project.status == "APPROVED"%}
-                        <b id="status_approved">{% translate "PATVIRTINTAS" %}</b>
+                        <b id="status_approved" style="color:green;">{% translate "PATVIRTINTAS" %}</b>
                     {% elif project.status == "REJECTED" %}
-                        <b id="status_rejected">{% translate "ATMESTAS" %}</b>
+                        <b id="status_rejected" style="color:red;">{% translate "ATMESTAS" %}</b>
                     {% else %}
                         <b id="status_created">{% translate "SUKURTAS" %}</b>
                     {% endif %}

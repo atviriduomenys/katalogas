@@ -1,3 +1,5 @@
+import secrets
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -13,6 +15,7 @@ from django.views.generic import DetailView
 from itsdangerous import URLSafeSerializer
 
 from vitrina import settings
+from vitrina.api.models import ApiKey
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm
@@ -180,6 +183,14 @@ class RepresentativeCreateView(
             )
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
+
+        if self.object.has_api_access:
+            ApiKey.objects.create(
+                api_key=secrets.token_urlsafe(),
+                enabled=True,
+                representative=self.object
+            )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -194,6 +205,23 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def form_valid(self, form):
+        self.object: Representative = form.save()
+        if self.object.has_api_access:
+            if not self.object.apikey_set.exists():
+                ApiKey.objects.create(
+                    api_key=secrets.token_urlsafe(),
+                    enabled=True,
+                    representative=self.object
+                )
+            elif form.cleaned_data.get('regenerate_api_key'):
+                api_key = self.object.apikey_set.first()
+                api_key.api_key = secrets.token_urlsafe()
+                api_key.save()
+        else:
+            self.object.apikey_set.all().delete()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

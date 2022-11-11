@@ -130,3 +130,17 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
 
     version = Version.objects.get_for_object(project).get()
     assert version.revision.comment == Project.STATUS_CHANGED
+
+
+@pytest.mark.django_db
+def test_request_comment_with_same_status(app: DjangoTestApp):
+    project = ProjectFactory(status=Project.APPROVED)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form['status'] = Comment.APPROVED
+    form.submit().follow()
+
+    assert project.comments.count() == 0
+    assert Version.objects.get_for_object(project).count() == 0

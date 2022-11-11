@@ -1,5 +1,5 @@
-{{ object.title }}
-{{ object.title_en }}
+{{ object.en_title }}
+{{ object.lt_title }}
 {{ object.filter_status }}
 {{ object.organization.title }}
 {{ object.category.title }}

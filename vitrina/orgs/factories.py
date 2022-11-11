@@ -37,4 +37,3 @@ class RepresentativeFactory(DjangoModelFactory):
         phone=factory.SelfAttribute('..phone'),
         email=factory.SelfAttribute('..email'),
     )
-

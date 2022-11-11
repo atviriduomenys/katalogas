@@ -1,5 +1,5 @@
 {% load static %}
-{% load i18n %}
+{% load i18n parler_tags %}
 {% load menu_tags %}
 
 <nav class="navbar" role="navigation" aria-label="main navigation">
@@ -73,11 +73,25 @@
                     {% endif %}
                 </div>
                 <div class="navbar-item">
-                    {% if locale == "en" %}
-                        <a href="?lang=lt" class="button is-text" title="{% translate "lang.lt" %}">LT</a>
-                    {% else %}
-                        <a href="?lang=en" class="button is-text" title="{% translate "lang.en" %}">EN</a>
-                    {% endif %}
+                    <div class="navbar-item has-dropdown">
+                        <form action="{% url 'set_language' %}" method="post" id="languageChange">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ redirect_to }}">
+                            <div class="select is-rounded">
+                                <select name="language"
+                                        onchange="languageChange.submit()">
+                                    {% get_current_language as LANGUAGE_CODE %}
+                                    {% get_available_languages as LANGUAGES %}
+                                    {% get_language_info_list for LANGUAGES as languages %}
+                                    {% for language in languages %}
+                                        <option class="navbar-item" value="{{ language.code }}" {% if language.code == LANGUAGE_CODE %} selected {% endif %}>
+                                            {{ language.code|upper }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

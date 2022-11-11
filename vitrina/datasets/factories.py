@@ -1,6 +1,8 @@
 import factory
+import faker
 from factory.django import DjangoModelFactory
 
+from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -31,10 +33,9 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
-        django_get_or_create = ('title', 'organization', 'is_public')
+        django_get_or_create = ('organization', 'is_public')
 
     organization = factory.SubFactory(OrganizationFactory)
-    title = factory.Faker('catch_phrase')
     is_public = True
     version = 1
     will_be_financed = False
@@ -42,6 +43,17 @@ class DatasetFactory(DjangoModelFactory):
     category = factory.SubFactory(CategoryFactory)
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        dataset = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            dataset.set_current_language(lang[0])
+            dataset.title = fake.word()
+            dataset.description = fake.catch_phrase()
+        dataset.save()
+        return dataset
 
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):

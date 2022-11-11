@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime
 
+import pytz
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
@@ -13,6 +14,8 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.users.models import User
+
+timezone = pytz.timezone(settings.TIME_ZONE)
 
 
 @pytest.mark.django_db
@@ -62,19 +65,19 @@ def organizations():
     organization1 = OrganizationFactory(
         slug="org1",
         title="Organization 1",
-        created=datetime(2022, 8, 22, 10, 30),
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
         jurisdiction="Jurisdiction1"
     )
     organization2 = OrganizationFactory(
         slug="org2",
         title="Organization 2",
-        created=datetime(2022, 10, 22, 10, 30),
+        created=timezone.localize(datetime(2022, 10, 22, 10, 30)),
         jurisdiction="Jurisdiction2"
     )
     organization3 = OrganizationFactory(
         slug="org3",
         title="Organization 3",
-        created=datetime(2022, 9, 22, 10, 30),
+        created=timezone.localize(datetime(2022, 9, 22, 10, 30)),
         jurisdiction="Jurisdiction2"
     )
     return [organization1, organization2, organization3]

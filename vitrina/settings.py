@@ -243,6 +243,10 @@ META_SITE_PROTOCOL = 'https'
 META_SITE_DOMAIN = 'data.gov.lt'
 
 PARLER_LANGUAGES = {
+    None: (
+        {'code': 'lt'},
+        {'code': 'en'},
+    ),
     1: (
         {'code': 'lt'},
         {'code': 'en'},
@@ -251,6 +255,10 @@ PARLER_LANGUAGES = {
         'fallbacks': ['lt', 'en'],
     }
 }
+PARLER_ENABLE_CACHING = True
+PARLER_CACHE_PREFIX = ''
+PARLER_SHOW_EXCLUDED_LANGUAGE_TABS = False
+PARLER_DEFAULT_ACTIVATE = True
 
 AUTH_USER_MODEL = 'vitrina_users.User'
 LOGIN_URL = '/login/'

@@ -6,6 +6,9 @@ from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import utc
+
+now = datetime.utcnow().replace(tzinfo=utc)
 
 
 class Task(models.Model):
@@ -19,7 +22,7 @@ class Task(models.Model):
     }
 
     title = models.CharField(max_length=255)
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=now)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
     role = models.CharField(max_length=255, choices=ROLES, blank=True, null=True)
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)

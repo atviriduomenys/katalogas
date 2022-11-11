@@ -72,6 +72,14 @@ To migrate news posts to Django CMS rerun server and run::
 
     poetry run python scripts/migrate_news.py "path/to/news/images"
 
+To add new language translations (replace en with desired language)::
+
+        django-admin makemessages -l en
+
+To generate or update .mo files when .po file is ready::
+
+        django-admin compilemessages
+
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
     System: PostgreSQL

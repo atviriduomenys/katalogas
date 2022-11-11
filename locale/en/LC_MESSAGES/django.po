@@ -1,0 +1,3288 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-11-11 11:41+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\venv\Lib\site-packages\_pytest\config\argparsing.py:458
+#, python-format
+msgid "ambiguous option: %(option)s could match %(matches)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\_termui_impl.py:496
+#, python-brace-format
+msgid "{editor}: Editing failed"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\_termui_impl.py:500
+#, python-brace-format
+msgid "{editor}: Editing failed: {e}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1097
+#: .\venv\Lib\site-packages\typer\core.py:267
+msgid "Aborted!"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1282
+#: .\venv\Lib\site-packages\click\decorators.py:495
+msgid "Show this message and exit."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1313
+#: .\venv\Lib\site-packages\click\core.py:1339
+#, python-brace-format
+msgid "(Deprecated) {text}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1357
+msgid "Options"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1383
+#, python-brace-format
+msgid "Got unexpected extra argument ({args})"
+msgid_plural "Got unexpected extra arguments ({args})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\core.py:1399
+msgid "DeprecationWarning: The command {name!r} is deprecated."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1605
+msgid "Commands"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1637
+msgid "Missing command."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:1715
+msgid "No such command {name!r}."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:2271
+msgid "Value must be an iterable."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:2291
+#, python-brace-format
+msgid "Takes {nargs} values but 1 was given."
+msgid_plural "Takes {nargs} values but {len} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\core.py:2734
+#: .\venv\Lib\site-packages\typer\core.py:565
+#, python-brace-format
+msgid "env var: {var}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:2764
+#: .\venv\Lib\site-packages\typer\core.py:120
+msgid "(dynamic)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:2777
+#: .\venv\Lib\site-packages\typer\core.py:388
+#: .\venv\Lib\site-packages\typer\core.py:586
+#, python-brace-format
+msgid "default: {default}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\core.py:2790
+#: .\venv\Lib\site-packages\typer\core.py:595
+msgid "required"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\decorators.py:400
+#, python-format
+msgid "%(prog)s, version %(version)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\decorators.py:464
+msgid "Show the version and exit."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:43
+#: .\venv\Lib\site-packages\click\exceptions.py:79
+#, python-brace-format
+msgid "Error: {message}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:71
+#, python-brace-format
+msgid "Try '{command} {option}' for help."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:120
+#, python-brace-format
+msgid "Invalid value: {message}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:122
+#, python-brace-format
+msgid "Invalid value for {param_hint}: {message}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:178
+msgid "Missing argument"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:180
+msgid "Missing option"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:182
+msgid "Missing parameter"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:184
+#, python-brace-format
+msgid "Missing {param_type}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:191
+#, python-brace-format
+msgid "Missing parameter: {param_name}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:211
+#, python-brace-format
+msgid "No such option: {name}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:223
+#, python-brace-format
+msgid "Did you mean {possibility}?"
+msgid_plural "(Possible options: {possibilities})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:261
+msgid "unknown error"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\exceptions.py:268
+msgid "Could not open file {filename!r}: {message}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\parser.py:231
+msgid "Argument {name!r} takes {nargs} values."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\parser.py:413
+msgid "Option {name!r} does not take a value."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\parser.py:474
+msgid "Option {name!r} requires an argument."
+msgid_plural "Option {name!r} requires {nargs} arguments."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\shell_completion.py:316
+msgid "Shell completion is not supported for Bash versions older than 4.4."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\shell_completion.py:322
+msgid "Couldn't detect Bash version, shell completion is not supported."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:160
+msgid "Repeat for confirmation"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:176
+msgid "Error: The value you entered was invalid."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:178
+#, python-brace-format
+msgid "Error: {e.message}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:189
+msgid "Error: The two entered values do not match."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:245
+msgid "Error: invalid input"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\termui.py:776
+msgid "Press any key to continue..."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:265
+#, python-brace-format
+msgid ""
+"Choose from:\n"
+"\t{choices}"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:297
+msgid "{value!r} is not {choice}."
+msgid_plural "{value!r} is not one of {choices}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\types.py:387
+msgid "{value!r} does not match the format {format}."
+msgid_plural "{value!r} does not match the formats {formats}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\click\types.py:409
+msgid "{value!r} is not a valid {number_type}."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:465
+#, python-brace-format
+msgid "{value} is not in the range {range}."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:606
+msgid "{value!r} is not a valid boolean."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:630
+msgid "{value!r} is not a valid UUID."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:811
+msgid "file"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:813
+msgid "directory"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:815
+msgid "path"
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:861
+msgid "{name} {filename!r} does not exist."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:870
+msgid "{name} {filename!r} is a file."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:878
+#, python-brace-format
+msgid "{name} '{filename}' is a directory."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:887
+msgid "{name} {filename!r} is not readable."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:896
+msgid "{name} {filename!r} is not writable."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:905
+msgid "{name} {filename!r} is not executable."
+msgstr ""
+
+#: .\venv\Lib\site-packages\click\types.py:972
+#, python-brace-format
+msgid "{len_type} values are required, but {len_value} was given."
+msgid_plural "{len_type} values are required, but {len_value} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\crispy_forms\tests\test_form_helper.py:130
+#: .\venv\Lib\site-packages\crispy_forms\tests\test_form_helper.py:140
+#: .\venv\Lib\site-packages\django\forms\fields.py:54
+msgid "This field is required."
+msgstr ""
+
+#: .\venv\Lib\site-packages\crispy_forms\tests\test_layout.py:392
+msgid "i18n text"
+msgstr ""
+
+#: .\venv\Lib\site-packages\crispy_forms\tests\test_layout.py:394
+msgid "i18n legend"
+msgstr ""
+
+#: .\venv\Lib\site-packages\crispy_forms\tests\test_layout_objects.py:143
+#: .\venv\Lib\site-packages\django\core\validators.py:22
+msgid "Enter a valid value."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\contrib\messages\apps.py:7
+msgid "Messages"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\contrib\sitemaps\apps.py:8
+msgid "Site Maps"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\contrib\staticfiles\apps.py:9
+msgid "Static Files"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\contrib\syndication\apps.py:7
+msgid "Syndication"
+msgstr ""
+
+#. Translators: String used to replace omitted page numbers in elided page
+#. range generated by paginators, e.g. [1, 2, '…', 5, 6, 7, '…', 9, 10].
+#: .\venv\Lib\site-packages\django\core\paginator.py:30
+msgid "…"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\paginator.py:51
+msgid "That page number is not an integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\paginator.py:53
+msgid "That page number is less than 1"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\paginator.py:58
+msgid "That page contains no results"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:93
+#: .\venv\Lib\site-packages\django\forms\fields.py:675
+msgid "Enter a valid URL."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:150
+msgid "Enter a valid integer."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:161
+msgid "Enter a valid email address."
+msgstr ""
+
+#. Translators: "letters" means latin letters: a-z and A-Z.
+#: .\venv\Lib\site-packages\django\core\validators.py:262
+msgid ""
+"Enter a valid “slug” consisting of letters, numbers, underscores or hyphens."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:269
+msgid ""
+"Enter a valid “slug” consisting of Unicode letters, numbers, underscores, or "
+"hyphens."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:278
+#: .\venv\Lib\site-packages\django\core\validators.py:288
+#: .\venv\Lib\site-packages\django\core\validators.py:311
+msgid "Enter a valid IPv4 address."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:296
+#: .\venv\Lib\site-packages\django\core\validators.py:312
+msgid "Enter a valid IPv6 address."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:306
+#: .\venv\Lib\site-packages\django\core\validators.py:310
+msgid "Enter a valid IPv4 or IPv6 address."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:340
+msgid "Enter only digits separated by commas."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:346
+#, python-format
+msgid "Ensure this value is %(limit_value)s (it is %(show_value)s)."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:379
+#, python-format
+msgid "Ensure this value is less than or equal to %(limit_value)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:388
+#, python-format
+msgid "Ensure this value is greater than or equal to %(limit_value)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:398
+#, python-format
+msgid ""
+"Ensure this value has at least %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at least %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:413
+#, python-format
+msgid ""
+"Ensure this value has at most %(limit_value)d character (it has "
+"%(show_value)d)."
+msgid_plural ""
+"Ensure this value has at most %(limit_value)d characters (it has "
+"%(show_value)d)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:432
+#: .\venv\Lib\site-packages\django\forms\fields.py:292
+#: .\venv\Lib\site-packages\django\forms\fields.py:327
+msgid "Enter a number."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:434
+#, python-format
+msgid "Ensure that there are no more than %(max)s digit in total."
+msgid_plural "Ensure that there are no more than %(max)s digits in total."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:439
+#, python-format
+msgid "Ensure that there are no more than %(max)s decimal place."
+msgid_plural "Ensure that there are no more than %(max)s decimal places."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:444
+#, python-format
+msgid ""
+"Ensure that there are no more than %(max)s digit before the decimal point."
+msgid_plural ""
+"Ensure that there are no more than %(max)s digits before the decimal point."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:506
+#, python-format
+msgid ""
+"File extension “%(extension)s” is not allowed. Allowed extensions are: "
+"%(allowed_extensions)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\core\validators.py:559
+msgid "Null characters are not allowed."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\base.py:1210
+#: .\venv\Lib\site-packages\django\forms\models.py:768
+msgid "and"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\base.py:1212
+#, python-format
+msgid "%(model_name)s with this %(field_labels)s already exists."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:100
+#, python-format
+msgid "Value %(value)r is not a valid choice."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:101
+msgid "This field cannot be null."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:102
+msgid "This field cannot be blank."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:103
+#, python-format
+msgid "%(model_name)s with this %(field_label)s already exists."
+msgstr ""
+
+#. Translators: The 'lookup_type' is one of 'date', 'year' or 'month'.
+#. Eg: "Title must be unique for pub_date year"
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:107
+#, python-format
+msgid ""
+"%(field_label)s must be unique for %(date_field_label)s %(lookup_type)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:126
+#, python-format
+msgid "Field of type: %(field_type)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:958
+#, python-format
+msgid "“%(value)s” value must be either True or False."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:959
+#, python-format
+msgid "“%(value)s” value must be either True, False, or None."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:961
+msgid "Boolean (Either True or False)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1002
+#, python-format
+msgid "String (up to %(max_length)s)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1096
+msgid "Comma-separated integers"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1145
+#, python-format
+msgid ""
+"“%(value)s” value has an invalid date format. It must be in YYYY-MM-DD "
+"format."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1147
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1290
+#, python-format
+msgid ""
+"“%(value)s” value has the correct format (YYYY-MM-DD) but it is an invalid "
+"date."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1150
+msgid "Date (without time)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1288
+#, python-format
+msgid ""
+"“%(value)s” value has an invalid format. It must be in YYYY-MM-DD HH:MM[:ss[."
+"uuuuuu]][TZ] format."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1292
+#, python-format
+msgid ""
+"“%(value)s” value has the correct format (YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
+"[TZ]) but it is an invalid date/time."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1296
+msgid "Date (with time)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1444
+#, python-format
+msgid "“%(value)s” value must be a decimal number."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1446
+msgid "Decimal number"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1585
+#, python-format
+msgid ""
+"“%(value)s” value has an invalid format. It must be in [DD] [[HH:]MM:]ss[."
+"uuuuuu] format."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1588
+msgid "Duration"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1638
+msgid "Email address"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1661
+msgid "File path"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1727
+#, python-format
+msgid "“%(value)s” value must be a float."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1729
+msgid "Floating point number"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1767
+#, python-format
+msgid "“%(value)s” value must be an integer."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1769
+msgid "Integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1852
+msgid "Big (8 byte) integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1867
+msgid "Small integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1875
+msgid "IPv4 address"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1906
+msgid "IP address"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1986
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1987
+#, python-format
+msgid "“%(value)s” value must be either None, True or False."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:1989
+msgid "Boolean (Either True, False or None)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2043
+msgid "Positive big integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2056
+msgid "Positive integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2069
+msgid "Positive small integer"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2083
+#, python-format
+msgid "Slug (up to %(max_length)s)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2115
+msgid "Text"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2181
+#, python-format
+msgid ""
+"“%(value)s” value has an invalid format. It must be in HH:MM[:ss[.uuuuuu]] "
+"format."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2183
+#, python-format
+msgid ""
+"“%(value)s” value has the correct format (HH:MM[:ss[.uuuuuu]]) but it is an "
+"invalid time."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2186
+#: .\venv\Lib\site-packages\haystack\templates\panels\haystack.html:8
+msgid "Time"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2312
+msgid "URL"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2334
+msgid "Raw binary data"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2399
+#, python-format
+msgid "“%(value)s” is not a valid UUID."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\__init__.py:2401
+msgid "Universally unique identifier"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\files.py:226
+msgid "File"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\files.py:375
+msgid "Image"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\json.py:18
+msgid "A JSON object"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\json.py:20
+msgid "Value must be valid JSON."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:790
+#, python-format
+msgid "%(model)s instance with %(field)s %(value)r does not exist."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:792
+msgid "Foreign Key (type determined by related field)"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:1045
+msgid "One-to-one relationship"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:1099
+#, python-format
+msgid "%(from)s-%(to)s relationship"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:1100
+#, python-format
+msgid "%(from)s-%(to)s relationships"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\db\models\fields\related.py:1142
+msgid "Many-to-many relationship"
+msgstr ""
+
+#. Translators: If found as last label character, these punctuation
+#. characters will prevent the default label_suffix to be appended to the label
+#: .\venv\Lib\site-packages\django\forms\boundfield.py:150
+msgid ":?.!"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:247
+msgid "Enter a whole number."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:402
+#: .\venv\Lib\site-packages\django\forms\fields.py:1143
+msgid "Enter a valid date."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:426
+#: .\venv\Lib\site-packages\django\forms\fields.py:1144
+msgid "Enter a valid time."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:454
+msgid "Enter a valid date/time."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:488
+msgid "Enter a valid duration."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:489
+#, python-brace-format
+msgid "The number of days must be between {min_days} and {max_days}."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:549
+msgid "No file was submitted. Check the encoding type on the form."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:550
+msgid "No file was submitted."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:551
+msgid "The submitted file is empty."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:553
+#, python-format
+msgid "Ensure this filename has at most %(max)d character (it has %(length)d)."
+msgid_plural ""
+"Ensure this filename has at most %(max)d characters (it has %(length)d)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:556
+msgid "Please either submit a file or check the clear checkbox, not both."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:617
+msgid ""
+"Upload a valid image. The file you uploaded was either not an image or a "
+"corrupted image."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:779
+#: .\venv\Lib\site-packages\django\forms\fields.py:869
+#: .\venv\Lib\site-packages\django\forms\models.py:1309
+#, python-format
+msgid "Select a valid choice. %(value)s is not one of the available choices."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:870
+#: .\venv\Lib\site-packages\django\forms\fields.py:985
+#: .\venv\Lib\site-packages\django\forms\models.py:1308
+msgid "Enter a list of values."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:986
+msgid "Enter a complete value."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:1202
+msgid "Enter a valid UUID."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\fields.py:1232
+msgid "Enter a valid JSON."
+msgstr ""
+
+#. Translators: This is the default suffix added to form field labels
+#: .\venv\Lib\site-packages\django\forms\forms.py:76
+msgid ":"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\forms.py:203
+#, python-format
+msgid "(Hidden field %(name)s) %(error)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\formsets.py:61
+#, python-format
+msgid ""
+"ManagementForm data is missing or has been tampered with. Missing fields: "
+"%(field_names)s. You may need to file a bug report if the issue persists."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\formsets.py:370
+#, python-format
+msgid "Please submit at most %d form."
+msgid_plural "Please submit at most %d forms."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\forms\formsets.py:377
+#, python-format
+msgid "Please submit at least %d form."
+msgid_plural "Please submit at least %d forms."
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\forms\formsets.py:405
+#: .\venv\Lib\site-packages\django\forms\formsets.py:412
+msgid "Order"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\formsets.py:417
+msgid "Delete"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:763
+#, python-format
+msgid "Please correct the duplicate data for %(field)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:767
+#, python-format
+msgid "Please correct the duplicate data for %(field)s, which must be unique."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:773
+#, python-format
+msgid ""
+"Please correct the duplicate data for %(field_name)s which must be unique "
+"for the %(lookup)s in %(date_field)s."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:782
+msgid "Please correct the duplicate values below."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:1109
+msgid "The inline value did not match the parent instance."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:1193
+msgid "Select a valid choice. That choice is not one of the available choices."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\models.py:1311
+#, python-format
+msgid "“%(pk)s” is not a valid value."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\utils.py:172
+#, python-format
+msgid ""
+"%(datetime)s couldn’t be interpreted in time zone %(current_timezone)s; it "
+"may be ambiguous or it may not exist."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:403
+msgid "Clear"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:404
+msgid "Currently"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:405
+msgid "Change"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:714
+msgid "Unknown"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:715
+msgid "Yes"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\forms\widgets.py:716
+msgid "No"
+msgstr ""
+
+#. Translators: Please do not add spaces around commas.
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:817
+msgid "yes,no,maybe"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:846
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:863
+#, python-format
+msgid "%(size)d byte"
+msgid_plural "%(size)d bytes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:865
+#, python-format
+msgid "%s KB"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:867
+#, python-format
+msgid "%s MB"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:869
+#, python-format
+msgid "%s GB"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:871
+#, python-format
+msgid "%s TB"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\template\defaultfilters.py:873
+#, python-format
+msgid "%s PB"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:66
+msgid "p.m."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:67
+msgid "a.m."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:72
+msgid "PM"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:73
+msgid "AM"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:146
+msgid "midnight"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dateformat.py:148
+msgid "noon"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:6
+msgid "Monday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:6
+msgid "Tuesday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:6
+msgid "Wednesday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:6
+msgid "Thursday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:6
+msgid "Friday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:7
+msgid "Saturday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:7
+msgid "Sunday"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:10
+msgid "Mon"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:10
+msgid "Tue"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:10
+msgid "Wed"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:10
+msgid "Thu"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:10
+msgid "Fri"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:11
+msgid "Sat"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:11
+msgid "Sun"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "January"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "February"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "March"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "April"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "May"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:14
+msgid "June"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:15
+msgid "July"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:15
+msgid "August"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:15
+msgid "September"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:15
+msgid "October"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:15
+msgid "November"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:16
+msgid "December"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "jan"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "feb"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "mar"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "apr"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "may"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:19
+msgid "jun"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "jul"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "aug"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "sep"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "oct"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "nov"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:20
+msgid "dec"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:23
+msgctxt "abbrev. month"
+msgid "Jan."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:24
+msgctxt "abbrev. month"
+msgid "Feb."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:25
+msgctxt "abbrev. month"
+msgid "March"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:26
+msgctxt "abbrev. month"
+msgid "April"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:27
+msgctxt "abbrev. month"
+msgid "May"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:28
+msgctxt "abbrev. month"
+msgid "June"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:29
+msgctxt "abbrev. month"
+msgid "July"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:30
+msgctxt "abbrev. month"
+msgid "Aug."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:31
+msgctxt "abbrev. month"
+msgid "Sept."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:32
+msgctxt "abbrev. month"
+msgid "Oct."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:33
+msgctxt "abbrev. month"
+msgid "Nov."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:34
+msgctxt "abbrev. month"
+msgid "Dec."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:37
+msgctxt "alt. month"
+msgid "January"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:38
+msgctxt "alt. month"
+msgid "February"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:39
+msgctxt "alt. month"
+msgid "March"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:40
+msgctxt "alt. month"
+msgid "April"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:41
+msgctxt "alt. month"
+msgid "May"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:42
+msgctxt "alt. month"
+msgid "June"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:43
+msgctxt "alt. month"
+msgid "July"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:44
+msgctxt "alt. month"
+msgid "August"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:45
+msgctxt "alt. month"
+msgid "September"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:46
+msgctxt "alt. month"
+msgid "October"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:47
+msgctxt "alt. month"
+msgid "November"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\dates.py:48
+msgctxt "alt. month"
+msgid "December"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\ipv6.py:8
+msgid "This is not a valid IPv6 address."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\text.py:71
+#, python-format
+msgctxt "String to return when truncating text"
+msgid "%(truncated_text)s…"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\text.py:240
+msgid "or"
+msgstr ""
+
+#. Translators: This string is used as a separator between list elements
+#: .\venv\Lib\site-packages\django\utils\text.py:259
+#: .\venv\Lib\site-packages\django\utils\timesince.py:94
+msgid ", "
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:9
+#, python-format
+msgid "%d year"
+msgid_plural "%d years"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:10
+#, python-format
+msgid "%d month"
+msgid_plural "%d months"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:11
+#, python-format
+msgid "%d week"
+msgid_plural "%d weeks"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:12
+#, python-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:13
+#, python-format
+msgid "%d hour"
+msgid_plural "%d hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\utils\timesince.py:14
+#, python-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:110
+msgid "Forbidden"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:111
+msgid "CSRF verification failed. Request aborted."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:115
+msgid ""
+"You are seeing this message because this HTTPS site requires a “Referer "
+"header” to be sent by your Web browser, but none was sent. This header is "
+"required for security reasons, to ensure that your browser is not being "
+"hijacked by third parties."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:120
+msgid ""
+"If you have configured your browser to disable “Referer” headers, please re-"
+"enable them, at least for this site, or for HTTPS connections, or for “same-"
+"origin” requests."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:124
+msgid ""
+"If you are using the <meta name=\"referrer\" content=\"no-referrer\"> tag or "
+"including the “Referrer-Policy: no-referrer” header, please remove them. The "
+"CSRF protection requires the “Referer” header to do strict referer checking. "
+"If you’re concerned about privacy, use alternatives like <a rel=\"noreferrer"
+"\" …> for links to third-party sites."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:132
+msgid ""
+"You are seeing this message because this site requires a CSRF cookie when "
+"submitting forms. This cookie is required for security reasons, to ensure "
+"that your browser is not being hijacked by third parties."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:137
+msgid ""
+"If you have configured your browser to disable cookies, please re-enable "
+"them, at least for this site, or for “same-origin” requests."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\csrf.py:142
+msgid "More information is available with DEBUG=True."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:41
+msgid "No year specified"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:61
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:111
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:208
+msgid "Date out of range"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:90
+msgid "No month specified"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:142
+msgid "No day specified"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:188
+msgid "No week specified"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:338
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:367
+#, python-format
+msgid "No %(verbose_name_plural)s available"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:594
+#, python-format
+msgid ""
+"Future %(verbose_name_plural)s not available because %(class_name)s."
+"allow_future is False."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\dates.py:628
+#, python-format
+msgid "Invalid date string “%(datestr)s” given format “%(format)s”"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\detail.py:54
+#, python-format
+msgid "No %(verbose_name)s found matching the query"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\list.py:67
+msgid "Page is not “last”, nor can it be converted to an int."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\list.py:72
+#, python-format
+msgid "Invalid page (%(page_number)s): %(message)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\generic\list.py:154
+#, python-format
+msgid "Empty list and “%(class_name)s.allow_empty” is False."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\static.py:40
+msgid "Directory indexes are not allowed here."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\static.py:42
+#, python-format
+msgid "“%(path)s” does not exist"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\static.py:80
+#, python-format
+msgid "Index of %(directory)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:7
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:221
+msgid "The install worked successfully! Congratulations!"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:207
+#, python-format
+msgid ""
+"View <a href=\"https://docs.djangoproject.com/en/%(version)s/releases/\" "
+"target=\"_blank\" rel=\"noopener\">release notes</a> for Django %(version)s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:222
+#, python-format
+msgid ""
+"You are seeing this page because <a href=\"https://docs.djangoproject.com/en/"
+"%(version)s/ref/settings/#debug\" target=\"_blank\" rel=\"noopener"
+"\">DEBUG=True</a> is in your settings file and you have not configured any "
+"URLs."
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:230
+msgid "Django Documentation"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:231
+msgid "Topics, references, &amp; how-to’s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:239
+msgid "Tutorial: A Polling App"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:240
+msgid "Get started with Django"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:248
+msgid "Django Community"
+msgstr ""
+
+#: .\venv\Lib\site-packages\django\views\templates\default_urlconf.html:249
+msgid "Connect, get help, or contribute"
+msgstr ""
+
+#: .\venv\Lib\site-packages\etc\admin\models.py:38
+msgid "Custom page"
+msgstr ""
+
+#: .\venv\Lib\site-packages\etc\admin\models.py:79
+msgid "Done."
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\admin.py:120
+#, python-format
+msgid "0 of %(count)d selected"
+msgid_plural "of %(count)d selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\haystack\admin.py:125
+#, python-format
+msgid "%(total_count)s selected"
+msgid_plural "All %(total_count)s selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: .\venv\Lib\site-packages\haystack\forms.py:24
+msgid "Search"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\forms.py:102
+msgid "Search In"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\panels.py:28
+msgid "Haystack"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\panels.py:52
+msgid "Search Queries"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\templates\panels\haystack.html:5
+msgid "Query"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\templates\panels\haystack.html:6
+msgid "Backend Alias"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\templates\panels\haystack.html:7
+msgid "Timeline"
+msgstr ""
+
+#: .\venv\Lib\site-packages\haystack\templates\panels\haystack.html:9
+msgid "Kwargs"
+msgstr ""
+
+#: .\venv\Lib\site-packages\menus\apps.py:7
+msgid "django CMS menus system"
+msgstr ""
+
+#: .\venv\Lib\site-packages\menus\menu_pool.py:191
+#, python-format
+msgid ""
+"Menu %s cannot be loaded. Please, make sure all its urls exist and can be "
+"resolved."
+msgstr ""
+
+#: .\venv\Lib\site-packages\menus\templates\menu\language_chooser.html:6
+msgid "Change to language:"
+msgstr ""
+
+#: .\venv\Lib\site-packages\sass_processor\management\commands\compilescss.py:62
+msgid "Delete generated `*.css` files instead of creating them."
+msgstr ""
+
+#: .\venv\Lib\site-packages\sass_processor\management\commands\compilescss.py:69
+msgid ""
+"Store resulting .css in configured storage. Default: store each css side-by-"
+"side with .scss."
+msgstr ""
+
+#: .\venv\Lib\site-packages\sass_processor\management\commands\compilescss.py:76
+msgid "Set templating engine used (django, jinja2). Default: django."
+msgstr ""
+
+#: .\venv\Lib\site-packages\sass_processor\management\commands\compilescss.py:83
+msgid ""
+"Set the precision for numeric computations in the SASS processor. Default: "
+"settings.SASS_PRECISION."
+msgstr ""
+
+#: .\venv\Lib\site-packages\tagulous\forms.py:188
+msgid "Tag field could not prepare unexpected value"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tagulous\forms.py:256
+#, python-format
+msgid "%s"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tagulous\templates\tagulous\admin\merge_tags.html:6
+msgid "Home"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tagulous\templates\tagulous\admin\merge_tags.html:9
+msgid "Merge"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tests\utils\custom_image\apps.py:8
+msgid "Custom Image"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tests\utils\extended_app\apps.py:8
+msgid "Extended App"
+msgstr ""
+
+#: .\venv\Lib\site-packages\tests\utils\test_app\apps.py:8
+msgid "Test app"
+msgstr ""
+
+#: .\vitrina\classifiers\admin.py:15
+msgid "kategoriją"
+msgstr ""
+
+#: .\vitrina\classifiers\apps.py:8
+msgid "Classifiers"
+msgstr ""
+
+#: .\vitrina\cms\cms_menus.py:11
+msgid "Duomenys"
+msgstr "Data"
+
+#: .\vitrina\cms\cms_menus.py:12
+msgid "Poreikis"
+msgstr "Requests and suggestions"
+
+#: .\vitrina\cms\cms_menus.py:13
+msgid "Projektai"
+msgstr "Projects"
+
+#: .\vitrina\cms\cms_menus.py:14
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:4
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:4
+msgid "Naujienos"
+msgstr "News"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:4
+#: .\vitrina\users\templates\vitrina\users\register.html:14
+msgid "Privatumo politika"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:9
+msgid ""
+"Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine "
+"arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios "
+"informacijos turi tik Lietuvos atvirų duomenų portalo atstovas. Bet kokią iš "
+"jūsų gautą informaciją portalas naudos tik pagal paskirtį. Patvirtinkite, "
+"kad susipažinote su šiomis naudojimo sąlygomis:"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:12
+msgid ""
+"Naudotojas įsipareigoja naudoti atvirus duomenis pagal CC BY 4.0 licenciją, "
+"jeigu nenurodyta kitaip."
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:14
+msgid ""
+"Asmeninius duomenis, kuriuos renkame iš prisijungusių prie Lietuvos atvirų "
+"duomenų portalo naudotojų, sudaro:"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:16
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:22
+msgid "Jūsų vardas, pavardė;"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:17
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:23
+msgid "Jūsų elektroninio pašto adresas;"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:19
+msgid ""
+"Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į "
+"Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie "
+"paslaugų pakeitimus;"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:20
+msgid ""
+"Asmeninius duomenis, kuriuos renkame iš organizacijų atstovų, atsakingų už "
+"atvirų duomenų pateikimą, sudaro:"
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:24
+msgid "Jūsų organizacijos pavadinimas."
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:26
+msgid ""
+"Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į "
+"Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie "
+"paslaugų pakeitimus. El. pašto adresą ir vardą naudosime, kad galėtume "
+"patikrinti, ar dirbate nurodytoje organizacijoje."
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:27
+msgid ""
+"Naudodamiesi Lietuvos atvirų duomenų portalu patvirtinate, kad jūsų pateikta "
+"asmeninė informacija yra teisinga."
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:28
+msgid ""
+"Visi naudotojo nurodyti ir gauti asmens duomenys yra kaupiami, saugomi ir "
+"tvarkomi pagal Lietuvos Respublikos asmens duomenų apsaugos įstatyme "
+"numatytus reikalavimus bei kitus Lietuvos Respublikoje asmens duomenų "
+"apsaugą reglamentuojančius teisės aktus. Portalas užtikrina gautų duomenų "
+"apsaugą ir įsipareigoja šią informaciją panaudoti tik esant naudotojo "
+"sutikimui ir tik įstatymo numatytais atvejais, taip pat tais atvejais, kurie "
+"būtini naudotojo užsakytai paslaugai suteikti."
+msgstr ""
+
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:21
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:26
+msgid "Autorius"
+msgstr "Author"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:22
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:25
+msgid "Publikavimo data"
+msgstr "Publication date"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:31
+msgid "Skaityti daugiau"
+msgstr "Read more"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:43
+msgid "Naujienų nėra"
+msgstr "There are no news"
+
+#: .\vitrina\comments\forms.py:9
+msgid "---------"
+msgstr "---------"
+
+#: .\vitrina\comments\forms.py:10 .\vitrina\comments\models.py:37
+#: .\vitrina\datasets\models.py:29 .\vitrina\requests\models.py:42
+msgid "Atvertas"
+msgstr "Open"
+
+#: .\vitrina\comments\forms.py:11 .\vitrina\comments\models.py:38
+#: .\vitrina\projects\models.py:20 .\vitrina\requests\models.py:44
+msgid "Patvirtintas"
+msgstr "Approved"
+
+#: .\vitrina\comments\forms.py:12 .\vitrina\comments\models.py:39
+#: .\vitrina\projects\models.py:21 .\vitrina\requests\models.py:41
+msgid "Atmestas"
+msgstr "Rejected"
+
+#: .\vitrina\comments\forms.py:29
+msgid "Registruoti kaip prašymą"
+msgstr "Register as request"
+
+#: .\vitrina\comments\forms.py:31
+msgid "Didinti duomenų atnaujinimo periodiškumą"
+msgstr "Increase the frequency of data updates"
+
+#: .\vitrina\comments\forms.py:42
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:51
+#: .\vitrina\requests\templates\vitrina\requests\list.html:74
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:23
+msgid "Būsena"
+msgstr "Status"
+
+#: .\vitrina\comments\forms.py:56
+msgid "Šis laukas yra privalomas"
+msgstr "This field is mandatory"
+
+#: .\vitrina\comments\models.py:23
+msgid "Naudotojo komentaras"
+msgstr "User comment"
+
+#: .\vitrina\comments\models.py:24
+msgid "Prašymo atverti duomenis komentaras"
+msgstr "Comment on the request to make data open-source"
+
+#: .\vitrina\comments\models.py:25
+msgid "Duomenų rinkinio įtraukimo į projektą komentaras"
+msgstr "A comment on addind a dataset to a project"
+
+#: .\vitrina\comments\models.py:26
+msgid "Statuso keitimo komentaras"
+msgstr "Status change comment"
+
+#: .\vitrina\comments\models.py:35 .\vitrina\datasets\models.py:30
+msgid "Inventorintas"
+msgstr "Inventorized"
+
+#: .\vitrina\comments\models.py:36 .\vitrina\datasets\models.py:38
+msgid "Įkelta duomenų struktūra"
+msgstr "Uploaded data structure"
+
+#: .\vitrina\comments\models.py:51
+msgid "Viešas komentaras"
+msgstr "Public comment"
+
+#: .\vitrina\comments\models.py:79
+#, python-brace-format
+msgid "Pateiktas naujas prašymas {self.rel_content_object.title}. "
+msgstr "A new request {self.rel_content_object.title} has beem created. "
+
+#: .\vitrina\comments\models.py:82
+#, python-brace-format
+msgid ""
+"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title} "
+"projektą."
+msgstr ""
+"This dataset is added to {self.rel_content_object.get_title} "
+"project."
+
+#: .\vitrina\comments\models.py:84
+msgid "Statusas pakeistas į {self.get_status_display()}. "
+msgstr "Status changed to {self.get_status_display()}."
+
+#: .\vitrina\compat\apps.py:8
+msgid "Compat"
+msgstr "Compatibility"
+
+#: .\vitrina\datasets\apps.py:8
+msgid "Datasets"
+msgstr "Datasets"
+
+#: .\vitrina\datasets\forms.py:18
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:14
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:14
+#: .\vitrina\projects\forms.py:11 .\vitrina\projects\forms.py:27
+#: .\vitrina\projects\forms.py:30 .\vitrina\requests\forms.py:11
+#: .\vitrina\requests\forms.py:25 .\vitrina\resources\models.py:57
+msgid "Pavadinimas"
+msgstr "Title"
+
+#: .\vitrina\datasets\forms.py:19
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:15
+#: .\vitrina\projects\forms.py:12 .\vitrina\projects\forms.py:28
+#: .\vitrina\requests\forms.py:12 .\vitrina\requests\forms.py:26
+#: .\vitrina\resources\models.py:61
+msgid "Aprašymas"
+msgstr "Description"
+
+#: .\vitrina\datasets\forms.py:36
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:67
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:52
+#: .\vitrina\orgs\forms.py:34
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:49
+#: .\vitrina\projects\forms.py:23 .\vitrina\requests\forms.py:21
+#: .\vitrina\resources\forms.py:68
+msgid "Redaguoti"
+msgstr "Edit"
+
+#: .\vitrina\datasets\forms.py:36 .\vitrina\orgs\forms.py:79
+#: .\vitrina\projects\forms.py:23 .\vitrina\requests\forms.py:21
+#: .\vitrina\resources\forms.py:68
+msgid "Sukurti"
+msgstr "Create"
+
+#: .\vitrina\datasets\forms.py:41
+msgid "Ar duomenys vieši"
+msgstr "Is the data public"
+
+#: .\vitrina\datasets\forms.py:43
+msgid "Duomenų rinkinio pavadinimas"
+msgstr "Dataset title"
+
+#: .\vitrina\datasets\forms.py:45
+msgid "Detalus duomenų rinkinio aprašas"
+msgstr "Detailed description of the dataset"
+
+#: .\vitrina\datasets\forms.py:47
+msgid "Surašykite aktualius raktinius žodžius"
+msgstr "List relevant keywords"
+
+#: .\vitrina\datasets\forms.py:52
+msgid "Pateikite visas prieigos teises kurios aktualios šiam duomenų rinkiniui"
+msgstr "Provide all access rights that apply to this dataset"
+
+#: .\vitrina\datasets\forms.py:54
+msgid ""
+"Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
+msgstr ""
+"Provide all of the conditions required to distribute the dataset"
+
+#: .\vitrina\datasets\forms.py:88
+msgid "Failas"
+msgstr "File"
+
+#: .\vitrina\datasets\forms.py:100 .\vitrina\helpers.py:58
+#: .\vitrina\templates\confirm_delete.html:17 .\vitrina\users\forms.py:154
+msgid "Patvirtinti"
+msgstr "Confirm"
+
+#: .\vitrina\datasets\models.py:31
+msgid "Parengti metaduomenys"
+msgstr "Prepared metadata"
+
+#: .\vitrina\datasets\models.py:32
+msgid "Įvertinti prioritetai"
+msgstr "Assessed priorities"
+
+#: .\vitrina\datasets\models.py:33
+msgid "Įvertintas finansavimas"
+msgstr "Estimated financing"
+
+#: .\vitrina\datasets\models.py:36
+msgid "Atverti duomenys"
+msgstr "Open data"
+
+#: .\vitrina\datasets\models.py:37
+msgid "Tik inventorintas"
+msgstr "Inventory only"
+
+#: .\vitrina\datasets\models.py:39
+msgid "Tik metaduomenys"
+msgstr "Metadata only"
+
+#: .\vitrina\datasets\models.py:50 .\vitrina\projects\models.py:27
+#: .\vitrina\requests\models.py:21 .\vitrina\requests\models.py:52
+msgid "Sukurta"
+msgstr "Created"
+
+#: .\vitrina\datasets\models.py:51 .\vitrina\projects\models.py:28
+#: .\vitrina\requests\models.py:24 .\vitrina\requests\models.py:55
+msgid "Redaguota"
+msgstr "Edited"
+
+#: .\vitrina\datasets\models.py:52 .\vitrina\requests\models.py:25
+#: .\vitrina\requests\models.py:56
+msgid "Pakeistas statusas"
+msgstr "Changed status"
+
+#: .\vitrina\datasets\models.py:53
+msgid "Perkelta"
+msgstr "Transferred"
+
+#: .\vitrina\datasets\models.py:54
+msgid "Pridėti duomenys"
+msgstr "Added data"
+
+#: .\vitrina\datasets\models.py:55
+msgid "Redaguoti duomenys"
+msgstr "Edited data"
+
+#: .\vitrina\datasets\models.py:56 .\vitrina\projects\models.py:29
+#: .\vitrina\requests\models.py:58
+msgid "Ištrinta"
+msgstr "Deleted"
+
+#: .\vitrina\datasets\models.py:60
+msgid "Title"
+msgstr "Title"
+
+#: .\vitrina\datasets\models.py:61
+msgid "Description"
+msgstr "Description"
+
+#: .\vitrina\datasets\models.py:76
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:47
+msgid "Kategorija"
+msgstr "Category"
+
+#: .\vitrina\datasets\models.py:84
+msgid "Licenzija"
+msgstr "Licence"
+
+#: .\vitrina\datasets\models.py:88
+msgid "Duomenų rinkinys viešinamas"
+msgstr "The dataset is public"
+
+#: .\vitrina\datasets\models.py:95
+msgid "Atnaujinimo dažnumas"
+msgstr "Update frequency"
+
+#: .\vitrina\datasets\models.py:98
+msgid "Prieigos teisės"
+msgstr "Access rights"
+
+#: .\vitrina\datasets\models.py:99
+msgid "Platinimo salygos"
+msgstr "Terms of distribution"
+
+#: .\vitrina\datasets\models.py:107
+msgid "Pateikite kableliu atskirtą sąrašą žymių."
+msgstr "Provide a comma-separated list of tags."
+
+#: .\vitrina\datasets\models.py:138
+msgid "Dataset"
+msgstr "Dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:7
+#: .\vitrina\requests\templates\vitrina\requests\list.html:98
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:57
+#: .\vitrina\templatetags\like_tags.py:12
+msgid "Patinka"
+msgstr "Like"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:14
+msgid "Brandos lygis"
+msgstr "Maturity level"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:16
+msgid ""
+"T. y. atvirų duomenų rinkinio formatas, kuriuo atverti atvirų duomenų "
+"rinkinio duomenys ir kuris įvertintas pagal Tim Berners-Lee penkių "
+"žvaigždučių modelį"
+msgstr ""
+"I.e. the open dataset format which is used to open the "
+"open-source dataset data and that is evaluated by the Tim Berners-Lee "
+"five star model"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:26
+msgid "Laikotarpis"
+msgstr "Period"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:33
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:111
+msgid "Atnaujinama"
+msgstr "Updating"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:41
+msgid "Kategorijos"
+msgstr "Categories"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:53
+msgid ""
+"Duomenų rinkinio atvėrimo būsena: Inventorintas, parengti metaduomenys, "
+"planuojamas atverti, atvertas, nenumatytas atverti"
+msgstr ""
+"Dataset status: inventoryed, prepared metadata, planned to open, opened "
+"not schedules to open"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:64
+msgid "dataset.status"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:66
+msgid "tooltip.datasetStatus"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:70
+msgid "dataset.statusOpen"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:76
+msgid "Licencija"
+msgstr "License"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:84
+msgid "Katalogas"
+msgstr "Directory"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:99
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:148
+msgid "Peržiūrėti papildomą informaciją"
+msgstr "View additional information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:107
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:122
+msgid "Atsakingas asmuo"
+msgstr "Responsible person"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:114
+msgid "dataset.responsiblePerson"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:131
+msgid "Duomenų rinkinio sukūrimo data"
+msgstr "Dataset creation date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:135
+msgid "Paskutinio atnaujinimo data"
+msgstr "Last update date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:139
+msgid "Platinimo sąlygos"
+msgstr "Distribution terms"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:142
+msgid "dataset.useLimitation"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:145
+msgid "dataset.accessConstraints"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:148
+msgid "dataset.useConstraints"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:151
+msgid "dataset.otherConstraints"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:161
+msgid "organization.provider"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:5
+msgid "Naujas šaltinis"
+msgstr "New source"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:13
+msgid "Teritorija"
+msgstr "Territory"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:15
+#: .\vitrina\resources\forms.py:17 .\vitrina\resources\models.py:114
+msgid "Periodo pradžia"
+msgstr "Period start"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:16
+#: .\vitrina\resources\forms.py:25 .\vitrina\resources\models.py:120
+msgid "Periodo pabaiga"
+msgstr "Period end"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:17
+msgid "Dydis"
+msgstr "Size"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:18
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:90
+msgid "Formatas"
+msgstr "Format"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:19
+msgid "Publikuota"
+msgstr "Published"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:20
+msgid "Atnaujinta"
+msgstr "Updated"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:49
+msgid "Atidaryti"
+msgstr "Open"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:56
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:87
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:58
+msgid "Peržiūrėti"
+msgstr "Review"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:59
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:21
+msgid "Atsisiųsti"
+msgstr "Download"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:74
+msgid "Trinti"
+msgstr "Delete"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:14
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:5
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:6
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:57
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:18
+msgid "Duomenų rinkiniai"
+msgstr "Datasets"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:29
+msgid "Duomenų rinkinio peržiūros"
+msgstr "Dataset views"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:36
+msgid "Redaguoti rinkinį"
+msgstr "Edit dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:54
+msgid "Rinkinio struktūra"
+msgstr "Dataset structure"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:55
+msgid "Informacija apie duomenų rinkinio duomenis"
+msgstr "Information about dataset data"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:69
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:26
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:50
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:4
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:4
+#: .\vitrina\users\templates\vitrina\users\profile.html:71
+msgid "Organizacija"
+msgstr "Organization"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:73
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:28
+#: .\vitrina\orgs\forms.py:59
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:47
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:26
+#: .\vitrina\users\forms.py:15 .\vitrina\users\forms.py:25
+#: .\vitrina\users\forms.py:48 .\vitrina\users\forms.py:66
+#: .\vitrina\users\forms.py:95 .\vitrina\users\forms.py:150
+#: .\vitrina\users\templates\vitrina\users\profile.html:49
+msgid "El. paštas"
+msgstr "E-mail"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:76
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:29
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:57
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:27
+#: .\vitrina\users\forms.py:152
+#: .\vitrina\users\templates\vitrina\users\profile.html:60
+msgid "Telefonas"
+msgstr "Phone number"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:79
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:62
+msgid "Tinklalapis"
+msgstr "Website"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:84
+#: .\vitrina\orgs\models.py:101
+msgid "Koordinatorius"
+msgstr "Coordinator"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:94
+msgid "Dalintis socialiniuose tinkluose"
+msgstr "Share on social networks"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:119
+msgid "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu"
+msgstr "Subscribe for newsletters related to the dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:128
+msgid "Duomenų šaltiniai"
+msgstr "Data sources"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:148
+msgid "Uždaryti papildomą informaciją"
+msgstr "Close additional information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:5
+msgid "Rinkinio būsena"
+msgstr "Dataset status"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:69
+msgid "Žymė"
+msgstr "Tag"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:132
+msgid "Įkėlimo data"
+msgstr "Upload date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:137
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:140
+msgid "Data nuo"
+msgstr "Date from"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:146
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:149
+msgid "Data iki"
+msgstr "Date until"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:81
+msgid "Ieškoti duomenų rinkinio"
+msgstr "Search for a dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:94
+#: .\vitrina\templates\component\search.html:18
+msgid "Išplėstinė paieška"
+msgstr "Advanced search"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:96
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:83
+#: .\vitrina\requests\templates\vitrina\requests\list.html:60
+msgid "Paieškos rezultatai"
+msgstr "Search results"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:99
+msgid "filter.results"
+msgstr ""
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:104
+msgid "Pridėti rinkinį"
+msgstr "Add a dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:170
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:41
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:134
+msgid "Išskleisti"
+msgstr "More"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:170
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:134
+msgid "Suskleisti"
+msgstr "Less"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:4
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:5
+msgid "Narių sąrašas"
+msgstr "Members"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:8
+msgid "Duomenų rinkinio narių sąrašas"
+msgstr "Dataset members"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:19
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:17
+msgid "Pridėti narį"
+msgstr "Add member"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:27
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:25
+#: .\vitrina\users\forms.py:46 .\vitrina\users\forms.py:64
+#: .\vitrina\users\forms.py:146
+msgid "Vardas"
+msgstr "Name"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:30
+#: .\vitrina\orgs\forms.py:14 .\vitrina\orgs\forms.py:60
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:28
+msgid "Rolė"
+msgstr "Role"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:42
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:41
+msgid "(pakvietimas išsiųstas)"
+msgstr "(invitation sent)"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:56
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:54
+msgid "Pašalinti"
+msgstr "Delete"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:4
+msgid "Duomenų rinkinio struktūra"
+msgstr "Dataset structure"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:24
+msgid "Importuoti"
+msgstr "Import"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:7
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:6
+#: .\vitrina\templates\component\tabs.html:7
+msgid "Informacija"
+msgstr "Information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:13
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:12
+msgid "Tvarkytojai"
+msgstr "Managers"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:20
+#: .\vitrina\templates\component\tabs.html:13
+msgid "Istorija"
+msgstr "History"
+
+#: .\vitrina\datasets\views.py:213
+msgid "Naujas duomenų rinkinys"
+msgstr "New dataset"
+
+#: .\vitrina\datasets\views.py:254
+msgid "Duomenų rinkinio redagavimas"
+msgstr "Dataset edit"
+
+#: .\vitrina\datasets\views.py:312
+msgid "Struktūros importas"
+msgstr "Strucutre import"
+
+#: .\vitrina\datasets\views.py:435 .\vitrina\orgs\views.py:170
+msgid "Kvietimas prisijungti prie atvirų duomenų portalo"
+msgstr "Invitation to join the open data site"
+
+#: .\vitrina\datasets\views.py:437
+#, python-brace-format
+msgid ""
+"Buvote įtraukti į „{self.dataset}“ duomenų rinkinio narių sąrašą, tačiau "
+"nesate registruotas Lietuvos atvirų duomenų portale. Prašome sekite šia "
+"nuoroda, kad užsiregistruotumėte ir patvirtintumėte savo narystę:\n"
+"\n"
+msgstr ""
+"You have been added to „{self.dataset}“ dataset members list, but "
+"you are not registered to Lithuanias open data site. Please follow this "
+"url to create an account and approve your membership:\n"
+"\n"
+
+#: .\vitrina\datasets\views.py:448 .\vitrina\orgs\views.py:184
+msgid "Naudotojui išsiųstas laiškas dėl registracijos"
+msgstr "The user has been sent an email for registration"
+
+#: .\vitrina\orgs\apps.py:8
+msgid "Organizations"
+msgstr "Organizations"
+
+#: .\vitrina\orgs\forms.py:15 .\vitrina\orgs\forms.py:61
+msgid "Suteikti API prieigą"
+msgstr "Grant API access"
+
+#: .\vitrina\orgs\forms.py:16
+msgid "API raktas"
+msgstr "API key"
+
+#: .\vitrina\orgs\forms.py:17
+msgid "Pergeneruoti raktą"
+msgstr "Regenerate key"
+
+#: .\vitrina\orgs\forms.py:52
+msgid ""
+"Negalima panaikinti koordinatoriaus rolės naudotojui, jei tai yra "
+"vienintelis koordinatoriaus rolės atstovas."
+msgstr ""
+"Can't remove coordinator role from the user, since he is the only"
+"user of the coordinator role left."
+
+#: .\vitrina\orgs\forms.py:95
+msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
+msgstr "User with this e-mail already exists"
+
+#: .\vitrina\orgs\models.py:53
+msgid "Valstybinė įstaiga"
+msgstr "State agency"
+
+#: .\vitrina\orgs\models.py:54
+msgid "Verslo organizacija"
+msgstr "Business organization"
+
+#: .\vitrina\orgs\models.py:55
+msgid "Nepelno ir nevalstybinė organizacija"
+msgstr "Non-profit and non-governmental organization"
+
+#: .\vitrina\orgs\models.py:102
+msgid "Tvarkytojas"
+msgstr "Handler"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:4
+msgid "nav.orgs"
+msgstr ""
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:35
+msgid "Pavaldus"
+msgstr "Subordinate"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:42
+msgid "Įmonės kodas"
+msgstr "Company code"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:52
+msgid "Buveinės adresas"
+msgstr "Office address"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:5
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:6
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:8
+msgid "Organizacijos"
+msgstr "Organizations"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:16
+msgid "Valdymo sritis"
+msgstr "Management area"
+
+#: .\vitrina\orgs\views.py:172
+#, python-brace-format
+msgid ""
+"Buvote įtraukti į „{organization}“ organizacijos narių sąrašo, tačiau nesate "
+"registruotas Lietuvos atvirų duomenų portale. Prašome sekite šia nuoroda, "
+"kad užsiregistruotumėte ir patvirtintumėte savo narystę organizacijoje:\n"
+"\n"
+msgstr ""
+"You have been added to „{organization}“ organization members list, but "
+"you are not registered to Lithuanias open data site. Please follow this "
+"url to create an account and approve your membership:\n"
+"\n"
+
+#: .\vitrina\projects\forms.py:13 .\vitrina\projects\forms.py:29
+msgid "Nuoroda į panaudojimo atvejį"
+msgstr "URL to use case"
+
+#: .\vitrina\projects\forms.py:14
+msgid "Paveiksliukas"
+msgstr "Picture"
+
+#: .\vitrina\projects\models.py:19 .\vitrina\requests\models.py:40
+msgid "Pateiktas"
+msgstr "Submited"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:19
+msgid "Peržiūrėjo"
+msgstr "Viewed"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:26
+msgid "Ar jums patinka šis projektas?"
+msgstr "Do you like this project?"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:30
+msgid "Patinka:"
+msgstr "Likes:"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:36
+msgid "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju"
+msgstr "Subscribe to the news associated with this use case"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:46
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:46
+msgid "Keisti"
+msgstr "Change"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:55
+msgid "Teikiama nauda"
+msgstr "Benefits"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:60
+msgid "Naudos gavėjų grupė"
+msgstr "Beneficiary group"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:65
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:308
+msgid "Papildoma informacija"
+msgstr "Additional information"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:70
+msgid "Nuoroda"
+msgstr "URL"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:77
+msgid "Panaudoti duomenų rinkiniai"
+msgstr "Used datasets"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:4
+#: .\vitrina\projects\templates\vitrina\projects\list.html:5
+#: .\vitrina\projects\templates\vitrina\projects\list.html:7
+msgid "Panaudojimo atvejai"
+msgstr "Use cases"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:14
+msgid ""
+"\n"
+"                Dalinimasis geraisiais atvirų duomenų naudojimo pavyzdžiais\n"
+"                didina jų vertę ir gali įkvėpti kitus duomenų vartotojus\n"
+"                pasekti Jūsų pavyzdžiu kuriant naujas paslaugas ar kitais\n"
+"                būdais didinti atvertų duomenų pakartotino naudojimo vertę.\n"
+"                "
+msgstr ""
+"\n"
+"                Sharing good examples of open data\n"
+"                increases their value and can inspire other data users\n"
+"                to follow in your example when creating new services or in other\n"
+"                ways to expand the reuse value of open data\n"
+"                "
+#: .\vitrina\projects\templates\vitrina\projects\list.html:22
+msgid "Pateikti naują panaudojimo atvejį"
+msgstr "Submit a new use case"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:54
+msgid "usecases.empty"
+msgstr ""
+
+#: .\vitrina\projects\views.py:63
+msgid "Panaudos atvejo registracija"
+msgstr "Use case"
+
+#: .\vitrina\projects\views.py:88
+msgid "Panaudos atvejo redagavimas"
+msgstr "Use case edit"
+
+#: .\vitrina\requests\models.py:22 .\vitrina\requests\models.py:53
+msgid "Atmesta"
+msgstr "Rejected"
+
+#: .\vitrina\requests\models.py:23 .\vitrina\requests\models.py:54
+msgid "Patvirtinta"
+msgstr "Approved"
+
+#: .\vitrina\requests\models.py:26 .\vitrina\requests\models.py:57
+msgid "Priskirta"
+msgstr "Assigned"
+
+#: .\vitrina\requests\models.py:43
+msgid "Atsakytas"
+msgstr "Answered"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:8
+#: .\vitrina\requests\templates\vitrina\requests\list.html:4
+#: .\vitrina\requests\templates\vitrina\requests\list.html:5
+#: .\vitrina\requests\templates\vitrina\requests\list.html:7
+msgid "Gauti poreikiai duomenų rinkiniams"
+msgstr "Received requests for datasets"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:17
+msgid ""
+"Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkiniui turite "
+"pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. "
+"Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują."
+msgstr ""
+"Can't find a dataset, or have suggestions for an existing dataset? "
+"Then please look at already created requests for datasets. "
+"If you can't find the needed request - create a new one"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:19
+#: .\vitrina\requests\templates\vitrina\requests\list.html:15
+msgid "Teikti poreikį"
+msgstr "Create a request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:22
+msgid "Užsiprenumeruokite naujienas, susijusias su poreikiu"
+msgstr "Subscribe to news associated with this request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:31
+msgid "Naujų duomenų atvėrimo poreikis"
+msgstr "New data opening request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:33
+msgid "Esamo duomenų rinkinio papildymo poreikis"
+msgstr "Existing dataset expansion request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:36
+msgid "Poreikio peržiūros"
+msgstr "Request views"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:56
+msgid "Duomenų panaudojimo tikslas"
+msgstr "Data usage purpose"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:71
+msgid "Moksliniams tyrimams, studijoms"
+msgstr "Scientific research and studies"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:87
+msgid "Naujų paslaugų, produktų sukūrimui"
+msgstr "Creation of new services and products"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:103
+msgid "Pilietinės visuomenės, demokratinių procesų skatinimui"
+msgstr "Promotion of civil society and democratin processes"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:119
+msgid "Visuomenės informavimui"
+msgstr "Public information"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:135
+msgid "Socialinių ar aplinkosauginių problemų sprendimui"
+msgstr "Solving social or environmental problems"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:142
+msgid "Norimas pakeitimas"
+msgstr "Desired change"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:159
+msgid "Atverti duomenų rinkinį kitu formatu"
+msgstr "Open dataset using another format"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:177
+msgid "Papildyti duomenų rinkinį naujais duomenimis"
+msgstr "Expand dataset with new data"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:195
+msgid "Keisti duomenų atnaujinimo periodą"
+msgstr "Change data update period"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:202
+msgid "Pageidaujamas duomenų pateikimo formatas"
+msgstr "Requested data format"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:279
+msgid "Pageidaujama duomenų struktūra"
+msgstr "Requested data structure"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:284
+msgid "Duomenų pavadinimas"
+msgstr "Data title"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:285
+msgid "Duomenų pavadinimas žodyne"
+msgstr "Data title in dictionary"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:286
+msgid "Duomenų tipas"
+msgstr "Data type"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:287
+msgid "Pastabos"
+msgstr "Notes"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:302
+msgid "request_object.structure_file"
+msgstr ""
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:316
+msgid "Organizacijos atsakymas"
+msgstr "Organization answer"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:13
+msgid ""
+"Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite "
+"pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. "
+"Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują."
+msgstr ""
+"Can't find the required dataset, or have suggestions to an existing dataset? "
+"Then you should look at already existing requests for datasets. If you can't "
+"find the wanted dataset in the list - create a new request."
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:19
+#: .\vitrina\requests\templates\vitrina\requests\list.html:89
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:27
+msgid "Registravimo data"
+msgstr "Registration date"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:44
+msgid ""
+"Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti "
+"poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant "
+"duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į "
+"atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir "
+"įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir "
+"verslo plėtrai."
+msgstr ""
+"In this part of the website contains requests for open data submitted by users. "
+"This is important because with opening data to the public the goal is to "
+"open the data to the maximum, taking into account demand driven "
+"approach and assessing their positive impact on the satisfaction of public "
+"interest, publicity and business development."
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:48
+msgid "Ieškoti poreikio duomenų rinkiniui"
+msgstr "Search for the request of dataset"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:63
+msgid "Filtruoti rezultatus"
+msgstr "Filter results"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:76
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:7
+msgid "Pasiūlymas organizacijai"
+msgstr "Request for organization"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:81
+msgid "Poreikis papildyti ar pakeisti esamą duomenų rinkinį"
+msgstr "Request to improve or replace current dataset"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:92
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:32
+msgid "Atnaujinimo data"
+msgstr "Renew date"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:95
+#: .\vitrina\templates\component\comments.html:5
+msgid "Komentarai"
+msgstr "Comments"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:18
+msgid "Norimas keisti duomenų rinkinys"
+msgstr "Dataset that is up for change"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:39
+msgid "Planuojama atvėrimo data"
+msgstr "Planned publication date"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:46
+msgid "request.user.count"
+msgstr ""
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:52
+msgid "Duomenų atnaujinimo periodiškumas"
+msgstr "Data renew period"
+
+#: .\vitrina\requests\views.py:86
+msgid "Poreikio registravimas"
+msgstr "Request creation"
+
+#: .\vitrina\requests\views.py:112
+msgid "Poreikio redagavimas"
+msgstr "Request edit"
+
+#: .\vitrina\resources\forms.py:19
+msgid "Data nuo kada duomenys yra aktualūs."
+msgstr "Date from when this data is relevant"
+
+#: .\vitrina\resources\forms.py:27
+msgid "Data nuo kada duomenys nebėra aktualūs."
+msgstr "Date from when this data is irrelevant"
+
+#: .\vitrina\resources\forms.py:33 .\vitrina\resources\models.py:67
+msgid "Prieigos nuoroda"
+msgstr "Access url"
+
+#: .\vitrina\resources\forms.py:35
+msgid ""
+"Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
+"nuorodas."
+msgstr ""
+"Link to a website where you can find direct download "
+"links."
+
+#: .\vitrina\resources\forms.py:43 .\vitrina\resources\models.py:84
+msgid "Atsisiuntimo nuoroda"
+msgstr "Download link"
+
+#: .\vitrina\resources\forms.py:45
+msgid ""
+"Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti tiesiogiai į "
+"CSV, JSON ar kito formato duomenų failą."
+msgstr ""
+"Direct download link to the data. This link must be direct to a "
+"CSV, JSON or other format data file."
+
+#: .\vitrina\resources\forms.py:72
+msgid "Šaltinio pavadinimas"
+msgstr "Source title"
+
+#: .\vitrina\resources\forms.py:73
+msgid "Detalus šaltinio aprašas"
+msgstr "Detailed source description"
+
+#: .\vitrina\resources\forms.py:74
+msgid "Pateikitę geografinę padėtį"
+msgstr "Provide a geographical location"
+
+#: .\vitrina\resources\forms.py:76
+msgid "Pasirinkite pradžios datą"
+msgstr "Choose a start date"
+
+#: .\vitrina\resources\forms.py:77
+msgid "Pasirinkite pabaigos datą"
+msgstr "Choose a end date"
+
+#: .\vitrina\resources\forms.py:82
+msgid "Šaltinio failas"
+msgstr "Source file"
+
+#: .\vitrina\resources\forms.py:91
+msgid ""
+"Užpildykit vieną iš pasirinktų laukų: URL lauką arba įkelkit failą, ne abu."
+msgstr ""
+"Fill in the URL field or upload a file, not both."
+
+#: .\vitrina\resources\forms.py:96
+msgid "Pateikite duomenų atsisiuntimo nuorodą."
+msgstr "Provide a data download link."
+
+#: .\vitrina\resources\forms.py:99
+msgid "Arba įkelkite duomenų faią."
+msgstr "Or upload a data file."
+
+#: .\vitrina\resources\models.py:69
+msgid "Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."
+msgstr "Link to website from where it is possible to download the data."
+
+#: .\vitrina\resources\models.py:78
+msgid "Duomenų formatas"
+msgstr "Data format"
+
+#: .\vitrina\resources\models.py:86
+msgid "Tiesioginė duomenų atsisiuntimo nuoroda."
+msgstr "Direct data download url"
+
+#: .\vitrina\resources\models.py:95
+msgid "Duomenų failas"
+msgstr "Data file"
+
+#: .\vitrina\resources\models.py:97
+msgid ""
+"Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir įprastinių "
+"atveju duomenys turėtu būti talpinami atvirų duomenų Saugykloje ar kitoje "
+"vietoje, pateikiant tiesioginę duomenų atsisiuntimo nuorodą. Tačiau "
+"nedidelės apimties (iki 5Mb) duomenų failus, galima talpinti ir kataloge."
+msgstr ""
+"The open-source data catalog is not meant for data storage and all data "
+"should be stored in n open data repository or by using other means of storage. "
+"You must provide a direct link to the data. Smaller (5Mb or less) data files, "
+"can be stored inside the catalog"
+
+#: .\vitrina\resources\models.py:108
+msgid "Geografinė aprėptis"
+msgstr "Geographical coverage"
+
+#: .\vitrina\resources\views.py:31
+msgid "Naujas duomenų rinkinio šaltinis"
+msgstr "New dataset source"
+
+#: .\vitrina\resources\views.py:66
+msgid "Duomenų rinkinio šaltinio redagavimas"
+msgstr "Dataset source edit"
+
+#: .\vitrina\settings.py:194
+msgid "Lithuanian"
+msgstr ""
+
+#: .\vitrina\settings.py:195
+msgid "English"
+msgstr ""
+
+#: .\vitrina\settings.py:227
+msgid "Home page"
+msgstr ""
+
+#: .\vitrina\tasks\models.py:19
+msgid "Vyr. koordinatorius"
+msgstr "Senior coordinator"
+
+#: .\vitrina\tasks\models.py:20
+msgid "Organizacijos koordinatorius"
+msgstr "Organization coordinator"
+
+#: .\vitrina\tasks\models.py:21
+msgid "Organizacijos tvarkytojas"
+msgstr "Organization manager"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:4
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:5
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:7
+#: .\vitrina\templates\component\navbar.html:55
+msgid "Užduotys"
+msgstr "Tasks"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:20
+msgid "Sukurta prieš"
+msgstr "Created for"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:32
+msgid "Užduočių nėra!"
+msgstr "There are no tasks!"
+
+#: .\vitrina\templates\base_form.html:12
+msgid "Pasirinkite turinio redagavimo kalbą"
+msgstr "Choose a language to edit"
+
+#: .\vitrina\templates\component\comment.html:22
+#: .\vitrina\templates\component\comment.html:51
+msgid "Atsakymas į"
+msgstr "Answer to"
+
+#: .\vitrina\templates\component\comment.html:26
+msgid "Komentaras pašalintas"
+msgstr "Comment deleted"
+
+#: .\vitrina\templates\component\comment.html:65
+#: .\vitrina\templates\component\comment.html:81
+msgid "Atsakyti"
+msgstr "Answer"
+
+#: .\vitrina\templates\component\comments.html:29
+msgid "Teikti komentarą"
+msgstr "Submit comment"
+
+#: .\vitrina\templates\component\comments.html:37
+msgid "Komentuoti gali tik prisijungę naudotojai"
+msgstr "Only logged in users can leave a comment"
+
+#: .\vitrina\templates\component\comments.html:65
+msgid "Šis laukas privalomas"
+msgstr "This field is mandatory"
+
+#: .\vitrina\templates\component\footer.html:12
+msgid "IVPK Informacinės visuomenės plėtros komitetas"
+msgstr "IVPK Information Society Development Committee"
+
+#: .\vitrina\templates\component\footer.html:14
+msgid "tel."
+msgstr "mob:"
+
+#: .\vitrina\templates\component\footer.html:15
+msgid "faks."
+msgstr "fax:"
+
+#: .\vitrina\templates\component\footer.html:16
+msgid "el. p."
+msgstr "e-mail:"
+
+#: .\vitrina\templates\component\footer.html:19
+msgid "Užsiprenumeruokite mūsų naujienlaiškį"
+msgstr "Subscribe to our newsletter"
+
+#: .\vitrina\templates\component\footer.html:22
+msgid "Įveskite el. pašto adresą..."
+msgstr "Your email address"
+
+#: .\vitrina\templates\component\footer.html:26
+msgid "Užsakyti"
+msgstr "Subscribe"
+
+#: .\vitrina\templates\component\footer.html:31
+msgid "Susisiekite su mumis:"
+msgstr "Contact us:"
+
+#: .\vitrina\templates\component\hero.html:11
+msgid "Lietuvos atvirų duomenų portalas"
+msgstr "Open data in Lithuania"
+
+#: .\vitrina\templates\component\hero.html:21
+msgid "Nerandate duomenų rinkinio?"
+msgstr "Can't find a dataset?"
+
+#: .\vitrina\templates\component\hero.html:22
+msgid "O gal esamas duomenų rinkinys neatitinka lūkesčių?"
+msgstr "Current dataset doesn't meet your expectations?"
+
+#: .\vitrina\templates\component\hero.html:24
+msgid "Teikti poreikį duomenų rinkiniui"
+msgstr "Submit a request for a dataset"
+
+#: .\vitrina\templates\component\hero.html:26
+msgid ""
+"Jeigu esate koordinatorius ir atstovaujate organizaciją, norinčą teikti "
+"duomenis?"
+msgstr "Are you a data provider and want to provide data?"
+
+#: .\vitrina\templates\component\hero.html:28
+msgid "Užpildyti naujo duomenų teikėjo formą"
+msgstr "Fill in the new data provider form"
+
+#: .\vitrina\templates\component\hero.html:40
+msgid "Rinkinių"
+msgstr "Datasets"
+
+#: .\vitrina\templates\component\hero.html:49
+msgid "Organizacijų"
+msgstr "Organizations"
+
+#: .\vitrina\templates\component\hero.html:58
+msgid "Panaudojimo atvejų"
+msgstr "Use cases"
+
+#: .\vitrina\templates\component\navbar.html:51
+msgid "Profilis"
+msgstr "Profile"
+
+#: .\vitrina\templates\component\navbar.html:58
+msgid "Rinkiniai"
+msgstr "Datasets"
+
+#: .\vitrina\templates\component\navbar.html:63
+msgid "Administravimas"
+msgstr "Administration"
+
+#: .\vitrina\templates\component\navbar.html:66
+msgid "Atsijungti"
+msgstr "Logout"
+
+#: .\vitrina\templates\component\navbar.html:71 .\vitrina\users\forms.py:27
+msgid "Prisijungti"
+msgstr "Login"
+
+#: .\vitrina\templates\component\search.html:8
+msgid "Ieškoti duomenų..."
+msgstr "Look for data..."
+
+#: .\vitrina\templates\component\subscription.html:12
+msgid "Prenumeruoja:"
+msgstr "Subscribers"
+
+#: .\vitrina\templates\confirm_delete.html:12
+msgid "Ar tikrai norite ištrinti"
+msgstr "Are you sure you want to delete"
+
+#: .\vitrina\templates\confirm_delete.html:16
+msgid "Atšaukti"
+msgstr "Cancel"
+
+#: .\vitrina\templates\history.html:4
+msgid "Veiksmų istorija"
+msgstr "Action history"
+
+#: .\vitrina\templates\history.html:16
+msgid "Data/laikas"
+msgstr "Date/Time"
+
+#: .\vitrina\templates\history.html:17
+msgid "Naudotojas"
+msgstr "User"
+
+#: .\vitrina\templates\history.html:18
+msgid "Veiksmas"
+msgstr "Action"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:7
+msgid "Pradinis"
+msgstr "First"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:8
+msgid "Atgal"
+msgstr "Back"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:12
+#, python-format
+msgid ""
+"\n"
+"                Puslapis %(number)s iš %(total)s.\n"
+"            "
+msgstr ""
+"\n"
+"                Page %(number)s out of %(total)s.\n"
+"            "
+#: .\vitrina\templates\vitrina\common\pagination.html:18
+msgid "Pirmyn"
+msgstr "Forward"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:19
+msgid "Paskutinis"
+msgstr "Last"
+
+#: .\vitrina\templates\vitrina\datasets\facets.html:17
+#: .\vitrina\templates\vitrina\datasets\facets.html:36
+msgid "general.metadataOnly"
+msgstr ""
+
+#: .\vitrina\templates\vitrina\datasets\facets.html:19
+msgid "general.structureUploaded"
+msgstr ""
+
+#: .\vitrina\templates\vitrina\datasets\facets.html:31
+msgid "general.inventored"
+msgstr ""
+
+#: .\vitrina\templatetags\like_tags.py:16
+msgid "Nepatinka"
+msgstr "Dislike"
+
+#: .\vitrina\templatetags\subscription_tags.py:13
+msgid "Prenumeruoti"
+msgstr "Subscribe"
+
+#: .\vitrina\templatetags\subscription_tags.py:18
+msgid "Atsisakyti prenumeratos"
+msgstr "Cancel subscription"
+
+#: .\vitrina\users\forms.py:16 .\vitrina\users\forms.py:26
+#: .\vitrina\users\forms.py:50 .\vitrina\users\forms.py:67
+msgid "Slaptažodis"
+msgstr "Password"
+
+#: .\vitrina\users\forms.py:37
+msgid "Neteisingi prisijungimo duomenys"
+msgstr "Incorrect login data"
+
+#: .\vitrina\users\forms.py:47 .\vitrina\users\forms.py:65
+#: .\vitrina\users\forms.py:148
+msgid "Pavardė"
+msgstr "Surname"
+
+#: .\vitrina\users\forms.py:52 .\vitrina\users\forms.py:68
+#: .\vitrina\users\forms.py:114 .\vitrina\users\forms.py:125
+msgid "Pakartokite slaptažodį"
+msgstr "Repeat password"
+
+#: .\vitrina\users\forms.py:70
+#: .\vitrina\users\templates\vitrina\users\login.html:11
+#: .\vitrina\users\templates\vitrina\users\login.html:14
+msgid "Registruotis"
+msgstr "Register"
+
+#: .\vitrina\users\forms.py:80
+msgid "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
+msgstr "Name can not be shorter than 3 symbols and can't have numbers"
+
+#: .\vitrina\users\forms.py:83
+msgid "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
+msgstr "Surname can not be shorter than 3 symbols and can't have numbers"
+
+#: .\vitrina\users\forms.py:85
+msgid "Turite sutikti su naudojimo sąlygomis"
+msgstr "You must agree to the terms of service"
+
+#: .\vitrina\users\forms.py:96 .\vitrina\users\forms.py:126
+#: .\vitrina\users\templates\vitrina\users\login.html:21
+msgid "Atstatyti slaptažodį"
+msgstr "Reset password"
+
+#: .\vitrina\users\forms.py:103
+msgid "Naudotojas su tokiu el. pašto adresu neegzistuoja"
+msgstr "User with this e-mail does not exist"
+
+#: .\vitrina\users\forms.py:109 .\vitrina\users\forms.py:124
+msgid "Naujas slaptažodis"
+msgstr "New password"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:5
+msgid "Prisijungimas"
+msgstr "Login"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:12
+msgid ""
+"Jeigu norite ne tik peržvelgti atvirų duomenų rinkinius skelbiamus šiame "
+"portale, bet ir pateikti panaudojimo atvejį, pateikti poreikį duomenų "
+"rinkiniui ir kt. rekomenduojame užsiregistruoti."
+msgstr ""
+"If you want to not only review open datasets published on this website, "
+"but also sumbit a use case or request a datasetc, etc. "
+"we recommend you to register."
+
+#: .\vitrina\users\templates\vitrina\users\login.html:18
+msgid "Pamiršote slaptažodį?"
+msgstr "Forgot password?"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:19
+msgid ""
+"Jeigu pamiršote slaptažodį, užpildykite formą ir naują slaptažodį gausite "
+"el. paštu."
+msgstr ""
+"If you forgot your password, please fill out a form and you will get your new password "
+"to your e-mail."
+
+#: .\vitrina\users\templates\vitrina\users\login.html:27
+msgid ""
+"Tai puslapis skirtas prisijungti arba užsiregistruoti naujam naudotojui, "
+"kuris nori neribotai, bei laisvai dalintis informacija, kurią vėliau savo "
+"tikslais galėtų naudoti bet kuris suinteresuotas asmuo ar organizacija. Jei "
+"kuriate naują naudotoją, svarbu pateikti teisingus duomenis (pvz. el. pašto "
+"adresas, kuris bus naudojamas pranešimams iš portalo siųsti). Jei "
+"susiduriate su problema parašykite adresu "
+msgstr ""
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_email.html:2
+msgid ""
+"Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą:"
+msgstr ""
+"Hello, if you want to create a new passowrd you have to follow this url:"
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_email.html:6
+msgid "Lietuvos Atvirų Duomenų Portalas"
+msgstr "Open data in Lithuania"
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_subject.txt:2
+msgid "Slaptažodžio atstatymas"
+msgstr "Password reset"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:5
+msgid "Naudotojo profilis"
+msgstr "User profile"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:10
+msgid "notification.type"
+msgstr ""
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:30
+msgid "Užsiregistravo prieš"
+msgstr "Registered for"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:39
+msgid "Prisijungė prieš"
+msgstr "Logged in for"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:86
+msgid "Keisti duomenis"
+msgstr "Change data"
+
+#: .\vitrina\users\templates\vitrina\users\register.html:5
+msgid "Naudotojo registracija"
+msgstr "User registration"
+
+#: .\vitrina\users\templates\vitrina\users\register.html:15
+msgid ""
+"Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine "
+"arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios "
+"informacijos turi tik data.gov.lt. Bet kokią iš jūsų gautą informaciją "
+"portalas naudos tik pagal paskirtį."
+msgstr ""
+"Any information that you submit using this website or e-mail is considered "
+"confidential and access to it is restricted to data.gov.lt. Any information "
+"that the website gets from you will only be used for it's purpose. "
+
+#: .\vitrina\users\templates\vitrina\users\register.html:16
+msgid "Plačiau apie privatumo politiką"
+msgstr "More about the privacy policy"
+
+#: .\vitrina\users\views.py:53
+msgid "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"
+msgstr "The url to change your password has been sent to your e-mail"
+
+#: .\vitrina\users\views.py:63
+msgid "Slaptažodis sėkmingai atnaujintas"
+msgstr "Password has been changed"
+
+#: .\vitrina\users\views.py:110
+msgid "Naudotojo profilio redagavimas"
+msgstr "User profile edit"

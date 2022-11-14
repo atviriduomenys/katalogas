@@ -3247,6 +3247,12 @@ msgid ""
 "adresas, kuris bus naudojamas pranešimams iš portalo siųsti). Jei "
 "susiduriate su problema parašykite adresu "
 msgstr ""
+"The purpose of this page is to allow the login and registration of new and "
+"existing users, who want to share information unlimitedly and freely, which "
+"can later be used by any user or organization of the website. "
+"It is important to provide correct personal information when logging in "
+"(E.g. e-mail address that will be used to notify you). If you run into any "
+"problems, please contact us at:"
 
 #: .\vitrina\users\templates\vitrina\users\password_reset_email.html:2
 msgid ""

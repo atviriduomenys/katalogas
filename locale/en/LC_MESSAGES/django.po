@@ -1633,7 +1633,7 @@ msgstr ""
 
 #: .\vitrina\classifiers\admin.py:15
 msgid "kategoriją"
-msgstr ""
+msgstr "Category"
 
 #: .\vitrina\classifiers\apps.py:8
 msgid "Classifiers"
@@ -1660,7 +1660,7 @@ msgstr "News"
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:4
 #: .\vitrina\users\templates\vitrina\users\register.html:14
 msgid "Privatumo politika"
-msgstr ""
+msgstr "Privacy policy"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:9
 msgid ""
@@ -1670,28 +1670,36 @@ msgid ""
 "jūsų gautą informaciją portalas naudos tik pagal paskirtį. Patvirtinkite, "
 "kad susipažinote su šiomis naudojimo sąlygomis:"
 msgstr ""
+"Any information you provide while using this website or email, is considered "
+"confidential and access to it is only given to the representative of open data. "
+"Any information received from you will be used only for it's intended purpose. "
+"Please confirm that you have read the following terms of use:"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:12
 msgid ""
 "Naudotojas įsipareigoja naudoti atvirus duomenis pagal CC BY 4.0 licenciją, "
 "jeigu nenurodyta kitaip."
 msgstr ""
+"The user undertakes to use open data under the CC BY 4.0 licence "
+"unless otherwise specified."
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:14
 msgid ""
 "Asmeninius duomenis, kuriuos renkame iš prisijungusių prie Lietuvos atvirų "
 "duomenų portalo naudotojų, sudaro:"
 msgstr ""
+"Personal data that we collect from those connected to Lithuanian open data "
+"website's list of users, consists of:"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:16
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:22
 msgid "Jūsų vardas, pavardė;"
-msgstr ""
+msgstr "Your name, surname;"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:17
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:23
 msgid "Jūsų elektroninio pašto adresas;"
-msgstr ""
+msgstr "Your e-mail address;"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:19
 msgid ""
@@ -1699,16 +1707,21 @@ msgid ""
 "Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie "
 "paslaugų pakeitimus;"
 msgstr ""
+"We collect the following personal data in order to provide access to "
+"Lithuanian open data website and send notifications to users about service "
+"changes;"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:20
 msgid ""
 "Asmeninius duomenis, kuriuos renkame iš organizacijų atstovų, atsakingų už "
 "atvirų duomenų pateikimą, sudaro:"
 msgstr ""
+"Personal data we collect from representative of organizations "
+"respnsible for open data submission, consists of:"
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:24
 msgid "Jūsų organizacijos pavadinimas."
-msgstr ""
+msgstr "Your organization title."
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:26
 msgid ""
@@ -1717,12 +1730,18 @@ msgid ""
 "paslaugų pakeitimus. El. pašto adresą ir vardą naudosime, kad galėtume "
 "patikrinti, ar dirbate nurodytoje organizacijoje."
 msgstr ""
+"We collect the following personal data in order to provide access to "
+"Lithuanian open data website and send notifications to users about service changes. "
+"We will use your email address and name to check if you work for the "
+"specified organization."
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:27
 msgid ""
 "Naudodamiesi Lietuvos atvirų duomenų portalu patvirtinate, kad jūsų pateikta "
 "asmeninė informacija yra teisinga."
 msgstr ""
+"By using the Lithuanian open data website, you confirm that your submitted "
+"personal information is correct."
 
 #: .\vitrina\cms\templates\vitrina\cms\policy.html:28
 msgid ""
@@ -1734,6 +1753,13 @@ msgid ""
 "sutikimui ir tik įstatymo numatytais atvejais, taip pat tais atvejais, kurie "
 "būtini naudotojo užsakytai paslaugai suteikti."
 msgstr ""
+"All personal data provided and received by the user are collected, stored and "
+"processed in accordance with the personal data protection law of the "
+"Republic of Lithuania requirements provided for and other personal data in "
+"the Republic of Lithuania laws regulating the protection. This website ensures "
+"the received data protection and undertakes to use this information only in the "
+"presence of the user for consent and only in cases provided for by law, as well as "
+"in cases that necessary to provide the service ordered by the user. "
 
 #: .\vitrina\cms\templates\vitrina\cms\post_detail.html:21
 #: .\vitrina\cms\templates\vitrina\cms\post_list.html:26

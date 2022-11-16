@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+{% load cms_tags sekizai_tags %}
+{% load menu_tags %}
+{% load static %}
+{% load sass_tags %}
+<html>
+<head>
+    <meta charset="utf-8">
+
+    <title>Lietuvos atvirų duomenų portalas{% block pageTitle %}{% endblock %}</title>
+    <meta name="description" content="{% block pageDescription %}Atvirų duomenų portalas - tai vieningas prieigos taškas prie visų Lietuvoje atvertų duomenų rinkinių ir suteikiantis technologines priemones atvirų duomenų tiekėjams parengti ir publikuoti atvertų duomenų rinkinių metaduomenis.{% endblock %}">
+    <meta name="keywords" content="{% block pageKeywords %}atviri duomenys, duomenų rinkiniai, atvirų duomenų portalas{% endblock %}">
+    <meta name="author" content="{% block pageAuthor %}Informacinės visuomenės plėtros komitetas{% endblock %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta property="og:title" content="Lietuvos atvirų duomenų portalas{% block pageOgTitle %}{% endblock %}" />
+    <meta property="og:type" content="{% block pageOgType %}website{% endblock %}" />
+    <meta property="og:description" content="{% block pageOgDescription %}Atvirų duomenų portalas - tai vieningas prieigos taškas prie visų Lietuvoje atvertų duomenų rinkinių ir suteikiantis technologines priemones atvirų duomenų tiekėjams parengti ir publikuoti atvertų duomenų rinkinių metaduomenis.{% endblock %}" />
+
+    <link type="text/css" href="{% static 'css/bundle.css' %}" rel="stylesheet" media="screen">
+    <script defer src="{% static 'js/bundle.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    {% include "component/favicon.html" %}
+    {% render_block "css" %}
+</head>
+<body {% if stagingEnv %}class="contains-warning-border"{% endif %}>
+{% block warning %}
+    {% if stagingEnv %}
+        <div id="top-bar" class="is-warning-bar">
+            <p>"testingEnvironment"</p>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block messages %}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                {% if message.tags %} <li class="{{ message.tags }}" id="message-list-{{ forloop.counter }}"> {% else %} <li> {% endif %}
+                    {{ message }}
+                    <span class="is-pulled-right message-close-button" onClick="HideMessage({{ forloop.counter }})">X</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock messages %}
+<header>
+    {% include "component/navbar.html" %}
+</header>
+
+{% block breadcrumbs %}
+    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
+        <div class="container needs-padding">
+            <ul class="p-t-sm">
+                <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
+            </ul>
+            <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% page_attribute "page_title" %}{% endblock %}</span>
+        </div>
+    </nav>
+{% endblock %}
+
+
+<section class="section">
+    <div class="container">
+        {% cms_toolbar %}
+        <div class="columns full-h">
+            <div class="column">
+                <div class="content m-b-md">
+                    {% placeholder "body" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% include "component/footer.html" %}
+{% render_block "js" %}
+</body>
+</html>

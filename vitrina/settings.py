@@ -223,7 +223,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SITE_ID = 1
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
-    ('page.html', _("Home page")),
+    ('pages/page.html', _("Puslapis be šoninio meniu")),
+    ('pages/page_with_side_menu.html', _("Puslapis su šoniniu meniu"))
 ]
 
 THUMBNAIL_HIGH_RESOLUTION = True

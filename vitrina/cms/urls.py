@@ -1,6 +1,6 @@
 from django.urls import path
 
-from vitrina.cms.views import PolicyView
+from vitrina.cms.views import PolicyView, LearningMaterialDetailView, SparqlView, ReportDetailView
 
 urlpatterns = [
     # @RequestMapping("/page")
@@ -9,6 +9,9 @@ urlpatterns = [
     # @PostMapping("/opening/addMaterial")
     # @GetMapping("/about")
     path('policy/', PolicyView.as_view(), name='policy'),
+    path('opening/learningmaterial/<int:pk>/', LearningMaterialDetailView.as_view(), name='learning-material-detail'),
+    path('reports/<int:pk>/', ReportDetailView.as_view(), name='report-detail'),
+    path('sparql/', SparqlView.as_view(), name='sparql'),
     # @GetMapping("/other")
     # @GetMapping("/opening")
     # @GetMapping("/opening/tips")

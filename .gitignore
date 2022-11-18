@@ -18,3 +18,5 @@
 *.css.map
 .idea/
 ./webpack/node_modules/
+/dist/
+/requirements.txt

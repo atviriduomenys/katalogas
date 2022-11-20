@@ -1,9 +1,11 @@
 import csv
+import datetime
 import json
 import operator
 import os
 import sys
 from functools import reduce
+from itertools import chain
 from itertools import groupby
 from pathlib import Path
 from typing import Any
@@ -13,6 +15,7 @@ from typing import NamedTuple
 from typing import Optional
 from typing import TextIO
 from typing import TypedDict
+from typing import Tuple
 
 from typer import Argument
 from typer import Option
@@ -50,7 +53,8 @@ def main(
     level: int = Option(4, help=(
         "Show up to (0 - totals, 1 - repo, 2 - milestone, 3 - epic, "
         "4 - sprint, 5 - task)"
-    ))
+    )),
+    order: bool = Option(False, help="Generate order table."),
 ):
     session = requests.Session()
     session.headers['Authorization'] = f'Bearer {token}'
@@ -63,11 +67,15 @@ def main(
     cards = _transform_cards(cards)
     cards = list(cards)
     if export:
+        if order:
+            _cards_to = _cards_to_csv_order
+        else:
+            _cards_to = _cards_to_csv
         if export.name == '-':
-            _cards_to_csv(sys.stdout, cards, level)
+            _cards_to(sys.stdout, cards, level)
         elif export.suffix == '.csv':
             with export.open('w') as f:
-                _cards_to_csv(f, cards, level)
+                _cards_to(f, cards, level)
         else:
             raise NotImplementedError(
                 f"Don't know how to export to {export.suffix}"
@@ -204,7 +212,7 @@ def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
             'id': None,
             'number': None,
             'title': None,
-            'body': None,
+            'body': '',
             'state': None,
             'status': None,
             'repo': None,
@@ -399,6 +407,109 @@ def _get_csv_title(row, col, level, titles):
         return titles[col]
     else:
         return ''
+
+
+def _cards_to_csv_order(
+    f: TextIO,
+    cards: Iterable[Card],
+    level: int = 4,
+) -> None:
+    writer = csv.writer(f)
+    writer.writerow(['a', 'b', 'c'])
+
+    titles = {
+        card['number']: card['title']
+        for card in cards
+    }
+
+    cards = [card for card in cards if card['status'] == 'Done']
+
+    sprints = sorted(cards, key=_get_sprint_num)
+    sprints = groupby(sprints, key=_get_sprint_num)
+    for sprint, cards in sprints:
+        writer.writerow(['Etapas', '1', ''])
+
+        writer.writerow(['Iteracija', sprint, ''])
+
+        writer.writerow([
+            'Iteracijos vykdymo periodas',
+            'Pradžia',
+            'Pabaiga',
+        ])
+
+        card = next(cards)
+        cards = chain([card], cards)
+
+        start, end = _get_sprint_dates(card)
+        writer.writerow(['', start, end])
+
+        hours = 0
+
+        epics = sorted(cards, key=_by_epic_group)
+        epics = groupby(epics, key=_by_epic_group)
+        for i, (epic, tasks) in enumerate(epics, 1):
+            writer.writerow([
+                f'{i}. Projekto dalies pavadinimas '
+                '(Pirkimo objekto dalis):',
+                titles.get(epic, '(no epic)'),
+                '',
+            ])
+
+            writer.writerow([
+                'Užduoties pavadinimas',
+                'Laiko sąnaudos, val.',
+                'Užduoties aprašymas',
+            ])
+
+            for task in tasks:
+                if '---' in task['body']:
+                    body = task['body'].rsplit('---', 1)[0]
+                else:
+                    body = task['body']
+
+                body = ''
+
+                writer.writerow([
+                    task['title'],
+                    task['spent'],
+                    body,
+                ])
+
+                hours += task['spent']
+
+        writer.writerow(['Viso val.:', hours, ''])
+
+        writer.writerow(['SUDERINO', '', ''])
+        writer.writerow([
+            'Užsakovo atstovas - projekto vadovas:',
+            '',
+            'Paslaugų teikėjo atstovas - projekto vadovas',
+        ])
+        writer.writerow([
+            'Julius Belickas',
+            '',
+            'Ernestas Vyšniauskas',
+        ])
+
+
+def _get_sprint_num(card: Card) -> int:
+    title = card['sprint']
+    if title == '(no sprint)':
+        return 0
+    else:
+        _, num = title.split()
+        return int(num)
+
+
+def _get_sprint_dates(card: Card) -> Tuple[datetime.date, datetime.date]:
+    if card['sprint_start']:
+        start = datetime.date.fromisoformat(card['sprint_start'])
+        duration = card['sprint_duration']
+        end = start + datetime.timedelta(days=duration)
+    else:
+        start = '-'
+        end = '-'
+    return start, end
 
 
 class Hours(NamedTuple):

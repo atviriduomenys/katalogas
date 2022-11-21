@@ -1,8 +1,4 @@
-from django.urls import path
+from allauth.socialaccount.providers.oauth2.urls import default_urlpatterns
+from vitrina.viisp.providers import VIISPProvider
 
-from vitrina.viisp.views import viisp_login
-
-urlpatterns = [
-    path('viisp/login/', viisp_login, name='viisp_login'),
-    # @GetMapping("/viisp/login")
-]
+urlpatterns = default_urlpatterns(VIISPProvider)

@@ -233,9 +233,14 @@ SITE_ID = 1
 # Provider specific settings
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_PROVIDERS = {
-    'facebook': {
-        'SCOPE': ['email', 'publish_stream'],
-        'METHOD': 'js_sdk'  # instead of 'oauth2'
+    'viisp': {
+        'SCOPE': ['email', 'identify'],
+        'PROFILE_FIELDS': [
+            'id',
+            'firstName',
+            'lastName',
+            'email',
+        ],
     }
 }
 

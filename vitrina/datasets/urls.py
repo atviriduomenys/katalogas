@@ -1,5 +1,8 @@
+from django.conf.urls import url
 from django.urls import path
-from vitrina.datasets.views import DatasetCreateView
+
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.views import DatasetCreateView, autocomplete_tags
 from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetDistributionDownloadView
 from vitrina.datasets.views import DatasetDistributionPreviewView
@@ -46,6 +49,12 @@ urlpatterns = [
         'datasets/<int:dataset_id>/members/<int:pk>/delete/',
         DeleteMemberView.as_view(),
         name='dataset-representative-delete',
+    ),
+    url(
+        r'^datasets/tags/autocomplete/',
+        autocomplete_tags,
+        {'tag_model': Dataset.tags.tag_model},
+        name='autocomplete_tags',
     ),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

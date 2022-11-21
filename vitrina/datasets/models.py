@@ -1,4 +1,3 @@
-import tagulous
 import datetime
 
 from django.db import models
@@ -103,6 +102,7 @@ class Dataset(TranslatableModel):
         blank=True,
         force_lowercase=True,
         space_delimiter=False,
+        autocomplete_view='autocomplete_tags',
         autocomplete_limit=20,
         verbose_name="Žymės",
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),

@@ -1,11 +1,14 @@
 import csv
 import itertools
+import json
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.http import FileResponse, JsonResponse, HttpResponseRedirect
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import QuerySet
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
@@ -26,6 +29,7 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
+
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -448,6 +452,46 @@ class CreateMemberView(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
         return HttpResponseRedirect(self.get_success_url())
+
+
+def autocomplete_tags(request, tag_model):
+    if isinstance(tag_model, QuerySet):
+        queryset = tag_model
+        tag_model = queryset.model
+    else:
+        queryset = tag_model.objects
+    options = tag_model.tag_options
+
+    query = request.GET.get("q", "")
+    page = int(request.GET.get("p", 1))
+
+    if query:
+        if options.force_lowercase:
+            query = query.lower()
+
+        if options.autocomplete_view_fulltext:
+            lookup = "contains"
+        else:
+            lookup = "startswith"
+
+        if not options.case_sensitive:
+            lookup = f"i{lookup}"
+
+        results = queryset.filter(**{f"name__{lookup}": query})
+
+    else:
+        results = queryset.all()
+
+    if options.autocomplete_limit:
+        start = options.autocomplete_limit * (page - 1)
+        end = options.autocomplete_limit * page
+        more = results.count() > end
+        results = results.order_by("count")[start:end]
+
+    response = {"results": [tag.name for tag in results], "more": more}
+    return HttpResponse(
+        json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json"
+    )
 
 
 class UpdateMemberView(

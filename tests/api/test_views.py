@@ -642,7 +642,6 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         ('title', "Test distribution"),
         ('region', 'Geo'),
         ('municipality', 'Location'),
-        ('periodStart', "2022-10-12")
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
@@ -659,7 +658,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         'id': distribution.pk,
         'issued': distribution.issued,
         'periodEnd': None,
-        'periodStart': distribution.period_start.strftime('%Y-%m-%d'),
+        'periodStart': None,
         'geo_location': "Geo Location",
         'title': "Test distribution",
         'type': "FILE",

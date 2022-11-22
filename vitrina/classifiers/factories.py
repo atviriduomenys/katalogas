@@ -10,6 +10,7 @@ class CategoryFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('catch_phrase')
+    description = factory.Faker('catch_phrase')
     version = 1
     featured = False
 
@@ -32,3 +33,5 @@ class LicenceFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('word')
+    description = factory.Faker('catch_phrase')
+    identifier = factory.Faker('word')

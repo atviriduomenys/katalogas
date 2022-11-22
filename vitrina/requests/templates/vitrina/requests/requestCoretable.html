@@ -47,7 +47,7 @@
             <td>{{ user_count }}</td>
         </tr>
     {% endif %}
-    {% if request.periodicity %}
+    {% if request_object.periodicity %}
     <tr>
         <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
         <td>{{ request_object.periodicity }}</td>

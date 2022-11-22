@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -9,10 +7,14 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
+import datetime
+from django.utils.timezone import utc
+
+now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Region(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -28,7 +30,7 @@ class Region(models.Model):
 
 
 class Municipality(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     title = models.TextField(blank=True, null=True)
@@ -53,9 +55,9 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=datetime.now)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     description = models.TextField(blank=True, null=True)
     municipality = models.CharField(max_length=255, blank=True, null=True)
     region = models.CharField(max_length=255, blank=True, null=True)
@@ -100,7 +102,7 @@ class Representative(models.Model):
         (MANAGER, _("Tvarkytojas"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     email = models.CharField(max_length=255)
@@ -111,6 +113,7 @@ class Representative(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     role = models.CharField(choices=ROLES, max_length=255)
     user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
+    has_api_access = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
@@ -129,7 +132,7 @@ class Representative(models.Model):
 
 
 class PublishedReport(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -143,7 +146,7 @@ class PublishedReport(models.Model):
 
 
 class Report(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.CharField(max_length=255, blank=True, null=True)

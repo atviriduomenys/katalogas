@@ -1,27 +1,27 @@
+from parler.forms import TranslatableModelForm, TranslatedField
+from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import DateField
+from django.forms import TextInput, CharField, DateField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 
-from vitrina.classifiers.models import Frequency
-from vitrina.classifiers.models import Licence
-from vitrina.orgs.forms import RepresentativeCreateForm
-from vitrina.orgs.forms import RepresentativeUpdateForm
+from vitrina.classifiers.models import Frequency, Licence
+from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset
-from vitrina.datasets.models import DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure
 
 
-class DatasetForm(forms.ModelForm):
+class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
+    title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
+    description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
+
     class Meta:
         model = Dataset
         fields = (
             'is_public',
-            'title',
-            'description',
             'tags',
             'category',
             'licence',

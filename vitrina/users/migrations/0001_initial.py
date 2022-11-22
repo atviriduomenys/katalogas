@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True, null=True)),
                 ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('version', models.IntegerField()),
+                ('version', models.IntegerField(default=1)),
                 ('email', models.CharField(blank=True, max_length=255, null=True, unique=True)),
                 ('first_name', models.CharField(blank=True, max_length=255, null=True)),
                 ('last_login', models.DateTimeField(blank=True, null=True)),
@@ -79,10 +79,10 @@ class Migration(migrations.Migration):
                 ('deleted', models.BooleanField(blank=True, null=True)),
                 ('deleted_on', models.DateTimeField(blank=True, null=True)),
                 ('phone', models.CharField(blank=True, max_length=255, null=True)),
-                ('needs_password_change', models.BooleanField()),
+                ('needs_password_change', models.BooleanField(default=False)),
                 ('year_of_birth', models.IntegerField(blank=True, null=True)),
-                ('disabled', models.BooleanField()),
-                ('suspended', models.BooleanField()),
+                ('disabled', models.BooleanField(default=False)),
+                ('suspended', models.BooleanField(default=False)),
                 ('organization',  models.ForeignKey(to='vitrina_orgs.organization', on_delete=models.SET_NULL, blank=True, null=True))
             ],
             options={

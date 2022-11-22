@@ -44,6 +44,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path('hitcount/', include('hitcount.urls', namespace='hitcount')),
+    path('i18n/', include('django.conf.urls.i18n')),
     path('accounts/', include('allauth.urls')),
     path('', include('cms.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

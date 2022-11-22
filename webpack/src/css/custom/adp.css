@@ -3330,6 +3330,10 @@ a.tag:hover {
   .label.is-large {
     font-size: 1.5rem; }
 
+#comment-form .label{
+  font-weight: 400;
+}
+
 .help {
   display: block;
   font-size: 0.75rem;
@@ -9381,6 +9385,10 @@ table.th-40 th {
 .control-group.error span.help-inline strong, .control-group.error label {
     color: #ff3860;
     font-weight: 500;
+}
+
+.is-borderless {
+    border: none;
 }
 
 /*# sourceMappingURL=adp-final.css.map */

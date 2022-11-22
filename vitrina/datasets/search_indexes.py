@@ -7,8 +7,8 @@ from vitrina.datasets.models import Dataset
 
 class DatasetIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
-    title = CharField(model_attr='title')
-    title_en = CharField(model_attr='title_en', null=True)
+    lt_title = CharField(model_attr='lt_title')
+    en_title = CharField(model_attr='en_title')
     organization = IntegerField(model_attr='organization__pk', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
@@ -21,7 +21,7 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
-        return self.get_model().public.filter(title__isnull=False)
+        return self.get_model().public.filter(translations__title__isnull=False).distinct()
 
     def prepare_category(self, obj):
         categories = []

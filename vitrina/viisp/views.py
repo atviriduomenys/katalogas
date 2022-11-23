@@ -1,5 +1,4 @@
 import requests
-from allauth.socialaccount.providers.apple.client import AppleOAuth2Client
 
 from allauth.socialaccount.providers.oauth2.views import (
     OAuth2LoginView,
@@ -10,7 +9,6 @@ from vitrina.viisp.providers import VIISPProvider
 
 
 class VIISPOAuth2Adapter(OAuth2Adapter):
-    client_class = AppleOAuth2Client
     provider_id = VIISPProvider.id
     access_token_url = "https://test.epaslaugos.lt:443/portal/authenticationServices/auth"
     authorize_url = "https://test.epaslaugos.lt/portal/external/services/authentication/v2"

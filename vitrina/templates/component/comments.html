@@ -5,9 +5,9 @@
 <h4 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h4>
 
 {% for c in comments %}
-    {% include "component/comment.html" with comment=c %}
+    {% include "component/comment.html" with comment=c.0 %}
 
-    {% for child in c.descendants %}
+    {% for child in c.1 %}
         {% include "component/comment.html" with comment=child is_child=True %}
     {% endfor %}
 {% endfor %}

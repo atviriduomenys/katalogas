@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -8,6 +6,7 @@ from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
+from vitrina.orgs.services import has_perm, Action
 
 now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
@@ -65,9 +64,12 @@ class Comment(models.Model):
     class Meta:
         db_table = 'comment'
 
-    def descendants(self, include_self=False):
+    def descendants(self, user=None, obj=None, include_self=False):
         descendants = []
-        children = Comment.public.filter(parent_id=self.pk).order_by('created')
+        children = Comment.objects.filter(parent_id=self.pk).order_by('created')
+        if user and obj:
+            if not has_perm(user, Action.COMMENT, obj):
+                children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)
         for child in children:

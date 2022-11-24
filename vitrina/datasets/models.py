@@ -18,6 +18,16 @@ from django.utils.translation import gettext_lazy as _
 now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
+class DatasetGroup(models.Model):
+    title = models.CharField(max_length=255, blank=False)
+
+    class Meta:
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
+
+
 class Dataset(TranslatableModel):
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
@@ -98,6 +108,7 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
+    groups = models.ManyToManyField(DatasetGroup)
     tags = tagulous.models.TagField(
         blank=True,
         force_lowercase=True,
@@ -152,6 +163,9 @@ class Dataset(TranslatableModel):
 
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
+
+    def get_group_list(self):
+        return list(self.groups.all().values_list('title', flat=True))
 
     @property
     def filter_status(self):

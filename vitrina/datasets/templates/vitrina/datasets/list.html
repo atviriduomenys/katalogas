@@ -119,6 +119,13 @@
                                     </a>
                                 </strong>
                             </div>
+                            {% if i.object.groups %}
+                                {% for group in i.object.get_group_list %}
+                                    <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                    </p>
+                                {% endfor %}
+                            {% endif %}
                             {% if i.object.organization_title %}
                                 <p>
                                     <small class="dataset-list-organization">{{ i.object.organization_title }}</small>

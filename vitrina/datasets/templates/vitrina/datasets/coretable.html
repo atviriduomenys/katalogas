@@ -44,7 +44,18 @@
                 {{ dataset.category.title }}
             {% endif %}
         </td>
-    </tr>
+    {% if dataset.groups %}
+        </tr>
+            <tr>
+            <th>{% translate "Grupės" %}</th>
+            <td>
+            {% for group in dataset.get_group_list %}
+                <span>{{ group.title }}</span>
+                <br/>
+            {% endfor %}
+            </td>
+        </tr>
+    {% endif %}
     {% if status %}
         <tr>
             <th>

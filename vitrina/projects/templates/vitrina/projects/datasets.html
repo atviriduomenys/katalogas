@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių sąrašas" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/projects/tabs.html' %}
+
+    {% if can_update_project %}
+        <div class="buttons is-right">
+            <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'project-dataset-add' pk=project.pk %}">
+                {% translate "Pridėti duomenų rinkinį" %}
+            </a>
+        </div>
+    {% endif %}
+    <table class="table is-fullwidth">
+        <tbody>
+            <tr>
+                <th></th>
+                {% if can_update_project %}
+                    <th></th>
+                {% endif %}
+            </tr>
+            {% for dataset in page_obj %}
+                <tr>
+                {% get_current_language as LANGUAGE_CODE %}
+                <td>
+                <article class="media">
+                    <div class="media-content">
+                        <div class="content">
+                            <div>
+                                <strong>
+                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                        {% objectlanguage dataset LANGUAGE_CODE %}
+                                            {{ dataset.title }}
+                                        {% endobjectlanguage %}
+                                    </a>
+                                </strong>
+                            </div>
+                            {% if dataset.organization_title %}
+                                <p>
+                                    <small class="dataset-list-organization">{{ dataset.organization_title }}</small>
+                                </p>
+                            {% endif %}
+                            <p class="dataset-list-description">
+                                {% objectlanguage dataset LANGUAGE_CODE %}
+                                    {{ dataset.description }}
+                                {% endobjectlanguage %}
+                            </p>
+                            <div class="tags">
+                                {% for t in dataset.distinct_formats %}
+                                <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
+                                    {{ t }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                </td>
+                {% if can_update_project %}
+                    <td>
+                        <div class="buttons is-right">
+                            <a id="remove-dataset-{{ m.pk }}-btn"  class="button is-danger is-small"
+                               href="{% url 'project-dataset-remove' project_id=project.pk dataset_id=dataset.pk %}">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </div>
+                    </td>
+                {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br/>
+    {% include "vitrina/common/pagination.html" %}
+{% endblock %}

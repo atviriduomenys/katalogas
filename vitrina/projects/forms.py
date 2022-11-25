@@ -1,7 +1,8 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Div, Submit
-from django.forms import ModelForm, CharField, ImageField, Textarea
+from django.forms import ModelForm, CharField, ImageField, Textarea, ModelMultipleChoiceField
 
+from vitrina.datasets.models import Dataset
 from vitrina.projects.models import Project
 
 from django.utils.translation import gettext_lazy as _
@@ -12,6 +13,11 @@ class ProjectForm(ModelForm):
     description = CharField(label=_('Aprašymas'), widget=Textarea)
     url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
     image = ImageField(label=_("Paveiksliukas"), required=False)
+    datasets = ModelMultipleChoiceField(
+        label=_('Duomenų rinkiniai'),
+        queryset=Dataset.objects.all(),
+        required=True
+    )
 
     class Meta:
         model = Project
@@ -26,7 +32,29 @@ class ProjectForm(ModelForm):
         self.helper.layout = Layout(
             Field('title', placeholder=_("Pavadinimas")),
             Field('description', placeholder=_("Aprašymas")),
+            Field('datasets'),
             Field('url', placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field('image', placeholder=_("Pavadinimas")),
             Submit('submit', button, css_class='button is-primary')
+        )
+
+
+class AddDatasetForm(ModelForm):
+    datasets = ModelMultipleChoiceField(
+        label=_('Duomenų rinkiniai'),
+        queryset=Dataset.objects.all(),
+        required=True
+    )
+
+    class Meta:
+        model = Project
+        fields = ['datasets']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "project-form"
+        self.helper.layout = Layout(
+            Field('datasets'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
         )

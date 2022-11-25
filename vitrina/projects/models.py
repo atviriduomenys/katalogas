@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.datasets.models import Dataset
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 import datetime
@@ -47,6 +48,7 @@ class Project(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
+    datasets = models.ManyToManyField(Dataset)
 
     class Meta:
         db_table = 'usecase'
@@ -68,15 +70,6 @@ class Project(models.Model):
 
     def get_acl_parents(self):
         return [self]
-
-
-class UsecaseDatasetIds(models.Model):
-    usecase = models.ForeignKey(Project, models.DO_NOTHING)
-    dataset_ids = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'usecase_dataset_ids'
 
 
 class UsecaseLike(models.Model):

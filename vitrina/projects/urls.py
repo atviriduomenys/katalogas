@@ -1,7 +1,7 @@
 from django.urls import path
 
 from vitrina.projects.views import ProjectListView, ProjectDetailView, ProjectCreateView, ProjectUpdateView, \
-    ProjectHistoryView
+    ProjectHistoryView, ProjectDatasetsView, RemoveDatasetView, ProjectAddDatasetView
 
 urlpatterns = [
     # @GetMapping("/usecases/examples")
@@ -10,6 +10,10 @@ urlpatterns = [
     path('projects/add/', ProjectCreateView.as_view(), name='project-create'),
     path('projects/<int:pk>/change/', ProjectUpdateView.as_view(), name='project-update'),
     path('projects/<int:pk>/history/', ProjectHistoryView.as_view(), name='project-history'),
+    path('projects/<int:pk>/datasets/', ProjectDatasetsView.as_view(), name='project-datasets'),
+    path('projects/<int:project_id>/datasets/<int:dataset_id>/remove/', RemoveDatasetView.as_view(),
+         name='project-dataset-remove'),
+    path('projects/<int:pk>/add/', ProjectAddDatasetView.as_view(), name='project-dataset-add'),
     # @GetMapping("/usecase")
     # @PostMapping("/usecase")
     # @GetMapping("/usecases/applications")

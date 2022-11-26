@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from vitrina.api.services import get_partner_schema_view
 from vitrina.api.views import CatalogViewSet, CategoryViewSet, LicenceViewSet
 
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
 router.register(r'categories', CategoryViewSet, basename="api-category")
 router.register(r'licences', LicenceViewSet, basename="api-licence")

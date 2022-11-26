@@ -16,7 +16,12 @@ class LicenceSerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    id = serializers.CharField(required=False, allow_blank=True, label="")
+    id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        label="",
+        source='identifier',
+    )
     licence = LicenceSerializer(read_only=True, label="")
     title = serializers.CharField(required=False, allow_blank=True, label="")
 

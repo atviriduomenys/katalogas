@@ -6,7 +6,12 @@ from vitrina.classifiers.models import Licence, Category
 
 class LicenceSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    id = serializers.CharField(required=False, allow_blank=True, label="")
+    id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        label="",
+        source='identifier',
+    )
     title = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:

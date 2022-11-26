@@ -19,7 +19,7 @@ def test_retrieve_catalog_list_without_api_key(app: DjangoTestApp):
 def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(enabled=False)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
@@ -29,7 +29,7 @@ def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
 def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(expires=datetime(2000, 12, 24))
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
@@ -40,15 +40,15 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
     catalog = CatalogFactory()
     api_key = APIKeyFactory()
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.json == [{
         'description': catalog.description,
-        'id': str(catalog.pk),
+        'id': str(catalog.identifier),
         'licence': {
             'description': catalog.licence.description,
-            'id': str(catalog.licence.pk),
+            'id': str(catalog.licence.identifier),
             'title': catalog.licence.title
         },
         'title': catalog.title
@@ -65,7 +65,7 @@ def test_retrieve_category_list_without_api_key(app: DjangoTestApp):
 def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(enabled=False)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
@@ -75,7 +75,7 @@ def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
 def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(expires=datetime(2000, 12, 24))
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
@@ -86,7 +86,7 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
     category = CategoryFactory()
     api_key = APIKeyFactory()
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.json == [{
@@ -106,7 +106,7 @@ def test_retrieve_licence_list_without_api_key(app: DjangoTestApp):
 def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(enabled=False)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
@@ -116,7 +116,7 @@ def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
 def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
     api_key = APIKeyFactory(expires=datetime(2000, 12, 24))
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
@@ -127,11 +127,11 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
     licence = LicenceFactory()
     api_key = APIKeyFactory()
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': api_key.api_key
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.json == [{
         'description': licence.description,
-        'id': str(licence.pk),
+        'id': str(licence.identifier),
         'title': licence.title
     }]

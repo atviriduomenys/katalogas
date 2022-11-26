@@ -1,6 +1,6 @@
 from django.db import models
 
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Representative
 
 
 class ApiKey(models.Model):
@@ -14,7 +14,12 @@ class ApiKey(models.Model):
     api_key = models.CharField(max_length=255, blank=True, null=True)
     enabled = models.BooleanField(blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
-    representative = models.ForeignKey(Representative, models.CASCADE, blank=True, null=True)
+    representative = models.ForeignKey(
+        Representative,
+        models.CASCADE,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         db_table = 'api_key'

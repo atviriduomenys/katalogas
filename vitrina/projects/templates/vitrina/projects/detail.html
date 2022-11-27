@@ -23,6 +23,7 @@
                 </p>
             </div>
             {% endif %}
+            {% if can_update_project %}
             <div class="content">
                 <p>
                     {% translate "Būsena" %}:
@@ -35,13 +36,14 @@
                     {% endif %}
                 </p>
             </div>
+            {% endif %}
             <div class="content" id="project_likes">
                 {% if user.is_authenticated %}
                     <p>{% translate "Ar jums patinka šis projektas?" %}</p>
                     
                 {% else %}
                     <p>
-                        {% translate "Patinka:" %}:
+                        {% translate "Patinka" %}:
                         <b>{% like obj=project user=request.user %}</b>
                     </p>
                 {% endif %}

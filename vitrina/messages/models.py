@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils import timezone
 
 from vitrina.users.models import User
 from vitrina.datasets.models import Dataset
@@ -88,7 +87,7 @@ class UserSubscription(models.Model):
 
 
 class Subscription(models.Model):
-    created = models.DateTimeField(default=timezone.now)
+    created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

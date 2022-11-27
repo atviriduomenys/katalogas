@@ -18,7 +18,7 @@ def migrate_subscriptions(apps, schema_editor):
             continue
         content_type = ContentType.objects.get_for_model(Dataset)
         Subscription.objects.create(
-            created=subscription.created or timezone.now,
+            created=subscription.created or timezone.now(),
             content_type=content_type,
             object_id=subscription.dataset.pk,
             user=subscription.user
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             name='Subscription',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(default=timezone.now)),
+                ('created', models.DateTimeField(auto_now_add=True)),
                 ('object_id', models.PositiveIntegerField()),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),

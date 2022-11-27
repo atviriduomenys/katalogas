@@ -1,5 +1,3 @@
-from django.utils import timezone
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -12,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Region(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=timezone.now)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -28,7 +26,7 @@ class Region(models.Model):
 
 
 class Municipality(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=timezone.now)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     title = models.TextField(blank=True, null=True)
@@ -53,7 +51,7 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=timezone.now)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     description = models.TextField(blank=True, null=True)

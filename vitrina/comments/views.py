@@ -64,7 +64,7 @@ class ReplyView(LoginRequiredMixin, View):
     def post(self, request, content_type_id, object_id, parent_id):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
-        form = CommentForm(request.POST)
+        form = CommentForm(obj, request.POST)
 
         if form.is_valid():
             Comment.objects.create(

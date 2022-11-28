@@ -57,7 +57,7 @@ class ProjectCreateView(
         return has_perm(self.request.user, Action.CREATE, Project)
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
+        self.object = form.save(commit=True)
         self.object.user = self.request.user
         self.object.status = Project.CREATED
         self.object.datasets.set(form.cleaned_data['datasets'])
@@ -87,7 +87,7 @@ class ProjectUpdateView(
 
     def form_valid(self, form):
         super().form_valid(form)
-        self.object = form.save(commit=False)
+        self.object = form.save(commit=True)
         for dataset in form.cleaned_data['datasets']:
             self.object.datasets.add(dataset.id)
         self.object.save()
@@ -154,7 +154,7 @@ class ProjectAddDatasetView(
         for dataset in form.cleaned_data['datasets']:
             self.object.datasets.add(dataset.id)
         self.object.save()
-        return HttpResponseRedirect(self.get_success_url())
+        return HttpResponseRedirect(reverse('project-datasets', kwargs={'pk': self.object.pk}))
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

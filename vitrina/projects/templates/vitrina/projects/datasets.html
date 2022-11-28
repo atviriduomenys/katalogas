@@ -69,7 +69,7 @@
                 {% if can_update_project %}
                     <td>
                         <div class="buttons is-right">
-                            <a id="remove-dataset-{{ m.pk }}-btn"  class="button is-danger is-small"
+                            <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
                                href="{% url 'project-dataset-remove' project_id=project.pk dataset_id=dataset.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>

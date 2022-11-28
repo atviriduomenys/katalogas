@@ -16,7 +16,7 @@ class ProjectForm(ModelForm):
     datasets = ModelMultipleChoiceField(
         label=_('Duomenų rinkiniai'),
         queryset=Dataset.objects.all(),
-        required=True
+        required=False
     )
 
     class Meta:
@@ -53,7 +53,7 @@ class AddDatasetForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_id = "project-form"
+        self.helper.form_id = "project-dataset-add-form"
         self.helper.layout = Layout(
             Field('datasets'),
             Submit('submit', _("Pridėti"), css_class='button is-primary')

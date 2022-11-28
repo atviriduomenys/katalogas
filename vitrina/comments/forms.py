@@ -69,14 +69,17 @@ class ProjectCommentForm(CommentForm):
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'status', 'body',)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['body'].required = False
+        self.obj = obj
 
     def clean(self):
         body = self.cleaned_data.get('body')
         status = self.cleaned_data.get('status')
         if not status and not body:
             self.add_error('body', _("Šis laukas yra privalomas"))
+        if self.obj.status == status:
+            self.add_error('body', _("Dabartinė būsena sutampa su jūsų pateikta"))
         return self.cleaned_data
 

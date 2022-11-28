@@ -22,6 +22,6 @@ def comments(obj, user):
         'user': user,
         'content_type': content_type,
         'object': obj,
-        'comment_form': comment_form_class(),
+        'comment_form': comment_form_class(obj),
         'reply_form': CommentForm()
     }

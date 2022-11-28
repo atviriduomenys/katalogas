@@ -21,7 +21,7 @@ class CommentView(
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
         form_class = get_comment_form_class(obj, request.user)
-        form = form_class(request.POST)
+        form = form_class(obj, request.POST)
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -47,15 +47,11 @@ class CommentView(
                 comment.rel_object_id = new_request.pk
 
             elif form.cleaned_data.get('status'):
-                if obj.status == form.cleaned_data.get('status'):
-                    messages.error(request, 'Dabartinė būsena sutampa su jūsų pateikta')
-                    return redirect(obj.get_absolute_url())
-                else:
-                    comment.type = Comment.STATUS
-                    obj.status = form.cleaned_data.get('status')
-                    obj.comment = comment.body
-                    obj.save()
-                    set_comment(type(obj).STATUS_CHANGED)
+                comment.type = Comment.STATUS
+                obj.status = form.cleaned_data.get('status')
+                obj.comment = comment.body
+                obj.save()
+                set_comment(type(obj).STATUS_CHANGED)
             else:
                 comment.type = Comment.USER
             comment.save()

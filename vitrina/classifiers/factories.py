@@ -32,6 +32,6 @@ class LicenceFactory(DjangoModelFactory):
         model = Licence
         django_get_or_create = ('title',)
 
+    identifier = factory.Sequence(lambda n: f'id{n}')
     title = factory.Faker('word')
     description = factory.Faker('catch_phrase')
-    identifier = factory.Faker('word')

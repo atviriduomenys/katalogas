@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
@@ -22,7 +24,45 @@ def test_retrieve_catalog_list_without_api_key(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_retrieve_catalog_list(app: DjangoTestApp):
+def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        expires=datetime(2000, 12, 24)
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
     catalog = CatalogFactory()
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -32,15 +72,15 @@ def test_retrieve_catalog_list(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.json == [{
         'description': catalog.description,
-        'id': str(catalog.pk),
+        'id': str(catalog.identifier),
         'licence': {
             'description': catalog.licence.description,
-            'id': str(catalog.licence.pk),
+            'id': str(catalog.licence.identifier),
             'title': catalog.licence.title
         },
         'title': catalog.title
@@ -54,7 +94,45 @@ def test_retrieve_category_list_without_api_key(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_retrieve_category_list(app: DjangoTestApp):
+def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-category-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        expires=datetime(2000, 12, 24)
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-category-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
     category = CategoryFactory()
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -64,7 +142,7 @@ def test_retrieve_category_list(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.json == [{
@@ -81,7 +159,45 @@ def test_retrieve_licence_list_without_api_key(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_retrieve_licence_list(app: DjangoTestApp):
+def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(
+        representative=representative,
+        expires=datetime(2000, 12, 24)
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+    })
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
     licence = LicenceFactory()
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -91,12 +207,12 @@ def test_retrieve_licence_list(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.json == [{
         'description': licence.description,
-        'id': str(licence.pk),
+        'id': str(licence.identifier),
         'title': licence.title
     }]
 
@@ -301,6 +417,7 @@ def test_create_dataset(app: DjangoTestApp):
     assert dataset.licence == licence
     assert dataset.frequency == frequency
     assert dataset.category == category
+    assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
     assert res.json == {

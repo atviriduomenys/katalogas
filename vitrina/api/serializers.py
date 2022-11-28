@@ -14,7 +14,12 @@ from vitrina.resources.models import DatasetDistribution
 
 class LicenceSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    id = serializers.CharField(required=False, allow_blank=True, label="")
+    id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        label="",
+        source='identifier',
+    )
     title = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:
@@ -24,7 +29,12 @@ class LicenceSerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    id = serializers.CharField(required=False, allow_blank=True, label="")
+    id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        label="",
+        source='identifier',
+    )
     licence = LicenceSerializer(read_only=True, label="")
     title = serializers.CharField(required=False, allow_blank=True, label="")
 
@@ -209,10 +219,10 @@ class PostDatasetSerializer(DatasetSerializer):
 
     def create(self, validated_data):
         request = self.context.get('request')
-        languages = validated_data.pop('language_array', None)
+        languages = validated_data.pop('language_array', [])
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
-        keywords = validated_data.pop('tag_name_array', None)
+        keywords = validated_data.pop('tag_name_array', [])
         theme = validated_data.pop('category_title', None)
 
         # these fields are not saved in the old code
@@ -253,10 +263,10 @@ class PatchDatasetSerializer(PostDatasetSerializer):
     )
 
     def update(self, instance, validated_data):
-        languages = validated_data.pop('language_array', None)
+        languages = validated_data.pop('language_array', [])
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
-        keywords = validated_data.pop('tag_name_array', None)
+        keywords = validated_data.pop('tag_name_array', [])
         theme = validated_data.pop('category_title', None)
 
         # these fields are not saved in the old code

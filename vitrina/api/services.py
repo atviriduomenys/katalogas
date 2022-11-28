@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from django.contrib.contenttypes.models import ContentType
-from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpRequest
 from django.templatetags.static import static
+from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
@@ -21,11 +24,11 @@ UPDATING_DATA_TAG = '4. Updating data'
 
 class PartnerOpenAPISchemaGenerator(OpenAPISchemaGenerator):
     def get_schema(self, request=None, public=False):
-        swagger = super().get_schema(request, public)
-        swagger['info']['x-logo'] = {
+        schema = super().get_schema(request, public)
+        schema['info']['x-logo'] = {
             'url': static('img/apix.png')
         }
-        swagger['tags'] = [{
+        schema['tags'] = [{
             'name': CATALOG_TAG,
             'description': "Retrieving available catalogs"
         }, {
@@ -46,7 +49,7 @@ class PartnerOpenAPISchemaGenerator(OpenAPISchemaGenerator):
         }, {
             'name': UPDATING_DATA_TAG
         }]
-        return swagger
+        return schema
 
 
 def get_partner_schema_view():
@@ -66,24 +69,30 @@ def get_partner_schema_view():
         public=True,
         generator_class=PartnerOpenAPISchemaGenerator,
         permission_classes=[permissions.AllowAny],
-    ).with_ui('redoc')
+    )
 
 
-def get_api_key_organization(request: WSGIRequest) -> Organization:
+def get_api_key_organization(request: HttpRequest) -> Organization:
     organization = None
     ct = ContentType.objects.get_for_model(Organization)
-    api_key = request.META.get('HTTP_AUTHORIZATION')
-    if api_key and api_key.startswith("ApiKey "):
-        api_key = api_key.replace("ApiKey ", "").strip()
-        if api_key and ApiKey.objects.filter(
-                api_key=api_key,
-                representative__content_type=ct,
-                representative__object_id__isnull=False
-        ).exists():
-            api_key_obj = ApiKey.objects.filter(
-                api_key=api_key,
-                representative__content_type=ct,
-                representative__object_id__isnull=False
-            ).first()
-            organization = api_key_obj.representative.content_object
+
+    auth = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth.lower().startswith('apikey '):
+        _, api_key = auth.split(None, 1)
+        api_key = api_key.strip()
+
+        if api_key:
+            api_key_obj = (
+                ApiKey.objects.
+                filter(
+                    api_key=api_key,
+                    representative__content_type=ct,
+                    representative__object_id__isnull=False
+                ).first()
+            )
+            if api_key_obj and api_key_obj.enabled and (
+                not api_key_obj.expires or
+                api_key_obj.expires > timezone.make_aware(datetime.now())
+            ):
+                organization = api_key_obj.representative.content_object
     return organization

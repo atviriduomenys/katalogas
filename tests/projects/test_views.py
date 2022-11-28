@@ -30,7 +30,7 @@ def test_project_create(app: DjangoTestApp):
     form = app.get(reverse("project-create")).forms['project-form']
     form['title'] = "Project"
     form['description'] = "Description"
-    form['datasets'] = (dataset.pk,)
+    form['dataset'] = (dataset.pk,)
     form['url'] = "example.com"
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
     resp = form.submit()
@@ -136,7 +136,7 @@ def test_add_dataset_with_permission(app: DjangoTestApp):
     app.set_user(user)
     resp = app.get(reverse('project-dataset-add', kwargs={'pk': project.pk}))
     form = resp.forms['project-dataset-add-form']
-    form['datasets'] = (dataset.pk,)
+    form['dataset'] = (dataset.pk,)
     resp = form.submit()
     dataset.refresh_from_db()
     assert resp.status_code == 302

@@ -60,7 +60,7 @@ class ProjectCreateView(
         self.object = form.save(commit=True)
         self.object.user = self.request.user
         self.object.status = Project.CREATED
-        self.object.datasets.set(form.cleaned_data['datasets'])
+        self.object.datasets.set(form.cleaned_data['dataset'])
         self.object.save()
         set_comment(Project.CREATED)
         return HttpResponseRedirect(self.get_success_url())
@@ -88,7 +88,7 @@ class ProjectUpdateView(
     def form_valid(self, form):
         super().form_valid(form)
         self.object = form.save(commit=True)
-        for dataset in form.cleaned_data['datasets']:
+        for dataset in form.cleaned_data['dataset']:
             self.object.datasets.add(dataset.id)
         self.object.save()
         set_comment(Project.EDITED)
@@ -151,8 +151,9 @@ class ProjectAddDatasetView(
     def form_valid(self, form):
         super().form_valid(form)
         self.object = form.save(commit=False)
-        for dataset in form.cleaned_data['datasets']:
-            self.object.datasets.add(dataset.id)
+        print(self.object)
+        for dataset in form.cleaned_data['dataset']:
+            self.object.datasets.add(dataset)
         self.object.save()
         return HttpResponseRedirect(reverse('project-datasets', kwargs={'pk': self.object.pk}))
 

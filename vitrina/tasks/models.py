@@ -21,11 +21,18 @@ class Task(models.Model):
         (MANAGER, _("Organizacijos tvarkytojas"))
     }
 
+    CREATED = "created"
+    COMPLETED = "completed"
+    STATUSES = (
+        (CREATED, _("Sukurta")),
+        (COMPLETED, _("Atlikta"))
+    )
+
     title = models.CharField(max_length=255)
-    created = models.DateTimeField(default=now)
+    created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
-    role = models.CharField(max_length=255, choices=ROLES, blank=True, null=True)
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
+    status = models.CharField(max_length=255, default=CREATED, choices=STATUSES)
 
     class Meta:
         db_table = 'task'

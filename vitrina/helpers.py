@@ -1,6 +1,9 @@
+from datetime import date, datetime, timedelta
 from typing import Optional, List, Any
 from urllib.parse import urlencode
 
+import json
+import requests
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.utils.translation import gettext_lazy as _
@@ -63,3 +66,35 @@ def get_current_domain(request: WSGIRequest) -> str:
     protocol = "https" if request.is_secure() else "http"
     domain = Site.objects.get_current().domain
     return request.build_absolute_uri("%s://%s" % (protocol, domain))
+
+
+def get_non_working_days(
+    include_weekends: bool,
+    date_from: date,
+    date_to: date
+) -> list:
+    res = requests.get("https://api.vilnius.lt/api/calendar/get-non-working-days", params={
+        "include_weekends": "true" if include_weekends else "false",
+        "date_from": date_from,
+        "date_to": date_to
+    })
+    data = json.loads(res.content)
+    non_working_days = [day['date'] for day in data.get('nonWorkingDays', [])]
+    weekends = data.get('weekends', [])
+    non_working_days.extend(weekends)
+    return non_working_days
+
+
+def add_work_days(
+    from_date: datetime,
+    number_of_days: int,
+    non_working_days: list = None
+) -> datetime:
+    if non_working_days is None:
+        non_working_days = []
+    res = from_date
+    while number_of_days:
+        res += timedelta(1)
+        if str(res.date()) not in non_working_days:
+            number_of_days -= 1
+    return res

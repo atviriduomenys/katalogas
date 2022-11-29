@@ -1,5 +1,4 @@
 import tagulous
-import datetime
 
 from django.db import models
 from django.urls import reverse
@@ -12,10 +11,7 @@ from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
-from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Dataset(TranslatableModel):
@@ -62,7 +58,7 @@ class Dataset(TranslatableModel):
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -183,7 +179,7 @@ class Dataset(TranslatableModel):
 #       https://github.com/atviriduomenys/katalogas/issues/22
 # ---------------------------8<-------------------------------------
 class GeoportalLtEntry(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     raw_data = models.TextField(blank=True, null=True)
@@ -197,7 +193,7 @@ class GeoportalLtEntry(models.Model):
 
 
 class OpenDataGovLtEntry(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     alt_title = models.TextField(blank=True, null=True)
@@ -228,7 +224,7 @@ class OpenDataGovLtEntry(models.Model):
 
 class HarvestingResult(models.Model):
     published = models.BooleanField()
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -253,7 +249,7 @@ class HarvestingResult(models.Model):
 # TODO: To be removed:
 # ---------------------------8<-------------------------------------
 class DatasetMigrate(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     catalog_id = models.BigIntegerField(blank=True, null=True)
     category = models.CharField(max_length=255, blank=True, null=True)
@@ -295,7 +291,7 @@ class DatasetMigrate(models.Model):
 
 
 class DatasetRemark(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.TextField(blank=True, null=True)
@@ -310,7 +306,7 @@ class DatasetRemark(models.Model):
 
 
 class DatasetResource(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     data = models.TextField(blank=True, null=True)
@@ -336,7 +332,7 @@ class DatasetResource(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class DatasetEvent(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     dataset_id = models.BigIntegerField(blank=True, null=True)
@@ -354,7 +350,7 @@ class DatasetEvent(models.Model):
 
 
 class DatasetResourceMigrate(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     data = models.TextField(blank=True, null=True)
     dataset_id = models.BigIntegerField(blank=True, null=True)
@@ -382,7 +378,7 @@ class DatasetResourceMigrate(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -418,7 +414,7 @@ class DatasetStructure(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructureField(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -439,7 +435,7 @@ class DatasetStructureField(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/60
 class DatasetVisit(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -455,7 +451,7 @@ class DatasetVisit(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/60
 class HarvestedVisit(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

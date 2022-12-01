@@ -17,12 +17,15 @@ def comments(obj, user):
         object_id=obj.pk,
         parent_id__isnull=True
     ).order_by('created')
-    if not has_perm(user, Action.COMMENT, obj):
+    perm = has_perm(user, Action.COMMENT, obj)
+    if not perm:
         obj_comments = obj_comments.filter(is_public=True)
     comment_form_class = get_comment_form_class(obj, user)
     comments_array = []
     for comment in obj_comments:
-        children = comment.descendants(user=user, obj=obj)
+        children = comment.descendants(user=user,
+                                       obj=obj,
+                                       permission=perm)
         comments_array.append((comment, children))
     return {
         'comments': comments_array,

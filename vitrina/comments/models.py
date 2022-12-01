@@ -64,11 +64,11 @@ class Comment(models.Model):
     class Meta:
         db_table = 'comment'
 
-    def descendants(self, user=None, obj=None, include_self=False):
+    def descendants(self, user=None, obj=None, include_self=False, permission=False):
         descendants = []
         children = Comment.objects.filter(parent_id=self.pk).order_by('created')
         if user and obj:
-            if not has_perm(user, Action.COMMENT, obj):
+            if not permission:
                 children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)

@@ -19,7 +19,7 @@
                         <div class="column">
                             {% if comment.parent %}
                                 <p class="is-italic">
-                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created }} {{ comment.parent.body_text|truncatechars:20 }}
+                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }} {{ comment.parent.body_text|truncatechars:20 }}
                                 </p>
                             {% endif %}
                             <p>
@@ -48,7 +48,7 @@
                         <div class="column {% if user.is_authenticated %}is-10{% endif %}">
                             {% if comment.parent %}
                                 <p class="is-italic">
-                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created }} {{ comment.parent.body_text|truncatechars:20 }}
+                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }} {{ comment.parent.body_text|truncatechars:20 }}
                                 </p>
                             {% endif %}
                             <p>

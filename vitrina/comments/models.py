@@ -1,14 +1,10 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-import datetime
-from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
 from vitrina.orgs.services import has_perm, Action
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Comment(models.Model):
@@ -38,7 +34,7 @@ class Comment(models.Model):
         (REJECTED, _("Atmestas"))
     )
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)

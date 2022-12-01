@@ -50,8 +50,8 @@ urlpatterns = [
         DeleteMemberView.as_view(),
         name='dataset-representative-delete',
     ),
-    url(
-        r'^datasets/tags/autocomplete/',
+    path(
+        'datasets/tags/autocomplete/',
         autocomplete_tags,
         {'tag_model': Dataset.tags.tag_model},
         name='autocomplete_tags',

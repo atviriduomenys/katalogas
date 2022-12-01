@@ -4,6 +4,7 @@ import json
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
@@ -225,6 +226,7 @@ class DatasetCreateView(
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
         self.object.save()
+        form.save_m2m()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
 
@@ -266,6 +268,7 @@ class DatasetUpdateView(
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.save()
+        form.save_m2m()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
 
@@ -454,6 +457,7 @@ class CreateMemberView(
         return HttpResponseRedirect(self.get_success_url())
 
 
+@login_required
 def autocomplete_tags(request, tag_model):
     if isinstance(tag_model, QuerySet):
         queryset = tag_model
@@ -486,7 +490,7 @@ def autocomplete_tags(request, tag_model):
         start = options.autocomplete_limit * (page - 1)
         end = options.autocomplete_limit * page
         more = results.count() > end
-        results = results.order_by("count")[start:end]
+        results = results.order_by("-count")[start:end]
 
     response = {"results": [tag.name for tag in results], "more": more}
     return HttpResponse(

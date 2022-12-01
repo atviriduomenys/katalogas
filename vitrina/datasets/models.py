@@ -106,7 +106,8 @@ class Dataset(TranslatableModel):
         autocomplete_limit=20,
         verbose_name="Žymės",
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
-        autocomplete_settings={"width": "100%"}
+        autocomplete_settings={"width": "100%"},
+        autocomplete_view_fulltext=True
     )
 
     notes = models.TextField(blank=True, null=True)

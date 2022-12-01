@@ -56,7 +56,12 @@
                                 <br>
                                 {{ comment.body_text | escape }}
                                 <br>
-                                <small>{{ comment.created|date:"SHORT_DATETIME_FORMAT" }}</small>
+                                <small>
+                                    {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}
+                                    {% if not comment.is_public %}
+                                    {% translate "(neviešinamas komentaras)" %}
+                                    {% endif %}
+                                </small>
                             </p>
                         </div>
                         {% if user.is_authenticated %}

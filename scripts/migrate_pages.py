@@ -4,9 +4,10 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
+from django.core.management import call_command
 from typing import List
 from tqdm import tqdm
-from typer import run
+from typer import run, Argument
 from cms.api import create_page, add_plugin, create_title, copy_plugins_to_language
 from cms.models import Page
 from django.urls import reverse
@@ -14,13 +15,15 @@ from vitrina.cms.models import CmsPage
 
 
 def remove_home_from_navigation():
-    if Page.objects.filter(is_home=True).exists():
-        home_page = Page.objects.filter(is_home=True).first()
+    for home_page in Page.objects.filter(is_home=True):
         home_page.in_navigation = False
         home_page.save()
-        for child in home_page.node.get_children():
-            child.item.in_navigation = False
-            child.item.save()
+
+
+def remove_blog_from_navigation():
+    for blog in Page.objects.filter(application_namespace="Blog"):
+        blog.in_navigation = False
+        blog.save()
 
 
 page_order = {
@@ -203,7 +206,11 @@ def add_language(
         page.publish(adp_page.language)
 
 
-def main():
+def main(
+    path: str = Argument(..., help=(
+        "Path to page files"
+    ))
+):
     """
     Migrate pages to django_cms Page.
     """
@@ -213,7 +220,9 @@ def main():
         total=CmsPage.objects.count()
     )
 
+    call_command('import_files', path=path)
     remove_home_from_navigation()
+    remove_blog_from_navigation()
     fix_adp_pages()
 
     with pbar:

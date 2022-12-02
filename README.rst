@@ -71,7 +71,7 @@ To generate static files run::
 To migrate news posts and pages to Django CMS rerun server and run::
 
     poetry run python scripts/migrate_news.py "path/to/news/images"
-    poetry run python scripts/migrate_pages.py
+    poetry run python scripts/migrate_pages.py "path/to/page/files"
 
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 

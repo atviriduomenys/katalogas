@@ -83,9 +83,14 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
 
 class DatasetViewSet(RevisionMixin, ModelViewSet):
     serializer_class = DatasetSerializer
-    queryset = Dataset.public.all()
     permission_classes = (APIKeyPermission,)
     lookup_url_kwarg = 'datasetId'
+
+    def get_queryset(self):
+        organization = get_api_key_organization(self.request)
+        if organization:
+            return Dataset.objects.filter(organization=organization)
+        return Dataset.objects.none()
 
     @swagger_auto_schema(
         operation_summary="List all datasets",

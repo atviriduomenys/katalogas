@@ -226,7 +226,9 @@ def test_get_all_datasets_without_api_key(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_get_all_datasets(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
-    dataset = DatasetFactory()
+    dataset = DatasetFactory(is_public=False)
+    dataset_from_another_org1 = DatasetFactory()
+    dataset_from_another_org2 = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -263,6 +265,25 @@ def test_get_dataset_without_api_key(app: DjangoTestApp):
         'datasetId': dataset.pk
     }), expect_errors=True)
     assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_dataset_from_different_organization(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+    })
+    res = app.get(reverse("api-single-dataset", kwargs={
+        'datasetId': dataset.pk
+    }), expect_errors=True)
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db
@@ -449,6 +470,26 @@ def test_update_dataset_without_api_key(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_update_dataset_from_different_organization(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+    })
+    res = app.patch(reverse("api-single-dataset", kwargs={'datasetId': dataset.pk}), {
+        'title': "Updated title",
+        'description': "Updated description"
+    }, expect_errors=True)
+    assert res.status_code == 404
+
+
+@pytest.mark.django_db
 def test_update_dataset_with_dataset_id(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory()
@@ -533,6 +574,25 @@ def test_delete_dataset_without_api_key(app: DjangoTestApp):
         'datasetId': dataset.pk
     }), expect_errors=True)
     assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_delete_dataset_from_different_organization(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+    })
+    res = app.delete(reverse('api-single-dataset', kwargs={
+        'datasetId': dataset.pk
+    }), expect_errors=True)
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db

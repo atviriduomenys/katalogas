@@ -70,8 +70,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
         else:
-            if DatasetGroup.objects.filter(dataset=project_instance).exists():
-                groups = DatasetGroup.objects.filter(dataset=project_instance).all()
+            groups = DatasetGroup.objects.filter(dataset=project_instance).all()
+            if len(groups) > 0:
                 self.initial['groups'] = groups
 
 

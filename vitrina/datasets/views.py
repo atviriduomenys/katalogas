@@ -67,7 +67,7 @@ class DatasetListView(FacetedSearchView):
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
-            'group_facet': update_facet_data(self.request, facet_fields, 'groups'),
+            'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),

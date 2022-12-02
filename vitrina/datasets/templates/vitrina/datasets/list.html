@@ -120,7 +120,7 @@
                                 </strong>
                             </div>
                             {% if i.object.groups %}
-                                {% for group in i.object.get_group_list %}
+                                {% for group in i.object.get_all_groups %}
                                     <p class="tag is-link" style="background-color:Gainsboro; color: black;">
                                         {{ group }}
                                     </p>

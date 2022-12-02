@@ -163,8 +163,11 @@ class Dataset(TranslatableModel):
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
 
+    def get_all_groups(self):
+        return self.groups.all()
+
     def get_group_list(self):
-        return list(self.groups.all().values_list('title', flat=True))
+        return list(self.groups.all().values_list('pk', flat=True))
 
     @property
     def filter_status(self):

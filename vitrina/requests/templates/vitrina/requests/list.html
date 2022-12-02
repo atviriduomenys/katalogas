@@ -86,10 +86,10 @@
                                     </div>
                                     <div class="column is-one-third">
                                         {% if i.registered %}
-                                            <p>{% translate "Registravimo data" %}: {{ i.registered|date:"Y-m-d H:i:s" }}</p>
+                                            <p>{% translate "Registravimo data" %}: {{ i.registered|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.modified %}
-                                            <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"Y-m-d H:i:s" }}</p>
+                                            <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.comment_count %}
                                             <p>{% translate "Komentarai" %}: {{ i.comment_count }}</p>

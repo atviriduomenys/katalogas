@@ -52,7 +52,7 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(
         representative=representative,
-        expires=datetime(2000, 12, 24)
+        expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
@@ -122,7 +122,7 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(
         representative=representative,
-        expires=datetime(2000, 12, 24)
+        expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
@@ -187,7 +187,7 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(
         representative=representative,
-        expires=datetime(2000, 12, 24)
+        expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'

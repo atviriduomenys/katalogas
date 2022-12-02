@@ -11,7 +11,7 @@ class DatasetAdmin(TranslatableAdmin, VersionAdmin):
     list_display = ('title', 'description', 'is_public')
 
 
-class GroupAdmin(admin.ModelAdmin):
+class GroupAdmin(TranslatableAdmin):
     list_display = ('title',)
 
 

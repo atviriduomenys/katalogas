@@ -18,14 +18,17 @@ from django.utils.translation import gettext_lazy as _
 now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
-class DatasetGroup(models.Model):
-    title = models.CharField(max_length=255, blank=False)
+class DatasetGroup(TranslatableModel):
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
+    )
+    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
 
     class Meta:
-        ordering = ['title']
+        ordering = ['created']
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
 class Dataset(TranslatableModel):

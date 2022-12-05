@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
                 ('version', models.IntegerField()),
                 ('imageuuid', models.CharField(blank=True, max_length=36, null=True)),
                 ('title', models.TextField(blank=True, null=True)),
-                ('type', models.CharField(blank=True, max_length=255, null=True)),
+                ('type', models.CharField(blank=True, choices=[('EU_COMISSION_PORTAL', 'Europos komisijos portalai'), ('EU_LAND', 'EU šalys'), ('OTHER_LAND', 'Kitos šalys')], max_length=255, null=True),),
                 ('url', models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={

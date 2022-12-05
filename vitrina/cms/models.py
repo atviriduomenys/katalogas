@@ -2,6 +2,7 @@ import pathlib
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from filer.fields.image import FilerImageField
 
 from vitrina.users.models import User
 
@@ -90,7 +91,7 @@ class ExternalSite(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    image = models.ImageField(max_length=255, blank=True, null=True, upload_to='image/')
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True, choices=TYPE_CHOICES)
     url = models.CharField(max_length=255, blank=True, null=True)
@@ -125,7 +126,7 @@ class FileResource(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    file = models.FileField(max_length=255, blank=True, null=True, upload_to="file/")
+    filename = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=36, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     obj_class = models.CharField(max_length=255, blank=True, null=True)
@@ -153,7 +154,7 @@ class LearningMaterial(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     video_url = models.CharField(max_length=255, blank=True, null=True)
-    image = models.ImageField(max_length=255, blank=True, null=True, upload_to='image/')
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     author_name = models.TextField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)

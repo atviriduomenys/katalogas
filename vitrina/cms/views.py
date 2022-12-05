@@ -12,16 +12,6 @@ class LearningMaterialDetailView(DetailView):
     model = LearningMaterial
     template_name = 'vitrina/cms/learning_material_detail.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'files': FileResource.objects.filter(
-                obj_class__contains=self.model.__name__,
-                obj_id=self.object.pk
-            )
-        })
-        return context
-
 
 class ReportDetailView(DetailView):
     model = PublishedReport

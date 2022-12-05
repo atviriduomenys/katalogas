@@ -137,9 +137,6 @@ class FileResource(models.Model):
     class Meta:
         db_table = 'file_resource'
 
-    def filename_without_path(self):
-        return pathlib.Path(self.file.name).name if self.file else ""
-
 
 class LearningMaterial(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

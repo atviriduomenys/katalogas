@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.redirects',
+    'rest_framework',
+    'drf_yasg',
     'vitrina.users',
 
     # Django CMS
@@ -291,3 +293,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = (
 CRISPY_TEMPLATE_PACK = 'bulma'
 
 SYSTEM_USER_EMAIL = "system.user@example.com"
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {},
+}

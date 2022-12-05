@@ -1,3 +1,5 @@
+import datetime
+
 import factory
 from factory.django import DjangoModelFactory
 
@@ -16,6 +18,8 @@ class OrganizationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
+        if not kwargs.get('created'):
+            kwargs['created'] = datetime.datetime.now()
         return model_class.add_root(**kwargs)
 
 

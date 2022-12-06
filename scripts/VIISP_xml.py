@@ -1,4 +1,13 @@
+import os
+import xml
+import requests
+
 from xml.dom import minidom
+from requests import Session
+from zeep import Transport, Client
+
+pem_file = "../resources/prod-auth.pem"
+crt_file = "../resources/VIISP_test.crt"
 
 providers = ('auth.lt.identity.card',
              'auth.lt.bank',
@@ -13,6 +22,20 @@ user_information = ('firstName',
 
 callback_url = 'http://127.0.0.1:8000/'
 PID = 'VSID000000000113'
+CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
+
+proxyAuth = 'https://test.epaslaugos.lt/portal/services/AuthenticationServiceProxy'
+proxyWSDL = 'https://test.epaslaugos.lt/portal/services/AuthenticationServiceProxy?wsdl'
+
+envelope = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:aut=\"http://www.epaslaugos.lt/services/authentication\" xmlns:xd=\"http://www.w3.org/2000/09/xmldsig#\">\n" \
+           "<soapenv:Header/>\n" \
+           "<soapenv:Body>\n" \
+           "{}\n" \
+           "</soapenv:Body>\n" \
+           "</soapenv:Envelope>"
+headers = {
+    'Content-Type': 'text/xml; charset=utf-8'
+}
 
 
 def create_base():
@@ -99,7 +122,7 @@ def generate_signature(base, xml):
     rsa_key_value.appendChild(modulus)
     rsa_key_value.appendChild(exponent)
     signature.appendChild(key_info)
-    return base
+    return xml
 
 
 def generate_xml():
@@ -113,8 +136,27 @@ def generate_xml():
     add_elements(base, xml, (callback_url,), element_name='authentication:postbackUrl')
     add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
     generate_signature(base, xml)
-    print(base.toprettyxml(indent='  '))
+    return xml
+
+
+def get_response_with_ticketid(xml):
+    soap_request = envelope.format(xml.toprettyxml())
+    session = Session()
+    session.verify = pem_file
+    transport = Transport(session=session)
+    client = Client(proxyWSDL, transport=transport)
+    resp = client.service.initAuthentication(soap_request)
+    # resp = requests.post(proxyWSDL, data=soap_request)
+    return resp
 
 
 if __name__ == '__main__':
-    generate_xml()
+    viisp_request = generate_xml()
+    # print(viisp_request.toprettyxml(indent='  '))
+    response = get_response_with_ticketid(viisp_request)
+
+    xml_string = xml.dom.minidom.parseString(response.text)
+    xml_string = xml_string.toprettyxml()
+    xml_string = os.linesep.join([s for s in xml_string.splitlines() if s.strip()])
+    print(xml_string)
+    print(response)

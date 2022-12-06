@@ -16,11 +16,14 @@ providers = ('auth.lt.identity.card',
              'auth.lt.government.employee.card',
              'auth.tsl.identity.card',)
 
+attributes = ('lt-personal-code',
+              'lt-company-code')
+
 user_information = ('firstName',
                     'lastName',
                     'companyName',)
 
-callback_url = 'http://127.0.0.1:8000/'
+callback_url = 'https://localhost'
 PID = 'VSID000000000113'
 CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
 
@@ -30,7 +33,7 @@ proxyWSDL = 'https://test.epaslaugos.lt/portal/services/AuthenticationServicePro
 envelope = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:aut=\"http://www.epaslaugos.lt/services/authentication\" xmlns:xd=\"http://www.w3.org/2000/09/xmldsig#\">\n" \
            "<soapenv:Header/>\n" \
            "<soapenv:Body>\n" \
-           "{}\n" \
+           "{}" \
            "</soapenv:Body>\n" \
            "</soapenv:Envelope>"
 headers = {
@@ -47,7 +50,6 @@ def create_base():
     xml.setAttribute('xmlns:ns3', 'http://www.w3.org/2001/10/xml-exc-c14n#')
     xml.setAttribute('id', 'uniqueNodeId')
     doc.appendChild(xml)
-
     return doc, xml
 
 
@@ -86,15 +88,23 @@ def generate_signature(base, xml):
     reference.appendChild(transforms)
 
     transform_1 = base.createElement('Transform')
-    transform_1.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#enveloped-signature')
+    transform_1.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#envelopedsignature')
     transforms.appendChild(transform_1)
 
     transform_2 = base.createElement('Transform')
     transform_2.setAttribute('Algorithm', 'http://www.w3.org/2001/10/xml-exc-c14n#')
     transforms.appendChild(transform_2)
 
+    digest_method = base.createElement('DigestMethod')
+    digest_method.setAttribute('Algorithm', 'http://www.w3.org/2000/09/xmldsig#sha1')
+    reference.appendChild(digest_method)
+
+    digest_value = base.createElement('DigestValue')
+    digest_value.appendChild(base.createTextNode('tfwNJctev1wsnd/lLq5a0PzZ2GQ='))
+    reference.appendChild(digest_value)
+
     inclusive_namespaces_2 = base.createElement('InclusiveNamespaces')
-    inclusive_namespaces_2.setAttribute('xmlns', 'http://www.w3.org/2001/10/xml-exc-c14n#')
+    inclusive_namespaces_2.setAttribute('xmlns', 'http://www.w3.org/2001/10/xml-excc14n#')
     inclusive_namespaces_2.setAttribute('PrefixList', 'authentication')
     transform_2.appendChild(inclusive_namespaces_2)
     signed_info.appendChild(reference)
@@ -109,7 +119,8 @@ def generate_signature(base, xml):
     signature.appendChild(signature_value)
 
     key_info = base.createElement('KeyInfo')
-    rsa_key_value = base.createElement('RASKeyValue')
+    key_value = base.createElement('KeyValue')
+    rsa_key_value = base.createElement('RSAKeyValue')
     modulus = base.createElement('Modulus')
     modulus.appendChild(base.createTextNode("i+rh6NJ7Z6Q8XiMSVK/Z8DYXIyk5j7N9GUX8AOSKONabse4us7/ogR0x7OOf0FsrdxAhQls59W"
                                             "n1vDxujSVOu3v1JhML/v/WK8glcxM433oEEpb0C56XRHlt27Qkbsn6v3njC1z0NGyDFdAtg5Pa"
@@ -118,7 +129,8 @@ def generate_signature(base, xml):
                                             "6zeuv3xbGSP7B7ubpG8fyatGb4oLB4eU0ceCJvqljGMP0w=="))
     exponent = base.createElement("Exponent")
     exponent.appendChild(base.createTextNode('AQAB'))
-    key_info.appendChild(rsa_key_value)
+    key_info.appendChild(key_value)
+    key_value.appendChild(rsa_key_value)
     rsa_key_value.appendChild(modulus)
     rsa_key_value.appendChild(exponent)
     signature.appendChild(key_info)
@@ -132,6 +144,7 @@ def generate_xml():
     xml.appendChild(pid)
 
     add_elements(base, xml, providers, element_name='authentication:authenticationProvider')
+    add_elements(base, xml, attributes, element_name='authentication:authenticationAttribute')
     add_elements(base, xml, user_information, element_name='authentication:userInformation')
     add_elements(base, xml, (callback_url,), element_name='authentication:postbackUrl')
     add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
@@ -141,12 +154,12 @@ def generate_xml():
 
 def get_response_with_ticketid(xml):
     soap_request = envelope.format(xml.toprettyxml())
-    session = Session()
-    session.verify = pem_file
-    transport = Transport(session=session)
-    client = Client(proxyWSDL, transport=transport)
-    resp = client.service.initAuthentication(soap_request)
-    # resp = requests.post(proxyWSDL, data=soap_request)
+    # session = Session()
+    # session.verify = pem_file
+    # transport = Transport(session=session)
+    # client = Client(proxyAuth, transport=transport)
+    # resp = client.service.initAuthentication(soap_request)
+    resp = requests.post(proxyAuth, data=soap_request)
     return resp
 
 

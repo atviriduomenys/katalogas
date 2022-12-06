@@ -1,0 +1,53 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+				  xmlns:aut="http://www.epaslaugos.lt/services/authentication"
+				  xmlns:xd="http://www.w3.org/2000/09/xmldsig#">
+<soapenv:Header/>
+<soapenv:Body>
+	<authentication:authenticationRequest xmlns:authentication="http://www.epaslaugos.lt/services/authentication"
+										  xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
+										  xmlns:ns3="http://www.w3.org/2001/10/xml-exc-c14n#"
+										  id="uniqueNodeId">
+	<authentication:pid>VSID000000000113</authentication:pid>
+	<authentication:authenticationProvider>auth.lt.identity.card</authentication:authenticationProvider>
+	<authentication:authenticationProvider>auth.lt.bank</authentication:authenticationProvider>
+	<authentication:authenticationProvider>auth.signatureProvider</authentication:authenticationProvider>
+	<authentication:authenticationProvider>auth.login.pass</authentication:authenticationProvider>
+	<authentication:authenticationProvider>auth.lt.government.employee.card</authentication:authenticationProvider>
+	<authentication:authenticationProvider>auth.tsl.identity.card</authentication:authenticationProvider>
+	<authentication:authenticationAttribute>lt-personal-code</authentication:authenticationAttribute>
+	<authentication:authenticationAttribute>lt-company-code</authentication:authenticationAttribute>
+	<authentication:userInformation>firstName</authentication:userInformation>
+	<authentication:userInformation>lastName</authentication:userInformation>
+	<authentication:userInformation>companyName</authentication:userInformation>
+	<authentication:postbackUrl>https://localhost</authentication:postbackUrl>
+	<authentication:customData>correlationData</authentication:customData>
+	<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+		<signedInfo>
+			<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+				<InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-exc-c14n#" PrefixList="authentication"/>
+			</CanonicalizationMethod>
+			<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+			<Reference URI="#uniqueNodeId">
+				<Transforms>
+					<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#envelopedsignature"/>
+					<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+						<InclusiveNamespaces xmlns="http://www.w3.org/2001/10/xml-excc14n#" PrefixList="authentication"/>
+					</Transform>
+				</Transforms>
+				<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+				<DigestValue>tfwNJctev1wsnd/lLq5a0PzZ2GQ=</DigestValue>
+			</Reference>
+		</signedInfo>
+		<SignatureValue>I2eCq37Me1LZ3IpbcgrTB+lIzYgjBPVRVdaAZUXrMVdpnrk9BZpxNJ24rhJeKH1CJDFzqVq8lGHl0nz3ZupzgQ+KI5XKXMD6QvjO9Stm8NQDXbFN3aJ5zfWciMDHt/TisJj3zLmstlY0QrWFY80EoYigxDrcS9IESNdgq/PtgwC+0AXL5ZMQQKl6m20+l0hkV7NaoESZa4NvEO4ad/UW11zSU08RZSpzTKQ749JK5W0AqUweLsCdrHywlFJdCpJcoOLh29wpdlvDrX/6u4VTqHxz+7QCyDHXcRCBJvicvETd4V6Q3CQqUZgS24IFc2rkIjtxNISdnErdSauM6AFpuQ==</SignatureValue>
+		<KeyInfo>
+			<KeyValue>
+				<RSAKeyValue>
+					<Modulus>i+rh6NJ7Z6Q8XiMSVK/Z8DYXIyk5j7N9GUX8AOSKONabse4us7/ogR0x7OOf0FsrdxAhQls59Wn1vDxujSVOu3v1JhML/v/WK8glcxM433oEEpb0C56XRHlt27Qkbsn6v3njC1z0NGyDFdAtg5PaMx7YmjyWR6ezMKj9wR5cK4CRZ7idm2PwzQaLUDFm7wUFXudZNkQ6pb60OvDw4ey1t68EVCPtq4nGdHG+3jlSDTTJc/03qk50pa6Nb/t5+EWsE3jFt/uhHim1rC2pMf5UrT26FL6/DjA0PxQFecc76zeuv3xbGSP7B7ubpG8fyatGb4oLB4eU0ceCJvqljGMP0w==</Modulus>
+					<Exponent>AQAB</Exponent>
+				</RSAKeyValue>
+			</KeyValue>
+		</KeyInfo>
+	</Signature>
+</authentication:authenticationRequest>
+</soapenv:Body>
+</soapenv:Envelope>

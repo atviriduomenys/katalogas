@@ -1,5 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from django.utils.translation import gettext_lazy as _
 from reversion import set_comment, set_user
@@ -60,7 +61,10 @@ class DatasetSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True,
         label="",
-        source='internal_id'
+        source='internal_id',
+        validators=[
+            UniqueValidator(Dataset.objects.all()),
+        ],
     )
     title = serializers.CharField(
         required=False,

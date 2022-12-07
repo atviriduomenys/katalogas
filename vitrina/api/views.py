@@ -4,6 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin
+from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -222,7 +223,7 @@ class InternalDatasetViewSet(DatasetViewSet):
 class DatasetDistributionViewSet(ModelViewSet):
     serializer_class = DatasetDistributionSerializer
     permission_classes = (APIKeyPermission,)
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, JSONParser]
     lookup_url_kwarg = "distributionId"
 
     def get_queryset(self):

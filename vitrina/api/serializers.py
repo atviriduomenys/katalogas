@@ -2,9 +2,8 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from django.utils.translation import gettext_lazy as _
-from reversion import set_comment
+from reversion import set_comment, set_user
 
-from vitrina.api.services import get_api_key_organization
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Licence, Category, Frequency
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -218,7 +217,6 @@ class PostDatasetSerializer(DatasetSerializer):
         ]
 
     def create(self, validated_data):
-        request = self.context.get('request')
         languages = validated_data.pop('language_array', [])
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
@@ -232,7 +230,7 @@ class PostDatasetSerializer(DatasetSerializer):
 
         instance = super().create(validated_data)
         instance.origin = Dataset.API_ORIGIN
-        instance.organization = get_api_key_organization(request)
+        instance.organization = self.context.get('organization')
         if languages:
             instance.language = " ".join(languages)
         if licence and Licence.objects.filter(identifier=licence['identifier']).exists():
@@ -245,6 +243,7 @@ class PostDatasetSerializer(DatasetSerializer):
             instance.tags.add(tag)
         instance.save()
         set_comment(Dataset.CREATED)
+        set_user(self.context.get('user'))
         return instance
 
 
@@ -289,6 +288,7 @@ class PatchDatasetSerializer(PostDatasetSerializer):
                 instance.tags.add(tag)
         instance.save()
         set_comment(Dataset.EDITED)
+        set_user(self.context.get('user'))
         return instance
 
 
@@ -495,7 +495,7 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
 class DatasetStructureSerializer(serializers.ModelSerializer):
     created = serializers.DateTimeField(required=False, label="")
     id = serializers.IntegerField(required=False, label="")
-    size = serializers.IntegerField(required=False, label="", source="file_size")
+    size = serializers.IntegerField(required=False, label="")
     title = serializers.CharField(required=False, allow_blank=True, label="")
     filename = serializers.CharField(
         required=False,

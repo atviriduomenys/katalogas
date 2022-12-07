@@ -11,6 +11,7 @@ from rest_framework import permissions
 
 from vitrina.api.models import ApiDescription, ApiKey
 from vitrina.orgs.models import Organization
+from vitrina.users.models import User
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -72,8 +73,8 @@ def get_partner_schema_view():
     )
 
 
-def get_api_key_organization(request: HttpRequest) -> Organization:
-    organization = None
+def get_api_key_organization_and_user(request: HttpRequest) -> (Organization, User):
+    organization = user = None
     ct = ContentType.objects.get_for_model(Organization)
 
     auth = request.META.get('HTTP_AUTHORIZATION', '')
@@ -95,4 +96,5 @@ def get_api_key_organization(request: HttpRequest) -> Organization:
                 api_key_obj.expires > timezone.make_aware(datetime.now())
             ):
                 organization = api_key_obj.representative.content_object
-    return organization
+                user = api_key_obj.representative.user
+    return organization, user

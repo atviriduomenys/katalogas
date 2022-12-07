@@ -441,6 +441,7 @@ def test_create_dataset(app: DjangoTestApp):
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
+    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -509,6 +510,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -548,6 +550,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -620,6 +623,7 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
     assert dataset.deleted_on is not None
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.DELETED
+    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
 
 
 @pytest.mark.django_db
@@ -647,6 +651,7 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
     assert dataset.deleted_on is not None
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.DELETED
+    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
 
 
 @pytest.mark.django_db
@@ -1507,7 +1512,7 @@ def test_get_dataset_structures_with_dataset_id(app: DjangoTestApp):
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),
         'id': structure.pk,
-        'size': structure.file_size(),
+        'size': structure.size,
         'title': structure.title
     }]
 
@@ -1533,7 +1538,7 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),
         'id': structure.pk,
-        'size': structure.file_size(),
+        'size': structure.size,
         'title': structure.title
     }]
 
@@ -1592,7 +1597,7 @@ def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),
         'id': structure.pk,
-        'size': structure.file_size(),
+        'size': structure.size,
         'title': structure.title
     }
 
@@ -1622,7 +1627,7 @@ def test_create_dataset_structure_with_internal_id(app: DjangoTestApp):
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),
         'id': structure.pk,
-        'size': structure.file_size(),
+        'size': structure.size,
         'title': structure.title
     }
 

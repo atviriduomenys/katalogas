@@ -7,7 +7,7 @@ from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModel
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from reversion import set_comment
+from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.permissions import APIKeyPermission
@@ -16,7 +16,7 @@ from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, Catego
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
     PatchDatasetDistributionSerializer
 from vitrina.api.services import CATALOG_TAG, CATEGORY_TAG, LICENCE_TAG, RETRIEVING_DATA_TAG, \
-    ADDING_DATA_TAG, UPDATING_DATA_TAG, REMOVING_DATA_TAG, get_api_key_organization
+    ADDING_DATA_TAG, UPDATING_DATA_TAG, REMOVING_DATA_TAG
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -85,11 +85,15 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
     serializer_class = DatasetSerializer
     permission_classes = (APIKeyPermission,)
     lookup_url_kwarg = 'datasetId'
+    organization = None
+    user = None
 
     def get_queryset(self):
-        organization = get_api_key_organization(self.request)
-        if organization:
-            return Dataset.objects.filter(organization=organization)
+        if self.organization:
+            return Dataset.objects.filter(
+                organization=self.organization,
+                deleted__isnull=True
+            )
         return Dataset.objects.none()
 
     @swagger_auto_schema(
@@ -118,7 +122,10 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = PostDatasetSerializer(
             data=request.data,
-            context={'request': request}
+            context={
+                'organization': self.organization,
+                'user': self.user
+            }
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -138,7 +145,12 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = PatchDatasetSerializer(instance, data=request.data, partial=True)
+        serializer = PatchDatasetSerializer(
+            instance,
+            data=request.data,
+            context={'user': self.user},
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
         serializer = DatasetSerializer(updated_instance, context={
@@ -162,17 +174,17 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
 
         instance.save()
         set_comment(Dataset.DELETED)
+        set_user(self.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class InternalDatasetViewSet(DatasetViewSet):
 
     def get_object(self):
-        organization = get_api_key_organization(self.request)
         internal_id = self.kwargs.get('internalId')
         obj = get_object_or_404(
             Dataset,
-            organization=organization,
+            organization=self.organization,
             internal_id=internal_id
         )
         return obj
@@ -310,13 +322,13 @@ class DatasetDistributionViewSet(ModelViewSet):
 
 
 class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
+    organization = None
 
     def get_dataset(self):
-        organization = get_api_key_organization(self.request)
         internal_id = self.kwargs.get('internalId')
         dataset = get_object_or_404(
             Dataset,
-            organization=organization,
+            organization=self.organization,
             internal_id=internal_id
         )
         return dataset
@@ -438,13 +450,13 @@ class DatasetStructureViewSet(
 
 
 class InternalDatasetStructureViewSet(DatasetStructureViewSet):
+    organization = None
 
     def get_dataset(self):
-        organization = get_api_key_organization(self.request)
         internal_id = self.kwargs.get('internalId')
         dataset = get_object_or_404(
             Dataset,
-            organization=organization,
+            organization=self.organization,
             internal_id=internal_id
         )
         return dataset

@@ -2,12 +2,14 @@ import io
 
 import pytest
 from PIL import Image
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.comments.models import Comment
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.users.factories import UserFactory
@@ -90,6 +92,62 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     assert len(resp.context['history']) == 1
     assert resp.context['history'][0]['action'] == "Redaguota"
     assert resp.context['history'][0]['user'] == user
+
+
+@pytest.mark.django_db
+def test_request_comment_with_status(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    app.set_user(user)
+
+    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form['is_public'] = True
+    form['status'] = Comment.APPROVED
+    form['body'] = "Approving this project"
+    resp = form.submit().follow()
+
+    comment = project.comments.get()
+    assert list(resp.context['comments']) == [comment]
+    assert comment.type == Comment.STATUS
+    assert comment.status == Comment.APPROVED
+
+    version = Version.objects.get_for_object(project).get()
+    assert version.revision.comment == Project.STATUS_CHANGED
+
+
+@pytest.mark.django_db
+def test_request_comment_with_status_rejected(app: DjangoTestApp):
+    project = ProjectFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form['is_public'] = True
+    form['status'] = Comment.REJECTED
+    form['body'] = ""
+    resp = form.submit().follow()
+
+    comment = project.comments.get()
+    assert list(resp.context['comments']) == [comment]
+    assert comment.type == Comment.STATUS
+    assert comment.status == Comment.REJECTED
+
+    version = Version.objects.get_for_object(project).get()
+    assert version.revision.comment == Project.STATUS_CHANGED
+
+
+@pytest.mark.django_db
+def test_request_comment_with_same_status(app: DjangoTestApp):
+    project = ProjectFactory(status=Project.APPROVED)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form['status'] = Comment.APPROVED
+    form.submit().follow()
+
+    assert project.comments.count() == 0
+    assert Version.objects.get_for_object(project).count() == 0
 
 
 @pytest.mark.django_db

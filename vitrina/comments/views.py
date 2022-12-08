@@ -21,7 +21,7 @@ class CommentView(
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
         form_class = get_comment_form_class(obj, request.user)
-        form = form_class(request.POST)
+        form = form_class(obj, request.POST)
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -51,7 +51,7 @@ class CommentView(
                 obj.status = form.cleaned_data.get('status')
                 obj.comment = comment.body
                 obj.save()
-                set_comment(Request.STATUS_CHANGED)
+                set_comment(type(obj).STATUS_CHANGED)
             else:
                 comment.type = Comment.USER
             comment.save()
@@ -64,7 +64,7 @@ class ReplyView(LoginRequiredMixin, View):
     def post(self, request, content_type_id, object_id, parent_id):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
-        form = CommentForm(request.POST)
+        form = CommentForm(obj, request.POST)
 
         if form.is_valid():
             Comment.objects.create(

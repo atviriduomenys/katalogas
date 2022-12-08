@@ -336,5 +336,40 @@
         $(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
         });
-    </script>
+    $(document).ready(function () {
+
+        $(function () {
+            $('.reply-button').click(function () {
+                $('#media-' + this.id).toggleClass('is-hidden');
+            });
+
+            $('#reply-form').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+
+            $('#comment-form').submit(function () {
+                $(this).find(":submit").attr('disabled', 'disabled');
+            });
+
+            $('#id_submit_button').click( function () {
+
+                const status_field = $(this).closest('#comment-form').find('#id_status')[0];
+                const body_field = $(this).closest('#comment-form').find('#id_body')[0];
+
+                if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED" )) {
+                    body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
+                    body_field.reportValidity();
+                }
+                else {
+                    $('#comment-form').trigger('submit');
+                }
+            });
+
+            $('input#id_register_request').click( function () {
+                $("#div_id_increase_frequency").toggle(this.checked);
+            });
+            $("#div_id_increase_frequency").toggle(false);
+        });
+    });
+</script>
 {% endblock %}

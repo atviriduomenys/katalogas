@@ -42,6 +42,7 @@ class Dataset(TranslatableModel):
     DATA_ADDED = "DATA_ADDED"
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
+    PROJECT_SET = "PROJECT_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -50,6 +51,7 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
+        PROJECT_SET: _("Priskirta projektui")
     }
 
     translations = TranslatedFields(

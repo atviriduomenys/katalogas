@@ -21,5 +21,10 @@
                 </a>
             </li>
         {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
+            <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
+                {% translate "Projektai" %}
+            </a>
+        </li>
     </ul>
 </div>

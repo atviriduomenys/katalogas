@@ -26,8 +26,10 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
+
+from vitrina.projects.models import Project
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -491,3 +493,94 @@ class DeleteMemberView(
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),
         })
+
+
+class DatasetProjectsView(LoginRequiredMixin, PermissionRequiredMixin, HistoryMixin, ListView):
+    model = Project
+    template_name = 'vitrina/datasets/project_list.html'
+    context_object_name = 'projects'
+    paginate_by = 20
+
+    # HistroyMixin
+    object: Dataset
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+
+    def get_queryset(self):
+        return (
+            Project.public.filter(datasets=self.object)
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.object
+        context['has_permission'] = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Representative,
+            self.object,
+        )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        return context
+
+
+class AddProjectView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+    model = Dataset
+    form_class = AddProjectForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        self.object = form.save()
+        for project in form.cleaned_data['projects']:
+            temp_proj = get_object_or_404(Project, pk=project.pk)
+            temp_proj.datasets.add(self.object)
+        set_comment(Dataset.PROJECT_SET)
+        self.object.save()
+        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.object.pk}))
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['current_title'] = _('Projektų pridėjimas')
+        return context_data
+
+
+class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Project
+    template_name = 'confirm_remove.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Project, pk=self.kwargs.get('pk'))
+        self.project = get_object_or_404(Project, pk=self.kwargs.get('project_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.DELETE, self.project)
+
+    def delete(self, request, *args, **kwargs):
+        self.project.datasets.remove(self.object.pk)
+        return reverse('dataset-projects', kwargs={'pk': self.object.pk})

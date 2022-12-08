@@ -12,15 +12,6 @@
 {% block content %}
 
     {% include 'vitrina/projects/tabs.html' %}
-
-    {% if can_update_project %}
-        <div class="buttons is-right">
-            <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
-               href="{% url 'project-dataset-add' pk=project.pk %}">
-                {% translate "Pridėti duomenų rinkinį" %}
-            </a>
-        </div>
-    {% endif %}
     <table class="table is-fullwidth">
         <tbody>
             <tr>
@@ -38,16 +29,16 @@
                         <div class="content">
                             <div>
                                 <strong>
-                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                    <a href="{{ dataset.get_absolute_url }}"class="dataset-list-title">
                                         {% objectlanguage dataset LANGUAGE_CODE %}
                                             {{ dataset.title }}
                                         {% endobjectlanguage %}
                                     </a>
                                 </strong>
                             </div>
-                            {% if dataset.organization_title %}
+                            {% if dataset.organization %}
                                 <p>
-                                    <small class="dataset-list-organization">{{ dataset.organization_title }}</small>
+                                    <small class="dataset-list-organization">{{ dataset.organization.title }}</small>
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
@@ -70,7 +61,7 @@
                     <td>
                         <div class="buttons is-right">
                             <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
-                               href="{% url 'project-dataset-remove' project_id=project.pk dataset_id=dataset.pk %}">
+                               href="{% url 'project-dataset-remove' pk=project.pk dataset_id=dataset.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>
                         </div>

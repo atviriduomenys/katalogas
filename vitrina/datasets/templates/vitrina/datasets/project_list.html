@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Projektų sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'dataset-project-add' dataset.pk %}">
+                {% translate "Pridėti projektą" %}
+            </a>
+        </div>
+    {% endif %}
+    <table class="table is-fullwidth">
+        <tbody>
+            <tr>
+                <th></th>
+                {% if has_permission %}
+                    <th></th>
+                {% endif %}
+            </tr>
+            {% for project in page_obj %}
+                <tr>
+                <td>
+                <article class="media">
+                    <div class="media-content">
+                        <div class="content">
+                            <div>
+                                <strong>
+                                    <a href="{{ project.get_absolute_url }}" class="dataset-list-title">
+                                          {{ project.title }}
+                                    </a>
+                                </strong>
+                            </div>
+                            <p class="dataset-list-description">
+                                {{ project.description }}
+                            </p>
+                        </div>
+                    </div>
+                </article>
+                </td>
+                {% if has_permission %}
+                    <td>
+                        <div class="buttons is-right">
+                            <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
+                               href="{% url 'dataset-project-remove' pk=dataset.pk project_id=project.pk %}">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </div>
+                    </td>
+                {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br/>
+    {% include "vitrina/common/pagination.html" %}
+{% endblock %}

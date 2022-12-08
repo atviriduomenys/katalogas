@@ -14,7 +14,7 @@ from reversion.views import RevisionMixin
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.services import has_perm, Action
-from vitrina.projects.forms import ProjectForm, AddDatasetForm
+from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
 
 from vitrina.views import HistoryMixin, HistoryView
@@ -121,7 +121,7 @@ class ProjectDatasetsView(HistoryMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return self.object.datasets.all()
+        return Dataset.public.filter(project=self.object).select_related('organization')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -134,41 +134,17 @@ class ProjectDatasetsView(HistoryMixin, ListView):
         return context
 
 
-class ProjectAddDatasetView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    RevisionMixin,
-    UpdateView
-):
+class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Project
-    form_class = AddDatasetForm
-    template_name = 'base_form.html'
+    template_name = 'confirm_remove.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Project, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        project = self.get_object()
-        return has_perm(self.request.user, Action.UPDATE, project)
+        return has_perm(self.request.user, Action.UPDATE, self.object)
 
-    def form_valid(self, form):
-        super().form_valid(form)
-        self.object = form.save(commit=False)
-        print(self.object)
-        for dataset in form.cleaned_data['dataset']:
-            self.object.datasets.add(dataset)
-        self.object.save()
+    def delete(self, request, *args, **kwargs):
+        self.object.datasets.remove(self.kwargs.get('dataset_id'))
         return HttpResponseRedirect(reverse('project-datasets', kwargs={'pk': self.object.pk}))
-
-    def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        context_data['current_title'] = _('Duomenų rinkinių pridėjimas')
-        return context_data
-
-
-class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    def has_permission(self):
-        project = get_object_or_404(Project, pk=self.kwargs.get('project_id'))
-        return has_perm(self.request.user, Action.UPDATE, project)
-
-    def get(self, request, project_id, dataset_id):
-        project = get_object_or_404(Project, pk=project_id)
-        project.datasets.remove(dataset_id)
-        return HttpResponseRedirect(reverse('project-datasets', kwargs={'pk': project_id}))

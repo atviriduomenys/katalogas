@@ -1,7 +1,7 @@
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField
+from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -12,6 +12,7 @@ from vitrina.classifiers.models import Frequency, Licence
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.projects.models import Project
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -98,6 +99,27 @@ class DatasetStructureImportForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
+        )
+
+
+class AddProjectForm(forms.ModelForm):
+    projects = ModelMultipleChoiceField(
+        label=_('Projektai'),
+        queryset=Project.objects.all(),
+        required=True
+    )
+
+    class Meta:
+        model = Dataset
+        fields = ['projects']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "project-dataset-add-form"
+        self.helper.layout = Layout(
+            Field('projects'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
         )
 
 

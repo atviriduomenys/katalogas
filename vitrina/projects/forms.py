@@ -13,11 +13,6 @@ class ProjectForm(ModelForm):
     description = CharField(label=_('Aprašymas'), widget=Textarea)
     url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
     image = ImageField(label=_("Paveiksliukas"), required=False)
-    dataset = ModelMultipleChoiceField(
-        label=_('Duomenų rinkiniai'),
-        queryset=Dataset.objects.all(),
-        required=False
-    )
 
     class Meta:
         model = Project
@@ -32,29 +27,7 @@ class ProjectForm(ModelForm):
         self.helper.layout = Layout(
             Field('title', placeholder=_("Pavadinimas")),
             Field('description', placeholder=_("Aprašymas")),
-            Field('dataset'),
             Field('url', placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field('image', placeholder=_("Pavadinimas")),
             Submit('submit', button, css_class='button is-primary')
-        )
-
-
-class AddDatasetForm(ModelForm):
-    dataset = ModelMultipleChoiceField(
-        label=_('Duomenų rinkiniai'),
-        queryset=Dataset.objects.all(),
-        required=True
-    )
-
-    class Meta:
-        model = Project
-        fields = ['dataset']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_id = "project-dataset-add-form"
-        self.helper.layout = Layout(
-            Field('dataset'),
-            Submit('submit', _("Pridėti"), css_class='button is-primary')
         )

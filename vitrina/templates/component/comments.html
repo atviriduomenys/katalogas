@@ -61,7 +61,7 @@
                 const status_field = $(this).closest('#comment-form').find('#id_status')[0];
                 const body_field = $(this).closest('#comment-form').find('#id_body')[0];
 
-                if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED" )) {
+                if (!body_field.value && (!status_field || !status_field.value)) {
                     body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
                     body_field.reportValidity();
                 }

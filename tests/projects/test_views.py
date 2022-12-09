@@ -26,20 +26,17 @@ def generate_photo_file() -> bytes:
 @pytest.mark.django_db
 def test_project_create(app: DjangoTestApp):
     user = UserFactory()
-    dataset = DatasetFactory()
     app.set_user(user)
 
     form = app.get(reverse("project-create")).forms['project-form']
     form['title'] = "Project"
     form['description'] = "Description"
-    form['dataset'] = (dataset.pk,)
     form['url'] = "example.com"
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
     resp = form.submit()
 
     added_project = Project.objects.filter(title='Project')
     assert added_project.exists()
-    assert added_project.first().datasets.first() == dataset
     assert resp.status_code == 302
     assert resp.url == added_project.first().get_absolute_url()
     assert Version.objects.get_for_object(added_project.first()).count() == 1
@@ -107,7 +104,7 @@ def test_request_comment_with_status(app: DjangoTestApp):
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert list(resp.context['comments']) == [comment]
+    assert list(resp.context['comments']) == [(comment, [])]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.APPROVED
 
@@ -128,7 +125,7 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert list(resp.context['comments']) == [comment]
+    assert list(resp.context['comments']) == [(comment, [])]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.REJECTED
 
@@ -160,7 +157,7 @@ def test_remove_dataset_no_permission(app: DjangoTestApp):
 
     app.set_user(user)
 
-    resp = app.get(reverse('project-dataset-remove', kwargs={'project_id': project.pk,
+    resp = app.get(reverse('project-dataset-remove', kwargs={'pk': project.pk,
                                                              'dataset_id': dataset.pk}),
                    expect_errors=True)
 
@@ -175,37 +172,14 @@ def test_remove_dataset_with_permission(app: DjangoTestApp):
     project.datasets.add(dataset)
     assert project.datasets.all().count() == 1
 
-    app.set_user(user)
-
     url = reverse('project-datasets', kwargs={'pk': project.pk})
+    app.set_user(user)
 
     resp = app.get(url)
     resp = resp.click(linkid=f"remove-dataset-{ dataset.pk }-btn")
 
+    form = resp.forms['delete-form']
+    resp = form.submit()
+
     assert resp.headers['location'] == url
     assert project.datasets.all().count() == 0
-
-
-@pytest.mark.django_db
-def test_add_dataset_with_permission(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    project = ProjectFactory()
-    dataset = DatasetFactory()
-    app.set_user(user)
-    resp = app.get(reverse('project-dataset-add', kwargs={'pk': project.pk}))
-    form = resp.forms['project-dataset-add-form']
-    form['dataset'] = (dataset.pk,)
-    resp = form.submit()
-    dataset.refresh_from_db()
-    assert resp.status_code == 302
-    assert resp.url == reverse('project-datasets', kwargs={'pk': project.pk})
-    assert project.datasets.all().first() == dataset
-
-
-@pytest.mark.django_db
-def test_add_dataset_with_no_permission(app: DjangoTestApp):
-    user = UserFactory()
-    project = ProjectFactory()
-    app.set_user(user)
-    resp = app.get(reverse('project-dataset-add', kwargs={'pk': project.pk}), expect_errors=True)
-    assert resp.status_code == 403

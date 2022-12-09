@@ -52,7 +52,7 @@
                 {% if has_permission %}
                     <td>
                         <div class="buttons is-right">
-                            <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
+                            <a id="remove-project-{{ project.pk }}-btn"  class="button is-danger is-small"
                                href="{% url 'dataset-project-remove' pk=dataset.pk project_id=project.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>

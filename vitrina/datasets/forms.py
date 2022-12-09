@@ -111,7 +111,7 @@ class AddProjectForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_id = "project-dataset-add-form"
+        self.helper.form_id = "dataset-add-project-form"
         if self.user.is_superuser or self.user.is_staff:
             self.fields['projects'].queryset = Project.objects.filter()
         else:

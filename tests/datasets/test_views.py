@@ -21,6 +21,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -993,3 +994,28 @@ def test_dataset_members_delete_member(app: DjangoTestApp):
     assert not qs.exists()
 
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_add_project_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}))
+    form = resp.forms['dataset-add-project-form']
+    form['projects'] = (project.pk,)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-projects', kwargs={'pk': dataset.pk})
+    assert project.datasets.all().first() == dataset
+
+
+@pytest.mark.django_db
+def test_add_project_with_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}), expect_errors=True)
+    assert resp.status_code == 403

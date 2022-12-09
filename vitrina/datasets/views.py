@@ -568,6 +568,13 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     def has_permission(self):
         return has_perm(self.request.user, Action.DELETE, self.project)
 
+    def handle_no_permission(self):
+        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.object.pk}))
+
     def delete(self, request, *args, **kwargs):
         self.project.datasets.remove(self.object.pk)
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
         return reverse('dataset-projects', kwargs={'pk': self.object.pk})

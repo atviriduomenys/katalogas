@@ -106,8 +106,6 @@ class ProjectUpdateView(
     def form_valid(self, form):
         super().form_valid(form)
         self.object = form.save(commit=True)
-        for dataset in form.cleaned_data['dataset']:
-            self.object.datasets.add(dataset.id)
         self.object.save()
         set_comment(Project.EDITED)
         return HttpResponseRedirect(self.get_success_url())
@@ -165,4 +163,8 @@ class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def delete(self, request, *args, **kwargs):
         self.object.datasets.remove(self.kwargs.get('dataset_id'))
-        return HttpResponseRedirect(reverse('project-datasets', kwargs={'pk': self.object.pk}))
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('project-datasets', kwargs={'pk': self.object.pk})

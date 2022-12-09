@@ -37,6 +37,7 @@ django-allauth = "^0.51.0"
 requests = ">=2.0.0,<3.0.0"
 zeep = "^4.2.1"
 suds = "^1.1.2"
+cryptography = "^38.0.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

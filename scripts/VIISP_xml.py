@@ -1,7 +1,7 @@
 import os
 import xml
 import requests
-
+from cryptography.hazmat.primitives import serialization
 from xml.dom import minidom
 from requests import Session
 from zeep import Transport, Client
@@ -60,6 +60,16 @@ def add_elements(base, xml, elements, element_name=None, element=None):
         element.appendChild(base.createTextNode(item))
         xml.appendChild(element)
     return base
+
+
+def generate_rsa():
+    with open("../resources/prod-auth.pem", "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+        )
+    # signature = private_key.sign()
+    return private_key
 
 
 def generate_signature(base, xml):
@@ -122,11 +132,8 @@ def generate_signature(base, xml):
     key_value = base.createElement('KeyValue')
     rsa_key_value = base.createElement('RSAKeyValue')
     modulus = base.createElement('Modulus')
-    modulus.appendChild(base.createTextNode("i+rh6NJ7Z6Q8XiMSVK/Z8DYXIyk5j7N9GUX8AOSKONabse4us7/ogR0x7OOf0FsrdxAhQls59W"
-                                            "n1vDxujSVOu3v1JhML/v/WK8glcxM433oEEpb0C56XRHlt27Qkbsn6v3njC1z0NGyDFdAtg5Pa"
-                                            "Mx7YmjyWR6ezMKj9wR5cK4CRZ7idm2PwzQaLUDFm7wUFXudZNkQ6pb60OvDw4ey1t68EVCPtq4"
-                                            "nGdHG+3jlSDTTJc/03qk50pa6Nb/t5+EWsE3jFt/uhHim1rC2pMf5UrT26FL6/DjA0PxQFecc7"
-                                            "6zeuv3xbGSP7B7ubpG8fyatGb4oLB4eU0ceCJvqljGMP0w=="))
+    RSAValue = generate_rsa()
+    modulus.appendChild(base.createTextNode(RSAValue))
     exponent = base.createElement("Exponent")
     exponent.appendChild(base.createTextNode('AQAB'))
     key_info.appendChild(key_value)

@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
 from filer.fields.image import FilerImageField
 
 from vitrina.users.models import User
@@ -19,6 +20,7 @@ class Project(models.Model):
     }
 
     EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
     DELETED = "DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
@@ -46,6 +48,8 @@ class Project(models.Model):
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
+
+    comments = GenericRelation("vitrina_comments.Comment")
 
     class Meta:
         db_table = 'usecase'

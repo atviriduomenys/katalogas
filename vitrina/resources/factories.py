@@ -28,4 +28,5 @@ class DatasetDistributionFactory(DjangoModelFactory):
     period_start = date(2022, 1, 1)
     period_end = date(2022, 12, 31)
     file = factory.SubFactory(FilerFileFactory)
+    type = "FILE"
     version = 1

@@ -10,7 +10,7 @@ class CatalogFactory(DjangoModelFactory):
         model = Catalog
         django_get_or_create = ('title', 'description',)
 
-    identifier = factory.Faker('word')
+    identifier = factory.Sequence(lambda n: f'id{n}')
     title = factory.Faker('catch_phrase')
     description = factory.Faker('catch_phrase')
     licence = factory.SubFactory(LicenceFactory)

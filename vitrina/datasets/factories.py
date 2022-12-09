@@ -76,3 +76,4 @@ class DatasetStructureFactory(DjangoModelFactory):
         FilerFileFactory,
         file=FileField(filename='manifest.csv', data=MANIFEST)
     )
+    dataset = factory.SubFactory(DatasetFactory)

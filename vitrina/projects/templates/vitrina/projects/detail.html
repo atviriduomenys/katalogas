@@ -6,8 +6,10 @@
 {% load like_tags %}
 {% load comment_tags %}
 
-{% block content %}
+{% block parent_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
+{% block current_title %}{{ project.get_title }}{% endblock %}
 
+{% block content %}
     {% include 'component/tabs.html' %}
 
     <div class="columns no-margin-bottom">
@@ -21,13 +23,27 @@
                 </p>
             </div>
             {% endif %}
+            {% if can_update_project %}
+            <div class="content">
+                <p>
+                    {% translate "Būsena" %}:
+                    {% if project.status == "APPROVED"%}
+                        <b id="status_approved" style="color:green;">{% translate "PATVIRTINTAS" %}</b>
+                    {% elif project.status == "REJECTED" %}
+                        <b id="status_rejected" style="color:red;">{% translate "ATMESTAS" %}</b>
+                    {% else %}
+                        <b id="status_created">{% translate "NAUJAS" %}</b>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
             <div class="content" id="project_likes">
                 {% if user.is_authenticated %}
                     <p>{% translate "Ar jums patinka šis projektas?" %}</p>
                     
                 {% else %}
                     <p>
-                        {% translate "Patinka:" %}:
+                        {% translate "Patinka" %}:
                         <b>{% like obj=project user=request.user %}</b>
                     </p>
                 {% endif %}
@@ -39,13 +55,12 @@
         </div>
         <div class="column is-two-quarters">
             <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
-
             {% if can_update_project %}
-            <div class="buttons is-right">
-                <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
-                    {% translate "Keisti" %}
-                </a>
-            </div>
+                <div class="buttons is-right">
+                    <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
+                        {% translate "Keisti" %}
+                    </a>
+                </div>
             {% endif %}
 
             <div class="content">

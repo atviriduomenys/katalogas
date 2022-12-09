@@ -520,6 +520,7 @@ class DatasetProjectsView(HistoryMixin, ListView):
         context['dataset'] = self.object
         context['has_permission'] = has_perm(self.request.user, Action.UPDATE, self.object)
         context['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, self.object)
+        context['has_projects'] = Project.objects.filter(user=self.request.user)
         return context
 
 
@@ -557,11 +558,11 @@ class AddProjectView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin,
 
 
 class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
-    model = Project
+    model = Dataset
     template_name = 'confirm_remove.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Project, pk=self.kwargs.get('pk'))
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
         self.project = get_object_or_404(Project, pk=self.kwargs.get('project_id'))
         return super().dispatch(request, *args, **kwargs)
 
@@ -569,12 +570,12 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return has_perm(self.request.user, Action.DELETE, self.project)
 
     def handle_no_permission(self):
-        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.object.pk}))
+        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.dataset.pk}))
 
     def delete(self, request, *args, **kwargs):
-        self.project.datasets.remove(self.object.pk)
+        self.project.datasets.remove(self.dataset.pk)
         success_url = self.get_success_url()
         return HttpResponseRedirect(success_url)
 
     def get_success_url(self):
-        return reverse('dataset-projects', kwargs={'pk': self.object.pk})
+        return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})

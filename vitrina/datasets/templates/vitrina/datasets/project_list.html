@@ -13,7 +13,7 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-    {% if has_permission %}
+    {% if has_permission and has_projects %}
         <div class="buttons is-right">
             <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
                href="{% url 'dataset-project-add' dataset.pk %}">

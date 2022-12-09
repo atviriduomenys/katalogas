@@ -49,7 +49,7 @@
                     </div>
                 </article>
                 </td>
-                {% if has_permission %}
+                {% if has_permission or project.user == request.user %}
                     <td>
                         <div class="buttons is-right">
                             <a id="remove-project-{{ project.pk }}-btn"  class="button is-danger is-small"

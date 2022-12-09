@@ -495,7 +495,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(LoginRequiredMixin, PermissionRequiredMixin, HistoryMixin, ListView):
+class DatasetProjectsView(HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -510,14 +510,6 @@ class DatasetProjectsView(LoginRequiredMixin, PermissionRequiredMixin, HistoryMi
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
 
-    def has_permission(self):
-        return has_perm(
-            self.request.user,
-            Action.VIEW,
-            Representative,
-            self.object,
-        )
-
     def get_queryset(self):
         return (
             Project.public.filter(datasets=self.object)
@@ -526,18 +518,8 @@ class DatasetProjectsView(LoginRequiredMixin, PermissionRequiredMixin, HistoryMi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
-        context['has_permission'] = has_perm(
-            self.request.user,
-            Action.CREATE,
-            Representative,
-            self.object,
-        )
-        context['can_view_members'] = has_perm(
-            self.request.user,
-            Action.VIEW,
-            Representative,
-            self.object,
-        )
+        context['has_permission'] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, self.object)
         return context
 
 
@@ -545,6 +527,11 @@ class AddProjectView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin,
     model = Dataset
     form_class = AddProjectForm
     template_name = 'base_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(AddProjectView, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))

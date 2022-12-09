@@ -103,24 +103,30 @@ class DatasetStructureImportForm(forms.ModelForm):
 
 
 class AddProjectForm(forms.ModelForm):
-    projects = ModelMultipleChoiceField(
-        label=_('Projektai'),
-        queryset=Project.objects.all(),
-        required=True
-    )
-
     class Meta:
         model = Dataset
         fields = ['projects']
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "project-dataset-add-form"
+        if self.user.is_superuser or self.user.is_staff:
+            self.fields['projects'].queryset = Project.objects.filter()
+        else:
+            self.fields['projects'].queryset = Project.objects.filter(user=self.user)
         self.helper.layout = Layout(
             Field('projects'),
             Submit('submit', _("Pridėti"), css_class='button is-primary')
         )
+
+    projects = ModelMultipleChoiceField(
+        label=_('Projektai'),
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
 
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):

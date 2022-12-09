@@ -3,9 +3,6 @@ from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
-
-from vitrina.comments.models import Comment
-from vitrina.datasets.models import Dataset
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 
@@ -47,8 +44,8 @@ class Project(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    datasets = models.ManyToManyField(Dataset)
-    comments = GenericRelation(Comment)
+    datasets = models.ManyToManyField("vitrina_datasets.Dataset")
+    comments = GenericRelation("vitrina_comments.Comment")
 
     class Meta:
         db_table = 'usecase'

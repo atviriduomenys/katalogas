@@ -79,7 +79,6 @@ class ProjectCreateView(
         self.object = form.save(commit=True)
         self.object.user = self.request.user
         self.object.status = Project.CREATED
-        self.object.datasets.set(form.cleaned_data['dataset'])
         self.object.save()
         set_comment(Project.CREATED)
         return HttpResponseRedirect(self.get_success_url())

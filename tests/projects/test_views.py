@@ -10,6 +10,7 @@ from webtest import Upload
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.users.factories import UserFactory
+from filer.models.imagemodels import Image as FilerImage
 
 
 def generate_photo_file() -> bytes:
@@ -38,6 +39,8 @@ def test_project_create(app: DjangoTestApp):
     assert resp.url == added_project.first().get_absolute_url()
     assert Version.objects.get_for_object(added_project.first()).count() == 1
     assert Version.objects.get_for_object(added_project.first()).first().revision.comment == Project.CREATED
+    assert FilerImage.objects.count() == 1
+    assert added_project.first().image.original_filename == "example.png"
 
 
 @pytest.mark.django_db

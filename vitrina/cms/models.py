@@ -1,4 +1,8 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from filer.fields.file import FilerFileField
+from filer.fields.image import FilerImageField
 
 from vitrina.users.models import User
 
@@ -77,10 +81,13 @@ class ExternalSite(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_site", on_delete=models.SET_NULL)
+
+    # Deprecated fields bellow
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -107,11 +114,27 @@ class FileResource(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
+
+    file = FilerFileField(
+        null=True,
+        blank=True,
+        related_name="file_object",
+        on_delete=models.CASCADE
+    )
+    content_type = models.ForeignKey(
+        to=ContentType,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='content_type_files'
+    )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    # Deprecated fields bellow
     filename = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=36, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
-    obj_class = models.CharField(max_length=255, blank=True, null=True)
-    obj_id = models.BigIntegerField(blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
 
@@ -133,12 +156,15 @@ class LearningMaterial(models.Model):
     topic = models.CharField(max_length=255, blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
     video_url = models.CharField(max_length=255, blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     author_name = models.TextField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     requested = models.IntegerField(blank=True, null=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_learning_material", on_delete=models.SET_NULL)
+
+    # Deprecated fields bellow
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -158,11 +184,14 @@ class NewsItem(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     author_name = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_news_item", on_delete=models.SET_NULL)
+
+    # Deprecated fields bellow
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         managed = True

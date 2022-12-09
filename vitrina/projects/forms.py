@@ -1,7 +1,8 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, Div, Submit
-from django.forms import ModelForm, CharField, ImageField, Textarea
+from crispy_forms.layout import Layout, Field, Submit
+from django.forms import ModelForm, CharField, Textarea
 
+from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project
 
 from django.utils.translation import gettext_lazy as _
@@ -11,7 +12,7 @@ class ProjectForm(ModelForm):
     title = CharField(label=_('Pavadinimas'))
     description = CharField(label=_('Aprašymas'), widget=Textarea)
     url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
-    image = ImageField(label=_("Paveiksliukas"), required=False)
+    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to="data/files")
 
     class Meta:
         model = Project
@@ -27,6 +28,6 @@ class ProjectForm(ModelForm):
             Field('title', placeholder=_("Pavadinimas")),
             Field('description', placeholder=_("Aprašymas")),
             Field('url', placeholder=_("Nuoroda į panaudojimo atvejį")),
-            Field('image', placeholder=_("Pavadinimas")),
+            Field('image'),
             Submit('submit', button, css_class='button is-primary')
         )

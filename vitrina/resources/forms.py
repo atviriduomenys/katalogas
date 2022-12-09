@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 
+from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
 
@@ -46,6 +47,18 @@ class DatasetResourceForm(forms.ModelForm):
             "tiesiogiai į CSV, JSON ar kito formato duomenų failą."
         ),
         required=False,
+    )
+    file = FilerFileField(
+        upload_to="data",
+        label=_('Duomenų failas'),
+        help_text=_(
+            'Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir '
+            'įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų '
+            'Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų '
+            'atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) '
+            'duomenų failus, galima talpinti ir kataloge.'
+        ),
+        required=False
     )
 
     class Meta:

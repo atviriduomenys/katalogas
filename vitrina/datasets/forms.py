@@ -9,6 +9,7 @@ from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 
 from vitrina.classifiers.models import Frequency, Licence
+from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -85,7 +86,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = forms.FileField(label=_("Failas"), required=True)
+    file = FilerFileField(label=_("Failas"), required=True, upload_to="data/structure")
 
     class Meta:
         model = DatasetStructure

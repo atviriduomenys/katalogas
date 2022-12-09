@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
+from filer.fields.image import FilerImageField
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
@@ -40,9 +41,11 @@ class Project(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
-    image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
+
+    # Deprecated fields
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         db_table = 'usecase'

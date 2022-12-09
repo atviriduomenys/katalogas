@@ -1,9 +1,10 @@
 import factory
 import faker
-from factory.django import DjangoModelFactory
+from factory.django import DjangoModelFactory, FileField
 
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
+from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 
@@ -71,4 +72,7 @@ class DatasetStructureFactory(DjangoModelFactory):
 
     version = 1
     title = factory.Faker('catch_phrase')
-    file = factory.django.FileField(filename='manifest.csv', data=MANIFEST)
+    file = factory.SubFactory(
+        FilerFileFactory,
+        file=FileField(filename='manifest.csv', data=MANIFEST)
+    )

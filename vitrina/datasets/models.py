@@ -2,6 +2,7 @@ import tagulous
 
 from django.db import models
 from django.urls import reverse
+from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
@@ -383,9 +384,6 @@ class DatasetStructure(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
@@ -393,17 +391,20 @@ class DatasetStructure(models.Model):
         blank=True,
         null=True,
     )
-    file = models.FileField(
-        upload_to='manifest/%Y/%m-%d',
+    file = FilerFileField(
         blank=True,
         null=True,
-        max_length=512,
+        related_name="file_structure",
+        on_delete=models.SET_NULL
     )
 
     # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     distribution_version = models.IntegerField(blank=True, null=True)
+    filename = models.CharField(max_length=255, blank=True, null=True)
+    identifier = models.CharField(max_length=255, blank=True, null=True)
+    size = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_structure'

@@ -10,6 +10,8 @@ from vitrina.projects.managers import PublicProjectManager
 
 
 class Project(models.Model):
+    UPLOAD_TO = "data/files"
+
     CREATED = "CREATED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"

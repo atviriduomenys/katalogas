@@ -49,7 +49,7 @@ class DatasetResourceForm(forms.ModelForm):
         required=False,
     )
     file = FilerFileField(
-        upload_to="data",
+        upload_to=DatasetDistribution.UPLOAD_TO,
         label=_('Duomenų failas'),
         help_text=_(
             'Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir '

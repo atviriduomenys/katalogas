@@ -86,7 +86,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = FilerFileField(label=_("Failas"), required=True, upload_to="data/structure")
+    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
     class Meta:
         model = DatasetStructure

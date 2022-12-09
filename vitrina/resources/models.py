@@ -40,6 +40,8 @@ class DistributionFormat(models.Model):
 
 
 class DatasetDistribution(models.Model):
+    UPLOAD_TO = "data"
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

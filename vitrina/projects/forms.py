@@ -12,7 +12,7 @@ class ProjectForm(ModelForm):
     title = CharField(label=_('Pavadinimas'))
     description = CharField(label=_('Aprašymas'), widget=Textarea)
     url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
-    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to="data/files")
+    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Project.UPLOAD_TO)
 
     class Meta:
         model = Project

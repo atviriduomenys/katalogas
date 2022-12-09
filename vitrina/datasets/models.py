@@ -397,6 +397,8 @@ class DatasetResourceMigrate(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
+    UPLOAD_TO = "data/structure"
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -431,13 +433,12 @@ class DatasetStructure(models.Model):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
     def file_size(self):
-        try:
+        if self.file:
             return self.file.size
-        except FileNotFoundError:
-            return 0
+        return 0
 
     def filename_without_path(self):
-        return pathlib.Path(self.file.name).name if self.file else ""
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

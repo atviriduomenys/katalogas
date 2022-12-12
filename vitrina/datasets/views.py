@@ -55,7 +55,7 @@ class DatasetListView(FacetedSearchView):
                 Organization,
                 pk=self.kwargs['pk'],
             )
-            datasets = datasets.filter(organization=organization.pk, is_public=True)
+            datasets = datasets.filter(organization=organization.pk)
         return datasets.order_by('-published')
 
     def get_context_data(self, **kwargs):

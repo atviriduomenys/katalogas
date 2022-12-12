@@ -1,4 +1,8 @@
+from django.db import models
+
+from haystack import signals
 from haystack.constants import Indexable
+from haystack.exceptions import NotHandled
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
 from haystack.indexes import SearchIndex
 
@@ -30,3 +34,26 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.append(obj.category.pk)
         return categories
 
+
+class CustomSignalProcessor(signals.BaseSignalProcessor):
+    def setup(self):
+        models.signals.post_save.connect(self.handle_save)
+        models.signals.post_delete.connect(self.handle_delete)
+
+    def teardown(self):
+        models.signals.post_save.disconnect(self.handle_save)
+        models.signals.post_delete.disconnect(self.handle_delete)
+
+    def handle_save(self, sender, instance, **kwargs):
+        using_backends = self.connection_router.for_write(instance=instance)
+
+        for using in using_backends:
+            try:
+                index = self.connections[using].get_unified_index().get_index(sender)
+                if index.index_queryset().filter(pk=instance.pk):
+                    index.update_object(instance, using=using)
+                else:
+                    index.remove_object(instance, using=using)
+
+            except NotHandled:
+                pass

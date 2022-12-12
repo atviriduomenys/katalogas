@@ -113,14 +113,9 @@
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% if i.object %}
-                                            {% objectlanguage i.object LANGUAGE_CODE %}
-                                                {{ i.object.title }}
-                                            {% endobjectlanguage %}
-                                        {% else %}
-                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                            -
-                                        {% endif %}
+                                        {% objectlanguage i.object LANGUAGE_CODE %}
+                                            {{ i.object.title }}
+                                        {% endobjectlanguage %}
                                     </a>
                                 </strong>
                             </div>

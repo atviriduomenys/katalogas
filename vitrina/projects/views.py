@@ -1,24 +1,42 @@
-from django.http import HttpResponseRedirect
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
 from django.http import HttpResponseRedirect
+
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
-
 from vitrina.views import HistoryMixin, HistoryView
 
 
 class ProjectListView(ListView):
     model = Project
-    queryset = Project.public.order_by('-created')
+    queryset = Project.public.all()
     template_name = 'vitrina/projects/list.html'
     paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        self.has_update_perm = has_perm(
+            request.user,
+            Action.UPDATE,
+            Project,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if not self.has_update_perm:
+            qs = qs.filter(status=Project.APPROVED)
+        return qs.order_by('-created')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_see_status'] = self.has_update_perm
+        return context
 
 
 class ProjectDetailView(HistoryMixin, DetailView):

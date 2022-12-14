@@ -1,3 +1,5 @@
+import pathlib
+
 import tagulous
 
 from django.db import models
@@ -52,6 +54,8 @@ class Dataset(TranslatableModel):
         DELETED: _("Ištrinta"),
     }
 
+    API_ORIGIN = "api"
+
     translations = TranslatedFields(
         title=models.TextField(_("Title"), blank=True),
         description=models.TextField(_("Description"), blank=True),
@@ -81,7 +85,7 @@ class Dataset(TranslatableModel):
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(default=False, verbose_name=_('Duomenų rinkinys viešinamas'))
+    is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
@@ -173,6 +177,20 @@ class Dataset(TranslatableModel):
 
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
+
+    @property
+    def language_array(self):
+        if self.language:
+            return [lang.replace(',', '') for lang in self.language.split(' ')]
+        return []
+
+    @property
+    def tag_name_array(self):
+        return [tag.name.strip() for tag in self.tags.tags]
+
+    @property
+    def category_title(self):
+        return self.category.title if self.category else ""
 
 
 # TODO: To be merged into Dataset:
@@ -410,6 +428,15 @@ class DatasetStructure(models.Model):
 
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
+
+    def file_size(self):
+        try:
+            return self.file.size
+        except FileNotFoundError:
+            return 0
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.name).name if self.file else ""
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

@@ -1,57 +1,105 @@
+import datetime
+import functools
+import operator
 from datetime import timedelta
 from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Min, Max
+from django.db.models import Q
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from vitrina.helpers import get_non_working_days, add_work_days
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import is_supervisor
 from vitrina.settings import VITRINA_TASK_RAISE_2, VITRINA_TASK_RAISE_1
-from vitrina.tasks.models import Task
+from vitrina.tasks.models import Task, Holiday
 from vitrina.users.models import User
+
+
+def get_past_work_date(
+    days: int,
+    exclude: list[datetime.date],  # weekends are excluded automatically
+    *,
+    now: datetime.date = None,
+) -> datetime.date:
+    now = now or timezone.now().date()
+    res = now
+
+    # Exclude weekends
+    while days:
+        res -= timedelta(days=1)
+        if res.weekday() < 5:
+            days -= 1
+
+    # Exclude holidays
+    for date in exclude:
+        if (now <= date <= res) and date.weekday() < 5:
+            res -= timedelta(days=1)
+
+    return res
+
+
+def get_holidays(
+    date_from: datetime.date,
+    date_to: datetime.date
+):
+    return Holiday.objects.filter(
+        date__range=[date_from, date_to]
+    ).values_list('date', flat=True)
 
 
 def get_active_tasks(
     user: User,
     queryset: Optional[QuerySet] = None,
+    now: datetime.date = None
 ) -> QuerySet:
     queryset = queryset or Task.objects.all()
-
-    date_from = queryset.values('created').aggregate(Min('created'))['created__min']
-    date_to = queryset.values('created').aggregate(Max('created'))['created__max']
-    if date_from:
-        date_from = date_from.date()
-    if date_to:
-        # adding VITRINA_TASK_RAISE_2 and 10 more, just to be safe
-        date_to = (date_to + timedelta(days=(VITRINA_TASK_RAISE_2 + 10))).date()
-    non_working_days = get_non_working_days(
-        include_weekends=True,
-        date_from=date_from,
-        date_to=date_to,
+    now = now or timezone.now().date()
+    holidays = get_holidays(
+        date_from=(now - timedelta(days=(VITRINA_TASK_RAISE_2 + 30))),
+        date_to=now
+    )
+    date_1 = get_past_work_date(
+        days=VITRINA_TASK_RAISE_1,
+        exclude=holidays,
+        now=now
+    )
+    date_2 = get_past_work_date(
+        days=VITRINA_TASK_RAISE_2,
+        exclude=holidays,
+        now=now
     )
 
-    user_organization_ids = user.representative_set.filter(
+    orgs = user.representative_set.filter(
         content_type=ContentType.objects.get_for_model(Organization),
-        object_id__isnull=False
-    ).values_list('object_id', flat=True)
-    user_task_ids = list(queryset.filter(
-        Q(user=user) |
-        Q(organization__pk__in=user_organization_ids)
-    ).values_list('pk', flat=True))
+        object_id__isnull=False,
+    )
 
-    # add tasks that should be shown to supervisor and admin
-    for task in queryset:
-        if task.status != Task.COMPLETED:
-            if task.organization and \
-                    is_supervisor(user, task.organization) and \
-                    add_work_days(task.created, VITRINA_TASK_RAISE_1, non_working_days) <= timezone.now():
-                user_task_ids.append(task.pk)
-            elif (user.is_staff or user.is_superuser) and \
-                    add_work_days(task.created, VITRINA_TASK_RAISE_2, non_working_days) <= timezone.now():
-                user_task_ids.append(task.pk)
-    return queryset.filter(pk__in=user_task_ids)
+    args = [
+        # 1. User can see his own tasks.
+        Q(user=user),
+    ]
 
+    for org in orgs:
+        org = org.content_object
+        args += [
+            # 2. User can see his represented org tasks.
+            Q(organization=org) |
 
+            # 3. User can see his supervised orgs tasks.
+            (
+                Q(organization__path__startswith=org.path) &
+                Q(organization__depth__gt=org.depth) &
+                Q(created__date__lte=date_1)
+            )
+        ]
+
+    if user.is_staff or user.is_superuser:
+        args += [
+            # 4. Superuser can see all tasks created later than
+            Q(created__date__lte=date_2)
+        ]
+    query = functools.reduce(operator.or_, args)
+
+    # By default, we are only interested in open tasks.
+    query = functools.reduce(operator.and_, [query, Q(status=Task.CREATED)])
+    return queryset.filter(query)

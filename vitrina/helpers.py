@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import Optional, List, Any
 from urllib.parse import urlencode
 
@@ -83,18 +83,3 @@ def get_non_working_days(
     weekends = data.get('weekends', [])
     non_working_days.extend(weekends)
     return non_working_days
-
-
-def add_work_days(
-    from_date: datetime,
-    number_of_days: int,
-    non_working_days: list = None
-) -> datetime:
-    if non_working_days is None:
-        non_working_days = []
-    res = from_date
-    while number_of_days:
-        res += timedelta(1)
-        if str(res.date()) not in non_working_days:
-            number_of_days -= 1
-    return res

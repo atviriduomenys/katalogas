@@ -31,3 +31,10 @@ class Task(models.Model):
 
     class Meta:
         db_table = 'task'
+
+
+class Holiday(models.Model):
+    date = models.DateField(unique=True)
+
+    class Meta:
+        db_table = 'holiday'

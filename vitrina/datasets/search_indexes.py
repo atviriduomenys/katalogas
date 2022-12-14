@@ -1,6 +1,5 @@
-from haystack.constants import Indexable
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
-from haystack.indexes import SearchIndex
+from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
 
@@ -17,6 +16,8 @@ class DatasetIndex(SearchIndex, Indexable):
     published = DateTimeField(model_attr='published', null=True)
     filter_status = CharField(model_attr='filter_status', faceted=True, null=True)
 
+    fields = ['organization', 'category', 'tags', 'formats', 'frequency', 'published', 'filter_status']
+
     def get_model(self):
         return Dataset
 
@@ -29,4 +30,3 @@ class DatasetIndex(SearchIndex, Indexable):
             categories = [cat.pk for cat in obj.category.get_ancestors() if cat.dataset_set.exists()]
             categories.append(obj.category.pk)
         return categories
-

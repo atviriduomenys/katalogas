@@ -46,16 +46,17 @@ class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
     form_class = DatasetSearchForm
+    facet_limit = 100
     paginate_by = 20
 
     def get_queryset(self):
         datasets = super().get_queryset()
         if is_org_dataset_list(self.request):
-            organization = get_object_or_404(
+            self.organization = get_object_or_404(
                 Organization,
                 pk=self.kwargs['pk'],
             )
-            datasets = datasets.filter(organization=organization.pk)
+            datasets = datasets.filter(organization=self.organization.pk)
         return datasets.order_by('-published')
 
     def get_context_data(self, **kwargs):
@@ -80,23 +81,18 @@ class DatasetListView(FacetedSearchView):
             'selected_date_to': form.cleaned_data.get('date_to'),
         }
         if is_org_dataset_list(self.request):
-            # TODO: We get org two times.
-            org = get_object_or_404(
-                Organization,
-                pk=self.kwargs['pk'],
-            )
-            extra_context['organization'] = org
+            extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(
                 self.request.user,
                 Action.VIEW,
                 Representative,
-                org
+                self.organization
             )
             extra_context['can_create_dataset'] = has_perm(
                 self.request.user,
                 Action.CREATE,
                 Dataset,
-                org,
+                self.organization,
             )
         context.update(extra_context)
         return context

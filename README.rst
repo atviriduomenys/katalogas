@@ -74,11 +74,11 @@ To migrate news posts to Django CMS rerun server and run::
 
 To add new language translations (replace en with desired language)::
 
-        django-admin makemessages -l en
+    poetry run python manage.py makemessages -av1
 
 To generate or update .mo files when .po file is ready::
 
-        django-admin compilemessages
+    poetry run python manage.py compilemessages
 
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 

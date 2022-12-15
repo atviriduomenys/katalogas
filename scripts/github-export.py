@@ -70,7 +70,7 @@ def main(
     if export:
         if order:
             if export.is_dir():
-                _cards_to_csv_order(export, cards)
+                _cards_to_xlsx_order(export, cards)
             else:
                 raise ValueError("Export path must be a directory.")
         else:
@@ -91,7 +91,7 @@ def _list_projects(session: requests.Session) -> None:
     pp(session.post('https://api.github.com/graphql', json={'query': '''\
     query{
         organization(login: "atviriduomenys"){
-          projectsNext(first: 10) {
+          projectsV2(first: 10) {
             nodes {
               id
               title
@@ -412,7 +412,7 @@ def _get_csv_title(row, col, level, titles):
         return ''
 
 
-def _cards_to_csv_order(
+def _cards_to_xlsx_order(
     path: Path,
     cards: Iterable[Card],
 ) -> None:

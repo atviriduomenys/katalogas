@@ -154,6 +154,16 @@ class Dataset(TranslatableModel):
         return list(self.tags.all().values_list('name', flat=True))
 
     @property
+    def parent_category(self):
+        categories = []
+        if self.category:
+            category = self.category
+            while category.parent:
+                category = category.parent
+            categories.append(category.pk)
+        return categories
+
+    @property
     def filter_status(self):
         if self.datasetstructure_set.exists():
             return self.HAS_STRUCTURE

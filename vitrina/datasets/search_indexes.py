@@ -10,13 +10,12 @@ class DatasetIndex(SearchIndex, Indexable):
     en_title = CharField(model_attr='en_title')
     organization = IntegerField(model_attr='organization__pk', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
+    parent_category = MultiValueField(model_attr='parent_category', faceted=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
     formats = MultiValueField(model_attr='formats', faceted=True)
     frequency = IntegerField(model_attr='frequency__pk', faceted=True)
     published = DateTimeField(model_attr='published', null=True)
     filter_status = CharField(model_attr='filter_status', faceted=True, null=True)
-
-    fields = ['organization', 'category', 'tags', 'formats', 'frequency', 'published', 'filter_status']
 
     def get_model(self):
         return Dataset
@@ -30,3 +29,6 @@ class DatasetIndex(SearchIndex, Indexable):
             categories = [cat.pk for cat in obj.category.get_ancestors() if cat.dataset_set.exists()]
             categories.append(obj.category.pk)
         return categories
+
+    def prepare_parent_category(self, obj):
+        return obj.parent_category

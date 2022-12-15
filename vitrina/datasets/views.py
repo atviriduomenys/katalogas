@@ -44,7 +44,7 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    facet_fields = ['filter_status', 'organization', 'category', 'parent_category', 'frequency', 'tags', 'formats']
     form_class = DatasetSearchForm
     facet_limit = 100
     paginate_by = 20
@@ -68,12 +68,14 @@ class DatasetListView(FacetedSearchView):
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
+            'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
+            'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_frequency': get_selected_value(form, 'frequency'),
             'selected_tags': get_selected_value(form, 'tags', True, False),
             'selected_formats': get_selected_value(form, 'formats', True, False),

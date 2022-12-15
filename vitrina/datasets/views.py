@@ -116,6 +116,8 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
+            #TODO: harvested functionality needs to be implemented
+            'harvested': '',
             'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),

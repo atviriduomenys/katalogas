@@ -47,7 +47,7 @@ class Project(models.Model):
     image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
 
-    comments = GenericRelation(Comment)
+    comments = GenericRelation('vitrina_comments.Comment')
 
     class Meta:
         db_table = 'usecase'

@@ -77,6 +77,13 @@ class DatasetStructureFactory(DjangoModelFactory):
 class DatasetGroupFactory(DjangoModelFactory):
     class Meta:
         model = DatasetGroup
-        django_get_or_create = ('title',)
 
-    title = factory.Faker('word')
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        group = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            group.set_current_language(lang[0])
+            group.title = fake.word()
+        group.save()
+        return group

@@ -1,4 +1,4 @@
-import uuid
+import secrets
 
 from factory.django import DjangoModelFactory
 
@@ -10,5 +10,5 @@ class APIKeyFactory(DjangoModelFactory):
         model = ApiKey
         django_get_or_create = ('api_key', 'enabled')
 
-    api_key = str(uuid.uuid4())
+    api_key = secrets.token_urlsafe()
     enabled = True

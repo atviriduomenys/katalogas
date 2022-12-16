@@ -71,6 +71,7 @@ class DatasetStructureFactory(DjangoModelFactory):
     version = 1
     title = factory.Faker('catch_phrase')
     file = factory.django.FileField(filename='manifest.csv', data=MANIFEST)
+    dataset = factory.SubFactory(DatasetFactory)
 
 
 class DatasetGroupFactory(DjangoModelFactory):

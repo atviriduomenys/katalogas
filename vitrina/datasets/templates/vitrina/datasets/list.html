@@ -113,9 +113,14 @@
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.title }}
-                                        {% endobjectlanguage %}
+                                        {% if i.object %}
+                                            {% objectlanguage i.object LANGUAGE_CODE %}
+                                                {{ i.object.title }}
+                                            {% endobjectlanguage %}
+                                        {% else %}
+                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                            -
+                                        {% endif %}
                                     </a>
                                 </strong>
                             </div>
@@ -132,9 +137,14 @@
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% objectlanguage i.object LANGUAGE_CODE %}
-                                    {{ i.object.description }}
-                                {% endobjectlanguage %}
+                                {% if i.object %}
+                                    {% objectlanguage i.object LANGUAGE_CODE %}
+                                        {{ i.object.description }}
+                                    {% endobjectlanguage %}
+                                {% else %}
+                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                    -
+                                {% endif %}
                             </p>
                             <div class="tags">
                                 {% for t in i.object.distinct_formats %}

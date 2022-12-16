@@ -112,10 +112,10 @@ class AddProjectForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "dataset-add-project-form"
-        if self.user.is_superuser or self.user.is_staff:
-            self.fields['projects'].queryset = Project.objects.filter()
-        else:
-            self.fields['projects'].queryset = Project.objects.filter(user=self.user)
+        projects = Project.objects.exclude(status=Project.REJECTED)
+        if not self.user.is_superuser and not self.user.is_staff:
+            projects = projects.filter(user=self.user)
+        self.fields['projects'].queryset = projects
         self.helper.layout = Layout(
             Field('projects'),
             Submit('submit', _("Pridėti"), css_class='button is-primary')

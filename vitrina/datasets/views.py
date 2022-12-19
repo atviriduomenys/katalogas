@@ -230,7 +230,6 @@ class DatasetCreateView(
         groups = form.cleaned_data['groups']
         self.object.groups.set(groups)
         self.object.save()
-        form.save_m2m()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
 
@@ -272,9 +271,10 @@ class DatasetUpdateView(
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         groups = form.cleaned_data['groups']
+        tags = form.cleaned_data['tags']
         self.object.groups.set(groups)
+        self.object.tags.set(tags)
         self.object.save()
-        form.save_m2m()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
 

@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
+from vitrina.orgs.services import has_perm, Action
 
 
 class Comment(models.Model):
@@ -59,9 +60,12 @@ class Comment(models.Model):
     class Meta:
         db_table = 'comment'
 
-    def descendants(self, include_self=False):
+    def descendants(self, user=None, obj=None, include_self=False, permission=False):
         descendants = []
-        children = Comment.public.filter(parent_id=self.pk).order_by('created')
+        children = Comment.objects.filter(parent_id=self.pk).order_by('created')
+        if user and obj:
+            if not permission:
+                children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)
         for child in children:

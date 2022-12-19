@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
@@ -18,6 +19,7 @@ class Project(models.Model):
     }
 
     EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
     DELETED = "DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
@@ -43,6 +45,8 @@ class Project(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
     image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
+
+    comments = GenericRelation('vitrina_comments.Comment')
 
     class Meta:
         db_table = 'usecase'

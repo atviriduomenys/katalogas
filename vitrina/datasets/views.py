@@ -35,7 +35,7 @@ from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -49,7 +49,7 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    facet_fields = ['filter_status', 'organization', 'category', 'groups', 'frequency', 'tags', 'formats']
     form_class = DatasetSearchForm
     paginate_by = 20
 
@@ -72,12 +72,14 @@ class DatasetListView(FacetedSearchView):
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
+            'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
+            'selected_groups': get_selected_value(form, 'groups', True, False),
             'selected_frequency': get_selected_value(form, 'frequency'),
             'selected_tags': get_selected_value(form, 'tags', True, False),
             'selected_formats': get_selected_value(form, 'formats', True, False),
@@ -222,9 +224,11 @@ class DatasetCreateView(
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
+        self.object = form.save(commit=True)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
+        groups = form.cleaned_data['groups']
+        self.object.groups.set(groups)
         self.object.save()
         form.save_m2m()
         set_comment(Dataset.CREATED)
@@ -267,6 +271,8 @@ class DatasetUpdateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
+        groups = form.cleaned_data['groups']
+        self.object.groups.set(groups)
         self.object.save()
         form.save_m2m()
         set_comment(Dataset.EDITED)

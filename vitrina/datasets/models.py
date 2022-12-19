@@ -1,4 +1,5 @@
 import datetime
+import pathlib
 import tagulous
 
 from django.db import models
@@ -14,6 +15,19 @@ from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
 from django.utils.translation import gettext_lazy as _
+
+
+class DatasetGroup(TranslatableModel):
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
+    )
+    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+
+    class Meta:
+        ordering = ['created']
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
 class Dataset(TranslatableModel):
@@ -54,6 +68,8 @@ class Dataset(TranslatableModel):
         DELETED: _("Ištrinta"),
     }
 
+    API_ORIGIN = "api"
+
     translations = TranslatedFields(
         title=models.TextField(_("Title"), blank=True),
         description=models.TextField(_("Description"), blank=True),
@@ -83,7 +99,7 @@ class Dataset(TranslatableModel):
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(default=False, verbose_name=_('Duomenų rinkinys viešinamas'))
+    is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
@@ -96,6 +112,7 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
+    groups = models.ManyToManyField(DatasetGroup)
     tags = TagField(
         blank=True,
         force_lowercase=True,
@@ -154,6 +171,12 @@ class Dataset(TranslatableModel):
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
 
+    def get_all_groups(self):
+        return self.groups.all()
+
+    def get_group_list(self):
+        return list(self.groups.all().values_list('pk', flat=True))
+
     @property
     def filter_status(self):
         if self.datasetstructure_set.exists():
@@ -178,6 +201,20 @@ class Dataset(TranslatableModel):
 
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
+
+    @property
+    def language_array(self):
+        if self.language:
+            return [lang.replace(',', '') for lang in self.language.split(' ')]
+        return []
+
+    @property
+    def tag_name_array(self):
+        return [tag.name.strip() for tag in self.tags.tags]
+
+    @property
+    def category_title(self):
+        return self.category.title if self.category else ""
 
 
 # TODO: To be merged into Dataset:
@@ -415,6 +452,15 @@ class DatasetStructure(models.Model):
 
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
+
+    def file_size(self):
+        try:
+            return self.file.size
+        except FileNotFoundError:
+            return 0
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.name).name if self.file else ""
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

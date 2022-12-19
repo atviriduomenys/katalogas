@@ -5,8 +5,7 @@ from factory.django import DjangoModelFactory
 from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.datasets.models import Dataset, DatasetStructure
-
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -72,3 +71,19 @@ class DatasetStructureFactory(DjangoModelFactory):
     version = 1
     title = factory.Faker('catch_phrase')
     file = factory.django.FileField(filename='manifest.csv', data=MANIFEST)
+    dataset = factory.SubFactory(DatasetFactory)
+
+
+class DatasetGroupFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetGroup
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        group = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            group.set_current_language(lang[0])
+            group.title = fake.word()
+        group.save()
+        return group

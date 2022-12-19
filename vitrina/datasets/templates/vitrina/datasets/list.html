@@ -113,21 +113,38 @@
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.title }}
-                                        {% endobjectlanguage %}
+                                        {% if i.object %}
+                                            {% objectlanguage i.object LANGUAGE_CODE %}
+                                                {{ i.object.title }}
+                                            {% endobjectlanguage %}
+                                        {% else %}
+                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                            -
+                                        {% endif %}
                                     </a>
                                 </strong>
                             </div>
+                            {% if i.object.groups %}
+                                {% for group in i.object.get_all_groups %}
+                                    <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                    </p>
+                                {% endfor %}
+                            {% endif %}
                             {% if i.object.organization_title %}
                                 <p>
                                     <small class="dataset-list-organization">{{ i.object.organization_title }}</small>
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% objectlanguage i.object LANGUAGE_CODE %}
-                                    {{ i.object.description }}
-                                {% endobjectlanguage %}
+                                {% if i.object %}
+                                    {% objectlanguage i.object LANGUAGE_CODE %}
+                                        {{ i.object.description }}
+                                    {% endobjectlanguage %}
+                                {% else %}
+                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                    -
+                                {% endif %}
                             </p>
                             <div class="tags">
                                 {% for t in i.object.distinct_formats %}

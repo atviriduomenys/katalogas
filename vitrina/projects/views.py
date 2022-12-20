@@ -1,14 +1,11 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.views.generic.edit import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
-from django.http import HttpResponseRedirect
 from django.urls import reverse
-
 
 from reversion import set_comment
 from reversion.views import RevisionMixin

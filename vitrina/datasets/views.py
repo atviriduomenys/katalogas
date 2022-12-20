@@ -512,15 +512,17 @@ class DatasetProjectsView(HistoryMixin, ListView):
 
     def get_queryset(self):
         return (
-            Project.public.filter(datasets=self.object)
+            Project.public.
+            filter(datasets=self.object).
+            order_by('-created')
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
-        context['has_permission'] = has_perm(
+        context['can_add_projects'] = has_perm(
             self.request.user,
-            Action.UPDATE,
+            Action.ADD_PROJECT,
             self.object,
         )
         context['can_view_members'] = has_perm(
@@ -531,31 +533,38 @@ class DatasetProjectsView(HistoryMixin, ListView):
         )
         if self.request.user.is_authenticated:
             context['has_projects'] = (
-                Project.objects.
+                Project.public.
                 filter(user=self.request.user).
                 exists()
             )
         else:
             context['has_projects'] = False
+        print(context)
         return context
 
 
-class AddProjectView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class AddProjectView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView,
+):
     model = Dataset
     form_class = AddProjectForm
     template_name = 'base_form.html'
-
-    def get_form_kwargs(self):
-        kwargs = super(AddProjectView, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
-        return kwargs
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+        return has_perm(self.request.user, Action.ADD_PROJECT, self.dataset)
+
+    def get_form_kwargs(self):
+        kwargs = super(AddProjectView, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        kwargs.update({'dataset': self.dataset})
+        return kwargs
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -565,12 +574,16 @@ class AddProjectView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin,
             temp_proj.datasets.add(self.object)
         set_comment(Dataset.PROJECT_SET)
         self.object.save()
-        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.object.pk}))
+        return HttpResponseRedirect(
+            reverse('dataset-projects', kwargs={'pk': self.object.pk})
+        )
 
     def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        context_data['current_title'] = _('Projektų pridėjimas')
-        return context_data
+        context = super().get_context_data(**kwargs)
+        context['parent_title'] = self.dataset
+        context['parent_url'] = self.dataset.get_absolute_url()
+        context['current_title'] = _('Projektų pridėjimas')
+        return context
 
 
 class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

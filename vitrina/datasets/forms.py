@@ -109,10 +109,20 @@ class AddProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
+        self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "dataset-add-project-form"
-        projects = Project.objects.exclude(status=Project.REJECTED)
+        projects = (
+            Project.objects.
+            exclude(
+                status=Project.REJECTED,
+                # FIXME: This does not work, somehow projects, that are
+                #        already assigned to the dataset should be excluded
+                #        from list of options for this field.
+                datasets=self.dataset,
+            )
+        )
         if not self.user.is_superuser and not self.user.is_staff:
             projects = projects.filter(user=self.user)
         self.fields['projects'].queryset = projects
@@ -125,7 +135,11 @@ class AddProjectForm(forms.ModelForm):
         label=_('Projektai'),
         queryset=None,
         widget=forms.CheckboxSelectMultiple,
-        required=True
+        required=True,
+        help_text=_(
+            "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų "
+            "rinkinys."
+        ),
     )
 
 

@@ -518,9 +518,25 @@ class DatasetProjectsView(HistoryMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
-        context['has_permission'] = has_perm(self.request.user, Action.UPDATE, self.object)
-        context['can_view_members'] = has_perm(self.request.user, Action.VIEW, Representative, self.object)
-        context['has_projects'] = Project.objects.filter(user=self.request.user)
+        context['has_permission'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.object,
+        )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        if self.request.user.is_authenticated:
+            context['has_projects'] = (
+                Project.objects.
+                filter(user=self.request.user).
+                exists()
+            )
+        else:
+            context['has_projects'] = False
         return context
 
 

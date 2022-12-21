@@ -10,6 +10,7 @@ class DatasetIndex(SearchIndex, Indexable):
     lt_title = CharField(model_attr='lt_title')
     en_title = CharField(model_attr='en_title')
     organization = IntegerField(model_attr='organization__pk', faceted=True)
+    groups = MultiValueField(model_attr='get_group_list', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
     formats = MultiValueField(model_attr='formats', faceted=True)

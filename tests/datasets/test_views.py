@@ -15,7 +15,7 @@ from webtest import Upload
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -626,6 +626,22 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert dataset.description == 'edited dataset description'
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+
+
+@pytest.mark.django_db
+def test_group_change_form_correct_login(app: DjangoTestApp):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['groups'] = ['1']
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
+    assert dataset.groups.all().first() == group
+    assert Version.objects.get_for_object(dataset).count() == 1
 
 
 @pytest.mark.django_db

@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 

@@ -5,7 +5,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
 from tqdm import tqdm
-from typer import run, Argument
+from typer import run, Option
 from filer.models import Image, File, Folder
 from django.core.files import File as DjangoFile
 from vitrina.cms.models import FileResource
@@ -120,13 +120,13 @@ def migrate_cms_files(pbar, root_path, folder):
 
 
 def main(
-    distribution_path: str = Argument(default="data/", help=(
+    distribution_path: str = Option("data/", help=(
         "Path to where dataset distribution files are saved"
     )),
-    cms_path: str = Argument(default="data/files/", help=(
+    cms_path: str = Option("data/files/", help=(
         "Path to where news and CMS page files are saved"
     )),
-    structure_path: str = Argument(default="data/structure/", help=(
+    structure_path: str = Option("data/structure/", help=(
         "Path to where dataset structure files are saved"
     )),
 ):

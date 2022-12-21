@@ -11,7 +11,7 @@ class ApiKey(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     version = models.IntegerField(default=1)
 
-    api_key = models.CharField(max_length=255, blank=True, null=True)
+    api_key = models.CharField(max_length=255, blank=True, null=True, unique=True)
     enabled = models.BooleanField(blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
     representative = models.ForeignKey(

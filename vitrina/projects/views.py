@@ -125,7 +125,7 @@ class ProjectDatasetsView(HistoryMixin, ListView):
     template_name = 'vitrina/projects/datasets.html'
     paginate_by = 20
 
-    object: Dataset
+    object: Project
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
 

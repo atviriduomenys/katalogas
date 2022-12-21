@@ -31,7 +31,7 @@ from vitrina.projects.models import Project
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
-from vitrina.datasets.services import update_facet_data
+from vitrina.datasets.services import update_facet_data, get_projects
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
@@ -511,18 +511,14 @@ class DatasetProjectsView(HistoryMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return (
-            Project.public.
-            filter(datasets=self.object).
-            order_by('-created')
-        )
+        return get_projects(self.request.user, self.object, order_value='-created')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
         context['can_add_projects'] = has_perm(
             self.request.user,
-            Action.ADD_PROJECT,
+            Action.UPDATE,
             self.object,
         )
         context['can_view_members'] = has_perm(
@@ -533,13 +529,10 @@ class DatasetProjectsView(HistoryMixin, ListView):
         )
         if self.request.user.is_authenticated:
             context['has_projects'] = (
-                Project.public.
-                filter(user=self.request.user).
-                exists()
+                get_projects(self.request.user, self.object, check_existence=True, form_query=True)
             )
         else:
             context['has_projects'] = False
-        print(context)
         return context
 
 
@@ -558,7 +551,7 @@ class AddProjectView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.ADD_PROJECT, self.dataset)
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
 
     def get_form_kwargs(self):
         kwargs = super(AddProjectView, self).get_form_kwargs()
@@ -596,7 +589,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.DELETE, self.project)
+        return has_perm(self.request.user, Action.UPDATE, self.project)
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.dataset.pk}))

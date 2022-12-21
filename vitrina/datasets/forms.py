@@ -9,10 +9,10 @@ from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 
 from vitrina.classifiers.models import Frequency, Licence
+from vitrina.datasets.services import get_projects
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.projects.models import Project
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -113,19 +113,7 @@ class AddProjectForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "dataset-add-project-form"
-        projects = (
-            Project.objects.
-            exclude(
-                status=Project.REJECTED,
-                # FIXME: This does not work, somehow projects, that are
-                #        already assigned to the dataset should be excluded
-                #        from list of options for this field.
-                datasets=self.dataset,
-            )
-        )
-        if not self.user.is_superuser and not self.user.is_staff:
-            projects = projects.filter(user=self.user)
-        self.fields['projects'].queryset = projects
+        self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
         self.helper.layout = Layout(
             Field('projects'),
             Submit('submit', _("Pridėti"), css_class='button is-primary')

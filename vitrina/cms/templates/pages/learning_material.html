@@ -1,0 +1,35 @@
+{% load i18n %}
+<div class="columns">
+    <div class="column">
+        {% if items %}
+            {% for i in items %}
+                <article class="media has-margin-bottom">
+                    <div class="media-content single-item">
+                        <div class="content">
+                            <div class="m-b-sm">
+                                <p><a href="{% url 'learning-material-detail' i.pk %}" class="usecase-url">{{ i.topic }}</a></p>
+                                <p>{% if i.author_name %}<span>{% translate "Autorius" %}: <i>{{ i.author_name }}</i></span>; {% endif %}
+                                   <span class="newsitem-date">{% translate "Publikavimo data" %}: <i>{{ i.published|date:"SHORT_DATE_FORMAT" }}</i></span>
+                                </p>
+                            </div>
+                            <p class="dataset-list-description">{{ i.summary }}</p>
+                            <p><a href="{% url 'learning-material-detail' i.pk %}">{% translate "Skaityti daugiau" %}</a></p>
+                        </div>
+                    </div>
+                    {% if i.image %}
+                        <figure class="media-right">
+                            <p class="image max-128x128">
+                                <img src="{{ i.image.url }}">
+                            </p>
+                        </figure>
+                    {% endif %}
+                </article>
+            {% endfor %}
+            <br/>
+        {% else %}
+            {% translate "Sąrašas tuščias" %}
+        {% endif %}
+    </div>
+</div>
+<br/>
+<br/>

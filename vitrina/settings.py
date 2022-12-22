@@ -281,7 +281,7 @@ HAYSTACK_CONNECTIONS = {
     'test': env.search_url(var="SEARCH_URL_TEST"),
 }
 
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'vitrina.datasets.search_indexes.CustomSignalProcessor'
 
 BLOG_USE_PLACEHOLDER = False
 META_USE_SITES = True

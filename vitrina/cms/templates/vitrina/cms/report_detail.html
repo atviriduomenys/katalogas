@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_title %}{% translate "Publikuotos ataskaitos" %}{% endblock %}
+{% block current_title %}{{ object.title }}{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column">
+            <article class="media">
+                <div class="content">
+                    <div class="m-b-sm">
+                        <span class="newsitem-date">{% translate "Publikavimo data" %}: <i>{{ object.created|date:"SHORT_DATETIME_FORMAT" }}</i></span>
+                    </div>
+                    <div>
+                        <table class="table is-striped is-hoverable is-fullwidth">
+                            {% for line in lines %}
+                                {% if forloop.first %}
+                                    <tr>
+                                        {% for col in line.cols %}
+                                            <th>{{ col }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        {% for col in line.cols %}
+                                            <td>{{ col }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
+                <br/>
+                <br/>
+            </article>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}{% endblock %}

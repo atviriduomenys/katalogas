@@ -17,6 +17,19 @@ from vitrina.datasets.managers import PublicDatasetManager
 from django.utils.translation import gettext_lazy as _
 
 
+class DatasetGroup(TranslatableModel):
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
+    )
+    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+
+    class Meta:
+        ordering = ['created']
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
+
+
 class Dataset(TranslatableModel):
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
@@ -99,6 +112,7 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
+    groups = models.ManyToManyField(DatasetGroup)
     tags = tagulous.models.TagField(
         blank=True,
         force_lowercase=True,
@@ -153,6 +167,12 @@ class Dataset(TranslatableModel):
 
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
+
+    def get_all_groups(self):
+        return self.groups.all()
+
+    def get_group_list(self):
+        return list(self.groups.all().values_list('pk', flat=True))
 
     @property
     def filter_status(self):

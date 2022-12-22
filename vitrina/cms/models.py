@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
 from filer.fields.image import FilerImageField
 
@@ -19,7 +20,7 @@ class CmsAttachment(models.Model):
     cms_page = models.ForeignKey('CmsPage', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'cms_attachment'
 
 
@@ -31,7 +32,7 @@ class CmsMenuItem(models.Model):
     version = models.IntegerField()
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'cms_menu_item'
 
 
@@ -53,7 +54,7 @@ class CmsPage(models.Model):
     list_children = models.BooleanField()
 
     class Meta:
-        managed = True
+        managed = False
         # XXX: Original table is name is `cms_page`, but it clashes with django-cms.
         db_table = 'adp_cms_page'
 
@@ -71,18 +72,28 @@ class CssRuleOverride(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'css_rule_override'
 
 
 class ExternalSite(models.Model):
+    EU_COMISSION_PORTAL = "EU_COMISSION_PORTAL"
+    EU_LAND = "EU_LAND"
+    OTHER_LAND = "OTHER_LAND"
+
+    TYPE_CHOICES = (
+        (EU_COMISSION_PORTAL, _("Europos komisijos portalai")),
+        (EU_LAND, _("EU šalys")),
+        (OTHER_LAND, _("Kitos šalys"))
+    )
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     title = models.TextField(blank=True, null=True)
-    type = models.CharField(max_length=255, blank=True, null=True)
+    type = models.CharField(max_length=255, blank=True, null=True, choices=TYPE_CHOICES)
     url = models.CharField(max_length=255, blank=True, null=True)
     image = FilerImageField(null=True, blank=True, related_name="image_site", on_delete=models.SET_NULL)
 
@@ -90,8 +101,10 @@ class ExternalSite(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'external_site'
+
+    def __str__(self):
+        return self.title
 
 
 class Faq(models.Model):
@@ -104,8 +117,11 @@ class Faq(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'faq'
+
+    def __str__(self):
+        return self.question
 
 
 class FileResource(models.Model):
@@ -139,7 +155,6 @@ class FileResource(models.Model):
     type = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'file_resource'
 
 
@@ -167,8 +182,10 @@ class LearningMaterial(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = True
         db_table = 'learning_material'
+
+    def __str__(self):
+        return self.topic
 
 
 class NewsItem(models.Model):
@@ -194,7 +211,7 @@ class NewsItem(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'news_item'
 
 
@@ -212,5 +229,5 @@ class TermsOfUse(models.Model):
     published = models.DateField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'terms_of_use'

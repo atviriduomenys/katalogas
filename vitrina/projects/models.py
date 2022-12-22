@@ -48,10 +48,10 @@ class Project(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
 
+    comments = GenericRelation('vitrina_comments.Comment')
+
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
-
-    comments = GenericRelation("vitrina_comments.Comment")
 
     class Meta:
         db_table = 'usecase'

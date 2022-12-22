@@ -76,6 +76,7 @@ To migrate files, news posts and pages to Django CMS rerun server and run::
         --structure-path var/data/structure/
 
     poetry run python scripts/migrate_news.py
+    poetry run python scripts/migrate_pages.py
 
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 

@@ -22,4 +22,8 @@ class Migration(migrations.Migration):
             name='fileresource',
             options={},
         ),
+        migrations.AlterModelOptions(
+            name='newsitem',
+            options={},
+        ),
     ]

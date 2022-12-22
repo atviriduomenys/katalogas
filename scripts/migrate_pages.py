@@ -4,10 +4,9 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
-from django.core.management import call_command
 from typing import List
 from tqdm import tqdm
-from typer import run, Argument
+from typer import run
 from cms.api import create_page, add_plugin, create_title, copy_plugins_to_language
 from cms.models import Page
 from django.urls import reverse
@@ -206,11 +205,7 @@ def add_language(
         page.publish(adp_page.language)
 
 
-def main(
-    path: str = Argument(..., help=(
-        "Path to page files"
-    ))
-):
+def main():
     """
     Migrate pages to django_cms Page.
     """
@@ -220,7 +215,6 @@ def main(
         total=CmsPage.objects.count()
     )
 
-    call_command('import_files', path=path)
     remove_home_from_navigation()
     remove_blog_from_navigation()
     fix_adp_pages()

@@ -4,6 +4,8 @@ from vitrina.orgs.models import Representative
 
 
 class ApiKey(models.Model):
+    DUPLICATE = "DUPLICATE"
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

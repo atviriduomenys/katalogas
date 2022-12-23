@@ -3,7 +3,7 @@
 from django.db import migrations, models
 
 
-def delete_non_unique_keys(apps, schema_editor):
+def disable_non_unique_keys(apps, schema_editor):
     ApiKey = apps.get_model('vitrina_api', 'ApiKey')
 
     non_unique_keys = list(
@@ -11,7 +11,10 @@ def delete_non_unique_keys(apps, schema_editor):
         .annotate(count=models.Count('api_key'))
         .filter(count__gt=1)
     )
-    ApiKey.objects.filter(api_key__in=non_unique_keys).delete()
+    for idx, key in enumerate(ApiKey.objects.filter(api_key__in=non_unique_keys)):
+        key.api_key = f"DUPLICATE-{idx}-{key.api_key}"
+        key.enabled = False
+        key.save(update_fields=['api_key', 'enabled'])
 
 
 class Migration(migrations.Migration):
@@ -21,7 +24,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(delete_non_unique_keys),
+        migrations.RunPython(disable_non_unique_keys),
         migrations.AlterField(
             model_name='apikey',
             name='api_key',

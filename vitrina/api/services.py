@@ -10,6 +10,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from vitrina.api.models import ApiDescription, ApiKey
+from vitrina.api.exceptions import DuplicateAPIKeyException
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 
@@ -73,7 +74,10 @@ def get_partner_schema_view():
     )
 
 
-def get_api_key_organization_and_user(request: HttpRequest) -> (Organization, User):
+def get_api_key_organization_and_user(
+    request: HttpRequest,
+    raise_error: bool = True
+) -> (Organization, User):
     organization = user = None
     ct = ContentType.objects.get_for_model(Organization)
 
@@ -83,18 +87,32 @@ def get_api_key_organization_and_user(request: HttpRequest) -> (Organization, Us
         api_key = api_key.strip()
 
         if api_key:
-            api_key_obj = (
-                ApiKey.objects.
-                filter(
-                    api_key=api_key,
-                    representative__content_type=ct,
-                    representative__object_id__isnull=False
-                ).first()
-            )
-            if api_key_obj and api_key_obj.enabled and (
-                not api_key_obj.expires or
-                api_key_obj.expires > timezone.make_aware(datetime.now())
-            ):
-                organization = api_key_obj.representative.content_object
-                user = api_key_obj.representative.user
+            if is_duplicate_key(api_key):
+                if raise_error:
+                    raise DuplicateAPIKeyException()
+            else:
+                api_key_obj = (
+                    ApiKey.objects.
+                    filter(
+                        api_key=api_key,
+                        representative__content_type=ct,
+                        representative__object_id__isnull=False
+                    ).first()
+                )
+                if api_key_obj and api_key_obj.enabled and (
+                    not api_key_obj.expires or
+                    api_key_obj.expires > timezone.make_aware(datetime.now())
+                ):
+                    organization = api_key_obj.representative.content_object
+                    user = api_key_obj.representative.user
     return organization, user
+
+
+def is_duplicate_key(api_key: str) -> bool:
+    if ApiKey.objects.filter(
+        api_key__contains=api_key,
+        api_key__startswith=ApiKey.DUPLICATE,
+        enabled=False
+    ):
+        return True
+    return False

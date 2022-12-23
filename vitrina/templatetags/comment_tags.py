@@ -5,6 +5,7 @@ from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.orgs.services import has_perm, Action
+from vitrina.requests.models import Request
 
 register = template.Library()
 
@@ -33,5 +34,6 @@ def comments(obj, user):
         'content_type': content_type,
         'object': obj,
         'comment_form': comment_form_class(obj),
-        'reply_form': CommentForm(obj)
+        'reply_form': CommentForm(obj),
+        'submit_button_id': "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button"
     }

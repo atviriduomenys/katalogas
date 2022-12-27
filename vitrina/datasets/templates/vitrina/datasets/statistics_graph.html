@@ -42,6 +42,7 @@
             let ctx = document.getElementById("chart").getContext("2d");
             const data = {{data|safe}};
             const labels = {{labels|safe}};
+            var graph_title = "{{graph_title}}";
             var chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -52,26 +53,33 @@
                     responsive: true,
                     title: {
                         display: true,
-                        text: ['Duomenų rinkinių kiekis laike']
+                        text: [graph_title]
                     },
                     scales: {
                         yAxis: {
-                            display: true,
-                            text: 'Duomenų rinkiniai'
+                            title: {
+                                display: true,
+                                text: 'Duomenų rinkiniai'
+                            }
                         },
-                        xAxis: {
-                            display: true,
-                            text: 'Laikas'
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Laikas'
+                            }
                         }
                     },
                     plugins: {
                         legend: {
-                            display: true,
+                            display: true
+                        },
+                        filler: {
+                            propagate: true
                         }
                     }
                 },
                 plugins: []
-            })
+            });
         })
     </script>
 {% endblock scripts %}

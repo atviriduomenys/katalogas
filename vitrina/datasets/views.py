@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-
+from django.template.defaultfilters import date as _date
 
 from django.views import View
 from django.views.generic import TemplateView, DetailView, ListView
@@ -654,6 +654,16 @@ class DatasetStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         data = []
         dataset_ids = []
+        status_translations = {}
+        status_graph_styles = {'INVENTORED': {'borderColor': 'black',
+                                              'backgroundColor': 'rgba(255, 179, 186, 0.9)',
+                                              'order': 3},
+                               'OPENED': {'borderColor': 'black',
+                                          'backgroundColor': 'rgba(255, 223, 186, 0.9)',
+                                          'order': 2},
+                               'STRUCTURED': {'borderColor': 'black',
+                                              'backgroundColor': 'rgba(186,225,255, 0.9)',
+                                              'order': 1}}
 
         for dataset in context.get('object_list'):
             dataset_ids.append(dataset.pk)
@@ -663,9 +673,14 @@ class DatasetStatsView(DatasetListView):
         statuses = comments.order_by('status').values_list('status', flat=True).distinct()
 
         oldest_comment = comments.values_list('created', flat=True)[:1]
-        labels = pd.date_range(oldest_comment[0].strftime("%Y-%m-%d"),
-                               datetime.datetime.now().strftime("%Y-%m-%d"),
-                               freq='MS').strftime("%Y-%m").tolist()
+        labels = pd.date_range(oldest_comment[0].strftime("%Y %b-%d"),
+                               datetime.datetime.now().strftime("%Y %b-%d"),
+                               freq='MS').tolist()
+        for i in range(len(labels)):
+            labels[i] = _date(labels[i], "y b")
+
+        for status in Comment.STATUSES:
+            status_translations[status[0]] = status[1]
 
         for item in statuses:
             total = 0
@@ -679,11 +694,16 @@ class DatasetStatsView(DatasetListView):
                 date = datetime.date(year=count.get('created__year'),
                                      month=count.get('created__month'),
                                      day=1)
-                temp.append({'x': date.strftime("%Y-%m"), 'y': total})
-            temp.append({'x': datetime.datetime.now().strftime("%Y-%m"), 'y': total})
-            data.append({'label': item,
-                         'data': temp,
-                         'borderWidth': 1})
+                temp.append({'x': _date(date, "y b"), 'y': total})
+            temp.append({'x': _date(datetime.datetime.now(), "y b"), 'y': total})
+            dict = {'label': str(status_translations[item]),
+                    'data': temp,
+                    'borderWidth': 1}
+            for style_element in status_graph_styles[item]:
+                dict[style_element] = status_graph_styles[item][style_element]
+            data.append(dict)
+
+        context['graph_title'] = _('Duomenų rinkinių kiekis laike')
         context['data'] = json.dumps(data)
         context['labels'] = labels
         context['dataset_count'] = len(dataset_ids)

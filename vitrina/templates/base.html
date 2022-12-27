@@ -30,6 +30,7 @@
             {{ cssOverride }}
         </style>
     {% endif %}
+    {% render_block "css" %}
 </head>
 <body {% if stagingEnv %}class="contains-warning-border"{% endif %}>
 {% block warning %}
@@ -52,9 +53,7 @@
     {% endif %}
 {% endblock messages %}
 <header>
-    {#<div class="container">#}
     {% include "component/navbar.html" %}
-    {#</div>#}
 </header>
 
 {% block breadcrumbs %}
@@ -68,6 +67,8 @@
     </nav>
 {% endblock %}
 
+{% cms_toolbar %}
+
 {% block root %}
     <section class="section">
         <div class="container">
@@ -75,7 +76,9 @@
         </div>
     </section>
 {% endblock %}
+
 {% include "component/footer.html" %}
+{% render_block "js" %}
 <script type="text/javascript">
     function openMenu() {
         var burger = document.querySelector('.burger');

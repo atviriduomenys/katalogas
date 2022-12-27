@@ -1,6 +1,20 @@
-from django.urls import path
+from django.urls import path, include
+from djangocms_blog.settings import get_setting
 
-from vitrina.cms.views import PolicyView
+from vitrina.cms.views import PolicyView, PostDetailView, LearningMaterialDetailView, SparqlView, ReportDetailView
+
+
+def get_urls():
+    urls = get_setting("PERMALINK_URLS")
+    details = []
+    for urlconf in urls.values():
+        details.append(
+            path(urlconf, PostDetailView.as_view(), name="post-detail"),
+        )
+    return details
+
+
+post_detail_urls = get_urls()
 
 urlpatterns = [
     # @RequestMapping("/page")
@@ -9,6 +23,10 @@ urlpatterns = [
     # @PostMapping("/opening/addMaterial")
     # @GetMapping("/about")
     path('policy/', PolicyView.as_view(), name='policy'),
+    path('blog/', include(post_detail_urls)),
+    path('opening/learningmaterial/<int:pk>/', LearningMaterialDetailView.as_view(), name='learning-material-detail'),
+    path('reports/<int:pk>/', ReportDetailView.as_view(), name='report-detail'),
+    path('sparql/', SparqlView.as_view(), name='sparql'),
     # @GetMapping("/other")
     # @GetMapping("/opening")
     # @GetMapping("/opening/tips")

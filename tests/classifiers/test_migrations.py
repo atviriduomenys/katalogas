@@ -2,9 +2,14 @@ from importlib import import_module
 
 import pytest
 from django_webtest import DjangoTestApp
+from django.apps import apps
+from django.db import connection
+
+from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.classifiers.models import Category
 
 data_migration = import_module('vitrina.classifiers.migrations.0007_remake_categories')
+frequency_migration = import_module('vitrina.classifiers.migrations.0011_auto_20221229_1513')
 
 
 @pytest.fixture
@@ -55,3 +60,15 @@ def test_path_generation(app: DjangoTestApp, categories):
     assert cats[3].path == '000100010002'
 
 
+@pytest.mark.django_db
+def test_frequency_hour_migration(app: DjangoTestApp):
+    kasmet = FrequencyFactory(title='Kasmet')
+    kasdien = FrequencyFactory(title='Kasdien')
+
+    frequency_migration.set_hours(apps, connection.schema_editor())
+
+    kasmet.refresh_from_db()
+    kasdien.refresh_from_db()
+
+    assert kasmet.hours == 8760
+    assert kasdien.hours == 24

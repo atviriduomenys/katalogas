@@ -52,8 +52,8 @@ class LicenceAdmin(admin.ModelAdmin):
 
 
 class FrequencyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'is_default',)
-    fields = ('title', 'title_en', 'uri', 'is_default',)
+    list_display = ('title', 'is_default', 'hours')
+    fields = ('title', 'title_en', 'hours', 'uri', 'is_default',)
 
     def save_model(self, request, obj, form, change):
         if obj.is_default:

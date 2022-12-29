@@ -76,7 +76,7 @@ class Frequency(models.Model):
     title_en = models.TextField(blank=True, null=True)
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
-    hours = models.IntegerField(verbose_name=_('Valandos'), null=True)
+    hours = models.IntegerField(verbose_name=_('Valandos'), blank=True, null=True)
 
     class Meta:
         db_table = 'frequency'

@@ -132,18 +132,6 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
         return context_data
 
 
-class DatasetDistributionDownloadView(View):
-    def get(self, request, dataset_id, distribution_id, file):
-        distribution = get_object_or_404(
-            DatasetDistribution,
-            dataset__pk=dataset_id,
-            pk=distribution_id,
-            file__icontains=file
-        )
-        response = FileResponse(open(distribution.file.path, 'rb'))
-        return response
-
-
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(
@@ -168,6 +156,7 @@ class DatasetStructureView(TemplateView):
         structure = dataset.current_structure
         context['errors'] = []
         context['manifest'] = None
+        context['structure'] = structure
         if structure and structure.file:
             if errors := detect_read_errors(structure.file.path):
                 context['errors'] = errors
@@ -182,14 +171,6 @@ class DatasetStructureView(TemplateView):
                 context['errors'] = state.errors
                 context['manifest'] = state.manifest
         return context
-
-
-class DatasetStructureDownloadView(View):
-    def get(self, request, pk):
-        dataset = get_object_or_404(Dataset, pk=pk)
-        structure = dataset.current_structure
-        response = FileResponse(open(structure.file.path, 'rb'))
-        return response
 
 
 class DatasetCreateView(

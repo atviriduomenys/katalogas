@@ -5,12 +5,19 @@
 {% block pageTitle %} | {% translate "Duomenų rinkinių sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkinių sąrašas" %}{% endblock %}
 
+{% block parent_title %}
+    {% if project.title %}
+        {{ project.title }}
+    {% else %}
+        {{ project.url }}
+    {% endif %}
+{% endblock %}
+
 {% block current_title %}
 {% translate "Duomenų rinkinių sąrašas" %}
 {% endblock %}
 
 {% block content %}
-
     {% include 'vitrina/projects/tabs.html' %}
     <table class="table is-fullwidth">
         <tbody>

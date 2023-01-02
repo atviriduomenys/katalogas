@@ -48,18 +48,21 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'groups', 'frequency', 'tags', 'formats']
+    facet_fields = ['filter_status', 'organization', 'category',
+                    'parent_category', 'groups', 'frequency',
+                    'tags', 'formats']
     form_class = DatasetSearchForm
+    facet_limit = 100
     paginate_by = 20
 
     def get_queryset(self):
         datasets = super().get_queryset()
         if is_org_dataset_list(self.request):
-            organization = get_object_or_404(
+            self.organization = get_object_or_404(
                 Organization,
                 pk=self.kwargs['pk'],
             )
-            datasets = datasets.filter(organization=organization.pk)
+            datasets = datasets.filter(organization=self.organization.pk)
         return datasets.order_by('-published')
 
     def get_context_data(self, **kwargs):
@@ -71,6 +74,7 @@ class DatasetListView(FacetedSearchView):
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
+            'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
@@ -78,6 +82,7 @@ class DatasetListView(FacetedSearchView):
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
+            'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'selected_frequency': get_selected_value(form, 'frequency'),
             'selected_tags': get_selected_value(form, 'tags', True, False),
@@ -86,23 +91,18 @@ class DatasetListView(FacetedSearchView):
             'selected_date_to': form.cleaned_data.get('date_to'),
         }
         if is_org_dataset_list(self.request):
-            # TODO: We get org two times.
-            org = get_object_or_404(
-                Organization,
-                pk=self.kwargs['pk'],
-            )
-            extra_context['organization'] = org
+            extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(
                 self.request.user,
                 Action.VIEW,
                 Representative,
-                org
+                self.organization
             )
             extra_context['can_create_dataset'] = has_perm(
                 self.request.user,
                 Action.CREATE,
                 Dataset,
-                org,
+                self.organization,
             )
         context.update(extra_context)
         return context

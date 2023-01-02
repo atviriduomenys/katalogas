@@ -5,6 +5,12 @@
 {% block pageTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
 
+{% block parent_title %}
+    {% objectlanguage dataset LANGUAGE_CODE %}
+        {{ dataset.title }}
+    {% endobjectlanguage %}
+{% endblock %}
+
 {% block current_title %}
 {% translate "Projektų sąrašas" %}
 {% endblock %}

@@ -178,13 +178,11 @@ class Dataset(TranslatableModel):
 
     @property
     def parent_category(self):
-        categories = []
         if self.category:
-            category = self.category
-            while category.parent:
-                category = category.parent
-            categories.append(category.pk)
-        return categories
+            if not self.category.is_root():
+                return self.category.get_root().pk
+            else:
+                return self.category.pk
 
     @property
     def filter_status(self):

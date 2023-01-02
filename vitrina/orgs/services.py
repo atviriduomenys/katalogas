@@ -28,7 +28,7 @@ class Role(Enum):
     COORDINATOR = Representative.COORDINATOR
     MANAGER = Representative.MANAGER
     AUTHOR = "author"
-    ALL = "all"
+    ALL = "all"  # All authenticated users
 
 
 acl = {

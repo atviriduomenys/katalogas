@@ -26,8 +26,8 @@
 	    <div class="column is-one-third">
 	            <div class="dataset-organization">
 	                <div class="is-hidden-mobile">
-	                    {% if org_logo %}
-	                        <img src="/image/{{ org_logo }}" class="image max-128x128 m-b-md">
+	                    {% if organization.image %}
+	                        <img src="{{ organization.image.url }}" class="image max-128x128 m-b-md">
 	                    {% endif %}
 	                </div>
 

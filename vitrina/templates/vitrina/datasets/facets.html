@@ -9,16 +9,16 @@
                     <div class="is-flex">
                     <span class="category-panel-block"><strong>
                             if fv.name=="1" }
-                                 translate "general.inventored" %}
+                                 translate "Inventorintas" %}
                                 {#                                <span class="icon info-icon has-tooltip-multiline m-r-md has-tooltip-right"#}
                                 {#                                                                            data-tooltip="{{ translate("tooltip.inventored") }}"><i#}
                                 {#                                        class="fas fa-info-circle"></i></span>#}
                             {% elif fv.name=="2" %}
-                                {% translate "general.metadataOnly" %}
+                                {% translate "Tik metaduomenys" %}
                             {% elif fv.name=="3" %}
-                                {% translate "general.structureUploaded" %}
+                                {% translate "Struktūra įkelta" %}
                             {% else %}
-                                {% translate("general.dataOpened" %}
+                                {% translate("Duomenys atviri" %}
                             {% endif %}
                         </strong></span>
                         <div class="stays-right">({{ fv.count }})</div>
@@ -28,16 +28,16 @@
                         <a href="{{ concat(currentQuery, "&", ff.name, "=", fv.name | url_encode ) }}"
                            class="category-panel-block">
                             {% if fv.name=="1" %}
-                                {% translate "general.inventored" %}
+                                {% translate "Inventorinta" %}
                                 {#                                <span class="icon info-icon has-tooltip-multiline m-r-md has-tooltip-right"#}
                                 {#                                                                            data-tooltip="{{ translate("tooltip.inventored") }}"><i#}
                                 {#                                        class="fas fa-info-circle"></i></span>#}
                             {% elif fv.name=="2" %}
-                                {% translate "general.metadataOnly" %}
+                                {% translate "Tik metaduomenys" %}
                             {% elif fv.name=="3" %}
-                                {{ translate("general.structureUploaded") }}
+                                {{ translate("Struktūra įkelta") }}
                             {% else %}
-                                {{ translate("general.dataOpened") }}
+                                {{ translate("Duomenys atviri") }}
                             {% endif %}</a>
                         <div class="stays-right">({{ fv.count }})</div>
                     </div>

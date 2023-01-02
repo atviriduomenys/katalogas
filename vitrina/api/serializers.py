@@ -1,4 +1,5 @@
 from django.utils import timezone
+from filer.models import Folder, File
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -394,18 +395,28 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         })
 
         # if overwrite True, try to look for existing distribution
-        upload_to = DatasetDistribution.file.field.upload_to
+        upload_to = DatasetDistribution.UPLOAD_TO
+        upload_folder = None
+        folders = upload_to.split('/')
+        for level, folder_name in enumerate(folders):
+            upload_folder, created = Folder.objects.get_or_create(
+                level=level,
+                name=folder_name,
+                parent=upload_folder
+            )
+
         if overwrite and file and dataset.datasetdistribution_set.filter(
-                file=f"{upload_to}{file.name}"
-        ).exists():
+            file__folder=upload_folder,
+            file__original_filename=file.name,
+        ):
             instance = dataset.datasetdistribution_set.filter(
-                file=f"{upload_to}{file.name}"
+                file__folder=upload_folder,
+                file__original_filename=file.name,
             ).first()
             instance = super().update(instance, validated_data)
         else:
             # did not find, initialize a new one
             instance = super().create(validated_data)
-            instance.file = file
 
         if region and not municipality:
             instance.geo_location = region
@@ -414,6 +425,11 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         elif region and municipality:
             instance.geo_location = f"{region} {municipality}"
         if file:
+            instance.file = File.objects.create(
+                file=file,
+                original_filename=file.name,
+                folder=upload_folder
+            )
             instance.type = "FILE"
         elif url:
             instance.type = "URL"
@@ -473,7 +489,7 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
         return data
 
     def update(self, instance, validated_data):
-        file = validated_data.get('file', None)
+        file = validated_data.pop('file', None)
         region = validated_data.pop('region', None)
         municipality = validated_data.pop('municipality', None)
         url = validated_data.pop('url', None)
@@ -486,6 +502,20 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
         elif region and municipality:
             instance.geo_location = f"{region} {municipality}"
         if file:
+            upload_to = DatasetDistribution.UPLOAD_TO
+            upload_folder = None
+            folders = upload_to.split('/')
+            for level, folder_name in enumerate(folders):
+                upload_folder, created = Folder.objects.get_or_create(
+                    level=level,
+                    name=folder_name,
+                    parent=upload_folder
+                )
+            instance.file = File.objects.create(
+                file=file,
+                original_filename=file.name,
+                folder=upload_folder
+            )
             instance.type = "FILE"
             instance.download_url = None
         elif url:
@@ -499,7 +529,7 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
 class DatasetStructureSerializer(serializers.ModelSerializer):
     created = serializers.DateTimeField(required=False, label="")
     id = serializers.IntegerField(required=False, label="")
-    size = serializers.IntegerField(required=False, label="")
+    size = serializers.IntegerField(required=False, label="file_size")
     title = serializers.CharField(required=False, allow_blank=True, label="")
     filename = serializers.CharField(
         required=False,
@@ -531,8 +561,28 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        file = validated_data.pop('file', None)
+        dataset = self.context.get('dataset')
         validated_data.update({
-            'dataset': self.context.get('dataset')
+            'dataset': dataset
         })
         instance = super().create(validated_data)
+        if file:
+            upload_to = DatasetStructure.UPLOAD_TO
+            upload_folder = None
+            folders = upload_to.split('/')
+            for level, folder_name in enumerate(folders):
+                upload_folder, created = Folder.objects.get_or_create(
+                    level=level,
+                    name=folder_name,
+                    parent=upload_folder
+                )
+            instance.file = File.objects.create(
+                file=file,
+                original_filename=file.name,
+                folder=upload_folder
+            )
+            instance.save()
+            dataset.current_structure = instance
+            dataset.save()
         return instance

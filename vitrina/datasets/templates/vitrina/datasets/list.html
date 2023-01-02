@@ -113,17 +113,19 @@
                             <div>
                                 <strong>
                                     <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% if i.object %}
-                                            {% objectlanguage i.object LANGUAGE_CODE %}
-                                                {{ i.object.title }}
-                                            {% endobjectlanguage %}
-                                        {% else %}
-                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                            -
-                                        {% endif %}
+                                        {% objectlanguage i.object LANGUAGE_CODE %}
+                                            {{ i.object.title }}
+                                        {% endobjectlanguage %}
                                     </a>
                                 </strong>
                             </div>
+                            {% if i.object.groups %}
+                                {% for group in i.object.get_all_groups %}
+                                    <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                    </p>
+                                {% endfor %}
+                            {% endif %}
                             {% if i.object.organization_title %}
                                 <p>
                                     <small class="dataset-list-organization">{{ i.object.organization_title }}</small>

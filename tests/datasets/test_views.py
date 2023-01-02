@@ -9,13 +9,15 @@ from django_webtest import DjangoTestApp
 
 import pytest
 from factory.django import FileField
+from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -62,22 +64,6 @@ def test_dataset_detail_status(app: DjangoTestApp, dataset_detail_data):
 def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
     assert list(resp.context['resources']) == [dataset_detail_data['dataset_distribution']]
-
-
-@pytest.mark.django_db
-def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(reverse('dataset-distribution-download', kwargs={
-        'dataset_id': 1000,
-        'distribution_id': 1000,
-        'file': "doesntexist",
-    }), expect_errors=True)
-    assert resp.status_code == 404
-
-
-@pytest.mark.django_db
-def test_download_distribution(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(dataset_detail_data['dataset_distribution'].get_download_url())
-    assert resp.content == b'Column\nValue'
 
 
 @pytest.mark.django_db
@@ -538,27 +524,14 @@ def test_with_non_readable_structure(app: DjangoTestApp):
     dataset = DatasetFactory()
     dataset.current_structure = DatasetStructureFactory(
         dataset=dataset,
-        file=FileField(filename='file.csv', data=b'ab\0c')
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=b'ab\0c')
+        )
     )
     dataset.save()
     resp = app.get(dataset.current_structure.get_absolute_url())
     assert len(resp.context['errors']) > 0
     assert resp.context['manifest'] is None
-
-
-@pytest.mark.django_db
-def test_download_non_existent_structure(app: DjangoTestApp):
-    resp = app.get(reverse('dataset-structure-download', kwargs={'pk': 1000}), expect_errors=True)
-    assert resp.status_code == 404
-
-
-@pytest.mark.django_db
-def test_download_structure(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    dataset.current_structure = DatasetStructureFactory(dataset=dataset)
-    dataset.save()
-    resp = app.get(dataset.current_structure.get_absolute_url() + "download/")
-    assert resp.content == dataset.current_structure.file.read()
 
 
 @pytest.mark.django_db
@@ -625,6 +598,22 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert dataset.description == 'edited dataset description'
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+
+
+@pytest.mark.django_db
+def test_group_change_form_correct_login(app: DjangoTestApp):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['groups'] = ['1']
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
+    assert dataset.groups.all().first() == group
+    assert Version.objects.get_for_object(dataset).count() == 1
 
 
 @pytest.mark.django_db
@@ -796,6 +785,8 @@ def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
     dataset.refresh_from_db()
     structure = DatasetStructure.objects.get(dataset=dataset)
     assert dataset.current_structure == structure
+    assert File.objects.count() == 1
+    assert structure.file.original_filename == "manifest.csv"
 
 
 @pytest.mark.django_db
@@ -812,6 +803,8 @@ def test_dataset_structure_import_standardized(app: DjangoTestApp):
     dataset.refresh_from_db()
     structure = DatasetStructure.objects.get(dataset=dataset)
     assert dataset.current_structure == structure
+    assert File.objects.count() == 1
+    assert structure.file.original_filename == "file.csv"
 
 
 @pytest.mark.django_db
@@ -993,3 +986,4 @@ def test_dataset_members_delete_member(app: DjangoTestApp):
     assert not qs.exists()
 
     assert len(mail.outbox) == 0
+

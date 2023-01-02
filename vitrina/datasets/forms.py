@@ -9,14 +9,21 @@ from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 
 from vitrina.classifiers.models import Frequency, Licence
+from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
     description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
+    groups = forms.ModelMultipleChoiceField(
+        label=_('Grupės'),
+        queryset=DatasetGroup.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     class Meta:
         model = Dataset
@@ -45,6 +52,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
+            Field('groups'),
             Field('category'),
             Field('licence'),
             Field('frequency'),
@@ -55,14 +63,17 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        instance = self.instance if self.instance and self.instance.pk else None
-        if not instance:
+        if not project_instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
                 self.initial['licence'] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
+        else:
+            groups = DatasetGroup.objects.filter(dataset=project_instance).all()
+            if len(groups) > 0:
+                self.initial['groups'] = groups
 
 
 class DatasetSearchForm(FacetedSearchForm):
@@ -85,7 +96,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = forms.FileField(label=_("Failas"), required=True)
+    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
     class Meta:
         model = DatasetStructure

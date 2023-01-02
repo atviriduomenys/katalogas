@@ -1,0 +1,21 @@
+{% load cms_tags %}
+
+<div class="column is-one-quarter">
+    <article class="panel m-b-md">
+        {% page_attribute "page_title" as current_title %}
+        <p class="panel-heading">
+            <a href="/{{ parent.item.get_path }}">{{ parent.item.get_title }}</a>
+        </p>
+        <nav class="category-panel">
+            {% for child in children %}
+                <a class="panel-block {% if current_title == child.item.get_title %} is-active {% endif %}"
+                   href="/{{ child.item.get_path }}">
+                    <span class="panel-icon">
+                        <i class="fas fa-book" aria-hidden="true"></i>
+                    </span>
+                    {{ child.item.get_title }}
+                </a>
+            {% endfor %}
+        </nav>
+    </article>
+</div>

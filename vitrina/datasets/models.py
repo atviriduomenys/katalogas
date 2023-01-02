@@ -4,6 +4,7 @@ import tagulous
 
 from django.db import models
 from django.urls import reverse
+from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
@@ -14,6 +15,19 @@ from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
 from django.utils.translation import gettext_lazy as _
+
+
+class DatasetGroup(TranslatableModel):
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
+    )
+    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+
+    class Meta:
+        ordering = ['created']
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
 class Dataset(TranslatableModel):
@@ -98,6 +112,7 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
+    groups = models.ManyToManyField(DatasetGroup)
     tags = tagulous.models.TagField(
         blank=True,
         force_lowercase=True,
@@ -152,6 +167,12 @@ class Dataset(TranslatableModel):
 
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
+
+    def get_all_groups(self):
+        return self.groups.all()
+
+    def get_group_list(self):
+        return list(self.groups.all().values_list('pk', flat=True))
 
     @property
     def filter_status(self):
@@ -396,14 +417,13 @@ class DatasetResourceMigrate(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
+    UPLOAD_TO = "data/structure"
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
@@ -411,17 +431,20 @@ class DatasetStructure(models.Model):
         blank=True,
         null=True,
     )
-    file = models.FileField(
-        upload_to='manifest/%Y/%m-%d',
+    file = FilerFileField(
         blank=True,
         null=True,
-        max_length=512,
+        related_name="file_structure",
+        on_delete=models.SET_NULL
     )
 
     # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     distribution_version = models.IntegerField(blank=True, null=True)
+    filename = models.CharField(max_length=255, blank=True, null=True)
+    identifier = models.CharField(max_length=255, blank=True, null=True)
+    size = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_structure'
@@ -430,13 +453,12 @@ class DatasetStructure(models.Model):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
     def file_size(self):
-        try:
+        if self.file:
             return self.file.size
-        except FileNotFoundError:
-            return 0
+        return 0
 
     def filename_without_path(self):
-        return pathlib.Path(self.file.name).name if self.file else ""
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

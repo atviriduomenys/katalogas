@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n parler_tags %}
 {% load like_tags %}
 
 <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
@@ -44,7 +44,18 @@
                 {{ dataset.category.title }}
             {% endif %}
         </td>
-    </tr>
+    {% if dataset.get_all_groups %}
+        </tr>
+            <tr>
+            <th>{% translate "Grupės" %}</th>
+            <td>
+            {% for group in dataset.get_all_groups %}
+                <span>{{ group }}</span>
+                <br/>
+            {% endfor %}
+            </td>
+        </tr>
+    {% endif %}
     {% if status %}
         <tr>
             <th>

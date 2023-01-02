@@ -22,7 +22,7 @@ def fix_dates(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_resources', '0012_alter_title_description'),
+        ('vitrina_resources', '0013_auto_20221206_1005'),
     ]
 
     operations = [

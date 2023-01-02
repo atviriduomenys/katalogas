@@ -35,9 +35,6 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.append(obj.category.pk)
         return categories
 
-    def prepare_parent_category(self, obj):
-        return obj.parent_category
-
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):
     def setup(self):

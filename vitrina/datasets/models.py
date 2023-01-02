@@ -176,7 +176,6 @@ class Dataset(TranslatableModel):
     def get_group_list(self):
         return list(self.groups.all().values_list('pk', flat=True))
 
-    @property
     def parent_category(self):
         if self.category:
             if not self.category.is_root():

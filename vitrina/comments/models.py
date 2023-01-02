@@ -74,12 +74,18 @@ class Comment(models.Model):
 
     def body_text(self):
         if self.type == self.REQUEST:
-            body_text = _(f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
-                          f"{self.rel_content_object.description}")
+            body_text = _(
+                f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
+                f"{self.rel_content_object.description}")
         elif self.type == self.PROJECT:
-            body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title} projektą.")
+            body_text = _(
+                "Šis duomenų rinkinys įtrauktas į "
+                f"{self.rel_content_object.get_title()} projektą."
+            )
         elif self.type == self.STATUS:
-            body_text = _(f"Statusas pakeistas į {self.get_status_display()}. ")
+            body_text = _(
+                f"Statusas pakeistas į {self.get_status_display()}."
+            )
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
         else:

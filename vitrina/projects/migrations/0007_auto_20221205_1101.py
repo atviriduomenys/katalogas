@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.FILER_IMAGE_MODEL),
-        ('vitrina_projects', '0004_auto_20221019_1510'),
+        ('vitrina_projects', '0006_delete_old_datasetid_table'),
     ]
 
     operations = [

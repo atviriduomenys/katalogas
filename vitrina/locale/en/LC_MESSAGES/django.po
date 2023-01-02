@@ -1,0 +1,1760 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-12-15 13:19+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\vitrina\api\serializers.py:370 .\vitrina\api\serializers.py:371
+msgid "file' arba 'url' laukui turi būti priskirta reikšmė"
+msgstr "one of the 'file' or 'url' field must have a chosen value"
+
+#: .\vitrina\api\serializers.py:375 .\vitrina\api\serializers.py:376
+#: .\vitrina\api\serializers.py:470 .\vitrina\api\serializers.py:471
+msgid "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
+msgstr ""
+"The value must be set using one of the 'file' or 'url' fields, not both"
+
+#: .\vitrina\classifiers\admin.py:15
+msgid "kategoriją"
+msgstr "Category"
+
+#: .\vitrina\classifiers\apps.py:8
+msgid "Classifiers"
+msgstr ""
+
+#: .\vitrina\cms\cms_menus.py:11
+msgid "Duomenys"
+msgstr "Data"
+
+#: .\vitrina\cms\cms_menus.py:12
+msgid "Poreikis"
+msgstr "Requests and suggestions"
+
+#: .\vitrina\cms\cms_menus.py:13
+msgid "Projektai"
+msgstr "Projects"
+
+#: .\vitrina\cms\cms_menus.py:14
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:4
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:4
+msgid "Naujienos"
+msgstr "News"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:4
+#: .\vitrina\users\templates\vitrina\users\register.html:14
+msgid "Privatumo politika"
+msgstr "Privacy policy"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:9
+msgid ""
+"Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine "
+"arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios "
+"informacijos turi tik Lietuvos atvirų duomenų portalo atstovas. Bet kokią iš "
+"jūsų gautą informaciją portalas naudos tik pagal paskirtį. Patvirtinkite, "
+"kad susipažinote su šiomis naudojimo sąlygomis:"
+msgstr ""
+"Any information you provide while using this website or email, is considered "
+"confidential and access to it is only given to the representative of open "
+"data. Any information received from you will be used only for it's intended "
+"purpose. Please confirm that you have read the following terms of use:"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:12
+msgid ""
+"Naudotojas įsipareigoja naudoti atvirus duomenis pagal CC BY 4.0 licenciją, "
+"jeigu nenurodyta kitaip."
+msgstr ""
+"The user undertakes to use open data under the CC BY 4.0 licence unless "
+"otherwise specified."
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:14
+msgid ""
+"Asmeninius duomenis, kuriuos renkame iš prisijungusių prie Lietuvos atvirų "
+"duomenų portalo naudotojų, sudaro:"
+msgstr ""
+"Personal data that we collect from those connected to Lithuanian open data "
+"website's list of users, consists of:"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:16
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:22
+msgid "Jūsų vardas, pavardė;"
+msgstr "Your name, surname;"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:17
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:23
+msgid "Jūsų elektroninio pašto adresas;"
+msgstr "Your e-mail address;"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:19
+msgid ""
+"Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į "
+"Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie "
+"paslaugų pakeitimus;"
+msgstr ""
+"We collect the following personal data in order to provide access to "
+"Lithuanian open data website and send notifications to users about service "
+"changes;"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:20
+msgid ""
+"Asmeninius duomenis, kuriuos renkame iš organizacijų atstovų, atsakingų už "
+"atvirų duomenų pateikimą, sudaro:"
+msgstr ""
+"Personal data we collect from representative of organizations respnsible for "
+"open data submission, consists of:"
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:24
+msgid "Jūsų organizacijos pavadinimas."
+msgstr "Your organization title."
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:26
+msgid ""
+"Šiuos išvardintus asmens duomenis renkame, kad galėtume suteikti prieigą į "
+"Lietuvos atvirų duomenų portalą ir siųsti pranešimus naudotojams apie "
+"paslaugų pakeitimus. El. pašto adresą ir vardą naudosime, kad galėtume "
+"patikrinti, ar dirbate nurodytoje organizacijoje."
+msgstr ""
+"We collect the following personal data in order to provide access to "
+"Lithuanian open data website and send notifications to users about service "
+"changes. We will use your email address and name to check if you work for "
+"the specified organization."
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:27
+msgid ""
+"Naudodamiesi Lietuvos atvirų duomenų portalu patvirtinate, kad jūsų pateikta "
+"asmeninė informacija yra teisinga."
+msgstr ""
+"By using the Lithuanian open data website, you confirm that your submitted "
+"personal information is correct."
+
+#: .\vitrina\cms\templates\vitrina\cms\policy.html:28
+msgid ""
+"Visi naudotojo nurodyti ir gauti asmens duomenys yra kaupiami, saugomi ir "
+"tvarkomi pagal Lietuvos Respublikos asmens duomenų apsaugos įstatyme "
+"numatytus reikalavimus bei kitus Lietuvos Respublikoje asmens duomenų "
+"apsaugą reglamentuojančius teisės aktus. Portalas užtikrina gautų duomenų "
+"apsaugą ir įsipareigoja šią informaciją panaudoti tik esant naudotojo "
+"sutikimui ir tik įstatymo numatytais atvejais, taip pat tais atvejais, kurie "
+"būtini naudotojo užsakytai paslaugai suteikti."
+msgstr ""
+"All personal data provided and received by the user are collected, stored "
+"and processed in accordance with the personal data protection law of the "
+"Republic of Lithuania requirements provided for and other personal data in "
+"the Republic of Lithuania laws regulating the protection. This website "
+"ensures the received data protection and undertakes to use this information "
+"only in the presence of the user for consent and only in cases provided for "
+"by law, as well as in cases that necessary to provide the service ordered by "
+"the user. "
+
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:21
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:26
+msgid "Autorius"
+msgstr "Author"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_detail.html:22
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:25
+msgid "Publikavimo data"
+msgstr "Publication date"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:31
+msgid "Skaityti daugiau"
+msgstr "Read more"
+
+#: .\vitrina\cms\templates\vitrina\cms\post_list.html:43
+msgid "Naujienų nėra"
+msgstr "There are no news"
+
+#: .\vitrina\comments\forms.py:9 .\vitrina\comments\forms.py:16
+msgid "---------"
+msgstr "---------"
+
+#: .\vitrina\comments\forms.py:10 .\vitrina\comments\models.py:32
+#: .\vitrina\datasets\models.py:27 .\vitrina\requests\models.py:36
+msgid "Atvertas"
+msgstr "Open"
+
+#: .\vitrina\comments\forms.py:11 .\vitrina\comments\forms.py:17
+#: .\vitrina\comments\models.py:33 .\vitrina\projects\models.py:16
+#: .\vitrina\requests\models.py:38
+msgid "Patvirtintas"
+msgstr "Approved"
+
+#: .\vitrina\comments\forms.py:12 .\vitrina\comments\forms.py:18
+#: .\vitrina\comments\models.py:34 .\vitrina\projects\models.py:17
+#: .\vitrina\requests\models.py:35
+msgid "Atmestas"
+msgstr "Rejected"
+
+#: .\vitrina\comments\forms.py:36
+msgid "Registruoti kaip prašymą"
+msgstr "Register as request"
+
+#: .\vitrina\comments\forms.py:38
+msgid "Didinti duomenų atnaujinimo periodiškumą"
+msgstr "Increase the frequency of data updates"
+
+#: .\vitrina\comments\forms.py:49 .\vitrina\comments\forms.py:68
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:51
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:29
+#: .\vitrina\requests\templates\vitrina\requests\list.html:74
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:23
+msgid "Būsena"
+msgstr "Status"
+
+#: .\vitrina\comments\forms.py:63 .\vitrina\comments\forms.py:81
+msgid "Šis laukas yra privalomas"
+msgstr "This field is mandatory"
+
+#: .\vitrina\comments\forms.py:83
+msgid "Dabartinė būsena sutampa su jūsų pateikta"
+msgstr "Current status is the same as the chosen on"
+
+#: .\vitrina\comments\models.py:18
+msgid "Naudotojo komentaras"
+msgstr "User comment"
+
+#: .\vitrina\comments\models.py:19
+msgid "Prašymo atverti duomenis komentaras"
+msgstr "Comment on the request to make data open-source"
+
+#: .\vitrina\comments\models.py:20
+msgid "Duomenų rinkinio įtraukimo į projektą komentaras"
+msgstr "A comment on addind a dataset to a project"
+
+#: .\vitrina\comments\models.py:21
+msgid "Statuso keitimo komentaras"
+msgstr "Status change comment"
+
+#: .\vitrina\comments\models.py:30 .\vitrina\datasets\models.py:28
+msgid "Inventorintas"
+msgstr "Inventorized"
+
+#: .\vitrina\comments\models.py:31 .\vitrina\datasets\models.py:36
+msgid "Įkelta duomenų struktūra"
+msgstr "Uploaded data structure"
+
+#: .\vitrina\comments\models.py:46
+msgid "Viešas komentaras"
+msgstr "Public comment"
+
+#: .\vitrina\comments\models.py:77
+#, python-brace-format
+msgid "Pateiktas naujas prašymas {self.rel_content_object.title}. "
+msgstr "A new request {self.rel_content_object.title} has beem created. "
+
+#: .\vitrina\comments\models.py:80
+#, python-brace-format
+msgid ""
+"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title} "
+"projektą."
+msgstr "This dataset is added to {self.rel_content_object.get_title} project."
+
+#: .\vitrina\comments\models.py:82
+msgid "Statusas pakeistas į {self.get_status_display()}. "
+msgstr "Status changed to {self.get_status_display()}."
+
+#: .\vitrina\compat\apps.py:8
+msgid "Compat"
+msgstr "Compatibility"
+
+#: .\vitrina\datasets\apps.py:8
+msgid "Datasets"
+msgstr "Datasets"
+
+#: .\vitrina\datasets\forms.py:18
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:14
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:14
+#: .\vitrina\projects\forms.py:11 .\vitrina\projects\forms.py:27
+#: .\vitrina\projects\forms.py:30 .\vitrina\requests\forms.py:11
+#: .\vitrina\requests\forms.py:25 .\vitrina\resources\models.py:57
+msgid "Pavadinimas"
+msgstr "Title"
+
+#: .\vitrina\datasets\forms.py:19
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:15
+#: .\vitrina\projects\forms.py:12 .\vitrina\projects\forms.py:28
+#: .\vitrina\requests\forms.py:12 .\vitrina\requests\forms.py:26
+#: .\vitrina\resources\models.py:61
+msgid "Aprašymas"
+msgstr "Description"
+
+#: .\vitrina\datasets\forms.py:36
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:67
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:52
+#: .\vitrina\orgs\forms.py:34
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:49
+#: .\vitrina\projects\forms.py:23 .\vitrina\requests\forms.py:21
+#: .\vitrina\resources\forms.py:68
+msgid "Redaguoti"
+msgstr "Edit"
+
+#: .\vitrina\datasets\forms.py:36 .\vitrina\orgs\forms.py:79
+#: .\vitrina\projects\forms.py:23 .\vitrina\requests\forms.py:21
+#: .\vitrina\resources\forms.py:68
+msgid "Sukurti"
+msgstr "Create"
+
+#: .\vitrina\datasets\forms.py:41
+msgid "Ar duomenys vieši"
+msgstr "Is the data public"
+
+#: .\vitrina\datasets\forms.py:43
+msgid "Duomenų rinkinio pavadinimas"
+msgstr "Dataset title"
+
+#: .\vitrina\datasets\forms.py:45
+msgid "Detalus duomenų rinkinio aprašas"
+msgstr "Detailed description of the dataset"
+
+#: .\vitrina\datasets\forms.py:47
+msgid "Surašykite aktualius raktinius žodžius"
+msgstr "List relevant keywords"
+
+#: .\vitrina\datasets\forms.py:52
+msgid "Pateikite visas prieigos teises kurios aktualios šiam duomenų rinkiniui"
+msgstr "Provide all access rights that apply to this dataset"
+
+#: .\vitrina\datasets\forms.py:54
+msgid ""
+"Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
+msgstr "Provide all of the conditions required to distribute the dataset"
+
+#: .\vitrina\datasets\forms.py:88
+msgid "Failas"
+msgstr "File"
+
+#: .\vitrina\datasets\forms.py:100 .\vitrina\helpers.py:58
+#: .\vitrina\templates\confirm_delete.html:17 .\vitrina\users\forms.py:154
+msgid "Patvirtinti"
+msgstr "Confirm"
+
+#: .\vitrina\datasets\models.py:29
+msgid "Parengti metaduomenys"
+msgstr "Prepared metadata"
+
+#: .\vitrina\datasets\models.py:30
+msgid "Įvertinti prioritetai"
+msgstr "Assessed priorities"
+
+#: .\vitrina\datasets\models.py:31
+msgid "Įvertintas finansavimas"
+msgstr "Estimated financing"
+
+#: .\vitrina\datasets\models.py:34
+msgid "Atverti duomenys"
+msgstr "Open data"
+
+#: .\vitrina\datasets\models.py:35
+msgid "Tik inventorintas"
+msgstr "Inventory only"
+
+#: .\vitrina\datasets\models.py:37
+#: .\vitrina\templates\vitrina\datasets\facets.html:17
+#: .\vitrina\templates\vitrina\datasets\facets.html:36
+msgid "Tik metaduomenys"
+msgstr "Metadata only"
+
+#: .\vitrina\datasets\models.py:48 .\vitrina\projects\models.py:24
+#: .\vitrina\requests\models.py:17 .\vitrina\requests\models.py:46
+msgid "Sukurta"
+msgstr "Created"
+
+#: .\vitrina\datasets\models.py:49 .\vitrina\projects\models.py:25
+#: .\vitrina\requests\models.py:20 .\vitrina\requests\models.py:49
+msgid "Redaguota"
+msgstr "Edited"
+
+#: .\vitrina\datasets\models.py:50 .\vitrina\requests\models.py:21
+#: .\vitrina\requests\models.py:50
+msgid "Pakeistas statusas"
+msgstr "Changed status"
+
+#: .\vitrina\datasets\models.py:51
+msgid "Perkelta"
+msgstr "Transferred"
+
+#: .\vitrina\datasets\models.py:52
+msgid "Pridėti duomenys"
+msgstr "Added data"
+
+#: .\vitrina\datasets\models.py:53
+msgid "Redaguoti duomenys"
+msgstr "Edited data"
+
+#: .\vitrina\datasets\models.py:54 .\vitrina\projects\models.py:26
+#: .\vitrina\requests\models.py:52
+msgid "Ištrinta"
+msgstr "Deleted"
+
+#: .\vitrina\datasets\models.py:60
+msgid "Title"
+msgstr "Title"
+
+#: .\vitrina\datasets\models.py:61
+msgid "Description"
+msgstr "Description"
+
+#: .\vitrina\datasets\models.py:76
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:47
+msgid "Kategorija"
+msgstr "Category"
+
+#: .\vitrina\datasets\models.py:84
+msgid "Licenzija"
+msgstr "Licence"
+
+#: .\vitrina\datasets\models.py:88
+msgid "Duomenų rinkinys viešinamas"
+msgstr "The dataset is public"
+
+#: .\vitrina\datasets\models.py:95
+msgid "Atnaujinimo dažnumas"
+msgstr "Update frequency"
+
+#: .\vitrina\datasets\models.py:98
+msgid "Prieigos teisės"
+msgstr "Access rights"
+
+#: .\vitrina\datasets\models.py:99
+msgid "Platinimo salygos"
+msgstr "Terms of distribution"
+
+#: .\vitrina\datasets\models.py:107
+msgid "Pateikite kableliu atskirtą sąrašą žymių."
+msgstr "Provide a comma-separated list of tags."
+
+#: .\vitrina\datasets\models.py:138
+msgid "Dataset"
+msgstr "Dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:7
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:46
+#: .\vitrina\requests\templates\vitrina\requests\list.html:98
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:57
+#: .\vitrina\templatetags\like_tags.py:12
+msgid "Patinka"
+msgstr "Like"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:14
+msgid "Brandos lygis"
+msgstr "Maturity level"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:16
+msgid ""
+"T. y. atvirų duomenų rinkinio formatas, kuriuo atverti atvirų duomenų "
+"rinkinio duomenys ir kuris įvertintas pagal Tim Berners-Lee penkių "
+"žvaigždučių modelį"
+msgstr ""
+"I.e. the open dataset format which is used to open the open-source dataset "
+"data and that is evaluated by the Tim Berners-Lee five star model"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:26
+msgid "Laikotarpis"
+msgstr "Period"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:33
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:111
+msgid "Atnaujinama"
+msgstr "Updating"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:41
+msgid "Kategorijos"
+msgstr "Categories"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:53
+msgid ""
+"Duomenų rinkinio atvėrimo būsena: Inventorintas, parengti metaduomenys, "
+"planuojamas atverti, atvertas, nenumatytas atverti"
+msgstr ""
+"Dataset status: inventoryed, prepared metadata, planned to open, opened not "
+"schedules to open"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:64
+msgid "Atliktas darbas"
+msgstr "Harvested"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:66
+msgid "Atlikto darbo būsena"
+msgstr "Harvesting status"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:76
+msgid "Licencija"
+msgstr "License"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:84
+msgid "Katalogas"
+msgstr "Directory"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:99
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:148
+msgid "Peržiūrėti papildomą informaciją"
+msgstr "View additional information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:107
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:114
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:122
+msgid "Atsakingas asmuo"
+msgstr "Responsible person"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:131
+msgid "Duomenų rinkinio sukūrimo data"
+msgstr "Dataset creation date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:135
+msgid "Paskutinio atnaujinimo data"
+msgstr "Last update date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:139
+msgid "Platinimo sąlygos"
+msgstr "Distribution terms"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:142
+#, fuzzy
+#| msgid "Naudotojo komentaras"
+msgid "Naudojimo limitas"
+msgstr "User comment"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:145
+#, fuzzy
+#| msgid "Prieigos nuoroda"
+msgid "Prieigos apribojimai"
+msgstr "Access url"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:148
+#, fuzzy
+#| msgid "Naudotojo profilis"
+msgid "Naudojimo apribojimai"
+msgstr "User profile"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:151
+msgid "Kiti apribojimai"
+msgstr "Other restrictions"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:161
+#, fuzzy
+#| msgid "Organizacijos tvarkytojas"
+msgid "Organizacijos teikėjas"
+msgstr "Organization manager"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:5
+msgid "Naujas šaltinis"
+msgstr "New source"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:13
+msgid "Teritorija"
+msgstr "Territory"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:15
+#: .\vitrina\resources\forms.py:17 .\vitrina\resources\models.py:113
+msgid "Periodo pradžia"
+msgstr "Period start"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:16
+#: .\vitrina\resources\forms.py:25 .\vitrina\resources\models.py:118
+msgid "Periodo pabaiga"
+msgstr "Period end"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:17
+msgid "Dydis"
+msgstr "Size"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:18
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:90
+msgid "Formatas"
+msgstr "Format"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:19
+msgid "Publikuota"
+msgstr "Published"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:20
+msgid "Atnaujinta"
+msgstr "Updated"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:49
+msgid "Atidaryti"
+msgstr "Open"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:56
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:87
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:58
+msgid "Peržiūrėti"
+msgstr "Review"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:59
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:21
+msgid "Atsisiųsti"
+msgstr "Download"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\datatable.html:74
+msgid "Trinti"
+msgstr "Delete"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:14
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:5
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:6
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:57
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:18
+msgid "Duomenų rinkiniai"
+msgstr "Datasets"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:29
+msgid "Duomenų rinkinio peržiūros"
+msgstr "Dataset views"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:36
+msgid "Redaguoti rinkinį"
+msgstr "Edit dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:54
+msgid "Rinkinio struktūra"
+msgstr "Dataset structure"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:55
+msgid "Informacija apie duomenų rinkinio duomenis"
+msgstr "Information about dataset data"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:69
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:26
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:50
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:4
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:4
+#: .\vitrina\users\templates\vitrina\users\profile.html:71
+msgid "Organizacija"
+msgstr "Organization"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:73
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:28
+#: .\vitrina\orgs\forms.py:59
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:47
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:26
+#: .\vitrina\users\forms.py:15 .\vitrina\users\forms.py:25
+#: .\vitrina\users\forms.py:48 .\vitrina\users\forms.py:66
+#: .\vitrina\users\forms.py:95 .\vitrina\users\forms.py:150
+#: .\vitrina\users\templates\vitrina\users\profile.html:49
+msgid "El. paštas"
+msgstr "E-mail"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:76
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:29
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:57
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:27
+#: .\vitrina\users\forms.py:152
+#: .\vitrina\users\templates\vitrina\users\profile.html:60
+msgid "Telefonas"
+msgstr "Phone number"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:79
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:62
+msgid "Tinklalapis"
+msgstr "Website"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:84
+#: .\vitrina\orgs\models.py:97
+msgid "Koordinatorius"
+msgstr "Coordinator"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:94
+msgid "Dalintis socialiniuose tinkluose"
+msgstr "Share on social networks"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:119
+msgid "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu"
+msgstr "Subscribe for newsletters related to the dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:128
+msgid "Duomenų šaltiniai"
+msgstr "Data sources"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:148
+msgid "Uždaryti papildomą informaciją"
+msgstr "Close additional information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:5
+msgid "Rinkinio būsena"
+msgstr "Dataset status"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:69
+msgid "Žymė"
+msgstr "Tag"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:132
+msgid "Įkėlimo data"
+msgstr "Upload date"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:137
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:140
+msgid "Data nuo"
+msgstr "Date from"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:146
+#: .\vitrina\datasets\templates\vitrina\datasets\filters.html:149
+msgid "Data iki"
+msgstr "Date until"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:81
+msgid "Ieškoti duomenų rinkinio"
+msgstr "Search for a dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:94
+#: .\vitrina\templates\component\search.html:18
+msgid "Išplėstinė paieška"
+msgstr "Advanced search"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:96
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:83
+#: .\vitrina\requests\templates\vitrina\requests\list.html:60
+msgid "Paieškos rezultatai"
+msgstr "Search results"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:99
+#, fuzzy
+#| msgid "Filtruoti rezultatus"
+msgid "Filtro rezultatai"
+msgstr "Filter results"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:104
+msgid "Pridėti rinkinį"
+msgstr "Add a dataset"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:180
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:41
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:134
+msgid "Išskleisti"
+msgstr "More"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\list.html:180
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:134
+msgid "Suskleisti"
+msgstr "Less"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:4
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:5
+msgid "Narių sąrašas"
+msgstr "Members"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:8
+msgid "Duomenų rinkinio narių sąrašas"
+msgstr "Dataset members"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:19
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:17
+msgid "Pridėti narį"
+msgstr "Add member"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:27
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:25
+#: .\vitrina\users\forms.py:46 .\vitrina\users\forms.py:64
+#: .\vitrina\users\forms.py:146
+msgid "Vardas"
+msgstr "Name"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:30
+#: .\vitrina\orgs\forms.py:14 .\vitrina\orgs\forms.py:60
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:28
+msgid "Rolė"
+msgstr "Role"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:42
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:41
+msgid "(pakvietimas išsiųstas)"
+msgstr "(invitation sent)"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\members_list.html:56
+#: .\vitrina\orgs\templates\vitrina\orgs\members.html:54
+msgid "Pašalinti"
+msgstr "Delete"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:4
+msgid "Duomenų rinkinio struktūra"
+msgstr "Dataset structure"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\structure.html:24
+msgid "Importuoti"
+msgstr "Import"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:7
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:6
+#: .\vitrina\templates\component\tabs.html:7
+msgid "Informacija"
+msgstr "Information"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:13
+#: .\vitrina\orgs\templates\vitrina\orgs\tabs.html:12
+msgid "Tvarkytojai"
+msgstr "Managers"
+
+#: .\vitrina\datasets\templates\vitrina\datasets\tabs.html:20
+#: .\vitrina\templates\component\tabs.html:13
+msgid "Istorija"
+msgstr "History"
+
+#: .\vitrina\datasets\views.py:215
+msgid "Naujas duomenų rinkinys"
+msgstr "New dataset"
+
+#: .\vitrina\datasets\views.py:256
+msgid "Duomenų rinkinio redagavimas"
+msgstr "Dataset edit"
+
+#: .\vitrina\datasets\views.py:314
+msgid "Struktūros importas"
+msgstr "Strucutre import"
+
+#: .\vitrina\datasets\views.py:437 .\vitrina\orgs\views.py:170
+msgid "Kvietimas prisijungti prie atvirų duomenų portalo"
+msgstr "Invitation to join the open data site"
+
+#: .\vitrina\datasets\views.py:439
+#, python-brace-format
+msgid ""
+"Buvote įtraukti į „{self.dataset}“ duomenų rinkinio narių sąrašą, tačiau "
+"nesate registruotas Lietuvos atvirų duomenų portale. Prašome sekite šia "
+"nuoroda, kad užsiregistruotumėte ir patvirtintumėte savo narystę:\n"
+"\n"
+msgstr ""
+"You have been added to „{self.dataset}“ dataset members list, but you are "
+"not registered to Lithuanias open data site. Please follow this url to "
+"create an account and approve your membership:\n"
+"\n"
+
+#: .\vitrina\datasets\views.py:450 .\vitrina\orgs\views.py:184
+msgid "Naudotojui išsiųstas laiškas dėl registracijos"
+msgstr "The user has been sent an email for registration"
+
+#: .\vitrina\orgs\apps.py:8
+msgid "Organizations"
+msgstr "Organizations"
+
+#: .\vitrina\orgs\forms.py:15 .\vitrina\orgs\forms.py:61
+msgid "Suteikti API prieigą"
+msgstr "Grant API access"
+
+#: .\vitrina\orgs\forms.py:16
+msgid "API raktas"
+msgstr "API key"
+
+#: .\vitrina\orgs\forms.py:17
+msgid "Pergeneruoti raktą"
+msgstr "Regenerate key"
+
+#: .\vitrina\orgs\forms.py:52
+msgid ""
+"Negalima panaikinti koordinatoriaus rolės naudotojui, jei tai yra "
+"vienintelis koordinatoriaus rolės atstovas."
+msgstr ""
+"Can't remove coordinator role from the user, since he is the onlyuser of the "
+"coordinator role left."
+
+#: .\vitrina\orgs\forms.py:95
+msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
+msgstr "User with this e-mail already exists"
+
+#: .\vitrina\orgs\models.py:49
+msgid "Valstybinė įstaiga"
+msgstr "State agency"
+
+#: .\vitrina\orgs\models.py:50
+msgid "Verslo organizacija"
+msgstr "Business organization"
+
+#: .\vitrina\orgs\models.py:51
+msgid "Nepelno ir nevalstybinė organizacija"
+msgstr "Non-profit and non-governmental organization"
+
+#: .\vitrina\orgs\models.py:98
+msgid "Tvarkytojas"
+msgstr "Handler"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\datasets.html:4
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:5
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:6
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:8
+msgid "Organizacijos"
+msgstr "Organizations"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:35
+msgid "Pavaldus"
+msgstr "Subordinate"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:42
+msgid "Įmonės kodas"
+msgstr "Company code"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\detail.html:52
+msgid "Buveinės adresas"
+msgstr "Office address"
+
+#: .\vitrina\orgs\templates\vitrina\orgs\list.html:16
+msgid "Valdymo sritis"
+msgstr "Management area"
+
+#: .\vitrina\orgs\views.py:172
+#, python-brace-format
+msgid ""
+"Buvote įtraukti į „{organization}“ organizacijos narių sąrašo, tačiau nesate "
+"registruotas Lietuvos atvirų duomenų portale. Prašome sekite šia nuoroda, "
+"kad užsiregistruotumėte ir patvirtintumėte savo narystę organizacijoje:\n"
+"\n"
+msgstr ""
+"You have been added to „{organization}“ organization members list, but you "
+"are not registered to Lithuanias open data site. Please follow this url to "
+"create an account and approve your membership:\n"
+"\n"
+
+#: .\vitrina\projects\forms.py:13 .\vitrina\projects\forms.py:29
+msgid "Nuoroda į panaudojimo atvejį"
+msgstr "URL to use case"
+
+#: .\vitrina\projects\forms.py:14
+msgid "Paveiksliukas"
+msgstr "Picture"
+
+#: .\vitrina\projects\models.py:15 .\vitrina\requests\models.py:34
+msgid "Pateiktas"
+msgstr "Submited"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:9
+#: .\vitrina\projects\templates\vitrina\projects\list.html:4
+#: .\vitrina\projects\templates\vitrina\projects\list.html:5
+#: .\vitrina\projects\templates\vitrina\projects\list.html:7
+msgid "Panaudojimo atvejai"
+msgstr "Use cases"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:21
+msgid "Peržiūrėjo"
+msgstr "Viewed"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:31
+msgid "PATVIRTINTAS"
+msgstr "APPROVED"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:33
+msgid "ATMESTAS"
+msgstr "REJECTED"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:35
+msgid "NAUJAS"
+msgstr "NEW"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:42
+msgid "Ar jums patinka šis projektas?"
+msgstr "Do you like this project?"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:52
+msgid "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju"
+msgstr "Subscribe to the news associated with this use case"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:61
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:46
+msgid "Keisti"
+msgstr "Change"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:70
+msgid "Teikiama nauda"
+msgstr "Benefits"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:75
+msgid "Naudos gavėjų grupė"
+msgstr "Beneficiary group"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:80
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:308
+msgid "Papildoma informacija"
+msgstr "Additional information"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:85
+msgid "Nuoroda"
+msgstr "URL"
+
+#: .\vitrina\projects\templates\vitrina\projects\detail.html:92
+msgid "Panaudoti duomenų rinkiniai"
+msgstr "Used datasets"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:14
+msgid ""
+"\n"
+"                Dalinimasis geraisiais atvirų duomenų naudojimo pavyzdžiais\n"
+"                didina jų vertę ir gali įkvėpti kitus duomenų vartotojus\n"
+"                pasekti Jūsų pavyzdžiu kuriant naujas paslaugas ar kitais\n"
+"                būdais didinti atvertų duomenų pakartotino naudojimo vertę.\n"
+"                "
+msgstr ""
+"\n"
+"                Sharing good examples of open data\n"
+"                increases their value and can inspire other data users\n"
+"                to follow in your example when creating new services or in "
+"other\n"
+"                ways to expand the reuse value of open data\n"
+"                "
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:22
+msgid "Pateikti naują panaudojimo atvejį"
+msgstr "Submit a new use case"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:38
+#, fuzzy
+#| msgid "Atnaujinta"
+msgid "naujas"
+msgstr "Updated"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:40
+#, fuzzy
+#| msgid "Atmestas"
+msgid "atmestas"
+msgstr "Rejected"
+
+#: .\vitrina\projects\templates\vitrina\projects\list.html:61
+#, fuzzy
+#| msgid "Nuoroda į panaudojimo atvejį"
+msgid "Nėra panaudojimo atvėjo"
+msgstr "URL to use case"
+
+#: .\vitrina\projects\views.py:81
+msgid "Panaudos atvejo registracija"
+msgstr "Use case"
+
+#: .\vitrina\projects\views.py:106
+msgid "Panaudos atvejo redagavimas"
+msgstr "Use case edit"
+
+#: .\vitrina\requests\models.py:18 .\vitrina\requests\models.py:47
+msgid "Atmesta"
+msgstr "Rejected"
+
+#: .\vitrina\requests\models.py:19 .\vitrina\requests\models.py:48
+msgid "Patvirtinta"
+msgstr "Approved"
+
+#: .\vitrina\requests\models.py:22 .\vitrina\requests\models.py:51
+msgid "Priskirta"
+msgstr "Assigned"
+
+#: .\vitrina\requests\models.py:37
+msgid "Atsakytas"
+msgstr "Answered"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:8
+#: .\vitrina\requests\templates\vitrina\requests\list.html:4
+#: .\vitrina\requests\templates\vitrina\requests\list.html:5
+#: .\vitrina\requests\templates\vitrina\requests\list.html:7
+msgid "Gauti poreikiai duomenų rinkiniams"
+msgstr "Received requests for datasets"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:17
+msgid ""
+"Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkiniui turite "
+"pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. "
+"Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują."
+msgstr ""
+"Can't find a dataset, or have suggestions for an existing dataset? Then "
+"please look at already created requests for datasets. If you can't find the "
+"needed request - create a new one"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:19
+#: .\vitrina\requests\templates\vitrina\requests\list.html:15
+msgid "Teikti poreikį"
+msgstr "Create a request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:22
+msgid "Užsiprenumeruokite naujienas, susijusias su poreikiu"
+msgstr "Subscribe to news associated with this request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:31
+msgid "Naujų duomenų atvėrimo poreikis"
+msgstr "New data opening request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:33
+msgid "Esamo duomenų rinkinio papildymo poreikis"
+msgstr "Existing dataset expansion request"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:36
+msgid "Poreikio peržiūros"
+msgstr "Request views"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:56
+msgid "Duomenų panaudojimo tikslas"
+msgstr "Data usage purpose"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:71
+msgid "Moksliniams tyrimams, studijoms"
+msgstr "Scientific research and studies"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:87
+msgid "Naujų paslaugų, produktų sukūrimui"
+msgstr "Creation of new services and products"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:103
+msgid "Pilietinės visuomenės, demokratinių procesų skatinimui"
+msgstr "Promotion of civil society and democratin processes"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:119
+msgid "Visuomenės informavimui"
+msgstr "Public information"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:135
+msgid "Socialinių ar aplinkosauginių problemų sprendimui"
+msgstr "Solving social or environmental problems"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:142
+msgid "Norimas pakeitimas"
+msgstr "Desired change"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:159
+msgid "Atverti duomenų rinkinį kitu formatu"
+msgstr "Open dataset using another format"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:177
+msgid "Papildyti duomenų rinkinį naujais duomenimis"
+msgstr "Expand dataset with new data"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:195
+msgid "Keisti duomenų atnaujinimo periodą"
+msgstr "Change data update period"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:202
+msgid "Pageidaujamas duomenų pateikimo formatas"
+msgstr "Requested data format"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:279
+msgid "Pageidaujama duomenų struktūra"
+msgstr "Requested data structure"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:284
+msgid "Duomenų pavadinimas"
+msgstr "Data title"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:285
+msgid "Duomenų pavadinimas žodyne"
+msgstr "Data title in dictionary"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:286
+msgid "Duomenų tipas"
+msgstr "Data type"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:287
+msgid "Pastabos"
+msgstr "Notes"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:302
+#, fuzzy
+#| msgid "Struktūros importas"
+msgid "Struktūros failas"
+msgstr "Strucutre import"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:316
+msgid "Organizacijos atsakymas"
+msgstr "Organization answer"
+
+#: .\vitrina\requests\templates\vitrina\requests\detail.html:360
+#: .\vitrina\templates\component\comments.html:65
+msgid "Šis laukas privalomas"
+msgstr "This field is mandatory"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:13
+msgid ""
+"Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite "
+"pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. "
+"Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują."
+msgstr ""
+"Can't find the required dataset, or have suggestions to an existing dataset? "
+"Then you should look at already existing requests for datasets. If you can't "
+"find the wanted dataset in the list - create a new request."
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:19
+#: .\vitrina\requests\templates\vitrina\requests\list.html:89
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:27
+msgid "Registravimo data"
+msgstr "Registration date"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:44
+msgid ""
+"Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti "
+"poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant "
+"duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į "
+"atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir "
+"įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir "
+"verslo plėtrai."
+msgstr ""
+"In this part of the website contains requests for open data submitted by "
+"users. This is important because with opening data to the public the goal is "
+"to open the data to the maximum, taking into account demand driven approach "
+"and assessing their positive impact on the satisfaction of public interest, "
+"publicity and business development."
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:48
+msgid "Ieškoti poreikio duomenų rinkiniui"
+msgstr "Search for the request of dataset"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:63
+msgid "Filtruoti rezultatus"
+msgstr "Filter results"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:76
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:7
+msgid "Pasiūlymas organizacijai"
+msgstr "Request for organization"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:81
+msgid "Poreikis papildyti ar pakeisti esamą duomenų rinkinį"
+msgstr "Request to improve or replace current dataset"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:92
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:32
+msgid "Atnaujinimo data"
+msgstr "Renew date"
+
+#: .\vitrina\requests\templates\vitrina\requests\list.html:95
+#: .\vitrina\templates\component\comments.html:5
+msgid "Komentarai"
+msgstr "Comments"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:18
+msgid "Norimas keisti duomenų rinkinys"
+msgstr "Dataset that is up for change"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:39
+msgid "Planuojama atvėrimo data"
+msgstr "Planned publication date"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:46
+#, fuzzy
+#| msgid "Naudotojas"
+msgid "Naudotojų skaičius"
+msgstr "User"
+
+#: .\vitrina\requests\templates\vitrina\requests\requestCoretable.html:52
+msgid "Duomenų atnaujinimo periodiškumas"
+msgstr "Data renew period"
+
+#: .\vitrina\requests\views.py:86
+msgid "Poreikio registravimas"
+msgstr "Request creation"
+
+#: .\vitrina\requests\views.py:112
+msgid "Poreikio redagavimas"
+msgstr "Request edit"
+
+#: .\vitrina\resources\forms.py:19
+msgid "Data nuo kada duomenys yra aktualūs."
+msgstr "Date from when this data is relevant"
+
+#: .\vitrina\resources\forms.py:27
+msgid "Data nuo kada duomenys nebėra aktualūs."
+msgstr "Date from when this data is irrelevant"
+
+#: .\vitrina\resources\forms.py:33 .\vitrina\resources\models.py:67
+msgid "Prieigos nuoroda"
+msgstr "Access url"
+
+#: .\vitrina\resources\forms.py:35
+msgid ""
+"Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
+"nuorodas."
+msgstr "Link to a website where you can find direct download links."
+
+#: .\vitrina\resources\forms.py:43 .\vitrina\resources\models.py:84
+msgid "Atsisiuntimo nuoroda"
+msgstr "Download link"
+
+#: .\vitrina\resources\forms.py:45
+msgid ""
+"Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti tiesiogiai į "
+"CSV, JSON ar kito formato duomenų failą."
+msgstr ""
+"Direct download link to the data. This link must be direct to a CSV, JSON or "
+"other format data file."
+
+#: .\vitrina\resources\forms.py:72
+msgid "Šaltinio pavadinimas"
+msgstr "Source title"
+
+#: .\vitrina\resources\forms.py:73
+msgid "Detalus šaltinio aprašas"
+msgstr "Detailed source description"
+
+#: .\vitrina\resources\forms.py:74
+msgid "Pateikitę geografinę padėtį"
+msgstr "Provide a geographical location"
+
+#: .\vitrina\resources\forms.py:76
+msgid "Pasirinkite pradžios datą"
+msgstr "Choose a start date"
+
+#: .\vitrina\resources\forms.py:77
+msgid "Pasirinkite pabaigos datą"
+msgstr "Choose a end date"
+
+#: .\vitrina\resources\forms.py:82
+msgid "Šaltinio failas"
+msgstr "Source file"
+
+#: .\vitrina\resources\forms.py:91
+msgid ""
+"Užpildykit vieną iš pasirinktų laukų: URL lauką arba įkelkit failą, ne abu."
+msgstr "Fill in the URL field or upload a file, not both."
+
+#: .\vitrina\resources\forms.py:96
+msgid "Pateikite duomenų atsisiuntimo nuorodą."
+msgstr "Provide a data download link."
+
+#: .\vitrina\resources\forms.py:99
+msgid "Arba įkelkite duomenų faią."
+msgstr "Or upload a data file."
+
+#: .\vitrina\resources\models.py:69
+msgid "Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."
+msgstr "Link to website from where it is possible to download the data."
+
+#: .\vitrina\resources\models.py:78
+msgid "Duomenų formatas"
+msgstr "Data format"
+
+#: .\vitrina\resources\models.py:86
+msgid "Tiesioginė duomenų atsisiuntimo nuoroda."
+msgstr "Direct data download url"
+
+#: .\vitrina\resources\models.py:95
+msgid "Duomenų failas"
+msgstr "Data file"
+
+#: .\vitrina\resources\models.py:97
+msgid ""
+"Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir įprastinių "
+"atveju duomenys turėtu būti talpinami atvirų duomenų Saugykloje ar kitoje "
+"vietoje, pateikiant tiesioginę duomenų atsisiuntimo nuorodą. Tačiau "
+"nedidelės apimties (iki 5Mb) duomenų failus, galima talpinti ir kataloge."
+msgstr ""
+"The open-source data catalog is not meant for data storage and all data "
+"should be stored in n open data repository or by using other means of "
+"storage. You must provide a direct link to the data. Smaller (5Mb or less) "
+"data files, can be stored inside the catalog"
+
+#: .\vitrina\resources\models.py:108
+msgid "Geografinė aprėptis"
+msgstr "Geographical coverage"
+
+#: .\vitrina\resources\views.py:31
+msgid "Naujas duomenų rinkinio šaltinis"
+msgstr "New dataset source"
+
+#: .\vitrina\resources\views.py:66
+msgid "Duomenų rinkinio šaltinio redagavimas"
+msgstr "Dataset source edit"
+
+#: .\vitrina\settings.py:196
+msgid "Lithuanian"
+msgstr ""
+
+#: .\vitrina\settings.py:197
+msgid "English"
+msgstr ""
+
+#: .\vitrina\settings.py:229
+msgid "Home page"
+msgstr ""
+
+#: .\vitrina\tasks\models.py:14
+msgid "Vyr. koordinatorius"
+msgstr "Senior coordinator"
+
+#: .\vitrina\tasks\models.py:15
+msgid "Organizacijos koordinatorius"
+msgstr "Organization coordinator"
+
+#: .\vitrina\tasks\models.py:16
+msgid "Organizacijos tvarkytojas"
+msgstr "Organization manager"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:4
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:5
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:7
+#: .\vitrina\templates\component\navbar.html:55
+msgid "Užduotys"
+msgstr "Tasks"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:20
+msgid "Sukurta prieš"
+msgstr "Created for"
+
+#: .\vitrina\tasks\templates\vitrina\tasks\list.html:32
+msgid "Užduočių nėra!"
+msgstr "There are no tasks!"
+
+#: .\vitrina\templates\base_form.html:12
+msgid "Pasirinkite turinio redagavimo kalbą"
+msgstr "Choose a language to edit"
+
+#: .\vitrina\templates\component\comment.html:22
+#: .\vitrina\templates\component\comment.html:51
+msgid "Atsakymas į"
+msgstr "Answer to"
+
+#: .\vitrina\templates\component\comment.html:26
+msgid "Komentaras pašalintas"
+msgstr "Comment deleted"
+
+#: .\vitrina\templates\component\comment.html:62
+#, fuzzy
+#| msgid "Viešas komentaras"
+msgid "(neviešinamas komentaras)"
+msgstr "Public comment"
+
+#: .\vitrina\templates\component\comment.html:70
+#: .\vitrina\templates\component\comment.html:86
+msgid "Atsakyti"
+msgstr "Answer"
+
+#: .\vitrina\templates\component\comments.html:29
+msgid "Teikti komentarą"
+msgstr "Submit comment"
+
+#: .\vitrina\templates\component\comments.html:37
+msgid "Komentuoti gali tik prisijungę naudotojai"
+msgstr "Only logged in users can leave a comment"
+
+#: .\vitrina\templates\component\footer.html:12
+msgid "IVPK Informacinės visuomenės plėtros komitetas"
+msgstr "IVPK Information Society Development Committee"
+
+#: .\vitrina\templates\component\footer.html:14
+msgid "tel."
+msgstr "mob:"
+
+#: .\vitrina\templates\component\footer.html:15
+msgid "faks."
+msgstr "fax:"
+
+#: .\vitrina\templates\component\footer.html:16
+msgid "el. p."
+msgstr "e-mail:"
+
+#: .\vitrina\templates\component\footer.html:19
+msgid "Užsiprenumeruokite mūsų naujienlaiškį"
+msgstr "Subscribe to our newsletter"
+
+#: .\vitrina\templates\component\footer.html:22
+msgid "Įveskite el. pašto adresą..."
+msgstr "Your email address"
+
+#: .\vitrina\templates\component\footer.html:26
+msgid "Užsakyti"
+msgstr "Subscribe"
+
+#: .\vitrina\templates\component\footer.html:31
+msgid "Susisiekite su mumis:"
+msgstr "Contact us:"
+
+#: .\vitrina\templates\component\hero.html:11
+msgid "Lietuvos atvirų duomenų portalas"
+msgstr "Open data in Lithuania"
+
+#: .\vitrina\templates\component\hero.html:21
+msgid "Nerandate duomenų rinkinio?"
+msgstr "Can't find a dataset?"
+
+#: .\vitrina\templates\component\hero.html:22
+msgid "O gal esamas duomenų rinkinys neatitinka lūkesčių?"
+msgstr "Current dataset doesn't meet your expectations?"
+
+#: .\vitrina\templates\component\hero.html:24
+msgid "Teikti poreikį duomenų rinkiniui"
+msgstr "Submit a request for a dataset"
+
+#: .\vitrina\templates\component\hero.html:26
+msgid ""
+"Jeigu esate koordinatorius ir atstovaujate organizaciją, norinčą teikti "
+"duomenis?"
+msgstr "Are you a data provider and want to provide data?"
+
+#: .\vitrina\templates\component\hero.html:28
+msgid "Užpildyti naujo duomenų teikėjo formą"
+msgstr "Fill in the new data provider form"
+
+#: .\vitrina\templates\component\hero.html:40
+msgid "Rinkinių"
+msgstr "Datasets"
+
+#: .\vitrina\templates\component\hero.html:49
+msgid "Organizacijų"
+msgstr "Organizations"
+
+#: .\vitrina\templates\component\hero.html:58
+msgid "Panaudojimo atvejų"
+msgstr "Use cases"
+
+#: .\vitrina\templates\component\navbar.html:51
+msgid "Profilis"
+msgstr "Profile"
+
+#: .\vitrina\templates\component\navbar.html:58
+msgid "Rinkiniai"
+msgstr "Datasets"
+
+#: .\vitrina\templates\component\navbar.html:63
+msgid "Administravimas"
+msgstr "Administration"
+
+#: .\vitrina\templates\component\navbar.html:66
+msgid "Atsijungti"
+msgstr "Logout"
+
+#: .\vitrina\templates\component\navbar.html:71 .\vitrina\users\forms.py:27
+msgid "Prisijungti"
+msgstr "Login"
+
+#: .\vitrina\templates\component\search.html:8
+msgid "Ieškoti duomenų..."
+msgstr "Look for data..."
+
+#: .\vitrina\templates\component\subscription.html:12
+msgid "Prenumeruoja:"
+msgstr "Subscribers"
+
+#: .\vitrina\templates\confirm_delete.html:12
+msgid "Ar tikrai norite ištrinti"
+msgstr "Are you sure you want to delete"
+
+#: .\vitrina\templates\confirm_delete.html:16
+msgid "Atšaukti"
+msgstr "Cancel"
+
+#: .\vitrina\templates\history.html:4
+msgid "Veiksmų istorija"
+msgstr "Action history"
+
+#: .\vitrina\templates\history.html:16
+msgid "Data/laikas"
+msgstr "Date/Time"
+
+#: .\vitrina\templates\history.html:17
+msgid "Naudotojas"
+msgstr "User"
+
+#: .\vitrina\templates\history.html:18
+msgid "Veiksmas"
+msgstr "Action"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:7
+msgid "Pradinis"
+msgstr "First"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:8
+msgid "Atgal"
+msgstr "Back"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:12
+#, python-format
+msgid ""
+"\n"
+"                Puslapis %(number)s iš %(total)s.\n"
+"            "
+msgstr ""
+"\n"
+"                Page %(number)s out of %(total)s.\n"
+"            "
+
+#: .\vitrina\templates\vitrina\common\pagination.html:18
+msgid "Pirmyn"
+msgstr "Forward"
+
+#: .\vitrina\templates\vitrina\common\pagination.html:19
+msgid "Paskutinis"
+msgstr "Last"
+
+#: .\vitrina\templates\vitrina\datasets\facets.html:19
+#, fuzzy
+#| msgid "Struktūros importas"
+msgid "Struktūra įkelta"
+msgstr "Strucutre import"
+
+#: .\vitrina\templates\vitrina\datasets\facets.html:31
+#, fuzzy
+#| msgid "Inventorintas"
+msgid "Inventorinta"
+msgstr "Inventorized"
+
+#: .\vitrina\templatetags\like_tags.py:16
+msgid "Nepatinka"
+msgstr "Dislike"
+
+#: .\vitrina\templatetags\subscription_tags.py:13
+msgid "Prenumeruoti"
+msgstr "Subscribe"
+
+#: .\vitrina\templatetags\subscription_tags.py:18
+msgid "Atsisakyti prenumeratos"
+msgstr "Cancel subscription"
+
+#: .\vitrina\users\forms.py:16 .\vitrina\users\forms.py:26
+#: .\vitrina\users\forms.py:50 .\vitrina\users\forms.py:67
+msgid "Slaptažodis"
+msgstr "Password"
+
+#: .\vitrina\users\forms.py:37
+msgid "Neteisingi prisijungimo duomenys"
+msgstr "Incorrect login data"
+
+#: .\vitrina\users\forms.py:47 .\vitrina\users\forms.py:65
+#: .\vitrina\users\forms.py:148
+msgid "Pavardė"
+msgstr "Surname"
+
+#: .\vitrina\users\forms.py:52 .\vitrina\users\forms.py:68
+#: .\vitrina\users\forms.py:114 .\vitrina\users\forms.py:125
+msgid "Pakartokite slaptažodį"
+msgstr "Repeat password"
+
+#: .\vitrina\users\forms.py:70
+#: .\vitrina\users\templates\vitrina\users\login.html:11
+#: .\vitrina\users\templates\vitrina\users\login.html:14
+msgid "Registruotis"
+msgstr "Register"
+
+#: .\vitrina\users\forms.py:80
+msgid "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
+msgstr "Name can not be shorter than 3 symbols and can't have numbers"
+
+#: .\vitrina\users\forms.py:83
+msgid "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
+msgstr "Surname can not be shorter than 3 symbols and can't have numbers"
+
+#: .\vitrina\users\forms.py:85
+msgid "Turite sutikti su naudojimo sąlygomis"
+msgstr "You must agree to the terms of service"
+
+#: .\vitrina\users\forms.py:96 .\vitrina\users\forms.py:126
+#: .\vitrina\users\templates\vitrina\users\login.html:21
+msgid "Atstatyti slaptažodį"
+msgstr "Reset password"
+
+#: .\vitrina\users\forms.py:103
+msgid "Naudotojas su tokiu el. pašto adresu neegzistuoja"
+msgstr "User with this e-mail does not exist"
+
+#: .\vitrina\users\forms.py:109 .\vitrina\users\forms.py:124
+msgid "Naujas slaptažodis"
+msgstr "New password"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:5
+msgid "Prisijungimas"
+msgstr "Login"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:12
+msgid ""
+"Jeigu norite ne tik peržvelgti atvirų duomenų rinkinius skelbiamus šiame "
+"portale, bet ir pateikti panaudojimo atvejį, pateikti poreikį duomenų "
+"rinkiniui ir kt. rekomenduojame užsiregistruoti."
+msgstr ""
+"If you want to not only review open datasets published on this website, but "
+"also sumbit a use case or request a datasetc, etc. we recommend you to "
+"register."
+
+#: .\vitrina\users\templates\vitrina\users\login.html:18
+msgid "Pamiršote slaptažodį?"
+msgstr "Forgot password?"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:19
+msgid ""
+"Jeigu pamiršote slaptažodį, užpildykite formą ir naują slaptažodį gausite "
+"el. paštu."
+msgstr ""
+"If you forgot your password, please fill out a form and you will get your "
+"new password to your e-mail."
+
+#: .\vitrina\users\templates\vitrina\users\login.html:27
+msgid ""
+"Tai puslapis skirtas prisijungti arba užsiregistruoti naujam naudotojui, "
+"kuris nori neribotai, bei laisvai dalintis informacija, kurią vėliau savo "
+"tikslais galėtų naudoti bet kuris suinteresuotas asmuo ar organizacija. Jei "
+"kuriate naują naudotoją, svarbu pateikti teisingus duomenis (pvz. el. pašto "
+"adresas, kuris bus naudojamas pranešimams iš portalo siųsti). Jei "
+"susiduriate su problema parašykite adresu "
+msgstr ""
+"The purpose of this page is to allow the login and registration of new and "
+"existing users, who want to share information unlimitedly and freely, which "
+"can later be used by any user or organization of the website. It is "
+"important to provide correct personal information when logging in (E.g. e-"
+"mail address that will be used to notify you). If you run into any problems, "
+"please contact us at:"
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_email.html:2
+msgid ""
+"Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą:"
+msgstr ""
+"Hello, if you want to create a new passowrd you have to follow this url:"
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_email.html:6
+msgid "Lietuvos Atvirų Duomenų Portalas"
+msgstr "Open data in Lithuania"
+
+#: .\vitrina\users\templates\vitrina\users\password_reset_subject.txt:2
+msgid "Slaptažodžio atstatymas"
+msgstr "Password reset"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:5
+msgid "Naudotojo profilis"
+msgstr "User profile"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:10
+msgid "Pranešimo tipas"
+msgstr "Message type"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:30
+msgid "Užsiregistravo prieš"
+msgstr "Registered for"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:39
+msgid "Prisijungė prieš"
+msgstr "Logged in for"
+
+#: .\vitrina\users\templates\vitrina\users\profile.html:86
+msgid "Keisti duomenis"
+msgstr "Change data"
+
+#: .\vitrina\users\templates\vitrina\users\register.html:5
+msgid "Naudotojo registracija"
+msgstr "User registration"
+
+#: .\vitrina\users\templates\vitrina\users\register.html:15
+msgid ""
+"Bet kokia informacija, kurią pateikiate naudodamiesi šia interneto svetaine "
+"arba elektroniniu paštu, yra laikoma konfidencialia ir prieigą prie šios "
+"informacijos turi tik data.gov.lt. Bet kokią iš jūsų gautą informaciją "
+"portalas naudos tik pagal paskirtį."
+msgstr ""
+"Any information that you submit using this website or e-mail is considered "
+"confidential and access to it is restricted to data.gov.lt. Any information "
+"that the website gets from you will only be used for it's purpose. "
+
+#: .\vitrina\users\templates\vitrina\users\register.html:16
+msgid "Plačiau apie privatumo politiką"
+msgstr "More about the privacy policy"
+
+#: .\vitrina\users\views.py:53
+msgid "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"
+msgstr "The url to change your password has been sent to your e-mail"
+
+#: .\vitrina\users\views.py:63
+msgid "Slaptažodis sėkmingai atnaujintas"
+msgstr "Password has been changed"
+
+#: .\vitrina\users\views.py:110
+msgid "Naudotojo profilio redagavimas"
+msgstr "User profile edit"
+
+#~ msgid "Patinka:"
+#~ msgstr "Likes:"

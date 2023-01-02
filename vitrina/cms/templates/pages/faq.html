@@ -1,0 +1,31 @@
+{% load i18n %}
+
+<div class="columns">
+    <div class="column">
+        {% if items %}
+            {% for i in items %}
+                <article class="media">
+                    <div class="media-content">
+                        <div class="content">
+                            <div>
+                                <strong>{{ i.question }}</strong>
+                            </div>
+                            <p class="dataset-list-description">
+                                {{ i.answer }}
+                            </p>
+                        </div>
+                        <nav class="level is-mobile">
+                            <div class="level-left">
+                            </div>
+                        </nav>
+                    </div>
+                </article>
+            {% endfor %}
+            <br/>
+        {% else %}
+            {% translate "Sąrašas tuščias" %}
+        {% endif %}
+    </div>
+</div>
+<br/>
+<br/>

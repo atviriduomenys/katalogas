@@ -10,6 +10,7 @@ from haystack.forms import FacetedSearchForm
 
 from vitrina.classifiers.models import Frequency, Licence
 from vitrina.datasets.services import get_projects
+from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
@@ -96,7 +97,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = forms.FileField(label=_("Failas"), required=True)
+    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
     class Meta:
         model = DatasetStructure

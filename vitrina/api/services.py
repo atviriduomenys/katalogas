@@ -3,6 +3,7 @@ from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
@@ -11,6 +12,7 @@ from rest_framework import permissions
 
 from vitrina.api.models import ApiDescription, ApiKey
 from vitrina.api.exceptions import DuplicateAPIKeyException
+from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 
@@ -87,9 +89,14 @@ def get_api_key_organization_and_user(
         api_key = api_key.strip()
 
         if api_key:
-            if is_duplicate_key(api_key):
+            duplicate_key_org, is_duplicate = is_duplicate_key(api_key)
+            if is_duplicate and duplicate_key_org:
                 if raise_error:
-                    raise DuplicateAPIKeyException()
+                    url = "%s%s" % (
+                        get_current_domain(request),
+                        reverse('organization-members', args=[duplicate_key_org.pk])
+                    )
+                    raise DuplicateAPIKeyException(url=url)
             else:
                 api_key_obj = (
                     ApiKey.objects.
@@ -108,11 +115,16 @@ def get_api_key_organization_and_user(
     return organization, user
 
 
-def is_duplicate_key(api_key: str) -> bool:
-    if ApiKey.objects.filter(
-        api_key__contains=api_key,
-        api_key__startswith=ApiKey.DUPLICATE,
-        enabled=False
-    ):
-        return True
-    return False
+def is_duplicate_key(api_key: str) -> (Organization, bool):
+    duplicate_keys = (
+        ApiKey.objects
+        .filter(
+            api_key__contains=api_key,
+            api_key__startswith=ApiKey.DUPLICATE,
+            enabled=False
+        )
+    )
+    if duplicate_keys:
+        organization = duplicate_keys.first().representative.content_object
+        return organization, True
+    return None, False

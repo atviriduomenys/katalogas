@@ -28,6 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
+LOCALE_PATHS = [os.path.join(BASE_DIR, 'vitrina/locale/')]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 

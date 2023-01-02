@@ -107,13 +107,11 @@ class DatasetDistribution(models.Model):
         verbose_name=_('Geografinė aprėptis'),
     )
     period_start = models.DateField(
-        max_length=255,
         blank=True,
         null=True,
         verbose_name=_('Periodo pradžia'),
     )
     period_end = models.DateField(
-        max_length=255,
         blank=True,
         null=True,
         verbose_name=_('Periodo pabaiga'),

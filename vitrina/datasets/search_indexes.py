@@ -1,6 +1,9 @@
-from haystack.constants import Indexable
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
-from haystack.indexes import SearchIndex
+from django.db import models
+
+from haystack import signals
+from haystack.exceptions import NotHandled
+from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
 
@@ -10,7 +13,9 @@ class DatasetIndex(SearchIndex, Indexable):
     lt_title = CharField(model_attr='lt_title')
     en_title = CharField(model_attr='en_title')
     organization = IntegerField(model_attr='organization__pk', faceted=True)
+    groups = MultiValueField(model_attr='get_group_list', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
+    parent_category = MultiValueField(model_attr='parent_category', faceted=True, null=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
     formats = MultiValueField(model_attr='formats', faceted=True)
     frequency = IntegerField(model_attr='frequency__pk', faceted=True)
@@ -30,3 +35,26 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.append(obj.category.pk)
         return categories
 
+
+class CustomSignalProcessor(signals.BaseSignalProcessor):
+    def setup(self):
+        models.signals.post_save.connect(self.handle_save)
+        models.signals.post_delete.connect(self.handle_delete)
+
+    def teardown(self):
+        models.signals.post_save.disconnect(self.handle_save)
+        models.signals.post_delete.disconnect(self.handle_delete)
+
+    def handle_save(self, sender, instance, **kwargs):
+        using_backends = self.connection_router.for_write(instance=instance)
+
+        for using in using_backends:
+            try:
+                index = self.connections[using].get_unified_index().get_index(sender)
+                if index.index_queryset().filter(pk=instance.pk):
+                    index.update_object(instance, using=using)
+                else:
+                    index.remove_object(instance, using=using)
+
+            except NotHandled:
+                pass

@@ -1,7 +1,7 @@
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField
+from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -9,14 +9,22 @@ from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 
 from vitrina.classifiers.models import Frequency, Licence
+from vitrina.datasets.services import get_projects
+from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
     description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
+    groups = forms.ModelMultipleChoiceField(
+        label=_('Grupės'),
+        queryset=DatasetGroup.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
 
     class Meta:
         model = Dataset
@@ -45,6 +53,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
+            Field('groups'),
             Field('category'),
             Field('licence'),
             Field('frequency'),
@@ -55,14 +64,17 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        instance = self.instance if self.instance and self.instance.pk else None
-        if not instance:
+        if not project_instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
                 self.initial['licence'] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
+        else:
+            groups = DatasetGroup.objects.filter(dataset=project_instance).all()
+            if len(groups) > 0:
+                self.initial['groups'] = groups
 
 
 class DatasetSearchForm(FacetedSearchForm):
@@ -85,7 +97,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = forms.FileField(label=_("Failas"), required=True)
+    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
     class Meta:
         model = DatasetStructure
@@ -99,6 +111,35 @@ class DatasetStructureImportForm(forms.ModelForm):
             Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+
+class AddProjectForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        fields = ['projects']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.dataset = kwargs.pop('dataset', None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-add-project-form"
+        self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
+        self.helper.layout = Layout(
+            Field('projects'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
+        )
+
+    projects = ModelMultipleChoiceField(
+        label=_('Projektai'),
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text=_(
+            "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų "
+            "rinkinys."
+        ),
+    )
 
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):

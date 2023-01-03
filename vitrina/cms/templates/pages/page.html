@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% load cms_tags sekizai_tags %}
+{% load menu_tags %}
+{% load static %}
+{% load sass_tags %}
+
+{% block current_title %}{% page_attribute "page_title" %}{% endblock %}
+
+{% block content %}
+    {% placeholder "body" %}
+{% endblock %}

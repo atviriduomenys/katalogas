@@ -29,7 +29,7 @@ class Role(Enum):
     MANAGER = Representative.MANAGER
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
-    ALL = "all"
+    ALL = "all"  # All authenticated users
 
 
 acl = {

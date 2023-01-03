@@ -1591,8 +1591,10 @@ def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
     res = app.post(reverse('api-structure', kwargs={
         'datasetId': dataset.pk
     }), params)
+    dataset.refresh_from_db()
     assert dataset.datasetstructure_set.count() == 1
     structure = dataset.datasetstructure_set.first()
+    assert dataset.current_structure == structure
     assert res.json == {
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),
@@ -1621,8 +1623,10 @@ def test_create_dataset_structure_with_internal_id(app: DjangoTestApp):
     res = app.post(reverse('api-structure-internal', kwargs={
         'internalId': dataset.internal_id
     }), params)
+    dataset.refresh_from_db()
     assert dataset.datasetstructure_set.count() == 1
     structure = dataset.datasetstructure_set.first()
+    assert dataset.current_structure == structure
     assert res.json == {
         'created': timezone.localtime(structure.created).isoformat(),
         'filename': structure.filename_without_path(),

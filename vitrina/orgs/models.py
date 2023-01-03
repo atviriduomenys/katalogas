@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
@@ -76,9 +77,12 @@ class Organization(MP_Node):
     phone = models.CharField(max_length=255, blank=True, null=True)
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
     role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
+
+    # Deprecated fields
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     node_order_by = ["created"]
 

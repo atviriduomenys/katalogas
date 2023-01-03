@@ -17,7 +17,7 @@
         </div>
         {% endif %}
 
-        <a class="button is-primary" href="{% url 'dataset-structure-download' view.kwargs.pk %}">
+        <a class="button is-primary" href="{{ structure.file.url }}">
             {% translate "Atsisiųsti" %}
         </a>
         <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">

@@ -1,10 +1,11 @@
+import datetime
 import pathlib
-
 import tagulous
 
 from django.db import models
 from django.urls import reverse
 from filer.fields.file import FilerFileField
+from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
@@ -115,13 +116,16 @@ class Dataset(TranslatableModel):
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
     groups = models.ManyToManyField(DatasetGroup)
-    tags = tagulous.models.TagField(
+    tags = TagField(
         blank=True,
         force_lowercase=True,
         space_delimiter=False,
+        autocomplete_view='autocomplete_tags',
         autocomplete_limit=20,
         verbose_name="Žymės",
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+        autocomplete_settings={"width": "100%"},
+        autocomplete_view_fulltext=True
     )
 
     notes = models.TextField(blank=True, null=True)

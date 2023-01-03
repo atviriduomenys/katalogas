@@ -93,3 +93,9 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Username: adp
     Password: secret
     Database: adp-dev
+
+Scripts that are run periodically:
+
+- Script that adds holiday dates to database::
+
+    poetry run python scripts/add_holiday_dates.py

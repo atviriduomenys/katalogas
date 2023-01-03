@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "SPARQL paieška" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "SPARQL paieška" %}{% endblock %}
+
+{% block current_title %}{% translate "SPARQL paieška" %}{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <p>{% translate "SPARQL Punktas" %}</p>
+        <p>{% translate "SPARQL (SPARQL protokolo ir RDF užklausos kalbos santrumpa) tai duomenų bazių semantinė užklausų kalba, galinti nuskaityti ir valdyti duomenis, saugomus „Resource Description Framework“ (RDF) formatu." %}</p>
+        <p>{% translate "Naudodamiesi šia forma, galite sukonfigūruoti savo užklausas SPARQL kalba." %}</p>
+    </div>
+    <form class="control" action="#" method="post">
+        <div class="field control is-expanded">
+                <textarea style="font-family: monospace;" class="textarea is-info is-fullwidth" name="query"
+                          rows="10">{% if query %}{{ query }}{% else %}{{ 'PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n\nSELECT ?key ?value\nWHERE {?subject ?key ?value}\nLIMIT 100' }}{% endif %}</textarea>
+        </div>
+        {% if error %}
+            <article class="message is-danger">
+                <div class="message-body">
+                    <strong>{{ error }}</strong>
+                </div>
+            </article>
+        {% endif %}
+        <div class="field is-expanded">
+            <div class="control">
+                <button type="submit" class="button is-link is-fullwidth">{% translate "Atlikti paiešką" %}</button>
+            </div>
+        </div>
+        {% if result %}
+            <div class="field">
+                <div class="control">
+                    <pre>{{ result | escape }}</pre>
+                </div>
+            </div>
+        {% endif %}
+    </form>
+    <br/>
+{% endblock %}

@@ -10,10 +10,11 @@
 {% block current_title %}{{ project.get_title }}{% endblock %}
 
 {% block content %}
-    {% include 'component/tabs.html' %}
+
+    {% include 'vitrina/projects/tabs.html' %}
 
     <div class="columns no-margin-bottom">
-        <div class="column is-one-forth">
+        <div class="column is-one-quarter">
             {% get_hit_count for project as total_hits %}
             {% if total_hits %}
             <div class="content">
@@ -53,7 +54,7 @@
                 {% subscription obj=project user=request.user description=description %}
             </div>
         </div>
-        <div class="column is-three-quarters">
+        <div class="column is-two-quarters">
             <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
             {% if can_update_project %}
                 <div class="buttons is-right">
@@ -93,10 +94,10 @@
             {# TODO: Add datasets. #}
             {% endif %}
         </div>
-        {% if i.getImageUUID %}
-            <div class="column is-2">
+        {% if project.image %}
+            <div class="column is-one-quarter">
                 <figure class="image">
-                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                    <img class="max-256x256" src="{{ project.image.url }}">
                 </figure>
             </div>
         {% endif %}

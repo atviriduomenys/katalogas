@@ -3,7 +3,6 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 
 class Category(MP_Node):
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1, blank=True)

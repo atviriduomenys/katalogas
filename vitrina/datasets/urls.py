@@ -2,9 +2,9 @@ from django.conf.urls import url
 from django.urls import path
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import DatasetCreateView, autocomplete_tags
+from vitrina.datasets.views import autocomplete_tags
+from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView
 from vitrina.datasets.views import DatasetDetailView
-from vitrina.datasets.views import DatasetDistributionDownloadView
 from vitrina.datasets.views import DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetHistoryView
 from vitrina.datasets.views import DatasetListView
@@ -12,7 +12,6 @@ from vitrina.datasets.views import DatasetMembersView
 from vitrina.datasets.views import CreateMemberView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import DeleteMemberView
-from vitrina.datasets.views import DatasetStructureDownloadView
 from vitrina.datasets.views import DatasetStructureImportView
 from vitrina.datasets.views import DatasetStructureView
 from vitrina.datasets.views import DatasetUpdateView
@@ -26,15 +25,18 @@ urlpatterns = [
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),
-    path('datasets/<int:dataset_id>/download/<int:distribution_id>/<str:file>/',
-         DatasetDistributionDownloadView.as_view(), name='dataset-distribution-download'),
     path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
-    path('datasets/<int:pk>/structure/download/', DatasetStructureDownloadView.as_view(),
-         name='dataset-structure-download'),
     path('datasets/<int:pk>/structure/import/', DatasetStructureImportView.as_view(),
          name='dataset-structure-import'),
     path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),
     path('datasets/<int:pk>/members/', DatasetMembersView.as_view(), name='dataset-members'),
+    path('datasets/<int:pk>/projects/', DatasetProjectsView.as_view(), name='dataset-projects'),
+    path('datasets/<int:pk>/projects/<int:project_id>/remove',
+         RemoveProjectView.as_view(),
+         name='dataset-project-remove'),
+    path('datasets/<int:pk>/projects/add',
+         AddProjectView.as_view(),
+         name='dataset-project-add'),
     path(
         'datasets/<int:dataset_id>/members/add/',
         CreateMemberView.as_view(),

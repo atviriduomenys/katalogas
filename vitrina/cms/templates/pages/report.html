@@ -1,0 +1,29 @@
+{% load i18n %}
+
+<div class="columns">
+    <div class="column">
+        {% if items %}
+            {% for i in items %}
+                <article class="media has-margin-bottom">
+                    <div class="media-content single-item">
+                        <div class="content">
+                            <div class="m-b-sm">
+                                <p><a href="{% url 'report-detail' i.pk %}" class="usecase-url">{{ i.title }}</a></p>
+                                <p><span class="newsitem-date">{% translate "Publikavimo data" %}: <i>{{ i.created|date:"SHORT_DATETIME_FORMAT" }}</i></span></p>
+                            </div>
+                            <div>
+                                <p class="dataset-list-description">{{ i.summary }}</p>
+                                <p><a href="{% url 'report-detail' i.pk %}">{% translate "Skaityti daugiau" %}</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+            <br/>
+        {% else %}
+            {% translate "Sąrašas tuščias" %}
+        {% endif %}
+    </div>
+</div>
+<br/>
+<br/>

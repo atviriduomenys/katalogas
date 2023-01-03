@@ -37,11 +37,11 @@ If elasticsearch does not start and raises `AccessDeniedException` on
 Then we need to install pgloader (https://pgloader.readthedocs.io/en/latest/install.html#docker-images) and migrate MySQL database to PostgreSQL::
 
     docker run -it --rm \
-    --network katalogas_default \
-    dimitri/pgloader:latest \
-    pgloader \
-        mysql://adp:secret@mysql/adp-dev \
-        postgresql://adp:secret@postgres/adp-dev
+        --network katalogas_default \
+        dimitri/pgloader:latest \
+        pgloader \
+            mysql://adp:secret@mysql/adp-dev \
+            postgresql://adp:secret@postgres/adp-dev
 
 
 By default pgloader creates a schema with the same name as in source database. So after this command we need to switch to public schema::
@@ -68,9 +68,23 @@ To generate static files run::
     npm run build
 
 
-To migrate news posts to Django CMS rerun server and run::
+To migrate files, news posts and pages to Django CMS rerun server and run::
 
-    poetry run python scripts/migrate_news.py "path/to/news/images"
+    poetry run python scripts/migrate_files.py \
+        --distribution-path var/data/ \
+        --cms-path var/data/files/ \
+        --structure-path var/data/structure/
+
+    poetry run python scripts/migrate_news.py
+    poetry run python scripts/migrate_pages.py
+
+To add new language translations (replace en with desired language)::
+
+    poetry run python manage.py makemessages -av1
+
+To generate or update .mo files when .po file is ready::
+
+    poetry run python manage.py compilemessages
 
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
@@ -79,3 +93,9 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Username: adp
     Password: secret
     Database: adp-dev
+
+Scripts that are run periodically:
+
+- Script that adds holiday dates to database::
+
+    poetry run python scripts/add_holiday_dates.py

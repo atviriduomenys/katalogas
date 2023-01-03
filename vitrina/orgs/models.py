@@ -2,6 +2,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
@@ -51,6 +52,13 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
+    MINISTRY = "ministry"
+    MUNICIPALITY = "municipality"
+    ROLES = (
+        (MINISTRY, _("Ministerija")),
+        (MUNICIPALITY, _("Savivaldybė"))
+    )
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -69,8 +77,12 @@ class Organization(MP_Node):
     phone = models.CharField(max_length=255, blank=True, null=True)
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
+    role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
+
+    # Deprecated fields
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     node_order_by = ["created"]
 
@@ -87,12 +99,15 @@ class Organization(MP_Node):
         return reverse('organization-detail', kwargs={'pk': self.pk})
 
     def get_acl_parents(self):
-        return [self]
+        parents = [self]
+        parents.extend(self.get_ancestors())
+        return parents
 
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'
+    SUPERVISOR = 'supervisor'
     ROLES = {
         (COORDINATOR, _("Koordinatorius")),
         (MANAGER, _("Tvarkytojas"))
@@ -125,6 +140,12 @@ class Representative(models.Model):
         parents = [self]
         parents.extend(self.content_object.get_acl_parents())
         return parents
+
+    def is_supervisor(self, organization):
+        if isinstance(self.content_object, Organization):
+            if organization in self.content_object.get_descendants():
+                return True
+        return False
 
 
 class PublishedReport(models.Model):

@@ -27,8 +27,9 @@ class Action(Enum):
 class Role(Enum):
     COORDINATOR = Representative.COORDINATOR
     MANAGER = Representative.MANAGER
+    SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
-    ALL = "all"
+    ALL = "all"  # All authenticated users
 
 
 acl = {
@@ -46,8 +47,8 @@ acl = {
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetStructure, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.CREATE): [Role.ALL],
-    (Request, Action.UPDATE): [Role.AUTHOR],
-    (Request, Action.DELETE): [Role.AUTHOR],
+    (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
+    (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
@@ -65,6 +66,14 @@ def is_author(user: User, node: Model) -> bool:
     elif isinstance(node, Organization):
         return False
     raise NotImplementedError(f"Don't know how to get author of {type(node)}.")
+
+
+def is_supervisor(user: User, node: Model) -> bool:
+    if isinstance(node, Organization):
+        for rep in user.representative_set.all():
+            if rep.is_supervisor(node):
+                return True
+    return False
 
 
 def get_parents(obj: Model) -> list:
@@ -106,6 +115,9 @@ def has_perm(
                 for node in nodes:
                     if role == Role.AUTHOR:
                         if is_author(user, node):
+                            return True
+                    elif role == Role.SUPERVISOR:
+                        if is_supervisor(user, node):
                             return True
                     else:
                         ct = ContentType.objects.get_for_model(node)

@@ -4,6 +4,7 @@ import tagulous
 
 from django.db import models
 from django.urls import reverse
+from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
@@ -58,6 +59,7 @@ class Dataset(TranslatableModel):
     DATA_ADDED = "DATA_ADDED"
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
+    PROJECT_SET = "PROJECT_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -66,6 +68,7 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
+        PROJECT_SET: _("Priskirta projektui")
     }
 
     API_ORIGIN = "api"
@@ -176,6 +179,13 @@ class Dataset(TranslatableModel):
 
     def get_group_list(self):
         return list(self.groups.all().values_list('pk', flat=True))
+
+    def parent_category(self):
+        if self.category:
+            if not self.category.is_root():
+                return self.category.get_root().pk
+            else:
+                return self.category.pk
 
     @property
     def filter_status(self):
@@ -420,14 +430,13 @@ class DatasetResourceMigrate(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
+    UPLOAD_TO = "data/structure"
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
@@ -435,17 +444,20 @@ class DatasetStructure(models.Model):
         blank=True,
         null=True,
     )
-    file = models.FileField(
-        upload_to='manifest/%Y/%m-%d',
+    file = FilerFileField(
         blank=True,
         null=True,
-        max_length=512,
+        related_name="file_structure",
+        on_delete=models.SET_NULL
     )
 
     # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     distribution_version = models.IntegerField(blank=True, null=True)
+    filename = models.CharField(max_length=255, blank=True, null=True)
+    identifier = models.CharField(max_length=255, blank=True, null=True)
+    size = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_structure'
@@ -454,13 +466,12 @@ class DatasetStructure(models.Model):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
     def file_size(self):
-        try:
+        if self.file:
             return self.file.size
-        except FileNotFoundError:
-            return 0
+        return 0
 
     def filename_without_path(self):
-        return pathlib.Path(self.file.name).name if self.file else ""
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

@@ -19,7 +19,10 @@
 
     <link type="text/css" href="{% static 'css/bundle.css' %}" rel="stylesheet" media="screen">
     <script defer src="{% static 'js/bundle.js' %}"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="{% static 'js/jquery.js' %}"></script>
+    <script type="text/javascript">
+        $ = window.jquery.$;
+    </script>
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
@@ -27,6 +30,7 @@
             {{ cssOverride }}
         </style>
     {% endif %}
+    {% render_block "css" %}
 </head>
 <body {% if stagingEnv %}class="contains-warning-border"{% endif %}>
 {% block warning %}
@@ -49,9 +53,7 @@
     {% endif %}
 {% endblock messages %}
 <header>
-    {#<div class="container">#}
     {% include "component/navbar.html" %}
-    {#</div>#}
 </header>
 
 {% block breadcrumbs %}
@@ -65,6 +67,8 @@
     </nav>
 {% endblock %}
 
+{% cms_toolbar %}
+
 {% block root %}
     <section class="section">
         <div class="container">
@@ -72,8 +76,10 @@
         </div>
     </section>
 {% endblock %}
+
 {% include "component/footer.html" %}
-<script>
+{% render_block "js" %}
+<script type="text/javascript">
     function openMenu() {
         var burger = document.querySelector('.burger');
         var nav = document.querySelector('#navbarBasic');

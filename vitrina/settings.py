@@ -28,6 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
+LOCALE_PATHS = [os.path.join(BASE_DIR, 'vitrina/locale/')]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -225,7 +226,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SITE_ID = 1
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
-    ('page.html', _("Home page")),
+    ('pages/page.html', _("Puslapis be šoninio meniu")),
+    ('pages/page_with_side_menu.html', _("Puslapis su šoniniu meniu"))
 ]
 
 THUMBNAIL_HIGH_RESOLUTION = True
@@ -281,7 +283,7 @@ HAYSTACK_CONNECTIONS = {
     'test': env.search_url(var="SEARCH_URL_TEST"),
 }
 
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'vitrina.datasets.search_indexes.CustomSignalProcessor'
 
 BLOG_USE_PLACEHOLDER = False
 META_USE_SITES = True
@@ -296,3 +298,6 @@ SYSTEM_USER_EMAIL = "system.user@example.com"
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {},
 }
+
+VITRINA_TASK_RAISE_1 = 5
+VITRINA_TASK_RAISE_2 = 10

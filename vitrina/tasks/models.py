@@ -34,6 +34,7 @@ class Task(models.Model):
 
 
 class Holiday(models.Model):
+    title = models.CharField(max_length=255)
     date = models.DateField(unique=True)
 
     class Meta:

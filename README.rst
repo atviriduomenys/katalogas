@@ -84,4 +84,4 @@ Scripts that are run periodically:
 
 - Script that adds holiday dates to database::
 
-    poetry run python scripts/add_holiday_dates.py "date_from" "date_to"
+    poetry run python scripts/add_holiday_dates.py

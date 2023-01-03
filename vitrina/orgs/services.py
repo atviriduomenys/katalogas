@@ -27,9 +27,9 @@ class Action(Enum):
 class Role(Enum):
     COORDINATOR = Representative.COORDINATOR
     MANAGER = Representative.MANAGER
+    SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
     ALL = "all"
-    SUPERVISOR = "supervisor"
 
 
 acl = {

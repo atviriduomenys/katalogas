@@ -41,8 +41,12 @@
             <td class="has-text-centered">
                 {{ r.get_format|default:"-" }}
             </td>
-            <td>{{ r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
-            <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+            <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+            {% if dataset.frequency.hours == 0 %}
+                <td>{% translate 'Realiu laiku' %}</td>
+            {% else %}
+                <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+            {% endif %}
             {% if r.is_external_url %}
                 <td>
                     <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"

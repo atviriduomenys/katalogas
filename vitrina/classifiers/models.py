@@ -1,6 +1,7 @@
 from django.db import models
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
+from django.utils.translation import gettext_lazy as _
 
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -74,9 +75,11 @@ class Frequency(models.Model):
     title_en = models.TextField(blank=True, null=True)
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
+    hours = models.IntegerField(verbose_name=_('Valandos'), blank=True, null=True)
 
     class Meta:
         db_table = 'frequency'
+        ordering = ['hours']
 
     def __str__(self):
         return self.title

@@ -8,6 +8,7 @@ from django_webtest import DjangoTestApp
 from reversion.models import Version
 from webtest import Upload
 
+from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
@@ -147,3 +148,41 @@ def test_request_comment_with_same_status(app: DjangoTestApp):
 
     assert project.comments.count() == 0
     assert Version.objects.get_for_object(project).count() == 0
+
+
+@pytest.mark.django_db
+def test_remove_dataset_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    app.set_user(user)
+
+    resp = app.get(reverse('project-dataset-remove', kwargs={'pk': project.pk,
+                                                             'dataset_id': dataset.pk}),
+                   expect_errors=True)
+
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_remove_dataset_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    url = reverse('project-datasets', kwargs={'pk': project.pk})
+    app.set_user(user)
+
+    resp = app.get(url)
+    resp = resp.click(linkid=f"remove-dataset-{ dataset.pk }-btn")
+
+    form = resp.forms['delete-form']
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+    assert project.datasets.all().count() == 0

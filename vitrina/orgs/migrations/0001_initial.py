@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(blank=True, default=datetime.datetime.now, null=True)),
                 ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('version', models.IntegerField()),
+                ('version', models.IntegerField(default=1)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('municipality', models.CharField(blank=True, max_length=255, null=True)),
                 ('region', models.CharField(blank=True, max_length=255, null=True)),

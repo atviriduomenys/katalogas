@@ -49,6 +49,7 @@ class Project(models.Model):
     image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
 
     comments = GenericRelation('vitrina_comments.Comment')
+    datasets = models.ManyToManyField("vitrina_datasets.Dataset")
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -73,15 +74,6 @@ class Project(models.Model):
 
     def get_acl_parents(self):
         return [self]
-
-
-class UsecaseDatasetIds(models.Model):
-    usecase = models.ForeignKey(Project, models.DO_NOTHING)
-    dataset_ids = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'usecase_dataset_ids'
 
 
 class UsecaseLike(models.Model):

@@ -78,6 +78,14 @@ To migrate files, news posts and pages to Django CMS rerun server and run::
     poetry run python scripts/migrate_news.py
     poetry run python scripts/migrate_pages.py
 
+To add new language translations (replace en with desired language)::
+
+    poetry run python manage.py makemessages -av1
+
+To generate or update .mo files when .po file is ready::
+
+    poetry run python manage.py compilemessages
+
 To log into adminer open http://localhost:9000/ in your browser and use credentials in docker-compose.yml::
 
     System: PostgreSQL
@@ -85,3 +93,9 @@ To log into adminer open http://localhost:9000/ in your browser and use credenti
     Username: adp
     Password: secret
     Database: adp-dev
+
+Scripts that are run periodically:
+
+- Script that adds holiday dates to database::
+
+    poetry run python scripts/add_holiday_dates.py

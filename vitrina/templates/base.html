@@ -19,7 +19,10 @@
 
     <link type="text/css" href="{% static 'css/bundle.css' %}" rel="stylesheet" media="screen">
     <script defer src="{% static 'js/bundle.js' %}"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="{% static 'js/jquery.js' %}"></script>
+    <script type="text/javascript">
+        $ = window.jquery.$;
+    </script>
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
@@ -76,7 +79,7 @@
 
 {% include "component/footer.html" %}
 {% render_block "js" %}
-<script>
+<script type="text/javascript">
     function openMenu() {
         var burger = document.querySelector('.burger');
         var nav = document.querySelector('#navbarBasic');

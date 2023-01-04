@@ -1,11 +1,15 @@
 import csv
 import itertools
+import json
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.http import FileResponse, JsonResponse, HttpResponseRedirect
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import QuerySet
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
@@ -26,9 +30,13 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
+
+from vitrina.projects.models import Project
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
+from vitrina.datasets.services import update_facet_data, get_projects
+from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.datasets.services import update_facet_data
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
@@ -44,18 +52,21 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'groups', 'frequency', 'tags', 'formats']
+    facet_fields = ['filter_status', 'organization', 'category',
+                    'parent_category', 'groups', 'frequency',
+                    'tags', 'formats']
     form_class = DatasetSearchForm
+    facet_limit = 100
     paginate_by = 20
 
     def get_queryset(self):
         datasets = super().get_queryset()
         if is_org_dataset_list(self.request):
-            organization = get_object_or_404(
+            self.organization = get_object_or_404(
                 Organization,
                 pk=self.kwargs['pk'],
             )
-            datasets = datasets.filter(organization=organization.pk)
+            datasets = datasets.filter(organization=self.organization.pk)
         return datasets.order_by('-published')
 
     def get_context_data(self, **kwargs):
@@ -67,6 +78,7 @@ class DatasetListView(FacetedSearchView):
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
+            'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
@@ -74,6 +86,7 @@ class DatasetListView(FacetedSearchView):
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
+            'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'selected_frequency': get_selected_value(form, 'frequency'),
             'selected_tags': get_selected_value(form, 'tags', True, False),
@@ -82,23 +95,18 @@ class DatasetListView(FacetedSearchView):
             'selected_date_to': form.cleaned_data.get('date_to'),
         }
         if is_org_dataset_list(self.request):
-            # TODO: We get org two times.
-            org = get_object_or_404(
-                Organization,
-                pk=self.kwargs['pk'],
-            )
-            extra_context['organization'] = org
+            extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(
                 self.request.user,
                 Action.VIEW,
                 Representative,
-                org
+                self.organization
             )
             extra_context['can_create_dataset'] = has_perm(
                 self.request.user,
                 Action.CREATE,
                 Dataset,
-                org,
+                self.organization,
             )
         context.update(extra_context)
         return context
@@ -118,6 +126,8 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
             'tags': dataset.get_tag_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
+            #TODO: harvested functionality needs to be implemented
+            'harvested': '',
             'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
@@ -247,7 +257,9 @@ class DatasetUpdateView(
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         groups = form.cleaned_data['groups']
+        tags = form.cleaned_data['tags']
         self.object.groups.set(groups)
+        self.object.tags.set(tags)
         self.object.save()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
@@ -437,6 +449,47 @@ class CreateMemberView(
         return HttpResponseRedirect(self.get_success_url())
 
 
+@login_required
+def autocomplete_tags(request, tag_model):
+    if isinstance(tag_model, QuerySet):
+        queryset = tag_model
+        tag_model = queryset.model
+    else:
+        queryset = tag_model.objects
+    options = tag_model.tag_options
+
+    query = request.GET.get("q", "")
+    page = int(request.GET.get("p", 1))
+
+    if query:
+        if options.force_lowercase:
+            query = query.lower()
+
+        if options.autocomplete_view_fulltext:
+            lookup = "contains"
+        else:
+            lookup = "startswith"
+
+        if not options.case_sensitive:
+            lookup = f"i{lookup}"
+
+        results = queryset.filter(**{f"name__{lookup}": query})
+
+    else:
+        results = queryset.all()
+
+    if options.autocomplete_limit:
+        start = options.autocomplete_limit * (page - 1)
+        end = options.autocomplete_limit * page
+        more = results.count() > end
+        results = results.order_by("-count")[start:end]
+
+    response = {"results": [tag.name for tag in results], "more": more}
+    return HttpResponse(
+        json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json"
+    )
+
+
 class UpdateMemberView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -478,3 +531,111 @@ class DeleteMemberView(
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),
         })
+
+
+class DatasetProjectsView(HistoryMixin, ListView):
+    model = Project
+    template_name = 'vitrina/datasets/project_list.html'
+    context_object_name = 'projects'
+    paginate_by = 20
+
+    # HistroyMixin
+    object: Dataset
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return get_projects(self.request.user, self.object, order_value='-created')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.object
+        context['can_add_projects'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.object,
+        )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        if self.request.user.is_authenticated:
+            context['has_projects'] = (
+                get_projects(self.request.user, self.object, check_existence=True, form_query=True)
+            )
+        else:
+            context['has_projects'] = False
+        return context
+
+
+class AddProjectView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    model = Dataset
+    form_class = AddProjectForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def get_form_kwargs(self):
+        kwargs = super(AddProjectView, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        kwargs.update({'dataset': self.dataset})
+        return kwargs
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        self.object = form.save()
+        for project in form.cleaned_data['projects']:
+            temp_proj = get_object_or_404(Project, pk=project.pk)
+            temp_proj.datasets.add(self.object)
+        set_comment(Dataset.PROJECT_SET)
+        self.object.save()
+        return HttpResponseRedirect(
+            reverse('dataset-projects', kwargs={'pk': self.object.pk})
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_title'] = self.dataset
+        context['parent_url'] = self.dataset.get_absolute_url()
+        context['current_title'] = _('Projektų pridėjimas')
+        return context
+
+
+class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Dataset
+    template_name = 'confirm_remove.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        self.project = get_object_or_404(Project, pk=self.kwargs.get('project_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.project)
+
+    def handle_no_permission(self):
+        return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.dataset.pk}))
+
+    def delete(self, request, *args, **kwargs):
+        self.project.datasets.remove(self.dataset.pk)
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})

@@ -23,6 +23,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -987,3 +988,65 @@ def test_dataset_members_delete_member(app: DjangoTestApp):
 
     assert len(mail.outbox) == 0
 
+
+@pytest.mark.django_db
+def test_add_project_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}))
+    form = resp.forms['dataset-add-project-form']
+    form['projects'] = (project.pk,)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-projects', kwargs={'pk': dataset.pk})
+    assert project.datasets.all().first() == dataset
+
+
+@pytest.mark.django_db
+def test_add_project_with_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_remove_project_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    app.set_user(user)
+
+    resp = app.get(reverse('dataset-project-remove', kwargs={'pk': dataset.pk, 'project_id': project.pk}),
+                   expect_errors=True)
+
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_remove_project_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    url = reverse('dataset-projects', kwargs={'pk': dataset.pk})
+
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    app.set_user(user)
+
+    resp = app.get(url)
+    resp = resp.click(linkid=f"remove-project-{project.pk}-btn")
+
+    form = resp.forms['delete-form']
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+    assert project.datasets.all().count() == 0

@@ -1,10 +1,9 @@
+from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
 from django.db import models
 
 from haystack import signals
-from haystack.constants import Indexable
 from haystack.exceptions import NotHandled
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
-from haystack.indexes import SearchIndex
+from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
 
@@ -16,6 +15,7 @@ class DatasetIndex(SearchIndex, Indexable):
     organization = IntegerField(model_attr='organization__pk', faceted=True)
     groups = MultiValueField(model_attr='get_group_list', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
+    parent_category = MultiValueField(model_attr='parent_category', faceted=True, null=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
     formats = MultiValueField(model_attr='formats', faceted=True)
     frequency = IntegerField(model_attr='frequency__pk', faceted=True)

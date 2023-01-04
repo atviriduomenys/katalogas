@@ -1,5 +1,9 @@
+from django.conf.urls import url
 from django.urls import path
-from vitrina.datasets.views import DatasetCreateView
+
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.views import autocomplete_tags
+from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView
 from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetHistoryView
@@ -26,6 +30,13 @@ urlpatterns = [
          name='dataset-structure-import'),
     path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),
     path('datasets/<int:pk>/members/', DatasetMembersView.as_view(), name='dataset-members'),
+    path('datasets/<int:pk>/projects/', DatasetProjectsView.as_view(), name='dataset-projects'),
+    path('datasets/<int:pk>/projects/<int:project_id>/remove',
+         RemoveProjectView.as_view(),
+         name='dataset-project-remove'),
+    path('datasets/<int:pk>/projects/add',
+         AddProjectView.as_view(),
+         name='dataset-project-add'),
     path(
         'datasets/<int:dataset_id>/members/add/',
         CreateMemberView.as_view(),
@@ -40,6 +51,12 @@ urlpatterns = [
         'datasets/<int:dataset_id>/members/<int:pk>/delete/',
         DeleteMemberView.as_view(),
         name='dataset-representative-delete',
+    ),
+    path(
+        'datasets/tags/autocomplete/',
+        autocomplete_tags,
+        {'tag_model': Dataset.tags.tag_model},
+        name='autocomplete_tags',
     ),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

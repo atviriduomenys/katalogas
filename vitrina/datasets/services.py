@@ -2,7 +2,11 @@ from typing import List, Any, Dict, Type
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
+
+from django.db.models import Q
+
 from vitrina.helpers import get_filter_url
+from vitrina.projects.models import Project
 
 
 def update_facet_data(
@@ -32,3 +36,23 @@ def update_facet_data(
             }
             updated_facet_data.append(data)
     return updated_facet_data
+
+
+def get_projects(user, dataset, check_existence=False, order_value=None, form_query=False):
+    if form_query:
+        if user.is_staff:
+            projects = Project.public.all()
+        else:
+            projects = Project.public.filter(user=user)
+
+        projects = projects.exclude(Q(status=Project.REJECTED) | Q(datasets__pk__in=[dataset.pk]))
+    else:
+        projects = Project.public.filter(datasets=dataset).exclude(status=Project.REJECTED)
+
+    if order_value:
+        projects.order_by(order_value)
+
+    if check_existence:
+        return projects.exists()
+    else:
+        return projects

@@ -72,16 +72,16 @@
     {% if harvested %}
         <tr>
             <th>
-                {% translate "dataset.status" %}
+                {% translate "Atliktas darbas" %}
                 <span class="icon info-icon has-tooltip-multiline is-middle"
-                      data-tooltip="{% translate 'tooltip.datasetStatus' %}"><i
+                      data-tooltip="{% translate 'Atlikto darbo būsena' %}"><i
                             class="fas fa-info-circle"></i></span>
             </th>
             <td>
-                {% translate "dataset.statusOpen" %}
+                {{ harvested }}
             </td>
         </tr>
-    {% endif %}
+    {% endif%}
     {% if dataset.licence %}
         <tr>
             <th>{% translate "Licencija" %}</th>
@@ -122,7 +122,7 @@
         </tr>
     {% elif harvested %}
         <tr>
-            <th>{% translate "dataset.responsiblePerson" %}</th>
+            <th>{% translate "Atsakingas asmuo" %}</th>
             <td>
                 {{ dataset.responsiblePerson }}{% if dataset.email1 %} {{ dataset.email1 }}{% endif %}{% if dataset.phone %} {{ dataset.phone }}{% endif %}
             </td>
@@ -150,16 +150,16 @@
         <th>{% translate "Platinimo sąlygos" %}</th>
         <td>{% if harvested %}
                 {% if dataset.useLimitation %}
-                    {% translate "dataset.useLimitation" %}: {{ dataset.useLimitation }}<br>
+                    {% translate "Naudojimo limitas" %}: {{ dataset.useLimitation }}<br>
                 {% endif %}
                 {% if dataset.accessConstraints %}
-                    {% translate "dataset.accessConstraints" %}: {{ dataset.accessConstraints }}<br>
+                    {% translate "Prieigos apribojimai" %}: {{ dataset.accessConstraints }}<br>
                 {% endif %}
                 {% if dataset.useConstraints %}
-                    {% translate "dataset.useConstraints" %}: {{ dataset.useConstraints }}<br>
+                    {% translate "Naudojimo apribojimai" %}: {{ dataset.useConstraints }}<br>
                 {% endif %}
                 {% if dataset.otherConstraints %}
-                    {% translate "dataset.otherConstraints" %}: {{ dataset.otherConstraints }}
+                    {% translate "Kiti apribojimai" %}: {{ dataset.otherConstraints }}
                 {% endif %}
             {% else %}
                 {{ dataset.distributionConditions }}
@@ -169,7 +169,7 @@
     {% if harvested %}
         {% if orgProvider %}
             <tr>
-                <th>{% translate "organization.provider" %}</th>
+                <th>{% translate "Organizacijos teikėjas" %}</th>
                 <td>
                     {{ dataset.orgProvider }}<br>
                     <a href="mailto:{{ dataset.orgEmail }}">{{ dataset.orgEmail }}</a><br>

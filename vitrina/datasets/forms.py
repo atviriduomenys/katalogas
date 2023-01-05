@@ -1,7 +1,7 @@
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField
+from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -9,6 +9,7 @@ from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
+from vitrina.datasets.services import get_projects
 from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
@@ -113,6 +114,35 @@ class DatasetStructureImportForm(forms.ModelForm):
             Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+
+class AddProjectForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        fields = ['projects']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.dataset = kwargs.pop('dataset', None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-add-project-form"
+        self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
+        self.helper.layout = Layout(
+            Field('projects'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
+        )
+
+    projects = ModelMultipleChoiceField(
+        label=_('Projektai'),
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text=_(
+            "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų "
+            "rinkinys."
+        ),
+    )
 
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):

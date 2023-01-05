@@ -4,10 +4,14 @@ const webpack = require('webpack')
 
 module.exports = {
   mode: "development",
-  entry: path.resolve(__dirname, './src/index.js'),
+  entry: {
+    bundle: path.resolve(__dirname, './src/index.js'),
+    jquery: path.resolve(__dirname, './src/jquery.js'),
+  },
   output: {
     path: path.resolve(__dirname, '../vitrina/static'),
-    filename: 'js/bundle.js'
+    filename: 'js/[name].js',
+    library: '[name]'
   },
   module: {
     rules: [{

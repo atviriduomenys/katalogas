@@ -7,8 +7,9 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from haystack.forms import FacetedSearchForm
+from treebeard.forms import MoveNodeForm
 
-from vitrina.classifiers.models import Frequency, Licence
+from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
@@ -62,6 +63,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
             Submit('submit', button, css_class='button is-primary')
         )
+
+        self.fields['category'].choices = MoveNodeForm.mk_dropdown_tree(Category)
 
         if not project_instance:
             if Licence.objects.filter(is_default=True).exists():

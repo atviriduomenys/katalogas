@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+{% block parent_title %}{{ parent_title }}{% endblock %}
+{% block parent_url %}{{ parent_url }}{% endblock %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        #div_id_category .select2-selection__arrow {
+            display: none;
+        }
+        #div_id_category #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_category .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_category .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% if language_tabs %}
+                <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
+                <div class="parler-language-tabs" style="padding-bottom: 2em">
+                    {% for tab in language_tabs %}
+                        <span class="{{tab.3}}">
+                            <a class="button" href="{{tab.0}}">{{tab.1}}</a>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% include "component/form.html" %}
+        </div>
+    </div>
+    <br/>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('#id_category').select2();
+            $('#id_category').on('select2:select', function (e) {
+                let value = $('#id_category').find(':selected')[0].innerText;
+                $('#select2-id_category-container')[0].innerHTML = $.trim(value);
+            });
+            $('#id_category').trigger('select2:select');
+        });
+    </script>
+{% endblock %}

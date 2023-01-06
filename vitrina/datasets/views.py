@@ -3,7 +3,6 @@ import datetime
 import itertools
 import json
 
-import pandas as pd
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -664,7 +663,8 @@ class DatasetStatsView(DatasetListView):
                                           'order': 2},
                                'STRUCTURED': {'borderColor': 'black',
                                               'backgroundColor': 'rgba(186,225,255, 0.9)',
-                                              'order': 1}}
+                                              'order': 1},
+                               }
 
         for dataset in context.get('object_list'):
             dataset_ids.append(dataset.pk)
@@ -703,6 +703,7 @@ class DatasetStatsView(DatasetListView):
             for style_element in status_graph_styles[item]:
                 dict[style_element] = status_graph_styles[item][style_element]
             data.append(dict)
+
 
         labels = sorted(labels)
         for i in range(len(labels)):

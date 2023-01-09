@@ -8,7 +8,7 @@
             </p>
         </a>
     {% endif %}
-    <a href="{% url 'dataset-stats' %}?{{ request.GET.urlencode }}" id="Dataset-stats">
+    <a href="{% url 'dataset-status-stats' %}?{{ request.GET.urlencode }}" id="Dataset-status-stats">
         <p class="category-panel-heading">
             <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
         </p>

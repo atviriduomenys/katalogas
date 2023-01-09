@@ -1061,7 +1061,7 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
         category_filter_data["categories"][1].pk
     ))
     old_object_list = resp.context['object_list']
-    resp = resp.click(linkid="Dataset-stats")
+    resp = resp.click(linkid="Dataset-status-stats")
 
     assert resp.status_code == 200
     assert resp.context['dataset_count'] == len(old_object_list)

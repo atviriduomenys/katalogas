@@ -19,7 +19,7 @@ from vitrina.datasets.views import DatasetUpdateView
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
-    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats"),
+    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
     # @GetMapping("/dataset/{slug}")
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),

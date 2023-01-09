@@ -674,38 +674,38 @@ class DatasetStatsView(DatasetListView):
             .values('created__year', 'created__month', 'status')\
             .annotate(count=Count('object_id')).order_by('created__year', 'created__month')
 
-        start_date = datetime.date(year=comments.first().get('created__year'),
-                                   month=comments.first().get('created__month'),
-                                   day=1)
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.date.today(),
-                                     freq='M').tolist()
-            for item in comments.order_by('status').values_list('status', flat=True).distinct():
-                total = 0
-                temp = []
-                for label in labels:
-                    count = comments.filter(status=item, created__year=label.year, created__month=label.month)
-                    if count:
-                        total += count.first().get('count', 0)
-                    temp.append({'x': _date(label, 'y b'), 'y': total})
+        if comments:
+            if comments.first().get('created__year', '') and comments.first().get('created__month', ''):
+                start_date = datetime.date(year=comments.first().get('created__year'),
+                                           month=comments.first().get('created__month'),
+                                           day=1)
+                labels = pd.period_range(start=start_date,
+                                         end=datetime.date.today(),
+                                         freq='M').tolist()
+                for item in comments.order_by('status').values_list('status', flat=True).distinct():
+                    total = 0
+                    temp = []
+                    for label in labels:
+                        count = comments.filter(status=item, created__year=label.year, created__month=label.month)
+                        if count:
+                            total += count.first().get('count', 0)
+                        temp.append({'x': _date(label, 'y b'), 'y': total})
 
-                dict = {'label': str(status_translations[item]),
-                        'data': temp,
-                        'borderWidth': 1}
+                    dict = {'label': str(status_translations[item]),
+                            'data': temp,
+                            'borderWidth': 1}
 
-                if item == 'INVENTORED':
-                    dict.update(inventored_styles)
-                elif item == 'STRUCTURED':
-                    dict.update(structured_styles)
-                elif item == 'OPENED':
-                    dict.update(opened_styles)
+                    if item == 'INVENTORED':
+                        dict.update(inventored_styles)
+                    elif item == 'STRUCTURED':
+                        dict.update(structured_styles)
+                    elif item == 'OPENED':
+                        dict.update(opened_styles)
 
-                data.append(dict)
-
-        data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
+                    data.append(dict)
+                data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
+                context['data'] = json.dumps(data)
         context['graph_title'] = _('Duomenų rinkinių kiekis laike')
-        context['data'] = json.dumps(data)
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')
         context['xAxis_title'] = _('Laikas')

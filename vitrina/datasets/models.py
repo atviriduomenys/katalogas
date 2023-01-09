@@ -225,8 +225,10 @@ class Dataset(TranslatableModel):
 
     def management_area(self):
         if self.organization:
-            if not self.organization.is_root() and self.organization.get_children_count() > 1:
-                return self.organization.get_root().pk
+            if not self.organization.is_root():
+                if self.organization.get_root().get_children_count() > 1:
+                    return self.organization.get_root().pk
+        return None
 
 
 # TODO: To be merged into Dataset:

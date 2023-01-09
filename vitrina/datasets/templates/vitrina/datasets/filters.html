@@ -4,7 +4,7 @@
 <nav class="category-panel">
     <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
         <p class="category-panel-heading">
-            <strong>{% translate "Atgal į rinkinių sąrašą" as orgTitle %} {{orgTitle|upper}}</strong>
+            <strong>&lt;- {% translate "Atgal į rinkinių sąrašą" as orgTitle %} {{orgTitle|upper}}</strong>
         </p>
     </a>
 </nav>

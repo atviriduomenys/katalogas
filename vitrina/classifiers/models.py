@@ -3,6 +3,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django.utils.translation import gettext_lazy as _
 
+
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

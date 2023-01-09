@@ -189,7 +189,7 @@ def test_organization_filter_without_query(app: DjangoTestApp, organization_filt
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] is None
+    assert resp.context['selected_organization'] == []
 
 
 @pytest.mark.haystack
@@ -202,7 +202,7 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] == organization_filter_data["organization"].pk
+    assert resp.context['selected_organization'][0] == str(organization_filter_data["organization"].pk)
 
 
 @pytest.fixture
@@ -469,7 +469,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
 
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset_with_all_filters.pk]
     assert resp.context['selected_status'] == Dataset.HAS_DATA
-    assert resp.context['selected_organization'] == organization.pk
+    assert resp.context['selected_organization'][0] == str(organization.pk)
     assert resp.context['selected_categories'] == [str(category.pk)]
     assert resp.context['selected_tags'] == ["tag1", "tag2"]
     assert resp.context['selected_frequency'] == frequency.pk

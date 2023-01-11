@@ -65,7 +65,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        self.fields['category'].choices = MoveNodeForm.mk_dropdown_tree(Category)
+        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
+        category_choices[0] = (None, "---------")
+        self.fields['category'].choices = category_choices
 
         if not project_instance:
             if Licence.objects.filter(is_default=True).exists():

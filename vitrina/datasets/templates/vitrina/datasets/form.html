@@ -1,9 +1,5 @@
-{% extends "base.html" %}
+{% extends "base_form.html" %}
 {% load i18n parler_tags %}
-
-{% block current_title %}{{ current_title }}{% endblock %}
-{% block parent_title %}{{ parent_title }}{% endblock %}
-{% block parent_url %}{{ parent_url }}{% endblock %}
 
 {% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
 {% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
@@ -30,25 +26,6 @@
             border-color: #b5b5b5;
         }
     </style>
-{% endblock %}
-
-{% block content %}
-    <div class="columns is-centered">
-        <div class="column is-half">
-            {% if language_tabs %}
-                <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
-                <div class="parler-language-tabs" style="padding-bottom: 2em">
-                    {% for tab in language_tabs %}
-                        <span class="{{tab.3}}">
-                            <a class="button" href="{{tab.0}}">{{tab.1}}</a>
-                        </span>
-                    {% endfor %}
-                </div>
-            {% endif %}
-            {% include "component/form.html" %}
-        </div>
-    </div>
-    <br/>
 {% endblock %}
 
 {% block scripts %}

@@ -186,7 +186,7 @@ class DatasetCreateView(
     LanguageChoiceMixin
 ):
     model = Dataset
-    template_name = 'base_form.html'
+    template_name = 'vitrina/datasets/form.html'
     context_object_name = 'dataset'
     form_class = DatasetForm
 
@@ -228,7 +228,7 @@ class DatasetUpdateView(
     ViewUrlMixin
 ):
     model = Dataset
-    template_name = 'base_form.html'
+    template_name = 'vitrina/datasets/form.html'
     view_url_name = 'dataset:edit'
     context_object_name = 'dataset'
     form_class = DatasetForm

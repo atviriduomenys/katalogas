@@ -30,7 +30,10 @@
             {{ cssOverride }}
         </style>
     {% endif %}
+
+    {% block before_render_css %}{% endblock %}
     {% render_block "css" %}
+    {% block after_render_css %}{% endblock %}
 </head>
 <body {% if stagingEnv %}class="contains-warning-border"{% endif %}>
 {% block warning %}
@@ -67,7 +70,9 @@
     </nav>
 {% endblock %}
 
+{% block before_cms_toolbar %}{% endblock %}
 {% cms_toolbar %}
+{% block after_cms_toolbar %}{% endblock %}
 
 {% block root %}
     <section class="section">
@@ -78,7 +83,10 @@
 {% endblock %}
 
 {% include "component/footer.html" %}
+
+{% block before_render_js %}{% endblock %}
 {% render_block "js" %}
+{% block after_render_js %}{% endblock %}
 <script type="text/javascript">
     function openMenu() {
         var burger = document.querySelector('.burger');

@@ -18,7 +18,7 @@ def fix_datasets_status(apps, schema_editor):
                 dataset.status = "HAS_DATA"
             elif latest_status_comment.status == "STRUCTURED":
                 dataset.status = "HAS_STRUCTURE"
-            elif latest_status_comment.status == "INVENTORED":
+            else:
                 dataset.status = "INVENTORED"
             dataset.save(update_fields=['status'])
 

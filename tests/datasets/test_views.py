@@ -449,6 +449,10 @@ def test_dataset_filter_all(app: DjangoTestApp):
         frequency=frequency
     )
 
+    distribution = DatasetDistributionFactory()
+    distribution.dataset = dataset_with_all_filters
+    distribution.save()
+
     dataset_with_all_filters.set_current_language(settings.LANGUAGE_CODE)
     dataset_with_all_filters.slug = 'ds1'
     dataset_with_all_filters.save()

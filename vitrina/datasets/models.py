@@ -39,16 +39,12 @@ class Dataset(TranslatableModel):
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (HAS_STRUCTURE, _("Įkelta duomenų struktūra")),
-        (METADATA, _("Parengti metaduomenys")),
-        (PRIORITIZED, _("Įvertinti prioritetai")),
-        (FINANCING, _("Įvertintas finansavimas")),
+        (HAS_STRUCTURE, _("Struktūruotas")),
     }
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys")
     }
 
     CREATED = "CREATED"

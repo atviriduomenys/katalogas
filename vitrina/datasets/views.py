@@ -11,7 +11,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Count, Max
+from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -652,7 +653,6 @@ class DatasetStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         data = []
-        start_date = None
         status_translations = Comment.get_statuses()
 
         inventored_styles = {'borderColor': 'black',
@@ -668,34 +668,37 @@ class DatasetStatsView(DatasetListView):
                          'fill': True,
                          'sort': 3}
 
-        comments = Comment.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
-                                          object_id__in=datasets.values_list('pk', flat=True),
-                                          status__isnull=False).order_by('created')
-        if comments:
-            start_date = comments.first().created
+        most_recent_comments = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=datasets.values_list('pk', flat=True),
+            status__isnull=False).values('object_id')\
+            .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
+            .order_by('latest_status_change')
 
-        comments = comments.values('object_id', 'created__year', 'created__month', 'status')\
-            .order_by('object_id', '-created')\
-            .distinct('object_id')
+        dataset_status = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=most_recent_comments.values('object_id'),
+            created__in=most_recent_comments.values('latest_status_change'))\
+            .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
+            .values('object_id', 'status', 'year', 'month')
 
-        if comments and start_date:
+        start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
+        statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
+
+        if start_date:
             labels = pd.period_range(start=start_date,
                                      end=datetime.date.today(),
                                      freq='M').tolist()
-            statuses = comments.order_by('status').values_list('status', flat=True).distinct()
+
             for item in statuses:
                 total = 0
                 temp = []
                 for label in labels:
-                    for comment in comments:
-                        if (
-                                comment.get('status') == item and
-                                comment.get('created__year') == label.year and
-                                comment.get('created__month') == label.month
-                        ):
-                            total += 1
+                    total += dataset_status.filter(status=item, year=label.year, month=label.month)\
+                        .values('object_id')\
+                        .annotate(count=Count('object_id', distinct=True))\
+                        .count()
                     temp.append({'x': _date(label, 'y b'), 'y': total})
-
                 dict = {'label': str(status_translations[item]),
                         'data': temp,
                         'borderWidth': 1}
@@ -708,8 +711,8 @@ class DatasetStatsView(DatasetListView):
                     dict.update(opened_styles)
 
                 data.append(dict)
-            data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
-            context['data'] = json.dumps(data)
+        data = sorted(data, key=lambda x: x['sort'])
+        context['data'] = json.dumps(data)
         context['graph_title'] = _('Duomenų rinkinių kiekis laike')
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')

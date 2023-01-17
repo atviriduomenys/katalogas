@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 
 import pytest
@@ -8,7 +9,9 @@ from django.utils import timezone
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 
+from vitrina.api.exceptions import DuplicateAPIKeyException
 from vitrina.api.factories import APIKeyFactory
+from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory, CategoryFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
@@ -59,6 +62,31 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_catalog_list_with_duplicate_api_key(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    key = secrets.token_urlsafe()
+    APIKeyFactory(
+        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {key}'
+    })
+    res = app.get(reverse("api-catalog-list"), expect_errors=True)
+    assert res.status_code == 403
+    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+        url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
+    )
 
 
 @pytest.mark.django_db
@@ -132,6 +160,31 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_retrieve_category_list_with_duplicate_api_key(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    key = secrets.token_urlsafe()
+    APIKeyFactory(
+        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {key}'
+    })
+    res = app.get(reverse("api-category-list"), expect_errors=True)
+    assert res.status_code == 403
+    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+        url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
+    )
+
+
+@pytest.mark.django_db
 def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
     category = CategoryFactory()
     organization = OrganizationFactory()
@@ -194,6 +247,31 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_retrieve_licence_list_with_duplicate_api_key(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    key = secrets.token_urlsafe()
+    APIKeyFactory(
+        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
+        representative=representative,
+        enabled=False
+    )
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': f'ApiKey {key}'
+    })
+    res = app.get(reverse("api-licence-list"), expect_errors=True)
+    assert res.status_code == 403
+    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+        url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
+    )
 
 
 @pytest.mark.django_db

@@ -22,3 +22,5 @@
 /requirements.txt
 /docker/dist/
 /docker/requirements.txt
+/docker/static/
+/vitrina/static/js/

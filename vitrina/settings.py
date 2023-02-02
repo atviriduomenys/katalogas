@@ -212,9 +212,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
-STATIC_ROOT = BASE_DIR / 'var/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 
@@ -278,9 +281,6 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
-
-MEDIA_ROOT = BASE_DIR / 'var/media/'
-MEDIA_URL = '/media/'
 
 _search_url = env.search_url()
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')

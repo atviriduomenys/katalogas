@@ -22,11 +22,14 @@ RUN python -m venv /opt/venv \
 FROM python:3.10-slim
 
 COPY --from=builder /opt/venv /opt/venv
+COPY static /app/static/
 
 EXPOSE 8000
 WORKDIR /app
 
 ENV DJANGO_SETTINGS_MODULE="vitrina.settings"
+ENV STATIC_ROOT="/app/static"
+ENV DEBUG="false"
 ENV PATH="/opt/venv/bin:$PATH"
 
 CMD ["gunicorn", "vitrina.wsgi", "-b", "0.0.0.0:8000"]

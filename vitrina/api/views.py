@@ -1,7 +1,11 @@
+from django.templatetags.static import static
 from django.utils import timezone
 from drf_yasg import openapi
+from drf_yasg.generators import OpenAPISchemaGenerator
+from drf_yasg.renderers import _SpecRenderer
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
+from drf_yasg.views import get_schema_view
+from rest_framework import status, permissions, exceptions
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin
 from rest_framework.parsers import JSONParser
@@ -11,17 +15,99 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
+from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission
 from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
     DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
     PatchDatasetDistributionSerializer
-from vitrina.api.services import CATALOG_TAG, CATEGORY_TAG, LICENCE_TAG, RETRIEVING_DATA_TAG, \
-    ADDING_DATA_TAG, UPDATING_DATA_TAG, REMOVING_DATA_TAG
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
+
+
+CATALOG_TAG = 'Catalogs'
+CATEGORY_TAG = 'Categories'
+LICENCE_TAG = 'Licences'
+API_V1_TAG = 'api-v-1-datasets'
+RETRIEVING_DATA_TAG = '1. Retrieving data'
+ADDING_DATA_TAG = '2. Adding data'
+REMOVING_DATA_TAG = '3. Removing data'
+UPDATING_DATA_TAG = '4. Updating data'
+
+
+class PartnerOpenAPISchemaGenerator(OpenAPISchemaGenerator):
+    def get_schema(self, request=None, public=False):
+        schema = super().get_schema(request, public)
+        schema['info']['x-logo'] = {
+            'url': static('img/apix.png')
+        }
+        schema['tags'] = [{
+            'name': CATALOG_TAG,
+            'description': "Retrieving available catalogs"
+        }, {
+            'name': CATEGORY_TAG,
+            'description': "Retrieving available categories"
+        }, {
+            'name': LICENCE_TAG,
+            'description': "Retrieving available licences"
+        }, {
+            'name': API_V1_TAG,
+            'description': "Operations pertaining to datasets and their distributions"
+        }, {
+            'name': RETRIEVING_DATA_TAG
+        }, {
+            'name': ADDING_DATA_TAG
+        }, {
+            'name': REMOVING_DATA_TAG
+        }, {
+            'name': UPDATING_DATA_TAG
+        }]
+        return schema
+
+
+SchemaView = get_schema_view(
+    info=openapi.Info(
+        title="",
+        default_version="",
+    )
+)
+
+
+class PartnerApiView(SchemaView):
+    url = None
+    patterns = None
+    urlconf = None
+    public = True
+    generator_class = PartnerOpenAPISchemaGenerator
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, version='', format=None):
+        version = request.version or version or ''
+
+        title = description = default_version = ""
+        if ApiDescription.objects.filter(identifier="partner"):
+            api_description = ApiDescription.objects.filter(identifier="partner").first()
+            title = api_description.title
+            description = api_description.desription_html
+            default_version = api_description.api_version
+
+        info = openapi.Info(
+            title=title,
+            default_version=default_version,
+            description=description
+        )
+
+        if isinstance(request.accepted_renderer, _SpecRenderer):
+            generator = self.generator_class(info, version, self.url, self.patterns, self.urlconf)
+        else:
+            generator = self.generator_class(info, version, self.url, patterns=[])
+
+        schema = generator.get_schema(request, self.public)
+        if schema is None:
+            raise exceptions.PermissionDenied()
+        return Response(schema)
 
 
 HEADER_PARAM = openapi.Parameter(

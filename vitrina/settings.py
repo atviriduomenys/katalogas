@@ -285,7 +285,7 @@ MEDIA_URL = '/media/'
 _search_url = env.search_url()
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')
 if _search_url_test:
-    _search_url_test = env.searchy_url(var="SEARCH_URL_TEST")
+    _search_url_test = env.search_url(var="SEARCH_URL_TEST")
 else:
     _search_url_test = {**_search_url, 'INDEX_NAME': 'test'}
 HAYSTACK_CONNECTIONS = {

@@ -22,7 +22,8 @@ RUN python -m venv /opt/venv \
 FROM python:3.10-slim
 
 COPY --from=builder /opt/venv /opt/venv
-COPY static /app/static/
+COPY scripts /app/scripts
+COPY static /app/static
 
 EXPOSE 8000
 WORKDIR /app

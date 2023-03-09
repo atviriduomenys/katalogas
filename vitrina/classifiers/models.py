@@ -24,7 +24,7 @@ class Category(MP_Node):
     )
     featured = models.BooleanField()
     icon = models.CharField(max_length=255,
-                            blank=False,
+                            blank=True,
                             help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
 
     node_order_by = ['title']

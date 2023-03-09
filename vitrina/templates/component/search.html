@@ -3,7 +3,9 @@
 {#<br/>#}
 {#<br/>#}
 <div class="container">
-    <form id="quick-search" class="field has-addons media-content" action="/search/quick" method="post" autocomplete="off">
+    <form id="quick-search" class="field has-addons media-content"
+        action="{% url 'dataset-list' %}" method="get" autocomplete="off">
+
         <p class="control is-expanded">
             <input name="q" class="input search-input is-large" type="text" value="{{ q | escape }}" placeholder="{% translate "Ieškoti duomenų..." %}" id="search-input">
         </p>
@@ -15,6 +17,5 @@
             </button>
         </p>
     </form>
-    <a href="/search" class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
 </div>
 {#</section>#}

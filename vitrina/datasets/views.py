@@ -143,6 +143,7 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
+        organization = get_object_or_404(Organization, id=dataset.organization.pk)
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
@@ -153,6 +154,7 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all(),
+            'org_logo': organization.image,
         }
         context_data.update(extra_context_data)
         return context_data

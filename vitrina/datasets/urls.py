@@ -23,7 +23,7 @@ urlpatterns = [
     # @GetMapping("/dataset/{slug}")
     path('dataset/<slug:slug>/', lambda request, slug: HttpResponsePermanentRedirect('/datasets/{slug}/'.format(slug=slug))),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
-    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
+    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-update'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),

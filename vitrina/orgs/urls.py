@@ -13,10 +13,10 @@ urlpatterns = [
     path('orgs/<int:pk>/datasets/', DatasetListView.as_view(), name='organization-datasets'),
     path('orgs/<int:organization_id>/members/add/', RepresentativeCreateView.as_view(),
          name='representative-create'),
-    path('orgs/<int:organization_id>/members/<int:pk>/change/', RepresentativeUpdateView.as_view(),
+    path('orgs/<int:organization_id>/members/<int:pk>/update/', RepresentativeUpdateView.as_view(),
          name='representative-update'),
-    path('orgs/<int:organization_id>/members/<int:pk>/delete/', RepresentativeDeleteView.as_view(),
-         name='representative-delete'),
+    path('orgs/<int:organization_id>/members/<int:pk>/remove/', RepresentativeDeleteView.as_view(),
+         name='representative-remove'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")

@@ -50,7 +50,7 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-danger is-small">
+                                    <a href="{% url 'representative-remove' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-danger is-small">
                                         {% translate "Pašalinti" %}
                                     </a>
                                 </td>

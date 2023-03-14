@@ -11,7 +11,7 @@ urlpatterns = [
     path('reset/', PasswordResetView.as_view(), name='reset'),
     path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('user/profile/<int:pk>/', ProfileView.as_view(), name='user-profile'),
-    path('user/profile/<int:pk>/edit', ProfileEditView.as_view(), name='user-profile-change')
+    path('user/profile/<int:pk>/update', ProfileEditView.as_view(), name='user-profile-update')
     # @GetMapping("/login")
     # @GetMapping("/register")
     # @GetMapping("/reset")

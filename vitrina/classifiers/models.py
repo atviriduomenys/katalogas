@@ -2,17 +2,15 @@ from django.db import models
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django.utils.translation import gettext_lazy as _
+from parler.models import TranslatedFields, TranslatableModel
 
-class Category(MP_Node):
+class Category(MP_Node, TranslatableModel):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1, blank=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    title = models.CharField(max_length=255, blank=True, null=True)
-    title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
     parent = models.ForeignKey(
         'self',
         related_name='children_set',
@@ -28,11 +26,17 @@ class Category(MP_Node):
 
     node_order_by = ['title']
 
+    translations = TranslatedFields(
+        title=models.TextField(_("Title"), blank=True),
+        description=models.TextField(_("Description"), blank=True),
+    )
+
     class Meta:
+        verbose_name = _('Category')
         db_table = 'category'
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
     def get_family_objects(self):
         yield from self.get_ancestors()
@@ -41,7 +45,7 @@ class Category(MP_Node):
     objects = MP_NodeManager()
 
 
-class Licence(models.Model):
+class Licence(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -52,18 +56,22 @@ class Licence(models.Model):
     identifier = models.CharField(unique=True, max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
 
-    title = models.CharField(max_length=255, blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
     is_default = models.BooleanField(default=False)
 
+    translations = TranslatedFields(
+        title=models.TextField(_("Title"), blank=True),
+        description=models.TextField(_("Description"), blank=True),
+    )
+
     class Meta:
+        verbose_name = _('License')
         db_table = 'licence'
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
-class Frequency(models.Model):
+class Frequency(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -71,15 +79,18 @@ class Frequency(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
-    title = models.TextField(blank=True, null=True)
-    title_en = models.TextField(blank=True, null=True)
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
     hours = models.IntegerField(verbose_name=_('Valandos'), blank=True, null=True)
 
+    translations = TranslatedFields(
+        title=models.TextField(_("Title"), blank=True),
+    )
+
     class Meta:
+        verbose_name = _('Frequency')
         db_table = 'frequency'
         ordering = ['hours']
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter('title', language_code=self.get_current_language())

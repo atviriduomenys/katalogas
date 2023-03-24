@@ -22,8 +22,7 @@ def home(request):
         },
         'categories': (
             Category.objects.
-            filter(featured=True).
-            order_by('title')
+            filter(featured=True)
         )
     })
 

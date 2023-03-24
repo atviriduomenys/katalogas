@@ -16,7 +16,14 @@ class CategoryFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        return model_class.add_root(**kwargs)
+        category = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            category.set_current_language(lang[0])
+            category.title = fake.word()
+        category.save()
+        return category
+
 
 
 class FrequencyFactory(DjangoModelFactory):

@@ -4,16 +4,14 @@ import io
 import mimetypes
 import tempfile
 import zipfile
-from typer import run, Option, Argument
-from concurrent.futures import FIRST_EXCEPTION
-from concurrent.futures import Future
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import wait
-from typing import NamedTuple
+from typer import run, Argument
+from typing import NamedTuple, Optional
 import django
 from django.db import migrations, models
 import requests
 from requests_cache import CachedSession
+from xdg_base_dirs import xdg_cache_home
+DEFAULT_FILE_TO_STORE_REQUEST = "{}/vitrina/cached_requests".format(xdg_cache_home())
 
 
 class _Result(NamedTuple):
@@ -21,7 +19,8 @@ class _Result(NamedTuple):
     format: str
 
 
-def main(cache_location: str = Argument(..., help="File name to cache requessts")):
+def main(cache_location: Optional[str] = Argument(DEFAULT_FILE_TO_STORE_REQUEST, help="File name to store requests in")):
+    print(xdg_cache_home())
     formats = {
         f.extension: f
         for f in Format.objects.all()

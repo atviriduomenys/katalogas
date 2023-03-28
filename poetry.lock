@@ -2352,7 +2352,19 @@ WebOb = ">=1.2"
 docs = ["Sphinx (>=1.8.1)", "docutils", "pylons-sphinx-themes (>=1.0.8)"]
 tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-cov"]
 
+[[package]]
+name = "xdg-base-dirs"
+version = "6.0.0"
+description = "Variables defined by the XDG Base Directory Specification"
+category = "main"
+optional = false
+python-versions = ">=3.10,<4.0"
+files = [
+    {file = "xdg_base_dirs-6.0.0-py3-none-any.whl", hash = "sha256:71b878d3b6c80923a8ddd7c4fb25f9f694c6796aa79214c3fe32dd49a13dcc82"},
+    {file = "xdg_base_dirs-6.0.0.tar.gz", hash = "sha256:3bc8813e260a78acba2f718b48eb00b5ff82bd9f02688b54b9e4ccd8a65d42cc"},
+]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "d94f306ff30a0b5da85203bb04676a8f6be2dbbf068312b9b6c7a7a681290595"
+content-hash = "6676ea664a54f7d8a70da09e58cfa3164de58ca6a241483b2b7a9d8275ece94b"

@@ -1,18 +1,17 @@
 import os
+import sys
 import io
 import mimetypes
 import tempfile
 import zipfile
-from typer import run, Option
+from typer import run, Option, Argument
 from concurrent.futures import FIRST_EXCEPTION
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 from typing import NamedTuple
-
 import django
 from django.db import migrations, models
-from django.apps import apps
 import requests
 from requests_cache import CachedSession
 
@@ -22,19 +21,15 @@ class _Result(NamedTuple):
     format: str
 
 
-def main():
-    Dist = apps.get_model("vitrina_resources", "DatasetDistribution")
-    Format = apps.get_model("vitrina_resources", "Format")
-
+def main(cache_location: str = Argument(..., help="File name to cache requessts")):
     formats = {
         f.extension: f
         for f in Format.objects.all()
     }
 
-    client = CachedSession('demo_cache')
+    client = CachedSession(cache_location)
 
 
-    dists_amount = len(Dist.objects.all())
     futures = []
     for dist in Dist.objects.all():
         format = _detect_format(formats, client, dist)
@@ -154,4 +149,5 @@ def _set_format(
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
     django.setup()
+    from vitrina.resources.models import DatasetDistribution as Dist, Format
     run(main)

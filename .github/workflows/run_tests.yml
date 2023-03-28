@@ -15,7 +15,7 @@ env:
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     services:
       localhost:
@@ -69,6 +69,9 @@ jobs:
 
       - name: Load initial db schema
         run: PGPASSWORD=secret psql -h localhost -U adp -d adp-dev < resources/adp-dev-fresh.sql
+
+      - name: Run migrations
+        run: python log.py
 
       - name: Rename database to test
         run: PGPASSWORD=secret psql -h localhost -U adp postgres -c 'alter database "adp-dev" rename to "test_adp-dev";'

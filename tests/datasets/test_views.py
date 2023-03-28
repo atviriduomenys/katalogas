@@ -677,7 +677,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
     assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
 
-
+@pytest.mark.haystack
 @pytest.mark.django_db
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(

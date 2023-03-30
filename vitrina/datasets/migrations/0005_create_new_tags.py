@@ -3,6 +3,7 @@
 from django.db import migrations, models
 import tagulous.models.fields
 import tagulous.models.models
+import parler
 
 
 class Migration(migrations.Migration):
@@ -28,7 +29,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'unique_together': {('slug',)},
             },
-            bases=(tagulous.models.models.BaseTagModel, models.Model),
+            bases=(parler.models.TranslatableModel, tagulous.models.models.BaseTagModel, models.Model),
         ),
         migrations.AddField(
             model_name='dataset',

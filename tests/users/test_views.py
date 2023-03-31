@@ -149,7 +149,7 @@ def test_profile_view_wrong_login(app: DjangoTestApp, user: User):
 
 @pytest.mark.django_db
 def test_profile_edit_form_no_login(app: DjangoTestApp, user: User):
-    resp = app.get(reverse('user-profile-change', kwargs={'pk': '1'}))
+    resp = app.get(reverse('user-profile-update', kwargs={'pk': '1'}))
     assert resp.status_code == 302
     assert resp.location == settings.LOGIN_URL
 
@@ -158,7 +158,7 @@ def test_profile_edit_form_no_login(app: DjangoTestApp, user: User):
 def test_profile_edit_form_wrong_login(app: DjangoTestApp, user: User):
     app.set_user(user)
     temp_user = User.objects.create_user(email="testas@testas.com", password="testas123")
-    resp = app.get(reverse('user-profile-change', kwargs={'pk': temp_user.pk}))
+    resp = app.get(reverse('user-profile-update', kwargs={'pk': temp_user.pk}))
     assert resp.status_code == 302
     assert str(user.pk) in resp.location
 
@@ -167,7 +167,7 @@ def test_profile_edit_form_wrong_login(app: DjangoTestApp, user: User):
 def test_profile_edit_form_correct_login(app: DjangoTestApp):
     user = User.objects.create_user(email="testas@testas.com", password="testas123")
     app.set_user(user)
-    form = app.get(reverse('user-profile-change', kwargs={'pk': user.pk})).forms['user-profile-form']
+    form = app.get(reverse('user-profile-update', kwargs={'pk': user.pk})).forms['user-profile-form']
     form['phone'] = '12341234'
     resp = form.submit()
     user.refresh_from_db()

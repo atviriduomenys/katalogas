@@ -29,6 +29,15 @@ def test_redirection_exists_no_new_path(app: DjangoTestApp):
     response = app.get('/labas/', expect_errors=True)
     assert response.status_code == 410
 
+@pytest.mark.django_db
+def test_redirect_dataset_search_query_with_old_params(app: DjangoTestApp):
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/datasets?q=&category_id=1',
+        new_path='/datasets/?selected_facets=parent_category_exact%3A1&q=',
+    )
+    response = app.get('/datasets?q=&category_id=1')
+    assert response.status_code == 301 and response.location == '/datasets/?selected_facets=parent_category_exact%3A1&q='
 
 @pytest.mark.django_db
 def test_dataset_has_new_path(app: DjangoTestApp):

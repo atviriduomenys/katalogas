@@ -33,11 +33,51 @@ def test_redirection_exists_no_new_path(app: DjangoTestApp):
 def test_redirect_dataset_search_query_with_old_params(app: DjangoTestApp):
     Redirect.objects.create(
         site_id=1,
-        old_path='/datasets?q=&category_id=1',
+        old_path='/datasets?q=&category_id=30',
         new_path='/datasets/?selected_facets=parent_category_exact%3A1&q=',
     )
-    response = app.get('/datasets?q=&category_id=1')
-    assert response.status_code == 301 and response.location == '/datasets/?selected_facets=parent_category_exact%3A1&q='
+    response = app.get('/datasets?q=&category_id=30').follow()
+    assert response.status_code == 301 and response.location == '?selected_facets=parent_category_exact%3A30&q='
+
+@pytest.mark.django_db
+def test_redirect_dataset_search_query_with_multiple_old_params(app: DjangoTestApp):
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/datasets?q=&category_id=30&category_id=31&category_id=32',
+        new_path='/datasets/?selected_facets=parent_category_exact%3A30&selected_facets=category_exact%3A31&selected_facets=category_exact%3A32&q=',
+    )
+    response = app.get('/datasets?q=&category_id=30&category_id=31&category_id=32').follow()
+    assert response.status_code == 301 and response.location == '?selected_facets=parent_category_exact%3A30&selected_facets=category_exact%3A31&selected_facets=category_exact%3A32&q='
+
+@pytest.mark.django_db
+def test_redirect_dataset_search_query_with_multiple_different_old_params(app: DjangoTestApp):
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/datasets?q=&category_id=30&category_id=31&format=XML&format=JSON',
+        new_path='/datasets/?selected_facets=parent_category_exact%3A30&selected_facets=category_exact%3A31&selected_facets=f_exact%3AXML&selected_facets=o_exact%3AJSON&q=',
+    )
+    response = app.get('/datasets?q=&category_id=30&category_id=31&format=XML&format=JSON').follow()
+    assert response.status_code == 301 and response.location == '?selected_facets=parent_category_exact%3A30&selected_facets=category_exact%3A31&selected_facets=f_exact%3AXML&selected_facets=o_exact%3AJSON&q='
+
+@pytest.mark.django_db
+def test_redirect_dataset_search_query_with_unchanged_params(app: DjangoTestApp):
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/datasets?q=&category_id=224&category_id=181&date_from=2016-01-03&date_to=2023-04-29',
+        new_path='/datasets/?selected_facets=parent_category_exact%3A224&selected_facets=category_exact%3A181&q=&date_from=2016-01-03&date_to=2023-04-29',
+    )
+    response = app.get('/datasets?q=&category_id=224&category_id=181&date_from=2016-01-03&date_to=2023-04-29').follow()
+    assert response.status_code == 301 and response.location == '?selected_facets=parent_category_exact%3A224&selected_facets=category_exact%3A181&q=&date_from=2016-01-03&date_to=2023-04-29'
+
+@pytest.mark.django_db
+def test_redirect_with_all_different_changed_params(app: DjangoTestApp):
+    Redirect.objects.create(
+        site_id=1,
+        old_path='/datasets?q=&organization_id=1&category_id=1&data_status=4&format=A&tags=B&updated=kasmet',
+        new_path='/datasets/?selected_facets=f_exact%3A4&selected_facets=parent_category_exact%3A1&selected_facets=o_exact%3A1&selected_facets=t_exact%3AB&selected_facets=f_exact%3AA&selected_facets=f_exact%3Akasmet',
+    )
+    response = app.get('/datasets?q=&organization_id=1&category_id=1&data_status=4&format=A&tags=B&updated=kasmet').follow()
+    assert response.status_code == 301 and response.location == '?selected_facets=f_exact%3A4&selected_facets=parent_category_exact%3A1&selected_facets=o_exact%3A1&selected_facets=t_exact%3AB&selected_facets=f_exact%3AA&selected_facets=f_exact%3Akasmet&q='
 
 @pytest.mark.django_db
 def test_dataset_has_new_path(app: DjangoTestApp):

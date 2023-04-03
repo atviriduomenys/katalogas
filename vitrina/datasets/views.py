@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 
+from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet
-from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
@@ -58,6 +59,34 @@ class DatasetListView(FacetedSearchView):
     form_class = DatasetSearchForm
     facet_limit = 100
     paginate_by = 20
+
+    def get(self, request):
+        new_query_dict = {}
+        facet_legacy_arg_map = {
+            'data_status': 'filter_status', 
+            'category_id': ['parent_category', 'category'], 
+            'organization_id': 'organization', 
+            'tags': 'tags', 
+            'format': 'formats', 
+            'updated': 'frequency'
+        }
+        for old_arg_name in facet_legacy_arg_map:
+            if old_arg_name in self.request.GET:
+                for index in range(len(self.request.GET.getlist(old_arg_name))):
+                    value = self.request.GET.getlist(old_arg_name)[index]
+                    new_name = facet_legacy_arg_map.get(old_arg_name)[0] if index == 0 else facet_legacy_arg_map.get(old_arg_name)[1]
+                    if "selected_facets" in new_query_dict:
+                        new_query_dict["selected_facets"].append('%s_exact:%s' % (new_name, value))
+                    else:
+                        new_query_dict["selected_facets"] = []
+                        new_query_dict["selected_facets"].append('%s_exact:%s' % (new_name, value))
+    
+        if new_query_dict:
+            for arg in self.request.GET:
+                if arg not in facet_legacy_arg_map:
+                    new_query_dict[arg] = self.request.GET.get(arg)
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
 
     def get_queryset(self):
         datasets = super().get_queryset()

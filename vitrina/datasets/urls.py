@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from django.urls import path
+from django.http.response import HttpResponsePermanentRedirect
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import autocomplete_tags
@@ -20,8 +21,9 @@ urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
+    path('dataset/<slug:slug>/', lambda request, slug: HttpResponsePermanentRedirect('/datasets/{slug}/'.format(slug=slug))),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
-    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
+    path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-update'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),
@@ -43,14 +45,14 @@ urlpatterns = [
         name='dataset-representative-create',
     ),
     path(
-        'datasets/<int:dataset_id>/members/<int:pk>/change/',
+        'datasets/<int:dataset_id>/members/<int:pk>/update/',
         UpdateMemberView.as_view(),
         name='dataset-representative-update',
     ),
     path(
-        'datasets/<int:dataset_id>/members/<int:pk>/delete/',
+        'datasets/<int:dataset_id>/members/<int:pk>/remove/',
         DeleteMemberView.as_view(),
-        name='dataset-representative-delete',
+        name='dataset-representative-remove',
     ),
     path(
         'datasets/tags/autocomplete/',

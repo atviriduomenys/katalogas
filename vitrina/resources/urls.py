@@ -4,7 +4,7 @@ from vitrina.resources.views import ResourceCreateView, ResourceUpdateView, Reso
 
 urlpatterns = [
     path('resource/<int:pk>/add', ResourceCreateView.as_view(), name='resource-add'),
-    path('resource/<int:pk>/change', ResourceUpdateView.as_view(), name='resource-change'),
-    path('resource/<int:pk>/delete', ResourceDeleteView.as_view(), name='resource-delete'),
+    path('resource/<int:pk>/update', ResourceUpdateView.as_view(), name='resource-update'),
+    path('resource/<int:pk>/remove', ResourceDeleteView.as_view(), name='resource-remove'),
     # @GetMapping("/resources")
 ]

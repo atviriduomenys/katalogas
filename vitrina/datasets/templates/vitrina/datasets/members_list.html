@@ -52,7 +52,7 @@
                                 {% translate "Redaguoti" %}
                             </a>
                             <a id="delete-member-{{ m.pk }}-btn"  class="button is-danger is-small"
-                               href="{% url 'dataset-representative-delete' dataset_id=dataset.pk pk=m.pk %}">
+                               href="{% url 'dataset-representative-remove' dataset_id=dataset.pk pk=m.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>
                         </div>

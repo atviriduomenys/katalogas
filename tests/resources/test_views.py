@@ -15,7 +15,7 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('resource-change', kwargs={'pk': resource.id}))
+    response = app.get(reverse('resource-update', kwargs={'pk': resource.id}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
@@ -25,7 +25,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
+    form = app.get(reverse('resource-update', kwargs={'pk': resource.id})).forms['resource-form']
     form['title'] = "Edited title"
     form['description'] = "edited resource description"
     resp = form.submit()
@@ -95,7 +95,7 @@ def test_click_add_button(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_delete_no_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
-    response = app.get(reverse('resource-delete', kwargs={'pk': resource.id}))
+    response = app.get(reverse('resource-remove', kwargs={'pk': resource.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -105,7 +105,7 @@ def test_delete_wrong_login(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     resource = DatasetDistributionFactory()
-    response = app.get(reverse('resource-delete', kwargs={'pk': resource.id}))
+    response = app.get(reverse('resource-remove', kwargs={'pk': resource.id}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
@@ -115,7 +115,7 @@ def test_delete_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resp = app.get(reverse('resource-delete', kwargs={'pk': resource.pk}))
+    resp = app.get(reverse('resource-remove', kwargs={'pk': resource.pk}))
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 0
 

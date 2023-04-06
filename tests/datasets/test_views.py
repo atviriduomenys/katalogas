@@ -554,7 +554,7 @@ def test_public_manager_filtering(app: DjangoTestApp):
 def test_change_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org)
-    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
+    response = app.get(reverse('dataset-update', kwargs={'pk': dataset.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -565,7 +565,7 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     dataset = DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
+    response = app.get(reverse('dataset-update', kwargs={'pk': dataset.id}))
     assert response.status_code == 302
     assert str(dataset.id) in response.location
 
@@ -588,7 +588,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form = app.get(reverse('dataset-update', kwargs={'pk': dataset.id})).forms['dataset-form']
     form['title'] = 'Edited title'
     form['description'] = 'edited dataset description'
     resp = form.submit()
@@ -607,7 +607,7 @@ def test_group_change_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form = app.get(reverse('dataset-update', kwargs={'pk': dataset.id})).forms['dataset-form']
     form['groups'] = ['1']
     resp = form.submit()
     dataset.refresh_from_db()
@@ -748,7 +748,7 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     dataset = DatasetFactory(organization=user.organization)
     app.set_user(user)
 
-    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
+    form = app.get(reverse("dataset-update", args=[dataset.pk])).forms['dataset-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit().follow()

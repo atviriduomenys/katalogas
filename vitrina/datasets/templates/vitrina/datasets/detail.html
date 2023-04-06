@@ -32,7 +32,7 @@
             </p>
             {% if can_update_dataset %}
                 <div class="buttons is-right">
-                    <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
+                    <a href="{%url 'dataset-update' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
                         {% translate "Redaguoti rinkinį" %}
                     </a>
                 </div>

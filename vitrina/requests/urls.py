@@ -11,7 +11,7 @@ urlpatterns = [
     # @GetMapping("/requests/info")
     # @GetMapping("/requests/request")
     path('requests/add/', RequestCreateView.as_view(), name='request-create'),
-    path('requests/<int:pk>/change/', RequestUpdateView.as_view(), name='request-update'),
+    path('requests/<int:pk>/update/', RequestUpdateView.as_view(), name='request-update'),
     path('requests/<int:pk>/history/', RequestHistoryView.as_view(), name='request-history'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")

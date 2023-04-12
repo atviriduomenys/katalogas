@@ -8,17 +8,16 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.http import JsonResponse
-
-from vitrina import settings
+from django.utils.timezone import now, make_aware
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
-from datetime import date
+from vitrina import settings
+from datetime import datetime
 from pandas import period_range
 from chartjs.views.lines import BaseLineChartView
-
 
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
@@ -133,7 +132,7 @@ class UserStatsViewJson(BaseLineChartView):
         """Return labels"""
         oldest_user_date = User.objects.order_by('created').first().created
         data = []
-        labels = period_range(start=oldest_user_date, end=date.today(), freq='M').tolist()    
+        labels = period_range(start=oldest_user_date, end=now(), freq='M').tolist()    
         return labels
 
     def get_providers(self):
@@ -148,26 +147,26 @@ class UserStatsViewJson(BaseLineChartView):
         for user_type in user_types:
             dataset = []
             for label in labels:
+                label = label + 1 # Increment by one month
+                created_date = datetime(label.year, label.month, 1)
+                created_date = make_aware(created_date)
                 if user_type == "Adp naudotojai":
-                    dataset.append(User.objects.filter(created__year=label.year, created__month=label.month).count())
+                    dataset.append(User.objects.filter(created__lt=created_date).count())
                 elif user_type == "Institucijų koordinatoriai":
                     dataset.append(User.objects.select_related('representative').filter(
                             representative__role='coordinator',
-                            created__year=label.year,
-                            created__month=label.month
+                            created__lt=created_date
                         ).distinct('representative__user').count()
                     )
                 elif user_type == "Duomenų tvarkytojai":
                     dataset.append(User.objects.select_related('representative').filter(
                             representative__role='manager',
-                            created__year=label.year,
-                            created__month=label.month
-                        ).distinct('representative__user').count()
+                            created__lt=created_date
+                        ).exclude(representative__role='coordinator').distinct('representative__user').count()
                     )
                 elif user_type == "Duomenų vartotojai":
                     dataset.append(User.objects.select_related('representative').filter(
-                            created__year=label.year,
-                            created__month=label.month
+                            created__lt=created_date
                         ).exclude(representative__role='manager').exclude(representative__role='coordinator').count()
                     )
             data.append(dataset)

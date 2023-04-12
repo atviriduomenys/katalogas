@@ -20,8 +20,8 @@ def home(request):
     ).distinct('representative__user').count()
     manager_count = User.objects.select_related('representative').filter(
         representative__role='manager'
-    ).count()
-    user_count = User.objects.count() - coordinator_count - manager_count
+    ).exclude(representative__role='coordinator').distinct('representative__user').count()
+    user_count = User.objects.exclude(representative__role='manager').exclude(representative__role='coordinator').count()
     return render(request, 'landing.html', {
         'counts': {
             'dataset': Dataset.public.count(),

@@ -759,7 +759,9 @@ class DatasetManagementsView(DatasetListView):
 class DatasetsStatsView(DatasetListView):
 
     template_name = 'graphs/graph.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    facet_fields = ['filter_status', 'organization',
+                    'parent_category', 'groups', 'frequency',
+                    'tags', 'formats']
 
     def get_date_labels(self):
         oldest_dataset_date = Dataset.objects.order_by('created').first().created
@@ -767,7 +769,7 @@ class DatasetsStatsView(DatasetListView):
 
     def get_categories(self):
         return [
-            cat.title for cat in Category.objects.filter(featured=True).order_by('title')
+            {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
         ]
     
     def get_color(self, year):
@@ -782,19 +784,18 @@ class DatasetsStatsView(DatasetListView):
     
     def get_statistics_data(self):
         categories = self.get_categories()
+        query_set = self.get_queryset()
         data = {
-            'labels': categories
+            'labels': [cat.get('title') for cat in categories] 
         }
         datasets = []
         date_labels = self.get_date_labels()
         for date_label in date_labels:
             dataset_counts = []
             for category in categories:
+                filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
                 dataset_counts.append(
-                    Dataset.objects.filter(
-                        category__title=category,
-                        created__lt=str(int(date_label) + 1) + '-01-01',
-                    ).count()
+                    Dataset.objects.filter(id__in=filtered_ids, created__lt=date_label + '-01-01').count()
                 )
             datasets.append(
                 {
@@ -804,13 +805,11 @@ class DatasetsStatsView(DatasetListView):
 
                 }
             )
-        print(data)
         data['datasets'] = datasets
-        print(data)
         return data
 
     def get_context_data(self, **kwargs):
-        data = self.get_statistics_data()
         context = super().get_context_data(**kwargs)
+        data = self.get_statistics_data()
         context['data'] = data
         return context

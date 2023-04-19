@@ -52,7 +52,6 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from chartjs.views.columns import BaseColumnsHighChartsView
 from django.utils.timezone import now, make_aware
 from pandas import period_range
 from datetime import datetime

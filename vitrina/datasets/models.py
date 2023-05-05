@@ -2,6 +2,7 @@ import datetime
 import pathlib
 import tagulous
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.urls import reverse
@@ -10,7 +11,7 @@ from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
-from vitrina.structure.models import Model
+from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog, HarvestingJob
@@ -231,22 +232,18 @@ class Dataset(TranslatableModel):
         return self.category.title if self.category else ""
 
     def get_level(self):
-        model_levels = []
-        for model in Model.objects.filter(dataset=self):
-            levels = []
-            if model_meta := model.metadata.first():
-                levels.append(model_meta.level)
-            if model.base:
-                if base_meta := model.base.metadata.first():
-                    levels.append(base_meta.level)
-            for prop in model.model_properties.filter(given=True):
-                if prop_meta := prop.metadata.first():
-                    levels.append(prop_meta.level)
-            level = sum(levels) // len(levels)
-            model_levels.append(level)
+        levels = Metadata.objects.filter(
+            dataset=self,
+            content_type__in=[
+                ContentType.objects.get_for_model(Model),
+                ContentType.objects.get_for_model(Base),
+                ContentType.objects.get_for_model(Property)
+            ],
+            level__isnull=False,
+        ).values_list('level', flat=True)
 
-        if model_levels:
-            return sum(model_levels) // len(model_levels)
+        if levels:
+            return sum(levels) / len(levels)
         else:
             return None
 

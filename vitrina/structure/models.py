@@ -37,6 +37,7 @@ class Metadata(models.Model):
     prepare = models.CharField(_("Formulė"), max_length=255, blank=True)
     prepare_ast = models.JSONField(_("Formulės AST"), blank=True)
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
+    level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
     access = models.CharField(_("Prieiga"), max_length=255, blank=True)
     prefix = models.ForeignKey(Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True)
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
@@ -47,6 +48,7 @@ class Metadata(models.Model):
     content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"))
     object_id = models.PositiveIntegerField(_("Objekto id"))
     object = GenericForeignKey('content_type', 'object_id')
+    dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_('Duomenų rinkinys'))
 
     objects = models.Manager()
 

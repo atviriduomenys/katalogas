@@ -46,12 +46,12 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 if state.errors:
                     errors = state.errors
                 else:
-                    _load_comments(state.manifest.comments, structure)
-                    _load_prefixes(state.manifest.prefixes, structure)
+                    _load_comments(structure.dataset, state.manifest.comments, structure)
+                    _load_prefixes(structure.dataset, state.manifest.prefixes, structure)
                     _load_datasets(state, structure.dataset)
                     _load_models(state, structure.dataset)
                     _link_distributions(state, structure.dataset)
-                    _link_models(state)
+                    _link_models(structure.dataset, state)
 
         for error in errors:
             Comment.objects.create(
@@ -80,11 +80,11 @@ def _load_datasets(
         ).exists():
             meta.errors.append(_(f'Dataset "{meta.name}" already exists.'))
         else:
-            dataset, metadata = _create_or_update_metadata(meta, dataset, i)
-            _load_prefixes(meta.prefixes, dataset)
-            _load_enums(meta.enums, dataset)
-            _load_params(meta.params, dataset)
-            _load_comments(meta.comments, dataset)
+            dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
+            _load_prefixes(dataset, meta.prefixes, dataset)
+            _load_enums(dataset, meta.enums, dataset)
+            _load_params(dataset, meta.params, dataset)
+            _load_comments(dataset, meta.comments, dataset)
             loaded_metadata.append(metadata)
 
         _create_errors(meta.errors, dataset)
@@ -95,6 +95,7 @@ def _load_datasets(
 
 
 def _load_prefixes(
+    dataset: Dataset,
     prefixes: Dict[str, struct.Prefix],
     obj: models.Model,
 ):
@@ -119,7 +120,7 @@ def _load_prefixes(
                 content_type=ct,
                 object_id=obj.pk
             )
-            prefix, metadata = _create_or_update_metadata(meta, prefix, i)
+            prefix, metadata = _create_or_update_metadata(dataset, meta, prefix, i)
             loaded_prefixes.append(prefix)
 
         _create_errors(meta.errors, prefix)
@@ -130,6 +131,7 @@ def _load_prefixes(
 
 
 def _load_enums(
+    dataset: Dataset,
     enums: Dict[str, List[struct.Enum]],
     obj: Union[Dataset, Property]
 ):
@@ -159,7 +161,7 @@ def _load_enums(
                 meta.errors.append(_(f'Enum item "{meta.prepare}" already exists.'))
             else:
                 enum_item = EnumItem(enum=enum)
-                enum_item, metadata = _create_or_update_metadata(meta, enum_item, i)
+                enum_item, metadata = _create_or_update_metadata(dataset, meta, enum_item, i)
                 loaded_enum_items.append(enum_item)
 
             _create_errors(meta.errors, enum_item)
@@ -176,6 +178,7 @@ def _load_enums(
 
 
 def _load_params(
+    dataset: Dataset,
     params: Dict[str, List[struct.Param]],
     obj: Union[Dataset, Model],
 ):
@@ -205,7 +208,7 @@ def _load_params(
                 meta.errors.append(_(f'Param item "{meta.prepare}" already exists.'))
             else:
                 param_item = ParamItem(param=param)
-                param_item, metadata = _create_or_update_metadata(meta, param_item, i)
+                param_item, metadata = _create_or_update_metadata(dataset, meta, param_item, i)
                 loaded_param_items.append(param_item)
 
             _create_errors(meta.errors, param_item)
@@ -236,10 +239,10 @@ def _load_models(
             meta.errors.append(_(f'Model "{meta.name}" already exists.'))
         else:
             model = Model(dataset=dataset)
-            model, metadata = _create_or_update_metadata(meta, model, i)
-            _load_comments(meta.comments, model)
-            _load_params(meta.params, model)
-            _load_properties(meta, model)
+            model, metadata = _create_or_update_metadata(dataset, meta, model, i)
+            _load_comments(dataset, meta.comments, model)
+            _load_params(dataset, meta.params, model)
+            _load_properties(dataset, meta, model)
             loaded_models.append(model)
 
         _create_errors(meta.errors, model)
@@ -250,6 +253,7 @@ def _load_models(
 
 
 def _load_properties(
+    dataset: Dataset,
     model_meta: struct.Model,
     model: Model,
 ):
@@ -264,9 +268,9 @@ def _load_properties(
             meta.errors.append(_(f'Property "{meta.name}" already exists.'))
         else:
             prop = Property(model=model)
-            prop, metadata = _create_or_update_metadata(meta, prop, i)
-            _load_comments(meta.comments, prop)
-            _load_enums(meta.enums, prop)
+            prop, metadata = _create_or_update_metadata(dataset, meta, prop, i)
+            _load_comments(dataset, meta.comments, prop)
+            _load_enums(dataset, meta.enums, prop)
             loaded_props.append(prop)
 
         _create_errors(meta.errors, prop)
@@ -277,6 +281,7 @@ def _load_properties(
 
 
 def _load_comments(
+    dataset: Dataset,
     comments: List[struct.Comment],
     obj: models.Model
 ):
@@ -296,7 +301,7 @@ def _load_comments(
             object_id=obj.pk,
             type=Comment.STRUCTURE
         )
-        comment, metadata = _create_or_update_metadata(meta, comment, i)
+        comment, metadata = _create_or_update_metadata(dataset, meta, comment, i)
         loaded_comments.append(comment)
 
         _create_errors(meta.errors, comment)
@@ -334,6 +339,7 @@ def _parse_prepare(prepare: str) -> dict:
 
 
 def _create_or_update_metadata(
+    dataset: Dataset,
     obj_meta: struct.Metadata,
     obj: models.Model,
     order: int = None,
@@ -367,6 +373,7 @@ def _create_or_update_metadata(
         metadata.prepare = obj_meta.prepare
         metadata.prepare_ast = _parse_prepare(obj_meta.prepare)
         metadata.level = obj_meta.level
+        metadata.level_given = obj_meta.level_given
         metadata.access = obj_meta.access
         metadata.uri = obj_meta.uri
         metadata.version = metadata.version + 1 if metadata.version else 1
@@ -382,6 +389,7 @@ def _create_or_update_metadata(
         if not obj_meta.id:
             obj_meta.id = uuid.uuid4()
         metadata = Metadata.objects.create(
+            dataset=dataset,
             uuid=obj_meta.id,
             name=obj_meta.name if hasattr(obj_meta, 'name') else '',
             type=obj_meta.type if hasattr(obj_meta, 'type') else '',
@@ -390,6 +398,7 @@ def _create_or_update_metadata(
             prepare=obj_meta.prepare,
             prepare_ast=_parse_prepare(obj_meta.prepare),
             level=obj_meta.level,
+            level_given=obj_meta.level_given,
             access=obj_meta.access,
             uri=obj_meta.uri,
             version=1,
@@ -446,12 +455,13 @@ def _link_distributions(
 
             if distribution:
                 distribution, metadata = _create_or_update_metadata(
+                    dataset,
                     resource,
                     distribution,
                     i,
                     use_existing_meta=True
                 )
-                _load_comments(resource.comments, distribution)
+                _load_comments(dataset, resource.comments, distribution)
                 if model := Model.objects.filter(
                     metadata__uuid=model_meta.id
                 ).first():
@@ -461,7 +471,7 @@ def _link_distributions(
                 _create_errors(resource.errors, distribution)
 
 
-def _link_models(state: struct.State):
+def _link_models(dataset: Dataset, state: struct.State):
     model_ct = ContentType.objects.get_for_model(Model)
     prop_ct = ContentType.objects.get_for_model(Property)
 
@@ -470,7 +480,7 @@ def _link_models(state: struct.State):
             metadata__content_type=model_ct,
             metadata__uuid=model_meta.id
         ).first():
-            _link_base(model_meta.base, model)
+            _link_base(dataset, model_meta.base, model)
 
             if model_meta.ref and model_meta.ref_props:
                 for j, prop in enumerate(model_meta.ref_props, 1):
@@ -486,10 +496,11 @@ def _link_models(state: struct.State):
                             property=prop
                         )
 
-            _link_properties(model, model_meta)
+            _link_properties(dataset, model, model_meta)
 
 
 def _link_base(
+    dataset: Dataset,
     meta: struct.Base,
     model: Model,
 ):
@@ -508,8 +519,8 @@ def _link_base(
                 meta.errors.append(_(f'Base "{meta.name}" already exists.'))
             else:
                 base = Base(model=base_model)
-                base, metadata = _create_or_update_metadata(meta, base)
-                _load_comments(meta.comments, base)
+                base, metadata = _create_or_update_metadata(dataset, meta, base)
+                _load_comments(dataset, meta.comments, base)
 
                 model.base = base
                 model.save()
@@ -526,6 +537,7 @@ def _link_base(
 
 
 def _link_properties(
+    dataset: Dataset,
     model: Model,
     model_meta: struct.Model,
 ):
@@ -538,7 +550,7 @@ def _link_properties(
             metadata__uuid=prop_meta.id
         ).first():
             if '.' in prop_meta.name:
-                _link_denorm_props(prop_meta, model, prop)
+                _link_denorm_props(dataset, prop_meta, model, prop)
 
             if prop_meta.type in ('ref', 'backref', 'generic') and prop_meta.ref:
                 if ref_model := Model.objects.filter(
@@ -563,6 +575,7 @@ def _link_properties(
 
 
 def _link_denorm_props(
+    dataset: Dataset,
     prop_meta: struct.Property,
     model: Model,
     prop: Property,
@@ -581,9 +594,9 @@ def _link_denorm_props(
             name=parent_prop,
         )
         parent_prop = Property.objects.create(model=model, given=False)
-        _create_or_update_metadata(meta, parent_prop)
+        _create_or_update_metadata(dataset, meta, parent_prop)
         if '.' in meta.name:
-            parent_prop = _link_denorm_props(meta, model, parent_prop)
+            parent_prop = _link_denorm_props(dataset, meta, model, parent_prop)
 
     prop.property = parent_prop
     prop.save()

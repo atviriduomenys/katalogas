@@ -964,3 +964,48 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
     assert Base.objects.count() == 0
     assert Model.objects.get(metadata__uuid='4').base is None
     assert Model.objects.get(metadata__uuid='5').base is None
+
+
+@pytest.mark.django_db
+def test_dataset_level(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Base,,,,,,4,,,,\n'
+        ',,,Base,,,,,,,4,,,,\n'
+        ',,,,City,,,,,,5,,,,\n'
+        ',,,,,id,integer,,,,5,,,,\n'
+        ',,,,,title,string,,,,5,,,,\n'
+        ',,,,,country,ref,Country,,,4,,,,\n'
+        ',,,,Country,,,,,,4,,,,\n'
+        ',,,,,id,integer,,,,3,,,,\n'
+        ',,,,,title,string,,,,2,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    create_structure_objects(structure)
+    assert structure.dataset.get_level() == 4
+
+
+@pytest.mark.django_db
+def test_dataset_level_without_given_level(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Base,,,,,,,,,,\n'                              # level 3
+        ',,,Base,,,,,,,,,,,\n'                              # level 3
+        ',,,,City,,,,,,,,,,\n'                              # level 3
+        ',,,,,id,integer,,,,,,dcat:id,,\n'                  # level 3            
+        ',,,,,country1,ref,Country,,,,,,,\n'                # level 4
+        ',,,,,country2,ref,Country,,,,,dcat:country,,\n'    # level 5
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    create_structure_objects(structure)
+    assert structure.dataset.get_level() == 3.5

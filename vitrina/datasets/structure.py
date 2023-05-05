@@ -213,6 +213,7 @@ class Metadata:
     source: str = ''
     prepare: str = ''
     level: int | None = None
+    level_given: int | None = None
     access: str = ''
     uri: str = ''
     title: str = ''
@@ -540,6 +541,7 @@ def _read_dataset(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -562,6 +564,7 @@ def _read_resource(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -580,7 +583,6 @@ def _read_base(
     name: str,
 ) -> Base:
     name = get_relative_model_name(state.dataset, name)
-    level = get_level(row)
     base = state.base = Base(
         id=row['id'],
         name=name,
@@ -588,7 +590,8 @@ def _read_base(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(level),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -603,7 +606,6 @@ def _read_model(
     name: str,
 ) -> Model:
     name = get_relative_model_name(state.dataset, name)
-    level = get_level(row)
     model = state.model = Model(
         id=row['id'],
         name=name,
@@ -611,7 +613,8 @@ def _read_model(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(level),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -653,7 +656,6 @@ def _read_property(
     row: Row,
     name: str,
 ) -> Property:
-    level = get_level(row)
     prop = state.prop = Property(
         id=row['id'],
         name=name,
@@ -661,7 +663,8 @@ def _read_property(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(level),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -690,6 +693,7 @@ def _read_comment(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -714,6 +718,7 @@ def _read_prefix(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -738,6 +743,7 @@ def _read_enum(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -770,6 +776,7 @@ def _read_param(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],

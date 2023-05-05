@@ -32,6 +32,7 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.projects.models import Project
+from vitrina.structure.services import create_structure_objects
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -319,6 +320,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
 
 

@@ -14,11 +14,15 @@ class Comment(models.Model):
     REQUEST = "REQUEST"
     PROJECT = "PROJECT"
     STATUS = "STATUS"
+    STRUCTURE = "STRUCTURE"
+    STRUCTURE_ERROR = "STRUCTURE_ERROR"
     TYPES = (
         (USER, _("Naudotojo komentaras")),
         (REQUEST, _("Prašymo atverti duomenis komentaras")),
         (PROJECT, _("Duomenų rinkinio įtraukimo į projektą komentaras")),
-        (STATUS, _("Statuso keitimo komentaras"))
+        (STATUS, _("Statuso keitimo komentaras")),
+        (STRUCTURE, _("Struktūros importavimo komentaras")),
+        (STRUCTURE_ERROR, _("Struktūros importavimo klaida")),
     )
 
     INVENTORED = "INVENTORED"

@@ -20,7 +20,7 @@
                     <div class="has-dark-blue-background hero-column">
                         <p class="is-size-5">{% translate "Nerandate duomenų rinkinio?" %}</p>
                         <p class="is-size-5">{% translate "O gal esamas duomenų rinkinys neatitinka lūkesčių?" %}</p>
-                        <a href="/requests/request" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        <a href="{% url 'request-create' %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Teikti poreikį duomenų rinkiniui" %}
                         </a>
                         <p class="is-size-5 m-t-md">{% translate "Jeigu esate koordinatorius ir atstovaujate organizaciją, norinčą teikti duomenis?" %}</p>

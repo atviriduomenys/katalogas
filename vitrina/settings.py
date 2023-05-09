@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+
 import environ
 import os
 from pathlib import Path
@@ -20,7 +21,10 @@ env = environ.Env()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = env.path(
+    'VITRINA_BASE_PATH',
+    default=Path(__file__).resolve().parent.parent,
+)
 
 # Take environment variables from .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -31,13 +35,14 @@ LOCALE_PATHS = [os.path.join(BASE_DIR, 'vitrina/locale/')]
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO: Fix SECRET_KEY.
-SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+SECRET_KEY = env('SECRET_KEY', default=(
+    'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + env.list('ALLOWED_HOSTS')
 
 # Application definition
 
@@ -207,7 +212,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATIC_ROOT = 'var/static/'
+STATIC_ROOT = BASE_DIR / 'var/static/'
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 

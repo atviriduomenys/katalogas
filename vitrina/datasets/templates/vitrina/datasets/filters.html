@@ -1,12 +1,18 @@
 {% load i18n %}
 
 <nav class="category-panel">
+    {% if labels %}
+        <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
+            <p class="category-panel-heading">
+                <strong><- {% translate "Atgal į rinkinių sąrašą" %}{{ datasetStatus|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
     <a href="{% url 'dataset-stats' %}?{{ request.GET.urlencode }}">
         <p class="category-panel-heading">
             <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
         </p>
     </a>
-
     {% for obj in status_facet|slice:":10" %}
         {% if obj.filter_value == selected_status %}
             <div class="is-flex">

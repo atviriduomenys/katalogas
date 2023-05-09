@@ -1,7 +1,9 @@
 import csv
+import datetime
 import itertools
 import json
 
+import pandas as pd
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,7 +11,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet
-from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponse
+from django.db.models import Count
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
@@ -645,10 +648,43 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 class DatasetStatsView(DatasetListView):
     facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
     template_name = 'vitrina/datasets/statistics_graph.html'
+    paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        all_datasets = []
-        for i in context.get('object_list'):
-            all_datasets.append(i.object)
+        data = []
+        dataset_ids = []
+
+        for dataset in context.get('object_list'):
+            dataset_ids.append(dataset.pk)
+        comments = Comment.objects\
+            .filter(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=dataset_ids)\
+            .exclude(status__isnull=True).order_by('created')
+        statuses = comments.order_by('status').values_list('status', flat=True).distinct()
+
+        oldest_comment = comments.values_list('created', flat=True)[:1]
+        labels = pd.date_range(oldest_comment[0].strftime("%Y-%m-%d"),
+                               datetime.datetime.now().strftime("%Y-%m-%d"),
+                               freq='MS').strftime("%Y-%m").tolist()
+
+        for item in statuses:
+            total = 0
+            counted_comments = comments.filter(status=item)\
+                .values('created__year', 'created__month')\
+                .annotate(count=Count('pk'))\
+                .order_by('created__year', 'created__month')
+            temp = []
+            for count in counted_comments:
+                total += count.get('count')
+                date = datetime.date(year=count.get('created__year'),
+                                     month=count.get('created__month'),
+                                     day=1)
+                temp.append({'x': date.strftime("%Y-%m"), 'y': total})
+            temp.append({'x': datetime.datetime.now().strftime("%Y-%m"), 'y': total})
+            data.append({'label': item,
+                         'data': temp,
+                         'borderWidth': 1})
+        context['data'] = json.dumps(data)
+        context['labels'] = labels
+        context['dataset_count'] = len(dataset_ids)
         return context

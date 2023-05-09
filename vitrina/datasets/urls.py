@@ -26,7 +26,7 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
     # @GetMapping("/dataset/{slug}")
-    path('datasets/stats-graph/', DatasetsStatsView.as_view(), name='datasets-stats-graph'),
+    path('datasets/stats/yearly', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),

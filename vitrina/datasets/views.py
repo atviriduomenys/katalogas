@@ -55,6 +55,7 @@ from vitrina.helpers import get_current_domain
 from chartjs.views.columns import BaseColumnsHighChartsView
 from django.utils.timezone import now, make_aware
 from pandas import period_range
+from datetime import datetime
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
@@ -758,10 +759,11 @@ class DatasetManagementsView(DatasetListView):
 
 class DatasetsStatsView(DatasetListView):
 
-    template_name = 'graphs/graph.html'
-    facet_fields = ['filter_status', 'organization',
-                    'parent_category', 'groups', 'frequency',
+    template_name = 'graphs/datasets_yearly_change_graph.html'
+    facet_fields = ['filter_status', 'organization', 'groups', 'frequency',
                     'tags', 'formats']
+    
+    paginate_by = 0
 
     def get_date_labels(self):
         oldest_dataset_date = Dataset.objects.order_by('created').first().created
@@ -794,8 +796,10 @@ class DatasetsStatsView(DatasetListView):
             dataset_counts = []
             for category in categories:
                 filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
+                created_date = datetime(int(date_label), 1, 1)
+                created_date = make_aware(created_date)
                 dataset_counts.append(
-                    Dataset.objects.filter(id__in=filtered_ids, created__lt=date_label + '-01-01').count()
+                    Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
                 )
             datasets.append(
                 {
@@ -806,10 +810,12 @@ class DatasetsStatsView(DatasetListView):
                 }
             )
         data['datasets'] = datasets
-        return data
+        return data, query_set
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        data = self.get_statistics_data()
+        data, qs = self.get_statistics_data()
         context['data'] = data
+        context['dataset_count'] = len(qs)
+        context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
         return context

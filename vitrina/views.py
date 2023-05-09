@@ -8,17 +8,28 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
+from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 
 
 def home(request):
+    coordinator_count = User.objects.select_related('representative').filter(
+        representative__role='coordinator'
+    ).distinct('representative__user').count()
+    manager_count = User.objects.select_related('representative').filter(
+        representative__role='manager'
+    ).exclude(representative__role='coordinator').distinct('representative__user').count()
+    user_count = User.objects.exclude(representative__role='manager').exclude(representative__role='coordinator').count()
     return render(request, 'landing.html', {
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),
             'project': Project.public.count(),
+            'coordinators': coordinator_count,
+            'managers': manager_count,
+            'users': user_count
         },
         'categories': (
             Category.objects.
@@ -26,7 +37,6 @@ def home(request):
             order_by('title')
         )
     })
-
 
 class HistoryView(PermissionRequiredMixin, TemplateView):
     template_name = 'history.html'

@@ -1,7 +1,6 @@
 $(function () {
     let ctx = document.getElementById("chart").getContext("2d");
     const data = {{data|safe}};
-    console.log(data)
     var chart = new Chart(ctx, {
         type: 'line',
         data: {

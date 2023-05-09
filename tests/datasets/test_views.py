@@ -1071,18 +1071,19 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
     assert resp.context['dataset_count'] == len(old_object_list)
 
 
-@pytest.fixture
-def category_filter_data_2():
+@pytest.mark.haystack
+def test_dataset_management_areas(app: DjangoTestApp):
     parent_org = OrganizationFactory()
-    child_org1 = parent_org.add_child(instance=OrganizationFactory.build(title='org-test-1'))
-    child_org2 = parent_org.add_child(instance=OrganizationFactory.build(title='org-test-2'))
+    child_org1 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-1')
+    )
+    child_org2 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-2')
+    )
     DatasetFactory(organization=parent_org)
     DatasetFactory(organization=child_org1)
     DatasetFactory(organization=child_org2)
 
-
-@pytest.mark.haystack
-def test_dataset_management_areas(app: DjangoTestApp, category_filter_data_2):
     resp = app.get(reverse("dataset-list"))
     area_facets = resp.context['management_area_facet']
     resp = resp.click(linkid="Dataset-management-areas")

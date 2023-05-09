@@ -60,6 +60,32 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="columns is-vcentered">
+                            <div class="column is-third has-text-centered" id="counts">
+                                <a href="{% url 'users-stats-graph' %}" class="stats">
+                                    <h3>{{ counts.coordinators }}</h3>
+                                    <div class="span-container-front">
+                                        <span>Koordinatoriai</span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="column is-third has-text-centered" id="counts">
+                                <a href="{% url 'users-stats-graph' %}" class="stats">
+                                    <h3>{{ counts.managers }}</h3>
+                                    <div class="span-container-front">
+                                        <span>Tvarkytojai</span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="column is-third has-text-centered" id="counts">
+                                <a href="{% url 'users-stats-graph' %}" class="stats">
+                                    <h3>{{ counts.users }}</h3>
+                                    <div class="span-container-front">
+                                        <span>Naudotojai</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

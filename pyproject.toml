@@ -40,7 +40,8 @@ drf-yasg = "^1.21.4"
 requests-cache = "^1.0.0"
 xdg-base-dirs = "^6.0.0"
 c3pyo = "^0.0.4.1"
-pandas = "^1.5.2"
+django-chartjs = "^2.3.0"
+pandas = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

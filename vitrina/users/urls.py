@@ -2,7 +2,7 @@ from django.contrib.auth.views import LogoutView
 from django.urls import path
 
 from vitrina.users.views import LoginView, RegisterView, PasswordResetView, PasswordResetConfirmView, ProfileView, \
-    ProfileEditView
+    ProfileEditView, UserStatsView, UserStatsViewJson
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -11,7 +11,9 @@ urlpatterns = [
     path('reset/', PasswordResetView.as_view(), name='reset'),
     path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('user/profile/<int:pk>/', ProfileView.as_view(), name='user-profile'),
-    path('user/profile/<int:pk>/edit', ProfileEditView.as_view(), name='user-profile-change')
+    path('user/profile/<int:pk>/edit', ProfileEditView.as_view(), name='user-profile-change'),
+    path('user/stats-graph', UserStatsView.as_view(), name='users-stats-graph'),
+    path('user/stats-graph-data', UserStatsViewJson.as_view(), name='users-stats-graph-data')
     # @GetMapping("/login")
     # @GetMapping("/register")
     # @GetMapping("/reset")

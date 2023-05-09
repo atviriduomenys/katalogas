@@ -5,8 +5,9 @@ from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetV
     PasswordResetConfirmView as BasePasswordResetConfirmView
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DetailView, UpdateView
+from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
+from django.http import JsonResponse
 
 from vitrina import settings
 from vitrina.orgs.services import has_perm, Action
@@ -14,6 +15,9 @@ from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
+from datetime import date
+from pandas import period_range
+from chartjs.views.lines import BaseLineChartView
 
 
 class LoginView(BaseLoginView):
@@ -116,3 +120,55 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.save()
         return redirect('user-profile', pk=self.request.user.id)
+
+class UserStatsView(TemplateView):
+    template_name = 'graph.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
+class UserStatsViewJson(BaseLineChartView):
+    def get_labels(self):
+        """Return labels"""
+        oldest_user_date = User.objects.order_by('created').first().created
+        data = []
+        labels = period_range(start=oldest_user_date, end=date.today(), freq='M').tolist()    
+        return labels
+
+    def get_providers(self):
+        """Return names of datasets."""
+        return ["Adp naudotojai", "Institucijų koordinatoriai", "Duomenų tvarkytojai", "Duomenų vartotojai"]
+
+    def get_data(self):
+        """Return datasets to plot."""
+        data = []
+        user_types = self.get_providers()
+        labels = self.get_labels()
+        for user_type in user_types:
+            dataset = []
+            for label in labels:
+                if user_type == "Adp naudotojai":
+                    dataset.append(User.objects.filter(created__year=label.year, created__month=label.month).count())
+                elif user_type == "Institucijų koordinatoriai":
+                    dataset.append(User.objects.select_related('representative').filter(
+                            representative__role='coordinator',
+                            created__year=label.year,
+                            created__month=label.month
+                        ).distinct('representative__user').count()
+                    )
+                elif user_type == "Duomenų tvarkytojai":
+                    dataset.append(User.objects.select_related('representative').filter(
+                            representative__role='manager',
+                            created__year=label.year,
+                            created__month=label.month
+                        ).distinct('representative__user').count()
+                    )
+                elif user_type == "Duomenų vartotojai":
+                    dataset.append(User.objects.select_related('representative').filter(
+                            created__year=label.year,
+                            created__month=label.month
+                        ).exclude(representative__role='manager').exclude(representative__role='coordinator').count()
+                    )
+            data.append(dataset)
+        return data

@@ -119,28 +119,33 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         form.save()
         return redirect('user-profile', pk=self.request.user.id)
 
+
 class UserStatsView(TemplateView):
     template_name = 'users_count_stats_chart.html'
 
     def get_labels(self):
         """Return labels"""
         oldest_user_date = User.objects.order_by('created').first().created
-        data = []
         labels = period_range(start=oldest_user_date, end=now(), freq='M').tolist()    
         return labels
 
-    
     def get_color(self, year):
         color_map = {
-            'Institucijų koordinatoriai': 'red',
-            'Duomenų tvarkytojai': 'green',
-            "Duomenų vartotojai": 'orange'
+            'Koordinatoriai': '#03256C',
+            'Tvarkytojai': '#1768AC',
+            "Registruoti naudotojai": '#06BEE1',
+            # FIXME: Use constants instead of strings.
         }
         return color_map.get(year)
 
     def get_user_types(self):
         """Return names of datasets."""
-        return ["Adp naudotojai", "Institucijų koordinatoriai", "Duomenų tvarkytojai", "Duomenų vartotojai"]
+        return [
+            "Koordinatoriai",
+            "Tvarkytojai",
+            "Registruoti naudotojai",
+            # FIXME: these strings should be translatable
+        ]
 
     def get_data(self):
         """Return datasets to plot."""
@@ -155,36 +160,46 @@ class UserStatsView(TemplateView):
                 'label': user_type,
                 'data': []
             }
-            if user_type != 'Adp naudotojai':
-                dataset['backgroundColor'] = self.get_color(user_type)
+            dataset['backgroundColor'] = self.get_color(user_type)
             for label in labels:
-                label = label + 1 # Increment by one month
+                label = label + 1  # Increment by one month
                 created_date = datetime(label.year, label.month, 1)
                 created_date = make_aware(created_date)
-                if user_type == "Adp naudotojai":
+                if user_type == "Koordinatoriai":
                     dataset['data'].append(
-                        User.objects.filter(created__lt=created_date).count()                   
-                    )
-                elif user_type == "Institucijų koordinatoriai":
-                    dataset['data'].append(
-                        User.objects.select_related('representative').filter(
+                        User.objects.select_related('representative').
+                        filter(
                             representative__role='coordinator',
                             created__lt=created_date
-                        ).distinct('representative__user').count()                  
+                        ).
+                        distinct('representative__user').
+                        count()
                     )
-                elif user_type == "Duomenų tvarkytojai":
-                        dataset['data'].append(
-                            User.objects.select_related('representative').filter(
-                                representative__role='manager',
-                                created__lt=created_date
-                            ).exclude(representative__role='coordinator').distinct('representative__user').count()                   
-                    )
-                elif user_type == "Duomenų vartotojai":
+                elif user_type == "Tvarkytojai":
                     dataset['data'].append(
-                        User.objects.select_related('representative').filter(
-                                created__lt=created_date
-                            ).exclude(representative__role='manager').exclude(representative__role='coordinator').count()               
+                        User.objects.select_related('representative').
+                        filter(
+                            representative__role='manager',
+                            created__lt=created_date,
+                        ).
+                        exclude(representative__role='coordinator').
+                        distinct('representative__user').
+                        count()
                     )
+                elif user_type == "Registruoti naudotojai":
+                    dataset['data'].append(
+                        User.objects.select_related('representative').
+                        filter(
+                            created__lt=created_date
+                        ).
+                        exclude(representative__role='manager').
+                        exclude(representative__role='coordinator').
+                        count()
+                    )
+                    # TODO: If it is possible, it would be nice, to get
+                    #       these stats with a single query.
+                else:
+                    raise ValueError(user_type)
             datasets.append(dataset)
         data['datasets'] = datasets
         return data

@@ -2,9 +2,7 @@ import pytest
 
 from django_webtest import DjangoTestApp
 
-from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
 
 
@@ -24,11 +22,14 @@ def test_home(app: DjangoTestApp):
         'users': 0
     }
 
-    assert [list(elem.stripped_strings) for elem in resp.html.find_all(id="counts")] == [
-        ['1', 'Rinkinių'], 
-        ['1', 'Organizacijų'], 
-        ['1', 'Panaudojimo atvejų'], 
-        ['0', 'Koordinatoriai'], 
-        ['0', 'Tvarkytojai'], 
-        ['0', 'Naudotojai']
+    assert [
+        list(elem.stripped_strings)
+        for elem in resp.html.select('a.stats')
+    ] == [
+        ['1', 'Rinkinių'],
+        ['1', 'Organizacijų'],
+        ['1', 'Panaudojimo atvejų'],
+        ['0', 'Koordinatoriai'],
+        ['0', 'Tvarkytojai'],
+        ['0', 'Naudotojai'],
     ]

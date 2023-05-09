@@ -15,74 +15,65 @@
             </div>
         </div>
         <div class="container">
-            <div class="columns is-gapless">
+            <div class="columns is-gapless has-dark-blue-background ">
                 <div class="column is-half">
-                    <div class="has-dark-blue-background hero-column">
+                    <div class="hero-column">
                         <p class="is-size-5">{% translate "Nerandate duomenų rinkinio?" %}</p>
                         <p class="is-size-5">{% translate "O gal esamas duomenų rinkinys neatitinka lūkesčių?" %}</p>
                         <a href="/requests/request" class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Teikti poreikį duomenų rinkiniui" %}
                         </a>
-                        <p class="is-size-5 m-t-md">{% translate "Jeigu esate koordinatorius ir atstovaujate organizaciją, norinčą teikti duomenis?" %}</p>
+                        <p class="is-size-5 m-t-md mt-6">{% translate "Jeigu esate koordinatorius ir atstovaujate organizaciją, norinčą teikti duomenis?" %}</p>
                         <a href="/partner/register" class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Užpildyti naujo duomenų teikėjo formą" %}
                         </a>
                     </div>
                 </div>
-                <div class="column is-half">
-                    <div class="has-blue-background hero-column">
-                        <div class="columns is-vcentered">
-                            <div class="column has-text-centered m-t-lg" id="counts">
+                <div class="column is-half has-blue-background hero-column">
+                    <div class="hero-column">
+                        <div class="columns">
+                            <div class="column has-text-centered m-t-lg" id="dataset-count">
                                 <a href="{% url 'dataset-list' %}" class="stats">
                                     <span class="icon"><i class="fas fa-sitemap fa-2x"></i></span>
                                     <h2>{{ counts.dataset }}</h2>
-                                    <div class="span-container-front">
-                                        <span>{% translate "Rinkinių" %}</span>
-                                    </div>
+                                    <span>{% translate "Rinkinių" %}</span>
                                 </a>
                             </div>
-                            <div class="column has-text-centered m-t-lg" id="counts">
+                            <div class="column has-text-centered m-t-lg" id="organization-count">
                                 <a href="{% url 'organization-list' %}" class="stats">
                                     <span class="icon"><i class="fa fa-building fa-2x"></i></span>
                                     <h2>{{ counts.organization }}</h2>
-                                    <div class="span-container-front">
-                                        <span>{% translate "Organizacijų" %}</span>
-                                    </div>
+                                    <span>{% translate "Organizacijų" %}</span>
                                 </a>
                             </div>
-                            <div class="column has-text-centered m-t-lg" id="counts">
+                            <div class="column has-text-centered m-t-lg" id="request-count">
                                 <a href="{% url 'project-list' %}" class="stats">
                                     <span class="icon"><i class="fa fa-briefcase fa-2x"></i></span>
                                     <h2>{{ counts.project }}</h2>
-                                    <div class="span-container-front">
-                                        <span>{% translate "Panaudojimo atvejų" %}</span>
-                                    </div>
+                                    <span>{% translate "Panaudojimo atvejų" %}</span>
                                 </a>
                             </div>
                         </div>
-                        <div class="columns is-vcentered">
-                            <div class="column is-third has-text-centered" id="counts">
+                        <div class="columns">
+                            <div class="column is-third has-text-centered" id="superviser-count">
                                 <a href="{% url 'users-stats-graph' %}" class="stats">
-                                    <h3>{{ counts.coordinators }}</h3>
-                                    <div class="span-container-front">
-                                        <span>Koordinatoriai</span>
-                                    </div>
+                                    <span class="icon"><i class="fa fa-duotone fa-users fa-2x"></i></span>
+                                    <h2>{{ counts.coordinators }}</h2>
+                                    <span>{% translate "Koordinatoriai" %}</span>
                                 </a>
                             </div>
-                            <div class="column is-third has-text-centered" id="counts">
+                            <div class="column is-third has-text-centered" id="manager-count">
                                 <a href="{% url 'users-stats-graph' %}" class="stats">
-                                    <h3>{{ counts.managers }}</h3>
-                                    <div class="span-container-front">
-                                        <span>Tvarkytojai</span>
-                                    </div>
+                                    <span class="icon"><i class="fa fa-duotone fa-users fa-2x"></i></span>
+                                    <h2>{{ counts.managers }}</h2>
+                                    <span>{% translate "Tvarkytojai" %}</span>
                                 </a>
                             </div>
-                            <div class="column is-third has-text-centered" id="counts">
+                            <div class="column is-third has-text-centered" id="user-count">
                                 <a href="{% url 'users-stats-graph' %}" class="stats">
-                                    <h3>{{ counts.users }}</h3>
-                                    <div class="span-container-front">
-                                        <span>Naudotojai</span>
-                                    </div>
+                                    <span class="icon"><i class="fa fa-users fa-2x"></i></span>
+                                    <h2>{{ counts.users }}</h2>
+                                    <span>{% translate "Naudotojai" %}</span>
                                 </a>
                             </div>
                         </div>

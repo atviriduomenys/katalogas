@@ -223,6 +223,15 @@ class Dataset(TranslatableModel):
     def category_title(self):
         return self.category.title if self.category else ""
 
+    @property
+    def management_area(self):
+        if self.organization:
+            organization = self.organization
+            while organization.get_parent():
+                organization = organization.get_parent()
+            if organization.get_children().count() > 1:
+                return organization.pk
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

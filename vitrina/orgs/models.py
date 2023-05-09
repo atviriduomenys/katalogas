@@ -84,7 +84,7 @@ class Organization(MP_Node):
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
-    node_order_by = ["created"]
+    node_order_by = ["title"]
 
     class Meta:
         db_table = 'organization'

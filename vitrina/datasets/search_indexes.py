@@ -12,7 +12,8 @@ class DatasetIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
     lt_title = CharField(model_attr='lt_title')
     en_title = CharField(model_attr='en_title')
-    organization = IntegerField(model_attr='organization__pk', faceted=True)
+    management_area = IntegerField(model_attr='management_area', faceted=True, null=True)
+    organization = IntegerField(model_attr='organization__pk', faceted=True, null=True)
     groups = MultiValueField(model_attr='get_group_list', faceted=True)
     category = MultiValueField(model_attr='category__pk', faceted=True)
     parent_category = MultiValueField(model_attr='parent_category', faceted=True, null=True)
@@ -34,6 +35,13 @@ class DatasetIndex(SearchIndex, Indexable):
             categories = [cat.pk for cat in obj.category.get_ancestors() if cat.dataset_set.exists()]
             categories.append(obj.category.pk)
         return categories
+
+    def prepare_manegement_area(self, obj):
+        return obj.management_area
+
+    def prepare_organization(self, obj):
+        if obj.organization.pk != obj.management_area:
+            return obj.organization.pk
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

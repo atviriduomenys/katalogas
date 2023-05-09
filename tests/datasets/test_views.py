@@ -1069,3 +1069,28 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
 
     assert resp.status_code == 200
     assert resp.context['dataset_count'] == len(old_object_list)
+
+
+@pytest.fixture
+def category_filter_data_2():
+    parent_org = OrganizationFactory()
+    child_org1 = parent_org.add_child(instance=OrganizationFactory.build(title='org-test-1'))
+    child_org2 = parent_org.add_child(instance=OrganizationFactory.build(title='org-test-2'))
+    DatasetFactory(organization=parent_org)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org2)
+
+
+@pytest.mark.haystack
+def test_dataset_management_areas(app: DjangoTestApp, category_filter_data_2):
+    resp = app.get(reverse("dataset-list"))
+    area_facets = resp.context['management_area_facet']
+    resp = resp.click(linkid="Dataset-management-areas")
+
+    max_count = 0
+    for area in area_facets:
+        if max_count < area.get('count'):
+            max_count = area.get('count')
+
+    assert resp.context['management_areas'] == area_facets
+    assert resp.context['max_count'] == max_count

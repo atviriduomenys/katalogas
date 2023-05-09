@@ -1,20 +1,24 @@
-from django.conf.urls import url
 from django.urls import path
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView, DatasetStatsView
+from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import CreateMemberView
+from vitrina.datasets.views import DatasetCreateView
 from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetHistoryView
 from vitrina.datasets.views import DatasetListView
+from vitrina.datasets.views import DatasetManagementsView
 from vitrina.datasets.views import DatasetMembersView
-from vitrina.datasets.views import CreateMemberView
-from vitrina.datasets.views import UpdateMemberView
-from vitrina.datasets.views import DeleteMemberView
+from vitrina.datasets.views import DatasetProjectsView
+from vitrina.datasets.views import DatasetStatsView
 from vitrina.datasets.views import DatasetStructureImportView
 from vitrina.datasets.views import DatasetStructureView
 from vitrina.datasets.views import DatasetUpdateView
+from vitrina.datasets.views import DeleteMemberView
+from vitrina.datasets.views import RemoveProjectView
+from vitrina.datasets.views import UpdateMemberView
+from vitrina.datasets.views import autocomplete_tags
 
 urlpatterns = [
     # @GetMapping("/datasets")
@@ -58,6 +62,11 @@ urlpatterns = [
         autocomplete_tags,
         {'tag_model': Dataset.tags.tag_model},
         name='autocomplete_tags',
+    ),
+    path(
+        'dataset/management_areas/',
+        DatasetManagementsView.as_view(),
+        name='dataset-management-areas'
     ),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

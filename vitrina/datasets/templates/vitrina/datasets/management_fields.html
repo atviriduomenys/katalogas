@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių valdymo sritys" %}
+{% endblock %}
+
+{% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% include "vitrina/datasets/filters.html" %}
+        </div>
+        <div class="column is-three-quarters">
+            <div class="is-flex">
+                <span>{% translate "Valdymo sritis" %}</span>
+                <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
+            </div>
+            {% for area in management_areas %}
+                <div class="is-flex">
+                    <a href="{% url 'dataset-list' %}{{ area.url }}" id="{{ area.filter_value }}_id">
+                        <strong style="color: black;">{{ area.display_value }}</strong>
+                    </a>
+                    <div class="stays-right">({{ area.count }})</div>
+                </div>
+                <progress class="progress is-info"
+                          value="{{ area.count }}"
+                          max="{{ max_count }}"></progress>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

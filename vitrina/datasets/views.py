@@ -55,9 +55,17 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category',
-                    'parent_category', 'groups', 'frequency',
-                    'tags', 'formats']
+    facet_fields = [
+        'filter_status',
+        'management_area',
+        'organization',
+        'category',
+        'parent_category',
+        'groups',
+        'frequency',
+        'tags',
+        'formats',
+    ]
     form_class = DatasetSearchForm
     facet_limit = 100
     paginate_by = 20
@@ -79,6 +87,7 @@ class DatasetListView(FacetedSearchView):
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
+            'management_area_facet': update_facet_data(self.request, facet_fields, 'management_area', Organization),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
             'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
@@ -87,6 +96,7 @@ class DatasetListView(FacetedSearchView):
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
+            'selected_management_area': get_selected_value(form, 'management_area'),
             'selected_organization': get_selected_value(form, 'organization'),
             'selected_categories': get_selected_value(form, 'category', True, False),
             'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
@@ -717,4 +727,20 @@ class DatasetStatsView(DatasetListView):
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')
         context['xAxis_title'] = _('Laikas')
+        return context
+
+
+class DatasetManagementsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/management_fields.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        context['management_areas'] = context['management_area_facet']
+        for area in context['management_areas']:
+            if max_count < area.get('count'):
+                max_count = area.get('count')
+        context['max_count'] = max_count
         return context

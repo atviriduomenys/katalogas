@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+
 import environ
-import os
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
@@ -20,24 +20,31 @@ env = environ.Env()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(env.path(
+    'VITRINA_BASE_PATH',
+    default=Path(__file__).resolve().parent.parent,
+))
 
 # Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(BASE_DIR / '.env')
 
-BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
-LOCALE_PATHS = [os.path.join(BASE_DIR, 'vitrina/locale/')]
+BASE_DB_PATH = BASE_DIR / 'resources/adp-pg.sql'
+LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO: Fix SECRET_KEY.
-SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+SECRET_KEY = env('SECRET_KEY', default=(
+    'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
+ALLOWED_HOSTS = (
+    ['localhost', '127.0.0.1'] +
+    env.list('ALLOWED_HOSTS', default=[])
+)
 
 # Application definition
 
@@ -205,9 +212,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
-STATIC_ROOT = 'var/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 
@@ -272,12 +282,15 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
-MEDIA_ROOT = BASE_DIR / 'var/media/'
-MEDIA_URL = '/media/'
-
+_search_url = env.search_url()
+_search_url_test = env.str(var="SEARCH_URL_TEST", default='')
+if _search_url_test:
+    _search_url_test = env.search_url(var="SEARCH_URL_TEST")
+else:
+    _search_url_test = {**_search_url, 'INDEX_NAME': 'test'}
 HAYSTACK_CONNECTIONS = {
-    'default': env.search_url(),
-    'test': env.search_url(var="SEARCH_URL_TEST"),
+    'default': _search_url,
+    'test': _search_url_test,
 }
 
 ELASTIC_FACET_SIZE = 50

@@ -18,3 +18,10 @@
 *.css.map
 .idea/
 ./webpack/node_modules/
+/dist/
+/requirements.txt
+/docker/dist/
+/docker/requirements.txt
+/docker/scripts/
+/docker/static/
+/vitrina/static/js/

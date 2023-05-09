@@ -52,7 +52,9 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-
+from chartjs.views.columns import BaseColumnsHighChartsView
+from django.utils.timezone import now, make_aware
+from pandas import period_range
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
@@ -751,4 +753,64 @@ class DatasetManagementsView(DatasetListView):
                 max_count = org.get('count')
         context['max_count'] = max_count
         context['stats'] = 'jurisdiction'
+        return context
+
+
+class DatasetsStatsView(DatasetListView):
+
+    template_name = 'graphs/graph.html'
+    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+
+    def get_date_labels(self):
+        oldest_dataset_date = Dataset.objects.order_by('created').first().created
+        return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
+
+    def get_categories(self):
+        return [
+            cat.title for cat in Category.objects.filter(featured=True).order_by('title')
+        ]
+    
+    def get_color(self, year):
+        color_map = {
+            '2019': 'red',
+            '2020': 'green',
+            '2021': 'blue',
+            "2022": 'orange',
+            "2023": "purple"
+        }
+        return color_map.get(year)
+    
+    def get_statistics_data(self):
+        categories = self.get_categories()
+        data = {
+            'labels': categories
+        }
+        datasets = []
+        date_labels = self.get_date_labels()
+        for date_label in date_labels:
+            dataset_counts = []
+            for category in categories:
+                dataset_counts.append(
+                    Dataset.objects.filter(
+                        category__title=category,
+                        created__lt=str(int(date_label) + 1) + '-01-01',
+                    ).count()
+                )
+            datasets.append(
+                {
+                    'label': date_label,
+                    'data': dataset_counts,
+                    'backgroundColor': self.get_color(date_label)
+
+                }
+            )
+        print(data)
+        data['datasets'] = datasets
+        print(data)
+        return data
+
+    def get_context_data(self, **kwargs):
+        data = self.get_statistics_data()
+        context = super().get_context_data(**kwargs)
+        context['data'] = data
         return context

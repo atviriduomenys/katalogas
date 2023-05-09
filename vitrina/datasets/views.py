@@ -1,20 +1,24 @@
 import csv
+import datetime
 import itertools
 import json
+import pandas as pd
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet
-from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponse
+from django.db.models import QuerySet, Count, Max
+from django.db.models.functions import ExtractYear, ExtractMonth
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-
+from django.template.defaultfilters import date as _date
 
 from django.views import View
 from django.views.generic import TemplateView, DetailView, ListView
@@ -32,12 +36,11 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.projects.models import Project
+from vitrina.comments.models import Comment
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
@@ -639,3 +642,79 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def get_success_url(self):
         return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})
+
+
+class DatasetStatsView(DatasetListView):
+    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    template_name = 'vitrina/datasets/statistics_graph.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        datasets = self.get_queryset()
+        data = []
+        status_translations = Comment.get_statuses()
+
+        inventored_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(255, 179, 186, 0.9)',
+                             'fill': True,
+                             'sort': 1}
+        structured_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(186,225,255, 0.9)',
+                             'fill': True,
+                             'sort': 2}
+        opened_styles = {'borderColor': 'black',
+                         'backgroundColor': 'rgba(255, 223, 186, 0.9)',
+                         'fill': True,
+                         'sort': 3}
+
+        most_recent_comments = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=datasets.values_list('pk', flat=True),
+            status__isnull=False).values('object_id')\
+            .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
+            .order_by('latest_status_change')
+
+        dataset_status = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=most_recent_comments.values('object_id'),
+            created__in=most_recent_comments.values('latest_status_change'))\
+            .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
+            .values('object_id', 'status', 'year', 'month')
+
+        start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
+        statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.date.today(),
+                                     freq='M').tolist()
+
+            for item in statuses:
+                total = 0
+                temp = []
+                for label in labels:
+                    total += dataset_status.filter(status=item, year=label.year, month=label.month)\
+                        .values('object_id')\
+                        .annotate(count=Count('object_id', distinct=True))\
+                        .count()
+                    temp.append({'x': _date(label, 'y b'), 'y': total})
+                dict = {'label': str(status_translations[item]),
+                        'data': temp,
+                        'borderWidth': 1}
+
+                if item == 'INVENTORED':
+                    dict.update(inventored_styles)
+                elif item == 'STRUCTURED':
+                    dict.update(structured_styles)
+                elif item == 'OPENED':
+                    dict.update(opened_styles)
+
+                data.append(dict)
+        data = sorted(data, key=lambda x: x['sort'])
+        context['data'] = json.dumps(data)
+        context['graph_title'] = _('Duomenų rinkinių kiekis laike')
+        context['dataset_count'] = len(datasets)
+        context['yAxis_title'] = _('Duomenų rinkiniai')
+        context['xAxis_title'] = _('Laikas')
+        return context

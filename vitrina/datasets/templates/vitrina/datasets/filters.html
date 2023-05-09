@@ -130,26 +130,28 @@
     </nav>
 {% endif %}
 
-<nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Duomenų grupė" as catTitle %} {{catTitle|upper}}</strong>
-    </p>
-    {% for obj in group_facet %}
-        {% if obj.filter_value in selected_groups %}
-            <div class="is-flex">
-                <span class="category-panel-block" title="{{ obj.display_value }}">
-                    <strong>{{ obj.display_value }}</strong>
-                </span>
-                <div class="stays-right">({{ obj.count }})</div>
-            </div>
-        {% else %}
-            <div class="is-flex">
-                <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
-                <div class="stays-right">({{ obj.count }})</div>
-            </div>
-        {% endif %}
-    {% endfor %}
-</nav>
+{% if group_facet %}
+    <nav class="category-panel">
+        <p class="category-panel-heading">
+            <strong id="data_group_filter_header">{% translate "Duomenų grupė" as catTitle %} {{catTitle|upper}}</strong>
+        </p>
+        {% for obj in group_facet|slice:":10" %}
+            {% if obj.filter_value in selected_groups %}
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ obj.display_value }}">
+                        <strong>{{ obj.display_value }}</strong>
+                    </span>
+                    <div class="stays-right">({{ obj.count }})</div>
+                </div>
+            {% else %}
+                <div class="is-flex">
+                    <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+                    <div class="stays-right">({{ obj.count }})</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </nav>
+{% endif %}
 
 <nav class="category-panel">
     <p class="category-panel-heading">

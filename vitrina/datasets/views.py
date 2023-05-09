@@ -2,11 +2,13 @@ import csv
 import datetime
 import itertools
 import json
+import pandas as pd
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet
@@ -39,8 +41,6 @@ from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
@@ -651,68 +651,62 @@ class DatasetStatsView(DatasetListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        datasets = self.get_queryset()
         data = []
-        dataset_ids = []
-        labels = []
-        status_translations = {}
-        status_graph_styles = {'INVENTORED': {'borderColor': 'black',
-                                              'backgroundColor': 'rgba(255, 179, 186, 0.9)',
-                                              'order': 3},
-                               'OPENED': {'borderColor': 'black',
-                                          'backgroundColor': 'rgba(255, 223, 186, 0.9)',
-                                          'order': 2},
-                               'STRUCTURED': {'borderColor': 'black',
-                                              'backgroundColor': 'rgba(186,225,255, 0.9)',
-                                              'order': 1},
-                               }
+        status_translations = Comment.get_statuses()
 
-        for dataset in context.get('object_list'):
-            dataset_ids.append(dataset.pk)
+        inventored_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(255, 179, 186, 0.9)',
+                             'fill': True,
+                             'sort': 1}
+        structured_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(186,225,255, 0.9)',
+                             'fill': True,
+                             'sort': 2}
+        opened_styles = {'borderColor': 'black',
+                         'backgroundColor': 'rgba(255, 223, 186, 0.9)',
+                         'fill': True,
+                         'sort': 3}
 
-        comments = Comment.objects\
-            .filter(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=dataset_ids)\
-            .exclude(status__isnull=True).order_by('created')
-        statuses = comments.order_by('status').values_list('status', flat=True).distinct()
+        comments = Comment.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
+                                          object_id__in=datasets.values_list('pk', flat=True),
+                                          status__isnull=False)\
+            .values('created__year', 'created__month', 'status')\
+            .annotate(count=Count('object_id')).order_by('created__year', 'created__month')
 
-        for status in Comment.STATUSES:
-            status_translations[status[0]] = status[1]
+        start_date = datetime.date(year=comments.first().get('created__year'),
+                                   month=comments.first().get('created__month'),
+                                   day=1)
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.date.today(),
+                                     freq='M').tolist()
+            for item in comments.order_by('status').values_list('status', flat=True).distinct():
+                total = 0
+                temp = []
+                for label in labels:
+                    count = comments.filter(status=item, created__year=label.year, created__month=label.month)
+                    if count:
+                        total += count.first().get('count', 0)
+                    temp.append({'x': _date(label, 'y b'), 'y': total})
 
-        for item in statuses:
-            total = 0
-            counted_comments = comments.filter(status=item)\
-                .values('created__year', 'created__month')\
-                .annotate(count=Count('pk'))\
-                .order_by('created__year', 'created__month')
-            temp = []
-            for count in counted_comments:
-                total += count.get('count')
-                date = datetime.date(year=count.get('created__year'),
-                                     month=count.get('created__month'),
-                                     day=1)
-                if date not in labels:
-                    labels.append(date)
-                temp.append({'x': _date(date, 'y b'), 'y': total})
-            now_date = datetime.date.today()
-            if now_date not in labels:
-                labels.append(now_date)
-            temp.append({'x': _date(now_date, 'y b'), 'y': total})
-            dict = {'label': str(status_translations[item]),
-                    'data': temp,
-                    'borderWidth': 1,
-                    'fill': 'origin', }
-            for style_element in status_graph_styles[item]:
-                dict[style_element] = status_graph_styles[item][style_element]
-            data.append(dict)
+                dict = {'label': str(status_translations[item]),
+                        'data': temp,
+                        'borderWidth': 1}
 
+                if item == 'INVENTORED':
+                    dict.update(inventored_styles)
+                elif item == 'STRUCTURED':
+                    dict.update(structured_styles)
+                elif item == 'OPENED':
+                    dict.update(opened_styles)
 
-        labels = sorted(labels)
-        for i in range(len(labels)):
-            labels[i] = _date(labels[i], 'y b')
+                data.append(dict)
 
+        data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
         context['graph_title'] = _('Duomenų rinkinių kiekis laike')
         context['data'] = json.dumps(data)
-        context['dataset_count'] = len(dataset_ids)
+        context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')
         context['xAxis_title'] = _('Laikas')
-        context['labels'] = labels
         return context

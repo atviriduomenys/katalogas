@@ -31,7 +31,11 @@
                     </a>
                 </div>
             {% endif %}
-            <canvas id="chart">{% translate "Statistikos duomenų nerasta." %}</canvas>
+            {% if data %}
+                <canvas id="chart"/>
+            {% else %}
+                <h1>{% translate "Statistikos duomenų nerasta." %}</h1>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
@@ -41,28 +45,25 @@
         $(function () {
             let ctx = document.getElementById("chart").getContext("2d");
             const data = {{data|safe}};
-            const labels = {{labels|safe}};
             var graph_title = "{{graph_title}}";
             var y_title = "{{yAxis_title}}";
             var x_title = "{{xAxis_title}}";
             const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
                     datasets: data
                 },
                 options: {
-                    title: {
-                        display: true,
-                        text: [graph_title]
-                    },
                     plugins: {
-                        colors: {
-                            enabled: true
+                        title: {
+                            display: true,
+                            text: graph_title
                         },
-                        filler: {
-                            propagate: true
-                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
                     },
                     scales: {
                         y: {
@@ -70,6 +71,7 @@
                                 display: true,
                                 text: y_title
                             },
+                            stacked: true
                         },
                         x: {
                             title: {

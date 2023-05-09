@@ -4,7 +4,7 @@
     {% if labels %}
         <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
             <p class="category-panel-heading">
-                <strong><- {% translate "Atgal į rinkinių sąrašą" %}{{ datasetStatus|upper}}</strong>
+                <strong>&lt;- {% translate "Atgal į rinkinių sąrašą" %}{{ datasetStatus|upper}}</strong>
             </p>
         </a>
     {% endif %}

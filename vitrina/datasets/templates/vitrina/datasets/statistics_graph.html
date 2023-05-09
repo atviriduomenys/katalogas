@@ -31,11 +31,7 @@
                     </a>
                 </div>
             {% endif %}
-            {% if labels %}
-                <canvas id="chart"></canvas>
-            {% else %}
-                <h1>Statistikos duomenų nerasta.</h1>
-            {% endif %}
+            <canvas id="chart">{% translate "Statistikos duomenų nerasta." %}</canvas>
         </div>
     </div>
 {% endblock %}
@@ -47,42 +43,28 @@
             const data = {{data|safe}};
             const labels = {{labels|safe}};
             var graph_title = "{{graph_title}}";
-            var chart = new Chart(ctx, {
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: data
                 },
                 options: {
-                    responsive: true,
                     title: {
                         display: true,
                         text: [graph_title]
                     },
-                    scales: {
-                        yAxis: {
-                            title: {
-                                display: true,
-                                text: 'Duomenų rinkiniai'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Laikas'
-                            }
-                        }
-                    },
                     plugins: {
-                        legend: {
-                            display: true
+                        colors: {
+                            enabled: true
                         },
                         filler: {
                             propagate: true
                         }
                     }
                 },
-                plugins: []
             });
         })
     </script>

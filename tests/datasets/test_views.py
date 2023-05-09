@@ -314,6 +314,24 @@ def test_category_filter_with_parent_and_child_category(
         str(category_filter_data["categories"][3].pk)
     ]
 
+@pytest.mark.haystack
+def test_data_group_filter_header_visible_if_data_groups_exist(
+    app: DjangoTestApp,
+):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    dataset.groups.set([group])
+    dataset.save()
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='data_group_filter_header')
+
+@pytest.mark.haystack
+def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
+    app: DjangoTestApp,
+):
+    dataset = DatasetFactory()
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='data_group_filter_header')
 
 @pytest.fixture
 def datasets():
@@ -681,6 +699,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
     assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
+
 
 @pytest.mark.haystack
 @pytest.mark.django_db

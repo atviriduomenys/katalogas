@@ -31,7 +31,11 @@
                     </a>
                 </div>
             {% endif %}
-            <canvas id="chart"></canvas>
+            {% if labels %}
+                <canvas id="chart"></canvas>
+            {% else %}
+                <h1>Statistikos duomenų nerasta.</h1>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

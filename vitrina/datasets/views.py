@@ -667,17 +667,20 @@ class DatasetStatsView(DatasetListView):
 
         for dataset in context.get('object_list'):
             dataset_ids.append(dataset.pk)
+
         comments = Comment.objects\
             .filter(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=dataset_ids)\
             .exclude(status__isnull=True).order_by('created')
         statuses = comments.order_by('status').values_list('status', flat=True).distinct()
 
         oldest_comment = comments.values_list('created', flat=True)[:1]
-        labels = pd.date_range(oldest_comment[0].strftime("%Y %b-%d"),
-                               datetime.datetime.now().strftime("%Y %b-%d"),
-                               freq='MS').tolist()
-        for i in range(len(labels)):
-            labels[i] = _date(labels[i], "y b")
+        if oldest_comment:
+            labels = pd.date_range(oldest_comment[0].strftime("%Y %b-%d"),
+                                   datetime.datetime.now().strftime("%Y %b-%d"),
+                                   freq='MS').tolist()
+            for i in range(len(labels)):
+                labels[i] = _date(labels[i], "y b")
+            context['labels'] = labels
 
         for status in Comment.STATUSES:
             status_translations[status[0]] = status[1]
@@ -705,6 +708,5 @@ class DatasetStatsView(DatasetListView):
 
         context['graph_title'] = _('Duomenų rinkinių kiekis laike')
         context['data'] = json.dumps(data)
-        context['labels'] = labels
         context['dataset_count'] = len(dataset_ids)
         return context

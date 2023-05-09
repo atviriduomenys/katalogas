@@ -223,6 +223,7 @@ def category_filter_data():
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2", organization=organization)
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3", organization=organization)
     dataset_with_category4 = DatasetFactory(category=category4, slug="ds4", organization=organization)
+
     return {
         "categories": [category1, category2, category3, category4],
         "datasets": [
@@ -1050,3 +1051,17 @@ def test_remove_project_with_permission(app: DjangoTestApp):
 
     assert resp.headers['location'] == url
     assert project.datasets.all().count() == 0
+
+
+@pytest.mark.haystack
+def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
+                                                category_filter_data: dict[str, list[Category]]):
+    resp = app.get("%s?selected_facets=category_exact:%s" % (
+        reverse("dataset-list"),
+        category_filter_data["categories"][1].pk
+    ))
+    old_object_list = resp.context['object_list']
+    resp = resp.click(linkid="Dataset-stats")
+
+    assert resp.status_code == 200
+    assert resp.context['dataset_count'] == len(old_object_list)

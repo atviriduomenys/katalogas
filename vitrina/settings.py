@@ -282,9 +282,15 @@ PASSWORD_HASHERS = [
 MEDIA_ROOT = BASE_DIR / 'var/media/'
 MEDIA_URL = '/media/'
 
+_search_url = env.search_url()
+_search_url_test = env.str(var="SEARCH_URL_TEST", default='')
+if _search_url_test:
+    _search_url_test = env.searchy_url(var="SEARCH_URL_TEST")
+else:
+    _search_url_test = {**_search_url, 'INDEX_NAME': 'test'}
 HAYSTACK_CONNECTIONS = {
-    'default': env.search_url(),
-    'test': env.search_url(var="SEARCH_URL_TEST"),
+    'default': _search_url,
+    'test': _search_url_test,
 }
 
 ELASTIC_FACET_SIZE = 50

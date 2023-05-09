@@ -792,7 +792,7 @@ django = ">=3.2"
 name = "django-sass-processor"
 version = "1.2.2"
 description = "SASS processor to compile SCSS files into *.css, while rendering, or offline."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -2642,4 +2642,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fef024075323adf0031b9250bdab0061f686b3e55bfff5e4ad519f3d8d411dc8"
+content-hash = "76cf3b92c912593623b5e7fe9c7747b99fe6261fa275f9d2ae120eb1f563b360"

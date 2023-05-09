@@ -26,6 +26,7 @@ COPY --from=builder /opt/venv /opt/venv
 EXPOSE 8000
 WORKDIR /app
 
+ENV DJANGO_SETTINGS_MODULE="vitrina.settings"
 ENV PATH="/opt/venv/bin:$PATH"
 
 CMD ["gunicorn", "vitrina.wsgi", "-b", "0.0.0.0:8000"]

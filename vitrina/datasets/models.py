@@ -223,6 +223,13 @@ class Dataset(TranslatableModel):
     def category_title(self):
         return self.category.title if self.category else ""
 
+    def jurisdiction(self) -> int | None:
+        if self.organization:
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

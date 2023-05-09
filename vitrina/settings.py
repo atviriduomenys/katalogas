@@ -9,8 +9,6 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import sys
-
 import environ
 import os
 from pathlib import Path
@@ -282,6 +280,8 @@ HAYSTACK_CONNECTIONS = {
     'default': env.search_url(),
     'test': env.search_url(var="SEARCH_URL_TEST"),
 }
+
+ELASTIC_FACET_SIZE = 50
 
 HAYSTACK_SIGNAL_PROCESSOR = 'vitrina.datasets.search_indexes.CustomSignalProcessor'
 

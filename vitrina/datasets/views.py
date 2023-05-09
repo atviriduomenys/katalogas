@@ -37,6 +37,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
+from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -55,15 +56,28 @@ from vitrina.helpers import get_current_domain
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category',
-                    'parent_category', 'groups', 'frequency',
-                    'tags', 'formats']
+    facet_fields = [
+        'filter_status',
+        'organization',
+        'jurisdiction',
+        'category',
+        'parent_category',
+        'groups',
+        'frequency',
+        'tags',
+        'formats',
+    ]
     form_class = DatasetSearchForm
-    facet_limit = 100
+    max_num_facets = 20
     paginate_by = 20
 
     def get_queryset(self):
         datasets = super().get_queryset()
+
+        options = {"size": ELASTIC_FACET_SIZE}
+        for field in self.facet_fields:
+            datasets = datasets.facet(field, **options)
+
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
                 Organization,
@@ -79,6 +93,7 @@ class DatasetListView(FacetedSearchView):
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
+            'jurisdiction_facet': update_facet_data(self.request, facet_fields, 'jurisdiction', Organization),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
             'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
@@ -87,7 +102,8 @@ class DatasetListView(FacetedSearchView):
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
-            'selected_organization': get_selected_value(form, 'organization'),
+            'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
+            'selected_organization': get_selected_value(form, 'organization', True, False),
             'selected_categories': get_selected_value(form, 'category', True, False),
             'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),
@@ -645,7 +661,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
 
 class DatasetStatsView(DatasetListView):
-    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/statistics_graph.html'
     paginate_by = 0
 
@@ -717,4 +733,22 @@ class DatasetStatsView(DatasetListView):
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')
         context['xAxis_title'] = _('Laikas')
+        context['stats'] = 'status'
+        return context
+
+
+class DatasetManagementsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/jurisdictions.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        context['jurisdictions'] = context['jurisdiction_facet']
+        for org in context['jurisdictions']:
+            if max_count < org.get('count'):
+                max_count = org.get('count')
+        context['max_count'] = max_count
+        context['stats'] = 'jurisdiction'
         return context

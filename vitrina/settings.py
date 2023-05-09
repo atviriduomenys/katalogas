@@ -79,7 +79,6 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
-    'chartjs',
     'vitrina',
     'vitrina.cms',
     'vitrina.api',

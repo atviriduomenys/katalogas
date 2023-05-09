@@ -17,7 +17,6 @@ from vitrina.users.models import User
 from vitrina import settings
 from datetime import datetime
 from pandas import period_range
-from chartjs.views.lines import BaseLineChartView
 
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
@@ -121,13 +120,8 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return redirect('user-profile', pk=self.request.user.id)
 
 class UserStatsView(TemplateView):
-    template_name = 'graph.html'
+    template_name = 'users_count_stats_chart.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
-
-class UserStatsViewJson(BaseLineChartView):
     def get_labels(self):
         """Return labels"""
         oldest_user_date = User.objects.order_by('created').first().created
@@ -135,39 +129,69 @@ class UserStatsViewJson(BaseLineChartView):
         labels = period_range(start=oldest_user_date, end=now(), freq='M').tolist()    
         return labels
 
-    def get_providers(self):
+    
+    def get_color(self, year):
+        color_map = {
+            'Institucijų koordinatoriai': 'red',
+            'Duomenų tvarkytojai': 'green',
+            "Duomenų vartotojai": 'orange'
+        }
+        return color_map.get(year)
+
+    def get_user_types(self):
         """Return names of datasets."""
         return ["Adp naudotojai", "Institucijų koordinatoriai", "Duomenų tvarkytojai", "Duomenų vartotojai"]
 
     def get_data(self):
         """Return datasets to plot."""
-        data = []
-        user_types = self.get_providers()
+        user_types = self.get_user_types()
         labels = self.get_labels()
+        data = {
+            'labels': [str(label) for label in labels]
+        }
+        datasets = []
         for user_type in user_types:
-            dataset = []
+            dataset = {
+                'label': user_type,
+                'data': []
+            }
+            if user_type != 'Adp naudotojai':
+                dataset['backgroundColor'] = self.get_color(user_type)
             for label in labels:
                 label = label + 1 # Increment by one month
                 created_date = datetime(label.year, label.month, 1)
                 created_date = make_aware(created_date)
                 if user_type == "Adp naudotojai":
-                    dataset.append(User.objects.filter(created__lt=created_date).count())
+                    dataset['data'].append(
+                        User.objects.filter(created__lt=created_date).count()                   
+                    )
                 elif user_type == "Institucijų koordinatoriai":
-                    dataset.append(User.objects.select_related('representative').filter(
+                    dataset['data'].append(
+                        User.objects.select_related('representative').filter(
                             representative__role='coordinator',
                             created__lt=created_date
-                        ).distinct('representative__user').count()
+                        ).distinct('representative__user').count()                  
                     )
                 elif user_type == "Duomenų tvarkytojai":
-                    dataset.append(User.objects.select_related('representative').filter(
-                            representative__role='manager',
-                            created__lt=created_date
-                        ).exclude(representative__role='coordinator').distinct('representative__user').count()
+                        dataset['data'].append(
+                            User.objects.select_related('representative').filter(
+                                representative__role='manager',
+                                created__lt=created_date
+                            ).exclude(representative__role='coordinator').distinct('representative__user').count()                   
                     )
                 elif user_type == "Duomenų vartotojai":
-                    dataset.append(User.objects.select_related('representative').filter(
-                            created__lt=created_date
-                        ).exclude(representative__role='manager').exclude(representative__role='coordinator').count()
+                    dataset['data'].append(
+                        User.objects.select_related('representative').filter(
+                                created__lt=created_date
+                            ).exclude(representative__role='manager').exclude(representative__role='coordinator').count()               
                     )
-            data.append(dataset)
+            datasets.append(dataset)
+        data['datasets'] = datasets
         return data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data = self.get_data()
+        context['data'] = data
+        return context
+

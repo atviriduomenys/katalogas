@@ -32,6 +32,7 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.projects.models import Project
+from vitrina.comments.models import Comment
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -639,3 +640,15 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def get_success_url(self):
         return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})
+
+
+class DatasetStatsView(DatasetListView):
+    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    template_name = 'vitrina/datasets/statistics_graph.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_datasets = []
+        for i in context.get('object_list'):
+            all_datasets.append(i.object)
+        return context

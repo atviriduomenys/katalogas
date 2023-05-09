@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių statistika" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių statistika" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių būsenos statistika" %}
+{% endblock %}
+
+{% block content %}
+    {% for i in page_obj %}
+    {% get_current_language as LANGUAGE_CODE %}
+        {% objectlanguage i.object LANGUAGE_CODE %}
+            {{ i.object.title }}
+        {% endobjectlanguage %}
+    {% endfor %}
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+
+    </script>
+{% endblock %}

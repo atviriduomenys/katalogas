@@ -3,7 +3,7 @@ from django.urls import path
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView
+from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView, DatasetStatsView
 from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetHistoryView
@@ -19,6 +19,7 @@ from vitrina.datasets.views import DatasetUpdateView
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('datasets/stats/', DatasetStatsView.as_view(), name="dataset-stats"),
     # @GetMapping("/dataset/{slug}")
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),

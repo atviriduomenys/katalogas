@@ -112,3 +112,5 @@ class HistoryMixin:
 
     def get_history_url_name(self):
         return self.history_url_name
+
+

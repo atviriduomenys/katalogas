@@ -52,6 +52,8 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
+from django.utils.timezone import now, make_aware
+from pandas import period_range
 
 
 class DatasetListView(FacetedSearchView):
@@ -751,4 +753,68 @@ class DatasetManagementsView(DatasetListView):
                 max_count = org.get('count')
         context['max_count'] = max_count
         context['stats'] = 'jurisdiction'
+        return context
+
+
+class DatasetsStatsView(DatasetListView):
+    template_name = 'graphs/datasets_yearly_change_graph.html'
+    facet_fields = DatasetListView.facet_fields
+    paginate_by = 0
+
+    def get_date_labels(self):
+        oldest_dataset_date = Dataset.objects.order_by('created').first().created
+        return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
+
+    def get_categories(self):
+        return [
+            {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
+        ]
+
+    def get_color(self, year):
+        color_map = {
+            '2019': '#03256C',
+            '2020': '#2541B2',
+            '2021': '#1768AC',
+            "2022": '#06BEE1',
+            "2023": "#4193A2",
+            # FIXME: this should net be hardcoded, use colormaps:
+            #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+            #        (maybe `winter`?)
+        }
+        return color_map.get(year)
+
+    def get_statistics_data(self):
+        categories = self.get_categories()
+        query_set = self.get_queryset()
+        data = {
+            'labels': [cat.get('title') for cat in categories] 
+        }
+        datasets = []
+        date_labels = self.get_date_labels()
+        for date_label in date_labels:
+            dataset_counts = []
+            for category in categories:
+                filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
+                created_date = datetime.datetime(int(date_label), 1, 1)
+                created_date = make_aware(created_date)
+                dataset_counts.append(
+                    Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
+                )
+            datasets.append(
+                {
+                    'label': date_label,
+                    'data': dataset_counts,
+                    'backgroundColor': self.get_color(date_label)
+
+                }
+            )
+        data['datasets'] = datasets
+        return data, query_set
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data, qs = self.get_statistics_data()
+        context['data'] = data
+        context['dataset_count'] = len(qs)
+        context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
         return context

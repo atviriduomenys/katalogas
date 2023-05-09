@@ -22,6 +22,7 @@
             </p>
         </a>
     {% endif %}
+
     {% for obj in status_facet|slice:":10" %}
         {% if obj.filter_value == selected_status %}
             <div class="is-flex">
@@ -85,45 +86,49 @@
     </nav>
 {% endif %}
 
-<nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
-    </p>
-    {% if selected_parent_category|length < 1 and selected_categories|length < 1 %}
-        {% for obj in parent_category_facet|slice:":10" %}
-            {% if obj.filter_value in selected_parent_category %}
-                <div class="is-flex">
-                    <span class="category-panel-block" title="{{ obj.display_value }}">
-                        <strong>{{ obj.display_value }}</strong>
-                    </span>
-                    <div class="stays-right">({{ obj.count }})</div>
-                </div>
-            {% else %}
-                <div class="is-flex">
-                    <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
-                    <div class="stays-right">({{ obj.count }})</div>
-                </div>
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-    {% if selected_parent_category or selected_categories %}
-        {% for obj in category_facet|slice:":10" %}
-            {% if obj.filter_value in selected_categories or obj.filter_value in selected_parent_category %}
-                <div class="is-flex">
-                    <span class="category-panel-block" title="{{ obj.display_value }}">
-                        <strong>{{ obj.display_value }}</strong>
-                    </span>
-                    <div class="stays-right">({{ obj.count }})</div>
-                </div>
-            {% else %}
-                <div class="is-flex">
-                    <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
-                    <div class="stays-right">({{ obj.count }})</div>
-                </div>
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-</nav>
+{% if not graph_title == 'Duomenų rinkinių atvėrimo progresas' %}
+    <nav class="category-panel">
+        <p class="category-panel-heading">
+            <a href="{% url 'dataset-stats-yearly' %}?{{ request.GET.urlencode }}" id="dataset-stats-yearly">
+                <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
+            </a>
+        </p>
+        {% if selected_parent_category|length < 1 and selected_categories|length < 1 %}
+            {% for obj in parent_category_facet|slice:":10" %}
+                {% if obj.filter_value in selected_parent_category %}
+                    <div class="is-flex">
+                        <span class="category-panel-block" title="{{ obj.display_value }}">
+                            <strong>{{ obj.display_value }}</strong>
+                        </span>
+                        <div class="stays-right">({{ obj.count }})</div>
+                    </div>
+                {% else %}
+                    <div class="is-flex">
+                        <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+                        <div class="stays-right">({{ obj.count }})</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% if selected_parent_category or selected_categories %}
+            {% for obj in category_facet|slice:":10" %}
+                {% if obj.filter_value in selected_categories or obj.filter_value in selected_parent_category %}
+                    <div class="is-flex">
+                        <span class="category-panel-block" title="{{ obj.display_value }}">
+                            <strong>{{ obj.display_value }}</strong>
+                        </span>
+                        <div class="stays-right">({{ obj.count }})</div>
+                    </div>
+                {% else %}
+                    <div class="is-flex">
+                        <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+                        <div class="stays-right">({{ obj.count }})</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </nav>
+{% endif %}
 
 <nav class="category-panel">
     <p class="category-panel-heading">

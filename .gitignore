@@ -20,3 +20,5 @@
 ./webpack/node_modules/
 /dist/
 /requirements.txt
+/docker/dist/
+/docker/requirements.txt

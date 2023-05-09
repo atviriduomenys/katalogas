@@ -1086,7 +1086,7 @@ def test_dataset_management_areas(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-list"))
     area_facets = resp.context['management_area_facet']
-    resp = resp.click(linkid="Dataset-management-areas")
+    resp = resp.click(linkid="Dataset-stats-supervisor")
 
     max_count = 0
     for area in area_facets:

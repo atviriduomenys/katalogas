@@ -64,9 +64,9 @@ urlpatterns = [
         name='autocomplete_tags',
     ),
     path(
-        'dataset/management_areas/',
+        'dataset/stats/supervisor/',
         DatasetManagementsView.as_view(),
-        name='dataset-management-areas'
+        name='dataset-stats-supervisor'
     ),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

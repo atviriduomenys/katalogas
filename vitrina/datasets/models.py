@@ -223,14 +223,10 @@ class Dataset(TranslatableModel):
     def category_title(self):
         return self.category.title if self.category else ""
 
-    @property
     def management_area(self):
         if self.organization:
-            organization = self.organization
-            while organization.get_parent():
-                organization = organization.get_parent()
-            if organization.get_children().count() > 1:
-                return organization.pk
+            if not self.organization.is_root() and self.organization.get_children_count() > 1:
+                return self.organization.get_root().pk
 
 
 # TODO: To be merged into Dataset:

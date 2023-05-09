@@ -42,7 +42,7 @@
 
 {% if management_area_facet and not management_areas %}
     <nav class="category-panel">
-        <a href="{% url 'dataset-management-areas' %}?{{ request.GET.urlencode }}" id="Dataset-management-areas">
+        <a href="{% url 'dataset-stats-supervisor' %}?{{ request.GET.urlencode }}" id="Dataset-stats-supervisor">
             <p class="category-panel-heading">
                 <strong>{% translate "Valdymo sritis" as orgTitle %} {{orgTitle|upper}}</strong>
             </p>

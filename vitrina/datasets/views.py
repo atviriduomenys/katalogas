@@ -37,6 +37,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
+from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -57,8 +58,8 @@ class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
         'filter_status',
-        'management_area',
         'organization',
+        'jurisdiction',
         'category',
         'parent_category',
         'groups',
@@ -67,11 +68,16 @@ class DatasetListView(FacetedSearchView):
         'formats',
     ]
     form_class = DatasetSearchForm
-    facet_limit = 100
+    max_num_facets = 20
     paginate_by = 20
 
     def get_queryset(self):
         datasets = super().get_queryset()
+
+        options = {"size": ELASTIC_FACET_SIZE}
+        for field in self.facet_fields:
+            datasets = datasets.facet(field, **options)
+
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
                 Organization,
@@ -87,7 +93,7 @@ class DatasetListView(FacetedSearchView):
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
-            'management_area_facet': update_facet_data(self.request, facet_fields, 'management_area', Organization),
+            'jurisdiction_facet': update_facet_data(self.request, facet_fields, 'jurisdiction', Organization),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
             'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
@@ -96,7 +102,7 @@ class DatasetListView(FacetedSearchView):
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
-            'selected_management_area': get_selected_value(form, 'management_area', True, False),
+            'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
             'selected_organization': get_selected_value(form, 'organization', True, False),
             'selected_categories': get_selected_value(form, 'category', True, False),
             'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
@@ -732,15 +738,15 @@ class DatasetStatsView(DatasetListView):
 
 class DatasetManagementsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/management_fields.html'
+    template_name = 'vitrina/datasets/jurisdictions.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        context['management_areas'] = context['management_area_facet']
-        for area in context['management_areas']:
-            if max_count < area.get('count'):
-                max_count = area.get('count')
+        context['jurisdictions'] = context['jurisdiction_facet']
+        for org in context['jurisdictions']:
+            if max_count < org.get('count'):
+                max_count = org.get('count')
         context['max_count'] = max_count
         return context

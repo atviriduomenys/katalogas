@@ -1082,16 +1082,20 @@ def test_dataset_management_areas(app: DjangoTestApp):
     )
     DatasetFactory(organization=parent_org)
     DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org2)
     DatasetFactory(organization=child_org2)
 
     resp = app.get(reverse("dataset-list"))
-    area_facets = resp.context['management_area_facet']
-    resp = resp.click(linkid="Dataset-stats-supervisor")
+    jurisdictions = resp.context['jurisdiction_facet']
+    resp = resp.click(linkid="dataset-stats-supervisor")
 
-    max_count = 0
-    for area in area_facets:
-        if max_count < area.get('count'):
-            max_count = area.get('count')
+    dataset_count = 0
+    for org in jurisdictions:
+        if dataset_count < org.get('count'):
+            dataset_count = org.get('count')
 
-    assert resp.context['management_areas'] == area_facets
-    assert resp.context['max_count'] == max_count
+    assert resp.context['jurisdictions'] == jurisdictions
+    assert resp.context['max_count'] == dataset_count
+    assert len(resp.context['jurisdictions']) == 1
+    assert dataset_count == 5

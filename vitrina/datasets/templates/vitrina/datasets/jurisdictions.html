@@ -21,15 +21,15 @@
                 <span>{% translate "Valdymo sritis" %}</span>
                 <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
             </div>
-            {% for area in management_areas %}
+            {% for org in jurisdictions %}
                 <div class="is-flex">
                     <a href="{% url 'dataset-list' %}{{ area.url }}" id="{{ area.filter_value }}_id">
-                        <strong style="color: black;">{{ area.display_value }}</strong>
+                        <strong style="color: black;">{{ org.display_value }}</strong>
                     </a>
-                    <div class="stays-right">({{ area.count }})</div>
+                    <div class="stays-right">{{ org.count }}</div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ area.count }}"
+                          value="{{ org.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

@@ -1,6 +1,6 @@
 {% load i18n %}
 
-{% if management_areas %}
+{% if jurisdictions %}
 <nav class="category-panel">
     <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
         <p class="category-panel-heading">
@@ -40,15 +40,15 @@
     {% endfor %}
 </nav>
 
-{% if management_area_facet and not management_areas %}
+{% if jurisdiction_facet and not jurisdictions %}
     <nav class="category-panel">
-        <a href="{% url 'dataset-stats-supervisor' %}?{{ request.GET.urlencode }}" id="Dataset-stats-supervisor">
+        <a href="{% url 'dataset-stats-jurisdiction' %}?{{ request.GET.urlencode }}" id="dataset-stats-supervisor">
             <p class="category-panel-heading">
                 <strong>{% translate "Valdymo sritis" as orgTitle %} {{orgTitle|upper}}</strong>
             </p>
         </a>
-        {% for obj in management_area_facet|slice:":10" %}
-            {% if obj.filter_value == selected_management_area %}
+        {% for obj in jurisdiction_facet|slice:":10" %}
+            {% if obj.filter_value == selected_jurisdiction %}
                 <div class="is-flex">
                     <span class="category-panel-block" title="{{ obj.display_value }}">
                         <strong>{{ obj.display_value }}</strong>
@@ -130,7 +130,7 @@
     <p class="category-panel-heading">
         <strong>{% translate "Grupė" as catTitle %} {{catTitle|upper}}</strong>
     </p>
-    {% for obj in group_facet|slice:":10" %}
+    {% for obj in group_facet %}
         {% if obj.filter_value in selected_groups %}
             <div class="is-flex">
                 <span class="category-panel-block" title="{{ obj.display_value }}">

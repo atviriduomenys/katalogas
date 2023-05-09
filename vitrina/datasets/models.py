@@ -223,11 +223,11 @@ class Dataset(TranslatableModel):
     def category_title(self):
         return self.category.title if self.category else ""
 
-    def management_area(self):
+    def jurisdiction(self) -> int | None:
         if self.organization:
-            if not self.organization.is_root():
-                if self.organization.get_root().get_children_count() > 1:
-                    return self.organization.get_root().pk
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
         return None
 
 

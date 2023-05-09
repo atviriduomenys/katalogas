@@ -1071,6 +1071,7 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
     assert resp.context['dataset_count'] == len(old_object_list)
 
 
+@pytest.mark.haystack
 def test_dataset_jurisdictions(app: DjangoTestApp):
     parent_org = OrganizationFactory()
     child_org1 = parent_org.add_child(

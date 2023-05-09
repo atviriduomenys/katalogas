@@ -12,7 +12,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet
-from django.db.models import Count
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -653,6 +652,7 @@ class DatasetStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         data = []
+        start_date = None
         status_translations = Comment.get_statuses()
 
         inventored_styles = {'borderColor': 'black',
@@ -670,41 +670,46 @@ class DatasetStatsView(DatasetListView):
 
         comments = Comment.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
                                           object_id__in=datasets.values_list('pk', flat=True),
-                                          status__isnull=False)\
-            .values('created__year', 'created__month', 'status')\
-            .annotate(count=Count('object_id')).order_by('created__year', 'created__month')
-
+                                          status__isnull=False).order_by('created')
         if comments:
-            if comments.first().get('created__year', '') and comments.first().get('created__month', ''):
-                start_date = datetime.date(year=comments.first().get('created__year'),
-                                           month=comments.first().get('created__month'),
-                                           day=1)
-                labels = pd.period_range(start=start_date,
-                                         end=datetime.date.today(),
-                                         freq='M').tolist()
-                for item in comments.order_by('status').values_list('status', flat=True).distinct():
-                    total = 0
-                    temp = []
-                    for label in labels:
-                        count = comments.filter(status=item, created__year=label.year, created__month=label.month)
-                        if count:
-                            total += count.first().get('count', 0)
-                        temp.append({'x': _date(label, 'y b'), 'y': total})
+            start_date = comments.first().created
 
-                    dict = {'label': str(status_translations[item]),
-                            'data': temp,
-                            'borderWidth': 1}
+        comments = comments.values('object_id', 'created__year', 'created__month', 'status')\
+            .order_by('object_id', '-created')\
+            .distinct('object_id')
 
-                    if item == 'INVENTORED':
-                        dict.update(inventored_styles)
-                    elif item == 'STRUCTURED':
-                        dict.update(structured_styles)
-                    elif item == 'OPENED':
-                        dict.update(opened_styles)
+        if comments and start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.date.today(),
+                                     freq='M').tolist()
+            statuses = comments.order_by('status').values_list('status', flat=True).distinct()
+            for item in statuses:
+                total = 0
+                temp = []
+                for label in labels:
+                    for comment in comments:
+                        if (
+                                comment.get('status') == item and
+                                comment.get('created__year') == label.year and
+                                comment.get('created__month') == label.month
+                        ):
+                            total += 1
+                    temp.append({'x': _date(label, 'y b'), 'y': total})
 
-                    data.append(dict)
-                data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
-                context['data'] = json.dumps(data)
+                dict = {'label': str(status_translations[item]),
+                        'data': temp,
+                        'borderWidth': 1}
+
+                if item == 'INVENTORED':
+                    dict.update(inventored_styles)
+                elif item == 'STRUCTURED':
+                    dict.update(structured_styles)
+                elif item == 'OPENED':
+                    dict.update(opened_styles)
+
+                data.append(dict)
+            data = sorted(data, key=lambda x: x.get('sort', len(status_translations)+1))
+            context['data'] = json.dumps(data)
         context['graph_title'] = _('Duomenų rinkinių kiekis laike')
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')

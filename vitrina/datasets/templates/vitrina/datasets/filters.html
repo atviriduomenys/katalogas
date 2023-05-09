@@ -1,7 +1,7 @@
 {% load i18n %}
 
 <nav class="category-panel">
-    {% if labels %}
+    {% if graph_title %}
         <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
             <p class="category-panel-heading">
                 <strong>&lt;- {% translate "Atgal į rinkinių sąrašą" %}{{ datasetStatus|upper}}</strong>

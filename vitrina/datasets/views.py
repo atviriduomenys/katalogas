@@ -757,11 +757,9 @@ class DatasetManagementsView(DatasetListView):
 
 
 class DatasetsStatsView(DatasetListView):
-
     template_name = 'graphs/datasets_yearly_change_graph.html'
     facet_fields = ['filter_status', 'organization', 'groups', 'frequency',
                     'tags', 'formats']
-    
     paginate_by = 0
 
     def get_date_labels(self):
@@ -772,7 +770,7 @@ class DatasetsStatsView(DatasetListView):
         return [
             {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
         ]
-    
+
     def get_color(self, year):
         color_map = {
             '2019': 'red',
@@ -782,7 +780,7 @@ class DatasetsStatsView(DatasetListView):
             "2023": "purple"
         }
         return color_map.get(year)
-    
+
     def get_statistics_data(self):
         categories = self.get_categories()
         query_set = self.get_queryset()

@@ -54,7 +54,7 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 from django.utils.timezone import now, make_aware
 from pandas import period_range
-from datetime import datetime
+
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
@@ -758,8 +758,7 @@ class DatasetManagementsView(DatasetListView):
 
 class DatasetsStatsView(DatasetListView):
     template_name = 'graphs/datasets_yearly_change_graph.html'
-    facet_fields = ['filter_status', 'organization', 'groups', 'frequency',
-                    'tags', 'formats']
+    facet_fields = DatasetListView.facet_fields
     paginate_by = 0
 
     def get_date_labels(self):
@@ -773,11 +772,14 @@ class DatasetsStatsView(DatasetListView):
 
     def get_color(self, year):
         color_map = {
-            '2019': 'red',
-            '2020': 'green',
-            '2021': 'blue',
-            "2022": 'orange',
-            "2023": "purple"
+            '2019': '#03256C',
+            '2020': '#2541B2',
+            '2021': '#1768AC',
+            "2022": '#06BEE1',
+            "2023": "#4193A2",
+            # FIXME: this should net be hardcoded, use colormaps:
+            #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+            #        (maybe `winter`?)
         }
         return color_map.get(year)
 
@@ -793,7 +795,7 @@ class DatasetsStatsView(DatasetListView):
             dataset_counts = []
             for category in categories:
                 filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
-                created_date = datetime(int(date_label), 1, 1)
+                created_date = datetime.datetime(int(date_label), 1, 1)
                 created_date = make_aware(created_date)
                 dataset_counts.append(
                     Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()

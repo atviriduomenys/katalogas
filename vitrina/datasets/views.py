@@ -661,7 +661,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
 
 class DatasetStatsView(DatasetListView):
-    facet_fields = ['filter_status', 'organization', 'category', 'frequency', 'tags', 'formats']
+    facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/statistics_graph.html'
     paginate_by = 0
 
@@ -733,6 +733,7 @@ class DatasetStatsView(DatasetListView):
         context['dataset_count'] = len(datasets)
         context['yAxis_title'] = _('Duomenų rinkiniai')
         context['xAxis_title'] = _('Laikas')
+        context['stats'] = 'status'
         return context
 
 
@@ -749,4 +750,5 @@ class DatasetManagementsView(DatasetListView):
             if max_count < org.get('count'):
                 max_count = org.get('count')
         context['max_count'] = max_count
+        context['stats'] = 'jurisdiction'
         return context

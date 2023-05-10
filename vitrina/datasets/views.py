@@ -60,7 +60,7 @@ class DatasetListView(FacetedSearchView):
     facet_limit = 100
     paginate_by = 20
 
-    def get(self, request):
+    def get(self, request, **kwargs):
         new_query_dict = {}
         facet_legacy_arg_map = {
             'data_status': 'filter_status', 

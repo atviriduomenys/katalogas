@@ -1,10 +1,12 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ObjectDoesNotExist
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
 from vitrina.users.models import User
+from vitrina.datasets.models import Dataset
 
 
 CREATED = "CREATED"
@@ -37,6 +39,13 @@ class Request(models.Model):
         (ANSWERED, _("Atsakytas")),
         (APPROVED, _("Patvirtintas"))
     }
+    FILTER_STATUSES = {
+        CREATED: _("Pateiktas"),
+        REJECTED: _("Atmestas"),
+        OPENED: _("Atvertas"),
+        ANSWERED: _("Atsakytas"),
+        APPROVED: _("Patvirtintas")
+    }
 
     EDITED = "EDITED"
     STATUS_CHANGED = "STATUS_CHANGED"
@@ -59,7 +68,7 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset_id = models.BigIntegerField(blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -96,6 +105,7 @@ class Request(models.Model):
         if self.organization:
             parents.extend(self.organization.get_acl_parents())
         return parents
+    
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

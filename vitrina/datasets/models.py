@@ -4,6 +4,7 @@ import tagulous
 
 from django.db import models
 from django.urls import reverse
+
 from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager

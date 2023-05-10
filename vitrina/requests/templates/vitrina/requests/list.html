@@ -10,43 +10,20 @@
     <div class="columns">
         <div class="column is-one-quarter">
             <div class="content">
+                {% include "vitrina/requests/filters.html" %}
                 <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
                 <a href="{% url 'request-create' %}"
                    class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
-
-                <nav class="category-panel">
-                    <p class="category-panel-heading">
-                        <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
-                    </p>
-                    <div class="field">
-                        <input
-                                type="date"
-                                class="input"
-                                name="date_from"
-                                id="from"
-                                value="{{ dateFrom }}"
-                        >
-                    </div>
-                    <div class="field">
-                        <input
-                                type="date"
-                                class="input"
-                                name="date_to"
-                                id="to"
-                                value="{{ dateTo }}"
-                        >
-                    </div>
-                </nav>
             </div>
         </div>
         <div class="column is-three-quarters">
             <div class="content">
                 <p>{% translate "Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir verslo plėtrai." %}</p>
             </div>
-            <form class="field has-addons is-fullwidth" method="get">
+            <form id="request-filter" class="field has-addons is-fullwidth" action="{% url 'request-list' %}" method="get">
                 <div class="control is-expanded">
-                    <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
-                           value="{{ query | escape }}"/>
+                    <input id="search-input" class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
+                           value="{{ q | escape }}"/>
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -57,7 +34,7 @@
                 </p>
             </form>
 
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
 
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "Filtruoti rezultatus" %}</button>
@@ -68,34 +45,34 @@
                     <div class="media-content">
                         <div class="content">
                             <div>
-                                <strong><a href="{{ i.get_absolute_url }}" class="dataset-list-title">{{ i.title | escape }}</a></strong>
+                                <strong><a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">{{ i.object.title | escape }}</a></strong>
                                 <div class="columns">
                                     <div class="column">
-                                        <p>{% translate "Būsena" %}: <span><b>{{ i.get_status_display }}</b></span></p>
-                                        {% if i.organization_title %}
+                                        <p>{% translate "Būsena" %}: <span><b>{{ i.object.get_status_display }}</b></span></p>
+                                        {% if i.object.organization_title %}
                                             <p>{% translate "Pasiūlymas organizacijai" %}:
-                                                <span><b>{{ i.organization_title }}</b></span></p>
+                                                <span><b>{{ i.object.rganization_title }}</b></span></p>
                                         {% endif %}
                                         <p class="dataset-list-description">
                                             {% if i.existing == 'true' %}
                                                 <b>{% translate "Poreikis papildyti ar pakeisti esamą duomenų rinkinį" %}</b>
                                             {% else %}
-                                                {{ i.description }}
+                                                {{ i.object.description }}
                                             {% endif %}
                                         </p>
                                     </div>
                                     <div class="column is-one-third">
                                         {% if i.registered %}
-                                            <p>{% translate "Registravimo data" %}: {{ i.registered|date:"SHORT_DATE_FORMAT" }}</p>
+                                            <p>{% translate "Registravimo data" %}: {{ i.object.registered|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.modified %}
-                                            <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"SHORT_DATE_FORMAT" }}</p>
+                                            <p>{% translate "Atnaujinimo data" %}: {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.comment_count %}
-                                            <p>{% translate "Komentarai" %}: {{ i.comment_count }}</p>
+                                            <p>{% translate "Komentarai" %}: {{ i.object.comment_count }}</p>
                                         {% endif %}
                                         {% if i.like_count %}
-                                            <p>{% translate "Patinka" %}: {{ i.like_count }}</p>
+                                            <p>{% translate "Patinka" %}: {{ i.object.like_count }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -109,4 +86,139 @@
             <br>
         </div>
     </div>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+
+            var query = $('#search-q-val').val();
+            if (query != null && query !== "") {
+                $('#search-input').val("{{ q }}");
+            }
+
+            $('.cats-more, .cats-more-inner').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "+" ? "-" : "+";
+                })
+            });
+
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            var lang = "lt-LT";
+            var currentUrl = new URL(window.location);
+            var searchParams = new URLSearchParams(currentUrl.search);
+            var selectedDate = null;
+            var datasetTitles = "datasetSuggestions";
+
+            $('.date_from').change(function() {
+                var date = $('.date_from').val();
+                if (date != null) {
+                    searchParams.set('date_from', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
+                }
+            });
+            $('.date_to').change(function() {
+                var date = $('.date_to').val();
+                if (date != null) {
+                    searchParams.set('date_to', date);
+                    currentUrl.search = searchParams.toString();
+                    window.location = currentUrl.toString();
+                }
+            });
+
+            function autocomplete(inp, arr) {
+                var currentFocus;
+
+                inp.addEventListener("input", function (e) {
+                    var a, b, i, val = this.value;
+                    closeAllLists();
+                    if (!val || val.length < 3) {
+                        return false;
+                    }
+                    currentFocus = -1;
+                    a = document.createElement("DIV");
+                    a.setAttribute("id", this.id + "autocomplete-list");
+                    a.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(a);
+                    for (i = 0; i < arr.length; i++) {
+                        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                            b = document.createElement("DIV");
+                            b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                            b.innerHTML += arr[i].substr(val.length);
+                            b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                            b.addEventListener("click", function (e) {
+                                inp.value = '"' + this.getElementsByTagName("input")[0].value + '"';
+                                closeAllLists();
+                                $('#request-filter').submit();
+                            });
+                            a.appendChild(b);
+                        }
+                    }
+                });
+
+                inp.addEventListener("keydown", function (e) {
+                    var x = document.getElementById(this.id + "autocomplete-list");
+                    if (x) x = x.getElementsByTagName("div");
+                    if (e.keyCode == 40) {
+                        currentFocus++;
+                        addActive(x);
+                    } else if (e.keyCode == 38) {
+                        currentFocus--;
+                        addActive(x);
+                    } else if (e.keyCode == 13) {
+                        // e.preventDefault();
+                        if (currentFocus > -1) {
+                            if (x) x[currentFocus].click();
+                        }
+                    }
+                });
+
+                function addActive(x) {
+                    if (!x) return false;
+                    removeActive(x);
+                    if (currentFocus >= x.length) currentFocus = 0;
+                    if (currentFocus < 0) currentFocus = (x.length - 1);
+                    x[currentFocus].classList.add("autocomplete-active");
+                }
+
+                function removeActive(x) {
+                    for (var i = 0; i < x.length; i++) {
+                        x[i].classList.remove("autocomplete-active");
+                    }
+                }
+
+                function closeAllLists(elmnt) {
+                    var x = document.getElementsByClassName("autocomplete-items");
+                    for (var i = 0; i < x.length; i++) {
+                        if (elmnt != x[i] && elmnt != inp) {
+                            x[i].parentNode.removeChild(x[i]);
+                        }
+                    }
+                }
+
+                document.addEventListener("click", function (e) {
+                    closeAllLists(e.target);
+                });
+            }
+
+            autocomplete(document.getElementById("search-input"), datasetTitles)
+        });
+    </script>
 {% endblock %}

@@ -1,0 +1,7 @@
+{{ object.title }}
+{{ object.dataset.status }}
+{{ object.dataset.organization.title }}
+{{ object.dataset.category.title }}
+{{ object.dataset.groups }}
+{{ object.dataset.tags }}
+{{ object.created }}

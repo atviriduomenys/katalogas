@@ -2,27 +2,59 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
-
+from vitrina.requests.forms import RequestSearchForm
 from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.helpers import is_org_dataset_list
+from vitrina.helpers import get_selected_value
 from reversion import set_comment
-
+from vitrina.datasets.services import update_facet_data
+from haystack.generic_views import FacetedSearchView
 from vitrina.requests.forms import RequestForm
 from django.core.exceptions import ObjectDoesNotExist
 from reversion.views import RevisionMixin
-from vitrina.datasets.models import Dataset
-from vitrina.requests.models import Request, RequestStructure
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category, Frequency
+from vitrina.requests.models import Request, Organization, RequestStructure
 
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.views import HistoryView, HistoryMixin
 
 
-class RequestListView(ListView):
-    model = Request
-    queryset = Request.public.order_by('-created')
+class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
+    facet_fields = ['filter_status', 'organization', 'category', 'parent_category', 'groups', 'tags']
+    facet_limit = 100
     paginate_by = 20
+    form_class = RequestSearchForm
+    
+    def get_queryset(self):
+        requests = super().get_queryset()
+        return requests.order_by('-created')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        facet_fields = context.get('facets').get('fields')
+        form = context.get('form')
+        extra_context = {
+            'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
+                                              choices=Dataset.FILTER_STATUSES),
+            'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
+            'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
+            'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
+            'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
+            'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
+            'selected_status': get_selected_value(form, 'filter_status', is_int=False),
+            'selected_organization': get_selected_value(form, 'organization'),
+            'selected_categories': get_selected_value(form, 'category', True, False),
+            'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
+            'selected_groups': get_selected_value(form, 'groups', True, False),
+            'selected_tags': get_selected_value(form, 'tags', True, False),
+            'selected_date_from': form.cleaned_data.get('date_from'),
+            'selected_date_to': form.cleaned_data.get('date_to'),
+        }     
+        context.update(extra_context)
+        return context
 
 class RequestDetailView(HistoryMixin, DetailView):
     model = Request
@@ -34,9 +66,8 @@ class RequestDetailView(HistoryMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         request: Request = self.object
-
         dataset = None
-        if request.dataset_id:
+        if request.dataset:
             try:
                 dataset = Dataset.public.get(pk=request.dataset_id)
             except ObjectDoesNotExist:

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių statistika" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių statistika" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių būsenos statistika" %}
+{% endblock %}
+
+{% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% include "vitrina/datasets/filters.html" %}
+        </div>
+
+        <div class="column is-three-quarters">
+
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ dataset_count }}</h1>
+
+            <div class="show-mobile m-b-md">
+                <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
+            </div>
+            {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Pridėti rinkinį" %}
+                    </a>
+                </div>
+            {% endif %}
+            {% if data %}
+                <canvas id="chart"/>
+            {% else %}
+                <h1>{% translate "Statistikos duomenų nerasta." %}</h1>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
+{% endblock scripts %}

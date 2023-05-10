@@ -1,6 +1,4 @@
-import datetime
 import pathlib
-import tagulous
 
 from django.db import models
 from django.urls import reverse
@@ -41,15 +39,12 @@ class Dataset(TranslatableModel):
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (METADATA, _("Parengti metaduomenys")),
-        (PRIORITIZED, _("Įvertinti prioritetai")),
-        (FINANCING, _("Įvertintas finansavimas")),
+        (HAS_STRUCTURE, _("Struktūruotas")),
     }
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys")
     }
 
     CREATED = "CREATED"
@@ -189,9 +184,11 @@ class Dataset(TranslatableModel):
 
     @property
     def filter_status(self):
-        if self.datasetstructure_set.exists():
+        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
             return self.HAS_STRUCTURE
-        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
+            return self.HAS_DATA
+        if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
         return None
 
@@ -225,6 +222,13 @@ class Dataset(TranslatableModel):
     @property
     def category_title(self):
         return self.category.title if self.category else ""
+
+    def jurisdiction(self) -> int | None:
+        if self.organization:
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
 
 
 # TODO: To be merged into Dataset:

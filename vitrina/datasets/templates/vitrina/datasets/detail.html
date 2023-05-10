@@ -62,7 +62,7 @@
             <div class="dataset-organization">
                 <div class="is-hidden-mobile">
                     {% if org_logo %}
-                        <img src="/image/{{ org_logo }}" class="image max-128x128 m-b-md">
+                        <img src="{{MEDIA_URL}}{{ org_logo.url }}" class="image max-128x128 m-b-md">
                     {% endif %}
                 </div>
 

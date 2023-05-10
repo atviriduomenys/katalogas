@@ -189,7 +189,7 @@ def test_organization_filter_without_query(app: DjangoTestApp, organization_filt
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] is None
+    assert resp.context['selected_organization'] == []
 
 
 @pytest.mark.haystack
@@ -202,7 +202,7 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] == organization_filter_data["organization"].pk
+    assert resp.context['selected_organization'][0] == str(organization_filter_data["organization"].pk)
 
 
 @pytest.fixture
@@ -223,6 +223,7 @@ def category_filter_data():
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2", organization=organization)
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3", organization=organization)
     dataset_with_category4 = DatasetFactory(category=category4, slug="ds4", organization=organization)
+
     return {
         "categories": [category1, category2, category3, category4],
         "datasets": [
@@ -313,6 +314,24 @@ def test_category_filter_with_parent_and_child_category(
         str(category_filter_data["categories"][3].pk)
     ]
 
+@pytest.mark.haystack
+def test_data_group_filter_header_visible_if_data_groups_exist(
+    app: DjangoTestApp,
+):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    dataset.groups.set([group])
+    dataset.save()
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='data_group_filter_header')
+
+@pytest.mark.haystack
+def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
+    app: DjangoTestApp,
+):
+    dataset = DatasetFactory()
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='data_group_filter_header')
 
 @pytest.fixture
 def datasets():
@@ -448,6 +467,10 @@ def test_dataset_filter_all(app: DjangoTestApp):
         frequency=frequency
     )
 
+    distribution = DatasetDistributionFactory()
+    distribution.dataset = dataset_with_all_filters
+    distribution.save()
+
     dataset_with_all_filters.set_current_language(settings.LANGUAGE_CODE)
     dataset_with_all_filters.slug = 'ds1'
     dataset_with_all_filters.save()
@@ -464,7 +487,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
 
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset_with_all_filters.pk]
     assert resp.context['selected_status'] == Dataset.HAS_DATA
-    assert resp.context['selected_organization'] == organization.pk
+    assert resp.context['selected_organization'][0] == str(organization.pk)
     assert resp.context['selected_categories'] == [str(category.pk)]
     assert resp.context['selected_tags'] == ["tag1", "tag2"]
     assert resp.context['selected_frequency'] == frequency.pk
@@ -676,6 +699,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
     assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
+
 
 @pytest.mark.haystack
 @pytest.mark.django_db
@@ -1050,3 +1074,47 @@ def test_remove_project_with_permission(app: DjangoTestApp):
 
     assert resp.headers['location'] == url
     assert project.datasets.all().count() == 0
+
+
+@pytest.mark.haystack
+def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
+                                                category_filter_data: dict[str, list[Category]]):
+    resp = app.get("%s?selected_facets=category_exact:%s" % (
+        reverse("dataset-list"),
+        category_filter_data["categories"][1].pk
+    ))
+    old_object_list = resp.context['object_list']
+    resp = resp.click(linkid="Dataset-status-stats")
+
+    assert resp.status_code == 200
+    assert resp.context['dataset_count'] == len(old_object_list)
+
+
+@pytest.mark.haystack
+def test_dataset_jurisdictions(app: DjangoTestApp):
+    parent_org = OrganizationFactory()
+    child_org1 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-1')
+    )
+    child_org2 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-2')
+    )
+    DatasetFactory(organization=parent_org)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org2)
+    DatasetFactory(organization=child_org2)
+
+    resp = app.get(reverse("dataset-list"))
+    jurisdictions = resp.context['jurisdiction_facet']
+    resp = resp.click(linkid="dataset-stats-supervisor")
+
+    dataset_count = 0
+    for org in jurisdictions:
+        if dataset_count < org.get('count'):
+            dataset_count = org.get('count')
+
+    assert resp.context['jurisdictions'] == jurisdictions
+    assert resp.context['max_count'] == dataset_count
+    assert len(resp.context['jurisdictions']) == 1
+    assert dataset_count == 5

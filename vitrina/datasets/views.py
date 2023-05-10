@@ -1,21 +1,25 @@
 import csv
+import datetime
 import itertools
 import json
+import pandas as pd
 
 from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet
 from django.http import FileResponse, JsonResponse, HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponse
+from django.db.models import QuerySet, Count, Max
+from django.db.models.functions import ExtractYear, ExtractMonth
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-
+from django.template.defaultfilters import date as _date
 
 from django.views import View
 from django.views.generic import TemplateView, DetailView, ListView
@@ -33,12 +37,12 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.projects.models import Project
+from vitrina.comments.models import Comment
+from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import update_facet_data
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
@@ -49,15 +53,25 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
+from django.utils.timezone import now, make_aware
+from pandas import period_range
 
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    facet_fields = ['filter_status', 'organization', 'category',
-                    'parent_category', 'groups', 'frequency',
-                    'tags', 'formats']
+    facet_fields = [
+        'filter_status',
+        'organization',
+        'jurisdiction',
+        'category',
+        'parent_category',
+        'groups',
+        'frequency',
+        'tags',
+        'formats',
+    ]
     form_class = DatasetSearchForm
-    facet_limit = 100
+    max_num_facets = 20
     paginate_by = 20
 
     def get(self, request, **kwargs):
@@ -90,6 +104,11 @@ class DatasetListView(FacetedSearchView):
 
     def get_queryset(self):
         datasets = super().get_queryset()
+
+        options = {"size": ELASTIC_FACET_SIZE}
+        for field in self.facet_fields:
+            datasets = datasets.facet(field, **options)
+
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
                 Organization,
@@ -105,6 +124,7 @@ class DatasetListView(FacetedSearchView):
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
+            'jurisdiction_facet': update_facet_data(self.request, facet_fields, 'jurisdiction', Organization),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
             'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
@@ -113,7 +133,8 @@ class DatasetListView(FacetedSearchView):
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
-            'selected_organization': get_selected_value(form, 'organization'),
+            'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
+            'selected_organization': get_selected_value(form, 'organization', True, False),
             'selected_categories': get_selected_value(form, 'category', True, False),
             'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),
@@ -151,6 +172,7 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
+        organization = get_object_or_404(Organization, id=dataset.organization.pk)
         extra_context_data = {
             'tags': dataset.get_tag_list(),
             'subscription': [],
@@ -161,6 +183,7 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all(),
+            'org_logo': organization.image,
         }
         context_data.update(extra_context_data)
         return context_data
@@ -668,3 +691,161 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def get_success_url(self):
         return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})
+
+
+class DatasetStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/statistics_graph.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        datasets = self.get_queryset()
+        data = []
+        status_translations = Comment.get_statuses()
+
+        inventored_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(255, 179, 186, 0.9)',
+                             'fill': True,
+                             'sort': 1}
+        structured_styles = {'borderColor': 'black',
+                             'backgroundColor': 'rgba(186,225,255, 0.9)',
+                             'fill': True,
+                             'sort': 2}
+        opened_styles = {'borderColor': 'black',
+                         'backgroundColor': 'rgba(255, 223, 186, 0.9)',
+                         'fill': True,
+                         'sort': 3}
+
+        most_recent_comments = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=datasets.values_list('pk', flat=True),
+            status__isnull=False).values('object_id')\
+            .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
+            .order_by('latest_status_change')
+
+        dataset_status = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=most_recent_comments.values('object_id'),
+            created__in=most_recent_comments.values('latest_status_change'))\
+            .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
+            .values('object_id', 'status', 'year', 'month')
+
+        start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
+        statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.date.today(),
+                                     freq='M').tolist()
+
+            for item in statuses:
+                total = 0
+                temp = []
+                for label in labels:
+                    total += dataset_status.filter(status=item, year=label.year, month=label.month)\
+                        .values('object_id')\
+                        .annotate(count=Count('object_id', distinct=True))\
+                        .count()
+                    temp.append({'x': _date(label, 'y b'), 'y': total})
+                dict = {'label': str(status_translations[item]),
+                        'data': temp,
+                        'borderWidth': 1}
+
+                if item == 'INVENTORED':
+                    dict.update(inventored_styles)
+                elif item == 'STRUCTURED':
+                    dict.update(structured_styles)
+                elif item == 'OPENED':
+                    dict.update(opened_styles)
+
+                data.append(dict)
+        data = sorted(data, key=lambda x: x['sort'])
+        context['data'] = json.dumps(data)
+        context['graph_title'] = _('Duomenų rinkinių kiekis laike')
+        context['dataset_count'] = len(datasets)
+        context['yAxis_title'] = _('Duomenų rinkiniai')
+        context['xAxis_title'] = _('Laikas')
+        context['stats'] = 'status'
+        return context
+
+
+class DatasetManagementsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/jurisdictions.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        context['jurisdictions'] = context['jurisdiction_facet']
+        for org in context['jurisdictions']:
+            if max_count < org.get('count'):
+                max_count = org.get('count')
+        context['max_count'] = max_count
+        context['stats'] = 'jurisdiction'
+        return context
+
+
+class DatasetsStatsView(DatasetListView):
+    template_name = 'graphs/datasets_yearly_change_graph.html'
+    facet_fields = DatasetListView.facet_fields
+    paginate_by = 0
+
+    def get_date_labels(self):
+        oldest_dataset_date = Dataset.objects.order_by('created').first().created
+        return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
+
+    def get_categories(self):
+        return [
+            {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
+        ]
+
+    def get_color(self, year):
+        color_map = {
+            '2019': '#03256C',
+            '2020': '#2541B2',
+            '2021': '#1768AC',
+            "2022": '#06BEE1',
+            "2023": "#4193A2",
+            # FIXME: this should net be hardcoded, use colormaps:
+            #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+            #        (maybe `winter`?)
+        }
+        return color_map.get(year)
+
+    def get_statistics_data(self):
+        categories = self.get_categories()
+        query_set = self.get_queryset()
+        data = {
+            'labels': [cat.get('title') for cat in categories] 
+        }
+        datasets = []
+        date_labels = self.get_date_labels()
+        for date_label in date_labels:
+            dataset_counts = []
+            for category in categories:
+                filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
+                created_date = datetime.datetime(int(date_label), 1, 1)
+                created_date = make_aware(created_date)
+                dataset_counts.append(
+                    Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
+                )
+            datasets.append(
+                {
+                    'label': date_label,
+                    'data': dataset_counts,
+                    'backgroundColor': self.get_color(date_label)
+
+                }
+            )
+        data['datasets'] = datasets
+        return data, query_set
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data, qs = self.get_statistics_data()
+        context['data'] = data
+        context['dataset_count'] = len(qs)
+        context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
+        return context

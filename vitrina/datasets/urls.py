@@ -1,27 +1,34 @@
-from django.conf.urls import url
 from django.urls import path
 from django.http.response import HttpResponsePermanentRedirect
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetCreateView, DatasetProjectsView, RemoveProjectView, AddProjectView
+from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import CreateMemberView
+from vitrina.datasets.views import DatasetCreateView
 from vitrina.datasets.views import DatasetDetailView
 from vitrina.datasets.views import DatasetDistributionPreviewView
 from vitrina.datasets.views import DatasetHistoryView
 from vitrina.datasets.views import DatasetListView
+from vitrina.datasets.views import DatasetManagementsView
 from vitrina.datasets.views import DatasetMembersView
-from vitrina.datasets.views import CreateMemberView
-from vitrina.datasets.views import UpdateMemberView
-from vitrina.datasets.views import DeleteMemberView
+from vitrina.datasets.views import DatasetProjectsView
+from vitrina.datasets.views import DatasetStatsView
 from vitrina.datasets.views import DatasetStructureImportView
 from vitrina.datasets.views import DatasetStructureView
 from vitrina.datasets.views import DatasetUpdateView
+from vitrina.datasets.views import DeleteMemberView
+from vitrina.datasets.views import RemoveProjectView
+from vitrina.datasets.views import UpdateMemberView
+from vitrina.datasets.views import autocomplete_tags
+from vitrina.datasets.views import DatasetsStatsView
 
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
     # @GetMapping("/dataset/{slug}")
     path('dataset/<slug:slug>/', lambda request, slug: HttpResponsePermanentRedirect('/datasets/{slug}/'.format(slug=slug))),
+    path('datasets/stats/yearly', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-update'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
@@ -59,6 +66,11 @@ urlpatterns = [
         autocomplete_tags,
         {'tag_model': Dataset.tags.tag_model},
         name='autocomplete_tags',
+    ),
+    path(
+        'dataset/stats/jurisdiction/',
+        DatasetManagementsView.as_view(),
+        name='dataset-stats-jurisdiction'
     ),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")

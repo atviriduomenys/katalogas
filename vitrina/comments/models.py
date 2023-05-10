@@ -59,6 +59,8 @@ class Comment(models.Model):
 
     class Meta:
         db_table = 'comment'
+        ordering = ('-created',)
+        get_latest_by = 'created'
 
     def descendants(self, user=None, obj=None, include_self=False, permission=False):
         descendants = []
@@ -91,6 +93,13 @@ class Comment(models.Model):
         else:
             body_text = self.body
         return body_text
+
+    @staticmethod
+    def get_statuses():
+        statuses = {}
+        for status in Comment.STATUSES:
+            statuses[status[0]] = status[1]
+        return statuses
 
 
 # TODO: To be removed.

@@ -66,12 +66,7 @@ class RequestDetailView(HistoryMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         request: Request = self.object
-        dataset = None
-        if request.dataset:
-            try:
-                dataset = request.dataset
-            except ObjectDoesNotExist:
-                pass
+        dataset = request.dataset if request.dataset else None
 
         extra_context_data = {
             "formats": request.format.replace(" ", "").split(",") if request.format else [],

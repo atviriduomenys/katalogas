@@ -1,4 +1,5 @@
 import pytest
+from django.urls import reverse
 
 from django_webtest import DjangoTestApp
 
@@ -6,6 +7,7 @@ from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -25,3 +27,13 @@ def test_home(app: DjangoTestApp):
         ['1', 'Organizacijų'],
         ['1', 'Panaudojimo atvejų'],
     ]
+
+
+@pytest.mark.django_db
+def test_request_create_link(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    resp = app.get('/')
+    resp = resp.click(linkid="request-create")
+    assert resp.request.path == reverse('request-create')
+

@@ -69,7 +69,7 @@ class RequestDetailView(HistoryMixin, DetailView):
         dataset = None
         if request.dataset:
             try:
-                dataset = Dataset.public.get(pk=request.dataset_id)
+                dataset = request.dataset
             except ObjectDoesNotExist:
                 pass
 

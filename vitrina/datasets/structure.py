@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Iterable, NamedTuple, TypedDict
-
+from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
 
 DIMS = [
     'dataset',
@@ -203,6 +202,8 @@ class Manifest:
     datasets: dict[str, Dataset] = field(default_factory=dict, init=False)
     models: dict[str, Model] = field(default_factory=dict, init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
+    prefixes: dict[str, Prefix] = field(default_factory=dict, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -212,6 +213,7 @@ class Metadata:
     source: str = ''
     prepare: str = ''
     level: int | None = None
+    level_given: int | None = None
     access: str = ''
     uri: str = ''
     title: str = ''
@@ -229,6 +231,9 @@ class Dataset(Metadata):
     models: dict[str, Model] = field(default_factory=dict, init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
     prefixes: dict[str, Prefix] = field(default_factory=dict, init=False)
+    enums: dict[str, list[Enum]] = field(default_factory=dict, init=False)
+    params: dict[str, list[Param]] = field(default_factory=dict, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -240,6 +245,8 @@ class Resource(Metadata):
 
     dataset: Dataset = field(init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
+    models: dict[str, Model] = field(default_factory=dict, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -250,6 +257,7 @@ class Base(Metadata):
     type: str = ''
 
     comments: list[Comment] = field(default_factory=list, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -262,6 +270,11 @@ class Model(Metadata):
     dataset: Dataset | None = field(default=None, init=False)
     properties: dict[str, Property] = field(default_factory=dict, init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
+    base: Base | None = field(default=None, init=False)
+    resource: Resource | None = field(default=None, init=False)
+    ref_props: list[str] = field(default_factory=list, init=False)
+    params: dict[str, list[Param]] = field(default_factory=dict, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
     @property
     def absname(self):
@@ -279,6 +292,9 @@ class Property(Metadata):
 
     model: Model = field(init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
+    enums: dict[str, list[Enum]] = field(default_factory=dict, init=False)
+    ref_props: list[str] = field(default_factory=list, init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -286,6 +302,7 @@ class Comment(Metadata):
     dim: str = field(default='comment')
 
     meta: Metadata = field(init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -295,14 +312,40 @@ class Prefix(Metadata):
     name: str = ''
 
     meta: Metadata = field(init=False)
+    errors: list[str] = field(default_factory=list, init=False)
+
+
+@dataclass
+class Enum(Metadata):
+    dim: str = field(default='enum')
+
+    name: str = ''
+
+    meta: Metadata = field(init=False)
+    errors: list[str] = field(default_factory=list, init=False)
+
+
+@dataclass
+class Param(Metadata):
+    dim: str = field(default='param')
+
+    name: str = ''
+
+    meta: Metadata = field(init=False)
+    errors: list[str] = field(default_factory=list, init=False)
 
 
 class State:
+    manifest: Manifest | None = None
     dataset: Dataset | None = None
     resource: Resource | None = None
     base: Base | None = None
     model: Model | None = None
     prop: Property | None = None
+    enum: Enum | None = None
+    comment: Comment | None = None
+    prefix: Comment | None = None
+    param: Param | None = None
 
     stack: list[Metadata]
     errors: list[str]
@@ -440,6 +483,11 @@ def read(reader: Iterable[Row]) -> State:
 
             if row['ref']:
                 name = row['ref']
+            elif (
+                (dim == 'enum' and isinstance(state.last, Enum)) or
+                (dim == 'param' and isinstance(state.last, Param))
+            ):
+                name = state.last.name
             else:
                 name = ''
 
@@ -468,6 +516,12 @@ def read(reader: Iterable[Row]) -> State:
         elif dim == 'prefix':
             meta = _read_prefix(state, row, name)
 
+        elif dim == 'enum':
+            meta = _read_enum(state, row, name)
+
+        elif dim == 'param':
+            meta = _read_param(state, row, name)
+
         # Push read metadata to stack
         state.push(meta)
 
@@ -478,7 +532,7 @@ def _read_dataset(
     state: State,
     row: Row,
     name: str,
-) -> None:
+) -> Dataset:
     dataset = state.dataset = Dataset(
         id=row['id'],
         name=name,
@@ -487,6 +541,7 @@ def _read_dataset(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -500,7 +555,7 @@ def _read_resource(
     state: State,
     row: Row,
     name: str,
-) -> None:
+) -> Resource:
     resource = state.resource = Resource(
         id=row['id'],
         name=name,
@@ -509,6 +564,7 @@ def _read_resource(
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -525,7 +581,8 @@ def _read_base(
     state: State,
     row: Row,
     name: str,
-) -> None:
+) -> Base:
+    name = get_relative_model_name(state.dataset, name)
     base = state.base = Base(
         id=row['id'],
         name=name,
@@ -533,7 +590,8 @@ def _read_base(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(row['level']),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -546,7 +604,8 @@ def _read_model(
     state: State,
     row: Row,
     name: str,
-) -> None:
+) -> Model:
+    name = get_relative_model_name(state.dataset, name)
     model = state.model = Model(
         id=row['id'],
         name=name,
@@ -554,40 +613,68 @@ def _read_model(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(row['level']),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
         description=row['description'],
     )
 
+    if model.ref:
+        model.ref_props = [x.strip() for x in model.ref.split(',')]
+
     if state.dataset:
         model.dataset = state.dataset
         model.dataset.models[name] = model
 
-    state.manifest.models[model.absname] = model
+    if state.base:
+        model.base = state.base
+
+    if state.resource:
+        model.resource = state.resource
+        model.resource.models[name] = model
+
+    state.manifest.models[model.name] = model
 
     return model
+
+
+def _parse_property_ref(ref: str) -> Tuple[str, List[str]]:
+    if '[' in ref:
+        ref = ref.rstrip(']')
+        ref_model, ref_props = ref.split('[', 1)
+        ref_props = [p.strip() for p in ref_props.split(',')]
+    else:
+        ref_model = ref
+        ref_props = []
+    return ref_model, ref_props
 
 
 def _read_property(
     state: State,
     row: Row,
     name: str,
-) -> None:
-    prop = state.prop = Model(
+) -> Property:
+    prop = state.prop = Property(
         id=row['id'],
         name=name,
         type=row['type'],
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(row['level']),
+        level=_parse_int(get_level(row)),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
         description=row['description'],
     )
+
+    if prop.ref and prop.type in ('ref', 'backref', 'generic'):
+        ref_model, ref_props = _parse_property_ref(prop.ref)
+        prop.ref = get_relative_model_name(state.dataset, ref_model)
+        prop.ref_props = ref_props
 
     prop.model = state.model
     prop.model.properties[name] = prop
@@ -599,13 +686,14 @@ def _read_comment(
     state: State,
     row: Row,
     name: str,
-) -> None:
-    comment = Comment(
+) -> Comment:
+    comment = state.comment = Comment(
         id=row['id'],
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -622,14 +710,15 @@ def _read_prefix(
     state: State,
     row: Row,
     name: str,
-) -> None:
-    prefix = Prefix(
+) -> Prefix:
+    prefix = state.prefix = Prefix(
         id=row['id'],
         name=name,
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
         level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
@@ -642,6 +731,70 @@ def _read_prefix(
     return prefix
 
 
+def _read_enum(
+    state: State,
+    row: Row,
+    name: str,
+) -> Enum:
+    enum = state.enum = Enum(
+        id=row['id'],
+        name=name,
+        ref=row['ref'],
+        source=row['source'],
+        prepare=row['prepare'],
+        level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
+        access=row['access'],
+        uri=row['uri'],
+        title=row['title'],
+        description=row['description'],
+    )
+
+    last = None
+    for node in state.stack:
+        if isinstance(node, Dataset) or isinstance(node, Property):
+            last = node
+
+    enum.meta = last
+    if enum.meta.enums.get(name):
+        enum.meta.enums[name].append(enum)
+    else:
+        enum.meta.enums[name] = [enum]
+
+    return enum
+
+
+def _read_param(
+    state: State,
+    row: Row,
+    name: str,
+) -> Param:
+    param = Param(
+        id=row['id'],
+        name=name,
+        ref=row['ref'],
+        source=row['source'],
+        prepare=row['prepare'],
+        level=_parse_int(row['level']),
+        level_given=_parse_int(row['level']),
+        access=row['access'],
+        uri=row['uri'],
+        title=row['title'],
+        description=row['description'],
+    )
+
+    last = None
+    for node in state.stack:
+        if isinstance(node, Dataset) or isinstance(node, Model):
+            last = node
+
+    param.meta = last
+    if param.meta.params.get(name):
+        param.meta.params[name].append(param)
+    else:
+        param.meta.params[name] = [param]
+
+    return param
 
 
 def _split_dim(
@@ -667,3 +820,27 @@ def _split_dim(
 
 def _parse_int(v: str) -> int | None:
     return int(v) if v else None
+
+
+def get_relative_model_name(dataset: Dataset, name: str) -> str:
+    if name.startswith('/'):
+        return name[1:]
+    elif dataset is None:
+        return name
+    else:
+        return '/'.join([
+            dataset.name,
+            name,
+        ])
+
+
+def get_level(row: Row) -> str:
+    if row['level']:
+        return row['level']
+
+    level = '3'
+    if row['ref'] and not row['uri']:
+        level = '5'
+    elif row['ref']:
+        level = '4'
+    return level

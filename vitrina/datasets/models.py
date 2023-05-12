@@ -1,4 +1,7 @@
 import pathlib
+import tagulous
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.urls import reverse
@@ -7,6 +10,7 @@ from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
+from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog, HarvestingJob
@@ -146,6 +150,8 @@ class Dataset(TranslatableModel):
     will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
 
+    metadata = GenericRelation('vitrina_structure.Metadata')
+
     objects = TranslatableManager()
     public = PublicDatasetManager()
 
@@ -229,6 +235,22 @@ class Dataset(TranslatableModel):
             if root_org.get_children_count() > 1:
                 return root_org.pk
         return None
+
+    def get_level(self):
+        levels = Metadata.objects.filter(
+            dataset=self,
+            content_type__in=[
+                ContentType.objects.get_for_model(Model),
+                ContentType.objects.get_for_model(Base),
+                ContentType.objects.get_for_model(Property)
+            ],
+            level__isnull=False,
+        ).values_list('level', flat=True)
+
+        if levels:
+            return sum(levels) / len(levels)
+        else:
+            return None
 
 
 # TODO: To be merged into Dataset:

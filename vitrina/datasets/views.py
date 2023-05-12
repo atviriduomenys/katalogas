@@ -38,6 +38,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.structure.services import create_structure_objects
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -342,6 +343,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -789,7 +791,7 @@ class DatasetsStatsView(DatasetListView):
         categories = self.get_categories()
         query_set = self.get_queryset()
         data = {
-            'labels': [cat.get('title') for cat in categories] 
+            'labels': [cat.get('title') for cat in categories]
         }
         datasets = []
         date_labels = self.get_date_labels()

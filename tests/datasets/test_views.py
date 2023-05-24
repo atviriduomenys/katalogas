@@ -1120,7 +1120,6 @@ def test_dataset_jurisdictions(app: DjangoTestApp):
     assert dataset_count == 5
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='org-dataset-url')
@@ -1131,7 +1130,6 @@ def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
 
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='manager-dataset-url')
@@ -1141,7 +1139,6 @@ def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
     assert not resp.html.find(id='manager-dataset-url')
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
     org = OrganizationFactory()
     user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
@@ -1150,7 +1147,6 @@ def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
     assert resp.html.find(id='org-dataset-url')
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_org_dataset_url_is_shown_for_manager(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory()
@@ -1165,7 +1161,6 @@ def test_org_dataset_url_is_shown_for_manager(app: DjangoTestApp):
     assert resp.html.find(id='manager-dataset-url')
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_org_datasets_are_shown_for_coordinator(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(title='testt', organization=org)
@@ -1176,7 +1171,6 @@ def test_org_datasets_are_shown_for_coordinator(app: DjangoTestApp):
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk]
 
 @pytest.mark.haystack
-@pytest.mark.django_db
 def test_manager_datasets_are_shown_for_manager(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory()

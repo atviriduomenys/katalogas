@@ -44,9 +44,10 @@ from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateF
 from vitrina.datasets.services import update_facet_data, get_projects
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
+from vitrina.datasets.helpers import is_manager_dataset_list
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
-from vitrina.orgs.helpers import is_org_dataset_list, is_manager_dataset_list
+from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
@@ -98,9 +99,6 @@ class DatasetListView(FacetedSearchView):
         form = context.get('form')
         user_is_authenticated = self.request.user.is_authenticated
         user_is_coordinator = user_is_authenticated and self.request.user.organization
-        print('Debug')
-        print(user_is_authenticated)
-        print(user_is_coordinator)
         user_is_manager = user_is_authenticated and self.request.user.representative_set.filter(role='manager')
         
         extra_context = {

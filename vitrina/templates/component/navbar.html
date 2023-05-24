@@ -55,7 +55,12 @@
                                     {% translate "Užduotys" %}
                                 </a>
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
-                                    {% translate "Rinkiniai" %}
+                                    {% translate "Mano organizacijos rinkiniai" %}
+                                </a>
+                                {% endif %}
+                                {% if user.is_manager %}
+                                <a href="{% url 'manager-dataset-list' %}" class="navbar-item">
+                                    {% translate "Mano tvarkomi rinkiniai" %}
                                 </a>
                                 {% endif %}
                                 {% if user.is_staff or user.is_superuser %}

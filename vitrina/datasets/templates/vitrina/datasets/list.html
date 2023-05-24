@@ -70,7 +70,7 @@
         <div class="column is-three-quarters">
 
             <form id="dataset-filter" class="field has-addons is-fullwidth"
-                  action="{% if request.resolver_match.url_name == 'dataset-list' %}
+                  action="{% if request.resolver_match.url_name == 'dataset-list' or request.resolver_match.url_name == 'manager-dataset-list'%}
                               {% url 'dataset-list' %}
                            {% else %}
                                {% url 'organization-datasets' request.resolver_match.kwargs.pk %}

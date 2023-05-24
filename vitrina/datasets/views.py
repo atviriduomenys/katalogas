@@ -46,7 +46,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
-from vitrina.orgs.helpers import is_org_dataset_list
+from vitrina.orgs.helpers import is_org_dataset_list, is_manager_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
@@ -79,6 +79,10 @@ class DatasetListView(FacetedSearchView):
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
+        
+        if is_manager_dataset_list(self.request):
+            dataset_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role='manager')]
+            datasets = datasets.filter(id__in=dataset_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
@@ -92,6 +96,13 @@ class DatasetListView(FacetedSearchView):
         context = super().get_context_data(**kwargs)
         facet_fields = context.get('facets').get('fields')
         form = context.get('form')
+        user_is_authenticated = self.request.user.is_authenticated
+        user_is_coordinator = user_is_authenticated and self.request.user.organization
+        print('Debug')
+        print(user_is_authenticated)
+        print(user_is_coordinator)
+        user_is_manager = user_is_authenticated and self.request.user.representative_set.filter(role='manager')
+        
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
@@ -114,6 +125,8 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
+            'show_org_dataset_list_url': user_is_coordinator,
+            'show_manager_dataset_list_url': user_is_manager and not is_manager_dataset_list(self.request),
         }
         if is_org_dataset_list(self.request):
             extra_context['organization'] = self.organization

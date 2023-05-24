@@ -10,6 +10,26 @@
 </nav>
 {% endif %}
 
+{% if show_org_dataset_list_url %}
+<nav class="category-panel">
+    <a href="{% url 'organization-datasets' user.organization.pk %}" id="org-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano organizacijos rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
+{% if show_manager_dataset_list_url %}
+<nav class="category-panel">
+    <a href="{% url 'manager-dataset-list' %}" id="manager-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano tvarkomi rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
 <nav class="category-panel">
     {% if stats == 'status' %}
         <p class="category-panel-heading">

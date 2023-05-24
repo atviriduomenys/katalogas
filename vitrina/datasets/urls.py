@@ -24,6 +24,7 @@ from vitrina.datasets.views import DatasetsStatsView
 urlpatterns = [
     # @GetMapping("/datasets")
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('manager-datasets/', DatasetListView.as_view(), name='manager-dataset-list'),
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/yearly', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),

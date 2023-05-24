@@ -1118,3 +1118,75 @@ def test_dataset_jurisdictions(app: DjangoTestApp):
     assert resp.context['max_count'] == dataset_count
     assert len(resp.context['jurisdictions']) == 1
     assert dataset_count == 5
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='org-dataset-url')
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='org-dataset-url')
+
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='manager-dataset-url')
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='manager-dataset-url')
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='org-dataset-url')
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_org_dataset_url_is_shown_for_manager(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER,
+    )
+    app.set_user(rep.user)
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='manager-dataset-url')
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_org_datasets_are_shown_for_coordinator(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(title='testt', organization=org)
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    resp = resp.click(linkid='org-dataset-url')
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk]
+
+@pytest.mark.haystack
+@pytest.mark.django_db
+def test_manager_datasets_are_shown_for_manager(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER,
+    )
+    app.set_user(rep.user)
+    resp = app.get(reverse('dataset-list'))
+    resp = resp.click(linkid='manager-dataset-url')
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk]

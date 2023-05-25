@@ -289,6 +289,8 @@ class Property(Metadata):
 
     name: str = ''
     type: str = ''
+    required: bool = False
+    unique: bool = False
 
     model: Model = field(init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
@@ -495,6 +497,7 @@ def read(reader: Iterable[Row]) -> State:
         state.clean(dim)
 
         # Read metadata
+        meta = None
         if dim == 'dataset':
             meta = _read_dataset(state, row, name)
 
@@ -523,7 +526,8 @@ def read(reader: Iterable[Row]) -> State:
             meta = _read_param(state, row, name)
 
         # Push read metadata to stack
-        state.push(meta)
+        if meta:
+            state.push(meta)
 
     return state
 
@@ -533,21 +537,24 @@ def _read_dataset(
     row: Row,
     name: str,
 ) -> Dataset:
-    dataset = state.dataset = Dataset(
-        id=row['id'],
-        name=name,
-        type=row['type'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
-    )
-    state.manifest.datasets[name] = dataset
+    if name == '/':
+        dataset = state.dataset = None
+    else:
+        dataset = state.dataset = Dataset(
+            id=row['id'],
+            name=name,
+            type=row['type'],
+            ref=row['ref'],
+            source=row['source'],
+            prepare=row['prepare'],
+            level=_parse_int(row['level']),
+            level_given=_parse_int(row['level']),
+            access=row['access'],
+            uri=row['uri'],
+            title=row['title'],
+            description=row['description'],
+        )
+        state.manifest.datasets[name] = dataset
     return dataset
 
 
@@ -556,23 +563,26 @@ def _read_resource(
     row: Row,
     name: str,
 ) -> Resource:
-    resource = state.resource = Resource(
-        id=row['id'],
-        name=name,
-        type=row['type'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
-    )
+    if name == '/':
+        resource = state.resource = None
+    else:
+        resource = state.resource = Resource(
+            id=row['id'],
+            name=name,
+            type=row['type'],
+            ref=row['ref'],
+            source=row['source'],
+            prepare=row['prepare'],
+            level=_parse_int(row['level']),
+            level_given=_parse_int(row['level']),
+            access=row['access'],
+            uri=row['uri'],
+            title=row['title'],
+            description=row['description'],
+        )
 
-    resource.dataset = state.dataset
-    resource.dataset.resources[name] = resource
+        resource.dataset = state.dataset
+        resource.dataset.resources[name] = resource
 
     return resource
 
@@ -582,21 +592,24 @@ def _read_base(
     row: Row,
     name: str,
 ) -> Base:
-    name = get_relative_model_name(state.dataset, name)
-    base = state.base = Base(
-        id=row['id'],
-        name=name,
-        type=row['type'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(get_level(row)),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
-    )
+    if name == '/':
+        base = state.base = None
+    else:
+        name = get_relative_model_name(state.dataset, name)
+        base = state.base = Base(
+            id=row['id'],
+            name=name,
+            type=row['type'],
+            ref=row['ref'],
+            source=row['source'],
+            prepare=row['prepare'],
+            level=_parse_int(_get_level(row)),
+            level_given=_parse_int(row['level']),
+            access=row['access'],
+            uri=row['uri'],
+            title=row['title'],
+            description=row['description'],
+        )
     return base
 
 
@@ -613,7 +626,7 @@ def _read_model(
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(get_level(row)),
+        level=_parse_int(_get_level(row)),
         level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
@@ -656,20 +669,27 @@ def _read_property(
     row: Row,
     name: str,
 ) -> Property:
+    dtype = _parse_dtype_string(row['type'])
+
     prop = state.prop = Property(
         id=row['id'],
         name=name,
-        type=row['type'],
+        type=dtype['type'],
         ref=row['ref'],
         source=row['source'],
         prepare=row['prepare'],
-        level=_parse_int(get_level(row)),
+        level=_parse_int(_get_level(row)),
         level_given=_parse_int(row['level']),
         access=row['access'],
         uri=row['uri'],
         title=row['title'],
         description=row['description'],
+        required=dtype['required'],
+        unique=dtype['unique'],
     )
+
+    if dtype['error']:
+        prop.errors.append(dtype['error'])
 
     if prop.ref and prop.type in ('ref', 'backref', 'generic'):
         ref_model, ref_props = _parse_property_ref(prop.ref)
@@ -834,13 +854,50 @@ def get_relative_model_name(dataset: Dataset, name: str) -> str:
         ])
 
 
-def get_level(row: Row) -> str:
+def _get_level(row: Row) -> str:
     if row['level']:
         return row['level']
 
     level = '3'
-    if row['ref'] and not row['uri']:
+    if row['ref'] and row['uri']:
         level = '5'
     elif row['ref']:
         level = '4'
     return level
+
+
+def _parse_dtype_string(dtype: str) -> dict:
+    args = []
+    error = None
+    required = unique = False
+    invalid_args = []
+
+    if '(' in dtype:
+        dtype, args = dtype.split('(', 1)
+        args, additional_args = args.split(')', 1)
+        args = args.strip().rstrip(')')
+        args = [a.strip() for a in args.split(',')]
+    else:
+        if len(dtype.split(None, 1)) > 1:
+            dtype, additional_args = dtype.split(None, 1)
+        else:
+            additional_args = ""
+
+    if additional_args:
+        for arg in additional_args.split(None):
+            if arg == 'required':
+                required = True
+            elif arg == 'unique':
+                unique = True
+            else:
+                invalid_args.append(arg)
+        if invalid_args:
+            error = f'Invalid type arguments: {", ".join(invalid_args)}.'
+
+    return {
+        'type': dtype,
+        'type_args': args,
+        'required': required,
+        'unique': unique,
+        'error': error,
+    }

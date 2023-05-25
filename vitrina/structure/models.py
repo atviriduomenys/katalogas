@@ -1,6 +1,12 @@
+import builtins
+import functools
+import operator
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 
@@ -38,17 +44,20 @@ class Metadata(models.Model):
     prepare_ast = models.JSONField(_("Formulės AST"), blank=True)
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
+    average_level = models.FloatField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
     access = models.CharField(_("Prieiga"), max_length=255, blank=True)
     prefix = models.ForeignKey(Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True)
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
     version = models.IntegerField(_("Versija"), blank=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    description = models.CharField(_("Aprašymas"), max_length=255, blank=True)
+    description = models.TextField(_("Aprašymas"), blank=True)
     order = models.IntegerField(_("Rikiavimo tvarka"), null=True, blank=True)
     content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"))
     object_id = models.PositiveIntegerField(_("Objekto id"))
     object = GenericForeignKey('content_type', 'object_id')
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_('Duomenų rinkinys'))
+    required = models.BooleanField(_("Privalomas"), null=True, blank=True)
+    unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
 
     objects = models.Manager()
 
@@ -58,6 +67,18 @@ class Metadata(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def uri_link(self):
+        link = None
+        if self.uri:
+            prefix, name = self.uri.split(':', 1)
+            if prefix := Prefix.objects.filter(
+                name=prefix,
+                metadata__dataset=self.dataset
+            ).first():
+                link = f"{prefix.uri}{name}"
+        return link
 
 
 class Base(models.Model):
@@ -76,8 +97,8 @@ class Base(models.Model):
         verbose_name = _('Bazė')
 
     def __str__(self):
-        if self.metadata.first():
-            return self.metadata.first().name
+        if metadata := self.metadata.first():
+            return metadata.name
         return ""
 
 
@@ -108,9 +129,47 @@ class Model(models.Model):
         verbose_name = _('Modelis')
 
     def __str__(self):
-        if self.metadata.first():
-            return self.metadata.first().name
+        if metadata := self.metadata.first():
+            return metadata.name
         return ""
+
+    @property
+    def name(self):
+        if metadata := self.metadata.first():
+            return metadata.name.split('/')[-1]
+        return ''
+
+    def update_level(self):
+        if metadata := self.metadata.first():
+            prop_ids = self.model_properties.values_list('pk', flat=True)
+            where = [
+                Q(content_type=ContentType.objects.get_for_model(Model), object_id=self.pk),
+                Q(content_type=ContentType.objects.get_for_model(Property), object_id__in=prop_ids)
+            ]
+            if self.base:
+                where.append(
+                    Q(content_type=ContentType.objects.get_for_model(Base), object_id=self.base.pk)
+                )
+            where = functools.reduce(operator.or_, where)
+            levels = Metadata.objects.filter(where, level__isnull=False).values_list('level', flat=True)
+            if levels:
+                metadata.average_level = sum(levels) / len(levels)
+                metadata.save()
+
+    def get_absolute_url(self):
+        return reverse('model-structure', kwargs={
+            'dataset_id': self.dataset.pk,
+            'model': self.name,
+        })
+
+    def get_data_url(self):
+        return reverse('model-data', kwargs={
+            'dataset_id': self.dataset.pk,
+            'model': self.name,
+        })
+
+    def get_given_props(self):
+        return self.model_properties.filter(given=True).order_by('metadata__order')
 
 
 class Property(models.Model):
@@ -141,15 +200,29 @@ class Property(models.Model):
     objects = models.Manager()
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
+    enums = GenericRelation('Enum')
 
     class Meta:
         db_table = 'property'
         verbose_name = _('Savybė')
 
     def __str__(self):
-        if self.metadata.first():
-            return self.metadata.first().name
+        if metadata := self.metadata.first():
+            return metadata.name
         return ""
+
+    def get_absolute_url(self):
+        return reverse('property-structure', kwargs={
+            'dataset_id': self.model.dataset.pk,
+            'model': self.model.name,
+            'prop': self.name,
+        })
+
+    @builtins.property
+    def name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ''
 
 
 class PropertyList(models.Model):
@@ -197,8 +270,8 @@ class EnumItem(models.Model):
         verbose_name = _('Pasirinkimas')
 
     def __str__(self):
-        if self.metadata.first():
-            return self.metadata.first().prepare
+        if metadata := self.metadata.first():
+            return metadata.prepare
         return ""
 
 
@@ -230,6 +303,6 @@ class ParamItem(models.Model):
         verbose_name = _('Parametro dalis')
 
     def __str__(self):
-        if self.metadata.first():
-            return self.metadata.first().name
+        if metadata := self.metadata.first():
+            return metadata.name
         return ""

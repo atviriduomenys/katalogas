@@ -785,9 +785,9 @@ def test_structure_without_ids__enums(app: DjangoTestApp):
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
         content_type=ContentType.objects.get_for_model(EnumItem),
-    ).values_list('body', flat=True)) == [
+    ).order_by('body').values_list('body', flat=True)) == [
+        'Enum item "BIG" already exists.',
         'Enum item "SMALL" already exists.',
-        'Enum item "BIG" already exists.'
     ]
 
 
@@ -820,9 +820,9 @@ def test_structure_without_ids__params(app: DjangoTestApp):
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
         content_type=ContentType.objects.get_for_model(ParamItem),
-    ).values_list('body', flat=True)) == [
+    ).order_by('body').values_list('body', flat=True)) == [
+        'Param item "BIG" already exists.',
         'Param item "SMALL" already exists.',
-        'Param item "BIG" already exists.'
     ]
 
 
@@ -967,17 +967,17 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_dataset_level(app: DjangoTestApp):
+def test_average_level(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Base,,,,,,4,,,,\n'
+        '1,,,,Base,,,,,,4,,,,\n'
         ',,,Base,,,,,,,4,,,,\n'
-        ',,,,City,,,,,,5,,,,\n'
+        '2,,,,City,,,,,,5,,,,\n'
         ',,,,,id,integer,,,,5,,,,\n'
         ',,,,,title,string,,,,5,,,,\n'
         ',,,,,country,ref,Country,,,4,,,,\n'
-        ',,,,Country,,,,,,4,,,,\n'
+        '3,,,,Country,,,,,,4,,,,\n'
         ',,,,,id,integer,,,,3,,,,\n'
         ',,,,,title,string,,,,2,,,,\n'
     )
@@ -987,17 +987,20 @@ def test_dataset_level(app: DjangoTestApp):
         )
     )
     create_structure_objects(structure)
-    assert structure.dataset.get_level() == 4
+    assert structure.dataset.metadata.first().average_level == 4
+    assert Model.objects.get(metadata__uuid="1").metadata.first().average_level == 4
+    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 4.6
+    assert Model.objects.get(metadata__uuid="3").metadata.first().average_level == 3.25
 
 
 @pytest.mark.django_db
-def test_dataset_level_without_given_level(app: DjangoTestApp):
+def test_average_level_without_given_level(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Base,,,,,,,,,,\n'                              # level 3
+        '1,,,,Base,,,,,,,,,,\n'                             # level 3
         ',,,Base,,,,,,,,,,,\n'                              # level 3
-        ',,,,City,,,,,,,,,,\n'                              # level 3
+        '2,,,,City,,,,,,,,,,\n'                             # level 3
         ',,,,,id,integer,,,,,,dcat:id,,\n'                  # level 3            
         ',,,,,country1,ref,Country,,,,,,,\n'                # level 4
         ',,,,,country2,ref,Country,,,,,dcat:country,,\n'    # level 5
@@ -1008,4 +1011,6 @@ def test_dataset_level_without_given_level(app: DjangoTestApp):
         )
     )
     create_structure_objects(structure)
-    assert structure.dataset.get_level() == 3.5
+    assert structure.dataset.metadata.first().average_level == 3.5
+    assert Model.objects.get(metadata__uuid="1").metadata.first().average_level == 3
+    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 3.6

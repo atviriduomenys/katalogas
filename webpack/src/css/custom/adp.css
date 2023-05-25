@@ -8861,4 +8861,77 @@ table.th-40 th {
     border: none;
 }
 
+.error-comment {
+    background-color: #fff5f7;
+    border-left-color: #ff3860;
+    border-left-width: 5px;
+    border-left-style: solid;
+    border-radius: 2px
+}
+
+.dropdown-check-list {
+  display: inline-block;
+  z-index: 100;
+}
+
+.dropdown-check-list .anchor {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  padding: 5px 50px 5px 10px;
+  min-width: 17em;
+}
+
+.dropdown-check-list ul.items {
+  padding: 5px;
+  display: none;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-top: none;
+  position: absolute;
+  background-color: whitesmoke;
+  overflow-x: auto;
+}
+
+.dropdown-check-list ul.items li {
+  list-style: none;
+}
+
+.dropdown-check-list.visible .items {
+  display: block;
+}
+
+.dropdown-check-list .anchor:after {
+  position: absolute;
+  content: "▼";
+  right: 10px;
+}
+
+.table-menu {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    position: absolute;
+    padding: 5px;
+    top: 100%;
+    left: 0;
+    width: 12em;
+}
+
+.is-short {
+    width: 7em;
+}
+
+button.is-fixed-length {
+    width: 7em;
+}
+
+.no-margin-right {
+    margin-right: 0px !important;
+}
+
+.filter-table {
+    overflow: auto;
+    max-height: 80vh;
+}
+
 /*# sourceMappingURL=adp-final.css.map */

@@ -236,21 +236,32 @@ class Dataset(TranslatableModel):
                 return root_org.pk
         return None
 
-    def get_level(self):
-        levels = Metadata.objects.filter(
-            dataset=self,
-            content_type__in=[
-                ContentType.objects.get_for_model(Model),
-                ContentType.objects.get_for_model(Base),
-                ContentType.objects.get_for_model(Property)
-            ],
-            level__isnull=False,
-        ).values_list('level', flat=True)
+    def update_level(self):
+        if metadata := self.metadata.first():
+            levels = Metadata.objects.filter(
+                dataset=self,
+                content_type__in=[
+                    ContentType.objects.get_for_model(Model),
+                    ContentType.objects.get_for_model(Base),
+                    ContentType.objects.get_for_model(Property)
+                ],
+                level__isnull=False,
+            ).values_list('level', flat=True)
 
-        if levels:
-            return sum(levels) / len(levels)
-        else:
-            return None
+            if levels:
+                metadata.average_level = sum(levels) / len(levels)
+                metadata.save()
+
+    def get_level(self):
+        if metadata := self.metadata.first():
+            return metadata.average_level
+        return None
+
+    @property
+    def name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ""
 
 
 # TODO: To be merged into Dataset:

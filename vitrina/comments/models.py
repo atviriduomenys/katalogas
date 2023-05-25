@@ -50,13 +50,21 @@ class Comment(models.Model):
     is_public = models.BooleanField(default=True, verbose_name=_("Viešas komentaras"))
     type = models.CharField(max_length=255, choices=TYPES, default=USER)
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='content_type_comments')
-    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name='content_type_comments',
+        null=True
+    )
+    object_id = models.PositiveIntegerField(null=True)
     content_object = GenericForeignKey('content_type', 'object_id')
     rel_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, blank=True, null=True,
                                          related_name='rel_content_type_comments')
     rel_object_id = models.PositiveIntegerField(blank=True, null=True)
     rel_content_object = GenericForeignKey('rel_content_type', 'rel_object_id')
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)
 
     objects = models.Manager()
     public = PublicCommentManager()
@@ -104,6 +112,9 @@ class Comment(models.Model):
         for status in Comment.STATUSES:
             statuses[status[0]] = status[1]
         return statuses
+
+    def is_error(self):
+        return self.type == self.STRUCTURE_ERROR
 
 
 # TODO: To be removed.

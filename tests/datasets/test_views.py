@@ -534,31 +534,6 @@ def dataset_structure_data():
 
 
 @pytest.mark.django_db
-def test_with_structure(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    dataset.current_structure = DatasetStructureFactory(dataset=dataset)
-    dataset.save()
-    resp = app.get(dataset.current_structure.get_absolute_url())
-    assert resp.context['errors'] == []
-    assert list(resp.context['manifest'].datasets) == ['datasets/gov/ivpk/adk']
-
-
-@pytest.mark.django_db
-def test_with_non_readable_structure(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    dataset.current_structure = DatasetStructureFactory(
-        dataset=dataset,
-        file=FilerFileFactory(
-            file=FileField(filename='file.csv', data=b'ab\0c')
-        )
-    )
-    dataset.save()
-    resp = app.get(dataset.current_structure.get_absolute_url())
-    assert len(resp.context['errors']) > 0
-    assert resp.context['manifest'] is None
-
-
-@pytest.mark.django_db
 def test_public_manager_filtering(app: DjangoTestApp):
     organization = OrganizationFactory(slug="org", kind="gov")
 

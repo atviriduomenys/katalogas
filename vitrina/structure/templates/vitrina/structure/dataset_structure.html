@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+
+{% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/structure/structure_tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-three-quarters">
+
+        {% if errors %}
+        <div class="message is-danger">
+            <div class="message-body">
+                {% for error in errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <a class="button is-primary" href="#">
+            {% translate "Eksportuoti" %}
+        </a>
+        <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
+            {% translate "Importuoti" %}
+        </a>
+        <a class="button is-primary mb-5 ml-2" href="#">
+            {% translate "Naujas modelis" %}
+        </a>
+
+        {% for model in models %}
+            <div class="columns">
+                <div class="column is-4">
+                    <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a><br/>
+                    <small class="ml-4">
+                        {% if model.metadata.first.title %}
+                            {{ model.metadata.first.title }}
+                        {% else %}
+                            {{ model.metadata.first.description|default:""|truncatewords:8 }}
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="column">
+                    <span>
+                        base:
+                        {% if model.base %}
+                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="column">
+                    <span>
+                        uri:
+                        {% if model.metadata.first.uri %}
+                            {% if model.metadata.first.uri_link %}
+                                <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
+                            {% else %}
+                                {{ model.metadata.first.uri }}
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="column has-text-right">
+                    <span class="has-text-weight-semibold">{{ model.metadata.first.average_level|default:"0"|floatformat:"1" }}</span>
+                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if structure %}
+<div class="columns no-margin-bottom mt-5">
+    <div class="column is-three-quarters">
+        {% comments obj=structure user=request.user %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

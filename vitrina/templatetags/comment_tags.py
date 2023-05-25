@@ -37,3 +37,28 @@ def comments(obj, user):
         'reply_form': CommentForm(obj),
         'submit_button_id': "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button"
     }
+
+
+@register.inclusion_tag('component/comments.html')
+def external_comments(content_type, object_id, user, dataset):
+    obj_comments = Comment.objects.filter(
+        external_content_type=content_type,
+        external_object_id=object_id,
+        parent_id__isnull=True
+    ).order_by('created')
+    obj_comments = obj_comments.filter(is_public=True)
+    comments_array = []
+    for comment in obj_comments:
+        children = comment.descendants(user=user)
+        comments_array.append((comment, children))
+    return {
+        'comments': comments_array,
+        'user': user,
+        'content_type': content_type,
+        'object_id': object_id,
+        'comment_form': CommentForm(None),
+        'reply_form': CommentForm(None),
+        'submit_button_id': "id_submit_button",
+        'external': True,
+        'dataset': dataset,
+    }

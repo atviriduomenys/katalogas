@@ -1,7 +1,9 @@
 import csv
+import json
 import uuid
 from typing import Union, Tuple, List, Dict
 
+import requests
 from django.db.models import Q
 
 import vitrina.datasets.structure as struct
@@ -52,6 +54,7 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                     _load_models(state, structure.dataset)
                     _link_distributions(state, structure.dataset)
                     _link_models(structure.dataset, state)
+                    structure.dataset.update_level()
 
         for error in errors:
             Comment.objects.create(
@@ -74,11 +77,13 @@ def _load_datasets(
     loaded_metadata = []
 
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
-        if Metadata.objects.filter(
+        if metadata := Metadata.objects.filter(
             ~Q(uuid=meta.id),
-            name=meta.name
-        ).exists():
+            name=meta.name,
+            dataset=dataset
+        ).first():
             meta.errors.append(_(f'Dataset "{meta.name}" already exists.'))
+            loaded_metadata.append(metadata)
         else:
             dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
             _load_prefixes(dataset, meta.prefixes, dataset)
@@ -111,8 +116,10 @@ def _load_prefixes(
         if prefix := existing_prefixes.filter(
             ~Q(metadata__uuid=meta.id),
             name=meta.name,
+            metadata__dataset=dataset,
         ).first():
             meta.errors.append(_(f'Prefix "{meta.name}" already exists.'))
+            loaded_prefixes.append(prefix)
         else:
             prefix = Prefix(
                 name=meta.name,
@@ -157,8 +164,10 @@ def _load_enums(
                 ~Q(metadata__uuid=meta.id),
                 metadata__name=meta.name,
                 metadata__prepare=meta.prepare,
+                metadata__dataset=dataset,
             ).first():
                 meta.errors.append(_(f'Enum item "{meta.prepare}" already exists.'))
+                loaded_enum_items.append(enum_item)
             else:
                 enum_item = EnumItem(enum=enum)
                 enum_item, metadata = _create_or_update_metadata(dataset, meta, enum_item, i)
@@ -174,6 +183,7 @@ def _load_enums(
 
     removed_enums = list(set(existing_enums) - set(loaded_enums))
     for enum in removed_enums:
+        enum.enumitem_set.all().delete()
         enum.delete()
 
 
@@ -203,9 +213,11 @@ def _load_params(
             if param_item := existing_param_items.filter(
                 ~Q(metadata__uuid=meta.id),
                 metadata__name=meta.name,
-                metadata__prepare=meta.prepare
+                metadata__prepare=meta.prepare,
+                metadata__dataset=dataset,
             ).first():
                 meta.errors.append(_(f'Param item "{meta.prepare}" already exists.'))
+                loaded_param_items.append(param_item)
             else:
                 param_item = ParamItem(param=param)
                 param_item, metadata = _create_or_update_metadata(dataset, meta, param_item, i)
@@ -221,6 +233,7 @@ def _load_params(
 
     removed_params = list(set(existing_params) - set(loaded_params))
     for param in removed_params:
+        param.paramitem_set.all().delete()
         param.delete()
 
 
@@ -234,9 +247,11 @@ def _load_models(
     for i, meta in enumerate(state.manifest.models.values(), 1):
         if model := existing_models.filter(
             ~Q(metadata__uuid=meta.id),
-            metadata__name=meta.name
+            metadata__name=meta.name,
+            metadata__dataset=dataset,
         ).first():
             meta.errors.append(_(f'Model "{meta.name}" already exists.'))
+            loaded_models.append(model)
         else:
             model = Model(dataset=dataset)
             model, metadata = _create_or_update_metadata(dataset, meta, model, i)
@@ -264,8 +279,10 @@ def _load_properties(
         if prop := existing_props.filter(
             ~Q(metadata__uuid=meta.id),
             metadata__name=meta.name,
+            metadata__dataset=dataset
         ).first():
             meta.errors.append(_(f'Property "{meta.name}" already exists.'))
+            loaded_props.append(prop)
         else:
             prop = Property(model=model)
             prop, metadata = _create_or_update_metadata(dataset, meta, prop, i)
@@ -290,7 +307,8 @@ def _load_comments(
 
     existing_comments = Comment.objects.filter(
         content_type=ct,
-        object_id=obj.pk
+        object_id=obj.pk,
+        type=Comment.STRUCTURE
     )
     loaded_comments = []
 
@@ -350,20 +368,24 @@ def _create_or_update_metadata(
     if use_existing_meta and obj.pk and Metadata.objects.filter(
         object_id=obj.pk,
         content_type=ct,
+        dataset=dataset,
     ).exists():
         metadata = Metadata.objects.filter(
             object_id=obj.pk,
-            content_type=ct
+            content_type=ct,
+            dataset=dataset,
         ).first()
         return metadata.object, metadata
 
     if obj_meta.id and Metadata.objects.filter(
         uuid=obj_meta.id,
         content_type=ct,
+        dataset=dataset,
     ).exists():
         metadata = Metadata.objects.filter(
             uuid=obj_meta.id,
-            content_type=ct
+            content_type=ct,
+            dataset=dataset
         ).first()
         metadata.uuid = obj_meta.id
         metadata.name = obj_meta.name if hasattr(obj_meta, 'name') else ''
@@ -380,6 +402,8 @@ def _create_or_update_metadata(
         metadata.title = obj_meta.title
         metadata.description = obj_meta.description
         metadata.order = order
+        metadata.required = obj_meta.required if hasattr(obj_meta, 'required') else None
+        metadata.unique = obj_meta.unique if hasattr(obj_meta, 'unique') else None
         metadata.save()
 
         obj = metadata.object
@@ -407,6 +431,8 @@ def _create_or_update_metadata(
             order=order,
             content_type=ct,
             object_id=obj.pk,
+            required=obj_meta.required if hasattr(obj_meta, 'required') else None,
+            unique=obj_meta.unique if hasattr(obj_meta, 'unique') else None,
         )
     return obj, metadata
 
@@ -419,10 +445,11 @@ def _link_distributions(
         for i, model_meta in enumerate(dataset_meta.models.values()):
             distribution = None
             resource = model_meta.resource
+            title = model_meta.name.split('/')[-1]
             if not resource:
                 url = f"https://get.data.gov.lt/{model_meta.name}/:ns"
                 resource = struct.Resource(
-                    name=model_meta.name,
+                    name=title,
                     source=url
                 )
                 distribution = DatasetDistribution.objects.filter(
@@ -437,19 +464,19 @@ def _link_distributions(
                         dataset=dataset,
                         download_url=url,
                         format=format,
-                        title=model_meta.name,
+                        title=title,
                         type='URL',
                     )
             elif resource and resource.source:
                 distribution = DatasetDistribution.objects.filter(
                     dataset=dataset,
-                    download_url=resource.source
+                    download_url=resource.source,
                 ).first()
                 if not distribution:
                     distribution = DatasetDistribution.objects.create(
                         dataset=dataset,
                         download_url=resource.source,
-                        title=model_meta.name,
+                        title=resource.name,
                         type='URL',
                     )
 
@@ -463,7 +490,8 @@ def _link_distributions(
                 )
                 _load_comments(dataset, resource.comments, distribution)
                 if model := Model.objects.filter(
-                    metadata__uuid=model_meta.id
+                    metadata__uuid=model_meta.id,
+                    dataset=dataset
                 ).first():
                     model.distribution = distribution
                     model.save()
@@ -478,7 +506,8 @@ def _link_models(dataset: Dataset, state: struct.State):
     for model_meta in state.manifest.models.values():
         if model := Model.objects.filter(
             metadata__content_type=model_ct,
-            metadata__uuid=model_meta.id
+            metadata__uuid=model_meta.id,
+            dataset=dataset,
         ).first():
             _link_base(dataset, model_meta.base, model)
 
@@ -497,6 +526,7 @@ def _link_models(dataset: Dataset, state: struct.State):
                         )
 
             _link_properties(dataset, model, model_meta)
+            model.update_level()
 
 
 def _link_base(
@@ -509,7 +539,8 @@ def _link_base(
     if meta:
         if base_model := Model.objects.filter(
             metadata__content_type=model_ct,
-            metadata__name=meta.name
+            metadata__name=meta.name,
+            dataset=dataset,
         ).first():
             if base := Base.objects.filter(
                 ~Q(metadata__uuid=meta.id),
@@ -547,7 +578,8 @@ def _link_properties(
     for prop_meta in model_meta.properties.values():
         if prop := Property.objects.filter(
             metadata__content_type=ct,
-            metadata__uuid=prop_meta.id
+            metadata__uuid=prop_meta.id,
+            model=model,
         ).first():
             if '.' in prop_meta.name:
                 _link_denorm_props(dataset, prop_meta, model, prop)
@@ -556,6 +588,7 @@ def _link_properties(
                 if ref_model := Model.objects.filter(
                     metadata__name=prop_meta.ref,
                     metadata__content_type=model_ct,
+                    dataset=dataset
                 ).first():
                     prop.ref_model = ref_model
                     prop.save()
@@ -585,7 +618,8 @@ def _link_denorm_props(
     parent_prop = prop_meta.name.rsplit('.', 1)[0]
     if parent_prop_meta := Metadata.objects.filter(
         content_type=ct,
-        name=parent_prop
+        name=parent_prop,
+        dataset=dataset
     ).first():
         parent_prop = parent_prop_meta.object
     else:
@@ -602,3 +636,11 @@ def _link_denorm_props(
     prop.save()
     return prop
 
+
+def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
+    if uuid:
+        res = requests.get(f"https://get.data.gov.lt/{model}/{uuid}/?{query}")
+    else:
+        res = requests.get(f"https://get.data.gov.lt/{model}/?{query}")
+    data = json.loads(res.content)
+    return data

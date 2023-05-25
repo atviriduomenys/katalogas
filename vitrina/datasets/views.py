@@ -21,7 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
 
 from django.views import View
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
@@ -44,7 +44,6 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
-from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -174,32 +173,6 @@ class DatasetDistributionPreviewView(View):
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
-
-
-class DatasetStructureView(TemplateView):
-    template_name = 'vitrina/datasets/structure.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
-        structure = dataset.current_structure
-        context['errors'] = []
-        context['manifest'] = None
-        context['structure'] = structure
-        if structure and structure.file:
-            if errors := detect_read_errors(structure.file.path):
-                context['errors'] = errors
-            else:
-                with open(
-                    structure.file.path,
-                    encoding='utf-8',
-                    errors='replace',
-                ) as f:
-                    reader = csv.DictReader(f)
-                    state = read(reader)
-                context['errors'] = state.errors
-                context['manifest'] = state.manifest
-        return context
 
 
 class DatasetCreateView(

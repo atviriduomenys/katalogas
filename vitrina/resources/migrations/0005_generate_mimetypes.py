@@ -13,6 +13,7 @@ def generate_mimetype_for_format_table(apps, schema_editor):
         'xml': 'application/xml',
         'shape': 'application/octet-stream',
         'api': 'application/vnd.api+json',
+        'uapi': 'application/vnd.api+json',
         'url': 'text/url',
         'doc': 'application/msword',
         'html': 'text/html',

@@ -162,3 +162,12 @@ poetry build
 poetry run python manage.py collectstatic --no-input --clear
 rsync -a --delete scripts dist var/static docker/
 docker build -t vitrina:$(git rev-parse --short HEAD) -t vitrina:latest docker
+
+
+# 2023-05-18 08:52 Issue with mysql
+
+docker-compose ps
+docker-compose up -d
+docker-compose ps
+docker-compose stop mysql
+docker-compose ps

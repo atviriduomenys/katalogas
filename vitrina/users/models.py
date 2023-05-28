@@ -1,7 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
+from vitrina.datasets.models import Dataset
 from vitrina.users.managers import UserManager
 
 
@@ -37,7 +38,27 @@ class User(AbstractUser):
 
     def get_acl_parents(self):
         return [self]
+    
+    @property
+    def is_coordinator(self):
+        return bool(self.organization)
 
+    @property
+    def is_manager(self):
+        return bool(self.representative_set.filter(role=Representative.MANAGER))
+    
+    @property
+    def can_see_organization_dataset_list_url(self):
+        if self.is_coordinator:
+            return Dataset.objects.filter(organization=self.organization)
+    
+    @property
+    def can_see_manager_dataset_list_url(self):
+        if self.is_manager:
+            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.MANAGER)]
+            for org_id in org_ids:
+                if Dataset.objects.filter(organization=org_id):
+                    return True
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

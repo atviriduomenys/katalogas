@@ -7,7 +7,6 @@ from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
-from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
@@ -351,7 +350,7 @@ class DatasetRemark(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    author = models.ForeignKey("vitrina_users.User", models.DO_NOTHING, blank=True, null=True)
     dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -398,7 +397,7 @@ class DatasetEvent(models.Model):
     user = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
+    user_0 = models.ForeignKey("vitrina_users.User", models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
 
     class Meta:
         managed = False

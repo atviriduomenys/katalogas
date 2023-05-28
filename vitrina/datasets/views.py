@@ -82,8 +82,8 @@ class DatasetListView(FacetedSearchView):
             datasets = datasets.facet(field, **options)
         
         if is_manager_dataset_list(self.request):
-            dataset_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role='manager')]
-            datasets = datasets.filter(id__in=dataset_ids)
+            org_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)]
+            datasets = datasets.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
@@ -96,11 +96,7 @@ class DatasetListView(FacetedSearchView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         facet_fields = context.get('facets').get('fields')
-        form = context.get('form')
-        user_is_authenticated = self.request.user.is_authenticated
-        user_is_coordinator = user_is_authenticated and self.request.user.organization
-        user_is_manager = user_is_authenticated and self.request.user.representative_set.filter(role='manager')
-        
+        form = context.get('form')    
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
@@ -122,10 +118,11 @@ class DatasetListView(FacetedSearchView):
             'selected_tags': get_selected_value(form, 'tags', True, False),
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
-            'selected_date_to': form.cleaned_data.get('date_to'),
-            'show_org_dataset_list_url': user_is_coordinator,
-            'show_manager_dataset_list_url': user_is_manager and not is_manager_dataset_list(self.request),
+            'selected_date_to': form.cleaned_data.get('date_to')
         }
+        user_is_authenticated = self.request.user.is_authenticated
+        extra_context['show_org_dataset_list_url'] = user_is_authenticated and self.request.user.can_see_organization_dataset_list_url
+        extra_context['show_manager_dataset_list_url'] = user_is_authenticated and self.request.user.can_see_manager_dataset_list_url
         if is_org_dataset_list(self.request):
             extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(

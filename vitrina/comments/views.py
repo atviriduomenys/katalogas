@@ -99,7 +99,7 @@ class ExternalCommentView(
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={
-            'dataset_id': form.data.get('dataset_id'),
+            'pk': form.data.get('dataset_id'),
             'model': external_content_type,
             'uuid': external_object_id,
         }))
@@ -122,7 +122,7 @@ class ExternalReplyView(LoginRequiredMixin, View):
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={
-            'dataset_id': form.data.get('dataset_id'),
+            'pk': form.data.get('dataset_id'),
             'model': external_content_type,
             'uuid': external_object_id,
         }))

@@ -8,9 +8,9 @@ from vitrina.structure.views import ObjectDataView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
-    path('datasets/<int:dataset_id>/models/<str:model>/', ModelStructureView.as_view(), name='model-structure'),
-    path('datasets/<int:dataset_id>/models/<str:model>/<str:prop>/',
+    path('datasets/<int:pk>/models/<str:model>/', ModelStructureView.as_view(), name='model-structure'),
+    path('datasets/<int:pk>/models/<str:model>/<str:prop>/',
          PropertyStructureView.as_view(), name='property-structure'),
-    path('datasets/<int:dataset_id>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
-    path('datasets/<int:dataset_id>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
+    path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
 ]

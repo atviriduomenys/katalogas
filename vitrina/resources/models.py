@@ -24,7 +24,7 @@ class Format(models.Model):
         db_table = 'format'
 
     def __str__(self):
-        return self.title
+        return self.title or ""
 
 
 class DistributionFormat(models.Model):

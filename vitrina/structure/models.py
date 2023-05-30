@@ -139,6 +139,12 @@ class Model(models.Model):
             return metadata.name.split('/')[-1]
         return ''
 
+    @property
+    def title(self):
+        if metadata := self.metadata.first():
+            return metadata.title
+        return ''
+
     def update_level(self):
         if metadata := self.metadata.first():
             prop_ids = self.model_properties.values_list('pk', flat=True)
@@ -158,18 +164,21 @@ class Model(models.Model):
 
     def get_absolute_url(self):
         return reverse('model-structure', kwargs={
-            'dataset_id': self.dataset.pk,
+            'pk': self.dataset.pk,
             'model': self.name,
         })
 
     def get_data_url(self):
         return reverse('model-data', kwargs={
-            'dataset_id': self.dataset.pk,
+            'pk': self.dataset.pk,
             'model': self.name,
         })
 
     def get_given_props(self):
         return self.model_properties.filter(given=True).order_by('metadata__order')
+
+    def get_acl_parents(self):
+        return [self.dataset]
 
 
 class Property(models.Model):
@@ -213,7 +222,7 @@ class Property(models.Model):
 
     def get_absolute_url(self):
         return reverse('property-structure', kwargs={
-            'dataset_id': self.model.dataset.pk,
+            'pk': self.model.dataset.pk,
             'model': self.model.name,
             'prop': self.name,
         })
@@ -223,6 +232,15 @@ class Property(models.Model):
         if metadata := self.metadata.first():
             return metadata.name
         return ''
+
+    @builtins.property
+    def title(self):
+        if metadata := self.metadata.first():
+            return metadata.title
+        return ''
+
+    def get_acl_parents(self):
+        return [self.model.dataset]
 
 
 class PropertyList(models.Model):

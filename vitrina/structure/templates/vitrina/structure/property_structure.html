@@ -3,20 +3,20 @@
 {% load comment_tags %}
 {% load markdown_tags %}
 
-{% block current_title %}{{ prop.name }}{% endblock %}
+{% block current_title %}{{ prop.title }}{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
         <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
-        <li><a href="{% url 'model-structure' dataset.pk model.name %}"><span>{{ model.name }}</span></a></li>
+        <li><a href="{% url 'model-structure' dataset.pk model.name %}"><span>{{ model.title }}</span></a></li>
     </ul>
 {% endblock %}
 
 {% block content %}
 
-{% include 'vitrina/structure/structure_tabs.html' %}
+{% include 'vitrina/datasets/tabs.html' %}
 
 <div class="columns no-margin-bottom">
     <div class="column is-one-quarter">
@@ -76,11 +76,13 @@
                 <span class="has-text-weight-semibold">{{ prop.metadata.first.source }}</span>
             {% endif %}
         </div>
+        {% if can_manage_structure %}
         <div class="buttons is-right">
             <a href="#" class="button is-primary">
                 {% translate "Redaguoti" %}
             </a>
         </div>
+        {% endif %}
         {% if prop.enums.first %}
             <div>
                 <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
@@ -117,13 +119,10 @@
         {% if prop.metadata.first.description %}
         <div><p>{{ prop.metadata.first.description | markdown | safe }}</p></div>
         {% endif %}
-    </div>
-</div>
 
-<div class="columns no-margin-bottom mt-5">
-    <div class="column is-one-quarter"></div>
-    <div class="column is-three-quarters">
-        {% comments obj=prop user=request.user %}
+        <div class="mt-6">
+            {% comments obj=prop user=request.user %}
+        </div>
     </div>
 </div>
 {% endblock %}

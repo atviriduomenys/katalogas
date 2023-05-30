@@ -38,7 +38,9 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.structure.models import Model
 from vitrina.structure.services import create_structure_objects
+from vitrina.structure.views import StructureMixin
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -133,7 +135,12 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
+class DatasetDetailView(
+    LanguageChoiceMixin,
+    HistoryMixin,
+    StructureMixin,
+    DetailView
+):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -158,6 +165,19 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
         }
         context_data.update(extra_context_data)
         return context_data
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': model.name,
+            })
+        return None
 
 
 class DatasetDistributionPreviewView(View):
@@ -262,7 +282,7 @@ class DatasetUpdateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(HistoryView):
+class DatasetHistoryView(StructureMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -277,6 +297,19 @@ class DatasetHistoryView(HistoryView):
             self.object,
         )
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': model.name,
+            })
+        return None
 
 
 class DatasetStructureImportView(
@@ -324,6 +357,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
+    StructureMixin,
     ListView,
 ):
     model = Representative
@@ -374,6 +408,19 @@ class DatasetMembersView(
             self.object,
         )
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': model.name,
+            })
+        return None
 
 
 class CreateMemberView(
@@ -531,7 +578,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(HistoryMixin, ListView):
+class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -570,6 +617,19 @@ class DatasetProjectsView(HistoryMixin, ListView):
         else:
             context['has_projects'] = False
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': model.name,
+            })
+        return None
 
 
 class AddProjectView(

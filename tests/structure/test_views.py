@@ -311,3 +311,243 @@ def test_object_data(app: DjangoTestApp):
             'prop_1': prop_1,
             'prop_2': prop_2
         }
+
+
+@pytest.mark.django_db
+def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(dataset.get_absolute_url())
+    resp = resp.click(linkid='structure_tab')
+    assert resp.request.path == reverse('dataset-structure', args=[dataset.pk])
+
+
+@pytest.mark.django_db
+def test_structure_tab_from_model_structure(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(model.get_absolute_url())
+    resp = resp.click(linkid='structure_tab')
+    assert resp.request.path == reverse('dataset-structure', args=[dataset.pk])
+
+
+@pytest.mark.django_db
+def test_structure_tab_from_property_structure(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(prop.get_absolute_url())
+    resp = resp.click(linkid='structure_tab')
+    assert resp.request.path == reverse('dataset-structure', args=[dataset.pk])
+
+
+@pytest.mark.django_db
+def test_structure_tab_from_model_data(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(model.get_data_url())
+    resp = resp.click(linkid='structure_tab')
+    assert resp.request.path == model.get_absolute_url()
+
+
+@pytest.mark.django_db
+def test_data_tab_from_dataset_detail(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(dataset.get_absolute_url())
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == model.get_data_url()
+
+
+@pytest.mark.django_db
+def test_data_tab_from_dataset_structure(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(reverse('dataset-structure', args=[dataset.pk]))
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == model.get_data_url()
+
+
+@pytest.mark.django_db
+def test_data_tab_from_model_structure(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(model.get_absolute_url())
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == model.get_data_url()
+
+
+@pytest.mark.django_db
+def test_data_tab_from_property_structure(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(prop.get_absolute_url())
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == model.get_data_url()

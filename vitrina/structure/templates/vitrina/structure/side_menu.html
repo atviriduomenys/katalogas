@@ -1,31 +1,47 @@
 <nav class="category-panel">
     {% for model in models %}
         <div>
-            {% if is_data %}
-                <a href="{{ model.get_data_url }}" class="category-panel-block">
-            {% else %}
-                <a href="{{ model.get_absolute_url }}" class="category-panel-block">
-            {% endif%}
+            <span class="has-tooltip-top" data-tooltip="{{ model.name }}">
+                {% if is_data %}
+                    <a href="{{ model.get_data_url }}" class="category-panel-block">
+                {% else %}
+                    <a href="{{ model.get_absolute_url }}" class="category-panel-block">
+                {% endif%}
 
-            {% if not show_props and request.resolver_match.kwargs.model == model.name %}
-                <strong>{{ model.name }}</strong>
-            {% else %}
-                {{ model.name }}
-            {% endif %}
-            </a>
+                {% if not show_props and request.resolver_match.kwargs.model == model.name %}
+                    <strong><span id="side_menu_elem">{{ model.name }}</span></strong>
+                {% else %}
+                    <span id="side_menu_elem">{{ model.name }}</span>
+                {% endif %}
+                </a>
+            </span>
         </div>
          {% if show_props and request.resolver_match.kwargs.model == model.name %}
             {% for prop in model.get_given_props %}
                 <div>
-                    <a href="{{ prop.get_absolute_url }}" class="category-panel-block ml-4">
-                    {% if request.resolver_match.kwargs.prop == prop.name %}
-                        <strong>{{ prop.name }}</strong>
-                    {% else %}
-                        {{ prop.name }}
-                    {% endif %}
-                    </a>
+                    <span class="has-tooltip-top" data-tooltip="{{ prop.name }}">
+                        <a href="{{ prop.get_absolute_url }}" class="category-panel-block ml-4">
+                        {% if request.resolver_match.kwargs.prop == prop.name %}
+                            <strong><span id="side_menu_elem">{{ prop.name }}</span></strong>
+                        {% else %}
+                            <span id="side_menu_elem">{{ prop.name }}</span>
+                        {% endif %}
+                        </a>
+                    </span>
                 </div>
             {% endfor %}
         {% endif %}
     {% endfor %}
 </nav>
+
+<script>
+     $(document).ready(function() {
+        $('span#side_menu_elem').each(function() {
+            let width = this.offsetWidth;
+            let widthParent = $(this).closest('div')[0].scrollWidth;
+            if (width <= widthParent) {
+                $(this).closest('span.has-tooltip-top').removeAttr('data-tooltip');
+            }
+        });
+    });
+</script>

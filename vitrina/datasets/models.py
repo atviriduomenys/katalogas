@@ -510,6 +510,9 @@ class DatasetStructure(models.Model):
     def filename_without_path(self):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
+    def get_acl_parents(self):
+        return [self.dataset]
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructureField(models.Model):

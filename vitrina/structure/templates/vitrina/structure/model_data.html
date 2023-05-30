@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{{ model.name }}{% endblock %}
+{% block current_title %}{{ model.title }}{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -13,7 +13,7 @@
 
 {% block content %}
 
-{% include 'vitrina/structure/structure_tabs.html' %}
+{% include 'vitrina/datasets/tabs.html' %}
 
 <div class="columns no-margin-bottom">
     <div class="column is-one-quarter">
@@ -29,7 +29,7 @@
                     {% endfor %}
                 </div>
             </div>
-        {% else %}
+        {% elif data %}
             <div class="field has-addons has-addons-right">
               <p class="control">
                 <a class="button" onclick="downloadData()">
@@ -116,7 +116,7 @@
                                     <div class="has-text-centered">
                                         <small class="has-text-weight-normal is-italic">
                                             {% if prop.ref_model %}
-                                                <a href="{{ ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
+                                                <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
                                             {% else %}
                                                 {{ prop.metadata.first.type }}
                                             {% endif %}
@@ -157,7 +157,7 @@
                                                 </button>
                                             </div>
                                             <div class="buttons is-right">
-                                                <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}')">
+                                                <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
                                                     {% translate "Filtruoti" %}
                                                 </button>
                                             </div>
@@ -167,9 +167,9 @@
                                 </th>
                         {% endfor %}
                     </tr>
-                    {% for obj in data %}
+                    {% for row in data %}
                         <tr>
-                            {% for col, val in obj.items %}
+                            {% for col, val in row.items %}
                                 {% get_value_by_key properties col as prop %}
 
                                 {% if col not in excluded_cols %}
@@ -177,12 +177,27 @@
                                         <td id="{{ col }}_col_id">
                                             <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
                                         </td>
-                                    {% elif prop.ref_model %}
-                                        {% get_value_by_key val '_id' as val %}
-                                        <td id="{{ col }}_col_id">
-                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
-                                        </td>
-                                    {% elif prop.metadata.first.type == 'number' or prop.metadata.first.type == 'integer' %}
+                                    {% elif val|is_dict %}
+                                        {% if prop.ref_model %}
+                                            {% get_value_by_key val '_id' as val %}
+                                            <td id="{{ col }}_col_id">
+                                                <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                            </td>
+                                        {% else %}
+                                            <td id="{{ col }}_col_id">
+                                                {% for k, v in val.items %}
+                                                    {% if k == '_id' %}
+                                                        {{ v|slice:":8" }}
+                                                    {% else %}
+                                                        {{ v }}
+                                                    {% endif %}
+                                                    {% if not forloop.last %}
+                                                        <br/>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                        {% endif %}
+                                    {% elif val|is_number %}
                                         <td id="{{ col }}_col_id" class="has-text-right">{{ val }}</td>
                                     {% else %}
                                         <td id="{{ col }}_col_id">{{ val }}</td>
@@ -194,6 +209,8 @@
                     </tbody>
                 </table>
             </div>
+        {% else %}
+            <p>{% translate "Duomenų nėra" %}</p>
         {% endif %}
     </div>
 </div>
@@ -270,7 +287,7 @@
             location.href = url;
         };
 
-        function filter(col) {
+        function filter(col, type) {
             let compareSelect = $(`select#${col}_compare_select_id`).val();
             let compareInput = $(`input#${col}_compare_value_id`).val();
             let compare;
@@ -283,7 +300,17 @@
                 compare = `${col}.${compareSelect}("${compareInput}")`;
             }
             else {
-                compare = `${col}${compareSelect}${compareInput}`;
+                if (
+                    type == 'string' ||
+                    type == 'date' ||
+                    type == 'datetime' ||
+                    col == '_id'
+                ) {
+                    compare = `${col}${compareSelect}"${compareInput}"`;
+                }
+                else {
+                    compare = `${col}${compareSelect}${compareInput}`;
+                }
             }
 
             location.href = location.search ? `${location.href}&${compare}` : `${location.href}?${compare}`;

@@ -3,7 +3,7 @@
 {% load util_tags %}
 {% load comment_tags %}
 
-{% block current_title %}{{ model.name }}{% endblock %}
+{% block current_title %}{{ model.title }}{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -14,7 +14,7 @@
 
 {% block content %}
 
-{% include 'vitrina/structure/structure_tabs.html' %}
+{% include 'vitrina/datasets/tabs.html' %}
 
 <div class="columns no-margin-bottom">
     <div class="column is-one-quarter">
@@ -80,13 +80,11 @@
                 </table>
             </div>
         {% endif %}
-    </div>
-</div>
-<div class="columns no-margin-bottom mt-5">
-    <div class="column is-one-quarter"></div>
-    <div class="column is-three-quarters">
-        {% get_value_by_key data '_id' as id %}
-        {% external_comments content_type=model.name object_id=id user=request.user dataset=dataset %}
+
+        <div class="mt-6">
+            {% get_value_by_key data '_id' as id %}
+            {% external_comments content_type=model.name object_id=id user=request.user dataset=dataset %}
+        </div>
     </div>
 </div>
 {% endblock %}

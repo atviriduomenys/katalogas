@@ -3,7 +3,7 @@
 {% load comment_tags %}
 {% load markdown_tags %}
 
-{% block current_title %}{{ model.name }}{% endblock %}
+{% block current_title %}{{ model.title }}{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -15,7 +15,7 @@
 
 {% block content %}
 
-{% include 'vitrina/structure/structure_tabs.html' %}
+{% include 'vitrina/datasets/tabs.html' %}
 
 <div class="columns no-margin-bottom">
     <div class="column is-one-quarter">
@@ -58,16 +58,18 @@
                 </span>
             {% endif %}
         </div>
+        {% if can_manage_structure %}
         <div class="buttons is-right">
             <a href="#" class="button is-primary">
                 {% translate "Redaguoti" %}
             </a>
         </div>
+        {% endif %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų laukai" %}</h4>
             {% for prop in model.get_given_props %}
             <div class="mb-2">
-                <span class="pr-3">
+                <span class="pr-3 is-family-monospace">
                     <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
                 </span>
 
@@ -119,21 +121,20 @@
             </div>
             {% endfor %}
         </div>
+        {% if can_manage_structure %}
         <div class="buttons is-right">
             <a href="#" class="button is-primary">
                 {% translate "Naujas duomenų laukas" %}
             </a>
         </div>
+        {% endif %}
         {% if model.metadata.first.description %}
         <div><p>{{ model.metadata.first.description | markdown | safe }}</p></div>
         {% endif %}
-    </div>
-</div>
 
-<div class="columns no-margin-bottom mt-5">
-    <div class="column is-one-quarter"></div>
-    <div class="column is-three-quarters">
-        {% comments obj=model user=request.user %}
+        <div class="mt-6">
+            {% comments obj=model user=request.user %}
+        </div>
     </div>
 </div>
 {% endblock %}

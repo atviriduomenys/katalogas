@@ -13,7 +13,7 @@
 
 {% block content %}
 
-{% include 'vitrina/structure/structure_tabs.html' %}
+{% include 'vitrina/datasets/tabs.html' %}
 
 <div class="columns no-margin-bottom">
     <div class="column is-three-quarters">
@@ -28,20 +28,47 @@
         </div>
         {% endif %}
 
-        <a class="button is-primary" href="#">
-            {% translate "Eksportuoti" %}
-        </a>
-        <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
-            {% translate "Importuoti" %}
-        </a>
-        <a class="button is-primary mb-5 ml-2" href="#">
-            {% translate "Naujas modelis" %}
-        </a>
+        {% if can_manage_structure %}
+            <a class="button is-primary" href="#">
+                {% translate "Eksportuoti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
+                {% translate "Importuoti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="#">
+                {% translate "Naujas modelis" %}
+            </a>
+        {% endif %}
 
         {% for model in models %}
-            <div class="columns">
-                <div class="column is-4">
-                    <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a><br/>
+            <div>
+                <span>
+                    <span class="pr-3 is-family-monospace" >
+                        <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
+                    </span>
+                    {% if model.base %}
+                        <span class="pr-3">
+                            base:
+                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
+                        </span>
+                    {% endif %}
+                    {% if model.metadata.first.uri %}
+                        <span class="pr-3">
+                            uri:
+                            {% if model.metadata.first.uri_link %}
+                                <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
+                            {% else %}
+                                {{ model.metadata.first.uri }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                    {% if model.metadata.first.average_level %}
+                    <span class="is-pulled-right">
+                        <span>{{ model.metadata.first.average_level|floatformat:"1" }}</span>
+                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                    </span>
+                    {% endif %}
+                    <br/>
                     <small class="ml-4">
                         {% if model.metadata.first.title %}
                             {{ model.metadata.first.title }}
@@ -49,45 +76,15 @@
                             {{ model.metadata.first.description|default:""|truncatewords:8 }}
                         {% endif %}
                     </small>
-                </div>
-                <div class="column">
-                    <span>
-                        base:
-                        {% if model.base %}
-                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="column">
-                    <span>
-                        uri:
-                        {% if model.metadata.first.uri %}
-                            {% if model.metadata.first.uri_link %}
-                                <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
-                            {% else %}
-                                {{ model.metadata.first.uri }}
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="column has-text-right">
-                    <span class="has-text-weight-semibold">{{ model.metadata.first.average_level|default:"0"|floatformat:"1" }}</span>
-                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
-                </div>
+                </span>
             </div>
         {% endfor %}
-    </div>
-</div>
 
-{% if structure %}
-<div class="columns no-margin-bottom mt-5">
-    <div class="column is-three-quarters">
-        {% comments obj=structure user=request.user %}
+        {% if structure %}
+        <div class="mt-6">
+            {% comments obj=structure user=request.user %}
+        </div>
+        {% endif %}
     </div>
 </div>
-{% endif %}
 {% endblock %}

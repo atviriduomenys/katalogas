@@ -26,5 +26,19 @@
                 {% translate "Projektai" %}
             </a>
         </li>
+        {% if structure_url %}
+        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure'%} is-active {% endif %}">
+            <a href="{{ structure_url }}" id="structure_tab">
+                {% translate "Struktūra" %}
+            </a>
+        </li>
+        {% endif %}
+        {% if data_url %}
+        <li class="{% if request.path == data_url %} is-active {% endif %}">
+            <a href="{{ data_url }}" id="data_tab">
+                {% translate "Duomenys" %}
+            </a>
+        </li>
+        {% endif %}
     </ul>
 </div>

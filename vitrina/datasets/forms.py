@@ -18,8 +18,8 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
-    title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True)
-    description = TranslatedField(label=_('Aprašymas'), widget=TextInput())
+    title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True, widget=TextInput())
+    description = TranslatedField(label=_('Aprašymas'))
     groups = forms.ModelMultipleChoiceField(
         label=_('Grupės'),
         queryset=DatasetGroup.objects.all(),

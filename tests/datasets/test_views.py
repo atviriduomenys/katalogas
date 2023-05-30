@@ -897,6 +897,8 @@ def test_dataset_members_create_member(app: DjangoTestApp):
     )
     assert rep.role == Representative.MANAGER
     assert rep.user is None
+    assert rep.has_api_access is False
+    assert rep.apikey_set.count() == 0
 
     assert len(mail.outbox) == 1
     assert '/register/' in mail.outbox[0].body
@@ -934,8 +936,41 @@ def test_dataset_members_add_member(app: DjangoTestApp):
     )
     assert rep.user == user
     assert rep.role == Representative.MANAGER
+    assert rep.has_api_access is False
+    assert rep.apikey_set.count() == 0
 
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_dataset_members_create_member_with_api_access(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    user = UserFactory(email='test@example.com')
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': dataset.pk}))
+    resp = resp.click(linkid="add-member-btn")
+
+    form = resp.forms['representative-form']
+    form['email'] = 'test@example.com'
+    form['role'] = Representative.MANAGER
+    form['has_api_access'] = True
+    form.submit()
+
+    rep = Representative.objects.get(
+        content_type=ct,
+        object_id=dataset.id,
+        email='test@example.com',
+    )
+    assert rep.user == user
+    assert rep.has_api_access is True
+    assert rep.apikey_set.count() == 1
 
 
 @pytest.mark.django_db
@@ -972,6 +1007,30 @@ def test_dataset_members_update_member(app: DjangoTestApp):
     assert manager.role == Representative.MANAGER
 
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_dataset_members_update_with_api_access(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': dataset.pk}))
+    resp = resp.click(linkid=f"update-member-{coordinator.pk}-btn")
+
+    form = resp.forms['representative-form']
+    form['has_api_access'] = True
+    form.submit()
+
+    coordinator.refresh_from_db()
+    assert coordinator.has_api_access is True
+    assert coordinator.apikey_set.count() == 1
 
 
 @pytest.mark.django_db

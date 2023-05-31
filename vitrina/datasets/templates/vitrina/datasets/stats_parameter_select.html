@@ -1,0 +1,20 @@
+<div class="is-flex">
+    <div class="stays-right">
+        <form action={% url 'dataset-stats-jurisdiction' %} method="GET">
+            <div class="select">
+              <select name="stats" id="stats-parameter" onchange="this.form.submit()">
+                <option value="download-request-count">Atsisiuntimų (užklausų) skaičius</option>
+		        <option value="download-object-count">Atsisiuntimų (objektų) skaičius</option>
+		        <option value="object-count">Objektų skaičius</option>
+		        <option value="field-count">Savybių (duomenų laukų) skaičius</option>
+		        <option value="model-count">Esybių (modelių) skaičius</option>
+		        <option value="distribution-count">Duomenų šaltinių (distribucijų) skaičius</option>
+		        <option value="dataset-count" selected>Duomenų rinkinių skaičius</option>
+		        <option value="request-count">Poreikių skaičius</option>
+		        <option value="project-count">Projektų skaičius</option>
+                <option value="maturity-average">Brandos lygis (vidurkis)</option>
+              </select>
+            </div>
+        </form>
+    </div>
+</div>

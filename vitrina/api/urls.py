@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from vitrina.api.views import CatalogViewSet, DatasetViewSet, CategoryViewSet, LicenceViewSet, \
     DatasetDistributionViewSet, DatasetStructureViewSet, InternalDatasetViewSet, InternalDatasetDistributionViewSet, \
-    InternalDatasetStructureViewSet, PartnerApiView
+    InternalDatasetStructureViewSet, PartnerApiView, DatasetModelDownloadViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
@@ -76,6 +76,11 @@ urlpatterns = [
          InternalDatasetStructureViewSet.as_view({
              'delete': 'destroy'
          }), name="api-single-structure-internal"),
+
+    path('partner/api/1/downloads',
+         DatasetModelDownloadViewSet.as_view({
+             'post': 'create'
+         }), name="api-download-stats-internal"),
 
     # @RequestMapping("/api")
     # @GetMapping("/partner/api/1")

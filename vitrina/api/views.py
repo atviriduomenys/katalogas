@@ -11,7 +11,7 @@ from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModel
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, StatsViewSet
 from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
@@ -20,7 +20,7 @@ from vitrina.api.permissions import APIKeyPermission
 from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
     DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
-    PatchDatasetDistributionSerializer
+    PatchDatasetDistributionSerializer, ModelDownloadStatsSerializer
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -576,3 +576,20 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+class DatasetModelDownloadViewSet(StatsViewSet):
+    @swagger_auto_schema(
+        operation_summary="Add model statistics",
+        request_body=ModelDownloadStatsSerializer,
+        responses={status.HTTP_200_OK: ModelDownloadStatsSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = ModelDownloadStatsSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        serializer = ModelDownloadStatsSerializer(instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)

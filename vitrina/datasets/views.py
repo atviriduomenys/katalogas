@@ -1,8 +1,8 @@
 import csv
-import datetime
 import itertools
 import json
 import pandas as pd
+import numpy as np
 
 from django.conf import settings
 from django.contrib import messages
@@ -52,12 +52,12 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from django.utils.timezone import now, make_aware
-from pandas import period_range
+from random import randrange
 
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
+    # todo maturity facet
     facet_fields = [
         'filter_status',
         'organization',
@@ -68,6 +68,7 @@ class DatasetListView(FacetedSearchView):
         'frequency',
         'tags',
         'formats',
+        'published'
     ]
     form_class = DatasetSearchForm
     max_num_facets = 20
@@ -90,6 +91,7 @@ class DatasetListView(FacetedSearchView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        datasets = self.get_queryset()
         facet_fields = context.get('facets').get('fields')
         form = context.get('form')
         extra_context = {
@@ -103,6 +105,7 @@ class DatasetListView(FacetedSearchView):
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
+            'published_facet': update_facet_data(self.request, facet_fields, 'published'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
             'selected_organization': get_selected_value(form, 'organization', True, False),
@@ -115,6 +118,44 @@ class DatasetListView(FacetedSearchView):
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
         }
+        yearly_stats = {}
+        quarter_stats = {}
+        monthly_stats = {}
+        for d in datasets:
+            published = d.published
+            if published is not None:
+                year_published = published.year
+                yearly_stats[year_published] = yearly_stats.get(year_published, 0) + 1
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+                month = str(year_published) + "-" + str('%02d' % published.month)
+                monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        final = {}
+        months = {}
+
+        for key, value in yearly_stats.items():
+            final[key] = {}
+            final[key]['total'] = value
+            final[key]['quarters'] = {}
+            final[key]['months'] = {}
+            for qk, qv in quarter_stats.items():
+                if qk.startswith(str(key)):
+                    final[key]['quarters'][qk] = qv
+
+        for q, qv in quarter_stats.items():
+            y_index = int(q.split('-Q')[0])
+            q_index = int(q.split('-Q')[1])
+            qq = {q: qv}
+            q_months = {}
+            for m, mv in monthly_stats.items():
+                y = int(m.split('-')[0])
+                m_index = m.split('-')[1]
+                m_q = (int(m_index) - 1) // 3 + 1
+                if q_index == m_q and y_index == y:
+                    q_months[m] = mv
+                    qq = q_months
+            months[q] = qq
+
         if is_org_dataset_list(self.request):
             extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(
@@ -130,6 +171,8 @@ class DatasetListView(FacetedSearchView):
                 self.organization,
             )
         context.update(extra_context)
+        context['year_filter'] = final
+        context['months'] = months
         return context
 
 
@@ -666,78 +709,92 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
 class DatasetStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/statistics_graph.html'
+    template_name = 'vitrina/datasets/status.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        max_count = 0
         datasets = self.get_queryset()
-        data = []
-        status_translations = Comment.get_statuses()
-
-        inventored_styles = {'borderColor': 'black',
-                             'backgroundColor': 'rgba(255, 179, 186, 0.9)',
-                             'fill': True,
-                             'sort': 1}
-        structured_styles = {'borderColor': 'black',
-                             'backgroundColor': 'rgba(186,225,255, 0.9)',
-                             'fill': True,
-                             'sort': 2}
-        opened_styles = {'borderColor': 'black',
-                         'backgroundColor': 'rgba(255, 223, 186, 0.9)',
-                         'fill': True,
-                         'sort': 3}
-
-        most_recent_comments = Comment.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=datasets.values_list('pk', flat=True),
-            status__isnull=False).values('object_id')\
-            .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
-            .order_by('latest_status_change')
-
-        dataset_status = Comment.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=most_recent_comments.values('object_id'),
-            created__in=most_recent_comments.values('latest_status_change'))\
-            .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
-            .values('object_id', 'status', 'year', 'month')
-
-        start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
-        statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.date.today(),
-                                     freq='M').tolist()
-
-            for item in statuses:
-                total = 0
-                temp = []
-                for label in labels:
-                    total += dataset_status.filter(status=item, year=label.year, month=label.month)\
-                        .values('object_id')\
-                        .annotate(count=Count('object_id', distinct=True))\
-                        .count()
-                    temp.append({'x': _date(label, 'y b'), 'y': total})
-                dict = {'label': str(status_translations[item]),
-                        'data': temp,
-                        'borderWidth': 1}
-
-                if item == 'INVENTORED':
-                    dict.update(inventored_styles)
-                elif item == 'STRUCTURED':
-                    dict.update(structured_styles)
-                elif item == 'OPENED':
-                    dict.update(opened_styles)
-
-                data.append(dict)
-        data = sorted(data, key=lambda x: x['sort'])
-        context['data'] = json.dumps(data)
-        context['graph_title'] = _('Duomenų rinkinių kiekis laike')
-        context['dataset_count'] = len(datasets)
-        context['yAxis_title'] = _('Duomenų rinkiniai')
-        context['xAxis_title'] = _('Laikas')
-        context['stats'] = 'status'
+        statuses = {}
+        for d in datasets:
+            statuses[d.filter_status] = statuses.get(d.filter_status, 0) + 1
+        keys = list(statuses.keys())
+        values = list(statuses.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_statuses = {keys[i]: values[i] for i in sorted_value_index}
+        # data = []
+        # status_translations = Comment.get_statuses()
+        #
+        # inventored_styles = {'borderColor': 'black',
+        #                      'backgroundColor': 'rgba(255, 179, 186, 0.9)',
+        #                      'fill': True,
+        #                      'sort': 1}
+        # structured_styles = {'borderColor': 'black',
+        #                      'backgroundColor': 'rgba(186,225,255, 0.9)',
+        #                      'fill': True,
+        #                      'sort': 2}
+        # opened_styles = {'borderColor': 'black',
+        #                  'backgroundColor': 'rgba(255, 223, 186, 0.9)',
+        #                  'fill': True,
+        #                  'sort': 3}
+        #
+        # most_recent_comments = Comment.objects.filter(
+        #     content_type=ContentType.objects.get_for_model(Dataset),
+        #     object_id__in=datasets.values_list('pk', flat=True),
+        #     status__isnull=False).values('object_id')\
+        #     .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
+        #     .order_by('latest_status_change')
+        #
+        # dataset_status = Comment.objects.filter(
+        #     content_type=ContentType.objects.get_for_model(Dataset),
+        #     object_id__in=most_recent_comments.values('object_id'),
+        #     created__in=most_recent_comments.values('latest_status_change'))\
+        #     .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
+        #     .values('object_id', 'status', 'year', 'month')
+        #
+        # start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
+        # statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
+        #
+        # if start_date:
+        #     labels = pd.period_range(start=start_date,
+        #                              end=datetime.date.today(),
+        #                              freq='M').tolist()
+        #
+        #     for item in statuses:
+        #         total = 0
+        #         temp = []
+        #         for label in labels:
+        #             total += dataset_status.filter(status=item, year=label.year, month=label.month)\
+        #                 .values('object_id')\
+        #                 .annotate(count=Count('object_id', distinct=True))\
+        #                 .count()
+        #             temp.append({'x': _date(label, 'y b'), 'y': total})
+        #         dict = {'label': str(status_translations[item]),
+        #                 'data': temp,
+        #                 'borderWidth': 1}
+        #
+        #         if item == 'INVENTORED':
+        #             dict.update(inventored_styles)
+        #         elif item == 'STRUCTURED':
+        #             dict.update(structured_styles)
+        #         elif item == 'OPENED':
+        #             dict.update(opened_styles)
+        #
+        #         data.append(dict)
+        # data = sorted(data, key=lambda x: x['sort'])
+        # context['data'] = json.dumps(data)
+        # context['graph_title'] = _('Duomenų rinkinių kiekis laike')
+        # context['dataset_count'] = len(datasets)
+        # context['yAxis_title'] = _('Duomenų rinkiniai')
+        # context['xAxis_title'] = _('Laikas')
+        # context['stats'] = 'status'
+        context['status_data'] = sorted_statuses
+        context['max_count'] = max_count
+        context['active_filter'] = 'status'
         return context
 
 
@@ -749,74 +806,538 @@ class DatasetManagementsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        context['jurisdictions'] = context['jurisdiction_facet']
-        for org in context['jurisdictions']:
+        all_orgs = context['jurisdiction_facet']
+        # context['jurisdictions'] = context['jurisdiction_facet']
+        modified_jurisdictions = []
+        for org in all_orgs:
+            current = Organization.objects.get(title=org.get('display_value'))
+            children = Organization.get_children(current)
+            # print(Organization.get_descendants(current))
+            child_titles = []
+            if len(children) > 0:
+                exists = 0
+                for ch in children:
+                    child_titles.append(ch.title)
+                for single in all_orgs:
+                    if single['display_value'] in child_titles:
+                        exists += 1
+                if exists == 0:
+                    org['has_orgs'] = False
+            else:
+                org['has_orgs'] = False
             if max_count < org.get('count'):
                 max_count = org.get('count')
+            modified_jurisdictions.append(org)
+        context['jurisdiction_data'] = modified_jurisdictions
         context['max_count'] = max_count
-        context['stats'] = 'jurisdiction'
+        context['active_filter'] = 'jurisdiction'
         return context
 
 
-class DatasetsStatsView(DatasetListView):
-    template_name = 'graphs/datasets_yearly_change_graph.html'
+class DatasetsMaturityView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/maturity.html'
     paginate_by = 0
-
-    def get_date_labels(self):
-        oldest_dataset_date = Dataset.objects.order_by('created').first().created
-        return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
-
-    def get_categories(self):
-        return [
-            {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
-        ]
-
-    def get_color(self, year):
-        color_map = {
-            '2019': '#03256C',
-            '2020': '#2541B2',
-            '2021': '#1768AC',
-            "2022": '#06BEE1',
-            "2023": "#4193A2",
-            # FIXME: this should net be hardcoded, use colormaps:
-            #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
-            #        (maybe `winter`?)
-        }
-        return color_map.get(year)
-
-    def get_statistics_data(self):
-        categories = self.get_categories()
-        query_set = self.get_queryset()
-        data = {
-            'labels': [cat.get('title') for cat in categories] 
-        }
-        datasets = []
-        date_labels = self.get_date_labels()
-        for date_label in date_labels:
-            dataset_counts = []
-            for category in categories:
-                filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
-                created_date = datetime.datetime(int(date_label), 1, 1)
-                created_date = make_aware(created_date)
-                dataset_counts.append(
-                    Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
-                )
-            datasets.append(
-                {
-                    'label': date_label,
-                    'data': dataset_counts,
-                    'backgroundColor': self.get_color(date_label)
-
-                }
-            )
-        data['datasets'] = datasets
-        return data, query_set
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        data, qs = self.get_statistics_data()
-        context['data'] = data
-        context['dataset_count'] = len(qs)
-        context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
+        max_count = 0
+        datasets = self.get_queryset()
+        maturity_levels = {}
+        for d in datasets:
+            m = randrange(5)
+            maturity_levels[m] = maturity_levels.get(m, 0) + 1
+        keys = list(maturity_levels.keys())
+        values = list(maturity_levels.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_levels = {keys[i]: values[i] for i in sorted_value_index}
+        context['maturity_data'] = sorted_levels
+        context['max_count'] = max_count
+        context['active_filter'] = 'maturity'
+        return context
+
+class DatasetsOrganizationsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/organizations.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        datasets = self.get_queryset()
+        orgs = {}
+        for d in datasets:
+            current = Organization.objects.get(id=d.organization[0])
+            orgs[current] = orgs.get(current, 0) + 1
+        keys = list(orgs.keys())
+        values = list(orgs.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
+        context['organization_data'] = sorted_orgs
+        context['max_count'] = max_count
+        context['active_filter'] = 'organizations'
+        return context
+
+class DatasetsTagsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/tag.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        datasets = self.get_queryset()
+        tags = {}
+        for d in datasets:
+            if d.tags is not None:
+                for t in d.tags:
+                    tags[t.strip().capitalize()] = tags.get(t.strip().capitalize(), 0) + 1
+        keys = list(tags.keys())
+        values = list(tags.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_tags = {keys[i]: values[i] for i in sorted_value_index}
+        if len(keys) > 100:
+            context['trimmed'] = True
+            sorted_tags = dict(itertools.islice(sorted_tags.items(), 100))
+        context['tag_data'] = sorted_tags
+        context['max_count'] = max_count
+        context['active_filter'] = 'tag'
+        return context
+
+class DatasetsFormatView(DatasetListView):
+        facet_fields = DatasetListView.facet_fields
+        template_name = 'vitrina/datasets/formats.html'
+        paginate_by = 0
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            max_count = 0
+            formats = {}
+            datasets = self.get_queryset()
+            for d in datasets:
+                if d.formats is not None:
+                    for f in d.formats:
+                        formats[f.strip().title()] = formats.get(f.strip().title(), 0) + 1
+            keys = list(formats.keys())
+            values = list(formats.values())
+            for v in values:
+                if max_count < v:
+                    max_count = v
+            sorted_value_index = np.flip(np.argsort(values))
+            sorted_formats = {keys[i]: values[i] for i in sorted_value_index}
+            context['format_data'] = sorted_formats
+            context['max_count'] = max_count
+            context['active_filter'] = 'format'
+            return context
+
+class DatasetsFrequencyView(DatasetListView):
+        facet_fields = DatasetListView.facet_fields
+        template_name = 'vitrina/datasets/frequency.html'
+        paginate_by = 0
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            max_count = 0
+            frequencies = {}
+            datasets = self.get_queryset()
+            for d in datasets:
+                if d.frequency is not None:
+                    freq = Frequency.objects.get(id=d.frequency)
+                    frequencies[freq] = frequencies.get(freq, 0) + 1
+            keys = list(frequencies.keys())
+            values = list(frequencies.values())
+            for v in values:
+                if max_count < v:
+                    max_count = v
+            sorted_value_index = np.flip(np.argsort(values))
+            sorted_frequencies = {keys[i]: values[i] for i in sorted_value_index}
+            context['frequency_data'] = sorted_frequencies
+            context['max_count'] = max_count
+            context['active_filter'] = 'frequency'
+            return context
+
+class JurisdictionStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/jurisdictions.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        all_cats = context['category_facet']
+        child_titles = []
+        cat_titles = []
+        for cat in all_cats:
+            cat_titles.append(cat['display_value'])
+        filtered_cats = []
+        parent_category = Category.objects.get(id=self.kwargs.get('pk'))
+        children = Category.get_children(parent_category)
+        for child in children:
+            child_titles.append(child.title)
+        for single_cat in all_cats:
+            if single_cat['display_value'] in child_titles:
+                cat_object = Category.objects.get(title=single_cat['display_value'])
+                subcategories = Category.get_children(cat_object)
+                if len(subcategories) > 0:
+                    exists = 0
+                    for ss in subcategories:
+                        if ss.title in cat_titles:
+                            exists += 1
+                    if exists == 0:
+                        single_cat['has_cats'] = False
+                else:
+                    single_cat['has_cats'] = False
+                if max_count < single_cat.get('count'):
+                    max_count = single_cat.get('count')
+                filtered_cats.append(single_cat)
+        context['max_count'] = max_count
+        context['categories'] = filtered_cats
+        return context
+
+class DatasetsStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/categories.html'
+    paginate_by = 0
+
+    # def get_date_labels(self):
+    #     oldest_dataset_date = Dataset.objects.order_by('created').first().created
+    #     return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
+    #
+    # def get_categories(self):
+    #     return [
+    #         {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
+    #     ]
+    #
+    # def get_color(self, year):
+    #     color_map = {
+    #         '2019': '#03256C',
+    #         '2020': '#2541B2',
+    #         '2021': '#1768AC',
+    #         "2022": '#06BEE1',
+    #         "2023": "#4193A2",
+    #         # FIXME: this should net be hardcoded, use colormaps:
+    #         #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
+    #         #        (maybe `winter`?)
+    #     }
+    #     return color_map.get(year)
+    #
+    # def get_statistics_data(self):
+    #     categories = self.get_categories()
+    #     query_set = self.get_queryset()
+    #     data = {
+    #         'labels': [cat.get('title') for cat in categories]
+    #     }
+    #     datasets = []
+    #     date_labels = self.get_date_labels()
+    #     for date_label in date_labels:
+    #         dataset_counts = []
+    #         for category in categories:
+    #             filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
+    #             created_date = datetime.datetime(int(date_label), 1, 1)
+    #             created_date = make_aware(created_date)
+    #             dataset_counts.append(
+    #                 Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
+    #             )
+    #         datasets.append(
+    #             {
+    #                 'label': date_label,
+    #                 'data': dataset_counts,
+    #                 'backgroundColor': self.get_color(date_label)
+    #
+    #             }
+    #         )
+    #     data['datasets'] = datasets
+    #     return data, query_set
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     max_count = 0
+    #     data, qs = self.get_statistics_data()
+    #     context['data'] = data
+    #     context['dataset_count'] = len(qs)
+    #     context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
+    #     return context
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        parent_cats = context['parent_category_facet']
+        all_cats = context['category_facet']
+        modified_cats = []
+        for cat in parent_cats:
+            current_category = Category.objects.get(title=cat.get('display_value'))
+            children = Category.get_children(current_category)
+            child_titles = []
+            if len(children) > 0:
+                existing_count = 0
+                for child in children:
+                    child_titles.append(child.title)
+                for single in all_cats:
+                    if single['display_value'] in child_titles:
+                        existing_count += 1
+                if existing_count == 0:
+                    cat['has_cats'] = False
+            else:
+                cat['has_cats'] = False
+            if max_count < cat.get('count'):
+                max_count = cat.get('count')
+            modified_cats.append(cat)
+        context['categories'] = modified_cats
+        context['max_count'] = max_count
+        context['active_filter'] = 'categories'
+        return context
+
+
+class DatasetsCategoriesView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/categories.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        parent_cats = context['parent_category_facet']
+        all_cats = context['category_facet']
+        modified_cats = []
+        for cat in parent_cats:
+            current_category = Category.objects.get(title=cat.get('display_value'))
+            children = Category.get_children(current_category)
+            child_titles = []
+            if len(children) > 0:
+                existing_count = 0
+                for child in children:
+                    child_titles.append(child.title)
+                for single in all_cats:
+                    if single['display_value'] in child_titles:
+                        existing_count += 1
+                if existing_count == 0:
+                    cat['has_cats'] = False
+            else:
+                cat['has_cats'] = False
+            if max_count < cat.get('count'):
+                max_count = cat.get('count')
+            modified_cats.append(cat)
+        context['categories'] = modified_cats
+        context['max_count'] = max_count
+        context['active_filter'] = 'categories'
+        return context
+
+class CategoryStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/categories.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        all_cats = context['category_facet']
+        child_titles = []
+        cat_titles = []
+        for cat in all_cats:
+            cat_titles.append(cat['display_value'])
+        filtered_cats = []
+        parent_category = Category.objects.get(id=self.kwargs.get('pk'))
+        children = Category.get_children(parent_category)
+        for child in children:
+            child_titles.append(child.title)
+        for single_cat in all_cats:
+            if single_cat['display_value'] in child_titles:
+                cat_object = Category.objects.get(title=single_cat['display_value'])
+                subcategories = Category.get_children(cat_object)
+                if len(subcategories) > 0:
+                    exists = 0
+                    for ss in subcategories:
+                        if ss.title in cat_titles:
+                            exists += 1
+                    if exists == 0:
+                        single_cat['has_cats'] = False
+                else:
+                    single_cat['has_cats'] = False
+                if max_count < single_cat.get('count'):
+                    max_count = single_cat.get('count')
+                filtered_cats.append(single_cat)
+        context['max_count'] = max_count
+        context['categories'] = filtered_cats
+        return context
+
+
+class PublicationStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/publications.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        datasets = self.get_queryset()
+        year_stats = {}
+        quarter_stats = {}
+        monthly_stats = {}
+        for dataset in datasets:
+            published = dataset.published
+            if published is not None:
+                year_published = published.year
+                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+                month = str(year_published) + "-" + str('%02d' % published.month)
+                monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        final = {}
+        months_s = {}
+
+        for key, value in year_stats.items():
+            final[key] = {}
+            final[key]['total'] = value
+            final[key]['quarters'] = {}
+            if max_count < value:
+                max_count = value
+            for qk, qv in quarter_stats.items():
+                if qk.startswith(str(key)):
+                    final[key]['quarters'][qk] = qv
+
+        for q, qv in quarter_stats.items():
+            y_index = int(q.split('-Q')[0])
+            q_index = int(q.split('-Q')[1])
+            qq = {q: qv}
+            q_months = {}
+            for m, mv in monthly_stats.items():
+                y = int(m.split('-')[0])
+                m_index = m.split('-')[1]
+                m_q = (int(m_index) - 1) // 3 + 1
+                if q_index == m_q and y_index == y:
+                    q_months[m] = mv
+                    qq = q_months
+            months_s[q] = qq
+        # years = list(year_stats.items())
+        context['year_stats'] = year_stats
+        context['max_count'] = max_count
+        context['active_filter'] = 'publication'
+        return context
+
+class YearStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/publications.html'
+    paginate_by = 0
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        datasets = self.get_queryset()
+        year_stats = {}
+        quarter_stats = {}
+        monthly_stats = {}
+        for dataset in datasets:
+            published = dataset.published
+            if published is not None:
+                year_published = published.year
+                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+                month = str(year_published) + "-" + str('%02d' % published.month)
+                monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        final = {}
+        months_s = {}
+
+        for key, value in year_stats.items():
+            final[key] = {}
+            final[key]['total'] = value
+            final[key]['quarters'] = {}
+            if max_count < value:
+                max_count = value
+            for qk, qv in quarter_stats.items():
+                if qk.startswith(str(key)):
+                    final[key]['quarters'][qk] = qv
+
+        for q, qv in quarter_stats.items():
+            y_index = int(q.split('-Q')[0])
+            q_index = int(q.split('-Q')[1])
+            qq = {q: qv}
+            q_months = {}
+            for m, mv in monthly_stats.items():
+                y = int(m.split('-')[0])
+                m_index = m.split('-')[1]
+                m_q = (int(m_index) - 1) // 3 + 1
+                if q_index == m_q and y_index == y:
+                    q_months[m] = mv
+                    qq = q_months
+            months_s[q] = qq
+
+        context['selected_year'] = str(self.kwargs['year'])
+        context['year_stats'] = quarter_stats
+        context['quarter_stats'] = quarter_stats
+        context['max_count'] = max_count
+        context['active_filter'] = 'publication'
+        return context
+
+class QuarterStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/publications.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        datasets = self.get_queryset()
+        year_stats = {}
+        quarter_stats = {}
+        monthly_stats = {}
+        for dataset in datasets:
+            published = dataset.published
+            if published is not None:
+                year_published = published.year
+                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+                month = str(year_published) + "-" + str('%02d' % published.month)
+                monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        final = {}
+        months_s = {}
+
+        for key, value in year_stats.items():
+            final[key] = {}
+            final[key]['total'] = value
+            final[key]['quarters'] = {}
+            if max_count < value:
+                max_count = value
+            for qk, qv in quarter_stats.items():
+                if qk.startswith(str(key)):
+                    final[key]['quarters'][qk] = qv
+
+        for q, qv in quarter_stats.items():
+            y_index = int(q.split('-Q')[0])
+            q_index = int(q.split('-Q')[1])
+            qq = {q: qv}
+            q_months = {}
+            for m, mv in monthly_stats.items():
+                y = int(m.split('-')[0])
+                m_index = m.split('-')[1]
+                m_q = (int(m_index) - 1) // 3 + 1
+                if q_index == m_q and y_index == y:
+                    q_months[m] = mv
+                    qq = q_months
+            months_s[q] = qq
+
+        filtered = {}
+        for m, mv in months_s.items():
+            selected_quarter = self.kwargs['quarter']
+            if selected_quarter in m:
+                filtered[m] = mv
+                for c, cv in mv.items():
+                    if max_count < cv:
+                        max_count = cv
+
+        context['selected_quarter'] = self.kwargs['quarter']
+        context['year_stats'] = quarter_stats
+        context['year_stats'] = filtered
+        context['max_count'] = max_count
+        context['active_filter'] = 'publication'
         return context

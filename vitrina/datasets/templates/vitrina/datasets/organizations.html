@@ -19,23 +19,23 @@
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" %}
             <div class="is-flex">
-                <span>{% translate "Valdymo sritis" %}</span>
+                <span>{% translate "Organizacija" %}</span>
                 <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
             </div>
-            {% for org in jurisdiction_data %}
+            {% for org, ov in organization_data.items %}
                 <div class="is-flex">
                     <a {% if org.has_orgs == False %}
-                            href="/datasets/{{ org.url }}"
+                            href="/datasets/{{ org.id }}"
                         {% else %}
-                            href="/datasets/stats/jurisdiction/{{ org.filter_value }}"
+                            href="/datasets/stats/organization/{{ org.id }}"
                         {% endif %}
-                        id="{{ area.filter_value }}_id">
-                        <strong style="color: black;">{{ org.display_value }}</strong>
+                        id="{{ org.id }}_id">
+                        <strong style="color: black;">{{ org.title }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/{{ org.url }}">{{ org.count }}</a></div>
+                    <div class="stays-right"><a href="/datasets/organization/{{ org.id }}">{{ ov }}</a></div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ org.count }}"
+                          value="{{ ov }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

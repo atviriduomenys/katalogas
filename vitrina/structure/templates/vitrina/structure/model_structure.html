@@ -3,7 +3,13 @@
 {% load comment_tags %}
 {% load markdown_tags %}
 
-{% block current_title %}{{ model.title }}{% endblock %}
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -67,7 +73,7 @@
         {% endif %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų laukai" %}</h4>
-            {% for prop in model.get_given_props %}
+            {% for prop in props %}
             <div class="mb-2">
                 <span class="pr-3 is-family-monospace">
                     <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
@@ -100,13 +106,14 @@
                 {% endif %}
 
                 {% if prop.metadata.first.uri %}
-                    {% if prop.metadata.first.uri_link %}
-                        <span class="pr-3">
-                            uri: <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
-                        </span>
-                    {% else %}
-                        {{ prop.metadata.first.uri }}
-                    {% endif %}
+                    <span class="pr-3">
+                        uri:
+                        {% if prop.metadata.first.uri_link %}
+                            <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
+                        {% else %}
+                            {{ prop.metadata.first.uri }}
+                        {% endif %}
+                    </span>
                 {% endif %}
 
                 {% if prop.metadata.first.level %}
@@ -117,7 +124,7 @@
                 {% endif %}
 
                 <br/>
-                <span class="ml-4">{{ prop.metadata.first.title }}</span>
+                <p class="ml-4">{{ prop.metadata.first.title }}</p>
             </div>
             {% endfor %}
         </div>
@@ -133,7 +140,7 @@
         {% endif %}
 
         <div class="mt-6">
-            {% comments obj=model user=request.user %}
+            {% comments obj=model user=request.user is_structure=True %}
         </div>
     </div>
 </div>

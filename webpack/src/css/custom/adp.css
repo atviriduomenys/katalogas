@@ -8872,6 +8872,7 @@ table.th-40 th {
 .dropdown-check-list {
   display: inline-block;
   z-index: 100;
+  padding-bottom: 0.5rem;
 }
 
 .dropdown-check-list .anchor {
@@ -8882,7 +8883,7 @@ table.th-40 th {
   min-width: 17em;
 }
 
-.dropdown-check-list ul.items {
+.dropdown-check-list .items {
   padding: 5px;
   display: none;
   margin: 0;
@@ -8890,10 +8891,15 @@ table.th-40 th {
   border-top: none;
   position: absolute;
   background-color: whitesmoke;
-  overflow-x: auto;
+  min-width: 17em;
 }
 
-.dropdown-check-list ul.items li {
+.dropdown-check-list .items ul {
+  overflow: auto;
+  max-height: 400px;
+}
+
+.dropdown-check-list .items li {
   list-style: none;
 }
 
@@ -8932,6 +8938,10 @@ button.is-fixed-length {
 .filter-table {
     overflow: auto;
     max-height: 80vh;
+}
+
+div.col-title {
+  white-space: nowrap;
 }
 
 /*# sourceMappingURL=adp-final.css.map */

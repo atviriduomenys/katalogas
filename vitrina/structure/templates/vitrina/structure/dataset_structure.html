@@ -82,7 +82,7 @@
 
         {% if structure %}
         <div class="mt-6">
-            {% comments obj=structure user=request.user %}
+            {% comments obj=structure user=request.user is_structure=True %}
         </div>
         {% endif %}
     </div>

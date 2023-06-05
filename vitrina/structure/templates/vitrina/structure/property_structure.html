@@ -3,14 +3,28 @@
 {% load comment_tags %}
 {% load markdown_tags %}
 
-{% block current_title %}{{ prop.title }}{% endblock %}
+{% block current_title %}
+    {% if prop.title %}
+        {{ prop.title }}
+    {% else %}
+        {{ prop.name }}
+    {% endif %}
+{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
         <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
-        <li><a href="{% url 'model-structure' dataset.pk model.name %}"><span>{{ model.title }}</span></a></li>
+        <li><a href="{% url 'model-structure' dataset.pk model.name %}">
+            <span>
+                {% if model.title %}
+                    {{ model.title }}
+                {% else %}
+                    {{ model.name }}
+                {% endif %}
+            </span>
+        </a></li>
     </ul>
 {% endblock %}
 
@@ -121,7 +135,7 @@
         {% endif %}
 
         <div class="mt-6">
-            {% comments obj=prop user=request.user %}
+            {% comments obj=prop user=request.user is_structure=True %}
         </div>
     </div>
 </div>

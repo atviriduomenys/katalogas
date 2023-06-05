@@ -35,6 +35,17 @@ class Prefix(models.Model):
 
 
 class Metadata(models.Model):
+    PRIVATE = 0
+    PROTECTED = 1
+    PUBLIC = 2
+    OPEN = 3
+    ACCESS_TYPES = (
+        (PRIVATE, _("Privatus")),
+        (PROTECTED, _("Apsaugotas")),
+        (PUBLIC, _("Viešas")),
+        (OPEN, _("Atviras")),
+    )
+
     uuid = models.CharField(_("Id"), max_length=255)
     name = models.CharField(_("Vardas"), max_length=255, blank=True)
     type = models.CharField(_("Tipas"), max_length=255, blank=True)
@@ -45,7 +56,7 @@ class Metadata(models.Model):
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
     average_level = models.FloatField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
-    access = models.CharField(_("Prieiga"), max_length=255, blank=True)
+    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
     prefix = models.ForeignKey(Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True)
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
     version = models.IntegerField(_("Versija"), blank=True)
@@ -72,12 +83,15 @@ class Metadata(models.Model):
     def uri_link(self):
         link = None
         if self.uri:
-            prefix, name = self.uri.split(':', 1)
-            if prefix := Prefix.objects.filter(
-                name=prefix,
-                metadata__dataset=self.dataset
-            ).first():
-                link = f"{prefix.uri}{name}"
+            if '://' in self.uri:
+                link = self.uri
+            elif ':' in self.uri:
+                prefix, name = self.uri.split(':', 1)
+                if prefix := Prefix.objects.filter(
+                    name=prefix,
+                    metadata__dataset=self.dataset
+                ).first():
+                    link = f"{prefix.uri}{name}"
         return link
 
 

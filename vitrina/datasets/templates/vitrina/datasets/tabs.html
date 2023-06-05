@@ -7,25 +7,6 @@
                 {% translate "Informacija" %}
             </a>
         </li>
-        {% if can_view_members %}
-            <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
-                <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
-                    {% translate "Tvarkytojai" %}
-                </a>
-            </li>
-        {% endif %}
-        {% if can_manage_history %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
-                <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
-                    {% translate "Istorija" %}
-                </a>
-            </li>
-        {% endif %}
-        <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
-            <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
-                {% translate "Projektai" %}
-            </a>
-        </li>
         {% if structure_url %}
         <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure'%} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">
@@ -39,6 +20,25 @@
                 {% translate "Duomenys" %}
             </a>
         </li>
+        {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
+            <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
+                {% translate "Projektai" %}
+            </a>
+        </li>
+        {% if can_view_members %}
+            <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
+                <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
+                    {% translate "Tvarkytojai" %}
+                </a>
+            </li>
+        {% endif %}
+        {% if can_manage_history %}
+            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+                <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
+                    {% translate "Istorija" %}
+                </a>
+            </li>
         {% endif %}
     </ul>
 </div>

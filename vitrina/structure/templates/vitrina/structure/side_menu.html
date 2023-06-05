@@ -17,7 +17,7 @@
             </span>
         </div>
          {% if show_props and request.resolver_match.kwargs.model == model.name %}
-            {% for prop in model.get_given_props %}
+            {% for prop in props %}
                 <div>
                     <span class="has-tooltip-top" data-tooltip="{{ prop.name }}">
                         <a href="{{ prop.get_absolute_url }}" class="category-panel-block ml-4">
@@ -38,8 +38,8 @@
      $(document).ready(function() {
         $('span#side_menu_elem').each(function() {
             let width = this.offsetWidth;
-            let widthParent = $(this).closest('div')[0].scrollWidth;
-            if (width <= widthParent) {
+            let widthParent = $(this).closest('a').width();
+            if ((width - widthParent) < 1) {
                 $(this).closest('span.has-tooltip-top').removeAttr('data-tooltip');
             }
         });

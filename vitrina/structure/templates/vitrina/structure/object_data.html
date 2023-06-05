@@ -3,7 +3,13 @@
 {% load util_tags %}
 {% load comment_tags %}
 
-{% block current_title %}{{ model.title }}{% endblock %}
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -63,16 +69,49 @@
                                             </small>
                                         </div>
                                     </th>
-                                    <td>
-                                        {% if col == '_id' %}
-                                            <a href="{% url 'object-data' dataset.pk model.name value %}">{{ value|slice:":8" }}</a>
-                                        {% elif prop.ref_model %}
+                                    {% if col == '_id' %}
+                                        <td><a href="{% url 'object-data' dataset.pk model.name value %}">{{ value|slice:":8" }}</a></td>
+                                    {% elif value|is_dict %}
+                                        {% if prop.ref_model %}
                                             {% get_value_by_key value '_id' as value %}
-                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name value %}">{{ value|slice:":8" }}</a>
+                                            {% if value != None %}
+                                                <td id="{{ col }}_col_id">
+                                                    <a href="{% url 'object-data' dataset.pk prop.ref_model.name value %}">{{ value|slice:":8" }}</a>
+                                                </td>
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
                                         {% else %}
-                                            {{ value }}
+                                            {% if value != None %}
+                                                {% for k, v in value.items %}
+                                                    {% if k == '_id' %}
+                                                        {% if v != None %}
+                                                            <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
+                                                        {% else %}
+                                                            <td class="has-background-white-ter"></td>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {% if v != None %}
+                                                            <td id="{{ col }}_col_id">{{ v }}</td>
+                                                        {% else %}
+                                                            <td class="has-background-white-ter"></td>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% if not forloop.last %}
+                                                        <br/>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
                                         {% endif %}
-                                    </td>
+                                    {% else %}
+                                        {% if value != None %}
+                                            <td>{{ value }}</td>
+                                        {% else %}
+                                            <td class="has-background-white-ter"></td>
+                                        {% endif %}
+                                    {% endif %}
                                 </tr>
                             {% endif %}
                         {% endfor %}

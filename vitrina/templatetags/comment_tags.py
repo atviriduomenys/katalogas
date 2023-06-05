@@ -4,14 +4,16 @@ from django.contrib.contenttypes.models import ContentType
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.services import has_perm, Action
 from vitrina.requests.models import Request
+from vitrina.structure.models import Metadata
 
 register = template.Library()
 
 
 @register.inclusion_tag('component/comments.html')
-def comments(obj, user):
+def comments(obj, user, is_structure=False):
     content_type = ContentType.objects.get_for_model(obj)
     obj_comments = Comment.objects.filter(
         content_type=content_type,
@@ -21,12 +23,22 @@ def comments(obj, user):
     perm = has_perm(user, Action.COMMENT, obj)
     if not perm:
         obj_comments = obj_comments.filter(is_public=True)
+    if is_structure:
+        can_manage_structure = has_perm(
+            user,
+            Action.STRUCTURE,
+            Dataset,
+            obj
+        )
+        if not can_manage_structure:
+            obj_comments = obj_comments.exclude(
+                type=Comment.STRUCTURE,
+                metadata__access__lt=Metadata.PUBLIC
+            )
     comment_form_class = get_comment_form_class(obj, user)
     comments_array = []
     for comment in obj_comments:
-        children = comment.descendants(user=user,
-                                       obj=obj,
-                                       permission=perm)
+        children = comment.descendants(permission=perm)
         comments_array.append((comment, children))
     return {
         'comments': comments_array,
@@ -46,10 +58,17 @@ def external_comments(content_type, object_id, user, dataset):
         external_object_id=object_id,
         parent_id__isnull=True
     ).order_by('created')
-    obj_comments = obj_comments.filter(is_public=True)
+    perm = has_perm(
+            user,
+            Action.STRUCTURE,
+            Dataset,
+            dataset.current_structure
+        )
+    if not perm:
+        obj_comments = obj_comments.filter(is_public=True)
     comments_array = []
     for comment in obj_comments:
-        children = comment.descendants(user=user)
+        children = comment.descendants(permission=perm)
         comments_array.append((comment, children))
     return {
         'comments': comments_array,

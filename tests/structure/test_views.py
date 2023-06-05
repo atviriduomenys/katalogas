@@ -1,4 +1,5 @@
 import json
+import uuid
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -6,7 +7,14 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from unittest.mock import Mock, patch
 
+from factory.django import FileField
+
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.datasets.factories import DatasetStructureFactory
+from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory
+from vitrina.structure.services import create_structure_objects
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -551,3 +559,236 @@ def test_data_tab_from_property_structure(app: DjangoTestApp):
     resp = app.get(prop.get_absolute_url())
     resp = resp.click(linkid='data_tab')
     assert resp.request.path == model.get_data_url()
+
+
+@pytest.mark.django_db
+def test_data_tab_from_object_data(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(reverse('object-data', args=[dataset.pk, model.name, str(uuid.uuid4())]))
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == model.get_data_url()
+
+
+@pytest.mark.django_db
+def test_private_model(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,private,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse('dataset-structure', args=[structure.dataset.pk]))
+    assert list(resp.context['models'].values_list('metadata__name', flat=True)) == [
+        'datasets/gov/ivpk/adp/Country'
+    ]
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'City']), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_private_model_with_access(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,private,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse('dataset-structure', args=[structure.dataset.pk]))
+    assert list(resp.context['models'].values_list('metadata__name', flat=True)) == [
+        'datasets/gov/ivpk/adp/City',
+        'datasets/gov/ivpk/adp/Country'
+    ]
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'City']))
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_private_property(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
+    assert list(resp.context['props'].values_list('metadata__name', flat=True)) == ['id']
+
+    resp = app.get(reverse('property-structure', args=[
+        structure.dataset.pk,
+        'Country',
+        'title'
+    ]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_private_property_with_access(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,private,dct:title,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
+    assert list(resp.context['props'].values_list('metadata__name', flat=True)) == ['id', 'title']
+
+    resp = app.get(reverse('property-structure', args=[
+        structure.dataset.pk,
+        'Country',
+        'title'
+    ]), expect_errors=True)
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_private_comment(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,,comment,type,,,,public,,Public comment,\n'
+        ',,,,,,comment,type,,,,private,,Private comment,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
+    assert sorted([comment.body for comment, _ in resp.context['comments']]) == [
+        'Public comment'
+    ]
+
+
+@pytest.mark.django_db
+def test_private_comment_with_access(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,\n'
+        ',,,,,,comment,type,,,,public,,Public comment,\n'
+        ',,,,,,comment,type,,,,private,,Private comment,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
+    assert sorted([comment.body for comment, _ in resp.context['comments']]) == [
+        'Private comment',
+        'Public comment',
+    ]

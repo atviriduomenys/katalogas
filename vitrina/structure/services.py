@@ -5,6 +5,7 @@ from typing import Union, Tuple, List, Dict
 
 import requests
 from django.db.models import Q
+from lark import ParseError
 
 import vitrina.datasets.structure as struct
 
@@ -70,8 +71,9 @@ def _load_datasets(
     state: struct.State,
     dataset: Dataset
 ):
+    ct = ContentType.objects.get_for_model(dataset)
     existing_metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(dataset),
+        content_type=ct,
         object_id=dataset.pk
     )
     loaded_metadata = []
@@ -79,10 +81,11 @@ def _load_datasets(
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
         if metadata := Metadata.objects.filter(
             ~Q(uuid=meta.id),
+            content_type=ct,
             name=meta.name,
             dataset=dataset
         ).first():
-            meta.errors.append(_(f'Dataset "{meta.name}" already exists.'))
+            meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         else:
             dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
@@ -105,6 +108,7 @@ def _load_prefixes(
     obj: models.Model,
 ):
     ct = ContentType.objects.get_for_model(obj)
+    prefix_ct = ContentType.objects.get_for_model(Prefix)
 
     existing_prefixes = Prefix.objects.filter(
         content_type=ct,
@@ -115,10 +119,11 @@ def _load_prefixes(
     for i, meta in enumerate(prefixes.values(), 1):
         if prefix := existing_prefixes.filter(
             ~Q(metadata__uuid=meta.id),
+            metadata__content_type=prefix_ct,
             name=meta.name,
             metadata__dataset=dataset,
         ).first():
-            meta.errors.append(_(f'Prefix "{meta.name}" already exists.'))
+            meta.errors.append(_(f'Prefiksas "{meta.name}" jau egzistuoja.'))
             loaded_prefixes.append(prefix)
         else:
             prefix = Prefix(
@@ -143,6 +148,7 @@ def _load_enums(
     obj: Union[Dataset, Property]
 ):
     ct = ContentType.objects.get_for_model(obj)
+    enum_ct = ContentType.objects.get_for_model(EnumItem)
 
     existing_enums = Enum.objects.filter(
         content_type=ct,
@@ -162,11 +168,12 @@ def _load_enums(
         for i, meta in enumerate(enum_items, 1):
             if enum_item := existing_enum_items.filter(
                 ~Q(metadata__uuid=meta.id),
+                metadata__content_type=enum_ct,
                 metadata__name=meta.name,
                 metadata__prepare=meta.prepare,
                 metadata__dataset=dataset,
             ).first():
-                meta.errors.append(_(f'Enum item "{meta.prepare}" already exists.'))
+                meta.errors.append(_(f'Pasirinkimas "{meta.prepare}" jau egzistuoja.'))
                 loaded_enum_items.append(enum_item)
             else:
                 enum_item = EnumItem(enum=enum)
@@ -193,6 +200,7 @@ def _load_params(
     obj: Union[Dataset, Model],
 ):
     ct = ContentType.objects.get_for_model(obj)
+    param_ct = ContentType.objects.get_for_model(ParamItem)
 
     existing_params = Param.objects.filter(
         content_type=ct,
@@ -212,11 +220,12 @@ def _load_params(
         for i, meta in enumerate(param_items, 1):
             if param_item := existing_param_items.filter(
                 ~Q(metadata__uuid=meta.id),
+                metadata__content_type=param_ct,
                 metadata__name=meta.name,
                 metadata__prepare=meta.prepare,
                 metadata__dataset=dataset,
             ).first():
-                meta.errors.append(_(f'Param item "{meta.prepare}" already exists.'))
+                meta.errors.append(_(f'Parametras "{meta.prepare}" jau egzistuoja.'))
                 loaded_param_items.append(param_item)
             else:
                 param_item = ParamItem(param=param)
@@ -241,20 +250,23 @@ def _load_models(
     state: struct.State,
     dataset: Dataset
 ):
+    ct = ContentType.objects.get_for_model(Model)
     existing_models = Model.objects.filter(dataset=dataset)
     loaded_models = []
 
     for i, meta in enumerate(state.manifest.models.values(), 1):
         if model := existing_models.filter(
             ~Q(metadata__uuid=meta.id),
+            metadata__content_type=ct,
             metadata__name=meta.name,
             metadata__dataset=dataset,
         ).first():
-            meta.errors.append(_(f'Model "{meta.name}" already exists.'))
+            meta.errors.append(_(f'Modelis "{meta.name}" jau egzistuoja.'))
             loaded_models.append(model)
         else:
             model = Model(dataset=dataset)
             model, metadata = _create_or_update_metadata(dataset, meta, model, i)
+            _check_uri(dataset, meta, meta.uri)
             _load_comments(dataset, meta.comments, model)
             _load_params(dataset, meta.params, model)
             _load_properties(dataset, meta, model)
@@ -272,20 +284,23 @@ def _load_properties(
     model_meta: struct.Model,
     model: Model,
 ):
+    ct = ContentType.objects.get_for_model(Property)
     existing_props = Property.objects.filter(model=model, given=True)
     loaded_props = []
 
     for i, meta in enumerate(model_meta.properties.values(), 1):
         if prop := existing_props.filter(
             ~Q(metadata__uuid=meta.id),
+            metadata__content_type=ct,
             metadata__name=meta.name,
             metadata__dataset=dataset
         ).first():
-            meta.errors.append(_(f'Property "{meta.name}" already exists.'))
+            meta.errors.append(_(f'Savybė "{meta.name}" jau egzistuoja.'))
             loaded_props.append(prop)
         else:
             prop = Property(model=model)
             prop, metadata = _create_or_update_metadata(dataset, meta, prop, i)
+            _check_uri(dataset, meta, metadata.uri)
             _load_comments(dataset, meta.comments, prop)
             _load_enums(dataset, meta.enums, prop)
             loaded_props.append(prop)
@@ -317,7 +332,8 @@ def _load_comments(
             user=sys_user,
             content_type=ct,
             object_id=obj.pk,
-            type=Comment.STRUCTURE
+            type=Comment.STRUCTURE,
+            body=meta.title
         )
         comment, metadata = _create_or_update_metadata(dataset, meta, comment, i)
         loaded_comments.append(comment)
@@ -352,8 +368,14 @@ def _create_errors(
         )
 
 
-def _parse_prepare(prepare: str) -> dict:
-    return spyna.parse(prepare) or {}
+def _parse_prepare(prepare: str, meta: struct.Metadata) -> dict:
+    if prepare:
+        try:
+            return spyna.parse(prepare)
+        except ParseError as e:
+            if hasattr(meta, 'errors'):
+                meta.errors.append(_(f'Klaida skaitant formulę "{prepare}"": {e}'))
+    return {}
 
 
 def _create_or_update_metadata(
@@ -393,10 +415,10 @@ def _create_or_update_metadata(
         metadata.ref = obj_meta.ref
         metadata.source = obj_meta.source
         metadata.prepare = obj_meta.prepare
-        metadata.prepare_ast = _parse_prepare(obj_meta.prepare)
+        metadata.prepare_ast = _parse_prepare(obj_meta.prepare, obj_meta)
         metadata.level = obj_meta.level
         metadata.level_given = obj_meta.level_given
-        metadata.access = obj_meta.access
+        metadata.access = _parse_access(obj_meta.access)
         metadata.uri = obj_meta.uri
         metadata.version = metadata.version + 1 if metadata.version else 1
         metadata.title = obj_meta.title
@@ -420,10 +442,10 @@ def _create_or_update_metadata(
             ref=obj_meta.ref,
             source=obj_meta.source,
             prepare=obj_meta.prepare,
-            prepare_ast=_parse_prepare(obj_meta.prepare),
+            prepare_ast=_parse_prepare(obj_meta.prepare, obj_meta),
             level=obj_meta.level,
             level_given=obj_meta.level_given,
-            access=obj_meta.access,
+            access=_parse_access(obj_meta.access),
             uri=obj_meta.uri,
             version=1,
             title=obj_meta.title,
@@ -442,61 +464,78 @@ def _link_distributions(
     dataset: Dataset
 ):
     for dataset_meta in state.manifest.datasets.values():
-        for i, model_meta in enumerate(dataset_meta.models.values()):
-            distribution = None
-            resource = model_meta.resource
-            title = model_meta.name.split('/')[-1]
-            if not resource:
-                url = f"https://get.data.gov.lt/{model_meta.name}/:ns"
-                resource = struct.Resource(
-                    name=title,
-                    source=url
-                )
-                distribution = DatasetDistribution.objects.filter(
+        if dataset_meta.resources:
+            for i, resource_meta in enumerate(dataset_meta.resources.values()):
+                if resource_meta.source:
+                    distribution = DatasetDistribution.objects.filter(
+                        dataset=dataset,
+                        download_url=resource_meta.source,
+                    ).first()
+                    if not distribution:
+                        distribution = DatasetDistribution.objects.create(
+                            dataset=dataset,
+                            download_url=resource_meta.source,
+                            title=resource_meta.name,
+                            type='URL',
+                        )
+
+                    distribution, metadata = _create_or_update_metadata(
+                        dataset,
+                        resource_meta,
+                        distribution,
+                        i,
+                        use_existing_meta=True
+                    )
+                    _load_comments(dataset, resource_meta.comments, distribution)
+                    for model_meta in resource_meta.models.values():
+                        if model := Model.objects.filter(
+                            metadata__uuid=model_meta.id,
+                            dataset=dataset
+                        ).first():
+                            model.distribution = distribution
+                            model.save()
+
+                    _create_errors(resource_meta.errors, distribution)
+        else:
+            title = dataset_meta.name.split('/')[-1]
+            url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
+            resource_meta = struct.Resource(
+                name=title,
+                source=url
+            )
+            distribution = DatasetDistribution.objects.filter(
+                dataset=dataset,
+                download_url=url,
+                format__extension='API',
+                type='URL',
+            ).first()
+            if not distribution:
+                format, _ = Format.objects.get_or_create(extension='API')
+                distribution = DatasetDistribution.objects.create(
                     dataset=dataset,
                     download_url=url,
-                    format__extension='API',
+                    format=format,
+                    title=title,
                     type='URL',
-                ).first()
-                if not distribution:
-                    format, _ = Format.objects.get_or_create(extension='API')
-                    distribution = DatasetDistribution.objects.create(
-                        dataset=dataset,
-                        download_url=url,
-                        format=format,
-                        title=title,
-                        type='URL',
-                    )
-            elif resource and resource.source:
-                distribution = DatasetDistribution.objects.filter(
-                    dataset=dataset,
-                    download_url=resource.source,
-                ).first()
-                if not distribution:
-                    distribution = DatasetDistribution.objects.create(
-                        dataset=dataset,
-                        download_url=resource.source,
-                        title=resource.name,
-                        type='URL',
-                    )
-
-            if distribution:
-                distribution, metadata = _create_or_update_metadata(
-                    dataset,
-                    resource,
-                    distribution,
-                    i,
-                    use_existing_meta=True
                 )
-                _load_comments(dataset, resource.comments, distribution)
+
+            distribution, metadata = _create_or_update_metadata(
+                dataset,
+                resource_meta,
+                distribution,
+                1,
+                use_existing_meta=True
+            )
+            _load_comments(dataset, resource_meta.comments, distribution)
+            for model_meta in dataset_meta.models.values():
                 if model := Model.objects.filter(
-                    metadata__uuid=model_meta.id,
-                    dataset=dataset
+                        metadata__uuid=model_meta.id,
+                        dataset=dataset
                 ).first():
                     model.distribution = distribution
                     model.save()
 
-                _create_errors(resource.errors, distribution)
+            _create_errors(resource_meta.errors, distribution)
 
 
 def _link_models(dataset: Dataset, state: struct.State):
@@ -534,6 +573,7 @@ def _link_base(
     meta: struct.Base,
     model: Model,
 ):
+    base_ct = ContentType.objects.get_for_model(Base)
     model_ct = ContentType.objects.get_for_model(Model)
 
     if meta:
@@ -544,10 +584,11 @@ def _link_base(
         ).first():
             if base := Base.objects.filter(
                 ~Q(metadata__uuid=meta.id),
+                metadata__content_type=base_ct,
                 metadata__name=meta.name,
                 model=base_model,
             ).first():
-                meta.errors.append(_(f'Base "{meta.name}" already exists.'))
+                meta.errors.append(_(f'Bazė "{meta.name}" jau egzistuoja.'))
             else:
                 base = Base(model=base_model)
                 base, metadata = _create_or_update_metadata(dataset, meta, base)
@@ -637,6 +678,32 @@ def _link_denorm_props(
     return prop
 
 
+def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
+    if (
+        uri and
+        '://' not in uri and
+        ':' not in uri
+    ):
+        if hasattr(meta, 'errors'):
+            meta.errors.append(_(f'Neteisingas uri "{uri}" formatas.'))
+    elif ':' in uri and '://' not in uri:
+        prefix, name = uri.split(':')
+        if not Prefix.objects.filter(
+            (
+                Q(
+                    content_type=ContentType.objects.get_for_model(DatasetStructure),
+                    object_id=dataset.current_structure.pk
+                ) |
+                Q(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    object_id=dataset.pk
+                )
+            ) & Q(name=prefix)
+        ):
+            if hasattr(meta, 'errors'):
+                meta.errors.append(_(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.'))
+
+
 def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
     if uuid:
         res = requests.get(f"https://get.data.gov.lt/{model}/{uuid}/?{query}")
@@ -644,3 +711,17 @@ def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
         res = requests.get(f"https://get.data.gov.lt/{model}/?{query}")
     data = json.loads(res.content)
     return data
+
+
+def _parse_access(value: str):
+    access = None
+    if value:
+        if value == 'private':
+            access = Metadata.PRIVATE
+        elif value == 'protected':
+            access = Metadata.PROTECTED
+        elif value == 'public':
+            access = Metadata.PUBLIC
+        elif value == 'open':
+            access = Metadata.OPEN
+    return access

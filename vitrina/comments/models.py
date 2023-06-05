@@ -1,10 +1,9 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
-from vitrina.orgs.services import has_perm, Action
 
 
 class Comment(models.Model):
@@ -69,21 +68,22 @@ class Comment(models.Model):
     objects = models.Manager()
     public = PublicCommentManager()
 
+    metadata = GenericRelation('vitrina_structure.Metadata')
+
     class Meta:
         db_table = 'comment'
         ordering = ('-created',)
         get_latest_by = 'created'
 
-    def descendants(self, user=None, obj=None, include_self=False, permission=False):
+    def descendants(self, include_self=False, permission=False):
         descendants = []
         children = Comment.objects.filter(parent_id=self.pk).order_by('created')
-        if user and obj:
-            if not permission:
-                children = children.filter(is_public=True)
+        if not permission:
+            children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)
         for child in children:
-            descendants.extend(child.descendants(include_self=True))
+            descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
     def body_text(self):

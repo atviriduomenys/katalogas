@@ -17,7 +17,7 @@ class MetadataFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('catch_phrase')
     version = 1
-    access = 'open'
+    access = Metadata.OPEN
 
     type = ''
     ref = ''

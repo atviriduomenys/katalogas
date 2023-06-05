@@ -2,7 +2,13 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{{ model.title }}{% endblock %}
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -29,7 +35,7 @@
                     {% endfor %}
                 </div>
             </div>
-        {% elif data %}
+        {% else %}
             <div class="field has-addons has-addons-right">
               <p class="control">
                 <a class="button" onclick="downloadData()">
@@ -51,7 +57,7 @@
                 <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Filtras" %}:</h4>
                 <div class="mb-5 tags">
                     {% for tag in tags %}
-                        <span class="tag no-margin-bottom" id="remove_tag_{{ forloop.counter0 }}_id">
+                        <span class="tag" id="remove_tag_{{ forloop.counter0 }}_id">
                             {{ tag }}
                             <button
                                 id="remove_tag_{{ tag }}_id"
@@ -60,37 +66,45 @@
                             </button>
                         </span>
                     {% endfor %}
-                    <div id="select_cols_id" class="dropdown-check-list" tabindex="100" data-cols="{{ selected_cols }}">
+                    <div id="select_cols_id" class="dropdown-check-list" tabindex="100">
                         <span class="tag anchor no-margin-bottom no-margin-right">
                             {{ select|truncatechars:30 }}
                         </span>
-                        <ul class="items">
-                            {% if '_id' in selected_cols %}
-                                <li onclick="select('_id', false)">
-                                    <input type="checkbox" checked/>
-                                    <span>_id</span>
-                                </li>
-                            {% else %}
-                                <li onchange="select('_id')">
-                                    <input type="checkbox"/>
-                                    <span>_id</span>
-                                </li>
-                            {% endif %}
-
-                            {% for col in properties.keys %}
-                                {% if col in selected_cols %}
-                                    <li onclick="select('{{ col }}', false)">
-                                        <input type="checkbox" checked/> {{ col }}
+                        <div class="items">
+                            <ul>
+                                {% if '_id' in selected_cols %}
+                                    <li>
+                                        <input type="checkbox" checked/>
+                                        <span>_id</span>
                                     </li>
                                 {% else %}
-                                    <li onclick="select('{{ col }}')">
-                                        <input type="checkbox"/> {{ col }}
+                                    <li>
+                                        <input type="checkbox"/>
+                                        <span>_id</span>
                                     </li>
                                 {% endif %}
-                            {% endfor %}
-                        </ul>
+
+                                {% for col in properties.keys %}
+                                    {% if col in selected_cols %}
+                                    <li> <input type="checkbox" checked/> <span>{{ col }}</span></li>
+                                    {% else %}
+                                    <li><input type="checkbox"/> <span>{{ col }}</span></li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+
+                            <div class="buttons">
+                                <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
+                                    {% translate "Rodyti" %}
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="mt-5 mb-2">
+                <p>{% translate "Rodoma" %} {{ data|length }} {% translate "objektų iš" %} {{ total_count }}</p>
             </div>
 
             <div class="filter-table">
@@ -100,7 +114,7 @@
                         {% for col in headers %}
                             {% get_value_by_key properties col as prop %}
                                 <th id="{{ col }}_col_id" class="is-relative">
-                                    <div class="has-text-centered">
+                                    <div class="has-text-centered col-title">
                                         <span>
                                             {% if prop %}
                                                 <a href="{{ prop.get_absolute_url }}">{{ col }}</a>
@@ -133,6 +147,7 @@
                                                         <option value="<"><</option>
                                                         <option value=">=">>=</option>
                                                         <option value="<="><=</option>
+                                                        <option value="!=">!=</option>
                                                         <option value="contains">contains</option>
                                                         <option value="startswith">startswith</option>
                                                         <option value="endswith">endswith</option>
@@ -143,16 +158,16 @@
                                             <div class="mb-3 is-inine-block">
                                                 <div class="buttons is-right">
                                                     <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
-                                                    <button id="{{ col }}_order_asc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}')">
+                                                    <button id="{{ col }}_order_asc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}', false)">
                                                         <span class="icon has-text-white"><i class="fas fa-arrow-up"></i></span>
                                                     </button>
-                                                    <button id="{{ col }}_order_desc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}', false)">
+                                                    <button id="{{ col }}_order_desc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}')">
                                                         <span class="icon has-text-white"><i class="fas fa-arrow-down"></i></span>
                                                     </button>
                                                 </div>
                                             </div>
                                             <div class="no-margin-bottom buttons is-right">
-                                                <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" onclick="select('{{ col }}', false)">
+                                                <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" onclick="hide('{{ col }}')">
                                                     {% translate "Slėpti" %}
                                                 </button>
                                             </div>
@@ -167,50 +182,72 @@
                                 </th>
                         {% endfor %}
                     </tr>
-                    {% for row in data %}
-                        <tr>
-                            {% for col, val in row.items %}
-                                {% get_value_by_key properties col as prop %}
+                    {% if data %}
+                        {% for row in data %}
+                            <tr>
+                                {% for col, val in row.items %}
+                                    {% get_value_by_key properties col as prop %}
 
-                                {% if col not in excluded_cols %}
-                                    {% if col == '_id' %}
-                                        <td id="{{ col }}_col_id">
-                                            <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
-                                        </td>
-                                    {% elif val|is_dict %}
-                                        {% if prop.ref_model %}
-                                            {% get_value_by_key val '_id' as val %}
+                                    {% if col not in excluded_cols %}
+                                        {% if col == '_id' %}
                                             <td id="{{ col }}_col_id">
-                                                <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
                                             </td>
+                                        {% elif val|is_dict %}
+                                            {% if prop.ref_model %}
+                                                {% get_value_by_key val '_id' as val %}
+                                                {% if val != None %}
+                                                    <td id="{{ col }}_col_id">
+                                                        <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                    </td>
+                                                {% else %}
+                                                    <td class="has-background-white-ter"></td>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if val != None %}
+                                                    {% for k, v in val.items %}
+                                                        {% if k == '_id' %}
+                                                            {% if v != None %}
+                                                                <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
+                                                            {% else %}
+                                                                <td class="has-background-white-ter"></td>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            {% if v != None %}
+                                                                <td id="{{ col }}_col_id">{{ v }}</td>
+                                                            {% else %}
+                                                                <td class="has-background-white-ter"></td>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                        {% if not forloop.last %}
+                                                            <br/>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <td class="has-background-white-ter"></td>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% elif val|is_number %}
+                                            <td id="{{ col }}_col_id" class="has-text-right">{{ val }}</td>
                                         {% else %}
-                                            <td id="{{ col }}_col_id">
-                                                {% for k, v in val.items %}
-                                                    {% if k == '_id' %}
-                                                        {{ v|slice:":8" }}
-                                                    {% else %}
-                                                        {{ v }}
-                                                    {% endif %}
-                                                    {% if not forloop.last %}
-                                                        <br/>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </td>
+                                            {% if val != None %}
+                                                <td id="{{ col }}_col_id">{{ val|truncatechars:256 }}</td>
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
                                         {% endif %}
-                                    {% elif val|is_number %}
-                                        <td id="{{ col }}_col_id" class="has-text-right">{{ val }}</td>
-                                    {% else %}
-                                        <td id="{{ col }}_col_id">{{ val }}</td>
                                     {% endif %}
-                                {% endif %}
-                            {% endfor %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="{{ headers|length }}">{% translate "Duomenų nėra" %}</td>
                         </tr>
-                    {% endfor %}
+                    {% endif %}
                     </tbody>
                 </table>
             </div>
-        {% else %}
-            <p>{% translate "Duomenų nėra" %}</p>
         {% endif %}
     </div>
 </div>
@@ -231,8 +268,8 @@
                 }
             });
 
-            width = selectCheckList.css('width');
-            $(".items").css('width', width);
+            let width = $('.items').css('width');
+            selectCheckList.find('span.anchor').css('width', width);
         });
 
 
@@ -297,15 +334,19 @@
                 compareSelect == 'startswith' ||
                 compareSelect == 'endswith'
             ) {
+                compareInput = compareInput.replaceAll('"', String.raw`\"`);
                 compare = `${col}.${compareSelect}("${compareInput}")`;
             }
             else {
                 if (
-                    type == 'string' ||
-                    type == 'date' ||
-                    type == 'datetime' ||
-                    col == '_id'
+                    (
+                        type == 'string' ||
+                        type == 'date' ||
+                        type == 'datetime' ||
+                        col == '_id'
+                    ) && compareInput != 'null'
                 ) {
+                    compareInput = compareInput.replaceAll('"', String.raw`\"`);
                     compare = `${col}${compareSelect}"${compareInput}"`;
                 }
                 else {
@@ -323,50 +364,50 @@
             let searchParams = search.split('&');
             let query = "";
             for (let param of searchParams) {
-                if (param != tag) {
+                if (param.replaceAll(/\\/g, "") != tag) {
                     query = query ? `${query}&${param}` : `?${param}`;
                 }
             }
             location.href = `${location.origin}${location.pathname}${query}`;
         };
 
-        function select(col, add = true) {
-            let cols = $('#select_cols_id').data('cols');
-            cols = cols.replace('[', '').replace(']', '').replaceAll("'", '');
-            cols = cols.split(', ');
+        function select() {
+            let selected_cols = [];
+            $('.items li input:checked').each(function() {
+                let value = $(this).siblings('span')[0].innerText;
+                selected_cols.push(value);
+            });
 
             let search = location.search.substring(1);
             let searchParams = search.split('&');
 
-            let select = add ? [] : cols;
+            let query = "";
+            for (let param of searchParams) {
+                if (param && !param.includes('select(')) {
+                    query = query ? `${query}&${param}` : `?${param}`;
+                }
+            }
+            let select = `select(${selected_cols.join(',')})`;
+            query = query ? `${query}&${select}` : `?${select}`;
+
+            let url = `${location.origin}${location.pathname}${query}`;
+            location.href = url;
+        }
+
+        function hide(col) {
+            let search = location.search.substring(1);
+            let searchParams = search.split('&');
+
+            let select = {{ selected_cols|safe }};
             let query = "";
             for (let param of searchParams) {
                 if (param) {
-                    if (param.includes('select(')) {
-                        let value = param.substring(
-                            param.indexOf("(") + 1,
-                            param.lastIndexOf(")")
-                        );
-                        for (let val of value.split(",")) {
-                            if (add){
-                                if (!select.includes(val)) {
-                                    select.push(val);
-                                }
-                            }
-                        }
-                    }
-                    else {
+                    if (param && !param.includes('select(')) {
                         query = query ? `${query}&${param}` : `?${param}`;
                     }
                 }
             }
-            if (add && !select.includes(col)) {
-                select.push(col);
-            }
-            else {
-                select = select.filter(v => v !== col);
-            }
-
+            select = select.filter(v => v !== col);
             select = `select(${select.join(',')})`;
             query = query ? `${query}&${select}` : `?${select}`;
 

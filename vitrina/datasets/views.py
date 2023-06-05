@@ -38,7 +38,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.structure.models import Model
+from vitrina.structure.models import Model, Metadata
 from vitrina.structure.services import create_structure_objects
 from vitrina.structure.views import StructureMixin
 from vitrina.views import HistoryView, HistoryMixin
@@ -172,10 +172,22 @@ class DatasetDetailView(
         })
 
     def get_data_url(self):
-        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
-                'model': model.name,
+                'model': models[0].name,
             })
         return None
 
@@ -304,10 +316,22 @@ class DatasetHistoryView(StructureMixin, HistoryView):
         })
 
     def get_data_url(self):
-        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
-                'model': model.name,
+                'model': models[0].name,
             })
         return None
 
@@ -415,10 +439,22 @@ class DatasetMembersView(
         })
 
     def get_data_url(self):
-        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
-                'model': model.name,
+                'model': models[0].name,
             })
         return None
 
@@ -624,10 +660,22 @@ class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
         })
 
     def get_data_url(self):
-        if model := Model.objects.filter(dataset__pk=self.kwargs.get('pk')).first():
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
-                'model': model.name,
+                'model': models[0].name,
             })
         return None
 

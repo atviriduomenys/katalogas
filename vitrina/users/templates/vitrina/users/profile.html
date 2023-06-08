@@ -49,7 +49,7 @@
                     <strong>{% translate "El. paštas" %}</strong>
                 </div>
                 <div class="column">
-                    {{ user.get_primary_email|urlize }}
+                    {{ user.email|urlize }}
                 </div>
             </div>
             {% endif %}

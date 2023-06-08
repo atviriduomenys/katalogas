@@ -32,4 +32,28 @@ class Migration(migrations.Migration):
                 'managed': False,
             },
         ),
+        migrations.CreateModel(
+            name='ApiDescription',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created', models.DateTimeField(auto_now_add=True, null=True)),
+                ('modified', models.DateTimeField(auto_now=True, null=True)),
+                ('deleted', models.BooleanField(blank=True, null=True)),
+                ('deleted_on', models.DateTimeField(blank=True, null=True)),
+                ('version', models.IntegerField(default=1)),
+                ('api_version', models.CharField(blank=True, max_length=255, null=True)),
+                ('contact_email', models.CharField(blank=True, max_length=255, null=True)),
+                ('contact_name', models.CharField(blank=True, max_length=255, null=True)),
+                ('contact_url', models.CharField(blank=True, max_length=255, null=True)),
+                ('desription_html', models.TextField(blank=True, null=True)),
+                ('identifier', models.CharField(blank=True, max_length=255, null=True)),
+                ('licence', models.CharField(blank=True, max_length=255, null=True)),
+                ('licence_url', models.CharField(blank=True, max_length=255, null=True)),
+                ('title', models.CharField(blank=True, max_length=255, null=True)),
+            ],
+            options={
+                'db_table': 'api_description',
+                'managed': False,
+            },
+        ),
     ]

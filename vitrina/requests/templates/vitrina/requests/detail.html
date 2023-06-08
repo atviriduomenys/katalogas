@@ -299,7 +299,7 @@
                 <div class="structure-wrapper m-b-sm"></div>
             {% endif %}
             {% if request_object.structure_file %}
-                <p class="label">{% translate "request_object.structure_file" %}</p>
+                <p class="label">{% translate "Struktūros failas" %}</p>
                 <div class="content">
                     <a href="{{ request_object.structure_file }}">{{ request_object.structure_file }}</a>
                 </div>
@@ -335,6 +335,20 @@
     <script type="text/javascript">
         $(function () {
             $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
+
+            $('#id_submit_button_request').click( function () {
+
+                const status_field = $(this).closest('#comment-form').find('#id_status')[0];
+                const body_field = $(this).closest('#comment-form').find('#id_body')[0];
+
+                if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED" )) {
+                    body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
+                    body_field.reportValidity();
+                }
+                else {
+                    $('#comment-form').trigger('submit');
+                }
+            });
         });
     </script>
 {% endblock %}

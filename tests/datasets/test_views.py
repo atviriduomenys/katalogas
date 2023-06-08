@@ -9,18 +9,21 @@ from django_webtest import DjangoTestApp
 
 import pytest
 from factory.django import FileField
+from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -62,22 +65,6 @@ def test_dataset_detail_status(app: DjangoTestApp, dataset_detail_data):
 def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(dataset_detail_data['dataset'].get_absolute_url())
     assert list(resp.context['resources']) == [dataset_detail_data['dataset_distribution']]
-
-
-@pytest.mark.django_db
-def test_download_non_existent_distribution(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(reverse('dataset-distribution-download', kwargs={
-        'dataset_id': 1000,
-        'distribution_id': 1000,
-        'file': "doesntexist",
-    }), expect_errors=True)
-    assert resp.status_code == 404
-
-
-@pytest.mark.django_db
-def test_download_distribution(app: DjangoTestApp, dataset_detail_data):
-    resp = app.get(dataset_detail_data['dataset_distribution'].get_download_url())
-    assert resp.content == b'Column\nValue'
 
 
 @pytest.mark.django_db
@@ -202,7 +189,7 @@ def test_organization_filter_without_query(app: DjangoTestApp, organization_filt
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] is None
+    assert resp.context['selected_organization'] == []
 
 
 @pytest.mark.haystack
@@ -215,7 +202,7 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] == organization_filter_data["organization"].pk
+    assert resp.context['selected_organization'][0] == str(organization_filter_data["organization"].pk)
 
 
 @pytest.fixture
@@ -236,6 +223,7 @@ def category_filter_data():
     dataset_with_category2 = DatasetFactory(category=category2, slug="ds2", organization=organization)
     dataset_with_category3 = DatasetFactory(category=category3, slug="ds3", organization=organization)
     dataset_with_category4 = DatasetFactory(category=category4, slug="ds4", organization=organization)
+
     return {
         "categories": [category1, category2, category3, category4],
         "datasets": [
@@ -326,6 +314,24 @@ def test_category_filter_with_parent_and_child_category(
         str(category_filter_data["categories"][3].pk)
     ]
 
+@pytest.mark.haystack
+def test_data_group_filter_header_visible_if_data_groups_exist(
+    app: DjangoTestApp,
+):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    dataset.groups.set([group])
+    dataset.save()
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='data_group_filter_header')
+
+@pytest.mark.haystack
+def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
+    app: DjangoTestApp,
+):
+    dataset = DatasetFactory()
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='data_group_filter_header')
 
 @pytest.fixture
 def datasets():
@@ -461,6 +467,10 @@ def test_dataset_filter_all(app: DjangoTestApp):
         frequency=frequency
     )
 
+    distribution = DatasetDistributionFactory()
+    distribution.dataset = dataset_with_all_filters
+    distribution.save()
+
     dataset_with_all_filters.set_current_language(settings.LANGUAGE_CODE)
     dataset_with_all_filters.slug = 'ds1'
     dataset_with_all_filters.save()
@@ -477,7 +487,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
 
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset_with_all_filters.pk]
     assert resp.context['selected_status'] == Dataset.HAS_DATA
-    assert resp.context['selected_organization'] == organization.pk
+    assert resp.context['selected_organization'][0] == str(organization.pk)
     assert resp.context['selected_categories'] == [str(category.pk)]
     assert resp.context['selected_tags'] == ["tag1", "tag2"]
     assert resp.context['selected_frequency'] == frequency.pk
@@ -538,27 +548,14 @@ def test_with_non_readable_structure(app: DjangoTestApp):
     dataset = DatasetFactory()
     dataset.current_structure = DatasetStructureFactory(
         dataset=dataset,
-        file=FileField(filename='file.csv', data=b'ab\0c')
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=b'ab\0c')
+        )
     )
     dataset.save()
     resp = app.get(dataset.current_structure.get_absolute_url())
     assert len(resp.context['errors']) > 0
     assert resp.context['manifest'] is None
-
-
-@pytest.mark.django_db
-def test_download_non_existent_structure(app: DjangoTestApp):
-    resp = app.get(reverse('dataset-structure-download', kwargs={'pk': 1000}), expect_errors=True)
-    assert resp.status_code == 404
-
-
-@pytest.mark.django_db
-def test_download_structure(app: DjangoTestApp):
-    dataset = DatasetFactory()
-    dataset.current_structure = DatasetStructureFactory(dataset=dataset)
-    dataset.save()
-    resp = app.get(dataset.current_structure.get_absolute_url() + "download/")
-    assert resp.content == dataset.current_structure.file.read()
 
 
 @pytest.mark.django_db
@@ -628,6 +625,22 @@ def test_change_form_correct_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_group_change_form_correct_login(app: DjangoTestApp):
+    group = DatasetGroupFactory()
+    dataset = DatasetFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['groups'] = ['1']
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
+    assert dataset.groups.all().first() == group
+    assert Version.objects.get_for_object(dataset).count() == 1
+
+
+@pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(
@@ -688,6 +701,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
 
 
+@pytest.mark.haystack
 @pytest.mark.django_db
 def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
@@ -796,6 +810,8 @@ def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
     dataset.refresh_from_db()
     structure = DatasetStructure.objects.get(dataset=dataset)
     assert dataset.current_structure == structure
+    assert File.objects.count() == 1
+    assert structure.file.original_filename == "manifest.csv"
 
 
 @pytest.mark.django_db
@@ -812,6 +828,8 @@ def test_dataset_structure_import_standardized(app: DjangoTestApp):
     dataset.refresh_from_db()
     structure = DatasetStructure.objects.get(dataset=dataset)
     assert dataset.current_structure == structure
+    assert File.objects.count() == 1
+    assert structure.file.original_filename == "file.csv"
 
 
 @pytest.mark.django_db
@@ -993,3 +1011,110 @@ def test_dataset_members_delete_member(app: DjangoTestApp):
     assert not qs.exists()
 
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_add_project_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}))
+    form = resp.forms['dataset-add-project-form']
+    form['projects'] = (project.pk,)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-projects', kwargs={'pk': dataset.pk})
+    assert project.datasets.all().first() == dataset
+
+
+@pytest.mark.django_db
+def test_add_project_with_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-project-add', kwargs={'pk': dataset.pk}), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_remove_project_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    app.set_user(user)
+
+    resp = app.get(reverse('dataset-project-remove', kwargs={'pk': dataset.pk, 'project_id': project.pk}),
+                   expect_errors=True)
+
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_remove_project_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    project = ProjectFactory()
+    dataset = DatasetFactory()
+    url = reverse('dataset-projects', kwargs={'pk': dataset.pk})
+
+    project.datasets.add(dataset)
+    assert project.datasets.all().count() == 1
+
+    app.set_user(user)
+
+    resp = app.get(url)
+    resp = resp.click(linkid=f"remove-project-{project.pk}-btn")
+
+    form = resp.forms['delete-form']
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+    assert project.datasets.all().count() == 0
+
+
+@pytest.mark.haystack
+def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
+                                                category_filter_data: dict[str, list[Category]]):
+    resp = app.get("%s?selected_facets=category_exact:%s" % (
+        reverse("dataset-list"),
+        category_filter_data["categories"][1].pk
+    ))
+    old_object_list = resp.context['object_list']
+    resp = resp.click(linkid="Dataset-status-stats")
+
+    assert resp.status_code == 200
+    assert resp.context['dataset_count'] == len(old_object_list)
+
+
+@pytest.mark.haystack
+def test_dataset_jurisdictions(app: DjangoTestApp):
+    parent_org = OrganizationFactory()
+    child_org1 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-1')
+    )
+    child_org2 = parent_org.add_child(
+        instance=OrganizationFactory.build(title='org-test-2')
+    )
+    DatasetFactory(organization=parent_org)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org1)
+    DatasetFactory(organization=child_org2)
+    DatasetFactory(organization=child_org2)
+
+    resp = app.get(reverse("dataset-list"))
+    jurisdictions = resp.context['jurisdiction_facet']
+    resp = resp.click(linkid="dataset-stats-supervisor")
+
+    dataset_count = 0
+    for org in jurisdictions:
+        if dataset_count < org.get('count'):
+            dataset_count = org.get('count')
+
+    assert resp.context['jurisdictions'] == jurisdictions
+    assert resp.context['max_count'] == dataset_count
+    assert len(resp.context['jurisdictions']) == 1
+    assert dataset_count == 5

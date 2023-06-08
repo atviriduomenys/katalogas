@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
-{% load account %}
 {% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
 
 {% block content %}
@@ -25,7 +24,7 @@
             <b>{% translate "Norite prisijungti su kita platforma?" %}</b>
             <p>{% translate "Jeigu norite prisijungti su duomenimis iš kitos platformos tai galite padaryti čia." %}</p>
             <p>
-                <a href="{% url 'viisp_login' %}" class="button is-small is-primary">{% translate "Prisijungti su VIISP" %}</a>
+                <a id="viisp-login" href="{% url 'viisp-login' %}" class="button is-small is-primary">{% translate "Prisijungti su VIISP" %}</a>
             </p>
         </div>
     </div>

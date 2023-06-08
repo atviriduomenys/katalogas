@@ -1,8 +1,9 @@
-import tagulous
-import datetime
+import pathlib
 
 from django.db import models
 from django.urls import reverse
+from filer.fields.file import FilerFileField
+from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
@@ -12,10 +13,20 @@ from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
-from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
 
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
+
+class DatasetGroup(TranslatableModel):
+    translations = TranslatedFields(
+        title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
+    )
+    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+
+    class Meta:
+        ordering = ['created']
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
 class Dataset(TranslatableModel):
@@ -28,15 +39,12 @@ class Dataset(TranslatableModel):
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (METADATA, _("Parengti metaduomenys")),
-        (PRIORITIZED, _("Įvertinti prioritetai")),
-        (FINANCING, _("Įvertintas finansavimas")),
+        (HAS_STRUCTURE, _("Struktūruotas")),
     }
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys")
     }
 
     CREATED = "CREATED"
@@ -46,6 +54,7 @@ class Dataset(TranslatableModel):
     DATA_ADDED = "DATA_ADDED"
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
+    PROJECT_SET = "PROJECT_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -54,7 +63,10 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
+        PROJECT_SET: _("Priskirta projektui")
     }
+
+    API_ORIGIN = "api"
 
     translations = TranslatedFields(
         title=models.TextField(_("Title"), blank=True),
@@ -62,7 +74,7 @@ class Dataset(TranslatableModel):
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -85,7 +97,7 @@ class Dataset(TranslatableModel):
 
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     published = models.DateTimeField(blank=True, null=True)
-    is_public = models.BooleanField(default=False, verbose_name=_('Duomenų rinkinys viešinamas'))
+    is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
     language = models.CharField(max_length=255, blank=True, null=True)
     spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
@@ -98,13 +110,17 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    tags = tagulous.models.TagField(
+    groups = models.ManyToManyField(DatasetGroup)
+    tags = TagField(
         blank=True,
         force_lowercase=True,
         space_delimiter=False,
+        autocomplete_view='autocomplete_tags',
         autocomplete_limit=20,
         verbose_name="Žymės",
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+        autocomplete_settings={"width": "100%"},
+        autocomplete_view_fulltext=True
     )
 
     notes = models.TextField(blank=True, null=True)
@@ -153,11 +169,26 @@ class Dataset(TranslatableModel):
     def get_tag_list(self):
         return list(self.tags.all().values_list('name', flat=True))
 
+    def get_all_groups(self):
+        return self.groups.all()
+
+    def get_group_list(self):
+        return list(self.groups.all().values_list('pk', flat=True))
+
+    def parent_category(self):
+        if self.category:
+            if not self.category.is_root():
+                return self.category.get_root().pk
+            else:
+                return self.category.pk
+
     @property
     def filter_status(self):
-        if self.datasetstructure_set.exists():
+        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
             return self.HAS_STRUCTURE
-        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
+            return self.HAS_DATA
+        if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
         return None
 
@@ -178,12 +209,33 @@ class Dataset(TranslatableModel):
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
 
+    @property
+    def language_array(self):
+        if self.language:
+            return [lang.replace(',', '') for lang in self.language.split(' ')]
+        return []
+
+    @property
+    def tag_name_array(self):
+        return [tag.name.strip() for tag in self.tags.tags]
+
+    @property
+    def category_title(self):
+        return self.category.title if self.category else ""
+
+    def jurisdiction(self) -> int | None:
+        if self.organization:
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
 # ---------------------------8<-------------------------------------
 class GeoportalLtEntry(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     raw_data = models.TextField(blank=True, null=True)
@@ -197,7 +249,7 @@ class GeoportalLtEntry(models.Model):
 
 
 class OpenDataGovLtEntry(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     alt_title = models.TextField(blank=True, null=True)
@@ -228,7 +280,7 @@ class OpenDataGovLtEntry(models.Model):
 
 class HarvestingResult(models.Model):
     published = models.BooleanField()
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -253,7 +305,7 @@ class HarvestingResult(models.Model):
 # TODO: To be removed:
 # ---------------------------8<-------------------------------------
 class DatasetMigrate(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     catalog_id = models.BigIntegerField(blank=True, null=True)
     category = models.CharField(max_length=255, blank=True, null=True)
@@ -295,7 +347,7 @@ class DatasetMigrate(models.Model):
 
 
 class DatasetRemark(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.TextField(blank=True, null=True)
@@ -310,7 +362,7 @@ class DatasetRemark(models.Model):
 
 
 class DatasetResource(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     data = models.TextField(blank=True, null=True)
@@ -336,7 +388,7 @@ class DatasetResource(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class DatasetEvent(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     dataset_id = models.BigIntegerField(blank=True, null=True)
@@ -354,7 +406,7 @@ class DatasetEvent(models.Model):
 
 
 class DatasetResourceMigrate(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     data = models.TextField(blank=True, null=True)
     dataset_id = models.BigIntegerField(blank=True, null=True)
@@ -382,14 +434,13 @@ class DatasetResourceMigrate(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    UPLOAD_TO = "data/structure"
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    filename = models.CharField(max_length=255, blank=True, null=True)
-    identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
@@ -397,17 +448,20 @@ class DatasetStructure(models.Model):
         blank=True,
         null=True,
     )
-    file = models.FileField(
-        upload_to='manifest/%Y/%m-%d',
+    file = FilerFileField(
         blank=True,
         null=True,
-        max_length=512,
+        related_name="file_structure",
+        on_delete=models.SET_NULL
     )
 
     # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     distribution_version = models.IntegerField(blank=True, null=True)
+    filename = models.CharField(max_length=255, blank=True, null=True)
+    identifier = models.CharField(max_length=255, blank=True, null=True)
+    size = models.BigIntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'dataset_structure'
@@ -415,10 +469,18 @@ class DatasetStructure(models.Model):
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
+    def file_size(self):
+        if self.file:
+            return self.file.size
+        return 0
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructureField(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -439,7 +501,7 @@ class DatasetStructureField(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/60
 class DatasetVisit(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -455,7 +517,7 @@ class DatasetVisit(models.Model):
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/60
 class HarvestedVisit(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

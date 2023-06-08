@@ -9,9 +9,9 @@
                                 title="{{ cat.description }}"
                                 class="category-icon">
                             {% if cat.icon %}
-                                <span class="icon is-large">
-                                    <i class="fas fa-4x {{ cat.icon }}"></i>
-                                </span>
+                            <p>
+                                <span class="category-custom-icon icon-{{ cat.icon }}"></span>
+                            </p>
                             {% endif %}
                             <p class="category-icon-text">{{ cat.title }}</p>
                         </a>

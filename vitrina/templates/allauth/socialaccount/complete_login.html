@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
+
+{% block content %}
+<h1>{% translate "Prisijungimas pavyko!" %}</h1>
+<h2>{% translate "Vartotojo duomenys:" %}</h2>
+<div class="columns is-centered mt-1">
+  <table class="table is-fullwidth">
+    <tbody>
+        <tr>
+            <td class="is-middle">{% translate "Asmens kodas" %}</td>
+            <td class="is-middle">{% translate "Vardas" %}</td>
+            <td class="is-middle">{% translate "Pavardė" %}</td>
+            <td class="is-middle">{% translate "Organizacija" %}</td>
+        </tr>
+        <tr>
+            <td class="is-middle">{{ lt_personal_code }}</td>
+            <td class="is-middle">{{ first_name }}</td>
+            <td class="is-middle">{{ last_name }}</td>
+            <td class="is-middle">{{ company_name }}</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+{% endblock %}

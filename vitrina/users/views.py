@@ -1,24 +1,26 @@
-from allauth.account.views import LoginView, SignupView, EmailVerificationSentView, EmailView, ConfirmEmailView
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.views import PasswordResetView as BasePasswordResetView, \
+from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.views.generic import DetailView, UpdateView
+from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
-
-from vitrina import settings
+from django.http import JsonResponse
+from django.utils.timezone import now, make_aware
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
-from vitrina.users.forms import RegisterForm, PasswordResetForm, PasswordResetConfirmForm, CustomLoginForm
+from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
+from vitrina import settings
+from datetime import datetime
+from pandas import period_range
 
-
-class CustomLoginView(LoginView):
-    form_class = CustomLoginForm
+class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
+    form_class = LoginForm
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -28,21 +30,17 @@ class CustomLoginView(LoginView):
         return super().get_success_url()
 
 
-class RegisterView(SignupView):
-    form_class = RegisterForm
+class RegisterView(CreateView):
     template_name = 'vitrina/users/register.html'
+    form_class = RegisterForm
 
-    def save(self, request):
-        user = super(RegisterView, self).save(request)
-        return user
-
-
-class EmailConfirmView(ConfirmEmailView):
-    template_name = 'vitrina/users/email_confirm.html'
-
-
-class EmailListView(EmailView):
-    template_name = 'vitrina/users/email.html'
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('home')
+        return render(request=request, template_name=self.template_name, context={"form": form})
 
 
 class PasswordResetView(BasePasswordResetView):
@@ -120,3 +118,95 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.save()
         return redirect('user-profile', pk=self.request.user.id)
+
+
+class UserStatsView(TemplateView):
+    template_name = 'users_count_stats_chart.html'
+
+    def get_labels(self):
+        """Return labels"""
+        oldest_user_date = User.objects.order_by('created').first().created
+        labels = period_range(start=oldest_user_date, end=now(), freq='M').tolist()    
+        return labels
+
+    def get_color(self, year):
+        color_map = {
+            'Koordinatoriai': '#03256C',
+            'Tvarkytojai': '#1768AC',
+            "Registruoti naudotojai": '#06BEE1',
+            # FIXME: Use constants instead of strings.
+        }
+        return color_map.get(year)
+
+    def get_user_types(self):
+        """Return names of datasets."""
+        return [
+            "Koordinatoriai",
+            "Tvarkytojai",
+            "Registruoti naudotojai",
+            # FIXME: these strings should be translatable
+        ]
+
+    def get_data(self):
+        """Return datasets to plot."""
+        user_types = self.get_user_types()
+        labels = self.get_labels()
+        data = {
+            'labels': [str(label) for label in labels]
+        }
+        datasets = []
+        for user_type in user_types:
+            dataset = {
+                'label': user_type,
+                'data': []
+            }
+            dataset['backgroundColor'] = self.get_color(user_type)
+            for label in labels:
+                label = label + 1  # Increment by one month
+                created_date = datetime(label.year, label.month, 1)
+                created_date = make_aware(created_date)
+                if user_type == "Koordinatoriai":
+                    dataset['data'].append(
+                        User.objects.select_related('representative').
+                        filter(
+                            representative__role='coordinator',
+                            created__lt=created_date
+                        ).
+                        distinct('representative__user').
+                        count()
+                    )
+                elif user_type == "Tvarkytojai":
+                    dataset['data'].append(
+                        User.objects.select_related('representative').
+                        filter(
+                            representative__role='manager',
+                            created__lt=created_date,
+                        ).
+                        exclude(representative__role='coordinator').
+                        distinct('representative__user').
+                        count()
+                    )
+                elif user_type == "Registruoti naudotojai":
+                    dataset['data'].append(
+                        User.objects.select_related('representative').
+                        filter(
+                            created__lt=created_date
+                        ).
+                        exclude(representative__role='manager').
+                        exclude(representative__role='coordinator').
+                        count()
+                    )
+                    # TODO: If it is possible, it would be nice, to get
+                    #       these stats with a single query.
+                else:
+                    raise ValueError(user_type)
+            datasets.append(dataset)
+        data['datasets'] = datasets
+        return data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data = self.get_data()
+        context['data'] = data
+        return context
+

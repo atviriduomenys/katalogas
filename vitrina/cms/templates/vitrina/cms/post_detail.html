@@ -19,11 +19,19 @@
                 <div class="content">
                     <div class="m-b-sm">
                         {% if post.author %}<span>{% translate "Autorius" %}: {{ post.author }}</span></br>{% endif %}
-                        <span>{% translate "Publikavimo data" %}: {{ post.date_published|date:"SHORT_DATE_FORMAT" }}</span>
+                        <span>{% translate "Publikavimo data" %}: {{ post.date_published|date:"SHORT_DATETIME_FORMAT" }}</span>
                     </div>
                     <div>
                         {{ post.post_text }}
                     </div>
+                    {% if files %}
+                        <div class="m-t-sm m-b-sm is-bold">{% translate "Prie naujienos pridėti failai" %}:</div>
+                        <div>
+                            {% for file in files %}
+                                <a href="{{ file.file.url }}" class="button is-primary is-small m-b-xs">{{ file.file.original_filename }}</a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <br/>

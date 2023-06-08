@@ -7,7 +7,7 @@
 {% block notification %}
     {% if notification %}
         <div id="top-bar">
-            <p>{% translate "notification.type" %}<span class="is-pulled-right message-close-button"
+            <p>{% translate "Pranešimo tipas" %}<span class="is-pulled-right message-close-button"
                                                        onClick="HideMessage()">X</span></p>
         </div>
     {% endif %}
@@ -50,13 +50,6 @@
                 </div>
                 <div class="column">
                     {{ user.get_primary_email|urlize }}
-                </div>
-                <div class="column">
-                    <a href="{%url 'account_email' %}"
-                       class="button is-primary is-normal is-size-6-mobile"
-                       id="show_emails">
-                        {% translate "Tvarkyti el. paštus" %}
-                    </a>
                 </div>
             </div>
             {% endif %}

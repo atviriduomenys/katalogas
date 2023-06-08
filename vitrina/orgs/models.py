@@ -2,19 +2,16 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
-import datetime
-from django.utils.timezone import utc
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Region(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -30,7 +27,7 @@ class Region(models.Model):
 
 
 class Municipality(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     title = models.TextField(blank=True, null=True)
@@ -55,7 +52,14 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    MINISTRY = "ministry"
+    MUNICIPALITY = "municipality"
+    ROLES = (
+        (MINISTRY, _("Ministerija")),
+        (MUNICIPALITY, _("Savivaldybė"))
+    )
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     description = models.TextField(blank=True, null=True)
@@ -73,10 +77,14 @@ class Organization(MP_Node):
     phone = models.CharField(max_length=255, blank=True, null=True)
     jurisdiction = models.CharField(max_length=255, blank=True, null=True)
     website = models.CharField(max_length=255, blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
+    role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
 
-    node_order_by = ["created"]
+    # Deprecated fields
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
+
+    node_order_by = ["title"]
 
     class Meta:
         db_table = 'organization'
@@ -91,18 +99,21 @@ class Organization(MP_Node):
         return reverse('organization-detail', kwargs={'pk': self.pk})
 
     def get_acl_parents(self):
-        return [self]
+        parents = [self]
+        parents.extend(self.get_ancestors())
+        return parents
 
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'
+    SUPERVISOR = 'supervisor'
     ROLES = {
         (COORDINATOR, _("Koordinatorius")),
         (MANAGER, _("Tvarkytojas"))
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     email = models.CharField(max_length=255)
@@ -130,9 +141,15 @@ class Representative(models.Model):
         parents.extend(self.content_object.get_acl_parents())
         return parents
 
+    def is_supervisor(self, organization):
+        if isinstance(self.content_object, Organization):
+            if organization in self.content_object.get_descendants():
+                return True
+        return False
+
 
 class PublishedReport(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -146,7 +163,7 @@ class PublishedReport(models.Model):
 
 
 class Report(models.Model):
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.CharField(max_length=255, blank=True, null=True)

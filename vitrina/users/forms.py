@@ -1,30 +1,48 @@
-from allauth.account.forms import LoginForm, SignupForm, ResetPasswordForm
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import authenticate
-from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.core.exceptions import ValidationError
-from django.forms import EmailField, CharField, PasswordInput, BooleanField, ModelForm
+from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm
+
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.users.models import User
+from vitrina.helpers import buttons, submit
 
 
-class CustomLoginForm(LoginForm):
-    def __init__(self, *args, **kwargs):
-        super(CustomLoginForm, self).__init__(*args, **kwargs)
+class LoginForm(Form):
+    email = EmailField(label=_("El. paštas"), required=True)
+    password = CharField(widget=PasswordInput, label=_("Slaptažodis"), required=True)
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        self.user_cache = None
+        super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "login-form"
-        self.helper.form_action = '/accounts/login/'
         self.helper.layout = Layout(
-            Field('login', placeholder=_("El. paštas")),
+            Field('email', placeholder=_("El. paštas")),
             Field('password', placeholder=_("Slaptažodis")),
-            Field('remember'),
             Submit('submit', _("Prisijungti"), css_class='button is-primary'),
         )
 
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password')
 
-class RegisterForm(SignupForm):
+        if email is not None and password:
+            self.user_cache = authenticate(self.request, email=email, password=password)
+            if self.user_cache is None:
+                raise ValidationError(_("Neteisingi prisijungimo duomenys"))
+
+        return self.cleaned_data
+
+    def get_user(self):
+        return self.user_cache
+
+
+class RegisterForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("El. paštas"), required=True, error_messages={})
@@ -68,7 +86,7 @@ class RegisterForm(SignupForm):
         return cleaned_data
 
 
-class PasswordResetForm(ResetPasswordForm):
+class PasswordResetForm(BasePasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()

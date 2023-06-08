@@ -6,12 +6,15 @@
 {% load like_tags %}
 {% load comment_tags %}
 
+{% block parent_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
+{% block current_title %}{{ project.get_title }}{% endblock %}
+
 {% block content %}
 
-    {% include 'component/tabs.html' %}
+    {% include 'vitrina/projects/tabs.html' %}
 
     <div class="columns no-margin-bottom">
-        <div class="column is-one-forth">
+        <div class="column is-one-quarter">
             {% get_hit_count for project as total_hits %}
             {% if total_hits %}
             <div class="content">
@@ -21,13 +24,27 @@
                 </p>
             </div>
             {% endif %}
+            {% if can_update_project %}
+            <div class="content">
+                <p>
+                    {% translate "Būsena" %}:
+                    {% if project.status == "APPROVED"%}
+                        <b id="status_approved" style="color:green;">{% translate "PATVIRTINTAS" %}</b>
+                    {% elif project.status == "REJECTED" %}
+                        <b id="status_rejected" style="color:red;">{% translate "ATMESTAS" %}</b>
+                    {% else %}
+                        <b id="status_created">{% translate "NAUJAS" %}</b>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
             <div class="content" id="project_likes">
                 {% if user.is_authenticated %}
                     <p>{% translate "Ar jums patinka šis projektas?" %}</p>
                     
                 {% else %}
                     <p>
-                        {% translate "Patinka:" %}:
+                        {% translate "Patinka" %}:
                         <b>{% like obj=project user=request.user %}</b>
                     </p>
                 {% endif %}
@@ -37,15 +54,14 @@
                 {% subscription obj=project user=request.user description=description %}
             </div>
         </div>
-        <div class="column is-three-quarters">
+        <div class="column is-two-quarters">
             <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
-
             {% if can_update_project %}
-            <div class="buttons is-right">
-                <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
-                    {% translate "Keisti" %}
-                </a>
-            </div>
+                <div class="buttons is-right">
+                    <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
+                        {% translate "Keisti" %}
+                    </a>
+                </div>
             {% endif %}
 
             <div class="content">
@@ -78,10 +94,10 @@
             {# TODO: Add datasets. #}
             {% endif %}
         </div>
-        {% if i.getImageUUID %}
-            <div class="column is-2">
+        {% if project.image %}
+            <div class="column is-one-quarter">
                 <figure class="image">
-                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                    <img class="max-256x256" src="{{ project.image.url }}">
                 </figure>
             </div>
         {% endif %}

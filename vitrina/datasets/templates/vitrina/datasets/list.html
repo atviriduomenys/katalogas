@@ -90,13 +90,10 @@
                 </p>
             </form>
 
-            <a href="/search"
-               class="button is-text advanced-search is-pulled-right">{% translate "Išplėstinė paieška" %}</a>
-
             <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
 
             <div class="show-mobile m-b-md">
-                <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>
+                <button class="button is-primary is-small show-mobile-facets">{% translate "Filtro rezultatai" %}</button>
             </div>
             {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
                 <div class="buttons is-right">
@@ -119,15 +116,27 @@
                                     </a>
                                 </strong>
                             </div>
+                            {% if i.object.groups %}
+                                {% for group in i.object.get_all_groups %}
+                                    <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                    </p>
+                                {% endfor %}
+                            {% endif %}
                             {% if i.object.organization_title %}
                                 <p>
                                     <small class="dataset-list-organization">{{ i.object.organization_title }}</small>
                                 </p>
                             {% endif %}
                             <p class="dataset-list-description">
-                                {% objectlanguage i.object LANGUAGE_CODE %}
-                                    {{ i.object.description }}
-                                {% endobjectlanguage %}
+                                {% if i.object %}
+                                    {% objectlanguage i.object LANGUAGE_CODE %}
+                                        {{ i.object.description }}
+                                    {% endobjectlanguage %}
+                                {% else %}
+                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                    -
+                                {% endif %}
                             </p>
                             <div class="tags">
                                 {% for t in i.object.distinct_formats %}

@@ -1,4 +1,5 @@
 import factory
+from django.utils import timezone
 from factory.django import DjangoModelFactory
 
 from vitrina.orgs.models import Organization, Representative
@@ -16,6 +17,8 @@ class OrganizationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
+        if not kwargs.get('created'):
+            kwargs['created'] = timezone.now()
         return model_class.add_root(**kwargs)
 
 

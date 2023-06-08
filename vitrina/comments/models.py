@@ -1,15 +1,10 @@
-from datetime import datetime
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-import datetime
-from django.utils.timezone import utc
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
+from vitrina.orgs.services import has_perm, Action
 
 
 class Comment(models.Model):
@@ -39,7 +34,7 @@ class Comment(models.Model):
         (REJECTED, _("Atmestas"))
     )
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
@@ -64,10 +59,15 @@ class Comment(models.Model):
 
     class Meta:
         db_table = 'comment'
+        ordering = ('-created',)
+        get_latest_by = 'created'
 
-    def descendants(self, include_self=False):
+    def descendants(self, user=None, obj=None, include_self=False, permission=False):
         descendants = []
-        children = Comment.public.filter(parent_id=self.pk).order_by('created')
+        children = Comment.objects.filter(parent_id=self.pk).order_by('created')
+        if user and obj:
+            if not permission:
+                children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)
         for child in children:
@@ -76,17 +76,30 @@ class Comment(models.Model):
 
     def body_text(self):
         if self.type == self.REQUEST:
-            body_text = _(f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
-                          f"{self.rel_content_object.description}")
+            body_text = _(
+                f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
+                f"{self.rel_content_object.description}")
         elif self.type == self.PROJECT:
-            body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title} projektą.")
+            body_text = _(
+                "Šis duomenų rinkinys įtrauktas į "
+                f"{self.rel_content_object.get_title()} projektą."
+            )
         elif self.type == self.STATUS:
-            body_text = _(f"Statusas pakeistas į {self.get_status_display()}. ")
+            body_text = _(
+                f"Statusas pakeistas į {self.get_status_display()}."
+            )
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
         else:
             body_text = self.body
         return body_text
+
+    @staticmethod
+    def get_statuses():
+        statuses = {}
+        for status in Comment.STATUSES:
+            statuses[status[0]] = status[1]
+        return statuses
 
 
 # TODO: To be removed.

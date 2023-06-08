@@ -5,9 +5,9 @@
 <h4 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h4>
 
 {% for c in comments %}
-    {% include "component/comment.html" with comment=c %}
+    {% include "component/comment.html" with comment=c.0 %}
 
-    {% for child in c.descendants %}
+    {% for child in c.1 %}
         {% include "component/comment.html" with comment=child is_child=True %}
     {% endfor %}
 {% endfor %}
@@ -25,7 +25,7 @@
             <div class="field">
                 <p class="control">
                     <button type="submit" hidden="true"></button>
-                    <button class="button is-primary is-pulled-right comment-button" id="id_submit_button"
+                    <button class="button is-primary is-pulled-right comment-button" id="{{ submit_button_id }}"
                             type="button">{% translate "Teikti komentarą" %}</button>
                 </p>
             </div>
@@ -61,7 +61,7 @@
                 const status_field = $(this).closest('#comment-form').find('#id_status')[0];
                 const body_field = $(this).closest('#comment-form').find('#id_body')[0];
 
-                if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED" )) {
+                if (!body_field.value && (!status_field || !status_field.value)) {
                     body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
                     body_field.reportValidity();
                 }

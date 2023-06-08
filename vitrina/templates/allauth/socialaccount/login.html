@@ -7,16 +7,11 @@
 {% block content %}
 <div class="columns is-centered">
     <div class="column is-half">
-      {% if process == "connect" %}
-        <h1>{% blocktrans with provider.name as provider %}Connect {{ provider }}{% endblocktrans %}</h1>
-        <h1>{% translate "Connect " %} {{ provider.name }}</h1>
-      {% else %}
-        <h1>{% translate "Sign In Via" %} {{ provider.name }}</h1>
-      {% endif %}
-      <p>{% translate "You are about to connect a new third party account from " %}{{ provider.name }}.</p>
+      <h1>{% translate "Sign in via VIISP" %} </h1>
+      <p>{% translate "You are about to connect a new third party account from VIISP" %}</p>
       <form method="post">
         {% csrf_token %}
-        <button class="button is-primary" type="submit">{% trans "Continue" %}</button>
+        <button class="button is-primary mt-1" type="submit">{% trans "Continue" %}</button>
       </form>
     </div>
 </div>

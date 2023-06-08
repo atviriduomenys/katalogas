@@ -218,6 +218,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
             elif form.cleaned_data.get('regenerate_api_key'):
                 api_key = self.object.apikey_set.first()
                 api_key.api_key = secrets.token_urlsafe()
+                api_key.enabled = True
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()

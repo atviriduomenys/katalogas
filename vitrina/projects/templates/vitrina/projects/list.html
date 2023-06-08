@@ -18,7 +18,7 @@
                 būdais didinti atvertų duomenų pakartotino naudojimo vertę.
                 {% endblocktranslate %}
                 </p>
-                <a href="{% url "project-create" %}" class="button is-primary m-t-xs m-b-lg">
+                <a href="{% url 'project-create' %}" class="button is-primary m-t-xs m-b-lg">
                     {% translate "Pateikti naują panaudojimo atvejį" %}
                 </a>
             </div>
@@ -33,6 +33,13 @@
                             <p>
                                 <a href="{{ i.get_absolute_url }}" class="usecase-url">
                                     {{ i.get_title }}
+                                    {% if can_see_status %}
+                                        {% if i.status == "CREATED" %}
+                                            <span style="color: green;">{% translate "naujas" %}</span>
+                                        {% elif i.status == "REJECTED" %}
+                                            <span style="color: red;">{% translate "atmestas" %}</span>
+                                        {% endif %}
+                                    {% endif %}
                                 </a>
                             </p>
                             <p>{{ i.description|truncatewords:42 }}</p>
@@ -51,7 +58,7 @@
                 <br>
                 {% include "vitrina/common/pagination.html" %}
             {% else %}
-                {% translate "usecases.empty" %}
+                {% translate "Nėra panaudojimo atvėjo" %}
             {% endif %}
         </div>
     </div>

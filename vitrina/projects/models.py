@@ -2,16 +2,16 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.fields import GenericRelation
+from filer.fields.image import FilerImageField
 
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
-import datetime
-from django.utils.timezone import utc
-
-now = datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 class Project(models.Model):
+    UPLOAD_TO = "data/files"
+
     CREATED = "CREATED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
@@ -22,6 +22,7 @@ class Project(models.Model):
     }
 
     EDITED = "EDITED"
+    STATUS_CHANGED = "STATUS_CHANGED"
     DELETED = "DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
@@ -29,7 +30,7 @@ class Project(models.Model):
         DELETED: _("Ištrinta"),
     }
 
-    created = models.DateTimeField(blank=True, null=True, default=now, editable=False)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     beneficiary_group = models.CharField(max_length=255, blank=True, null=True)
@@ -44,9 +45,14 @@ class Project(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    imageuuid = models.CharField(max_length=36, blank=True, null=True)
-    image = models.ImageField(upload_to='projects/%Y/%m/%d/', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
+    image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
+
+    comments = GenericRelation('vitrina_comments.Comment')
+    datasets = models.ManyToManyField("vitrina_datasets.Dataset")
+
+    # Deprecated fields
+    imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         db_table = 'usecase'
@@ -68,15 +74,6 @@ class Project(models.Model):
 
     def get_acl_parents(self):
         return [self]
-
-
-class UsecaseDatasetIds(models.Model):
-    usecase = models.ForeignKey(Project, models.DO_NOTHING)
-    dataset_ids = models.BigIntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'usecase_dataset_ids'
 
 
 class UsecaseLike(models.Model):

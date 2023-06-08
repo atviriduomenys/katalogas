@@ -17,13 +17,6 @@ class VIISPProvider(OAuth2Provider):
     def extract_uid(self, data):
         return str(data['id'])
 
-    def extract_common_fields(self, data):
-        from pprint import pprint
-        return dict(username=data['username'],
-                    email=data['email'],
-                    first_name=data['first_name'],
-                    last_name=data['last_name'],)
-
     def get_default_scope(self):
         scope = ['read']
         return scope

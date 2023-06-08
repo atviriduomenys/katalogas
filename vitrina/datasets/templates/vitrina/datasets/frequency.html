@@ -17,10 +17,10 @@
             {% include "vitrina/datasets/filters.html" %}
         </div>
         <div class="column is-three-quarters">
-            {% include "vitrina/datasets/stats_parameter_select.html" %}
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="frequency" %}
             <div class="is-flex">
                 <span>{% translate "Atnaujinama" %}</span>
-                <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
             {% for freq, fv in frequency_data.items %}
                 <div class="is-flex">

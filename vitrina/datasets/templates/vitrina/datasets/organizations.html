@@ -17,22 +17,17 @@
             {% include "vitrina/datasets/filters.html" %}
         </div>
         <div class="column is-three-quarters">
-            {% include "vitrina/datasets/stats_parameter_select.html" %}
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="organization" %}
             <div class="is-flex">
                 <span>{% translate "Organizacija" %}</span>
-                <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
             {% for org, ov in organization_data.items %}
                 <div class="is-flex">
-                    <a {% if org.has_orgs == False %}
-                            href="/datasets/{{ org.id }}"
-                        {% else %}
-                            href="/datasets/stats/organization/{{ org.id }}"
-                        {% endif %}
-                        id="{{ org.id }}_id">
+                    <a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}" id="{{ org.id }}_id">
                         <strong style="color: black;">{{ org.title }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/organization/{{ org.id }}">{{ ov }}</a></div>
+                    <div class="stays-right"><a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}">{{ ov }}</a></div>
                 </div>
                 <progress class="progress is-info"
                           value="{{ ov }}"

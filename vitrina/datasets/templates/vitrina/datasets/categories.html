@@ -17,25 +17,37 @@
             {% include "vitrina/datasets/filters.html" %}
         </div>
         <div class="column is-three-quarters">
-            {% include "vitrina/datasets/stats_parameter_select.html" %}
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="category" %}
             <div class="is-flex">
                 <span>{% translate "Kategorija" %}</span>
-                <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
             {% for cat in categories %}
                 <div class="is-flex">
                     <a {% if cat.has_cats == False %}
                             href="/datasets/{{ cat.url }}"
                         {% else %}
-                            href="/datasets/stats/category/{{ cat.filter_value }}"
+                            href="/datasets/stats/category/{{ cat.filter_value }}?{{ request.GET.urlencode }}"
                         {% endif %}
                         id="{{ area.filter_value }}_id">
                         <strong style="color: black;">{{ cat.display_value }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/{{ cat.url }}">{{ cat.count }}</a></div>
+                    <div class="stays-right">
+                        <a href="/datasets/{{ cat.url }}">
+                            {% if active_indicator == 'dataset-count' %}
+                                {{ cat.count }}
+                            {% else %}
+                                {{ cat.stats }}
+                            {% endif %}
+                        </a>
+                    </div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ cat.count }}"
+                          {% if active_indicator == 'dataset-count' %}
+                            value="{{ cat.count }}"
+                          {% else %}
+                            value="{{ cat.stats }}"
+                          {% endif %}
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

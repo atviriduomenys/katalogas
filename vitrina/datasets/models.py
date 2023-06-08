@@ -6,6 +6,7 @@ from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
+from random import randrange
 
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
@@ -181,6 +182,9 @@ class Dataset(TranslatableModel):
                 return self.category.get_root().pk
             else:
                 return self.category.pk
+
+    def level(self):
+        return randrange(5)
 
     @property
     def filter_status(self):

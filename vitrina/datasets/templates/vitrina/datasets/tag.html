@@ -17,10 +17,10 @@
             {% include "vitrina/datasets/filters.html" %}
         </div>
         <div class="column is-three-quarters">
-            {% include "vitrina/datasets/stats_parameter_select.html" %}
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="tag" %}
             <div class="is-flex">
                 <span>{% translate "Žymė" %}</span>
-                <div class="stays-right">{% translate "Duomenų rinkinių sk." %}</div>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
         {% if trimmed %}
             <p>{% translate "Rodomi pirmi 100 rezultatų" %}</p>

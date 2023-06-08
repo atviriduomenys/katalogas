@@ -15,16 +15,14 @@ class ModelDownloadStats(models.Model):
 
 class DatasetStats(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    dataset_id = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    download_request_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    download_object_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    object_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    field_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    model_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    distribution_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    request_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    project_count = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    maturity_level = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    dataset_id = models.IntegerField(blank=False, null=False)
+    object_count = models.IntegerField(blank=True, null=True)
+    field_count = models.IntegerField(blank=True, null=True)
+    model_count = models.IntegerField(blank=True, null=True)
+    distribution_count = models.IntegerField(blank=True, null=True)
+    request_count = models.IntegerField(blank=True, null=True)
+    project_count = models.IntegerField(blank=True, null=True)
+    maturity_level = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = True

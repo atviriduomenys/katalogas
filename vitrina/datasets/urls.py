@@ -2,6 +2,7 @@ from django.urls import path
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import OrganizationStatsView
 from vitrina.datasets.views import QuarterStatsView
 from vitrina.datasets.views import DatasetsTagsView
 from vitrina.datasets.views import YearStatsView
@@ -9,7 +10,7 @@ from vitrina.datasets.views import DatasetsFormatView
 from vitrina.datasets.views import DatasetsFrequencyView
 from vitrina.datasets.views import DatasetsOrganizationsView
 from vitrina.datasets.views import DatasetsCategoriesView
-from vitrina.datasets.views import DatasetsMaturityView
+from vitrina.datasets.views import DatasetsLevelView
 from vitrina.datasets.views import PublicationStatsView
 from vitrina.datasets.views import CategoryStatsView
 from vitrina.datasets.views import JurisdictionStatsView
@@ -37,12 +38,13 @@ urlpatterns = [
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
-    path('datasets/stats/maturity/', DatasetsMaturityView.as_view(), name='dataset-stats-maturity'),
+    path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
     path('datasets/stats/jurisdiction/', DatasetManagementsView.as_view(), name='dataset-stats-jurisdiction'),
     path('datasets/stats/jurisdiction/<int:pk>/', JurisdictionStatsView.as_view(),
          name='dataset-stats-jurisdiction-children'),
     path('datasets/stats/yearly/', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
     path('datasets/stats/organization/', DatasetsOrganizationsView.as_view(), name='dataset-stats-organization'),
+    # path('datasets/stats/organization/<int:pk>', OrganizationStatsView.as_view(), name='dataset-stats-organization-children'),
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
     path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tag'),

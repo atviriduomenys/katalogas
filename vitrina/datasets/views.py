@@ -38,6 +38,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.statistics.models import DatasetStats
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -52,12 +53,11 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from random import randrange
-
+from datetime import datetime
+import pytz
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
-    # todo maturity facet
     facet_fields = [
         'filter_status',
         'organization',
@@ -68,7 +68,8 @@ class DatasetListView(FacetedSearchView):
         'frequency',
         'tags',
         'formats',
-        'published'
+        'published',
+        'level'
     ]
     form_class = DatasetSearchForm
     max_num_facets = 20
@@ -106,6 +107,7 @@ class DatasetListView(FacetedSearchView):
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'published_facet': update_facet_data(self.request, facet_fields, 'published'),
+            'level_facet': update_facet_data(self.request, facet_fields, 'level'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
             'selected_organization': get_selected_value(form, 'organization', True, False),
@@ -117,6 +119,7 @@ class DatasetListView(FacetedSearchView):
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
+            'selected_level': get_selected_value(form, 'level'),
         }
         yearly_stats = {}
         quarter_stats = {}
@@ -716,16 +719,65 @@ class DatasetStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
         statuses = {}
+        stat_groups = {}
+        if indicator is None:
+            indicator = 'dataset-count'
         for d in datasets:
             statuses[d.filter_status] = statuses.get(d.filter_status, 0) + 1
         keys = list(statuses.keys())
+        if indicator != 'dataset-count':
+            for k in keys:
+                id_list = []
+                for d in datasets:
+                    if d.filter_status == k:
+                        id_list.append(d.pk)
+                stat_groups[k] = id_list
+            for item in stat_groups.keys():
+                # if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    # todo
+                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            statuses[item] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            statuses[item] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            statuses[item] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            statuses[item] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            statuses[item] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            statuses[item] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev)/len(lev))
+                            statuses[item] = level_avg
         values = list(statuses.values())
         for v in values:
-            if max_count < v:
-                max_count = v
+            if max_count < int(v):
+                max_count = int(v)
         sorted_value_index = np.flip(np.argsort(values))
         sorted_statuses = {keys[i]: values[i] for i in sorted_value_index}
+
         # data = []
         # status_translations = Comment.get_statuses()
         #
@@ -792,9 +844,11 @@ class DatasetStatsView(DatasetListView):
         # context['yAxis_title'] = _('Duomenų rinkiniai')
         # context['xAxis_title'] = _('Laikas')
         # context['stats'] = 'status'
+        # context['by_indicator'] = stat_groups
         context['status_data'] = sorted_statuses
         context['max_count'] = max_count
         context['active_filter'] = 'status'
+        context['active_indicator'] = indicator
         return context
 
 
@@ -807,12 +861,19 @@ class DatasetManagementsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         all_orgs = context['jurisdiction_facet']
-        # context['jurisdictions'] = context['jurisdiction_facet']
+        indicator = self.request.GET.get('indicator', None)
         modified_jurisdictions = []
+        if indicator is None:
+            indicator = 'dataset-count'
         for org in all_orgs:
+            id_list = []
             current = Organization.objects.get(title=org.get('display_value'))
-            children = Organization.get_children(current)
-            # print(Organization.get_descendants(current))
+            org_datasets = Dataset.objects.filter(organization=current).values_list('id', flat=True)
+            if len(org_datasets) > 0:
+                for d in org_datasets:
+                    id_list.append(d)
+                org['dataset_ids'] = id_list
+            children = current.get_children()
             child_titles = []
             if len(children) > 0:
                 exists = 0
@@ -825,39 +886,142 @@ class DatasetManagementsView(DatasetListView):
                     org['has_orgs'] = False
             else:
                 org['has_orgs'] = False
-            if max_count < org.get('count'):
-                max_count = org.get('count')
+            if indicator == 'dataset-count':
+                if max_count < org.get('count'):
+                    max_count = org.get('count')
             modified_jurisdictions.append(org)
+            print(modified_jurisdictions)
+        if indicator != 'dataset-count':
+            for single in modified_jurisdictions:
+                if 'dataset_ids' in single:
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        single['stats'] = 0
+                        # todo
+                    stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                single['stats'] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                single['stats'] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                single['stats'] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                single['stats'] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                single['stats'] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                single['stats'] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                single['stats'] = level_avg
+                    else:
+                        single['stats'] = 0
+                    if max_count < single.get('stats'):
+                        max_count = single.get('stats')
+                else:
+                    single['stats'] = 0
+            modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=True)
         context['jurisdiction_data'] = modified_jurisdictions
         context['max_count'] = max_count
         context['active_filter'] = 'jurisdiction'
+        context['active_indicator'] = indicator
         return context
 
 
-class DatasetsMaturityView(DatasetListView):
+class DatasetsLevelView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/maturity.html'
+    template_name = 'vitrina/datasets/level.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        maturity_levels = {}
+        indicator = self.request.GET.get('indicator', None)
+        levels = {}
+        stat_groups = {}
+        if indicator is None:
+            indicator = 'dataset-count'
         for d in datasets:
-            m = randrange(5)
-            maturity_levels[m] = maturity_levels.get(m, 0) + 1
-        keys = list(maturity_levels.keys())
-        values = list(maturity_levels.values())
+            lev = d.level
+            levels[lev] = levels.get(lev, 0) + 1
+        keys = list(levels.keys())
+        if indicator != 'dataset-count':
+            for le in levels.keys():
+                id_list = []
+                for d in datasets:
+                    if d.level is not None:
+                        if d.level == le:
+                            id_list.append(d.pk)
+                stat_groups[le] = id_list
+            for item in stat_groups.keys():
+                # if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    # todo
+                stats = DatasetStats.objects.filter(maturity_level__in=stat_groups[item])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            levels[item] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            levels[item] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            levels[item] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            levels[item] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            levels[item] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            levels[item] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev) / len(lev))
+                            levels[item] = level_avg
+                else:
+                    levels[item] = 0
+        values = list(levels.values())
         for v in values:
             if max_count < v:
                 max_count = v
         sorted_value_index = np.flip(np.argsort(values))
         sorted_levels = {keys[i]: values[i] for i in sorted_value_index}
-        context['maturity_data'] = sorted_levels
+        context['level_data'] = sorted_levels
         context['max_count'] = max_count
-        context['active_filter'] = 'maturity'
+        context['active_filter'] = 'level'
+        context['active_indicator'] = indicator
         return context
+
 
 class DatasetsOrganizationsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -868,10 +1032,83 @@ class DatasetsOrganizationsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
         orgs = {}
+        stat_groups = {}
+        if indicator is None:
+            indicator = 'dataset-count'
         for d in datasets:
             current = Organization.objects.get(id=d.organization[0])
             orgs[current] = orgs.get(current, 0) + 1
+        keys = list(orgs.keys())
+        if indicator != 'dataset-count':
+            for k in keys:
+                id_list = []
+                for d in datasets:
+                    if d.organization[0] == k.pk:
+                        id_list.append(d.pk)
+                stat_groups[k] = id_list
+            for item in stat_groups.keys():
+                # if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    # todo
+                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            orgs[item] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            orgs[item] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            orgs[item] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            orgs[item] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            orgs[item] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            orgs[item] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev) / len(lev))
+                            orgs[item] = level_avg
+                else:
+                    orgs[item] = 0
+        values = list(orgs.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
+        context['organization_data'] = sorted_orgs
+        context['max_count'] = max_count
+        context['active_filter'] = 'organizations'
+        context['active_indicator'] = indicator
+        return context
+
+class OrganizationStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/organizations.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        indicator = self.request.GET.get('indicator', None)
+        orgs = {}
         keys = list(orgs.keys())
         values = list(orgs.values())
         for v in values:
@@ -882,6 +1119,7 @@ class DatasetsOrganizationsView(DatasetListView):
         context['organization_data'] = sorted_orgs
         context['max_count'] = max_count
         context['active_filter'] = 'organizations'
+        context['active_indicator'] = indicator
         return context
 
 class DatasetsTagsView(DatasetListView):
@@ -893,12 +1131,62 @@ class DatasetsTagsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
         tags = {}
+        stat_groups = {}
+        if indicator is None:
+            indicator = 'dataset-count'
         for d in datasets:
             if d.tags is not None:
                 for t in d.tags:
                     tags[t.strip().capitalize()] = tags.get(t.strip().capitalize(), 0) + 1
         keys = list(tags.keys())
+        if indicator != 'dataset-count':
+            for k in keys:
+                id_list = []
+                for d in datasets:
+                    if d.tags is not None:
+                        for tag in d.tags:
+                            if tag == k:
+                                id_list.append(d.pk)
+                stat_groups[k] = id_list
+            for item in stat_groups.keys():
+                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            tags[item] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            tags[item] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            tags[item] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            tags[item] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            tags[item] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            tags[item] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev) / len(lev))
+                            tags[item] = level_avg
+                else:
+                    tags[item] = 0
         values = list(tags.values())
         for v in values:
             if max_count < v:
@@ -911,6 +1199,7 @@ class DatasetsTagsView(DatasetListView):
         context['tag_data'] = sorted_tags
         context['max_count'] = max_count
         context['active_filter'] = 'tag'
+        context['active_indicator'] = indicator
         return context
 
 class DatasetsFormatView(DatasetListView):
@@ -921,13 +1210,63 @@ class DatasetsFormatView(DatasetListView):
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             max_count = 0
-            formats = {}
             datasets = self.get_queryset()
+            indicator = self.request.GET.get('indicator', None)
+            formats = {}
+            stat_groups = {}
+            if indicator is None:
+                indicator = 'dataset-count'
             for d in datasets:
                 if d.formats is not None:
                     for f in d.formats:
                         formats[f.strip().title()] = formats.get(f.strip().title(), 0) + 1
             keys = list(formats.keys())
+            if indicator != 'dataset-count':
+                for k in keys:
+                    id_list = []
+                    for d in datasets:
+                        if d.formats is not None:
+                            for format in d.formats:
+                                if format.strip().title() == k:
+                                    id_list.append(d.pk)
+                    stat_groups[k] = id_list
+                for item in stat_groups.keys():
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                formats[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                formats[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                formats[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                formats[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                formats[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                formats[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                formats[item] = level_avg
+                    else:
+                        formats[item] = 0
             values = list(formats.values())
             for v in values:
                 if max_count < v:
@@ -937,6 +1276,7 @@ class DatasetsFormatView(DatasetListView):
             context['format_data'] = sorted_formats
             context['max_count'] = max_count
             context['active_filter'] = 'format'
+            context['active_indicator'] = indicator
             return context
 
 class DatasetsFrequencyView(DatasetListView):
@@ -947,13 +1287,63 @@ class DatasetsFrequencyView(DatasetListView):
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
             max_count = 0
-            frequencies = {}
             datasets = self.get_queryset()
+            indicator = self.request.GET.get('indicator', None)
+            frequencies = {}
+            stat_groups = {}
+            if indicator is None:
+                indicator = 'dataset-count'
             for d in datasets:
                 if d.frequency is not None:
                     freq = Frequency.objects.get(id=d.frequency)
                     frequencies[freq] = frequencies.get(freq, 0) + 1
             keys = list(frequencies.keys())
+            if indicator != 'dataset-count':
+                for k in keys:
+                    id_list = []
+                    for d in datasets:
+                        if d.frequency is not None:
+                            freq = Frequency.objects.get(id=d.frequency)
+                            if freq == k:
+                                id_list.append(d.pk)
+                    stat_groups[k] = id_list
+                for item in stat_groups.keys():
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                frequencies[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                frequencies[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                frequencies[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                frequencies[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                frequencies[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                frequencies[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                frequencies[item] = level_avg
+                    else:
+                        frequencies[item] = 0
             values = list(frequencies.values())
             for v in values:
                 if max_count < v:
@@ -963,6 +1353,7 @@ class DatasetsFrequencyView(DatasetListView):
             context['frequency_data'] = sorted_frequencies
             context['max_count'] = max_count
             context['active_filter'] = 'frequency'
+            context['active_indicator'] = indicator
             return context
 
 class JurisdictionStatsView(DatasetListView):
@@ -973,34 +1364,83 @@ class JurisdictionStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_cats = context['category_facet']
-        child_titles = []
-        cat_titles = []
-        for cat in all_cats:
-            cat_titles.append(cat['display_value'])
-        filtered_cats = []
-        parent_category = Category.objects.get(id=self.kwargs.get('pk'))
-        children = Category.get_children(parent_category)
-        for child in children:
-            child_titles.append(child.title)
-        for single_cat in all_cats:
-            if single_cat['display_value'] in child_titles:
-                cat_object = Category.objects.get(title=single_cat['display_value'])
-                subcategories = Category.get_children(cat_object)
-                if len(subcategories) > 0:
-                    exists = 0
-                    for ss in subcategories:
-                        if ss.title in cat_titles:
-                            exists += 1
-                    if exists == 0:
-                        single_cat['has_cats'] = False
+        current_org = Organization.objects.get(id=self.kwargs.get('pk'))
+        child_orgs = current_org.get_children()
+        indicator = self.request.GET.get('indicator', None)
+        filtered_orgs = []
+        if indicator is None:
+            indicator = 'dataset-count'
+        for org in child_orgs:
+            modified = {}
+            id_list = []
+            datasets = Dataset.objects.filter(organization=org).values_list('id', flat=True)
+            if len(datasets) > 0:
+                for d in datasets:
+                    id_list.append(d)
+            modified[org] = id_list
+            filtered_orgs.append(modified)
+        result = []
+        for single in filtered_orgs:
+            single_dict = {}
+            for k, v in single.items():
+                single_dict['id'] = k.pk
+                single_dict['title'] = k.title
+                single_dict['url'] = '?selected_facets=jurisdiction_exact:' + str(k.pk)
+                if len(k.get_children()) > 0:
+                    single_dict['has_orgs'] = True
                 else:
-                    single_cat['has_cats'] = False
-                if max_count < single_cat.get('count'):
-                    max_count = single_cat.get('count')
-                filtered_cats.append(single_cat)
+                    single_dict['has_orgs'] = False
+                if indicator == 'dataset-count':
+                    single_dict['count'] = len(v)
+                    if max_count < len(v):
+                        max_count = len(v)
+                elif indicator != 'dataset-count':
+                    stats = DatasetStats.objects.filter(dataset_id__in=v)
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                single_dict['count'] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                single_dict['count'] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                single_dict['count'] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                single_dict['count'] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                single_dict['count'] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                single_dict['count'] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                single_dict['count'] = level_avg
+                        if max_count < single_dict.get('count'):
+                            max_count = single_dict.get('count')
+                    else:
+                        single_dict['count'] = 0
+            result.append(single_dict)
+            result = sorted(result, key=lambda dd: dd['count'], reverse=True)
+        context['single_org'] = True
+        context['jurisdiction_data'] = result
         context['max_count'] = max_count
-        context['categories'] = filtered_cats
+        context['current_object'] = self.kwargs.get('pk')
+        context['active_filter'] = 'jurisdiction'
+        context['active_indicator'] = indicator
         return context
 
 class DatasetsStatsView(DatasetListView):
@@ -1106,9 +1546,18 @@ class DatasetsCategoriesView(DatasetListView):
         max_count = 0
         parent_cats = context['parent_category_facet']
         all_cats = context['category_facet']
+        indicator = self.request.GET.get('indicator', None)
         modified_cats = []
+        if indicator is None:
+            indicator = 'dataset-count'
         for cat in parent_cats:
+            id_list = []
             current_category = Category.objects.get(title=cat.get('display_value'))
+            category_datasets = Dataset.objects.filter(category=current_category)
+            if len(category_datasets) > 0:
+                for d in category_datasets:
+                    id_list.append(d.pk)
+                cat['dataset_ids'] = id_list
             children = Category.get_children(current_category)
             child_titles = []
             if len(children) > 0:
@@ -1122,12 +1571,61 @@ class DatasetsCategoriesView(DatasetListView):
                     cat['has_cats'] = False
             else:
                 cat['has_cats'] = False
-            if max_count < cat.get('count'):
-                max_count = cat.get('count')
+            if indicator == 'dataset-count':
+                if max_count < cat.get('count'):
+                    max_count = cat.get('count')
             modified_cats.append(cat)
+        if indicator != 'dataset-count':
+            for single in modified_cats:
+                if 'dataset_ids' in single:
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        single['stats'] = 0
+                        # todo
+                    stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                single['stats'] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                single['stats'] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                single['stats'] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                single['stats'] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                single['stats'] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                single['stats'] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                single['stats'] = level_avg
+                            if max_count < single.get('stats'):
+                                max_count = single.get('stats')
+                    else:
+                        single['stats'] = 0
+                else:
+                    single['stats'] = 0
+            modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
         context['categories'] = modified_cats
         context['max_count'] = max_count
-        context['active_filter'] = 'categories'
+        context['active_filter'] = 'category'
+        context['active_indicator'] = indicator
         return context
 
 class CategoryStatsView(DatasetListView):
@@ -1141,6 +1639,9 @@ class CategoryStatsView(DatasetListView):
         all_cats = context['category_facet']
         child_titles = []
         cat_titles = []
+        indicator = self.request.GET.get('indicator', None)
+        if indicator is None:
+            indicator = 'dataset-count'
         for cat in all_cats:
             cat_titles.append(cat['display_value'])
         filtered_cats = []
@@ -1164,8 +1665,61 @@ class CategoryStatsView(DatasetListView):
                 if max_count < single_cat.get('count'):
                     max_count = single_cat.get('count')
                 filtered_cats.append(single_cat)
+        if indicator != 'dataset-count':
+            for k in filtered_cats:
+                id_list = []
+                c_cat = Category.objects.get(title=k.get('display_value'))
+                cat_datasets = Dataset.objects.filter(category=c_cat.pk)
+                if len(cat_datasets) > 0:
+                    for dd in cat_datasets:
+                        id_list.append(dd.pk)
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        k['stats'] = 0
+                        # todo
+                    stats = DatasetStats.objects.filter(dataset_id__in=id_list)
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                k['stats'] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                k['stats'] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                k['stats'] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                k['stats'] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                k['stats'] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                k['stats'] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                k['stats'] = level_avg
+                            if max_count < k.get('stats'):
+                                max_count = k.get('stats')
+                    else:
+                        k['stats'] = 0
+            filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
         context['max_count'] = max_count
         context['categories'] = filtered_cats
+        context['current_object'] = self.kwargs.get('pk')
+        context['active_filter'] = 'category'
+        context['active_indicator'] = indicator
         return context
 
 
@@ -1178,48 +1732,72 @@ class PublicationStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
         year_stats = {}
-        quarter_stats = {}
-        monthly_stats = {}
+        # quarter_stats = {}
+        # monthly_stats = {}
+        if indicator is None:
+            indicator = 'dataset-count'
         for dataset in datasets:
             published = dataset.published
             if published is not None:
                 year_published = published.year
                 year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                month = str(year_published) + "-" + str('%02d' % published.month)
-                monthly_stats[month] = monthly_stats.get(month, 0) + 1
-        final = {}
-        months_s = {}
+                # quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                # quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+                # month = str(year_published) + "-" + str('%02d' % published.month)
+                # monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        if indicator != 'dataset-count':
+            for yr in year_stats.keys():
+                start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
+                end_date = datetime.strptime(str(yr) + "-12-31", '%Y-%m-%d')
+                # todo kitaip?
+                tz = pytz.timezone('Europe/Vilnius')
+                stats = DatasetStats.objects.filter(created__range=[tz.localize(start_date), tz.localize(end_date)])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            year_stats[yr] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            year_stats[yr] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            year_stats[yr] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            year_stats[yr] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            year_stats[yr] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            year_stats[yr] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev)/len(lev))
+                            year_stats[yr] = level_avg
+                else:
+                    year_stats[yr] = 0
 
         for key, value in year_stats.items():
-            final[key] = {}
-            final[key]['total'] = value
-            final[key]['quarters'] = {}
             if max_count < value:
                 max_count = value
-            for qk, qv in quarter_stats.items():
-                if qk.startswith(str(key)):
-                    final[key]['quarters'][qk] = qv
 
-        for q, qv in quarter_stats.items():
-            y_index = int(q.split('-Q')[0])
-            q_index = int(q.split('-Q')[1])
-            qq = {q: qv}
-            q_months = {}
-            for m, mv in monthly_stats.items():
-                y = int(m.split('-')[0])
-                m_index = m.split('-')[1]
-                m_q = (int(m_index) - 1) // 3 + 1
-                if q_index == m_q and y_index == y:
-                    q_months[m] = mv
-                    qq = q_months
-            months_s[q] = qq
-        # years = list(year_stats.items())
         context['year_stats'] = year_stats
         context['max_count'] = max_count
         context['active_filter'] = 'publication'
+        context['active_indicator'] = indicator
         return context
 
 class YearStatsView(DatasetListView):
@@ -1227,14 +1805,16 @@ class YearStatsView(DatasetListView):
     template_name = 'vitrina/datasets/publications.html'
     paginate_by = 0
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
         year_stats = {}
         quarter_stats = {}
-        monthly_stats = {}
+        selected_year = str(self.kwargs['year'])
+        if indicator is None:
+            indicator = 'dataset-count'
         for dataset in datasets:
             published = dataset.published
             if published is not None:
@@ -1242,41 +1822,69 @@ class YearStatsView(DatasetListView):
                 year_stats[year_published] = year_stats.get(year_published, 0) + 1
                 quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
                 quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                month = str(year_published) + "-" + str('%02d' % published.month)
-                monthly_stats[month] = monthly_stats.get(month, 0) + 1
-        final = {}
-        months_s = {}
-
-        for key, value in year_stats.items():
-            final[key] = {}
-            final[key]['total'] = value
-            final[key]['quarters'] = {}
+        if indicator != 'dataset-count':
+            for k in quarter_stats.keys():
+                tz = pytz.timezone('Europe/Vilnius')
+                if selected_year in k:
+                    if '-Q1' in k:
+                        start = datetime.strptime(str(selected_year) + "-1-1", '%Y-%m-%d')
+                        end = datetime.strptime(str(selected_year) + "-3-31", '%Y-%m-%d')
+                    elif '-Q2' in k:
+                        start = datetime.strptime(str(selected_year) + "-4-1", '%Y-%m-%d')
+                        end = datetime.strptime(str(selected_year) + "-6-30", '%Y-%m-%d')
+                    elif '-Q3' in k:
+                        start = datetime.strptime(str(selected_year) + "-7-1", '%Y-%m-%d')
+                        end = datetime.strptime(str(selected_year) + "-9-30", '%Y-%m-%d')
+                    else:
+                        start = datetime.strptime(str(selected_year) + "-10-1", '%Y-%m-%d')
+                        end = datetime.strptime(str(selected_year) + "-12-31", '%Y-%m-%d')
+                    stats = DatasetStats.objects.filter(created__range=[tz.localize(start), tz.localize(end)])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                quarter_stats[k] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                quarter_stats[k] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                quarter_stats[k] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                quarter_stats[k] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                quarter_stats[k] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                quarter_stats[k] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                quarter_stats[k] = level_avg
+                    else:
+                        quarter_stats[k] = 0
+        for key, value in quarter_stats.items():
             if max_count < value:
                 max_count = value
-            for qk, qv in quarter_stats.items():
-                if qk.startswith(str(key)):
-                    final[key]['quarters'][qk] = qv
-
-        for q, qv in quarter_stats.items():
-            y_index = int(q.split('-Q')[0])
-            q_index = int(q.split('-Q')[1])
-            qq = {q: qv}
-            q_months = {}
-            for m, mv in monthly_stats.items():
-                y = int(m.split('-')[0])
-                m_index = m.split('-')[1]
-                m_q = (int(m_index) - 1) // 3 + 1
-                if q_index == m_q and y_index == y:
-                    q_months[m] = mv
-                    qq = q_months
-            months_s[q] = qq
-
-        context['selected_year'] = str(self.kwargs['year'])
+        context['selected_year'] = selected_year
         context['year_stats'] = quarter_stats
-        context['quarter_stats'] = quarter_stats
         context['max_count'] = max_count
+        context['current_object'] = str('year/' + selected_year)
         context['active_filter'] = 'publication'
+        context['active_indicator'] = indicator
         return context
+
 
 class QuarterStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -1287,57 +1895,71 @@ class QuarterStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        year_stats = {}
-        quarter_stats = {}
+        indicator = self.request.GET.get('indicator', None)
+        # year_stats = {}
+        # quarter_stats = {}
         monthly_stats = {}
+        selected_quarter = str(self.kwargs['quarter'])
+        if indicator is None:
+            indicator = 'dataset-count'
         for dataset in datasets:
             published = dataset.published
             if published is not None:
                 year_published = published.year
-                year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                month = str(year_published) + "-" + str('%02d' % published.month)
-                monthly_stats[month] = monthly_stats.get(month, 0) + 1
-        final = {}
-        months_s = {}
-
-        for key, value in year_stats.items():
-            final[key] = {}
-            final[key]['total'] = value
-            final[key]['quarters'] = {}
-            if max_count < value:
-                max_count = value
-            for qk, qv in quarter_stats.items():
-                if qk.startswith(str(key)):
-                    final[key]['quarters'][qk] = qv
-
-        for q, qv in quarter_stats.items():
-            y_index = int(q.split('-Q')[0])
-            q_index = int(q.split('-Q')[1])
-            qq = {q: qv}
-            q_months = {}
-            for m, mv in monthly_stats.items():
-                y = int(m.split('-')[0])
-                m_index = m.split('-')[1]
-                m_q = (int(m_index) - 1) // 3 + 1
-                if q_index == m_q and y_index == y:
-                    q_months[m] = mv
-                    qq = q_months
-            months_s[q] = qq
-
-        filtered = {}
-        for m, mv in months_s.items():
-            selected_quarter = self.kwargs['quarter']
-            if selected_quarter in m:
-                filtered[m] = mv
-                for c, cv in mv.items():
-                    if max_count < cv:
-                        max_count = cv
-
+                if str(year_published) in selected_quarter:
+                    quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                    if quarter == selected_quarter:
+                        month = str(year_published) + "-" + str('%02d' % published.month)
+                        monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        if indicator != 'dataset-count':
+            for k in monthly_stats.keys():
+                tz = pytz.timezone('Europe/Vilnius')
+                start = datetime.strptime(str(k) + "-1", '%Y-%m-%d')
+                end = datetime.strptime(str(k) + "-28", '%Y-%m-%d')
+                stats = DatasetStats.objects.filter(created__range=[tz.localize(start), tz.localize(end)])
+                if len(stats) > 0:
+                    total = 0
+                    for st in stats:
+                        if indicator == 'request-count':
+                            if st.request_count is not None:
+                                total += st.request_count
+                            monthly_stats[k] = total
+                        elif indicator == 'project-count':
+                            if st.project_count is not None:
+                                total += st.project_count
+                            monthly_stats[k] = total
+                        elif indicator == 'distribution-count':
+                            if st.distribution_count is not None:
+                                total += st.distribution_count
+                            monthly_stats[k] = total
+                        elif indicator == 'object-count':
+                            if st.object_count is not None:
+                                total += st.object_count
+                            monthly_stats[k] = total
+                        elif indicator == 'field-count':
+                            if st.field_count is not None:
+                                total += st.field_count
+                            monthly_stats[k] = total
+                        elif indicator == 'model-count':
+                            if st.model_count is not None:
+                                total += st.model_count
+                            monthly_stats[k] = total
+                        elif indicator == 'level-average':
+                            lev = []
+                            if st.maturity_level is not None:
+                                lev.append(st.maturity_level)
+                            level_avg = int(sum(lev) / len(lev))
+                            monthly_stats[k] = level_avg
+                else:
+                    monthly_stats[k] = 0
+        for m, mv in monthly_stats.items():
+            if max_count < mv:
+                max_count = mv
         context['selected_quarter'] = self.kwargs['quarter']
-        context['year_stats'] = quarter_stats
-        context['year_stats'] = filtered
+        # context['year_stats'] = quarter_stats
+        context['year_stats'] = monthly_stats
         context['max_count'] = max_count
+        context['current_object'] = str('quarter/' + selected_quarter)
         context['active_filter'] = 'publication'
+        context['active_indicator'] = indicator
         return context

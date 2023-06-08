@@ -1802,3 +1802,24 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
         'structureId': structure.pk
     }))
     assert dataset.datasetstructure_set.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_model_statistics(app: DjangoTestApp):
+    res = app.post(reverse('api-download-stats-internal', {
+        'source': 'get.data.gov.lt',
+        'model': 'naujas_modelis',
+        'format': 'excel',
+        'time': '2023-06-08T14:23:24.984016+03:00',
+        'requests': 100,
+        'objects': 10
+    }), expect_errors=False)
+    assert res.json == {
+        "source": "get.data.gov.lt",
+        "model": "naujas_modelis",
+        "format": "excel",
+        "time": "2023-06-08T14:23:24.984016+03:00",
+        "requests": 100,
+        "objects": 10
+    }
+

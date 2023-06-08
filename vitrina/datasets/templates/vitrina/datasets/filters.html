@@ -42,20 +42,20 @@
 </nav>
 
 <nav class="category-panel">
-    {% if active_filter == 'maturity' %}
+    {% if active_filter == 'level' %}
         <p class="category-panel-heading">
             <strong>{% translate "Brandos lygis" as tagTitle %} {{tagTitle|upper}}</strong>
         </p>
     {% else %}
-        <a href="{% url 'dataset-stats-maturity' %}?{{ request.GET.urlencode }}" id="dataset-stats-maturity">
+        <a href="{% url 'dataset-stats-level' %}?{{ request.GET.urlencode }}" id="dataset-stats-level">
             <p class="category-panel-heading">
                 <strong>{% translate "Brandos lygis" as tagTitle %} {{tagTitle|upper}}</strong>
             </p>
         </a>
     {% endif %}
-    {% for i in '543210'|make_list %}
+    {% for obj in level_facet %}
         <div class="is-flex">
-            <a href="/datasets/?selected_facets=maturity_exact%3A{{ i }}" class="category-panel-block">{{ i }}</a>
+            <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
             <div class="stays-right">({{ obj.count }})</div>
         </div>
     {% endfor %}
@@ -124,7 +124,7 @@
 
 {% if not graph_title == 'Duomenų rinkinių atvėrimo progresas' %}
     <nav class="category-panel">
-        {% if active_filter == 'categories' %}
+        {% if active_filter == 'category' %}
                 <p class="category-panel-heading">
                     <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
                 </p>

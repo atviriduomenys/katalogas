@@ -1118,3 +1118,13 @@ def test_dataset_jurisdictions(app: DjangoTestApp):
     assert resp.context['max_count'] == dataset_count
     assert len(resp.context['jurisdictions']) == 1
     assert dataset_count == 5
+
+
+@pytest.mark.django_db
+def test_dataset_resource_create_button(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    resp = app.get(dataset.get_absolute_url())
+    resp = resp.click(linkid="add_resource")
+    assert resp.request.path == reverse('resource-add', args=[dataset.pk])

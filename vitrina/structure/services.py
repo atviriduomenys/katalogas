@@ -709,9 +709,14 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
 
 def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
     if uuid:
-        res = requests.get(f"https://get.data.gov.lt/{model}/{uuid}/?{query}")
+        url = f"https://get.data.gov.lt/{model}/{uuid}/?{query}"
     else:
-        res = requests.get(f"https://get.data.gov.lt/{model}/?{query}")
+        url = f"https://get.data.gov.lt/{model}/?{query}"
+    try:
+        res = requests.get(url)
+    except requests.exceptions.RequestException:
+        return {}
+
     try:
         data = json.loads(res.content)
         return data

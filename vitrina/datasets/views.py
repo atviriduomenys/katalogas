@@ -184,7 +184,7 @@ class DatasetDetailView(
                 annotate(access=Max('model_properties__metadata__access')). \
                 filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
-        if models:
+        if models and models[0].name:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
                 'model': models[0].name,
@@ -328,7 +328,7 @@ class DatasetHistoryView(StructureMixin, HistoryView):
                 annotate(access=Max('model_properties__metadata__access')). \
                 filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
-        if models:
+        if models and models[0].name:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
                 'model': models[0].name,
@@ -451,7 +451,7 @@ class DatasetMembersView(
                 annotate(access=Max('model_properties__metadata__access')). \
                 filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
-        if models:
+        if models and models[0].name:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
                 'model': models[0].name,
@@ -672,7 +672,7 @@ class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
                 annotate(access=Max('model_properties__metadata__access')). \
                 filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
-        if models:
+        if models and models[0].name:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
                 'model': models[0].name,

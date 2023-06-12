@@ -104,7 +104,7 @@
             </div>
 
             <div class="mt-5 mb-2">
-                <p>{% translate "Rodoma" %} {{ data|length }} {% translate "objektų iš" %} {{ total_count }}</p>
+                <p>{{ total_count }}</p>
             </div>
 
             <div class="filter-table">
@@ -191,14 +191,22 @@
                                     {% if col not in excluded_cols %}
                                         {% if col == '_id' %}
                                             <td id="{{ col }}_col_id">
-                                                <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
+                                                {% if model.name %}
+                                                    <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
+                                                {% else %}
+                                                    {{ val|slice:":8" }}
+                                                {% endif %}
                                             </td>
                                         {% elif val|is_dict %}
                                             {% if prop.ref_model %}
                                                 {% get_value_by_key val '_id' as val %}
                                                 {% if val != None %}
                                                     <td id="{{ col }}_col_id">
-                                                        <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                        {% if prop.ref_model.name %}
+                                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                        {% else %}
+                                                            {{ val|slice:":8" }}
+                                                        {% endif %}
                                                     </td>
                                                 {% else %}
                                                     <td class="has-background-white-ter"></td>
@@ -281,8 +289,19 @@
             $(`#${col}_filter_id`).each(function() {
                 if(this.style.display == 'block'){
                     this.style.display = 'none';
+                    let table = $('.filter-table');
+                    table.css('height', '');
                 } else {
                     this.style.display = 'block';
+
+                    let table = $('.filter-table');
+                    let tableScrollHeight = table[0].scrollHeight;
+                    let tableClientHeight = table[0].clientHeight;
+
+                    if (tableScrollHeight > tableClientHeight){
+                        let height = tableClientHeight + 130;
+                        table.css('height', height + "px");
+                    }
                 }
             });
         };

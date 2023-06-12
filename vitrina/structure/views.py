@@ -1,3 +1,4 @@
+from gettext import ngettext
 from typing import List
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -90,7 +91,7 @@ class DatasetStructureView(HistoryMixin, StructureMixin, TemplateView):
         return reverse('dataset-structure', kwargs={'pk': self.kwargs.get('pk')})
 
     def get_data_url(self):
-        if self.models:
+        if self.models and self.models[0].name:
             return reverse('model-data', kwargs={
                 'pk': self.kwargs.get('pk'),
                 'model': self.models[0].name,
@@ -167,10 +168,12 @@ class ModelStructureView(
         return reverse('dataset-structure', kwargs={'pk': self.kwargs.get('pk')})
 
     def get_data_url(self):
-        return reverse('model-data', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name,
-        })
+        if self.model.name:
+            return reverse('model-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            })
+        return None
 
 
 class PropertyStructureView(
@@ -247,10 +250,12 @@ class PropertyStructureView(
         return reverse('dataset-structure', kwargs={'pk': self.kwargs.get('pk')})
 
     def get_data_url(self):
-        return reverse('model-data', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name
-        })
+        if self.model.name:
+            return reverse('model-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name
+            })
+        return None
 
 
 class ModelDataView(
@@ -328,6 +333,7 @@ class ModelDataView(
         select = 'select(*)'
         selected_cols = []
         query = ['limit(100)']
+        count_query = ['count()']
         for key, val in self.request.GET.items():
             if key.startswith('select('):
                 select = key
@@ -339,10 +345,13 @@ class ModelDataView(
                 if val == '':
                     tags.append(key)
                     query.append(key)
+                    if not key.startswith('sort('):
+                        count_query.append(key)
                 else:
                     tag = f"{key}={val}"
                     tags.append(tag)
                     query.append(tag)
+                    count_query.append(tag)
 
         query = '&'.join(query)
         data = get_data_from_spinta(self.model, query=query)
@@ -357,7 +366,7 @@ class ModelDataView(
             exclude = all_props - context['properties'].keys()
             exclude.update(EXCLUDED_COLS)
 
-            context['data'] = data.get('_data')
+            context['data'] = data.get('_data') or []
             if context['data']:
                 context['headers'] = [col for col in context['data'][0].keys() if col not in exclude]
             elif selected_cols:
@@ -378,10 +387,16 @@ class ModelDataView(
             context['selected_cols'] = selected_cols or context['headers']
 
             total_count = 0
-            count_data = get_data_from_spinta(self.model, query="count()")
+            count_query = '&'.join(count_query)
+            count_data = get_data_from_spinta(self.model, query=count_query)
             count_data = count_data.get('_data')
             if count_data and count_data[0].get('count()'):
                 total_count = count_data[0].get('count()')
+            total_count = ngettext(
+                f"Rodoma {len(context['data'])} objektas iš {total_count:,}",
+                f"Rodoma {len(context['data'])} objektai iš {total_count:,}",
+                len(context['data']),
+            )
             context['total_count'] = total_count
 
         context['can_view_members'] = has_perm(
@@ -393,16 +408,20 @@ class ModelDataView(
         return context
 
     def get_structure_url(self):
-        return reverse('model-structure', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name,
-        })
+        if self.model.name:
+            return reverse('model-structure', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            })
+        return None
 
     def get_data_url(self):
-        return reverse('model-data', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name
-        })
+        if self.model.name:
+            return reverse('model-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name
+            })
+        return None
 
 
 class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, TemplateView):
@@ -482,13 +501,17 @@ class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, Temp
         return context
 
     def get_structure_url(self):
-        return reverse('model-structure', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name,
-        })
+        if self.model.name:
+            return reverse('model-structure', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            })
+        return None
 
     def get_data_url(self):
-        return reverse('model-data', kwargs={
-            'pk': self.object.pk,
-            'model': self.model.name,
-        })
+        if self.model.name:
+            return reverse('model-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            })
+        return None

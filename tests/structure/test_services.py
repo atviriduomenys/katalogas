@@ -516,7 +516,7 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
-        format=FileFormat(title="Saugykla", extension='API'),
+        format=FileFormat(title="Saugykla", extension='UAPI'),
     )
 
     structure.dataset.current_structure = structure
@@ -792,8 +792,8 @@ def test_structure_without_ids__datasets(app: DjangoTestApp):
     create_structure_objects(structure)
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(structure.dataset),
-        object_id=structure.dataset.pk
+        content_type=ContentType.objects.get_for_model(structure),
+        object_id=structure.pk
     ).values_list('body', flat=True)) == [
         'Duomenų rinkinys "datasets/gov/ivpk/adp" jau egzistuoja.'
     ]

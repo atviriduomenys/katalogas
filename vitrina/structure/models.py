@@ -177,16 +177,20 @@ class Model(models.Model):
                 metadata.save()
 
     def get_absolute_url(self):
-        return reverse('model-structure', kwargs={
-            'pk': self.dataset.pk,
-            'model': self.name,
-        })
+        if self.name:
+            return reverse('model-structure', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.name,
+            })
+        return None
 
     def get_data_url(self):
-        return reverse('model-data', kwargs={
-            'pk': self.dataset.pk,
-            'model': self.name,
-        })
+        if self.name:
+            return reverse('model-data', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.name,
+            })
+        return None
 
     def get_given_props(self):
         return self.model_properties.filter(given=True).order_by('metadata__order')
@@ -235,11 +239,13 @@ class Property(models.Model):
         return ""
 
     def get_absolute_url(self):
-        return reverse('property-structure', kwargs={
-            'pk': self.model.dataset.pk,
-            'model': self.model.name,
-            'prop': self.name,
-        })
+        if self.model.name and self.name:
+            return reverse('property-structure', kwargs={
+                'pk': self.model.dataset.pk,
+                'model': self.model.name,
+                'prop': self.name,
+            })
+        return None
 
     @builtins.property
     def name(self):

@@ -1,6 +1,7 @@
 import csv
 import json
 import uuid
+from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict
 
 import requests
@@ -95,7 +96,7 @@ def _load_datasets(
             _load_comments(dataset, meta.comments, dataset)
             loaded_metadata.append(metadata)
 
-        _create_errors(meta.errors, dataset)
+        _create_errors(meta.errors, dataset.current_structure)
 
     removed_metadata = list(set(existing_metadata) - set(loaded_metadata))
     for meta in removed_metadata:
@@ -506,11 +507,13 @@ def _link_distributions(
             distribution = DatasetDistribution.objects.filter(
                 dataset=dataset,
                 download_url=url,
-                format__extension='API',
-                type='URL',
             ).first()
             if not distribution:
-                format, _ = Format.objects.get_or_create(extension='API')
+                format, created = Format.objects.get_or_create(extension='UAPI')
+                if created:
+                    format.title = 'Saugyklos API'
+                    format.mimetype = "application/vnd.api+json"
+                    format.save()
                 distribution = DatasetDistribution.objects.create(
                     dataset=dataset,
                     download_url=url,
@@ -709,8 +712,11 @@ def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
         res = requests.get(f"https://get.data.gov.lt/{model}/{uuid}/?{query}")
     else:
         res = requests.get(f"https://get.data.gov.lt/{model}/?{query}")
-    data = json.loads(res.content)
-    return data
+    try:
+        data = json.loads(res.content)
+        return data
+    except JSONDecodeError:
+        return {}
 
 
 def _parse_access(value: str):

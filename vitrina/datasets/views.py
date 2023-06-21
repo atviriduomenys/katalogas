@@ -18,6 +18,7 @@ from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
@@ -36,13 +37,15 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
+from treebeard.forms import MoveNodeForm
 
 from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
+    DatasetCategoryForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
@@ -212,7 +215,7 @@ class DatasetCreateView(
     LanguageChoiceMixin
 ):
     model = Dataset
-    template_name = 'vitrina/datasets/form.html'
+    template_name = 'base_form.html'
     context_object_name = 'dataset'
     form_class = DatasetForm
 
@@ -239,8 +242,6 @@ class DatasetCreateView(
         self.object = form.save(commit=True)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
-        groups = form.cleaned_data['groups']
-        self.object.groups.set(groups)
         self.object.save()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
@@ -254,7 +255,7 @@ class DatasetUpdateView(
     ViewUrlMixin
 ):
     model = Dataset
-    template_name = 'vitrina/datasets/form.html'
+    template_name = 'base_form.html'
     view_url_name = 'dataset:edit'
     context_object_name = 'dataset'
     form_class = DatasetForm
@@ -282,9 +283,7 @@ class DatasetUpdateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
-        groups = form.cleaned_data['groups']
         tags = form.cleaned_data['tags']
-        self.object.groups.set(groups)
         self.object.tags.set(tags)
         self.object.save()
         set_comment(Dataset.EDITED)
@@ -849,3 +848,77 @@ class DatasetsStatsView(DatasetListView):
         context['dataset_count'] = len(qs)
         context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
         return context
+
+
+class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/datasets/dataset_categories.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = DatasetCategoryForm()
+        context['dataset'] = self.dataset
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = DatasetCategoryForm(request.POST)
+        if form.is_valid():
+            self.dataset.category.clear()
+            for category in form.cleaned_data.get('category'):
+                self.dataset.category.add(category)
+            self.dataset.save()
+        else:
+            messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
+        return redirect(self.dataset.get_absolute_url())
+
+
+class FilterCategoryView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        category_data = {}
+        if group_id := request.GET.get('group_id'):
+            group = get_object_or_404(DatasetGroup, pk=int(group_id))
+            group_categories = group.category_set.all()
+
+            categories = group_categories
+            if ids := request.GET.get('category_ids'):
+                ids = [int(i) for i in ids.split(',')]
+                categories = categories.filter(pk__in=ids)
+
+            if term := request.GET.get('term'):
+                categories = categories.filter(title__icontains=term)
+
+            for cat in categories:
+                category_data[cat.pk] = {
+                    'show_checkbox': True,
+                }
+                for ancestor in cat.get_ancestors():
+                    if ancestor not in categories:
+                        category_data[ancestor.pk] = {
+                            'show_checkbox': True if ancestor in group_categories else False,
+                        }
+        elif request.GET.get('on_load'):
+            dataset_categories = dataset.category.values_list('pk', flat=True)
+            category_choices = MoveNodeForm.mk_dropdown_tree(Category)
+            category_choices = category_choices[1:]
+            category_data = {
+                pk: {
+                    'checked': True if pk in dataset_categories else False,
+                    'html': mark_safe(f'<div class="control">'
+                                      f'<label class="checkbox" for="id_category_{i}"></label>'
+                                      f'<input type="checkbox" name="category" id="id_category_{i}" value="{pk}"/> '
+                                      f'{cat}'
+                                      f'</div>')
+                }
+                for i, (pk, cat) in enumerate(category_choices)
+            }
+
+        return JsonResponse({'categories': category_data})

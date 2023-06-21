@@ -20,6 +20,8 @@ from vitrina.datasets.views import RemoveProjectView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import autocomplete_tags
 from vitrina.datasets.views import DatasetsStatsView
+from vitrina.datasets.views import DatasetCategoryView
+from vitrina.datasets.views import FilterCategoryView
 
 urlpatterns = [
     # @GetMapping("/datasets")
@@ -70,6 +72,8 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
+    path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
+    path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

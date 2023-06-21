@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block current_title %}{% translate "Kategorijų priskyrimas" %}{% endblock %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% include "component/form.html" %}
+        </div>
+    </div>
+    <br/>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            let group = $('select#id_group');
+            let search = $('input#id_search');
+            let showSelected = $('input#show_selected_id');
+
+            showSelected.on('click', function(event, onLoad=false) {
+                let checked = $(this).is(":checked");
+                let groupId = group.val();
+                let term = search.val();
+                let datasetId = {{ dataset.pk }};
+                if (checked) {
+                    let checkedIds = [];
+                    $('#div_id_category input:checked').each(function() {
+                        checkedIds.push($(this).val());
+                    });
+                    $.ajax({
+                        url: `/datasets/${datasetId}/filter_categories/`,
+                        data: {
+                            group_id: groupId,
+                            category_ids: checkedIds.join(','),
+                            term: term,
+                        }
+                    }).then(response => {
+                        let categories = response['categories'];
+                        let ids = Object.keys(categories);
+                        $('#div_id_category input').each(function() {
+                            if(!ids.includes($(this).val())) {
+                                $(this).parents('.control').hide();
+                            }
+                            else {
+                                $(this).parents('.control').show();
+                                let showCheckbox = categories[$(this).val()]['show_checkbox'];
+                                if (!showCheckbox) {
+                                    $(this).prop( "disabled", true );
+                                }
+                                else {
+                                    $(this).prop( "disabled", false );
+                                };
+                            }
+                        });
+                    });
+                }
+                else {
+                    group.trigger('change');
+                }
+            });
+
+            group.on('change', function(event, onLoad=false) {
+                let term = search.val();
+                let groupId = group.val();
+                let datasetId = {{ dataset.pk }};
+                if( groupId || onLoad ) {
+                    let checked = $(showSelected).is(":checked");
+                    let checkedIds = [];
+                    if (checked){
+                        $('#div_id_category input:checked').each(function() {
+                            checkedIds.push($(this).val());
+                        });
+                    }
+
+                    $.ajax({
+                         url: `/datasets/${datasetId}/filter_categories/`,
+                         data: {
+                             group_id: groupId,
+                             category_ids: checkedIds.join(','),
+                             term: term,
+                             on_load: onLoad,
+                         }
+                     }).then(response => {
+                         let categories = response['categories'];
+                         let ids = Object.keys(categories);
+                         let values = Object.values(categories);
+
+                         if (onLoad){
+                            let field = $('div#div_id_category');
+                            for (let category of values) {
+                                if(category['html']){
+                                    $(field).append(category['html']);
+                                }
+                            }
+
+                            $('#div_id_category input').each(function() {
+                                $(this).parents('.control').hide();
+                                let checked = categories[$(this).val()]['checked'];
+                                if (checked) {
+                                    $(this).prop( "checked", true );
+                                }
+                                else {
+                                    $(this).prop( "checked", false );
+                                }
+                             });
+                         }
+                         else {
+                             $('#div_id_category input').each(function() {
+                                if(!ids.includes($(this).val())) {
+                                    $(this).parents('.control').hide();
+                                }
+                                else {
+                                    $(this).parents('.control').show();
+                                    let showCheckbox = categories[$(this).val()]['show_checkbox'];
+                                    if (!showCheckbox) {
+                                        $(this).prop( "disabled", true );
+                                    }
+                                    else {
+                                        $(this).prop( "disabled", false );
+                                    };
+                                }
+                             });
+                         }
+                     });
+                 }
+                 else {
+                    $('#div_id_category input').each(function() {
+                        $(this).parents('.control').hide();
+                    });
+                 }
+            });
+            group.trigger('change', [true]);
+
+            search.on('input', function(event, onLoad=false) {
+                let term = search.val();
+                let groupId = group.val();
+                let datasetId = {{ dataset.pk }};
+
+                if (groupId) {
+                    let checkedIds = [];
+                    let checked = $(showSelected).is(":checked");
+                    if (checked){
+                        $('#div_id_category input:checked').each(function() {
+                            checkedIds.push($(this).val());
+                        });
+                    }
+                    $.ajax({
+                        url: `/datasets/${datasetId}/filter_categories/`,
+                        data: {
+                            group_id: groupId,
+                            category_ids: checkedIds.join(','),
+                            term: term,
+                            on_load: onLoad,
+                        }
+                    }).then(response => {
+                        let categories = response['categories'];
+                        let ids = Object.keys(categories);
+
+                        $('#div_id_category input').each(function() {
+                           if(!ids.includes($(this).val())) {
+                               $(this).parents('.control').hide();
+                           }
+                           else {
+                               $(this).parents('.control').show();
+                               let showCheckbox = categories[$(this).val()]['show_checkbox'];
+                               if (!showCheckbox) {
+                                   $(this).prop( "disabled", true );
+                               }
+                               else {
+                                   $(this).prop( "disabled", false );
+                               };
+                           }
+                        });
+                    });
+                }
+                else {
+                     $('#div_id_category input').each(function() {
+                        $(this).parents('.control').hide();
+                    });
+                }
+            });
+        })
+    </script>
+{% endblock %}

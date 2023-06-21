@@ -21,6 +21,7 @@ from typer import Argument
 from typer import Option
 from typer import run
 
+import xlsxwriter
 import requests
 from pprintpp import pprint as pp
 
@@ -68,18 +69,20 @@ def main(
     cards = list(cards)
     if export:
         if order:
-            _cards_to = _cards_to_csv_order
+            if export.is_dir():
+                _cards_to_csv_order(export, cards)
+            else:
+                raise ValueError("Export path must be a directory.")
         else:
-            _cards_to = _cards_to_csv
-        if export.name == '-':
-            _cards_to(sys.stdout, cards, level)
-        elif export.suffix == '.csv':
-            with export.open('w') as f:
-                _cards_to(f, cards, level)
-        else:
-            raise NotImplementedError(
-                f"Don't know how to export to {export.suffix}"
-            )
+            if export.name == '-':
+                _cards_to_csv(sys.stdout, cards, level)
+            elif export.suffix == '.csv':
+                with export.open('w') as f:
+                    _cards_to_csv(f, cards, level)
+            else:
+                raise NotImplementedError(
+                    f"Don't know how to export to {export.suffix}"
+                )
     else:
         _cards_to_ascii(cards, level)
 
@@ -410,12 +413,10 @@ def _get_csv_title(row, col, level, titles):
 
 
 def _cards_to_csv_order(
-    f: TextIO,
+    path: Path,
     cards: Iterable[Card],
-    level: int = 4,
 ) -> None:
-    writer = csv.writer(f)
-    writer.writerow(['a', 'b', 'c'])
+    cards = list(cards)
 
     titles = {
         card['number']: card['title']
@@ -424,72 +425,235 @@ def _cards_to_csv_order(
 
     cards = [card for card in cards if card['status'] == 'Done']
 
-    sprints = sorted(cards, key=_get_sprint_num)
-    sprints = groupby(sprints, key=_get_sprint_num)
-    for sprint, cards in sprints:
-        writer.writerow(['Etapas', '1', ''])
+    cards = sorted(cards, key=_get_sprint_num)
 
-        writer.writerow(['Iteracija', sprint, ''])
+    repos = {
+        'katalogas': 'Katalogo tobulinimas',
+        'saugykla': 'Saugyklos tobulinimas',
+    }
 
-        writer.writerow([
-            'Iteracijos vykdymo periodas',
-            'Pradžia',
-            'Pabaiga',
-        ])
+    formats = {
+        't': {
+            'align': 'center',
+            'valign': 'vcenter',
+        },
+        'd0': {
+            'num_format': 'yyyy-mm-dd',
+        },
+        'd': {
+            'align': 'left',
+            'border': 1,
+            'num_format': 'yyyy-mm-dd',
+        },
+        'h': {
+            'border': 1,
+            'bg_color': '#d9d9d9',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'hb': {
+            'border': 1,
+            'bg_color': '#d9d9d9',
+            'bold': True,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'hc': {
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'c': {
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'rb': {
+            'border': 1,
+            'bold': True,
+            'align': 'right',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'cb': {
+            'border': 1,
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'b': {
+            'border': 1,
+            'bold': True,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        '': {
+            'border': 1,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+    }
 
-        card = next(cards)
-        cards = chain([card], cards)
+    wbtypes = [
+        # Užduotims
+        {
+            'title': [
+                'ATVIRŲ DUOMENŲ SĄVOKŲ ŽINYNO MODULIO SUKŪRIMAS IR '
+                'ATVIRŲ DUOMENŲ PORTALO (ADP) PLĖTROS SUKURIANT '
+                'INTEGRACINES SĄSAJAS',
+                'PASLAUGŲ VIEŠOJO PIRKIMO–PARDAVIMO SUTARTIES '
+                'NR. 6F-30(2022)',
+                'UŽDUOTIS PASLAUGŲ SUTEIKIMUI',
+            ],
+            'date': lambda s, e: s - datetime.timedelta(days=2),
+            'filename': 'S{sprint:02}U_{date:%Y-%m-%d}.xlsx',
+            'A1': 'SUDERINO',
+            'B1': '',
+            'A2': 'Užsakovo atstovas - projekto vadovas:',
+            'B2': 'Paslaugų teikėjo atstovas - projekto vadovas',
+            'A3': 'Julius Belickas',
+            'B3': 'Ernestas Vyšniauskas',
+            'body': 1,
+        },
+        # Aktams
+        {
+            'title': [
+                'ATVIRŲ DUOMENŲ SĄVOKŲ ŽINYNO MODULIO SUKŪRIMAS IR '
+                'ATVIRŲ DUOMENŲ PORTALO (ADP) PLĖTROS SUKURIANT '
+                'INTEGRACINES SĄSAJAS',
+                'PASLAUGŲ VIEŠOJO PIRKIMO–PARDAVIMO SUTARTIES '
+                'NR. 6F-30(2022)',
+                'UŽDUOČIŲ PRIĖMIMO AKTAS',
+            ],
+            'date': lambda s, e: e + datetime.timedelta(days=2),
+            'filename': 'S{sprint:02}A_{date:%Y-%m-%d}.xlsx',
+            'A1': 'ĮVYKDė IR PATEIKĖ:',
+            'B1': 'PATIKRINO IR PRIĖMĖ',
+            'A2': 'Paslaugų teikėjo atstovas - projekto vadovas',
+            'B2': 'Užsakovo atstovas - projekto vadovas:',
+            'A3': 'Ernestas Vyšniauskas',
+            'B3': 'Julius Belickas',
+            'body': 0,
+        },
+    ]
 
-        start, end = _get_sprint_dates(card)
-        writer.writerow(['', start, end])
+    for wbtype in wbtypes:
+        sprints = groupby(cards, key=_get_sprint_num)
+        for sprint, tasks in sprints:
+            task = next(tasks)
+            tasks = chain([task], tasks)
+            start, end = _get_sprint_dates(task)
+            date = wbtype['date'](start, end)
 
-        hours = 0
+            wb = xlsxwriter.Workbook(
+                path / wbtype['filename'].format(
+                    date=date,
+                    sprint=sprint,
+                )
+            )
+            ws = wb.add_worksheet()
 
-        epics = sorted(cards, key=_by_epic_group)
-        epics = groupby(epics, key=_by_epic_group)
-        for i, (epic, tasks) in enumerate(epics, 1):
-            writer.writerow([
-                f'{i}. Projekto dalies pavadinimas '
-                '(Pirkimo objekto dalis):',
-                titles.get(epic, '(no epic)'),
-                '',
-            ])
+            ws.set_column(0, 0, 30)
+            ws.set_column(1, 1, 20)
+            ws.set_column(2, 2, 80)
 
-            writer.writerow([
-                'Užduoties pavadinimas',
-                'Laiko sąnaudos, val.',
-                'Užduoties aprašymas',
-            ])
+            fmt = {k: wb.add_format(v) for k, v in formats.items()}
 
-            for task in tasks:
-                if '---' in task['body']:
-                    body = task['body'].rsplit('---', 1)[0]
+            r = 1
+            ws.merge_range(
+                f'A{r}:C{r}',
+                '\n'.join(wbtype['title']),
+                fmt['t'],
+            )
+            ws.set_row(r-1, 60)
+
+            r += 1
+            ws.write(f'C{r}', date, fmt['d0'])
+
+            r += 1
+            ws.write(f'A{r}', 'Etapas', fmt['hb'])
+            ws.write(f'B{r}', 'Pirmas', fmt['c'])
+
+            r += 1
+            ws.write(f'A{r}', 'Iteracija', fmt['hb'])
+            ws.write(f'B{r}', sprint, fmt['c'])
+
+            r += 1
+            ws.merge_range(
+                f'A{r}:A{r+1}',
+                'Iteracijos vykdymo periodas',
+                fmt['b'],
+            )
+            ws.write(f'B{r}', 'Pradžia', fmt[''])
+            ws.write(f'C{r}', 'Pabaiga', fmt[''])
+
+            r += 1
+            ws.write(f'B{r}', start, fmt['d'])
+            ws.write(f'C{r}', end, fmt['d'])
+
+            r += 1
+            ws.write(f'A{r}', 'Užduoties pavadinimas', fmt['hb'])
+            ws.write(f'B{r}', 'Laiko sąnaudos, val.', fmt['hb'])
+            ws.write(f'C{r}', 'Užduoties aprašymas', fmt['hb'])
+
+            tnum = 1
+            hours = 0
+            epics = sorted(tasks, key=_by_epic_group)
+            epics = groupby(epics, key=_by_epic_group)
+            for epic, tasks in epics:
+                task = next(tasks)
+                tasks = chain([task], tasks)
+
+                r += 1
+                repo = repos.get(task['repo'], task['repo'])
+                epic = titles.get(epic, '(no epic)')
+                if epic.startswith("Kitos "):
+                    ws.merge_range(
+                        f'A{r}:C{r}',
+                        "Kitų,  pirkimo specifikacijoje neįvardintų "
+                        "Katalogo ir Saugyklos plėtros ir  patobulinimų, "
+                        "kurių nebuvo galima numatyti arba apibrėžti "
+                        "specifikavimo metu, paslaugų teikimas",
+                        fmt['b'],
+                    )
                 else:
-                    body = task['body']
+                    ws.merge_range(f'A{r}:C{r}', f"{repo}: {epic}", fmt['b'])
 
-                body = ''
+                for task in tasks:
+                    if '---' in task['body']:
+                        body = task['body'].rsplit('---', 1)[wbtype['body']]
+                    else:
+                        body = task['body']
 
-                writer.writerow([
-                    task['title'],
-                    task['spent'],
-                    body,
-                ])
+                    title = task['title']
 
-                hours += task['spent']
+                    r += 1
+                    ws.write(f'A{r}', f"{tnum}. {title}", fmt[''])
+                    ws.write(f'B{r}', task['spent'], fmt['c'])
+                    ws.write(f'C{r}', body, fmt[''])
 
-        writer.writerow(['Viso val.:', hours, ''])
+                    tnum += 1
+                    hours += task['spent']
 
-        writer.writerow(['SUDERINO', '', ''])
-        writer.writerow([
-            'Užsakovo atstovas - projekto vadovas:',
-            '',
-            'Paslaugų teikėjo atstovas - projekto vadovas',
-        ])
-        writer.writerow([
-            'Julius Belickas',
-            '',
-            'Ernestas Vyšniauskas',
-        ])
+            r += 1
+            ws.write(f'A{r}', 'Viso val.:', fmt['rb'])
+            ws.write(f'B{r}', hours, fmt['cb'])
+
+            r += 3
+            ws.write(f'A{r}', wbtype['A1'])
+
+            r += 2
+            ws.write(f'A{r}', wbtype['A2'])
+            ws.write(f'C{r}', wbtype['B2'])
+
+            r += 1
+            ws.write(f'A{r}', wbtype['A3'])
+            ws.write(f'C{r}', wbtype['B3'])
+
+            wb.close()
 
 
 def _get_sprint_num(card: Card) -> int:

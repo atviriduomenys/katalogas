@@ -50,6 +50,7 @@ tqdm = "^4.64.1"
 dataset = "^1.5.2"
 typer = "^0.6.1"
 flake8 = "^4.0.1"
+xlsxwriter = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

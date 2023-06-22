@@ -16,6 +16,8 @@ from typing import Optional
 from typing import TextIO
 from typing import TypedDict
 from typing import Tuple
+from typing import List
+from typing import Dict
 
 from typer import Argument
 from typer import Option
@@ -24,6 +26,88 @@ from typer import run
 import xlsxwriter
 import requests
 from pprintpp import pprint as pp
+
+
+QUERY = '''
+query($endCursor: String) {
+  repository(owner: "atviriduomenys", name: "%s") {
+    issues(first: 100, after: $endCursor) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        number
+        state
+        title
+        body
+        labels(first: 10) {
+          nodes {
+            name
+            color
+          }
+        }
+        milestone {
+          number
+          state
+          title
+        }
+        repository {
+          name
+        }
+        projectItems (first: 5) {
+          nodes {
+            project {
+              number
+              title
+            }
+            fieldValues(first: 10) {
+              nodes {
+                ... on ProjectV2ItemFieldIterationValue {
+                  title
+                  startDate
+                  duration
+                  field {
+                    ... on ProjectV2IterationField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldNumberValue {
+                  number
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  name
+                  field {
+                    ... on ProjectV2SingleSelectField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldTextValue {
+                  text
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      totalCount
+    }
+  }
+}
+'''
 
 
 class Card(TypedDict):
@@ -45,27 +129,30 @@ class Card(TypedDict):
 
 
 def main(
-    token: str = Argument(..., help="https://github.com/settings/tokens"),
-    project_id: Optional[str] = Argument(None, help=(
-        "Project id (listed if not given)"
+    files: List[str] = Argument(default=None, help=(
+        "List of json files exported with `gh api graphql`."
     )),
-    update: Optional[bool] = Option(False, help="Update cached data."),
+    project: Optional[str] = Option(None, help="Project title."),
     export: Optional[Path] = Option(None, help="Export to CSV file."),
     level: int = Option(4, help=(
         "Show up to (0 - totals, 1 - repo, 2 - milestone, 3 - epic, "
         "4 - sprint, 5 - task)"
     )),
     order: bool = Option(False, help="Generate order table."),
+    simple: bool = Option(False, help="Generate simple table."),
+    query: str = Option('', '-q', '--query', help="Outpur GraphQL query."),
 ):
-    session = requests.Session()
-    session.headers['Authorization'] = f'Bearer {token}'
+    if query:
+        print(QUERY % query)
+        return
 
-    if project_id is None:
-        _list_projects(session)
-        exit()
+    cards = _extract_cards(files)
 
-    cards = _extract_cached_cards(session, project_id, update=update)
-    cards = _transform_cards(cards)
+    if project is None:
+        _list_projects(cards)
+        return
+
+    cards = _transform_cards(cards, project)
     cards = list(cards)
     if export:
         if order:
@@ -73,6 +160,16 @@ def main(
                 _cards_to_xlsx_order(export, cards)
             else:
                 raise ValueError("Export path must be a directory.")
+        elif simple:
+            if export.name == '-':
+                _cards_to_simple_csv(sys.stdout, cards)
+            elif export.suffix == '.csv':
+                with export.open('w') as f:
+                    _cards_to_simple_csv(f, cards)
+            else:
+                raise NotImplementedError(
+                    f"Don't know how to export to {export.suffix}"
+                )
         else:
             if export.name == '-':
                 _cards_to_csv(sys.stdout, cards, level)
@@ -86,130 +183,34 @@ def main(
     else:
         _cards_to_ascii(cards, level)
 
+RawCards = Iterable[Dict[str, Any]]
 
-def _list_projects(session: requests.Session) -> None:
-    pp(session.post('https://api.github.com/graphql', json={'query': '''\
-    query{
-        organization(login: "atviriduomenys"){
-          projectsV2(first: 10) {
-            nodes {
-              id
-              title
-            }
-          }
-        }
-    }
-    '''}).json())
-
-
-def _extract_cached_cards(
-    session: requests.Session,
-    project_id: str,
-    *,
-    update: bool = False,
-) -> Iterator[Card]:
-    cache_dir = os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache'))
-    cache_dir = Path(cache_dir) / 'vitrina'
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / 'github-cards.jsonl'
-
-    if update or not cache_file.exists():
-        cards = _extract_cards(session, project_id)
-        with cache_file.open('w') as f:
-            for card in cards:
-                line = json.dumps(card)
-                f.write(line + '\n')
-
-    with cache_file.open() as f:
-        for line in f:
-            card = json.loads(line.strip())
-            yield card
+def _list_projects(cards: RawCards) -> None:
+    print("Choose project:")
+    seen = set()
+    for card in cards:
+        if 'projectItems' not in card:
+            pp(card)
+        for project in card['projectItems']['nodes']:
+            title = project['project']['title']
+            if title not in seen:
+                print(f"- \"{title}\"")
+                seen.add(title)
 
 
 def _extract_cards(
-    session: requests.Session,
-    project_id: str,
+    files: List[str],
 ) -> Iterator[Card]:
-    loop = True
-    cursor = None
-    while loop:
-        resp = session.post('https://api.github.com/graphql', json={
-            'query': '''\
-             query cards($project: ID!, $cursor: String) {
-              node(id: $project) {
-                id
-                ... on ProjectNext {
-                  id
-                  title
-                  items(first: 10, after: $cursor) {
-                    nodes {
-                      content {
-                        ... on Issue {
-                          id
-                          title
-                          body
-                          number
-                          state
-                          repository {
-                            name
-                          }
-                          milestone {
-                            title
-                          }
-                          labels(first: 10) {
-                            nodes {
-                              name
-                            }
-                          }
-                        }
-                      }
-                      title
-                      fieldValues(first: 10) {
-                        nodes {
-                          value
-                          projectField {
-                            name
-                            settings
-                          }
-                        }
-                      }
-                    }
-                    edges {
-                      cursor
-                    }
-                    pageInfo {
-                      hasNextPage
-                    }
-                  }
-                }
-              }
-            }
-            ''',
-            'variables': {
-                'project': project_id,
-                'cursor': cursor,
-            }
-        })
-
-        resp.raise_for_status()
-        project = resp.json()
-
-        if project['data']['node'] is None:
-            pp(project['errors'])
-            exit()
-
-        if project['data']['node']['items']['edges']:
-            cursor = project['data']['node']['items']['edges'][-1]['cursor']
-        else:
-            cursor = None
-
-        loop = project['data']['node']['items']['pageInfo']['hasNextPage']
-
-        for card in project['data']['node']['items']['nodes']:
-            yield card
+    for file in files:
+        with open(file) as f:
+            for line in f:
+                yield json.loads(line)
 
 
-def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
+def _transform_cards(
+    cards: Iterable[Card],
+    project_title: Optional[str],
+) -> Iterator[Card]:
     for card in cards:
         row = {
             'id': None,
@@ -227,55 +228,54 @@ def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
             'milestone': None,
         }
 
-        if card['content']:
-            row['id'] = card['content']['id']
-            row['number'] = card['content']['number']
-            row['title'] = card['content']['title']
-            row['body'] = card['content']['body']
-            row['state'] = card['content']['state']
-            row['repo'] = card['content']['repository']['name']
-            row['labels'] = [
-                label['name']
-                for label in card['content']['labels']['nodes']
-            ]
-            if card['content']['milestone']:
-                row['milestone'] = card['content']['milestone']['title']
+        row['id'] = card['id']
+        row['number'] = card['number']
+        row['title'] = card['title']
+        row['body'] = card['body']
+        row['state'] = card['state']
+        row['repo'] = card['repository']['name']
+        row['labels'] = [
+            label['name']
+            for label in card['labels']['nodes']
+        ]
+        if card['milestone']:
+            row['milestone'] = card['milestone']['title']
 
-        data = {}
-        for field in card['fieldValues']['nodes']:
-            name = field['projectField']['name']
-            value = field['value']
-            if 'settings' in field['projectField']:
-                settings = json.loads(field['projectField']['settings'])
-                if settings:
-                    if 'options' in settings:
-                        value = _get_option(value, settings)
-                    elif 'configuration' in settings:
-                        value = _get_iteration(value, settings)
-            data[name] = value
+        for project in card['projectItems']['nodes']:
+            if (
+                project_title is not None and
+                project['project']['title'] != project_title
+            ):
+                continue
 
-        row['status'] = data.get('Status')
-        row['sprint'] = data.get('Iteration', {}).get('title')
-        row['sprint_start'] = data.get('Iteration', {}).get('start_date')
-        row['sprint_duration'] = _toint(
-            data.
-            get('Iteration', {}).
-            get('duration')
-        )
-        row['estimate'] = _toint(data.get('Estimate'))
-        row['spent'] = _toint(data.get('Time spent'))
-        row['epic'] = data.get('Epic')
+            row['project'] = project['project']['title']
 
-        if 'epic' not in row['labels'] and row['spent'] is None:
-            row['spent'] = row['estimate']
+            data = {}
+            for field in project['fieldValues']['nodes']:
+                if 'field' in field:
+                    name = field['field']['name']
+                    data[name] = field
 
-        if row['epic']:
-            row['epic'] = _toint(row['epic'].strip('#'))
+            row['status'] = data.get('Status', {}).get('name')
+            row['sprint'] = data.get('Iteration', {}).get('title')
+            row['sprint_start'] = data.get('Iteration', {}).get('startDate')
+            row['sprint_duration'] = _toint(
+                data.get('Iteration', {}).get('duration')
+            )
+            row['estimate'] = _toint(data.get('Estimate', {}).get('number'))
+            row['spent'] = _toint(data.get('Spent', {}).get('number'))
+            row['epic'] = data.get('Epic', {}).get('text')
 
-        if row['title'] is None:
-            row['title'] = data.get('Title')
+            if 'epic' not in row['labels'] and row['spent'] is None:
+                row['spent'] = row['estimate']
 
-        yield row
+            if row['epic']:
+                row['epic'] = _toint(row['epic'].strip('#'))
+
+            if row['title'] is None:
+                row['title'] = data.get('Title')
+
+            yield row
 
 
 def _toint(v: str | int | None) -> int | None:
@@ -383,7 +383,11 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
     writer.writeheader()
     for row in _summary_totals(cards):
         titles = {
-            col: _get_csv_title(row, col, _level, titles)
+            # col: _get_csv_title(row, col, _level, titles)
+            col: (
+                _get_csv_title(row, col, _level, titles)
+                if _level == row.level else ''
+            )
             for _level, col in enumerate(cols)
         }
         if row.level - 1 > level:
@@ -729,6 +733,7 @@ def _get_epic_spent_percent(row: Card) -> int | None:
 def _get_task_spent_percent(row: Card) -> int | None:
     if (
         row.estimate.task is not None and
+        row.estimate.task > 0 and
         row.spent.task is not None and
         row.spent.task > 0
     ):
@@ -911,6 +916,46 @@ def _sum(
         body=body,
         **kwargs
     )
+
+
+
+def _cards_to_simple_csv(f: TextIO, cards: Iterable[Card]) -> None:
+    header = [
+        'repo',
+        'epic #',
+        'task #',
+        'task',
+        'sprint',
+        'estimate',
+        'spent',
+        'status',
+        'state',
+    ]
+    writer = csv.DictWriter(f, header)
+    writer.writeheader()
+    for card in sorted(cards, key=lambda c: (
+        (c['sprint_start'] or ''),
+        c['repo'],
+        f"{(c['epic'] or 0):04}",
+        c['title'],
+    )):
+        if 'epic' in card['labels']:
+            continue
+        row = {
+            'repo': card['repo'],
+            'epic #': card['epic'],
+            'task #': card['number'],
+            'task': card['title'],
+            'sprint': (
+                f"{card['sprint']} ({card['sprint_start']})"
+                if card['sprint'] else '-'
+            ),
+            'estimate': card['estimate'],
+            'spent': card['spent'],
+            'status': card['status'],
+            'state': card['state'],
+        }
+        writer.writerow(row)
 
 
 if __name__ == '__main__':

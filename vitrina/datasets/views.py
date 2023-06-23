@@ -42,10 +42,11 @@ from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
+    DatasetRelationForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, DatasetRelation
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -71,6 +72,7 @@ class DatasetListView(FacetedSearchView):
         'frequency',
         'tags',
         'formats',
+        'type',
     ]
     form_class = DatasetSearchForm
     max_num_facets = 20
@@ -89,7 +91,7 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
-        return datasets.order_by('-published')
+        return datasets.order_by('-type_order', '-published')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -105,6 +107,7 @@ class DatasetListView(FacetedSearchView):
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
+            'type_facet': update_facet_data(self.request, facet_fields, 'type', Type),
             'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
             'selected_status': get_selected_value(form, 'filter_status', is_int=False),
             'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
@@ -114,6 +117,7 @@ class DatasetListView(FacetedSearchView):
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'selected_frequency': get_selected_value(form, 'frequency'),
             'selected_tags': get_selected_value(form, 'tags', True, False),
+            'selected_types': get_selected_value(form, 'type', True, False),
             'selected_formats': get_selected_value(form, 'formats', True, False),
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
@@ -159,6 +163,13 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
             'resources': dataset.datasetdistribution_set.all(),
             'org_logo': organization.image,
         }
+        part_of = dataset.part_of.order_by('relation')
+        part_of = itertools.groupby(part_of, lambda x: x.relation)
+        extra_context_data['part_of'] = [(relation, list(values)) for relation, values in part_of]
+        related_datasets = dataset.related_datasets.all()
+        related_datasets = itertools.groupby(related_datasets, lambda x: x.relation)
+        extra_context_data['related_datasets'] = [(relation, list(values)) for relation, values in related_datasets]
+
         context_data.update(extra_context_data)
         return context_data
 
@@ -230,6 +241,7 @@ class DatasetCreateView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Naujas duomenų rinkinys')
+        context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
         return context
 
     def get(self, request, *args, **kwargs):
@@ -241,6 +253,22 @@ class DatasetCreateView(
         self.object.organization_id = self.kwargs.get('pk')
         groups = form.cleaned_data['groups']
         self.object.groups.set(groups)
+
+        types = form.cleaned_data.get('type')
+        self.object.type.set(types)
+        if types.filter(name=Type.SERVICE):
+            self.object.service = True
+        else:
+            self.object.endpoint_url = None
+            self.object.endpoint_type = None
+            self.object.endpoint_description = None
+            self.object.endpoint_description_type = None
+            self.object.service = False
+        if types.filter(name=Type.SERIES):
+            self.object.series = True
+        else:
+            self.object.series = False
+
         self.object.save()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
@@ -274,6 +302,7 @@ class DatasetUpdateView(
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Duomenų rinkinio redagavimas')
         switch_language(self.object, get_language())
+        context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
         return context
 
     def get(self, request, *args, **kwargs):
@@ -286,6 +315,22 @@ class DatasetUpdateView(
         tags = form.cleaned_data['tags']
         self.object.groups.set(groups)
         self.object.tags.set(tags)
+
+        types = form.cleaned_data.get('type')
+        self.object.type.set(types)
+        if types.filter(name=Type.SERVICE):
+            self.object.service = True
+        else:
+            self.object.endpoint_url = None
+            self.object.endpoint_type = None
+            self.object.endpoint_description = None
+            self.object.endpoint_description_type = None
+            self.object.service = False
+        if types.filter(name=Type.SERIES):
+            self.object.series = True
+        else:
+            self.object.series = False
+
         self.object.save()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
@@ -849,3 +894,58 @@ class DatasetsStatsView(DatasetListView):
         context['dataset_count'] = len(qs)
         context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
         return context
+
+
+class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
+    model = DatasetRelation
+    form_class = DatasetRelationForm
+    template_name = 'vitrina/datasets/relation_form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization_id'] = self.dataset.organization.pk
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        return context
+
+    def form_valid(self, form):
+        self.object: DatasetRelation = form.save(commit=False)
+        self.object.dataset = self.dataset
+        self.object.save()
+        self.dataset.part_of.add(self.object)
+        return redirect(self.dataset.get_absolute_url())
+
+
+class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
+    model = DatasetRelation
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def get(self, *args, **kwargs):
+        return self.post(*args, **kwargs)
+
+    def get_success_url(self):
+        return self.dataset.get_absolute_url()

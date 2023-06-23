@@ -17,7 +17,8 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
 from vitrina.cms.factories import FilerFileFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, TypeFactory, \
+    DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -1187,3 +1188,65 @@ def test_dataset_resource_create_button(app: DjangoTestApp):
     resp = app.get(dataset.get_absolute_url())
     resp = resp.click(linkid="add_resource")
     assert resp.request.path == reverse('resource-add', args=[dataset.pk])
+
+
+@pytest.mark.django_db
+def test_dataset_with_type_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    series_type = TypeFactory(name='series')
+    service_type = TypeFactory(name='service')
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['type'] = [service_type.pk, series_type.pk]
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Tipai "service" ir "series" negali būti pažymėti abu kartu, gali būti pažymėtas tik vienas arba kitas.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_with_type(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    type = TypeFactory(name='service')
+    service_type = DataServiceTypeFactory()
+    service_spec_type = DataServiceSpecTypeFactory()
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['type'] = [type.pk]
+    form['endpoint_url'] = "https://test.com"
+    form['endpoint_type'] = service_type.pk
+    form['endpoint_description'] = "https://testdescription.com"
+    form['endpoint_description_type'] = service_spec_type.pk
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert list(dataset.type.all()) == [type]
+    assert dataset.series is False
+    assert dataset.service is True
+    assert dataset.endpoint_url == "https://test.com"
+    assert dataset.endpoint_type == service_type
+    assert dataset.endpoint_description == "https://testdescription.com"
+    assert dataset.endpoint_description_type == service_spec_type
+
+
+@pytest.mark.django_db
+def test_dataset_add_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    dataset_part_of = DatasetFactory()
+    relation = RelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset.pk])).forms['dataset-relation-form']
+    form['relation'] = relation.pk
+    form['part_of'].force_value(dataset_part_of.pk)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.part_of.count() == 1
+    assert dataset.part_of.first().part_of == dataset_part_of
+    assert dataset.part_of.first().relation == relation

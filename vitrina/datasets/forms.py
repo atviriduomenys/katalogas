@@ -1,3 +1,7 @@
+from django.core.exceptions import ValidationError
+from django.db.models import Value, CharField as _CharField, Case, When
+from django.db.models.functions import Concat
+from django_select2.forms import ModelSelect2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -12,13 +16,28 @@ from treebeard.forms import MoveNodeForm
 from vitrina.datasets.services import get_projects
 from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField
+from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, DatasetRelation
+
+
+class DatasetTypeField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        if obj.description:
+            return f'{obj.title} - {obj.description}'
+        else:
+            return obj.title
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True, widget=TextInput())
+    type = DatasetTypeField(
+        label=_("Duomenų rinkinio tipas"),
+        required=False,
+        queryset=Type.objects.all(),
+        widget=forms.CheckboxSelectMultiple
+    )
     description = TranslatedField(label=_('Aprašymas'))
     groups = forms.ModelMultipleChoiceField(
         label=_('Grupės'),
@@ -37,6 +56,11 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'frequency',
             'access_rights',
             'distribution_conditions',
+            'type',
+            'endpoint_url',
+            'endpoint_type',
+            'endpoint_description',
+            'endpoint_description_type',
         )
 
     def __init__(self, *args, **kwargs):
@@ -58,6 +82,15 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('category'),
             Field('licence'),
             Field('frequency'),
+            Field('type'),
+            Field('endpoint_url',
+                  placeholder=_("Pagrindinis API paslaugos adresas")),
+            Field('endpoint_type'),
+            Field('endpoint_description',
+                  placeholder=_("Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
+                                "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
+                                "nuskaitoma mašininiu būdu")),
+            Field('endpoint_description_type'),
             Field('access_rights',
                   placeholder=_('Pateikite visas prieigos teises kurios aktualios šiam duomenų rinkiniui')),
             Field('distribution_conditions',
@@ -80,6 +113,16 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             groups = DatasetGroup.objects.filter(dataset=project_instance).all()
             if len(groups) > 0:
                 self.initial['groups'] = groups
+
+    def clean_type(self):
+        type = self.cleaned_data.get('type')
+        if (
+            type.filter(name=Type.SERVICE).exists() and
+            type.filter(name=Type.SERIES).exists()
+        ):
+            raise ValidationError(_('Tipai "service" ir "series" negali būti pažymėti abu kartu, '
+                                    'gali būti pažymėtas tik vienas arba kitas.'))
+        return type
 
 
 class DatasetSearchForm(FacetedSearchForm):
@@ -153,3 +196,56 @@ class DatasetMemberUpdateForm(RepresentativeUpdateForm):
 
 class DatasetMemberCreateForm(RepresentativeCreateForm):
     object_model = Dataset
+
+
+class PartOfWidget(ModelSelect2Widget):
+    model = Dataset
+    search_fields = [
+        'translations__title__icontains',
+        'absolute_url__icontains']
+    dependent_fields = {'organization_id': 'organization__pk'}
+    max_results = 10
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        organization_id = None
+        if 'organization__pk' in dependent_fields:
+            organization_id = dependent_fields.pop('organization__pk')
+        if queryset:
+            domain = get_current_domain(request)
+            queryset = queryset.annotate(
+                absolute_url=Concat(Value(domain), Value('/datasets/'), 'pk', Value('/'), output_field=_CharField())
+            )
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+        if organization_id:
+            organization_datasets = queryset.filter(organization__pk=organization_id).values_list('pk', flat=True)
+            if organization_datasets:
+                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(organization_datasets)])
+                queryset = queryset.order_by(preserved)
+        return queryset
+
+
+class DatasetRelationForm(forms.ModelForm):
+    organization_id = forms.IntegerField(widget=forms.HiddenInput)
+    part_of = forms.ModelChoiceField(
+        label=_("Priklauso rinkiniui"),
+        widget=PartOfWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0}),
+        queryset=Dataset.public.all()
+    )
+
+    class Meta:
+        model = DatasetRelation
+        fields = ('organization_id', 'relation', 'part_of',)
+
+    def __init__(self, organization_id,  *args, **kwargs):
+        self.organization_id = organization_id
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-relation-form"
+        self.helper.layout = Layout(
+            Field('organization_id'),
+            Field('relation'),
+            Field('part_of'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
+        )
+
+        self.initial['organization_id'] = organization_id

@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
+    'django_select2',
     'vitrina',
     'vitrina.cms',
     'vitrina.api',

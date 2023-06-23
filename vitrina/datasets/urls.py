@@ -20,6 +20,8 @@ from vitrina.datasets.views import RemoveProjectView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import autocomplete_tags
 from vitrina.datasets.views import DatasetsStatsView
+from vitrina.datasets.views import DatasetRelationCreateView
+from vitrina.datasets.views import DatasetRelationDeleteView
 
 urlpatterns = [
     # @GetMapping("/datasets")
@@ -70,6 +72,9 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
+    path('datasets/<int:pk>/relation/add/', DatasetRelationCreateView.as_view(), name='dataset-relation-add'),
+    path('datasets/<int:dataset_id>/relation/delete/<int:pk>',
+         DatasetRelationDeleteView.as_view(), name='dataset-relation-delete'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

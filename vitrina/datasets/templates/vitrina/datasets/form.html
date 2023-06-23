@@ -37,6 +37,29 @@
                 $('#select2-id_category-container')[0].innerHTML = $.trim(value);
             });
             $('#id_category').trigger('select2:select');
+
+            let serviceTypes = {{ service_types|safe }};
+            $('div#div_id_type input').on('change', function() {
+                let foundService = false;
+                $('div#div_id_type input:checked').each(function() {
+                    if (serviceTypes.includes(parseInt($(this).val()))) {
+                        foundService = true;
+                        $('div#div_id_endpoint_url').show();
+                        $('div#div_id_endpoint_type').show();
+                        $('div#div_id_endpoint_description').show();
+                        $('div#div_id_endpoint_description_type').show();
+                        return true;
+                    }
+                });
+
+                if (!foundService) {
+                    $('div#div_id_endpoint_url').hide();
+                    $('div#div_id_endpoint_type').hide();
+                    $('div#div_id_endpoint_description').hide();
+                    $('div#div_id_endpoint_description_type').hide();
+                }
+            });
+            $('div#div_id_type input').trigger('change');
         });
     </script>
 {% endblock %}

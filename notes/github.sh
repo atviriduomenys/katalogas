@@ -12,78 +12,12 @@ sudo pacman -S hub github-cli
 gh auth login
 gh auth status
 gh issue list
-gh api graphql --paginate -f query='
-query($endCursor: String) {
-  repository(owner: "atviriduomenys", name: "spinta") {
-    issues(last: 1, after: $endCursor) {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        number
-        state
-        title
-        labels(first: 10) {
-          nodes {
-            name
-            color
-          }
-        }
-        milestone {
-          number
-          state
-          title
-        }
-        projectItems (first: 5) {
-          nodes {
-            project {
-              number
-              title
-            }
-            fieldValues(first: 10) {
-              nodes {
-                ... on ProjectV2ItemFieldIterationValue {
-                  title
-                  startDate
-                  duration
-                  field {
-                    ... on ProjectV2IterationField {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldNumberValue {
-                  number
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldSingleSelectValue {
-                  name
-                  field {
-                    ... on ProjectV2SingleSelectField {
-                      name
-                    }
-                  }
-                }
-                ... on ProjectV2ItemFieldTextValue {
-                  text
-                  field {
-                    ... on ProjectV2Field {
-                      name
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      totalCount
-    }
-  }
-}
-'
+
+gh api graphql --paginate -f query=$(poetry run python scripts/github-export.py -q spinta) | jq . > var/issues-spinta-pretty.json
+cat var/issues-spinta-pretty.json | jq -c '.data.repository.issues.nodes[]' > var/issues.json
+
+gh api graphql --paginate -f query=$(poetry run python scripts/github-export.py -q katalogas) | jq . > var/issues-katalogas-pretty.json
+cat var/issues-katalogas-pretty.json | jq -c '.data.repository.issues.nodes[]' >> var/issues.json
+
+poetry run python scripts/github-export.py var/issues.json  --project="Portalo plėtra" --export=var/tasks.csv --simple
+poetry run python scripts/github-export.py var/issues.json  --project="Portalo plėtra" --export=var/tasks.csv

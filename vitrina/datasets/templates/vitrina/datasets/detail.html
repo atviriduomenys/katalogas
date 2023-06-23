@@ -159,11 +159,13 @@
                                 <tr>
                                     <td><a href="{{ dr.part_of.get_absolute_url }}">{{ dr.part_of }}</a></td>
                                     <td>
+                                        {% if can_update_dataset %}
                                         <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
                                            onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
                                            class="button is-link is-small is-pulled-right"
                                            id="delete_resource">{% translate "Trinti" %}
                                         </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -192,11 +194,13 @@
                                 <tr>
                                     <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
                                     <td>
+                                        {% if can_update_dataset %}
                                         <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
                                            onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
                                            class="button is-link is-small is-pulled-right"
                                            id="delete_resource">{% translate "Trinti" %}
                                         </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

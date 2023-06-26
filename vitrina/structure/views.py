@@ -3,16 +3,17 @@ from typing import List
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Func, F, Value, TextField, Max
-from django.http import Http404
+from django.http import Http404, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import TemplateView
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.structure.models import Model, Property, Metadata
-from vitrina.structure.services import get_data_from_spinta
+from vitrina.structure.services import get_data_from_spinta, export_dataset_structure
 from vitrina.views import HistoryMixin
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -515,3 +516,22 @@ class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, Temp
                 'model': self.model.name,
             })
         return None
+
+
+class DatasetStructureExportView(PermissionRequiredMixin, View):
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            dataset
+        )
+
+    def get(self, request, *args, **kwargs):
+        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        stream = export_dataset_structure(dataset)
+
+        response = StreamingHttpResponse(stream, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=manifest.csv'
+        return response

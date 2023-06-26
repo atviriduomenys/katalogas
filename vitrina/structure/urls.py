@@ -1,6 +1,7 @@
 from django.urls import path
 
 from vitrina.structure.views import DatasetStructureView
+from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import ModelStructureView
 from vitrina.structure.views import PropertyStructureView
 from vitrina.structure.views import ModelDataView
@@ -13,4 +14,5 @@ urlpatterns = [
          PropertyStructureView.as_view(), name='property-structure'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/structure/export/', DatasetStructureExportView.as_view(), name='dataset-structure-export'),
 ]

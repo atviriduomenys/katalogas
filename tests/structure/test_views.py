@@ -12,7 +12,8 @@ from factory.django import FileField
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory
 from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory
+from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory
+from vitrina.structure.models import Metadata, Enum, EnumItem
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 
@@ -792,3 +793,301 @@ def test_private_comment_with_access(app: DjangoTestApp):
         'Private comment',
         'Public comment',
     ]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_create__string(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('enum-create', args=[dataset.pk, model.name, prop.name])).forms['enum-form']
+    form['value'] = "test"
+    form['source'] = "TEST"
+    form['access'] = Metadata.OPEN
+    form['title'] = 'Test value'
+    form['description'] = 'For testing'
+    resp = form.submit()
+
+    assert resp.url == prop.get_absolute_url()
+    assert Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    ).count() == 1
+    assert list(EnumItem.objects.filter(
+        enum__content_type=ContentType.objects.get_for_model(prop),
+        enum__object_id=prop.pk
+    ).values(
+        'metadata__prepare',
+        'metadata__source',
+        'metadata__access',
+        'metadata__title',
+        'metadata__description'
+    )) == [
+        {
+            'metadata__prepare': '"test"',
+            'metadata__source': "TEST",
+            'metadata__access': Metadata.OPEN,
+            'metadata__title': "Test value",
+            'metadata__description': "For testing"
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_create__integer(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+    )
+
+    form = app.get(reverse('enum-create', args=[dataset.pk, model.name, prop.name])).forms['enum-form']
+    form['value'] = 1
+    form['source'] = "TEST"
+    form['access'] = Metadata.OPEN
+    form['title'] = 'Test value'
+    form['description'] = 'For testing'
+    resp = form.submit()
+
+    assert resp.url == prop.get_absolute_url()
+    assert Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    ).count() == 1
+    assert list(EnumItem.objects.filter(
+        enum__content_type=ContentType.objects.get_for_model(prop),
+        enum__object_id=prop.pk
+    ).values(
+        'metadata__prepare',
+        'metadata__source',
+        'metadata__access',
+        'metadata__title',
+        'metadata__description'
+    )) == [
+        {
+            'metadata__prepare': '1',
+            'metadata__source': "TEST",
+            'metadata__access': Metadata.OPEN,
+            'metadata__title': "Test value",
+            'metadata__description': "For testing"
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_create__integer_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+    )
+
+    form = app.get(reverse('enum-create', args=[dataset.pk, model.name, prop.name])).forms['enum-form']
+    form['value'] = "invalid"
+    form['source'] = "TEST"
+    form['access'] = Metadata.OPEN
+    form['title'] = 'Test value'
+    form['description'] = 'For testing'
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [["Reikšmė turi būti integer tipo."]]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_update(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+    )
+
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    enum_item = EnumItemFactory(enum=enum)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title='Test value',
+        description='For testing',
+        prepare='1',
+        access=Metadata.OPEN,
+        source="TEST",
+    )
+
+    form = app.get(reverse('enum-update', args=[
+        dataset.pk,
+        model.name,
+        prop.name,
+        enum_item.pk
+    ])).forms['enum-form']
+    form['access'] = Metadata.PUBLIC
+    form['title'] = 'Test value (updated)'
+    resp = form.submit()
+
+    assert resp.url == prop.get_absolute_url()
+    assert Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    ).count() == 1
+    assert list(EnumItem.objects.filter(
+        enum__content_type=ContentType.objects.get_for_model(prop),
+        enum__object_id=prop.pk
+    ).values(
+        'metadata__prepare',
+        'metadata__source',
+        'metadata__access',
+        'metadata__title',
+        'metadata__description'
+    )) == [
+        {
+            'metadata__prepare': '1',
+            'metadata__source': "TEST",
+            'metadata__access': Metadata.PUBLIC,
+            'metadata__title': "Test value (updated)",
+            'metadata__description': "For testing"
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_delete(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+    )
+
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    enum_item = EnumItemFactory(enum=enum)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title='Test value',
+        description='For testing',
+        prepare='1',
+        access=Metadata.OPEN,
+        source="TEST",
+    )
+
+    resp = app.get(reverse('enum-delete', args=[
+        dataset.pk,
+        model.name,
+        prop.name,
+        enum_item.pk
+    ]))
+
+    assert resp.url == prop.get_absolute_url()
+    assert EnumItem.objects.filter(pk=enum_item.pk).count() == 0
+    assert Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk
+    ).count() == 0

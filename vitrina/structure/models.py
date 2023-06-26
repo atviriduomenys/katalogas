@@ -35,15 +35,17 @@ class Prefix(models.Model):
 
 
 class Metadata(models.Model):
+    UNDEFINED = None
     PRIVATE = 0
     PROTECTED = 1
     PUBLIC = 2
     OPEN = 3
     ACCESS_TYPES = (
-        (PRIVATE, _("Privatus")),
-        (PROTECTED, _("Apsaugotas")),
-        (PUBLIC, _("Viešas")),
-        (OPEN, _("Atviras")),
+        (UNDEFINED, _("nepasirinkta")),
+        (PRIVATE, _("private")),
+        (PROTECTED, _("protected")),
+        (PUBLIC, _("public")),
+        (OPEN, _("open")),
     )
 
     uuid = models.CharField(_("Id"), max_length=255)

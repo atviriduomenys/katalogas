@@ -1,17 +1,22 @@
+import uuid
 from gettext import ngettext
 from typing import List
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Func, F, Value, TextField, Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import TemplateView
+from django.utils.translation import gettext_lazy as _
+from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
-from vitrina.structure.models import Model, Property, Metadata
+from vitrina.structure import spyna
+from vitrina.structure.forms import EnumForm
+from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.views import HistoryMixin
 
@@ -515,3 +520,225 @@ class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, Temp
                 'model': self.model.name,
             })
         return None
+
+
+class EnumCreateView(PermissionRequiredMixin, CreateView):
+    model = EnumItem
+    form_class = EnumForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset
+    model_obj: Model
+    property: Property
+    enum: Enum
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model_obj:
+            raise Http404('No Model matches the given query.')
+        prop_name = kwargs.get('prop')
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
+        self.enum = self.property.enums.first()
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['prop'] = self.property
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Galimos reikšmės pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+        }
+        if self.model_obj.name:
+            url = reverse('model-structure', args=[self.dataset.pk, self.model_obj.name])
+            context['parent_links'][url] = self.model_obj.title or self.model_obj.name
+        if self.model_obj.name and self.property.name:
+            url = reverse('property-structure', args=[self.dataset.pk, self.model_obj.name, self.property.name])
+            context['parent_links'][url] = self.property.title or self.property.name
+        return context
+
+    def form_valid(self, form):
+        self.object: EnumItem = form.save(commit=False)
+        if self.enum:
+            self.object.enum = self.enum
+        else:
+            self.object.enum = Enum.objects.create(
+                content_type=ContentType.objects.get_for_model(Property),
+                object_id=self.property.pk,
+                name=self.property.name
+            )
+        self.object.save()
+        value = form.cleaned_data.get('value')
+        if metadata := self.property.metadata.first():
+            if metadata.type == 'string':
+                value = f'"{value}"'
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=self.dataset,
+            content_type=ContentType.objects.get_for_model(EnumItem),
+            object_id=self.object.pk,
+            name=self.object.enum.name,
+            type='enum',
+            prepare=value,
+            prepare_ast=spyna.parse(form.cleaned_data.get('value')),
+            source=form.cleaned_data.get('source'),
+            access=form.cleaned_data.get('access') or None,
+            title=form.cleaned_data.get('title'),
+            description=form.cleaned_data.get('description'),
+            version=1,
+        )
+        return redirect(self.property.get_absolute_url())
+
+
+class EnumUpdateView(PermissionRequiredMixin, UpdateView):
+    model = EnumItem
+    form_class = EnumForm
+    template_name = 'base_form.html'
+    pk_url_kwarg = 'enum_id'
+
+    dataset: Dataset
+    model_obj: Model
+    property: Property
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model_obj:
+            raise Http404('No Model matches the given query.')
+        prop_name = kwargs.get('prop')
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['prop'] = self.property
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Galimos reikšmės redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+        }
+        if self.model_obj.name:
+            url = reverse('model-structure', args=[self.dataset.pk, self.model_obj.name])
+            context['parent_links'][url] = self.model_obj.title or self.model_obj.name
+        if self.model_obj.name and self.property.name:
+            url = reverse('property-structure', args=[self.dataset.pk, self.model_obj.name, self.property.name])
+            context['parent_links'][url] = self.property.title or self.property.name
+        return context
+
+    def form_valid(self, form):
+        self.object: EnumItem = form.save()
+        value = form.cleaned_data.get('value')
+        if metadata := self.property.metadata.first():
+            if metadata.type == 'string':
+                value = f'"{value}"'
+        if metadata := self.object.metadata.first():
+            metadata.prepare = value
+            metadata.prepare_ast = spyna.parse(form.cleaned_data.get('value'))
+            metadata.source = form.cleaned_data.get('source')
+            metadata.access = form.cleaned_data.get('access') or None
+            metadata.title = form.cleaned_data.get('title')
+            metadata.description = form.cleaned_data.get('description')
+            metadata.version += 1
+            metadata.save()
+
+        return redirect(self.property.get_absolute_url())
+
+
+class EnumDeleteView(PermissionRequiredMixin, DeleteView):
+    model = EnumItem
+    pk_url_kwarg = 'enum_id'
+    template_name = 'confirm_delete.html'
+
+    dataset: Dataset
+    model_obj: Model
+    property: Property
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model:
+            raise Http404('No Model matches the given query.')
+        prop_name = kwargs.get('prop')
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def get_success_url(self):
+        return self.property.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Galimos reikšmės šalinimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+        }
+        if self.model_obj.name:
+            url = reverse('model-structure', args=[self.dataset.pk, self.model_obj.name])
+            context['parent_links'][url] = self.model_obj.title or self.model_obj.name
+        if self.model_obj.name and self.property.name:
+            url = reverse('property-structure', args=[self.dataset.pk, self.model_obj.name, self.property.name])
+            context['parent_links'][url] = self.property.title or self.property.name
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)

@@ -51,19 +51,3 @@
     </div>
     <br/>
 {% endblock %}
-
-{% block scripts %}
-    <script type="text/javascript">
-        $(document).ready(function () {
-            let organizationSelect = $('#div_id_organization select');
-            organizationSelect.on('change', function() {
-                if ($(this).val()) {
-                    console.log('val');
-                }
-                else {
-                    console.log('no val');
-                }
-            });
-        });
-    </script>
-{% endblock %}

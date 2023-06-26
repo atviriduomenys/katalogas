@@ -7,6 +7,25 @@
                 {% translate "Informacija" %}
             </a>
         </li>
+        {% if structure_url %}
+        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure'%} is-active {% endif %}">
+            <a href="{{ structure_url }}" id="structure_tab">
+                {% translate "Struktūra" %}
+            </a>
+        </li>
+        {% endif %}
+        {% if data_url %}
+        <li class="{% if request.path == data_url %} is-active {% endif %}">
+            <a href="{{ data_url }}" id="data_tab">
+                {% translate "Duomenys" %}
+            </a>
+        </li>
+        {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
+            <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
+                {% translate "Projektai" %}
+            </a>
+        </li>
         {% if can_view_members %}
             <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
                 <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
@@ -21,10 +40,5 @@
                 </a>
             </li>
         {% endif %}
-        <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
-            <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
-                {% translate "Projektai" %}
-            </a>
-        </li>
     </ul>
 </div>

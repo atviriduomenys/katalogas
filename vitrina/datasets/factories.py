@@ -6,7 +6,7 @@ from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Attribution
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -28,6 +28,14 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 ,,,,,title,string,,,,2,open,dct:title,,
 ,,,,,,comment,type,,"update(property: ""title@lt"", type: ""text"")",4,open,spinta:204,2022-10-23 11:00,
 '''
+
+
+class AttributionFactory(DjangoModelFactory):
+    class Meta:
+        model = Attribution
+
+    name = factory.Faker('word')
+    title = factory.Faker('catch_phrase')
 
 
 class DatasetFactory(DjangoModelFactory):

@@ -530,3 +530,36 @@ class HarvestedVisit(models.Model):
         managed = False
         db_table = 'harvested_visit'
 # --------------------------->8-------------------------------------
+
+
+class Attribution(models.Model):
+    CREATOR = 'creator'
+    CONTRIBUTOR = 'contributor'
+    PUBLISHER = 'publisher'
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Ryšio identifikatorius"), max_length=255, blank=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
+
+    class Meta:
+        db_table = 'attribution'
+
+    def __str__(self):
+        return self.title if self.title else self.name
+
+
+class DatasetAttribution(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name=_("Duomenų rinkinys"))
+    attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_("Organizacija")
+    )
+    agent = models.CharField(_("Agentas"), max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = 'dataset_attribution'
+
+

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        div#div_id_organization .select {
+            width: 100%;
+        }
+        div#div_id_organization .select:not(.is-multiple):not(.is-loading)::after {
+            display: none;
+        }
+        div#div_id_organization .select2-selection__arrow {
+            height: 2em;
+        }
+        #div_id_organization #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_organization .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_organization .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}{% translate "Organizacijos priskyrimas" %}{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% include "component/form.html" %}
+        </div>
+    </div>
+    <br/>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            let organizationSelect = $('#div_id_organization select');
+            organizationSelect.on('change', function() {
+                if ($(this).val()) {
+                    console.log('val');
+                }
+                else {
+                    console.log('no val');
+                }
+            });
+        });
+    </script>
+{% endblock %}

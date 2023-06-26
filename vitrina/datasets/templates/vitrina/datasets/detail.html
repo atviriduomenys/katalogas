@@ -121,6 +121,8 @@
                 {% include 'vitrina/datasets/datatable.html' %}
             </div>
         </div>
+    {% else %}
+        {% include 'vitrina/datasets/add_resource.html' %}
     {% endif %}
     <div class="columns no-margin-bottom">
         <div class="column is-three-quarters">

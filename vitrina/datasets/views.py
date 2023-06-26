@@ -2,6 +2,8 @@ import csv
 import datetime
 import itertools
 import json
+import secrets
+
 import pandas as pd
 
 from django.conf import settings
@@ -35,6 +37,7 @@ from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
+from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
@@ -527,6 +530,14 @@ class CreateMemberView(
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
+
+        if self.object.has_api_access:
+            ApiKey.objects.create(
+                api_key=secrets.token_urlsafe(),
+                enabled=True,
+                representative=self.object
+            )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -591,6 +602,24 @@ class UpdateMemberView(
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),
         })
+
+    def form_valid(self, form):
+        self.object: Representative = form.save()
+        if self.object.has_api_access:
+            if not self.object.apikey_set.exists():
+                ApiKey.objects.create(
+                    api_key=secrets.token_urlsafe(),
+                    enabled=True,
+                    representative=self.object
+                )
+            elif form.cleaned_data.get('regenerate_api_key'):
+                api_key = self.object.apikey_set.first()
+                api_key.api_key = secrets.token_urlsafe()
+                api_key.enabled = True
+                api_key.save()
+        else:
+            self.object.apikey_set.all().delete()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class DeleteMemberView(

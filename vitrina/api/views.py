@@ -7,11 +7,11 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.views import get_schema_view
 from rest_framework import status, permissions, exceptions
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin
+from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin, UpdateModelMixin
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ModelViewSet, StatsViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
@@ -578,7 +578,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetModelDownloadViewSet(StatsViewSet):
+class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericViewSet):
     @swagger_auto_schema(
         operation_summary="Add model statistics",
         request_body=ModelDownloadStatsSerializer,

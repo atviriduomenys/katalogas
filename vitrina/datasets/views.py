@@ -79,6 +79,8 @@ class DatasetListView(FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
 
+        sorting = self.request.GET.get('sort', None)
+
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
@@ -89,12 +91,20 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
-        return datasets.order_by('-published')
+        if sorting is None or sorting == 'sort-by-date':
+            datasets = datasets.order_by('-published')
+        elif sorting == 'sort-by-title':
+            if self.request.LANGUAGE_CODE == 'lt':
+                datasets = datasets.order_by('lt_title_s')
+            else:
+                datasets = datasets.order_by('en_title_s')
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         facet_fields = context.get('facets').get('fields')
         form = context.get('form')
+        sorting = self.request.GET.get('sort', None)
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
@@ -133,6 +143,7 @@ class DatasetListView(FacetedSearchView):
                 self.organization,
             )
         context.update(extra_context)
+        context['sort'] = sorting
         return context
 
 

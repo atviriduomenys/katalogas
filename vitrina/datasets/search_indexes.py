@@ -11,7 +11,9 @@ from vitrina.datasets.models import Dataset
 class DatasetIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
     lt_title = CharField(model_attr='lt_title')
+    lt_title_s = CharField(model_attr='lt_title', indexed=False, stored=True)
     en_title = CharField(model_attr='en_title')
+    en_title_s = CharField(model_attr='en_title', indexed=False, stored=True)
     jurisdiction = MultiValueField(model_attr='jurisdiction', faceted=True, null=True)
     organization = MultiValueField(model_attr='organization__pk', faceted=True, null=True)
     groups = MultiValueField(model_attr='get_group_list', faceted=True)

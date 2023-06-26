@@ -192,6 +192,14 @@ class Model(models.Model):
             })
         return None
 
+    def get_api_url(self):
+        if self.name:
+            return reverse('getall-api', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.name
+            })
+        return None
+
     def get_given_props(self):
         return self.model_properties.filter(given=True).order_by('metadata__order')
 

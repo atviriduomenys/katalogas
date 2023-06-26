@@ -5,6 +5,9 @@ from vitrina.structure.views import ModelStructureView
 from vitrina.structure.views import PropertyStructureView
 from vitrina.structure.views import ModelDataView
 from vitrina.structure.views import ObjectDataView
+from vitrina.structure.views import GetAllApiView
+from vitrina.structure.views import GetOneApiView
+from vitrina.structure.views import ChangesApiView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -13,4 +16,7 @@ urlpatterns = [
          PropertyStructureView.as_view(), name='property-structure'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/api/getall/<str:model>/', GetAllApiView.as_view(), name='getall-api'),
+    path('datasets/<int:pk>/api/getone/<str:model>/<str:uuid>/', GetOneApiView.as_view(), name='getone-api'),
+    path('datasets/<int:pk>/api/changes/<str:model>/', ChangesApiView.as_view(), name='changes-api'),
 ]

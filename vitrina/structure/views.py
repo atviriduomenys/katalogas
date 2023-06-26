@@ -1,3 +1,4 @@
+import json
 from gettext import ngettext
 from typing import List
 
@@ -7,6 +8,11 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import TemplateView
+from pygments import highlight
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers.data import JsonLexer
+from pygments.lexers.special import TextLexer
+from pygments.styles import get_style_by_name
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
@@ -27,12 +33,14 @@ FORMATS = {
 class StructureMixin:
     structure_url = None
     data_url = None
+    api_url = None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
             'structure_url': self.get_structure_url(),
             'data_url': self.get_data_url(),
+            'api_url': self.get_api_url(),
         })
         return context
 
@@ -41,6 +49,48 @@ class StructureMixin:
 
     def get_data_url(self):
         return self.data_url
+
+    def get_api_url(self):
+        return self.api_url
+
+
+class DatasetStructureMixin(StructureMixin):
+    dataset: Dataset
+    models: List[Model]
+    can_manage_structure: bool
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+        if self.can_manage_structure:
+            self.models = Model.objects.filter(dataset=self.dataset).order_by('metadata__name')
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.dataset, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.dataset.pk,
+        })
+
+    def get_data_url(self):
+        if self.models and self.models[0].name:
+            return reverse('model-data', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.models[0].name,
+            })
+        return None
+
+    def get_api_url(self):
+        return self.models[0].get_api_url() if self.models else None
 
 
 class DatasetStructureView(HistoryMixin, StructureMixin, TemplateView):
@@ -97,6 +147,9 @@ class DatasetStructureView(HistoryMixin, StructureMixin, TemplateView):
                 'model': self.models[0].name,
             })
         return None
+
+    def get_api_url(self):
+        return self.models[0].get_api_url() if self.models else None
 
 
 class ModelStructureView(
@@ -174,6 +227,9 @@ class ModelStructureView(
                 'model': self.model.name,
             })
         return None
+
+    def get_api_url(self):
+        return self.model.get_api_url()
 
 
 class PropertyStructureView(
@@ -256,6 +312,9 @@ class PropertyStructureView(
                 'model': self.model.name
             })
         return None
+
+    def get_api_url(self):
+        return self.model.get_api_url()
 
 
 class ModelDataView(
@@ -423,6 +482,20 @@ class ModelDataView(
             })
         return None
 
+    def get_api_url(self):
+        url = self.model.get_api_url()
+        if url:
+            query = []
+            for key, val in self.request.GET.items():
+                if val == '':
+                    query.append(key)
+                else:
+                    query.append(f"{key}={val}")
+            if query:
+                query = '&'.join(query)
+                url = f"{url}?{query}"
+        return url
+
 
 class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, TemplateView):
     template_name = 'vitrina/structure/object_data.html'
@@ -515,3 +588,255 @@ class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, Temp
                 'model': self.model.name,
             })
         return None
+
+    def get_api_url(self):
+        if self.model.name:
+            return reverse('getone-api', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+                'uuid': self.kwargs.get('uuid'),
+            })
+        return None
+
+
+class ApiView(
+    HistoryMixin,
+    StructureMixin,
+    PermissionRequiredMixin,
+    TemplateView
+):
+    template_name = 'vitrina/structure/api.html'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
+
+    object: Dataset
+    model: Model
+    models: List[Model]
+    can_manage_structure: bool
+
+    def has_permission(self):
+        return self.model in self.models
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.object).first()
+        if not self.model:
+            raise Http404('No Model matches the given query.')
+
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        )
+        if self.can_manage_structure:
+            self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_api'] = True
+        context['dataset'] = self.object
+        context['model'] = self.model
+        context['models'] = self.models
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+
+        query = self.get_query()
+        query_params = []
+        for key, val in self.request.GET.items():
+            if val == '':
+                query_params.append(key)
+            else:
+                query_params.append(f"{key}={val}")
+        query_params = '&'.join(query_params)
+        context['query_params'] = query_params
+
+        url = f"{query}?{query_params}" if query_params else query
+        context['tabs'] = {
+            'http': {
+                'name': 'HTTP',
+                'query': highlight(
+                    url,
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'httpie': {
+                'name': 'HTTPie',
+                'query': highlight(
+                    'http GET "%s"' % url.replace("\\", r"\\").replace('"', r'\"'),
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'curl': {
+                'name': 'curl',
+                'query': highlight(
+                    f'curl "%s"' % url.replace("\\", r"\\").replace('"', r'\"').replace(' ', '%20'),
+                    TextLexer(), HtmlFormatter()
+                )
+            }
+        }
+
+        return context
+
+    def get_structure_url(self):
+        if self.model.name:
+            return reverse('model-structure', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            })
+        return None
+
+    def get_data_url(self):
+        query_params = []
+        for key, val in self.request.GET.items():
+            if val == '':
+                query_params.append(key)
+            else:
+                query_params.append(f"{key}={val}")
+        query_params = '&'.join(query_params)
+
+        if self.model.name:
+            return "%s%s" % (reverse('model-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+            }), f"?{query_params}" if query_params else "")
+        return None
+
+    def get_api_url(self):
+        return self.model.get_api_url()
+
+    def get_query(self):
+        raise NotImplementedError
+
+
+class GetAllApiView(ApiView):
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = context['query_params']
+        if query:
+            query = f"{query}&limit(1)"
+        else:
+            query = 'limit(1)'
+        data = get_data_from_spinta(self.model, query=query)
+        context['response'] = highlight(
+            json.dumps(data, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+        if self.model.name:
+            uuid = None
+            if data.get('_data') and data.get('_data')[0].get('_id'):
+                uuid = data.get('_data')[0].get('_id')
+            else:
+                # Try to get data again without filters
+                data = get_data_from_spinta(self.model, query="limit(1)")
+                if data.get('_data'):
+                    uuid = data.get('_data')[0].get('_id')
+
+            context['actions'] = {
+                'getall': "%s%s" % (
+                    reverse('getall-api', args=[self.object.pk, self.model.name]),
+                    f"?{context['query_params']}" if context['query_params'] else ""
+                ),
+                'getone': reverse('getone-api', args=[self.object.pk, self.model.name, uuid]),
+                'changes': reverse('changes-api', args=[self.object.pk, self.model.name]),
+            }
+
+        return context
+
+    def get_query(self):
+        return f"https://get.data.gov.lt/{self.model}"
+
+
+class GetOneApiView(ApiView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = context['query_params']
+        if self.kwargs.get('uuid') != 'None':
+            data = get_data_from_spinta(self.model, self.kwargs.get('uuid'), query=query)
+        else:
+            data = {}
+        context['response'] = highlight(
+            json.dumps(data, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+        if self.model.name:
+            context['actions'] = {
+                'getall': reverse('getall-api', args=[self.object.pk, self.model.name]),
+                'getone': reverse('getone-api', args=[self.object.pk, self.model.name, self.kwargs.get('uuid')]),
+                'changes': reverse('changes-api', args=[self.object.pk, self.model.name]),
+            }
+
+        return context
+
+    def get_query(self):
+        return f"https://get.data.gov.lt/{self.model}/{self.kwargs.get('uuid')}"
+
+    def get_data_url(self):
+        if self.model.name:
+            return reverse('object-data', kwargs={
+                'pk': self.object.pk,
+                'model': self.model.name,
+                'uuid': self.kwargs.get('uuid'),
+            })
+        return None
+
+
+class ChangesApiView(ApiView):
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = context['query_params']
+        if query:
+            query = f"{query}&limit(1)"
+        else:
+            query = 'limit(1)'
+        data = get_data_from_spinta(self.model, ":changes", query=query)
+        context['response'] = highlight(
+            json.dumps(data, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+        if self.model.name:
+            uuid = None
+            if data.get('_data') and data.get('_data')[0].get('_id'):
+                uuid = data.get('_data')[0].get('_id')
+            else:
+                # Try to get data again without filters
+                data = get_data_from_spinta(self.model, query="limit(1)")
+                if data.get('_data'):
+                    uuid = data.get('_data')[0].get('_id')
+
+            context['actions'] = {
+                'getall': reverse('getall-api', args=[self.object.pk, self.model.name]),
+                'getone': reverse('getone-api', args=[self.object.pk, self.model.name, uuid]),
+                'changes': reverse('changes-api', args=[self.object.pk, self.model.name]),
+            }
+
+        return context
+
+    def get_query(self):
+        return f"https://get.data.gov.lt/{self.model}/:changes"

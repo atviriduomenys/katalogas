@@ -62,11 +62,11 @@
                             {% endif %}
                         </span>
                     {% endif %}
-                    {% if model.metadata.first.access is not None %}
-                        <span>
-                            model.metadata.first.get_access_display
-                        </span>
+
+                    {% if model.access_display_value %}
+                        <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
                     {% endif %}
+
                     {% if model.metadata.first.average_level %}
                     <span class="is-pulled-right">
                         <span>{{ model.metadata.first.average_level|floatformat:"1" }}</span>

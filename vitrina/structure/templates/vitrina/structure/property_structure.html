@@ -74,6 +74,10 @@
             </span>
             {% endif %}
 
+            {% if prop.metadata.first.access is not None %}
+                <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
+            {% endif %}
+
             {% if prop.metadata.first.level %}
             <span class>{{ prop.metadata.first.level }}</span>
             <span class="icon has-text-warning"><i class="fas fa-star"></i></span>

@@ -5,7 +5,7 @@ import operator
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -208,6 +208,17 @@ class Model(models.Model):
 
     def get_acl_parents(self):
         return [self.dataset]
+
+    @property
+    def access_display_value(self):
+        access = Model.objects.annotate(
+            access=Max('model_properties__metadata__access')
+        ).get(pk=self.pk).access
+        if access is not None:
+            for type in Metadata.ACCESS_TYPES:
+                if type[0] == access:
+                    return type[1]
+        return ''
 
 
 class Property(models.Model):

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+
+{% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-three-quarters">
+
+        {% if errors %}
+        <div class="message is-danger">
+            <div class="message-body">
+                {% for error in errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_manage_structure %}
+            <a class="button is-primary" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
+                {% translate "Eksportuoti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
+                {% translate "Importuoti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="#">
+                {% translate "Naujas modelis" %}
+            </a>
+        {% endif %}
+
+        {% for model in models %}
+            <div>
+                <span>
+                    <span class="pr-3 is-family-monospace" >
+                        <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
+                    </span>
+                    {% if model.base %}
+                        <span class="pr-3">
+                            base:
+                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
+                        </span>
+                    {% endif %}
+                    {% if model.metadata.first.uri %}
+                        <span class="pr-3">
+                            uri:
+                            {% if model.metadata.first.uri_link %}
+                                <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
+                            {% else %}
+                                {{ model.metadata.first.uri }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
+
+                    {% if model.access_display_value %}
+                        <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+                    {% endif %}
+
+                    {% if model.metadata.first.average_level %}
+                    <span class="is-pulled-right">
+                        <span>{{ model.metadata.first.average_level|floatformat:"1" }}</span>
+                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                    </span>
+                    {% endif %}
+                    <br/>
+                    <small class="ml-4">
+                        {% if model.metadata.first.title %}
+                            {{ model.metadata.first.title }}
+                        {% else %}
+                            {{ model.metadata.first.description|default:""|truncatewords:8 }}
+                        {% endif %}
+                    </small>
+                </span>
+            </div>
+        {% endfor %}
+
+        {% if structure %}
+        <div class="mt-6">
+            {% comments obj=structure user=request.user is_structure=True %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -146,8 +146,10 @@ class DatasetAttributionForm(forms.ModelForm):
         model = DatasetAttribution
         fields = ('attribution', 'organization', 'agent',)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
         self.helper = FormHelper()
         self.helper.form_id = "attribution-form"
         self.helper.layout = Layout(
@@ -158,6 +160,7 @@ class DatasetAttributionForm(forms.ModelForm):
         )
 
     def clean(self):
+        attribution = self.cleaned_data.get('attribution')
         organization = self.cleaned_data.get('organization')
         agent = self.cleaned_data.get('agent')
 
@@ -166,6 +169,20 @@ class DatasetAttributionForm(forms.ModelForm):
 
         elif not organization and not agent:
             self.add_error('organization', _('Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'))
+
+        elif organization and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            organization=organization,
+            attribution=attribution,
+        ).exists():
+            self.add_error('organization', _(f'Ryšys "{attribution}" su šia organizacija jau egzistuoja.'))
+
+        elif agent and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            agent=agent,
+            attribution=attribution,
+        ).exists():
+            self.add_error('agent', _(f'Ryšys "{attribution}" su šiuo agentu jau egzistuoja.'))
 
         return self.cleaned_data
 

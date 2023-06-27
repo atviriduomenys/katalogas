@@ -854,6 +854,11 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
             self.dataset
         )
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.dataset
@@ -864,3 +869,26 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
         self.object.dataset = self.dataset
         self.object.save()
         return redirect(self.dataset.get_absolute_url())
+
+
+class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
+    model = DatasetAttribution
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return self.dataset.get_absolute_url()

@@ -134,6 +134,7 @@
                     <tr>
                         <th>{% translate "Priskyrimo rūšis" %}</th>
                         <th>{% translate "Organizacija" %}</th>
+                        <th></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -145,6 +146,15 @@
                                     <a href="{{ a.organization.get_absolute_url }}">{{ a.organization }}</a>
                                 {% else %}
                                     {{ a.agent }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if can_update_dataset %}
+                                <a href="{%url 'attribution-delete' dataset.pk a.pk %}"
+                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                   class="button is-link is-small is-pulled-right"
+                                   id="delete_attribution">{% translate "Trinti" %}
+                                </a>
                                 {% endif %}
                             </td>
                         </tr>

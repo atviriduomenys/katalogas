@@ -14,6 +14,7 @@ from vitrina.datasets.views import DatasetProjectsView
 from vitrina.datasets.views import DatasetStatsView
 from vitrina.datasets.views import DatasetStructureImportView
 from vitrina.datasets.views import DatasetAttributionCreateView
+from vitrina.datasets.views import DatasetAttributionDeleteView
 from vitrina.datasets.views import DatasetUpdateView
 from vitrina.datasets.views import DeleteMemberView
 from vitrina.datasets.views import RemoveProjectView
@@ -70,6 +71,8 @@ urlpatterns = [
         name='dataset-stats-jurisdiction'
     ),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
+    path('datasets/<int:dataset_id>/attribution/delete/<int:pk>',
+         DatasetAttributionDeleteView.as_view(), name="attribution-delete"),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

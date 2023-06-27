@@ -1,6 +1,7 @@
 from django.urls import path
 
 from vitrina.structure.views import DatasetStructureView
+from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import ModelStructureView
 from vitrina.structure.views import PropertyStructureView
 from vitrina.structure.views import ModelDataView
@@ -19,4 +20,5 @@ urlpatterns = [
     path('datasets/<int:pk>/api/getall/<str:model>/', GetAllApiView.as_view(), name='getall-api'),
     path('datasets/<int:pk>/api/getone/<str:model>/<str:uuid>/', GetOneApiView.as_view(), name='getone-api'),
     path('datasets/<int:pk>/api/changes/<str:model>/', ChangesApiView.as_view(), name='changes-api'),
+    path('datasets/<int:pk>/structure/export/', DatasetStructureExportView.as_view(), name='dataset-structure-export'),
 ]

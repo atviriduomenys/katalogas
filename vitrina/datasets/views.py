@@ -41,9 +41,8 @@ from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.structure.models import Model, Metadata
 from vitrina.structure.services import create_structure_objects
-from vitrina.structure.views import StructureMixin
+from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -141,7 +140,7 @@ class DatasetListView(FacetedSearchView):
 class DatasetDetailView(
     LanguageChoiceMixin,
     HistoryMixin,
-    StructureMixin,
+    DatasetStructureMixin,
     DetailView
 ):
     model = Dataset
@@ -168,31 +167,6 @@ class DatasetDetailView(
         }
         context_data.update(extra_context_data)
         return context_data
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class DatasetDistributionPreviewView(View):
@@ -297,7 +271,7 @@ class DatasetUpdateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(StructureMixin, HistoryView):
+class DatasetHistoryView(DatasetStructureMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -312,31 +286,6 @@ class DatasetHistoryView(StructureMixin, HistoryView):
             self.object,
         )
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class DatasetStructureImportView(
@@ -384,7 +333,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
-    StructureMixin,
+    DatasetStructureMixin,
     ListView,
 ):
     model = Representative
@@ -435,31 +384,6 @@ class DatasetMembersView(
             self.object,
         )
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class CreateMemberView(
@@ -643,7 +567,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
+class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -682,31 +606,6 @@ class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
         else:
             context['has_projects'] = False
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class AddProjectView(

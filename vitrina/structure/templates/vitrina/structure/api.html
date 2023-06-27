@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+{% load markdown_tags %}
+
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-one-quarter">
+        {% include 'vitrina/structure/side_menu.html' %}
+    </div>
+
+    <div class="column is-three-quarters">
+       <div class="tabs">
+            <ul>
+                {% for key, tab in tabs.items %}
+                <li class="format-tab" id="{{ key }}_tab_id">
+                    <a href="#{{ key }}" onclick="selectTab('{{ key }}')">{{ tab.name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+       </div>
+       <div class="mb-5">
+           <h4 class="custom-title is-size-4-mobile">{% translate "Užklausa" %}</h4>
+
+           <div>
+               {% for key, tab in tabs.items %}
+               <div class="tab-content" style="display: none;" id="{{ key }}_id">
+                   {{ tab.query|safe }}
+               </div>
+               {% endfor %}
+           </div>
+       </div>
+       <div>
+           <h4 class="custom-title is-size-4-mobile">{% translate "Atsakymas" %}</h4>
+           {{ response|safe }}
+       </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+           selectTab();
+        });
+
+        function selectTab(format=null) {
+            if (format == null) {
+                format = "http";
+                if (location.hash && (
+                    location.hash == "#http" ||
+                    location.hash == "#httpie" ||
+                    location.hash == "#curl"
+                )) {
+                    format = location.hash.replace("#", "");
+                }
+            }
+
+            $(`.tab-content:not(#${format}_id)`).each(function() {
+                this.style.display = 'none';
+            });
+            $(`li.format-tab:not(#${format}_tab_id)`).each(function() {
+                $(this).removeClass('is-active');
+            });
+
+            let content = $(`.tab-content#${format}_id`);
+            let tab = $(`li.format-tab#${format}_tab_id`);
+            content.css('display', 'block');
+            tab.addClass('is-active');
+        }
+    </script>
+{% endblock %}

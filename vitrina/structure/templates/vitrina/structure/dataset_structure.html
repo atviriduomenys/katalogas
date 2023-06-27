@@ -29,7 +29,7 @@
         {% endif %}
 
         {% if can_manage_structure %}
-            <a class="button is-primary" href="#">
+            <a class="button is-primary" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
                 {% translate "Eksportuoti" %}
             </a>
             <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">

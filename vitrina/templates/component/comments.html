@@ -19,9 +19,16 @@
                 <img src="{% static 'img/placeholder/128x128.png' %}">
             </p>
         </figure>
-        <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
+        {% if external %}
+            <form class="media-content" action="{% url 'external-comment' content_type object_id %}" method="post" id="comment-form">
+        {% else %}
+            <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
+        {% endif %}
             {% csrf_token %}
             {{ comment_form|crispy }}
+            {% if external %}
+                <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
+            {% endif %}
             <div class="field">
                 <p class="control">
                     <button type="submit" hidden="true"></button>

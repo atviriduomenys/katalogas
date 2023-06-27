@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-one-quarter">
+        {% include 'vitrina/structure/side_menu.html' %}
+    </div>
+
+    <div class="column is-three-quarters">
+        {% if errors %}
+            <div class="message is-danger">
+                <div class="message-body">
+                    {% for error in errors %}
+                    <p>{{ error.message }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="field has-addons has-addons-right">
+              <p class="control">
+                <a class="button" onclick="downloadData()">
+                  {% translate "Atsisiųsti" %}
+                </a>
+              </p>
+              <p class="control">
+                <span class="select">
+                  <select id="select_format_id">
+                      {% for format, name in formats.items %}
+                        <option value="{{ format }}">{{ name }}</option>
+                      {% endfor %}
+                  </select>
+                </span>
+              </p>
+            </div>
+
+            <div>
+                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Filtras" %}:</h4>
+                <div class="mb-5 tags">
+                    {% for tag in tags %}
+                        <span class="tag" id="remove_tag_{{ forloop.counter0 }}_id">
+                            {{ tag }}
+                            <button
+                                id="remove_tag_{{ tag }}_id"
+                                class="delete is-small"
+                                onclick="removeFilter('{{ tag }}', {{ forloop.counter0 }})">
+                            </button>
+                        </span>
+                    {% endfor %}
+                    <div id="select_cols_id" class="dropdown-check-list" tabindex="100">
+                        <span class="tag anchor no-margin-bottom no-margin-right">
+                            {{ select|truncatechars:30 }}
+                        </span>
+                        <div class="items">
+                            <ul>
+                                {% if '_id' in selected_cols %}
+                                    <li>
+                                        <input type="checkbox" checked/>
+                                        <span>_id</span>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <input type="checkbox"/>
+                                        <span>_id</span>
+                                    </li>
+                                {% endif %}
+
+                                {% for col in properties.keys %}
+                                    {% if col in selected_cols %}
+                                    <li> <input type="checkbox" checked/> <span>{{ col }}</span></li>
+                                    {% else %}
+                                    <li><input type="checkbox"/> <span>{{ col }}</span></li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+
+                            <div class="buttons">
+                                <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
+                                    {% translate "Rodyti" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 mb-2">
+                <p>{{ total_count }}</p>
+            </div>
+
+            <div class="filter-table">
+                <table class="table is-bordered">
+                    <tbody>
+                    <tr>
+                        {% for col in headers %}
+                            {% get_value_by_key properties col as prop %}
+                                <th id="{{ col }}_col_id" class="is-relative">
+                                    <div class="has-text-centered col-title">
+                                        <span>
+                                            {% if prop %}
+                                                <a href="{{ prop.get_absolute_url }}">{{ col }}</a>
+                                            {% else %}
+                                                {{ col }}
+                                            {% endif %}
+                                            {% if col == '_id' or prop.metadata.first.unique %}
+                                                <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
+                                            {% endif %}
+                                        </span>
+                                        <a class="is-size-7" id="{{ col }}_button_id" onclick="showFilterWindow('{{ col }}')">▼</a>
+                                    </div>
+                                    <div class="has-text-centered">
+                                        <small class="has-text-weight-normal is-italic">
+                                            {% if prop.ref_model %}
+                                                <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
+                                            {% else %}
+                                                {{ prop.metadata.first.type }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+
+                                    <div id="{{ col }}_filter_id" style="display: none">
+                                        <div class="table-menu">
+                                            <div class="mb-3 is-inline-block">
+                                                <div class="select is-small is-short">
+                                                    <select id="{{ col }}_compare_select_id">
+                                                        <option value="=">=</option>
+                                                        <option value=">">></option>
+                                                        <option value="<"><</option>
+                                                        <option value=">=">>=</option>
+                                                        <option value="<="><=</option>
+                                                        <option value="!=">!=</option>
+                                                        <option value="contains">contains</option>
+                                                        <option value="startswith">startswith</option>
+                                                        <option value="endswith">endswith</option>
+                                                    </select>
+                                                </div>
+                                                <input class="input is-small is-short" id="{{ col }}_compare_value_id" type="text"/>
+                                            </div>
+                                            <div class="mb-3 is-inine-block">
+                                                <div class="buttons is-right">
+                                                    <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
+                                                    <button id="{{ col }}_order_asc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}', false)">
+                                                        <span class="icon has-text-white"><i class="fas fa-arrow-up"></i></span>
+                                                    </button>
+                                                    <button id="{{ col }}_order_desc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}')">
+                                                        <span class="icon has-text-white"><i class="fas fa-arrow-down"></i></span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="no-margin-bottom buttons is-right">
+                                                <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" onclick="hide('{{ col }}')">
+                                                    {% translate "Slėpti" %}
+                                                </button>
+                                            </div>
+                                            <div class="buttons is-right">
+                                                <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
+                                                    {% translate "Filtruoti" %}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </th>
+                        {% endfor %}
+                    </tr>
+                    {% if data %}
+                        {% for row in data %}
+                            <tr>
+                                {% for col, val in row.items %}
+                                    {% get_value_by_key properties col as prop %}
+
+                                    {% if col not in excluded_cols %}
+                                        {% if col == '_id' %}
+                                            <td id="{{ col }}_col_id">
+                                                {% if model.name %}
+                                                    <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
+                                                {% else %}
+                                                    {{ val|slice:":8" }}
+                                                {% endif %}
+                                            </td>
+                                        {% elif val|is_dict %}
+                                            {% if prop.ref_model %}
+                                                {% get_value_by_key val '_id' as val %}
+                                                {% if val != None %}
+                                                    <td id="{{ col }}_col_id">
+                                                        {% if prop.ref_model.name %}
+                                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                        {% else %}
+                                                            {{ val|slice:":8" }}
+                                                        {% endif %}
+                                                    </td>
+                                                {% else %}
+                                                    <td class="has-background-white-ter"></td>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if val != None %}
+                                                    {% for k, v in val.items %}
+                                                        {% if k == '_id' %}
+                                                            {% if v != None %}
+                                                                <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
+                                                            {% else %}
+                                                                <td class="has-background-white-ter"></td>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            {% if v != None %}
+                                                                <td id="{{ col }}_col_id">{{ v }}</td>
+                                                            {% else %}
+                                                                <td class="has-background-white-ter"></td>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                        {% if not forloop.last %}
+                                                            <br/>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <td class="has-background-white-ter"></td>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% elif val|is_number %}
+                                            <td id="{{ col }}_col_id" class="has-text-right">{{ val }}</td>
+                                        {% else %}
+                                            {% if val != None %}
+                                                <td id="{{ col }}_col_id">{{ val|truncatechars:256 }}</td>
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="{{ headers|length }}">{% translate "Duomenų nėra" %}</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let selectCheckList = $('#select_cols_id');
+            let anchor = selectCheckList.find('.anchor');
+            anchor.on('click', () => {
+                if (selectCheckList.hasClass('visible')) {
+                    selectCheckList.removeClass('visible');
+                }
+                else {
+                    selectCheckList.addClass('visible');
+                }
+            });
+
+            let width = $('.items').css('width');
+            selectCheckList.find('span.anchor').css('width', width);
+        });
+
+
+        function showFilterWindow(col) {
+            $(`div[id$='_filter_id']:not(#${col}_filter_id)`).each(function() {
+                this.style.display = 'none';
+            });
+
+            $(`#${col}_filter_id`).each(function() {
+                if(this.style.display == 'block'){
+                    this.style.display = 'none';
+                    let table = $('.filter-table');
+                    table.css('height', '');
+                } else {
+                    this.style.display = 'block';
+
+                    let table = $('.filter-table');
+                    let tableScrollHeight = table[0].scrollHeight;
+                    let tableClientHeight = table[0].clientHeight;
+
+                    if (tableScrollHeight > tableClientHeight){
+                        let height = tableClientHeight + 130;
+                        table.css('height', height + "px");
+                    }
+                }
+            });
+        };
+
+        function orderBy(col, asc = true) {
+
+            let search = location.search.substring(1);
+            let searchParams = search.split('&');
+
+            let sort = [];
+            let query = "";
+            for (let param of searchParams) {
+                if(param){
+                    if (param.includes('sort(')) {
+                        let value = param.substring(
+                            param.indexOf("(") + 1,
+                            param.lastIndexOf(")")
+                        );
+                        for (let val of value.split(",")) {
+                            if (!sort.includes(val) && val.replace("-", "") != col) {
+                                sort.push(val);
+                            }
+                        }
+                    }
+                    else {
+                        query = query ? `${query}&${param}` : `?${param}`;
+                    }
+                }
+            }
+            if (!sort.includes(col)) {
+                col = asc ? col : `-${col}`;
+                sort.push(col);
+            }
+            sort = `sort(${sort.join(',')})`;
+            console.log(query);
+            query = query ? `${query}&${sort}` : `?${sort}`;
+
+            let url = `${location.origin}${location.pathname}${query}`;
+            location.href = url;
+        };
+
+        function filter(col, type) {
+            let compareSelect = $(`select#${col}_compare_select_id`).val();
+            let compareInput = $(`input#${col}_compare_value_id`).val();
+            let compare;
+
+            if (
+                compareSelect == 'contains' ||
+                compareSelect == 'startswith' ||
+                compareSelect == 'endswith'
+            ) {
+                compareInput = compareInput.replaceAll('"', String.raw`\"`);
+                compare = `${col}.${compareSelect}("${compareInput}")`;
+            }
+            else {
+                if (
+                    (
+                        type == 'string' ||
+                        type == 'date' ||
+                        type == 'datetime' ||
+                        col == '_id'
+                    ) && compareInput != 'null'
+                ) {
+                    compareInput = compareInput.replaceAll('"', String.raw`\"`);
+                    compare = `${col}${compareSelect}"${compareInput}"`;
+                }
+                else {
+                    compare = `${col}${compareSelect}${compareInput}`;
+                }
+            }
+
+            location.href = location.search ? `${location.href}&${compare}` : `${location.href}?${compare}`;
+        };
+
+        function removeFilter(tag, idx) {
+            $(`#remove_tag_${idx}_id`).remove();
+
+            let search = decodeURIComponent(location.search.substring(1));
+            let searchParams = search.split('&');
+            let query = "";
+            for (let param of searchParams) {
+                if (param.replaceAll(/\\/g, "") != tag) {
+                    query = query ? `${query}&${param}` : `?${param}`;
+                }
+            }
+            location.href = `${location.origin}${location.pathname}${query}`;
+        };
+
+        function select() {
+            let selected_cols = [];
+            $('.items li input:checked').each(function() {
+                let value = $(this).siblings('span')[0].innerText;
+                selected_cols.push(value);
+            });
+
+            let search = location.search.substring(1);
+            let searchParams = search.split('&');
+
+            let query = "";
+            for (let param of searchParams) {
+                if (param && !param.includes('select(')) {
+                    query = query ? `${query}&${param}` : `?${param}`;
+                }
+            }
+            let select = `select(${selected_cols.join(',')})`;
+            query = query ? `${query}&${select}` : `?${select}`;
+
+            let url = `${location.origin}${location.pathname}${query}`;
+            location.href = url;
+        }
+
+        function hide(col) {
+            let search = location.search.substring(1);
+            let searchParams = search.split('&');
+
+            let select = {{ selected_cols|safe }};
+            let query = "";
+            for (let param of searchParams) {
+                if (param) {
+                    if (param && !param.includes('select(')) {
+                        query = query ? `${query}&${param}` : `?${param}`;
+                    }
+                }
+            }
+            select = select.filter(v => v !== col);
+            select = `select(${select.join(',')})`;
+            query = query ? `${query}&${select}` : `?${select}`;
+
+            let url = `${location.origin}${location.pathname}${query}`;
+            location.href = url;
+        };
+
+        function downloadData() {
+            let select = $("select#select_format_id");
+            let format = select.val();
+            let url = '';
+            if (location.search ){
+                url = location.href + `&format(${format})`;
+            }
+            else {
+                url = location.href + `?format(${format})`;
+            }
+            location.href = url;
+        };
+    </script>
+{% endblock %}

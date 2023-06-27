@@ -2,8 +2,19 @@
 {% load i18n parler_tags %}
 
 {% block current_title %}{{ current_title }}{% endblock %}
-{% block parent_title %}{{ parent_title }}{% endblock %}
-{% block parent_url %}{{ parent_url }}{% endblock %}
+
+{% if parent_links %}
+    {% block parent_links %}
+        <ul class="p-t-sm">
+            {% for link, title in parent_links.items %}
+                <li><a href="{{ link }}"><span>{{ title }}</span></a></li>
+            {% endfor %}
+        </ul>
+    {% endblock %}
+{% else %}
+    {% block parent_title %}{{ parent_title }}{% endblock %}
+    {% block parent_url %}{{ parent_url }}{% endblock %}
+{% endif %}
 
 {% block content %}
     <div class="columns is-centered">

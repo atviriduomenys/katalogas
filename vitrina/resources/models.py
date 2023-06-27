@@ -1,5 +1,6 @@
 import pathlib
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
@@ -16,10 +17,9 @@ class Format(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     mimetype = models.TextField(blank=True, null=True)
     rating = models.IntegerField(blank=True, null=True)
-    title = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        managed = True
         db_table = 'format'
 
     def __str__(self):
@@ -128,6 +128,8 @@ class DatasetDistribution(models.Model):
     identifier = models.CharField(max_length=255, blank=True, null=True)
     size = models.BigIntegerField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
+
+    metadata = GenericRelation('vitrina_structure.Metadata')
 
     class Meta:
         db_table = 'dataset_distribution'

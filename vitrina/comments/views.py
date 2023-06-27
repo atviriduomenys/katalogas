@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 from reversion import set_comment
 from reversion.views import RevisionMixin
@@ -79,3 +80,49 @@ class ReplyView(LoginRequiredMixin, View):
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
+
+
+class ExternalCommentView(
+    LoginRequiredMixin,
+    View
+):
+    def post(self, request, external_content_type, external_object_id):
+        form = CommentForm(None, request.POST)
+
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.external_object_id = external_object_id
+            comment.external_content_type = external_content_type
+            comment.type = Comment.USER
+            comment.save()
+        else:
+            messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
+        return redirect(reverse('object-data', kwargs={
+            'pk': form.data.get('dataset_id'),
+            'model': external_content_type,
+            'uuid': external_object_id,
+        }))
+
+
+class ExternalReplyView(LoginRequiredMixin, View):
+    def post(self, request, external_content_type, external_object_id, parent_id):
+        form = CommentForm(None, request.POST)
+
+        if form.is_valid():
+            Comment.objects.create(
+                type=Comment.USER,
+                user=request.user,
+                external_object_id=external_object_id,
+                external_content_type=external_content_type,
+                parent_id=parent_id,
+                body=form.cleaned_data.get('body'),
+                is_public=form.cleaned_data.get('is_public')
+            )
+        else:
+            messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
+        return redirect(reverse('object-data', kwargs={
+            'pk': form.data.get('dataset_id'),
+            'model': external_content_type,
+            'uuid': external_object_id,
+        }))

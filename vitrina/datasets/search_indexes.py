@@ -22,6 +22,7 @@ class DatasetIndex(SearchIndex, Indexable):
     frequency = IntegerField(model_attr='frequency__pk', faceted=True)
     published = DateTimeField(model_attr='published', null=True)
     filter_status = CharField(model_attr='filter_status', faceted=True, null=True)
+    level = IntegerField(model_attr='get_level', faceted=True, null=True)
     type = MultiValueField(model_attr='public_types', faceted=True)
     type_order = IntegerField(model_attr='type_order')
 

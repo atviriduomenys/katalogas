@@ -22,6 +22,7 @@ class Action(Enum):
     VIEW = 'view'
     HISTORY_VIEW = 'history_view'
     COMMENT = "comment_with_status"
+    STRUCTURE = 'structure'
 
 
 class Role(Enum):
@@ -42,6 +43,7 @@ acl = {
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],

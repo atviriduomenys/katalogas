@@ -1,11 +1,5 @@
 {% load i18n %}
-{% if can_add_resource %}
-    <div class="buttons is-right">
-        <a href="{%url 'resource-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_resource">
-            {% translate "Naujas šaltinis" %}
-        </a>
-    </div>
-{% endif %}
+{% include 'vitrina/datasets/add_resource.html' %}
 <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
     <thead>
     <tr>

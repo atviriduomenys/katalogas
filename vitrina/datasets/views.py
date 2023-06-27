@@ -1,6 +1,8 @@
 import csv
 import itertools
 import json
+import secrets
+
 import pandas as pd
 import numpy as np
 
@@ -35,10 +37,14 @@ from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
+from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.statistics.models import DatasetStats
+from vitrina.structure.models import Model, Metadata
+from vitrina.structure.services import create_structure_objects
+from vitrina.structure.views import StructureMixin
+from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
@@ -179,7 +185,12 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
+class DatasetDetailView(
+    LanguageChoiceMixin,
+    HistoryMixin,
+    StructureMixin,
+    DetailView
+):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -204,6 +215,31 @@ class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
         }
         context_data.update(extra_context_data)
         return context_data
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models and models[0].name:
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': models[0].name,
+            })
+        return None
 
 
 class DatasetDistributionPreviewView(View):
@@ -334,7 +370,7 @@ class DatasetUpdateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(HistoryView):
+class DatasetHistoryView(StructureMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -349,6 +385,31 @@ class DatasetHistoryView(HistoryView):
             self.object,
         )
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models and models[0].name:
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': models[0].name,
+            })
+        return None
 
 
 class DatasetStructureImportView(
@@ -388,6 +449,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -395,6 +457,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
+    StructureMixin,
     ListView,
 ):
     model = Representative
@@ -445,6 +508,31 @@ class DatasetMembersView(
             self.object,
         )
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models and models[0].name:
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': models[0].name,
+            })
+        return None
 
 
 class CreateMemberView(
@@ -515,6 +603,14 @@ class CreateMemberView(
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
+
+        if self.object.has_api_access:
+            ApiKey.objects.create(
+                api_key=secrets.token_urlsafe(),
+                enabled=True,
+                representative=self.object
+            )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -580,6 +676,24 @@ class UpdateMemberView(
             'pk': self.kwargs.get('dataset_id'),
         })
 
+    def form_valid(self, form):
+        self.object: Representative = form.save()
+        if self.object.has_api_access:
+            if not self.object.apikey_set.exists():
+                ApiKey.objects.create(
+                    api_key=secrets.token_urlsafe(),
+                    enabled=True,
+                    representative=self.object
+                )
+            elif form.cleaned_data.get('regenerate_api_key'):
+                api_key = self.object.apikey_set.first()
+                api_key.api_key = secrets.token_urlsafe()
+                api_key.enabled = True
+                api_key.save()
+        else:
+            self.object.apikey_set.all().delete()
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class DeleteMemberView(
     LoginRequiredMixin,
@@ -602,7 +716,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(HistoryMixin, ListView):
+class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -641,6 +755,31 @@ class DatasetProjectsView(HistoryMixin, ListView):
         else:
             context['has_projects'] = False
         return context
+
+    def get_structure_url(self):
+        return reverse('dataset-structure', kwargs={
+            'pk': self.kwargs.get('pk'),
+        })
+
+    def get_data_url(self):
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        ):
+            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
+        else:
+            models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        if models and models[0].name:
+            return reverse('model-data', kwargs={
+                'pk': self.kwargs.get('pk'),
+                'model': models[0].name,
+            })
+        return None
 
 
 class AddProjectView(
@@ -735,42 +874,56 @@ class DatasetStatsView(DatasetListView):
                         id_list.append(d.pk)
                 stat_groups[k] = id_list
             for item in stat_groups.keys():
-                # if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    # todo
-                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                if len(stats) > 0:
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
                     total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            statuses[item] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            statuses[item] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            statuses[item] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            statuses[item] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            statuses[item] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            statuses[item] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev)/len(lev))
-                            statuses[item] = level_avg
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    statuses[item] = total
+                else:
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                statuses[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                statuses[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                statuses[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                statuses[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                statuses[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                statuses[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev)/len(lev))
+                                statuses[item] = level_avg
         values = list(statuses.values())
         for v in values:
             if max_count < int(v):
@@ -895,44 +1048,57 @@ class DatasetManagementsView(DatasetListView):
             for single in modified_jurisdictions:
                 if 'dataset_ids' in single:
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        single['stats'] = 0
-                        # todo
-                    stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
-                    if len(stats) > 0:
+                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                single['stats'] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                single['stats'] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                single['stats'] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                single['stats'] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                single['stats'] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                single['stats'] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                single['stats'] = level_avg
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        single['stats'] = total
                     else:
-                        single['stats'] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    single['stats'] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    single['stats'] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    single['stats'] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    single['stats'] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    single['stats'] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    single['stats'] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    single['stats'] = level_avg
+                        else:
+                            single['stats'] = 0
                     if max_count < single.get('stats'):
                         max_count = single.get('stats')
                 else:
@@ -972,44 +1138,58 @@ class DatasetsLevelView(DatasetListView):
                             id_list.append(d.pk)
                 stat_groups[le] = id_list
             for item in stat_groups.keys():
-                # if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    # todo
-                stats = DatasetStats.objects.filter(maturity_level__in=stat_groups[item])
-                if len(stats) > 0:
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
                     total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            levels[item] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            levels[item] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            levels[item] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            levels[item] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            levels[item] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            levels[item] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev) / len(lev))
-                            levels[item] = level_avg
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    levels[item] = total
                 else:
-                    levels[item] = 0
+                    stats = DatasetStats.objects.filter(maturity_level__in=stat_groups[item])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                levels[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                levels[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                levels[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                levels[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                levels[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                levels[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                levels[item] = level_avg
+                    else:
+                        levels[item] = 0
         values = list(levels.values())
         for v in values:
             if max_count < v:
@@ -1049,44 +1229,58 @@ class DatasetsOrganizationsView(DatasetListView):
                         id_list.append(d.pk)
                 stat_groups[k] = id_list
             for item in stat_groups.keys():
-                # if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    # todo
-                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                if len(stats) > 0:
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
                     total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            orgs[item] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            orgs[item] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            orgs[item] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            orgs[item] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            orgs[item] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            orgs[item] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev) / len(lev))
-                            orgs[item] = level_avg
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    orgs[item] = total
                 else:
-                    orgs[item] = 0
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                orgs[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                orgs[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                orgs[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                orgs[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                orgs[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                orgs[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                orgs[item] = level_avg
+                    else:
+                        orgs[item] = 0
         values = list(orgs.values())
         for v in values:
             if max_count < v:
@@ -1231,42 +1425,58 @@ class DatasetsFormatView(DatasetListView):
                                     id_list.append(d.pk)
                     stat_groups[k] = id_list
                 for item in stat_groups.keys():
-                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                    if len(stats) > 0:
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                formats[item] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                formats[item] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                formats[item] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                formats[item] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                formats[item] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                formats[item] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                formats[item] = level_avg
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        formats[item] = total
                     else:
-                        formats[item] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    formats[item] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    formats[item] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    formats[item] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    formats[item] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    formats[item] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    formats[item] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    formats[item] = level_avg
+                        else:
+                            formats[item] = 0
             values = list(formats.values())
             for v in values:
                 if max_count < v:
@@ -1308,42 +1518,58 @@ class DatasetsFrequencyView(DatasetListView):
                                 id_list.append(d.pk)
                     stat_groups[k] = id_list
                 for item in stat_groups.keys():
-                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                    if len(stats) > 0:
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                frequencies[item] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                frequencies[item] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                frequencies[item] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                frequencies[item] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                frequencies[item] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                frequencies[item] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                frequencies[item] = level_avg
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        frequencies[item] = total
                     else:
-                        frequencies[item] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    frequencies[item] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    frequencies[item] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    frequencies[item] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    frequencies[item] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    frequencies[item] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    frequencies[item] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    frequencies[item] = level_avg
+                        else:
+                            frequencies[item] = 0
             values = list(frequencies.values())
             for v in values:
                 if max_count < v:
@@ -1395,44 +1621,60 @@ class JurisdictionStatsView(DatasetListView):
                     if max_count < len(v):
                         max_count = len(v)
                 elif indicator != 'dataset-count':
-                    stats = DatasetStats.objects.filter(dataset_id__in=v)
-                    if len(stats) > 0:
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        models = Model.objects.filter(dataset_id__in=v).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                single_dict['count'] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                single_dict['count'] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                single_dict['count'] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                single_dict['count'] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                single_dict['count'] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                single_dict['count'] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                single_dict['count'] = level_avg
-                        if max_count < single_dict.get('count'):
-                            max_count = single_dict.get('count')
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        single_dict['count'] = total
                     else:
-                        single_dict['count'] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=v)
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    single_dict['count'] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    single_dict['count'] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    single_dict['count'] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    single_dict['count'] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    single_dict['count'] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    single_dict['count'] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    single_dict['count'] = level_avg
+                            if max_count < single_dict.get('count'):
+                                max_count = single_dict.get('count')
+                        else:
+                            single_dict['count'] = 0
             result.append(single_dict)
             result = sorted(result, key=lambda dd: dd['count'], reverse=True)
         context['single_org'] = True
@@ -1579,46 +1821,59 @@ class DatasetsCategoriesView(DatasetListView):
             for single in modified_cats:
                 if 'dataset_ids' in single:
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        single['stats'] = 0
-                        # todo
-                    stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
-                    if len(stats) > 0:
+                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                single['stats'] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                single['stats'] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                single['stats'] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                single['stats'] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                single['stats'] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                single['stats'] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                single['stats'] = level_avg
-                            if max_count < single.get('stats'):
-                                max_count = single.get('stats')
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        single['stats'] = total
                     else:
-                        single['stats'] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    single['stats'] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    single['stats'] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    single['stats'] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    single['stats'] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    single['stats'] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    single['stats'] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    single['stats'] = level_avg
+                                if max_count < single.get('stats'):
+                                    max_count = single.get('stats')
+                        else:
+                            single['stats'] = 0
                 else:
                     single['stats'] = 0
             modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
@@ -1674,46 +1929,59 @@ class CategoryStatsView(DatasetListView):
                     for dd in cat_datasets:
                         id_list.append(dd.pk)
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        k['stats'] = 0
-                        # todo
-                    stats = DatasetStats.objects.filter(dataset_id__in=id_list)
-                    if len(stats) > 0:
+                        models = Model.objects.filter(dataset_id__in=id_list).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                k['stats'] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                k['stats'] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                k['stats'] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                k['stats'] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                k['stats'] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                k['stats'] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                k['stats'] = level_avg
-                            if max_count < k.get('stats'):
-                                max_count = k.get('stats')
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        k['stats'] = total
                     else:
-                        k['stats'] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=id_list)
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    k['stats'] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    k['stats'] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    k['stats'] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    k['stats'] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    k['stats'] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    k['stats'] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    k['stats'] = level_avg
+                                if max_count < k.get('stats'):
+                                    max_count = k.get('stats')
+                        else:
+                            k['stats'] = 0
             filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
         context['max_count'] = max_count
         context['categories'] = filtered_cats
@@ -1751,44 +2019,63 @@ class PublicationStatsView(DatasetListView):
             for yr in year_stats.keys():
                 start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
                 end_date = datetime.strptime(str(yr) + "-12-31", '%Y-%m-%d')
-                # todo kitaip?
                 tz = pytz.timezone('Europe/Vilnius')
-                stats = DatasetStats.objects.filter(created__range=[tz.localize(start_date), tz.localize(end_date)])
-                if len(stats) > 0:
+                filtered_datasets = datasets.filter(published__range=[tz.localize(start_date), tz.localize(end_date)])
+                dataset_ids = []
+                for fd in filtered_datasets:
+                    dataset_ids.append(fd.pk)
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name', flat=True)
                     total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            year_stats[yr] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            year_stats[yr] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            year_stats[yr] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            year_stats[yr] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            year_stats[yr] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            year_stats[yr] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev)/len(lev))
-                            year_stats[yr] = level_avg
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    year_stats[yr] = total
                 else:
-                    year_stats[yr] = 0
+                    stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                year_stats[yr] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                year_stats[yr] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                year_stats[yr] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                year_stats[yr] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                year_stats[yr] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                year_stats[yr] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev)/len(lev))
+                                year_stats[yr] = level_avg
+                    else:
+                        year_stats[yr] = 0
 
         for key, value in year_stats.items():
             if max_count < value:
@@ -1838,42 +2125,62 @@ class YearStatsView(DatasetListView):
                     else:
                         start = datetime.strptime(str(selected_year) + "-10-1", '%Y-%m-%d')
                         end = datetime.strptime(str(selected_year) + "-12-31", '%Y-%m-%d')
-                    stats = DatasetStats.objects.filter(created__range=[tz.localize(start), tz.localize(end)])
-                    if len(stats) > 0:
+                    filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
+                    dataset_ids = []
+                    for fd in filtered_datasets:
+                        dataset_ids.append(fd.pk)
+                    if indicator == 'download-request-count' or indicator == 'download-object-count':
+                        models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name', flat=True)
                         total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                quarter_stats[k] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                quarter_stats[k] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                quarter_stats[k] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                quarter_stats[k] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                quarter_stats[k] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                quarter_stats[k] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                quarter_stats[k] = level_avg
+                        if len(models) > 0:
+                            for m in models:
+                                model_stats = ModelDownloadStats.objects.filter(model=m)
+                                if len(model_stats) > 0:
+                                    for m_st in model_stats:
+                                        if indicator == 'download-request-count':
+                                            if m_st is not None:
+                                                total += m_st.model_requests
+                                        elif indicator == 'download-object-count':
+                                            if m_st is not None:
+                                                total += m_st.model_objects
+                        quarter_stats[k] = total
                     else:
-                        quarter_stats[k] = 0
+                        stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                        if len(stats) > 0:
+                            total = 0
+                            for st in stats:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        total += st.request_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        total += st.project_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        total += st.distribution_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        total += st.object_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        total += st.field_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        total += st.model_count
+                                    quarter_stats[k] = total
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    quarter_stats[k] = level_avg
+                        else:
+                            quarter_stats[k] = 0
         for key, value in quarter_stats.items():
             if max_count < value:
                 max_count = value
@@ -1916,42 +2223,62 @@ class QuarterStatsView(DatasetListView):
                 tz = pytz.timezone('Europe/Vilnius')
                 start = datetime.strptime(str(k) + "-1", '%Y-%m-%d')
                 end = datetime.strptime(str(k) + "-28", '%Y-%m-%d')
-                stats = DatasetStats.objects.filter(created__range=[tz.localize(start), tz.localize(end)])
-                if len(stats) > 0:
+                filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
+                dataset_ids = []
+                for fd in filtered_datasets:
+                    dataset_ids.append(fd.pk)
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name', flat=True)
                     total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            monthly_stats[k] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            monthly_stats[k] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            monthly_stats[k] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            monthly_stats[k] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            monthly_stats[k] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            monthly_stats[k] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev) / len(lev))
-                            monthly_stats[k] = level_avg
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    monthly_stats[k] = total
                 else:
-                    monthly_stats[k] = 0
+                    stats = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                    if len(stats) > 0:
+                        total = 0
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                monthly_stats[k] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                monthly_stats[k] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                monthly_stats[k] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                monthly_stats[k] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                monthly_stats[k] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                monthly_stats[k] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                monthly_stats[k] = level_avg
+                    else:
+                        monthly_stats[k] = 0
         for m, mv in monthly_stats.items():
             if max_count < mv:
                 max_count = mv

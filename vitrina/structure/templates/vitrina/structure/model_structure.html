@@ -80,7 +80,12 @@
                 </span>
 
                 {% if prop.metadata.first.type %}
-                <span class="is-bold pr-3">{{ prop.metadata.first.type }}</span>
+                <span class="is-bold pr-3">
+                    {{ prop.metadata.first.type }}
+                    {% if prop.metadata.first.type_args %}
+                        <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                    {% endif %}
+                </span>
                 {% endif %}
 
                 {% if prop.metadata.first.required %}

@@ -15,9 +15,16 @@
         </li>
         {% endif %}
         {% if data_url %}
-        <li class="{% if request.path == data_url %} is-active {% endif %}">
+        <li class="{% if request.resolver_match.url_name == 'object-data' or request.resolver_match.url_name == 'model-data' %} is-active {% endif %}">
             <a href="{{ data_url }}" id="data_tab">
                 {% translate "Duomenys" %}
+            </a>
+        </li>
+        {% endif %}
+        {% if api_url %}
+        <li class='{% if request.resolver_match.url_name == "getall-api" or request.resolver_match.url_name == "getone-api" or request.resolver_match.url_name == "changes-api" %} is-active {% endif %}'>
+            <a href="{{ api_url }}" id="api_tab">
+                {% translate "API" %}
             </a>
         </li>
         {% endif %}

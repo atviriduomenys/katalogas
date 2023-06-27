@@ -8,6 +8,11 @@ from django_webtest import DjangoTestApp
 from unittest.mock import Mock, patch
 
 from factory.django import FileField
+from pygments import highlight
+from pygments.formatters.html import HtmlFormatter
+from pygments.lexers.data import JsonLexer
+from pygments.lexers.special import TextLexer
+from pygments.styles import get_style_by_name
 
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory
@@ -792,3 +797,524 @@ def test_private_comment_with_access(app: DjangoTestApp):
         'Private comment',
         'Public comment',
     ]
+
+
+@pytest.mark.django_db
+def test_getall(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name='prop_1',
+        type='string',
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name='prop_2',
+        type='integer'
+    )
+
+    with patch('vitrina.structure.services.requests.get') as mock_get:
+        data = {
+            '_data': [
+                {
+                    '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+                    'prop_1': "test 1",
+                    'prop_2': 1
+                },
+            ]
+        }
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
+        assert resp.context['tabs'] == {
+            'http': {
+                'name': 'HTTP',
+                'query': highlight(
+                    "https://get.data.gov.lt/test/dataset/TestModel",
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'httpie': {
+                'name': 'HTTPie',
+                'query': highlight(
+                    'http GET "https://get.data.gov.lt/test/dataset/TestModel"',
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'curl': {
+                'name': 'curl',
+                'query': highlight(
+                    'curl "https://get.data.gov.lt/test/dataset/TestModel"',
+                    TextLexer(), HtmlFormatter()
+                )
+            }
+        }
+        assert resp.context['response'] == highlight(
+            json.dumps({
+                '_data': [
+                    {
+                        '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+                        'prop_1': "test 1",
+                        'prop_2': 1
+                    },
+                ]
+            }, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+
+@pytest.mark.django_db
+def test_getall_with_query(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name='prop_1',
+        type='string',
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name='prop_2',
+        type='integer'
+    )
+
+    with patch('vitrina.structure.services.requests.get') as mock_get:
+        data = {
+            '_data': [
+                {
+                    '_id': '5bfd5a54-0ded-4803-9363-349f6e1b4523',
+                    'prop_2': 2
+                },
+            ]
+        }
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get("%s%s" % (
+            reverse('getall-api', args=[dataset.pk, model.name]),
+            "?select(_id,prop_2)&sort(-prop2)"
+        ))
+        assert resp.context['tabs'] == {
+            'http': {
+                'name': 'HTTP',
+                'query': highlight(
+                    "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)",
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'httpie': {
+                'name': 'HTTPie',
+                'query': highlight(
+                    'http GET "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'curl': {
+                'name': 'curl',
+                'query': highlight(
+                    'curl "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
+                    TextLexer(), HtmlFormatter()
+                )
+            }
+        }
+        assert resp.context['response'] == highlight(
+            json.dumps({
+                '_data': [
+                    {
+                        '_id': '5bfd5a54-0ded-4803-9363-349f6e1b4523',
+                        'prop_2': 2
+                    },
+                ]
+            }, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+
+@pytest.mark.django_db
+def test_getone(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name='prop_1',
+        type='string',
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name='prop_2',
+        type='integer'
+    )
+
+    with patch('vitrina.structure.services.requests.get') as mock_get:
+        data = {
+            '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+            'prop_1': "test 1",
+            'prop_2': 1
+        }
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get(reverse('getone-api', args=[dataset.pk, model.name, "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"]))
+        assert resp.context['tabs'] == {
+            'http': {
+                'name': 'HTTP',
+                'query': highlight(
+                    "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886",
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'httpie': {
+                'name': 'HTTPie',
+                'query': highlight(
+                    'http GET "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'curl': {
+                'name': 'curl',
+                'query': highlight(
+                    'curl "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
+                    TextLexer(), HtmlFormatter()
+                )
+            }
+        }
+        assert resp.context['response'] == highlight(
+            json.dumps({
+                '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+                'prop_1': "test 1",
+                'prop_2': 1
+            }, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+
+@pytest.mark.django_db
+def test_changes(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name='prop_1',
+        type='string',
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name='prop_2',
+        type='integer'
+    )
+
+    with patch('vitrina.structure.services.requests.get') as mock_get:
+        data = {
+            '_data': [
+                {
+                    '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+                    '_op': 'insert',
+                    'prop_1': "test 1",
+                    'prop_2': 1
+                }
+            ]
+        }
+        mock_get.return_value = Mock(content=json.dumps(data))
+        resp = app.get(reverse('changes-api', args=[dataset.pk, model.name]))
+        assert resp.context['tabs'] == {
+            'http': {
+                'name': 'HTTP',
+                'query': highlight(
+                    "https://get.data.gov.lt/test/dataset/TestModel/:changes",
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'httpie': {
+                'name': 'HTTPie',
+                'query': highlight(
+                    'http GET "https://get.data.gov.lt/test/dataset/TestModel/:changes"',
+                    TextLexer(), HtmlFormatter()
+                )
+            },
+            'curl': {
+                'name': 'curl',
+                'query': highlight(
+                    'curl "https://get.data.gov.lt/test/dataset/TestModel/:changes"',
+                    TextLexer(), HtmlFormatter()
+                )
+            }
+        }
+        assert resp.context['response'] == highlight(
+            json.dumps({
+                '_data': [
+                    {
+                        '_id': 'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+                        '_op': 'insert',
+                        'prop_1': "test 1",
+                        'prop_2': 1
+                    },
+                ]
+            }, indent=2, ensure_ascii=False),
+            JsonLexer(),
+            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+        )
+
+
+@pytest.mark.django_db
+def test_api_tab_from_model_data(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(reverse('model-data', args=[dataset.pk, model.name]))
+    resp = resp.click(linkid='api_tab')
+    assert resp.request.path == model.get_api_url()
+
+
+@pytest.mark.django_db
+def test_api_tab_from_model_data_with_query(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get("%s%s" % (
+        reverse('model-data', args=[dataset.pk, model.name]),
+        "?select(prop)"
+    ))
+    resp = resp.click(linkid='api_tab')
+    assert resp.request.path_qs == "%s%s" % (
+        model.get_api_url(),
+        "?select(prop)"
+    )
+
+
+@pytest.mark.django_db
+def test_api_tab_from_object_data(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    _id = str(uuid.uuid4())
+    resp = app.get(reverse('object-data', args=[dataset.pk, model.name, _id]))
+    resp = resp.click(linkid='api_tab')
+    assert resp.request.path == reverse('getone-api', args=[dataset.pk, model.name, _id])
+
+
+@pytest.mark.django_db
+def test_data_tab_from_getone(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    _id = str(uuid.uuid4())
+    resp = app.get(reverse('getone-api', args=[dataset.pk, model.name, _id]))
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == reverse('object-data', args=[dataset.pk, model.name, _id])
+
+
+@pytest.mark.django_db
+def test_data_tab_from_getall(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path == reverse('model-data', args=[dataset.pk, model.name])
+
+
+@pytest.mark.django_db
+def test_data_tab_from_getall_with_query(app: DjangoTestApp):
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = app.get("%s%s" % (
+        reverse('getall-api', args=[dataset.pk, model.name]),
+        "?select(prop)"
+    ))
+    resp = resp.click(linkid='data_tab')
+    assert resp.request.path_qs == "%s%s" % (
+        model.get_data_url(),
+        "?select(prop)"
+    )

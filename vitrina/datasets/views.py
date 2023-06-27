@@ -23,7 +23,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
 
 from django.views import View
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
@@ -41,6 +41,8 @@ from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.structure.services import create_structure_objects
+from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm
@@ -137,7 +139,12 @@ class DatasetListView(FacetedSearchView):
         return context
 
 
-class DatasetDetailView(LanguageChoiceMixin, HistoryMixin, DetailView):
+class DatasetDetailView(
+    LanguageChoiceMixin,
+    HistoryMixin,
+    DatasetStructureMixin,
+    DetailView
+):
     model = Dataset
     template_name = 'vitrina/datasets/detail.html'
     context_object_name = 'dataset'
@@ -178,32 +185,6 @@ class DatasetDistributionPreviewView(View):
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
-
-
-class DatasetStructureView(TemplateView):
-    template_name = 'vitrina/datasets/structure.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
-        structure = dataset.current_structure
-        context['errors'] = []
-        context['manifest'] = None
-        context['structure'] = structure
-        if structure and structure.file:
-            if errors := detect_read_errors(structure.file.path):
-                context['errors'] = errors
-            else:
-                with open(
-                    structure.file.path,
-                    encoding='utf-8',
-                    errors='replace',
-                ) as f:
-                    reader = csv.DictReader(f)
-                    state = read(reader)
-                context['errors'] = state.errors
-                context['manifest'] = state.manifest
-        return context
 
 
 class DatasetCreateView(
@@ -293,7 +274,7 @@ class DatasetUpdateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(HistoryView):
+class DatasetHistoryView(DatasetStructureMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -347,6 +328,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -354,6 +336,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
+    DatasetStructureMixin,
     ListView,
 ):
     model = Representative
@@ -587,7 +570,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(HistoryMixin, ListView):
+class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -820,7 +803,7 @@ class DatasetsStatsView(DatasetListView):
         categories = self.get_categories()
         query_set = self.get_queryset()
         data = {
-            'labels': [cat.get('title') for cat in categories] 
+            'labels': [cat.get('title') for cat in categories]
         }
         datasets = []
         date_labels = self.get_date_labels()

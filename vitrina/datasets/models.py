@@ -1,4 +1,7 @@
 import pathlib
+import tagulous
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.urls import reverse
@@ -7,6 +10,7 @@ from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 
+from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog, HarvestingJob
@@ -146,6 +150,8 @@ class Dataset(TranslatableModel):
     will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
 
+    metadata = GenericRelation('vitrina_structure.Metadata')
+
     objects = TranslatableManager()
     public = PublicDatasetManager()
 
@@ -229,6 +235,33 @@ class Dataset(TranslatableModel):
             if root_org.get_children_count() > 1:
                 return root_org.pk
         return None
+
+    def update_level(self):
+        if metadata := self.metadata.first():
+            levels = Metadata.objects.filter(
+                dataset=self,
+                content_type__in=[
+                    ContentType.objects.get_for_model(Model),
+                    ContentType.objects.get_for_model(Base),
+                    ContentType.objects.get_for_model(Property)
+                ],
+                level__isnull=False,
+            ).values_list('level', flat=True)
+
+            if levels:
+                metadata.average_level = sum(levels) / len(levels)
+                metadata.save()
+
+    def get_level(self):
+        if metadata := self.metadata.first():
+            return metadata.average_level
+        return None
+
+    @property
+    def name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ""
 
 
 # TODO: To be merged into Dataset:
@@ -476,6 +509,9 @@ class DatasetStructure(models.Model):
 
     def filename_without_path(self):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
+    def get_acl_parents(self):
+        return [self.dataset]
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14

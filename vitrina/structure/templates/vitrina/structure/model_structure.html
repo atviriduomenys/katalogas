@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+{% load markdown_tags %}
+
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-one-quarter">
+        {% include 'vitrina/structure/side_menu.html' %}
+    </div>
+
+    <div class="column">
+        <div class="mb-2">
+            <span class="is-family-monospace is-size-6-mobile is-size-5 pr-3">
+                {{ model.name }}
+            </span>
+
+            {% if model.property_list.all %}
+                <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
+                <span class="is-italic pr-3">
+                    {% for prop in model.property_list.all %}
+                        {{ prop }}
+                    {% endfor %}
+                </span>
+            {% endif %}
+
+            {% if model.access_display_value %}
+                <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+            {% endif %}
+
+            <span>{{ model.metadata.first.average_level|default:"0"|floatformat:"1" }}</span>
+            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+        </div>
+        <div class="mb-2">
+            {% if model.base %}
+                <span class="pr-5">
+                    base:
+                    <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
+                </span>
+            {% endif %}
+            {% if model.metadata.first.uri %}
+                <span>
+                    uri:
+                    {% if model.metadata.first.uri_link %}
+                        <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
+                    {% else %}
+                        {{ model.metadata.first.uri }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </div>
+        {% if can_manage_structure %}
+        <div class="buttons is-right">
+            <a href="#" class="button is-primary">
+                {% translate "Redaguoti" %}
+            </a>
+        </div>
+        {% endif %}
+        <div>
+            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų laukai" %}</h4>
+            {% for prop in props %}
+            <div class="mb-2">
+                <span class="pr-3 is-family-monospace">
+                    <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
+                </span>
+
+                {% if prop.metadata.first.type %}
+                <span class="is-bold pr-3">
+                    {{ prop.metadata.first.type }}
+                    {% if prop.metadata.first.type_args %}
+                        <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                    {% endif %}
+                </span>
+                {% endif %}
+
+                {% if prop.metadata.first.required %}
+                <span class="is-italic pr-3">required</span>
+                {% endif %}
+
+                {% if prop.metadata.first.unique %}
+                <span class="is-italic pr-3">unique</span>
+                {% endif %}
+
+                {% if prop.ref_model %}
+                <span class="pr-3">
+                    model:
+                    <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                    {% if prop.property_list.all %}
+                        <span class="is-italic">
+                            {% for p in prop.property_list.all %}
+                                {{ p }}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </span>
+                {% endif %}
+
+                {% if prop.metadata.first.uri %}
+                    <span class="pr-3">
+                        uri:
+                        {% if prop.metadata.first.uri_link %}
+                            <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
+                        {% else %}
+                            {{ prop.metadata.first.uri }}
+                        {% endif %}
+                    </span>
+                {% endif %}
+
+                {% if prop.metadata.first.access is not None %}
+                <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
+                {% endif %}
+
+                {% if prop.metadata.first.level %}
+                <span class="is-pulled-right">
+                    <span>{{ prop.metadata.first.level }}</span>
+                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                </span>
+                {% endif %}
+
+                <br/>
+                <p class="ml-4">{{ prop.metadata.first.title }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if can_manage_structure %}
+        <div class="buttons is-right">
+            <a href="#" class="button is-primary">
+                {% translate "Naujas duomenų laukas" %}
+            </a>
+        </div>
+        {% endif %}
+        {% if model.metadata.first.description %}
+        <div><p>{{ model.metadata.first.description | markdown | safe }}</p></div>
+        {% endif %}
+
+        <div class="mt-6">
+            {% comments obj=model user=request.user is_structure=True %}
+        </div>
+    </div>
+</div>
+{% endblock %}

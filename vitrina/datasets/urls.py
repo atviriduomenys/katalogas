@@ -13,7 +13,6 @@ from vitrina.datasets.views import DatasetMembersView
 from vitrina.datasets.views import DatasetProjectsView
 from vitrina.datasets.views import DatasetStatsView
 from vitrina.datasets.views import DatasetStructureImportView
-from vitrina.datasets.views import DatasetStructureView
 from vitrina.datasets.views import DatasetAttributionCreateView
 from vitrina.datasets.views import DatasetUpdateView
 from vitrina.datasets.views import DeleteMemberView
@@ -33,7 +32,6 @@ urlpatterns = [
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
     path('datasets/<int:dataset_id>/preview/<int:distribution_id>/', DatasetDistributionPreviewView.as_view(),
          name='dataset-distribution-preview'),
-    path('datasets/<int:pk>/structure/', DatasetStructureView.as_view(), name='dataset-structure'),
     path('datasets/<int:pk>/structure/import/', DatasetStructureImportView.as_view(),
          name='dataset-structure-import'),
     path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),

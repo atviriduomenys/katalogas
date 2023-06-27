@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+{% load markdown_tags %}
+
+{% block current_title %}
+    {% if prop.title %}
+        {{ prop.title }}
+    {% else %}
+        {{ prop.name }}
+    {% endif %}
+{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
+        <li><a href="{{ model.get_absolute_url }}">
+            <span>
+                {% if model.title %}
+                    {{ model.title }}
+                {% else %}
+                    {{ model.name }}
+                {% endif %}
+            </span>
+        </a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-one-quarter">
+        {% include 'vitrina/structure/side_menu.html' %}
+    </div>
+
+    <div class="column">
+        <div class="mb-2">
+            <span class="is-family-monospace pr-3 is-size-6-mobile is-size-5">
+                {{ prop }}
+            </span>
+
+            {% if prop.metadata.first.type %}
+            <span class="is-bold pr-3">
+                {{ prop.metadata.first.type }}
+                {% if prop.metadata.first.type_args %}
+                    <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                {% endif %}
+            </span>
+            {% endif %}
+
+            {% if prop.metadata.first.required %}
+            <span class="is-italic pr-3">required</span>
+            {% endif %}
+
+            {% if prop.metadata.first.unique %}
+            <span class="is-italic pr-3">unique</span>
+            {% endif %}
+
+            {% if prop.ref_model %}
+            <span class="pr-3">
+                model:
+                <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                {% if prop.property_list.all %}
+                    <span class="is-italic">
+                        {% for p in prop.property_list.all %}
+                            {{ p }}
+                        {% endfor %}
+                    </span>
+                {% endif %}
+            </span>
+            {% endif %}
+
+            {% if prop.metadata.first.level %}
+            <span class>{{ prop.metadata.first.level }}</span>
+            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+            {% endif %}
+        </div>
+        <div class="mb-2">
+            {% if prop.metadata.first.uri %}
+                <span>uri: </span>
+                {% if prop.metadata.first.uri_link %}
+                    <span class="pr-3">
+                        <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
+                    </span>
+                {% else %}
+                    <span class="has-text-weight-semibold">{{ prop.metadata.first.uri }}</span>
+                {% endif %}
+            {% endif %}
+            {% if prop.metadata.first.source %}
+                <span>source: </span>
+                <span class="has-text-weight-semibold">{{ prop.metadata.first.source }}</span>
+            {% endif %}
+        </div>
+        {% if can_manage_structure %}
+        <div class="buttons is-right">
+            <a href="#" class="button is-primary">
+                {% translate "Redaguoti" %}
+            </a>
+        </div>
+        {% endif %}
+
+        {% if prop.metadata.first.type == 'string' or prop.metadata.first.type == 'integer' %}
+        <div>
+            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
+            {% if prop.enums.first %}
+                {% for enum_item in prop.enums.first.enumitem_set.all %}
+                <div class="mb-3">
+                    <div class="is-inline">
+                        {% if enum_item.metadata.first.prepare %}
+                        <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
+                        {% endif %}
+
+                        {% if enum_item.metadata.first.title %}
+                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
+                        {% endif %}
+
+                        {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
+                            {% if prop.name and model.name and can_manage_structure %}
+                            <div class="buttons is-pulled-right mr-1 no-margin-bottom">
+                                <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
+                                    {% translate "Keisti" %}
+                                </a>
+                                <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
+                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                   class="button is-danger is-small"
+                                   id="delete_enum">{% translate "Trinti" %}
+                                </a>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+
+                    </div>
+                    <div class="ml-4">
+                        {% if enum_item.metadata.first.source %}
+                        <span>source: </span>
+                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
+                        {% endif %}
+                    </div>
+                    {% if enum_item.metadata.first.description %}
+                        <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>
+                    {% translate "Galimos reikšmės neapibrėžtos." %}
+                </p>
+            {% endif %}
+            {% if model.name and prop.name and can_manage_structure %}
+                <div class="buttons is-right mt-5">
+                    <a href="{% url 'enum-create' dataset.pk model.name prop.name %}" class="button is-primary">
+                        {% translate "Nauja reikšmė" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if prop.metadata.first.description %}
+        <div><p>{{ prop.metadata.first.description | markdown | safe }}</p></div>
+        {% endif %}
+
+        <div class="mt-6">
+            {% comments obj=prop user=request.user is_structure=True %}
+        </div>
+    </div>
+</div>
+{% endblock %}

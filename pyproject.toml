@@ -34,6 +34,9 @@ c3pyo = "^0.0.4.1"
 django-chartjs = "^2.3.0"
 pandas = "^2.0.0"
 django-sass-processor = "^1.2"
+lark-parser = "^0.12.0"
+markdown = "^3.4.3"
+pygments = "^2.15.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -50,6 +53,7 @@ tqdm = "^4.64.1"
 dataset = "^1.5.2"
 typer = "^0.6.1"
 flake8 = "^4.0.1"
+xlsxwriter = "^3.0.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

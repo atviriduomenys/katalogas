@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+{% load comment_tags %}
+
+{% block current_title %}
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
+{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/datasets/tabs.html' %}
+
+<div class="columns no-margin-bottom">
+    <div class="column is-one-quarter">
+        {% include 'vitrina/structure/side_menu.html' %}
+    </div>
+
+    <div class="column is-three-quarters">
+        {% if errors %}
+            <div class="message is-danger">
+                <div class="message-body">
+                    {% for error in errors %}
+                    <p>{{ error.message }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="table-container">
+                <table class="table is-bordered">
+                    <tbody>
+                        {% for col in headers %}
+                            {% get_value_by_key properties col as prop %}
+                            {% get_value_by_key data col as value %}
+
+                            {% if col not in excluded_cols %}
+                                <tr>
+                                    <th>
+                                        <div>
+                                            <span>
+                                                {% if prop %}
+                                                    <a href="{{ prop.get_absolute_url }}">{{ col }}</a>
+                                                {% else %}
+                                                    {{ col }}
+                                                {% endif %}
+                                                {% if col == '_id' or prop.metadata.first.unique %}
+                                                    <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <small class="has-text-weight-normal is-italic">
+                                                {% if prop.ref_model %}
+                                                    <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
+                                                {% else %}
+                                                    {{ prop.metadata.first.type }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </th>
+                                    {% if col == '_id' %}
+                                        <td>
+                                            {% if model.name %}
+                                                <a href="{% url 'object-data' dataset.pk model.name value %}">{{ value|slice:":8" }}</a>
+                                            {% else %}
+                                                {{ value|slice:":8" }}
+                                            {% endif %}
+                                        </td>
+                                    {% elif value|is_dict %}
+                                        {% if prop.ref_model %}
+                                            {% get_value_by_key value '_id' as value %}
+                                            {% if value != None %}
+                                                <td id="{{ col }}_col_id">
+                                                    {% if prop.ref_model.name %}
+                                                        <a href="{% url 'object-data' dataset.pk prop.ref_model.name value %}">{{ value|slice:":8" }}</a>
+                                                    {% else %}
+                                                        {{ value|slice:":8" }}
+                                                    {% endif %}
+                                                </td>
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if value != None %}
+                                                {% for k, v in value.items %}
+                                                    {% if k == '_id' %}
+                                                        {% if v != None %}
+                                                            <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
+                                                        {% else %}
+                                                            <td class="has-background-white-ter"></td>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {% if v != None %}
+                                                            <td id="{{ col }}_col_id">{{ v }}</td>
+                                                        {% else %}
+                                                            <td class="has-background-white-ter"></td>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% if not forloop.last %}
+                                                        <br/>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
+                                                <td class="has-background-white-ter"></td>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% if value != None %}
+                                            <td>{{ value }}</td>
+                                        {% else %}
+                                            <td class="has-background-white-ter"></td>
+                                        {% endif %}
+                                    {% endif %}
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if model.name %}
+                <div class="mt-6">
+                    {% get_value_by_key data '_id' as id %}
+                    {% external_comments content_type=model.name object_id=id user=request.user dataset=dataset %}
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

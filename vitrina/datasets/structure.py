@@ -291,6 +291,7 @@ class Property(Metadata):
     type: str = ''
     required: bool = False
     unique: bool = False
+    type_args: list[str] = None
 
     model: Model = field(init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
@@ -686,6 +687,7 @@ def _read_property(
         description=row['description'],
         required=dtype['required'],
         unique=dtype['unique'],
+        type_args=dtype['type_args'],
     )
 
     if dtype['error']:

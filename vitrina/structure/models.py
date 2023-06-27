@@ -71,6 +71,7 @@ class Metadata(models.Model):
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_('Duomenų rinkinys'))
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
+    type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
 
     objects = models.Manager()
 
@@ -191,6 +192,14 @@ class Model(models.Model):
             return reverse('model-data', kwargs={
                 'pk': self.dataset.pk,
                 'model': self.name,
+            })
+        return None
+
+    def get_api_url(self):
+        if self.name:
+            return reverse('getall-api', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.name
             })
         return None
 

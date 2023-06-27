@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
+from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects
 from vitrina.classifiers.models import Frequency, Licence, Category
@@ -148,8 +149,10 @@ class DatasetCategoryForm(Form):
         widget=CheckboxSelectMultiple
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
         self.helper = FormHelper()
         self.helper.form_id = "dataset-category-form"
         self.helper.layout = Layout(
@@ -160,4 +163,8 @@ class DatasetCategoryForm(Form):
             Field('category'),
             Submit('submit', _("Išsaugoti"), css_class='button is-primary')
         )
-        self.fields['category'].choices = ()
+
+        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
+        category_choices = category_choices[1:]
+        self.fields['category'].choices = category_choices
+        self.initial['category'] = self.dataset.category.all()

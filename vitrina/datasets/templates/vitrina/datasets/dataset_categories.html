@@ -27,7 +27,7 @@
             let search = $('input#id_search');
             let showSelected = $('input#show_selected_id');
 
-            showSelected.on('click', function(event, onLoad=false) {
+            showSelected.on('click', function() {
                 let checked = $(this).is(":checked");
                 let groupId = group.val();
                 let term = search.val();
@@ -69,125 +69,89 @@
                 }
             });
 
-            group.on('change', function(event, onLoad=false) {
+            group.on('change', function() {
                 let term = search.val();
                 let groupId = group.val();
                 let datasetId = {{ dataset.pk }};
-                if( groupId || onLoad ) {
-                    let checked = $(showSelected).is(":checked");
-                    let checkedIds = [];
-                    if (checked){
-                        $('#div_id_category input:checked').each(function() {
-                            checkedIds.push($(this).val());
-                        });
-                    }
 
-                    $.ajax({
-                         url: `/datasets/${datasetId}/filter_categories/`,
-                         data: {
-                             group_id: groupId,
-                             category_ids: checkedIds.join(','),
-                             term: term,
-                             on_load: onLoad,
-                         }
-                     }).then(response => {
-                         let categories = response['categories'];
-                         let ids = Object.keys(categories);
-                         let values = Object.values(categories);
-
-                         if (onLoad){
-                            let field = $('div#div_id_category');
-                            for (let category of values) {
-                                if(category['html']){
-                                    $(field).append(category['html']);
-                                }
-                            }
-
-                            $('#div_id_category input').each(function() {
-                                $(this).parents('.control').hide();
-                                let checked = categories[$(this).val()]['checked'];
-                                if (checked) {
-                                    $(this).prop( "checked", true );
-                                }
-                                else {
-                                    $(this).prop( "checked", false );
-                                }
-                             });
-                         }
-                         else {
-                             $('#div_id_category input').each(function() {
-                                if(!ids.includes($(this).val())) {
-                                    $(this).parents('.control').hide();
-                                }
-                                else {
-                                    $(this).parents('.control').show();
-                                    let showCheckbox = categories[$(this).val()]['show_checkbox'];
-                                    if (!showCheckbox) {
-                                        $(this).prop( "disabled", true );
-                                    }
-                                    else {
-                                        $(this).prop( "disabled", false );
-                                    };
-                                }
-                             });
-                         }
-                     });
-                 }
-                 else {
-                    $('#div_id_category input').each(function() {
-                        $(this).parents('.control').hide();
+                let checked = $(showSelected).is(":checked");
+                let checkedIds = [];
+                if (checked){
+                    $('#div_id_category input:checked').each(function() {
+                        checkedIds.push($(this).val());
                     });
-                 }
-            });
-            group.trigger('change', [true]);
+                }
 
-            search.on('input', function(event, onLoad=false) {
+                $.ajax({
+                     url: `/datasets/${datasetId}/filter_categories/`,
+                     data: {
+                         group_id: groupId,
+                         category_ids: checkedIds.join(','),
+                         term: term,
+                     }
+                 }).then(response => {
+                     let categories = response['categories'];
+                     let ids = Object.keys(categories);
+                     let values = Object.values(categories);
+
+                     $('#div_id_category input').each(function() {
+                        if(!ids.includes($(this).val())) {
+                            $(this).parents('.control').hide();
+                        }
+                        else {
+                            $(this).parents('.control').show();
+                            let showCheckbox = categories[$(this).val()]['show_checkbox'];
+                            if (!showCheckbox) {
+                                $(this).prop( "disabled", true );
+                            }
+                            else {
+                                $(this).prop( "disabled", false );
+                            };
+                        }
+                     });
+                 });
+            });
+            group.trigger('change');
+
+            search.on('input', function() {
                 let term = search.val();
                 let groupId = group.val();
                 let datasetId = {{ dataset.pk }};
 
-                if (groupId) {
-                    let checkedIds = [];
-                    let checked = $(showSelected).is(":checked");
-                    if (checked){
-                        $('#div_id_category input:checked').each(function() {
-                            checkedIds.push($(this).val());
-                        });
+                let checkedIds = [];
+                let checked = $(showSelected).is(":checked");
+                if (checked){
+                    $('#div_id_category input:checked').each(function() {
+                        checkedIds.push($(this).val());
+                    });
+                }
+                $.ajax({
+                    url: `/datasets/${datasetId}/filter_categories/`,
+                    data: {
+                        group_id: groupId,
+                        category_ids: checkedIds.join(','),
+                        term: term,
                     }
-                    $.ajax({
-                        url: `/datasets/${datasetId}/filter_categories/`,
-                        data: {
-                            group_id: groupId,
-                            category_ids: checkedIds.join(','),
-                            term: term,
-                            on_load: onLoad,
-                        }
-                    }).then(response => {
-                        let categories = response['categories'];
-                        let ids = Object.keys(categories);
+                }).then(response => {
+                    let categories = response['categories'];
+                    let ids = Object.keys(categories);
 
-                        $('#div_id_category input').each(function() {
-                           if(!ids.includes($(this).val())) {
-                               $(this).parents('.control').hide();
+                    $('#div_id_category input').each(function() {
+                       if(!ids.includes($(this).val())) {
+                           $(this).parents('.control').hide();
+                       }
+                       else {
+                           $(this).parents('.control').show();
+                           let showCheckbox = categories[$(this).val()]['show_checkbox'];
+                           if (!showCheckbox) {
+                               $(this).prop( "disabled", true );
                            }
                            else {
-                               $(this).parents('.control').show();
-                               let showCheckbox = categories[$(this).val()]['show_checkbox'];
-                               if (!showCheckbox) {
-                                   $(this).prop( "disabled", true );
-                               }
-                               else {
-                                   $(this).prop( "disabled", false );
-                               };
-                           }
-                        });
+                               $(this).prop( "disabled", false );
+                           };
+                       }
                     });
-                }
-                else {
-                     $('#div_id_category input').each(function() {
-                        $(this).parents('.control').hide();
-                    });
-                }
+                });
             });
         })
     </script>

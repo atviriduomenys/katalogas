@@ -18,13 +18,12 @@ from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
 
 from django.views import View
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
@@ -37,7 +36,6 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
-from treebeard.forms import MoveNodeForm
 
 from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
@@ -195,7 +193,7 @@ class DatasetCreateView(
     LanguageChoiceMixin
 ):
     model = Dataset
-    template_name = 'base_form.html'
+    template_name = 'vitrina/datasets/form.html'
     context_object_name = 'dataset'
     form_class = DatasetForm
 
@@ -235,7 +233,7 @@ class DatasetUpdateView(
     ViewUrlMixin
 ):
     model = Dataset
-    template_name = 'base_form.html'
+    template_name = 'vitrina/datasets/form.html'
     view_url_name = 'dataset:edit'
     context_object_name = 'dataset'
     form_class = DatasetForm
@@ -846,12 +844,12 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = DatasetCategoryForm()
+        context['form'] = DatasetCategoryForm(self.dataset)
         context['dataset'] = self.dataset
         return context
 
     def post(self, request, *args, **kwargs):
-        form = DatasetCategoryForm(request.POST)
+        form = DatasetCategoryForm(self.dataset, request.POST)
         if form.is_valid():
             self.dataset.category.clear()
             for category in form.cleaned_data.get('category'):
@@ -864,43 +862,29 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
 
 class FilterCategoryView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        categories = Category.objects.all()
         category_data = {}
+        group_categories = []
+
         if group_id := request.GET.get('group_id'):
             group = get_object_or_404(DatasetGroup, pk=int(group_id))
             group_categories = group.category_set.all()
-
             categories = group_categories
-            if ids := request.GET.get('category_ids'):
-                ids = [int(i) for i in ids.split(',')]
-                categories = categories.filter(pk__in=ids)
 
-            if term := request.GET.get('term'):
-                categories = categories.filter(title__icontains=term)
+        if ids := request.GET.get('category_ids'):
+            ids = [int(i) for i in ids.split(',')]
+            categories = categories.filter(pk__in=ids)
 
-            for cat in categories:
-                category_data[cat.pk] = {
-                    'show_checkbox': True,
-                }
-                for ancestor in cat.get_ancestors():
-                    if ancestor not in categories:
-                        category_data[ancestor.pk] = {
-                            'show_checkbox': True if ancestor in group_categories else False,
-                        }
-        elif request.GET.get('on_load'):
-            dataset_categories = dataset.category.values_list('pk', flat=True)
-            category_choices = MoveNodeForm.mk_dropdown_tree(Category)
-            category_choices = category_choices[1:]
-            category_data = {
-                pk: {
-                    'checked': True if pk in dataset_categories else False,
-                    'html': mark_safe(f'<div class="control">'
-                                      f'<label class="checkbox" for="id_category_{i}"></label>'
-                                      f'<input type="checkbox" name="category" id="id_category_{i}" value="{pk}"/> '
-                                      f'{cat}'
-                                      f'</div>')
-                }
-                for i, (pk, cat) in enumerate(category_choices)
+        if term := request.GET.get('term'):
+            categories = categories.filter(title__icontains=term)
+
+        for cat in categories:
+            category_data[cat.pk] = {
+                'show_checkbox': True,
             }
-
+            for ancestor in cat.get_ancestors():
+                if ancestor not in categories:
+                    category_data[ancestor.pk] = {
+                        'show_checkbox': True if ancestor in group_categories or not group_id else False,
+                    }
         return JsonResponse({'categories': category_data})

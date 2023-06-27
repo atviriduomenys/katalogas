@@ -7,7 +7,7 @@ from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, Frequ
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType
+    DataServiceSpecType, DatasetRelation
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -127,6 +127,15 @@ class RelationFactory(DjangoModelFactory):
             relation.inverse_title = fake.word()
         relation.save()
         return relation
+
+
+class DatasetRelationFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetRelation
+
+    dataset = factory.SubFactory(DatasetFactory)
+    part_of = factory.SubFactory(DatasetFactory)
+    relation = factory.SubFactory(RelationFactory)
 
 
 class DataServiceTypeFactory(DjangoModelFactory):

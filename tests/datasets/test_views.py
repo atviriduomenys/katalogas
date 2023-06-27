@@ -18,7 +18,7 @@ from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, TypeFactory, \
-    DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory
+    DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, DatasetRelationFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -1209,6 +1209,36 @@ def test_dataset_with_type(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_dataset_add_relation_with_existing_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_relation = DatasetRelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset_relation.dataset.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{dataset_relation.relation.pk}"
+    form['part_of'].force_value(dataset_relation.part_of.pk)
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        f'"{dataset_relation.relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_add_relation_with_existing_inverse_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_relation = DatasetRelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset_relation.part_of.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{dataset_relation.relation.pk}_inv"
+    form['part_of'].force_value(dataset_relation.dataset.pk)
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        f'"{dataset_relation.relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
 def test_dataset_add_relation(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -1217,7 +1247,7 @@ def test_dataset_add_relation(app: DjangoTestApp):
     relation = RelationFactory()
 
     form = app.get(reverse('dataset-relation-add', args=[dataset.pk])).forms['dataset-relation-form']
-    form['relation'] = relation.pk
+    form['relation_type'] = f"{relation.pk}"
     form['part_of'].force_value(dataset_part_of.pk)
     resp = form.submit()
     dataset.refresh_from_db()
@@ -1225,3 +1255,22 @@ def test_dataset_add_relation(app: DjangoTestApp):
     assert dataset.part_of.count() == 1
     assert dataset.part_of.first().part_of == dataset_part_of
     assert dataset.part_of.first().relation == relation
+
+
+@pytest.mark.django_db
+def test_dataset_add_inverse_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    dataset_part_of = DatasetFactory()
+    relation = RelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{relation.pk}_inv"
+    form['part_of'].force_value(dataset_part_of.pk)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset_part_of.part_of.count() == 1
+    assert dataset_part_of.part_of.first().part_of == dataset
+    assert dataset_part_of.part_of.first().relation == relation

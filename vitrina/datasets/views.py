@@ -48,7 +48,7 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
     DatasetRelationForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, DatasetRelation
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, DatasetRelation, Relation
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -899,7 +899,7 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['organization_id'] = self.dataset.organization.pk
+        kwargs['dataset'] = self.dataset
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -909,9 +909,31 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object: DatasetRelation = form.save(commit=False)
-        self.object.dataset = self.dataset
-        self.object.save()
-        self.dataset.part_of.add(self.object)
+
+        if relation := form.cleaned_data.get('relation_type'):
+            inverse = False
+            if relation.endswith('_inv'):
+                relation = relation.replace('_inv', '')
+                inverse = True
+            try:
+                relation = Relation.objects.get(pk=int(relation))
+            except (ValueError, ObjectDoesNotExist) as e:
+                messages.error(self.request, e)
+                return redirect(self.dataset.get_absolute_url())
+
+            self.object.relation = relation
+            if inverse:
+                self.object.dataset = self.object.part_of
+                self.object.part_of = self.dataset
+            else:
+                self.object.dataset = self.dataset
+            self.object.save()
+            self.object.dataset.part_of.add(self.object)
+
+            # need to save to update search index
+            self.object.dataset.save()
+            self.object.part_of.save()
+
         return redirect(self.dataset.get_absolute_url())
 
 

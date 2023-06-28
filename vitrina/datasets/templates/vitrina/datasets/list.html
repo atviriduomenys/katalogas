@@ -97,7 +97,8 @@
                         <div><span style="float:right">{% translate "Rūšiavimas" %}</span></div>
                         <div class="select">
                             <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
-                                <option value="sort-by-date" {% if sort == 'sort-by-date' %}selected{% endif %}>{% translate "Data" %}</option>
+                                <option value="sort-by-date-newest" {% if sort == 'sort-by-date-newest' %}selected{% endif %}>{% translate "Naujausi" %}</option>
+                                <option value="sort-by-date-oldest" {% if sort == 'sort-by-date-oldest' %}selected{% endif %}>{% translate "Seniausi" %}</option>
                                 <option value="sort-by-title" {% if sort == 'sort-by-title' %}selected{% endif %}>{% translate "Pavadinimas" %}</option>
                             </select>
                         </div>

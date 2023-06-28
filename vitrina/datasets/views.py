@@ -92,8 +92,10 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
-        if sorting is None or sorting == 'sort-by-date':
+        if sorting is None or sorting == 'sort-by-date-newest':
             datasets = datasets.order_by('-published')
+        elif sorting == 'sort-by-date-oldest':
+            datasets = datasets.order_by('published')
         elif sorting == 'sort-by-title':
             if self.request.LANGUAGE_CODE == 'lt':
                 datasets = datasets.order_by('lt_title_s')

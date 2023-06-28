@@ -29,7 +29,7 @@
         {% endif %}
 
         {% if can_manage_structure %}
-            <a class="button is-primary" href="#">
+            <a class="button is-primary" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
                 {% translate "Eksportuoti" %}
             </a>
             <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
@@ -62,6 +62,11 @@
                             {% endif %}
                         </span>
                     {% endif %}
+
+                    {% if model.access_display_value %}
+                        <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+                    {% endif %}
+
                     {% if model.metadata.first.average_level %}
                     <span class="is-pulled-right">
                         <span>{{ model.metadata.first.average_level|floatformat:"1" }}</span>

@@ -90,7 +90,7 @@ class Dataset(TranslatableModel):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Kategorija'))
+    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
@@ -115,7 +115,6 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    groups = models.ManyToManyField(DatasetGroup)
     tags = TagField(
         blank=True,
         force_lowercase=True,
@@ -177,17 +176,20 @@ class Dataset(TranslatableModel):
         return list(self.tags.all().values_list('name', flat=True))
 
     def get_all_groups(self):
-        return self.groups.all()
+        ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
+        return DatasetGroup.objects.filter(pk__in=ids)
 
     def get_group_list(self):
-        return list(self.groups.all().values_list('pk', flat=True))
+        return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct())
 
     def parent_category(self):
-        if self.category:
-            if not self.category.is_root():
-                return self.category.get_root().pk
+        parents = []
+        for category in self.category.all():
+            if not category.is_root():
+                parents.append(category.get_root().pk)
             else:
-                return self.category.pk
+                parents.append(category.pk)
+        return parents
 
     def level(self):
         return randrange(5)
@@ -230,8 +232,8 @@ class Dataset(TranslatableModel):
         return [tag.name.strip() for tag in self.tags.tags]
 
     @property
-    def category_title(self):
-        return self.category.title if self.category else ""
+    def category_titles(self):
+        return self.category.values_list('title', flat=True)
 
     def jurisdiction(self) -> int | None:
         if self.organization:

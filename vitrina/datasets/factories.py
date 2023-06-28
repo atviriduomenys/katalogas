@@ -40,7 +40,6 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
-    category = factory.SubFactory(CategoryFactory)
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
 

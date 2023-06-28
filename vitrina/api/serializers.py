@@ -142,10 +142,10 @@ class DatasetSerializer(serializers.ModelSerializer):
         label="",
         help_text="dcat:landingPage - Landing page of dataset",
     )
-    theme = serializers.CharField(
-        source='category_title',
+    theme = serializers.ListField(
+        child=serializers.CharField(),
+        source='category_titles',
         required=False,
-        allow_blank=True,
         label="",
         help_text="dcat:theme - Category of the dataset",
     )
@@ -227,7 +227,7 @@ class PostDatasetSerializer(DatasetSerializer):
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
         keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_title', None)
+        theme = validated_data.pop('category_titles', [])
 
         # these fields are not saved in the old code
         validated_data.pop('publisher', None)
@@ -243,8 +243,9 @@ class PostDatasetSerializer(DatasetSerializer):
             instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
         if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
             instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
-        if theme and Category.objects.filter(title=theme).exists():
-            instance.category = Category.objects.filter(title=theme).first()
+        if theme and Category.objects.filter(title__in=theme).exists():
+            for category in Category.objects.filter(title__in=theme):
+                instance.category.add(category)
         for tag in keywords:
             instance.tags.add(tag)
         instance.save()
@@ -272,7 +273,7 @@ class PatchDatasetSerializer(PostDatasetSerializer):
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
         keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_title', None)
+        theme = validated_data.pop('category_titles', [])
 
         # these fields are not saved in the old code
         validated_data.pop('publisher', None)
@@ -286,8 +287,10 @@ class PatchDatasetSerializer(PostDatasetSerializer):
             instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
         if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
             instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
-        if theme and Category.objects.filter(title=theme).exists():
-            instance.category = Category.objects.filter(title=theme).first()
+        if theme and Category.objects.filter(title__in=theme).exists():
+            instance.category.clear()
+            for category in Category.objects.filter(title__in=theme):
+                instance.category.add(category)
         if keywords:
             instance.tags.all().delete()
             for tag in keywords:

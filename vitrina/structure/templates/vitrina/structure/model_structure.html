@@ -43,6 +43,10 @@
                 </span>
             {% endif %}
 
+            {% if model.access_display_value %}
+                <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+            {% endif %}
+
             <span>{{ model.metadata.first.average_level|default:"0"|floatformat:"1" }}</span>
             <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
         </div>
@@ -80,7 +84,12 @@
                 </span>
 
                 {% if prop.metadata.first.type %}
-                <span class="is-bold pr-3">{{ prop.metadata.first.type }}</span>
+                <span class="is-bold pr-3">
+                    {{ prop.metadata.first.type }}
+                    {% if prop.metadata.first.type_args %}
+                        <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                    {% endif %}
+                </span>
                 {% endif %}
 
                 {% if prop.metadata.first.required %}
@@ -114,6 +123,10 @@
                             {{ prop.metadata.first.uri }}
                         {% endif %}
                     </span>
+                {% endif %}
+
+                {% if prop.metadata.first.access is not None %}
+                <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
                 {% endif %}
 
                 {% if prop.metadata.first.level %}

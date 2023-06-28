@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
 
@@ -13,6 +14,7 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.models import Metadata, Prefix, Model, Property, PropertyList, Enum, Param, EnumItem, \
     ParamItem, Base
 from vitrina.structure.services import create_structure_objects
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -1232,3 +1234,339 @@ def test_uri_prefix(app: DjangoTestApp):
         object_id=Property.objects.get(metadata__uuid=7).pk,
         type=Comment.STRUCTURE_ERROR
     ).values_list('body', flat=True)) == ['Prefiksas "spinta" duomenų rinkinyje neegzistuoja.']
+
+
+@pytest.mark.django_db
+def test_structure_export__prefixes(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,,,,,,prefix,spinta,,,,,https://github.com/atviriduomenys/spinta/issues/,,\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '3,,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\n'
+        '4,,,,,,,dct,,,,,http://purl.org/dc/terms/,,'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,,,,,,prefix,spinta,,,,,https://github.com/atviriduomenys/spinta/issues/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '3,,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\r\n'
+        '4,,,,,,,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__models_and_props(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '4,,,,Licence,,,id,,page(id),,,,Licence,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '6,,,,,title,string,,,,2,open,dct:title,,\n'
+        ',,,,,,,,,,,,,,\n'
+        '7,,,,Catalog,,,id,,,,,,Catalog,\n'
+        '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '4,,,,Licence,,,id,,page(id),,,,Licence,\r\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,2,open,dct:title,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '7,,,,Catalog,,,id,,,,,,Catalog,\r\n'
+        '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__base_model(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '4,,,,Base,,,,,,,,,,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,,,,,,,,,,\n'
+        '6,,,Base,,,,,,,,,,,\n'
+        '7,,,,Catalog,,,,,,,,,,\n'
+        '8,,,,,title,string,,,,2,open,dct:title,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '4,,,,Base,,,,,,,,,,\r\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '6,,,Base,,,,,,,,,,,\r\n'
+        '7,,,,Catalog,,,,,,,,,,\r\n'
+        '8,,,,,title,string,,,,2,open,dct:title,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__property_ref(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '4,,,,Country,,,,,,,,,,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '6,,,,,title,string,,,,5,open,dct:title,,\n'
+        '7,,,,,continent,ref,Continent[id],,,5,open,dct:continent,,\n'
+        '8,,,,Continent,,,,,,,,,,\n'
+        '9,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '4,,,,Country,,,,,,,,,,\r\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,5,open,dct:title,,\r\n'
+        '7,,,,,continent,ref,Continent[id],,,5,open,dct:continent,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '8,,,,Continent,,,,,,,,,,\r\n'
+        '9,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__model_ref(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '4,,,,Country,,,"id, title",,,,,,,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '6,,,,,title,string,,,,5,open,dct:title,,\n'
+        '7,,,,,continent,ref,Continent,,,5,open,dct:continent,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '4,,,,Country,,,"id, title",,,,,,,\r\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,5,open,dct:title,,\r\n'
+        '7,,,,,continent,ref,Continent,,,5,open,dct:continent,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__comments(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '4,,,,Country,,,,,,,,,,\n'
+        '5,,,,,,comment,type,,,,open,,Model comment,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '7,,,,,,comment,type,,,,open,,Property comment,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '4,,,,Country,,,,,,,,,,\r\n'
+        '5,,,,,,comment,type,,,,open,,Model comment,\r\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '7,,,,,,comment,type,,,,open,,Property comment,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__enums(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,,,,,enum,Size,,SMALL,,,,,\n'
+        '4,,,,,,,,,MEDIUM,,,,,\n'
+        '5,,,,,,,,,BIG,,,,,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '7,,,,City,,,,,,,,,,\n'
+        '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '9,,,,,size,Size,,,,5,open,dct:size,,\n'
+        '10,,,,,type,string,,,,5,open,dct:type,,\n'
+        '11,,,,,,enum,Type,,CREATED,,,,,\n'
+        '12,,,,,,,,,MODIFIED,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,,,,,enum,Size,,SMALL,,,,,\r\n'
+        '4,,,,,,,,,MEDIUM,,,,,\r\n'
+        '5,,,,,,,,,BIG,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '7,,,,City,,,,,,,,,,\r\n'
+        '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '9,,,,,size,Size,,,,5,open,dct:size,,\r\n'
+        '10,,,,,type,string,,,,5,open,dct:type,,\r\n'
+        '11,,,,,,enum,Type,,CREATED,,,,,\r\n'
+        '12,,,,,,,,,MODIFIED,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export__params(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '3,,,,,,param,country,,lt,,,,,\n'
+        '4,,,,,,,,,lv,,,,,\n'
+        '5,,,,,,,,,ee,,,,,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '7,,,,City,,,,,,,,,,\n'
+        '8,,,,,,param,type,,created,,,,,\n'
+        '9,,,,,,,,,modified,,,,,\n'
+        '10,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '11,,,,,type,string,,,,5,open,dct:type,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '3,,,,,,param,country,,lt,,,,,\r\n'
+        '4,,,,,,,,,lv,,,,,\r\n'
+        '5,,,,,,,,,ee,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '7,,,,City,,,,,,,,,,\r\n'
+        '8,,,,,,param,type,,created,,,,,\r\n'
+        '9,,,,,,,,,modified,,,,,\r\n'
+        '10,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
+        '11,,,,,type,string,,,,5,open,dct:type,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )

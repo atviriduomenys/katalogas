@@ -1,6 +1,7 @@
 import csv
 import json
 import uuid
+from io import StringIO
 from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict
 
@@ -427,6 +428,8 @@ def _create_or_update_metadata(
         metadata.order = order
         metadata.required = obj_meta.required if hasattr(obj_meta, 'required') else None
         metadata.unique = obj_meta.unique if hasattr(obj_meta, 'unique') else None
+        metadata.type_args = ", ".join(obj_meta.type_args) \
+            if hasattr(obj_meta, 'type_args') and obj_meta.type_args else None
         metadata.save()
 
         obj = metadata.object
@@ -456,6 +459,7 @@ def _create_or_update_metadata(
             object_id=obj.pk,
             required=obj_meta.required if hasattr(obj_meta, 'required') else None,
             unique=obj_meta.unique if hasattr(obj_meta, 'unique') else None,
+            type_args=", ".join(obj_meta.type_args) if hasattr(obj_meta, 'type_args') and obj_meta.type_args else None,
         )
     return obj, metadata
 
@@ -736,3 +740,328 @@ def _parse_access(value: str):
         elif value == 'open':
             access = Metadata.OPEN
     return access
+
+
+DATASET = [
+    'id',
+    'dataset',
+    'resource',
+    'base',
+    'model',
+    'property',
+    'type',
+    'ref',
+    'source',
+    'prepare',
+    'level',
+    'access',
+    'uri',
+    'title',
+    'description',
+]
+
+
+class IterableFile:
+
+    def __init__(self):
+        self.writes = []
+
+    def __iter__(self):
+        yield from self.writes
+        self.writes = []
+
+    def write(self, data):
+        self.writes.append(data)
+
+
+def export_dataset_structure(dataset: Dataset) -> StringIO:
+    cols = DATASET
+    rows = datasets_to_tabular(dataset)
+    rows = ({c: row[c] for c in cols} for row in rows)
+
+    stream = IterableFile()
+    writer = csv.DictWriter(stream, fieldnames=cols)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(row)
+        yield from stream
+
+
+def datasets_to_tabular(dataset: Dataset):
+    yield from _prefixes_to_tabular(dataset.current_structure, separator=True)
+    yield from _dataset_to_tabular(dataset, separator=True)
+
+
+def to_row(keys, values) -> Dict:
+    return {k: values.get(k) for k in keys}
+
+
+def _end_marker(name):
+    yield to_row(DATASET, {
+        name: "/"
+    })
+
+
+def _prefixes_to_tabular(
+    obj: models.Model,
+    separator: bool = False
+):
+    ct = ContentType.objects.get_for_model(obj)
+    prefixes = Prefix.objects.filter(content_type=ct, object_id=obj.pk).order_by('metadata__order')
+
+    first = True
+    for prefix in prefixes:
+        if meta := prefix.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'type': 'prefix' if first else '',
+                'ref': meta.name,
+                'uri': meta.uri,
+                'title': meta.title,
+                'description': meta.description,
+            })
+            first = False
+
+    if separator and prefixes:
+        yield to_row(DATASET, {})
+
+
+def _dataset_to_tabular(
+    dataset: Dataset,
+    separator: bool = False
+):
+    if meta := dataset.metadata.first():
+        yield to_row(DATASET, {
+            'id': meta.uuid,
+            'dataset': meta.name,
+            'level': meta.level_given,
+            'access': _get_access(meta.access),
+            'title': meta.title,
+            'description': meta.description,
+        })
+    yield from _prefixes_to_tabular(dataset, separator=separator)
+    yield from _enums_to_tabular(dataset, separator=separator)
+    yield from _params_to_tabular(dataset, separator=separator)
+    yield from _models_to_tabular(dataset, separator=separator)
+
+
+def _enums_to_tabular(
+    obj: models.Model,
+    separator: bool = False
+):
+    ct = ContentType.objects.get_for_model(obj)
+    enums = Enum.objects.filter(content_type=ct, object_id=obj.pk)
+
+    for enum in enums:
+        first = True
+        for item in enum.enumitem_set.all().order_by('metadata__order'):
+            if meta := item.metadata.first():
+                yield to_row(DATASET, {
+                    'id': meta.uuid,
+                    'type': 'enum' if first else '',
+                    'ref': enum.name if first else '',
+                    'source': meta.source,
+                    'prepare': meta.prepare,
+                    'access': _get_access(meta.access),
+                    'title': meta.title,
+                    'description': meta.description,
+                })
+                first = False
+
+    if separator and enums:
+        yield to_row(DATASET, {})
+
+
+def _params_to_tabular(
+    obj: models.Model,
+    separator: bool = False
+):
+    ct = ContentType.objects.get_for_model(obj)
+    params = Param.objects.filter(content_type=ct, object_id=obj.pk)
+
+    for param in params:
+        first = True
+        for item in param.paramitem_set.all().order_by('metadata__order'):
+            if meta := item.metadata.first():
+                yield to_row(DATASET, {
+                    'id': meta.uuid,
+                    'type': 'param' if first else '',
+                    'ref': param.name if first else '',
+                    'source': meta.source,
+                    'prepare': meta.prepare,
+                    'access': _get_access(meta.access),
+                    'title': meta.title,
+                    'description': meta.description,
+                })
+                first = False
+
+    if separator and params:
+        yield to_row(DATASET, {})
+
+
+def _models_to_tabular(
+    dataset: Dataset,
+    separator: bool = False
+):
+    dataset_models = Model.objects.filter(dataset=dataset).order_by('metadata__order')
+
+    resource = None
+    base = None
+    for model in dataset_models:
+        if model.distribution and not resource:
+            yield from _resource_to_tabular(model.distribution)
+            resource = model.distribution
+        elif not model.distribution and resource:
+            yield from _end_marker('resource')
+            resource = None
+
+        if model.base and not base:
+            yield from _base_to_tabular(model.base)
+            base = model.base
+        elif not model.base and base:
+            yield from _end_marker('base')
+            base = None
+
+        if meta := model.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'model': _to_relative_model_name(meta.name, dataset),
+                'level': meta.level_given,
+                'access': _get_access(meta.access),
+                'title': meta.title,
+                'description': meta.description,
+                'uri': meta.uri,
+                'source': meta.source,
+                'prepare': meta.prepare,
+                'ref': ', '.join([
+                    prop.property.name
+                    for prop in model.property_list.all()]
+                ) if model.property_list.exists() else ''
+            })
+
+            yield from _comments_to_tabular(model)
+            yield from _params_to_tabular(model)
+            yield from _properties_to_tabular(model)
+            if separator:
+                yield to_row(DATASET, {})
+
+
+def _resource_to_tabular(
+    resource: DatasetDistribution
+):
+    if meta := resource.metadata.first():
+        yield to_row(DATASET, {
+            'id': meta.uuid,
+            'resource': meta.name,
+            'source': meta.source,
+            'prepare': meta.prepare,
+            'type': meta.type,
+            'ref': meta.ref,
+            'level': meta.level_given,
+            'access': _get_access(meta.access),
+            'title': meta.title,
+            'description': meta.description,
+        })
+    yield from _comments_to_tabular(resource)
+
+
+def _comments_to_tabular(obj: models.Model):
+    ct = ContentType.objects.get_for_model(obj)
+    comments = Comment.objects.filter(
+        content_type=ct,
+        object_id=obj.pk,
+        type=Comment.STRUCTURE
+    ).order_by('metadata__order')
+
+    first = True
+    for comment in comments:
+        if meta := comment.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'type': 'comment' if first else '',
+                'ref': meta.ref,
+                'source': meta.source,
+                'access': _get_access(meta.access),
+                'title': meta.title,
+                'description': meta.description,
+            })
+            first = False
+
+
+def _base_to_tabular(base: Base):
+    if meta := base.metadata.first():
+        yield to_row(DATASET, {
+            'id': meta.uuid,
+            'base': _to_relative_model_name(meta.name, meta.dataset),
+            'ref': meta.ref
+        })
+
+
+def _properties_to_tabular(model: Model):
+    props = model.get_given_props()
+
+    for prop in props:
+        if meta := prop.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'property': meta.name,
+                'type': _get_type_repr(meta),
+                'level': meta.level_given,
+                'access': _get_access(meta.access),
+                'uri': meta.uri,
+                'title': meta.title,
+                'description': meta.description,
+                'source': meta.source,
+                'prepare': meta.prepare,
+                'ref': _prop_ref_to_tabular(prop, meta)
+            })
+
+            yield from _comments_to_tabular(prop)
+            yield from _enums_to_tabular(prop)
+
+
+def _get_type_repr(meta: Metadata):
+    required = ' required' if meta.required else ''
+    unique = ' unique' if meta.unique else ''
+    args = ''
+    if meta.type_args:
+        args = f'({meta.type_args})'
+    return f'{meta.type}{args}{unique}{required}'
+
+
+def _to_relative_model_name(name: str, dataset: Dataset) -> str:
+    if (
+        dataset.name and
+        name.startswith(dataset.name)
+    ):
+        prefix = dataset.name
+        return name[len(prefix) + 1:]
+    else:
+        return name
+
+
+def _get_access(acess: int) -> str:
+    if acess == Metadata.PRIVATE:
+        return 'private'
+    elif acess == Metadata.PROTECTED:
+        return 'protected'
+    elif acess == Metadata.PUBLIC:
+        return 'public'
+    elif acess == Metadata.OPEN:
+        return 'open'
+    return ''
+
+
+def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:
+    ref = meta.ref
+    if meta.type == 'ref':
+        ref_model = _to_relative_model_name(meta.ref, meta.dataset)
+        ref_props = prop.property_list.values_list('property__metadata__name', flat=True)
+        if ref_props:
+            ref_props = ', '.join(ref_props)
+            ref = f"{ref_model}[{ref_props}]"
+        else:
+            ref = ref_model
+    return ref
+
+

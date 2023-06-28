@@ -5,7 +5,7 @@ import operator
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -35,15 +35,17 @@ class Prefix(models.Model):
 
 
 class Metadata(models.Model):
+    UNDEFINED = None
     PRIVATE = 0
     PROTECTED = 1
     PUBLIC = 2
     OPEN = 3
     ACCESS_TYPES = (
-        (PRIVATE, _("Privatus")),
-        (PROTECTED, _("Apsaugotas")),
-        (PUBLIC, _("Viešas")),
-        (OPEN, _("Atviras")),
+        (UNDEFINED, _("nepasirinkta")),
+        (PRIVATE, _("private")),
+        (PROTECTED, _("protected")),
+        (PUBLIC, _("public")),
+        (OPEN, _("open")),
     )
 
     uuid = models.CharField(_("Id"), max_length=255)
@@ -69,6 +71,7 @@ class Metadata(models.Model):
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_('Duomenų rinkinys'))
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
+    type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
 
     objects = models.Manager()
 
@@ -192,11 +195,30 @@ class Model(models.Model):
             })
         return None
 
+    def get_api_url(self):
+        if self.name:
+            return reverse('getall-api', kwargs={
+                'pk': self.dataset.pk,
+                'model': self.name
+            })
+        return None
+
     def get_given_props(self):
         return self.model_properties.filter(given=True).order_by('metadata__order')
 
     def get_acl_parents(self):
         return [self.dataset]
+
+    @property
+    def access_display_value(self):
+        access = Model.objects.annotate(
+            access=Max('model_properties__metadata__access')
+        ).get(pk=self.pk).access
+        if access is not None:
+            for type in Metadata.ACCESS_TYPES:
+                if type[0] == access:
+                    return type[1]
+        return ''
 
 
 class Property(models.Model):

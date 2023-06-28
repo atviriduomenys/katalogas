@@ -23,7 +23,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
 
 from django.views import View
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
@@ -41,12 +41,11 @@ from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.structure.models import Model, Metadata
 from vitrina.structure.services import create_structure_objects
-from vitrina.structure.views import StructureMixin
-from vitrina.statistics.models import DatasetStats, ModelDownloadStats
+from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin
-from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm
+from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
+    DatasetCategoryForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
@@ -188,7 +187,7 @@ class DatasetListView(FacetedSearchView):
 class DatasetDetailView(
     LanguageChoiceMixin,
     HistoryMixin,
-    StructureMixin,
+    DatasetStructureMixin,
     DetailView
 ):
     model = Dataset
@@ -215,31 +214,6 @@ class DatasetDetailView(
         }
         context_data.update(extra_context_data)
         return context_data
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class DatasetDistributionPreviewView(View):
@@ -318,8 +292,6 @@ class DatasetCreateView(
         self.object = form.save(commit=True)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
-        groups = form.cleaned_data['groups']
-        self.object.groups.set(groups)
         self.object.save()
         set_comment(Dataset.CREATED)
         return HttpResponseRedirect(self.get_success_url())
@@ -361,16 +333,14 @@ class DatasetUpdateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
-        groups = form.cleaned_data['groups']
         tags = form.cleaned_data['tags']
-        self.object.groups.set(groups)
         self.object.tags.set(tags)
         self.object.save()
         set_comment(Dataset.EDITED)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(StructureMixin, HistoryView):
+class DatasetHistoryView(DatasetStructureMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -385,31 +355,6 @@ class DatasetHistoryView(StructureMixin, HistoryView):
             self.object,
         )
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class DatasetStructureImportView(
@@ -457,7 +402,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
-    StructureMixin,
+    DatasetStructureMixin,
     ListView,
 ):
     model = Representative
@@ -508,31 +453,6 @@ class DatasetMembersView(
             self.object,
         )
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class CreateMemberView(
@@ -716,7 +636,7 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
+class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -755,31 +675,6 @@ class DatasetProjectsView(StructureMixin, HistoryMixin, ListView):
         else:
             context['has_projects'] = False
         return context
-
-    def get_structure_url(self):
-        return reverse('dataset-structure', kwargs={
-            'pk': self.kwargs.get('pk'),
-        })
-
-    def get_data_url(self):
-        if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.object
-        ):
-            models = Model.objects.filter(dataset__pk=self.kwargs.get('pk')).order_by('metadata__name')
-        else:
-            models = Model.objects. \
-                annotate(access=Max('model_properties__metadata__access')). \
-                filter(dataset__pk=self.kwargs.get('pk'), access__gte=Metadata.PUBLIC). \
-                order_by('metadata__name')
-        if models and models[0].name:
-            return reverse('model-data', kwargs={
-                'pk': self.kwargs.get('pk'),
-                'model': models[0].name,
-            })
-        return None
 
 
 class AddProjectView(
@@ -2290,3 +2185,63 @@ class QuarterStatsView(DatasetListView):
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
         return context
+
+
+class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/datasets/dataset_categories.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = DatasetCategoryForm(self.dataset)
+        context['dataset'] = self.dataset
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = DatasetCategoryForm(self.dataset, request.POST)
+        if form.is_valid():
+            self.dataset.category.clear()
+            for category in form.cleaned_data.get('category'):
+                self.dataset.category.add(category)
+            self.dataset.save()
+        else:
+            messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
+        return redirect(self.dataset.get_absolute_url())
+
+
+class FilterCategoryView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.all()
+        category_data = {}
+        group_categories = []
+
+        if group_id := request.GET.get('group_id'):
+            group = get_object_or_404(DatasetGroup, pk=int(group_id))
+            group_categories = group.category_set.all()
+            categories = group_categories
+
+        if ids := request.GET.get('category_ids'):
+            ids = [int(i) for i in ids.split(',')]
+            categories = categories.filter(pk__in=ids)
+
+        if term := request.GET.get('term'):
+            categories = categories.filter(title__icontains=term)
+
+        for cat in categories:
+            category_data[cat.pk] = {
+                'show_checkbox': True,
+            }
+            for ancestor in cat.get_ancestors():
+                if ancestor not in categories:
+                    category_data[ancestor.pk] = {
+                        'show_checkbox': True if ancestor in group_categories or not group_id else False,
+                    }
+        return JsonResponse({'categories': category_data})

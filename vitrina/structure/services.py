@@ -742,6 +742,18 @@ def _parse_access(value: str):
     return access
 
 
+def get_model_name(dataset: Dataset, name: str) -> str:
+    if name.startswith('/'):
+        return name[1:]
+    elif not dataset or not dataset.name:
+        return name
+    else:
+        return '/'.join([
+            dataset.name,
+            name,
+        ])
+
+
 DATASET = [
     'id',
     'dataset',
@@ -1024,9 +1036,10 @@ def _get_type_repr(meta: Metadata):
     required = ' required' if meta.required else ''
     unique = ' unique' if meta.unique else ''
     args = ''
+    type = meta.type if meta.type != 'inherit' else ''
     if meta.type_args:
         args = f'({meta.type_args})'
-    return f'{meta.type}{args}{unique}{required}'
+    return f'{type}{args}{unique}{required}'
 
 
 def _to_relative_model_name(name: str, dataset: Dataset) -> str:

@@ -99,9 +99,9 @@
                 <span class="has-text-weight-semibold">{{ prop.metadata.first.source }}</span>
             {% endif %}
         </div>
-        {% if can_manage_structure %}
+        {% if can_manage_structure and model.name and prop.name %}
         <div class="buttons is-right">
-            <a href="#" class="button is-primary">
+            <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary">
                 {% translate "Redaguoti" %}
             </a>
         </div>

@@ -66,7 +66,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                     'user': version.revision.user,
                     'action': self.model.HISTORY_MESSAGES.get(
                         version.revision.comment,
-                    ),
+                    ) or version.revision.comment,
                 }
                 for version in (
                     Version.objects.
@@ -102,7 +102,7 @@ class HistoryMixin:
             'can_manage_history': has_perm(
                 self.request.user,
                 Action.HISTORY_VIEW,
-                self.object,
+                self.get_history_object(),
             )
         })
         return context
@@ -112,5 +112,8 @@ class HistoryMixin:
 
     def get_history_url_name(self):
         return self.history_url_name
+
+    def get_history_object(self):
+        return self.object
 
 

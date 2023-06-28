@@ -41,6 +41,8 @@ from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.statistics.models import DatasetStats, ModelDownloadStats
+from vitrina.structure.models import Model
 from vitrina.structure.services import create_structure_objects
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin

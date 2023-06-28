@@ -12,6 +12,7 @@
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
+{% block parent_url %}{% url 'dataset-list' %}{% endblock %}
 {% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block content %}

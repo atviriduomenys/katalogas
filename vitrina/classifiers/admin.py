@@ -35,6 +35,7 @@ class CategoryAdmin(TreeAdmin):
     ]
     list_filter = [
         RootCategoryFilter,
+        'groups',
     ]
     search_fields = (
         'title',

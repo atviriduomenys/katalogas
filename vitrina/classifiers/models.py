@@ -26,6 +26,7 @@ class Category(MP_Node):
     icon = models.CharField(max_length=255,
                             blank=True,
                             help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
+    groups = models.ManyToManyField(to='vitrina_datasets.DatasetGroup')
 
     node_order_by = ['title']
 

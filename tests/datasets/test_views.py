@@ -219,10 +219,18 @@ def category_filter_data():
     category4 = category2.add_child(
         instance=CategoryFactory.build(title='Cat 2.1'),
     )
-    dataset_with_category1 = DatasetFactory(category=category1, slug="ds1", organization=organization)
-    dataset_with_category2 = DatasetFactory(category=category2, slug="ds2", organization=organization)
-    dataset_with_category3 = DatasetFactory(category=category3, slug="ds3", organization=organization)
-    dataset_with_category4 = DatasetFactory(category=category4, slug="ds4", organization=organization)
+    dataset_with_category1 = DatasetFactory(slug="ds1", organization=organization)
+    dataset_with_category1.category.add(category1)
+    dataset_with_category1.save()
+    dataset_with_category2 = DatasetFactory(slug="ds2", organization=organization)
+    dataset_with_category2.category.add(category2)
+    dataset_with_category2.save()
+    dataset_with_category3 = DatasetFactory(slug="ds3", organization=organization)
+    dataset_with_category3.category.add(category3)
+    dataset_with_category3.save()
+    dataset_with_category4 = DatasetFactory(slug="ds4", organization=organization)
+    dataset_with_category4.category.add(category4)
+    dataset_with_category4.save()
 
     return {
         "categories": [category1, category2, category3, category4],
@@ -248,12 +256,12 @@ def test_category_filter_with_parent_category(app: DjangoTestApp, category_filte
         reverse("dataset-list"),
         category_filter_data["categories"][0].pk
     ))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
         category_filter_data["datasets"][0].pk,
         category_filter_data["datasets"][1].pk,
         category_filter_data["datasets"][2].pk,
         category_filter_data["datasets"][3].pk
-    ]
+    ])
     assert resp.context['selected_categories'] == [str(category_filter_data["categories"][0].pk)]
 
 
@@ -266,10 +274,10 @@ def test_category_filter_with_middle_category(
         reverse("dataset-list"),
         category_filter_data["categories"][1].pk
     ))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
         category_filter_data["datasets"][1].pk,
         category_filter_data["datasets"][3].pk,
-    ]
+    ])
     assert resp.context['selected_categories'] == [
         str(category_filter_data["categories"][1].pk),
     ]
@@ -309,21 +317,25 @@ def test_category_filter_with_parent_and_child_category(
     assert [int(obj.pk) for obj in resp.context['object_list']] == [
         category_filter_data["datasets"][3].pk,
     ]
-    assert resp.context['selected_categories'] == [
+    assert sorted(resp.context['selected_categories']) == sorted([
         str(category_filter_data["categories"][0].pk),
         str(category_filter_data["categories"][3].pk)
-    ]
+    ])
+
 
 @pytest.mark.haystack
 def test_data_group_filter_header_visible_if_data_groups_exist(
     app: DjangoTestApp,
 ):
     group = DatasetGroupFactory()
+    category = CategoryFactory()
+    category.groups.add(group)
     dataset = DatasetFactory()
-    dataset.groups.set([group])
+    dataset.category.add(category)
     dataset.save()
     resp = app.get(reverse('dataset-list'))
     assert resp.html.find(id='data_group_filter_header')
+
 
 @pytest.mark.haystack
 def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
@@ -332,6 +344,7 @@ def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
     dataset = DatasetFactory()
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='data_group_filter_header')
+
 
 @pytest.fixture
 def datasets():
@@ -349,6 +362,7 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
     ]
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
     assert resp.context['selected_tags'] == []
+
 
 @pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
@@ -463,9 +477,9 @@ def test_dataset_filter_all(app: DjangoTestApp):
         tags=('tag1', 'tag2', 'tag3'),
         published=timezone.localize(datetime(2022, 2, 9)),
         organization=organization,
-        category=category,
         frequency=frequency
     )
+    dataset_with_all_filters.category.add(category)
 
     distribution = DatasetDistributionFactory()
     distribution.dataset = dataset_with_all_filters
@@ -578,11 +592,11 @@ def test_change_form_correct_login(app: DjangoTestApp):
         published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         description='test description',
-        category=category,
         licence=licence,
         frequency=frequency,
         organization=org
     )
+    dataset.category.add(category)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
@@ -597,22 +611,6 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert dataset.description == 'edited dataset description'
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
-
-
-@pytest.mark.django_db
-def test_group_change_form_correct_login(app: DjangoTestApp):
-    group = DatasetGroupFactory()
-    dataset = DatasetFactory()
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['groups'] = ['1']
-    resp = form.submit()
-    dataset.refresh_from_db()
-    assert resp.status_code == 302
-    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
-    assert dataset.groups.all().first() == group
-    assert Version.objects.get_for_object(dataset).count() == 1
 
 
 @pytest.mark.django_db
@@ -653,7 +651,6 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 def test_add_form_correct_login(app: DjangoTestApp):
     LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
-    category = CategoryFactory()
     org = OrganizationFactory(
         title="Org_title",
         created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
@@ -666,7 +663,6 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
-    form['category'] = category.pk
     resp = form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Added title")
     assert added_dataset.count() == 1
@@ -1162,3 +1158,64 @@ def test_dataset_resource_create_button(app: DjangoTestApp):
     resp = app.get(dataset.get_absolute_url())
     resp = resp.click(linkid="add_resource")
     assert resp.request.path == reverse('resource-add', args=[dataset.pk])
+
+
+@pytest.mark.django_db
+def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+
+    group = DatasetGroupFactory()
+    category = CategoryFactory()
+    category.groups.add(group)
+
+    dataset = DatasetFactory()
+    resp = app.get(reverse('assign-category', args=[dataset.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dataset_assign_new_category(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    csrf_exempt_django_app.set_user(user)
+
+    group = DatasetGroupFactory()
+    category1 = CategoryFactory()
+    category1.groups.add(group)
+    category2 = CategoryFactory()
+    category2.groups.add(group)
+    category3 = CategoryFactory()
+    category3.groups.add(group)
+
+    dataset = DatasetFactory()
+    resp = csrf_exempt_django_app.post(reverse('assign-category', args=[dataset.pk]), {
+        'category': [category1.pk, category2.pk]
+    })
+    assert resp.status_code == 302
+    assert resp.url == dataset.get_absolute_url()
+    assert list(dataset.category.order_by('pk')) == [category1, category2]
+
+
+@pytest.mark.django_db
+def test_dataset_change_category(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    csrf_exempt_django_app.set_user(user)
+
+    group = DatasetGroupFactory()
+    category1 = CategoryFactory()
+    category1.groups.add(group)
+    category2 = CategoryFactory()
+    category2.groups.add(group)
+    category3 = CategoryFactory()
+    category3.groups.add(group)
+
+    dataset = DatasetFactory()
+    dataset.category.add(category1)
+    dataset.category.add(category2)
+
+    resp = csrf_exempt_django_app.post(reverse('assign-category', args=[dataset.pk]), {
+        'category': [category3.pk]
+    })
+    assert resp.status_code == 302
+    assert resp.url == dataset.get_absolute_url()
+    assert list(dataset.category.all()) == [category3]

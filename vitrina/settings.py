@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     'vitrina.tasks',
     'vitrina.catalogs',
     'vitrina.datasets',
+    'vitrina.statistics',
     'vitrina.structure',
     'vitrina.classifiers',
     'vitrina.projects',

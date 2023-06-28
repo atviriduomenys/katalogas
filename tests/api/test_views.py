@@ -18,6 +18,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.statistics.models import ModelDownloadStats
 
 
 @pytest.mark.django_db
@@ -1812,3 +1813,24 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
         'structureId': structure.pk
     }))
     assert dataset.datasetstructure_set.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_model_statistics(app: DjangoTestApp):
+    res = app.post(reverse('api-download-stats-internal'), {
+        'source': 'get.data.gov.lt',
+        'model': 'naujas_modelis',
+        'format': 'excel',
+        'time': datetime.now(),
+        'requests': 100,
+        'objects': 10
+    }, expect_errors=False)
+    assert res.json == {
+        "source": "get.data.gov.lt",
+        "model": "naujas_modelis",
+        "format": "excel",
+        "time": timezone.localtime(ModelDownloadStats.objects.first().created).isoformat(),
+        "requests": 100,
+        "objects": 10
+    }
+

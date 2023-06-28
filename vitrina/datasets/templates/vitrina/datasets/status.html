@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių valdymo sritys" %}
+{% endblock %}
+
+{% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% include "vitrina/datasets/filters.html" %}
+        </div>
+        <div class="column is-three-quarters">
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="status" %}
+            <div class="is-flex">
+                <span>{% translate "Rinkinio būsena" %}</span>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
+            </div>
+            {% for st, stv in status_data.items %}
+                <div class="is-flex">
+                    <a href="/datasets/?selected_facets=filter_status_exact%3A{{ st }}"
+                        id="{{ st }}_id">
+                        <strong style="color: black;">
+                            {% if st == 'HAS_STRUCTURE' %}
+                                {% translate "Įkelta duomenų struktūra" %}
+                            {% elif st == 'HAS_DATA' %}
+                                {% translate "Atverti duomenys" %}
+                            {% else %}
+                                {% translate "Inventorintas" %}
+                            {% endif %}
+                        </strong>
+                    </a>
+                    <div class="stays-right">
+                        <a href="/datasets/?selected_facets=filter_status_exact%3A{{ st }}">{{ stv }}</a>
+                    </div>
+                </div>
+                <progress class="progress is-info"
+                          value="{{ stv }}"
+                          max="{{ max_count }}"></progress>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

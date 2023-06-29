@@ -17,7 +17,8 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
 from vitrina.cms.factories import FilerFileFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
+    DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, DatasetRelationFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -1220,3 +1221,249 @@ def test_dataset_change_category(csrf_exempt_django_app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
     assert list(dataset.category.all()) == [category3]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_organization_and_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_without_organization_and_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_existing_organization(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+    organization = OrganizationFactory()
+    DatasetAttributionFactory(
+        dataset=dataset,
+        attribution=attribution,
+        organization=organization
+    )
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        f'Ryšys "{attribution.title}" su šia organizacija jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_existing_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+    DatasetAttributionFactory(
+        dataset=dataset,
+        attribution=attribution,
+        agent="Test organization"
+    )
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        f'Ryšys "{attribution.title}" su šiuo agentu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_organization(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    resp = form.submit()
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 1
+    assert dataset.datasetattribution_set.first().organization == organization
+    assert dataset.datasetattribution_set.first().attribution == attribution
+    assert dataset.datasetattribution_set.first().agent is None
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 1
+    assert dataset.datasetattribution_set.first().agent == "Test organization"
+    assert dataset.datasetattribution_set.first().attribution == attribution
+    assert dataset.datasetattribution_set.first().organization is None
+
+
+@pytest.mark.django_db
+def test_dataset_delete_attribution(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_attribution = DatasetAttributionFactory()
+    dataset = dataset_attribution.dataset
+
+    resp = app.get(reverse('attribution-delete', args=[
+        dataset.pk,
+        dataset_attribution.pk
+    ]))
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 0
+
+
+@pytest.mark.django_db
+def test_dataset_with_type_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    series_type = TypeFactory(name='series')
+    service_type = TypeFactory(name='service')
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['type'] = [service_type.pk, series_type.pk]
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Tipai "service" ir "series" negali būti pažymėti abu kartu, gali būti pažymėtas tik vienas arba kitas.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_with_type(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    type = TypeFactory(name='service')
+    service_type = DataServiceTypeFactory()
+    service_spec_type = DataServiceSpecTypeFactory()
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['type'] = [type.pk]
+    form['endpoint_url'] = "https://test.com"
+    form['endpoint_type'] = service_type.pk
+    form['endpoint_description'] = "https://testdescription.com"
+    form['endpoint_description_type'] = service_spec_type.pk
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert list(dataset.type.all()) == [type]
+    assert dataset.series is False
+    assert dataset.service is True
+    assert dataset.endpoint_url == "https://test.com"
+    assert dataset.endpoint_type == service_type
+    assert dataset.endpoint_description == "https://testdescription.com"
+    assert dataset.endpoint_description_type == service_spec_type
+
+
+@pytest.mark.django_db
+def test_dataset_add_relation_with_existing_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_relation = DatasetRelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset_relation.dataset.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{dataset_relation.relation.pk}"
+    form['part_of'].force_value(dataset_relation.part_of.pk)
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        f'"{dataset_relation.relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_add_relation_with_existing_inverse_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_relation = DatasetRelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset_relation.part_of.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{dataset_relation.relation.pk}_inv"
+    form['part_of'].force_value(dataset_relation.dataset.pk)
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        f'"{dataset_relation.relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_add_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    dataset_part_of = DatasetFactory()
+    relation = RelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{relation.pk}"
+    form['part_of'].force_value(dataset_part_of.pk)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.part_of.count() == 1
+    assert dataset.part_of.first().part_of == dataset_part_of
+    assert dataset.part_of.first().relation == relation
+
+
+@pytest.mark.django_db
+def test_dataset_add_inverse_relation(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    dataset_part_of = DatasetFactory()
+    relation = RelationFactory()
+
+    form = app.get(reverse('dataset-relation-add', args=[dataset.pk])).forms['dataset-relation-form']
+    form['relation_type'] = f"{relation.pk}_inv"
+    form['part_of'].force_value(dataset_part_of.pk)
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset_part_of.part_of.count() == 1
+    assert dataset_part_of.part_of.first().part_of == dataset
+    assert dataset_part_of.part_of.first().relation == relation

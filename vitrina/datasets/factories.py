@@ -6,7 +6,8 @@ from vitrina import settings
 from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -63,6 +64,23 @@ class DatasetFactory(DjangoModelFactory):
                 self.tags.add(tag)
 
 
+class AttributionFactory(DjangoModelFactory):
+    class Meta:
+        model = Attribution
+
+    name = factory.Faker('word')
+    title = factory.Faker('catch_phrase')
+
+
+class DatasetAttributionFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetAttribution
+
+    dataset = factory.SubFactory(DatasetFactory)
+    attribution = factory.SubFactory(AttributionFactory)
+    organization = factory.SubFactory(OrganizationFactory)
+
+
 class DatasetStructureFactory(DjangoModelFactory):
     class Meta:
         model = DatasetStructure
@@ -90,3 +108,61 @@ class DatasetGroupFactory(DjangoModelFactory):
             group.title = fake.word()
         group.save()
         return group
+
+
+class TypeFactory(DjangoModelFactory):
+    class Meta:
+        model = Type
+
+    name = factory.Faker('word')
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        type = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            type.set_current_language(lang[0])
+            type.title = fake.word()
+        type.save()
+        return type
+
+
+class RelationFactory(DjangoModelFactory):
+    class Meta:
+        model = Relation
+
+    name = factory.Faker('word')
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        relation = model_class(*args, **kwargs)
+        fake = faker.Faker()
+        for lang in reversed(settings.LANGUAGES):
+            relation.set_current_language(lang[0])
+            relation.title = fake.word()
+            relation.inverse_title = fake.word()
+        relation.save()
+        return relation
+
+
+class DatasetRelationFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetRelation
+
+    dataset = factory.SubFactory(DatasetFactory)
+    part_of = factory.SubFactory(DatasetFactory)
+    relation = factory.SubFactory(RelationFactory)
+
+
+class DataServiceTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = DataServiceType
+
+    title = factory.Faker('word')
+
+
+class DataServiceSpecTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = DataServiceSpecType
+
+    title = factory.Faker('word')

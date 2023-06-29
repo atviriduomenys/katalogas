@@ -1,0 +1,73 @@
+{% load i18n %}
+{% load hitcount_tags %}
+{% load i18n parler_tags %}
+
+{% get_current_language as LANGUAGE_CODE %}
+
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+        <p class="title">
+          {% translate "Duomenų rinkiniai" %}
+        </p>
+        <div class="columns is-multiline p-t-lg">
+            {% for dataset in datasets %}
+            <div class="column">
+                <div class="card">
+                  <div class="card-content">
+                    <div class="content">
+                        <p>
+                          <a href="{{ dataset.get_absolute_url }}" class="has-text-info-dark is-size-5">
+                            {% objectlanguage dataset LANGUAGE_CODE %}
+                              {{ dataset.title }}
+                            {% endobjectlanguage %}
+                          </a>
+                        </p>
+                        <p>
+                          <a href="{{ dataset.organization.get_absolute_url }}" class="has-text-grey">
+                            {{ dataset.organization.title }}
+                          </a>
+                        </p>
+                        <p>
+                          {% with formats=dataset.distinct_formats %}
+
+                          {% for format in formats %}
+                          <a href="{% url "dataset-list" %}?selected_facets=formats_exact:{{ format }}" class="tag is-link is-light mr-3">
+                              {{ format }}
+                          </a>
+                          {% endfor %}
+
+                          {% get_hit_count for dataset as total_hits %}
+                          <span class="icon is-small {% if formats %}mx-5{% else %}mr-5{% endif %}">
+                            <i class="fas fa-eye"></i>
+                            &nbsp;{{ total_hits }}
+                          </span>
+
+                          <span class="icon is-small ml-5">
+                            <i class="fas fa-thumbs-up"></i>
+                            &nbsp;{{ dataset.get_likes }}
+                          </span>
+
+                          {% endwith %}
+                        </p>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="columns">
+            <div class="column has-text-right">
+                <a href="{% url "dataset-list" %}" class="button is-primary">
+                    <span>{% translate "Rodyti daugiau" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+

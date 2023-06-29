@@ -35,7 +35,12 @@ def home(request):
             Category.objects.
             filter(featured=True).
             order_by('title')
-        )
+        ),
+        'datasets': (
+            Dataset.public.
+            select_related('organization').
+            order_by('-published')[:3]
+        ),
     })
 
 class HistoryView(PermissionRequiredMixin, TemplateView):

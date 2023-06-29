@@ -94,7 +94,7 @@
             <div class="is-flex">
                 <div class="stays-right">
                     <form action="/datasets/" method="GET">
-                        <div><span style="float:right">{% translate "Rūšiavimas" %}</span></div>
+                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
                         <div class="select">
                             <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
                                 <option value="sort-by-date-newest" {% if sort == 'sort-by-date-newest' %}selected{% endif %}>{% translate "Naujausi" %}</option>
@@ -129,13 +129,11 @@
                                     </a>
                                 </strong>
                             </div>
-                            {% if i.object.groups %}
-                                {% for group in i.object.get_all_groups %}
-                                    <p class="tag is-link" style="background-color:Gainsboro; color: black;">
-                                        {{ group }}
-                                    </p>
-                                {% endfor %}
-                            {% endif %}
+                            {% for group in i.object.get_all_groups %}
+                                <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                    {{ group }}
+                                </p>
+                            {% endfor %}
                             {% if i.object.organization_title %}
                                 <p>
                                     <small class="dataset-list-organization">{{ i.object.organization_title }}</small>

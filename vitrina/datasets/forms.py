@@ -1,11 +1,12 @@
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField
+from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField, Form, ModelChoiceField, \
+    CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Submit, Layout
+from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
@@ -20,19 +21,12 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True, widget=TextInput())
     description = TranslatedField(label=_('Aprašymas'))
-    groups = forms.ModelMultipleChoiceField(
-        label=_('Grupės'),
-        queryset=DatasetGroup.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
 
     class Meta:
         model = Dataset
         fields = (
             'is_public',
             'tags',
-            'category',
             'licence',
             'frequency',
             'access_rights',
@@ -54,8 +48,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
-            Field('groups'),
-            Field('category'),
             Field('licence'),
             Field('frequency'),
             Field('access_rights',
@@ -65,10 +57,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
-        category_choices[0] = (None, "---------")
-        self.fields['category'].choices = category_choices
-
         if not project_instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
@@ -76,10 +64,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
-        else:
-            groups = DatasetGroup.objects.filter(dataset=project_instance).all()
-            if len(groups) > 0:
-                self.initial['groups'] = groups
 
 
 class DatasetSearchForm(FacetedSearchForm):
@@ -153,3 +137,34 @@ class DatasetMemberUpdateForm(RepresentativeUpdateForm):
 
 class DatasetMemberCreateForm(RepresentativeCreateForm):
     object_model = Dataset
+
+
+class DatasetCategoryForm(Form):
+    search = CharField(label=_("Paieška"), required=False)
+    group = ModelChoiceField(label=_("Grupė"), required=False, queryset=DatasetGroup.objects.all())
+    category = ModelMultipleChoiceField(
+        label=_("Kategorija"),
+        required=False,
+        queryset=Category.objects.all(),
+        widget=CheckboxSelectMultiple
+    )
+
+    def __init__(self, dataset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-category-form"
+        self.helper.layout = Layout(
+            Field('group'),
+            Field('search'),
+            HTML(f'<div class="mt-4 mb-3"><input type="checkbox" id="show_selected_id"/>'
+                 f'<strong>{_("Rodyti pasirinktas kategorijas")}</strong></div>'),
+            Field('category'),
+            Submit('submit', _("Išsaugoti"), css_class='button is-primary')
+        )
+
+        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
+        category_choices = category_choices[1:]
+        self.fields['category'].choices = category_choices
+        self.initial['category'] = self.dataset.category.all()

@@ -40,8 +40,17 @@
     <tr>
         <th>{% translate "Kategorijos" %}</th>
         <td>
-            {% if dataset.category %}
-                {{ dataset.category.title }}
+            <ul class="mt-0 ml-4">
+                {% for category in dataset.category.all %}
+                    <li>{{ category.title }}</li>
+                {% endfor %}
+            </ul>
+            {% if can_update_dataset %}
+            <div class="buttons">
+                <a href="{% url 'assign-category' dataset.pk %}" class="button is-primary is-small">
+                    {% translate "Priskirti kategorijai" %}
+                </a>
+            </div>
             {% endif %}
         </td>
     {% if dataset.get_all_groups %}
@@ -50,7 +59,7 @@
             <th>{% translate "Grupės" %}</th>
             <td>
             {% for group in dataset.get_all_groups %}
-                <span>{{ group }}</span>
+                <span>{{ group.title }}</span>
                 <br/>
             {% endfor %}
             </td>

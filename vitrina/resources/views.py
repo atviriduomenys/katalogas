@@ -43,6 +43,11 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         resource.save()
         return redirect(resource.dataset)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return kwargs
+
 
 class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = DatasetDistribution
@@ -72,6 +77,12 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
     def form_valid(self, form):
         resource = form.save()
         return redirect(resource.dataset)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+        kwargs['dataset'] = resource.dataset
+        return kwargs
 
 
 class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

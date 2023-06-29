@@ -11,7 +11,8 @@
 {% endif %}
 
 <nav class="category-panel">
-    {% if stats == 'status' %}
+    {% if active_filter == 'status' %}
+{#    {% if stats == 'status' %}#}
         <p class="category-panel-heading">
             <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
         </p>
@@ -40,13 +41,39 @@
     {% endfor %}
 </nav>
 
+<nav class="category-panel">
+    {% if active_filter == 'level' %}
+        <p class="category-panel-heading">
+            <strong>{% translate "Brandos lygis" as tagTitle %} {{tagTitle|upper}}</strong>
+        </p>
+    {% else %}
+        <a href="{% url 'dataset-stats-level' %}?{{ request.GET.urlencode }}" id="dataset-stats-level">
+            <p class="category-panel-heading">
+                <strong>{% translate "Brandos lygis" as tagTitle %} {{tagTitle|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
+    {% for obj in level_facet %}
+        <div class="is-flex">
+            <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+            <div class="stays-right">({{ obj.count }})</div>
+        </div>
+    {% endfor %}
+</nav>
+
 {% if jurisdiction_facet and not jurisdictions %}
     <nav class="category-panel">
-        <a href="{% url 'dataset-stats-jurisdiction' %}?{{ request.GET.urlencode }}" id="dataset-stats-supervisor">
+        {% if active_filter == 'jurisdiction' %}
             <p class="category-panel-heading">
                 <strong>{% translate "Valdymo sritis" as orgTitle %} {{orgTitle|upper}}</strong>
             </p>
+            {% else %}
+            <a href="{% url 'dataset-stats-jurisdiction' %}?{{ request.GET.urlencode }}" id="dataset-stats-supervisor">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Valdymo sritis" as orgTitle %} {{orgTitle|upper}}</strong>
+                </p>
         </a>
+        {% endif %}
         {% for obj in jurisdiction_facet|slice:":10" %}
             {% if obj.filter_value == selected_jurisdiction %}
                 <div class="is-flex">
@@ -65,9 +92,18 @@
     </nav>
 
     <nav class="category-panel">
-        <p class="category-panel-heading">
-            <strong>{% translate "Organizacija" as orgTitle %} {{orgTitle|upper}}</strong>
-        </p>
+        {% if active_filter == 'organizations' %}
+            <p class="category-panel-heading">
+                <strong>{% translate "Organizacija" as orgTitle %} {{orgTitle|upper}}</strong>
+            </p>
+        {% else %}
+            <a href="{% url 'dataset-stats-organization' %}?{{ request.GET.urlencode }}" id="dataset-stats-organization">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Organizacija" as orgTitle %} {{orgTitle|upper}}</strong>
+                </p>
+            </a>
+        {% endif %}
+
         {% for obj in organization_facet|slice:":10" %}
             {% if obj.filter_value == selected_organization %}
                 <div class="is-flex">
@@ -88,11 +124,17 @@
 
 {% if not graph_title == 'Duomenų rinkinių atvėrimo progresas' %}
     <nav class="category-panel">
-        <p class="category-panel-heading">
-            <a href="{% url 'dataset-stats-yearly' %}?{{ request.GET.urlencode }}" id="dataset-stats-yearly">
-                <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
+        {% if active_filter == 'category' %}
+                <p class="category-panel-heading">
+                    <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
+                </p>
+            {% else %}
+            <a href="{% url 'dataset-stats-category' %}?{{ request.GET.urlencode }}" id="dataset-stats-category">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Kategorijos" as catTitle %} {{catTitle|upper}}</strong>
+                </p>
             </a>
-        </p>
+        {% endif %}
         {% if selected_parent_category|length < 1 and selected_categories|length < 1 %}
             {% for obj in parent_category_facet|slice:":10" %}
                 {% if obj.filter_value in selected_parent_category %}
@@ -154,9 +196,18 @@
 {% endif %}
 
 <nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Žymė" as tagTitle %} {{tagTitle|upper}}</strong>
-    </p>
+    {% if active_filter == 'tag' %}
+        <p class="category-panel-heading">
+            <strong>{% translate "Žymė" as tagTitle %} {{tagTitle|upper}}</strong>
+        </p>
+    {% else %}
+        <a href="{% url 'dataset-stats-tag' %}?{{ request.GET.urlencode }}" id="dataset-stats-tag">
+            <p class="category-panel-heading">
+                <strong>{% translate "Žymė" as tagTitle %} {{tagTitle|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
+
      {% for obj in tag_facet|slice:":10" %}
         {% if obj.filter_value in selected_tags %}
             <div class="is-flex">
@@ -175,9 +226,18 @@
 </nav>
 
 <nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Formatas" as formatTitle %} {{formatTitle|upper}}</strong>
-    </p>
+    {% if active_filter == 'format' %}
+        <p class="category-panel-heading">
+            <strong>{% translate "Formatas" as formatTitle %} {{formatTitle|upper}}</strong>
+        </p>
+    {% else %}
+        <a href="{% url 'dataset-stats-format' %}?{{ request.GET.urlencode }}" id="dataset-stats-format">
+            <p class="category-panel-heading">
+                <strong>{% translate "Formatas" as formatTitle %} {{formatTitle|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
+
     {% for obj in format_facet|slice:":10" %}
         {% if obj.filter_value in selected_formats %}
             <div class="is-flex">
@@ -196,9 +256,18 @@
 </nav>
 
 <nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Atnaujinama" as freqTitle %} {{freqTitle|upper}}</strong>
-    </p>
+    {% if active_filter == 'frequency' %}
+        <p class="category-panel-heading">
+            <strong>{% translate "Atnaujinama" as freqTitle %} {{freqTitle|upper}}</strong>
+        </p>
+    {% else %}
+        <a href="{% url 'dataset-stats-frequency' %}?{{ request.GET.urlencode }}" id="dataset-stats-frequency">
+            <p class="category-panel-heading">
+                <strong>{% translate "Atnaujinama" as freqTitle %} {{freqTitle|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
+
     {% for obj in frequency_facet|slice:":10" %}
         {% if obj.filter_value == selected_frequency %}
             <div class="is-flex">
@@ -217,25 +286,111 @@
 </nav>
 
 <nav class="category-panel">
-    <p class="category-panel-heading">
-        <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
-    </p>
-    <div class="field">
-        {% if selected_date_from %}
-            <input type="date" class="input date_from" name="date_from" id="from" value="{{ selected_date_from|stringformat:'s' }}"
-                   placeholder="{% translate 'Data nuo' %}">
-        {% else %}
-            <input type="date" class="input date_from" name="date_from" id="from"
-                   placeholder="{% translate 'Data nuo' %}">
-        {% endif %}
-    </div>
-    <div class="field">
-        {% if selected_date_to %}
-            <input type="date" class="input date_to" name="date_to" id="to" value="{{ selected_date_to|stringformat:'s' }}"
-                   placeholder="{% translate 'Data iki' %}">
-        {% else %}
-            <input type="date" class="input date_to" name="date_to" id="to"
-                   placeholder="{% translate 'Data iki' %}">
-        {% endif %}
-    </div>
+    {% if active_filter == 'publication' %}
+        <p class="category-panel-heading">
+            <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
+        </p>
+    {% else %}
+        <a href="{% url 'dataset-stats-publication' %}?{{ request.GET.urlencode }}" id="dataset-stats-publication">
+            <p class="category-panel-heading">
+                <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
+            </p>
+        </a>
+    {% endif %}
+
+    {% for k, v in year_filter.items %}
+        <div class="is-flex">
+            <a class="category-panel-block quarter-toggle" id="{{ k }}" title="{{ k }}">{{ k }}</a>
+        {% for k2, v2 in v.items %}
+            {% if k2 == 'total' %}
+                    <div class="stays-right">({{ v2 }})</div>
+                    </div>
+            {% endif %}
+            {% if k2 == 'quarters' %}
+                {% for q, qv in v2.items reversed %}
+                        <div class="ml-2 dropdown {{ k }}-quarters">
+                        {% if 'Q1' in q %}
+                            <a class="category-panel-block month-toggle" id="{{ q }}" title="I ketvirtis">I ketvirtis</a>
+                        {% elif 'Q2' in q %}
+                            <a class="category-panel-block month-toggle" id="{{ q }}" title="II ketvirtis">II ketvirtis</a>
+                        {% elif 'Q3' in q %}
+                            <a class="category-panel-block month-toggle" id="{{ q }}" title="III ketvirtis">III ketvirtis</a>
+                        {% else %}
+                            <a class="category-panel-block month-toggle" id="{{ q }}" title="IV ketvirtis">IV ketvirtis</a>
+                        {% endif %}
+                        <div class="stays-right">({{ qv }})</div>
+                        </div>
+                    {% for m, mv in months.items %}
+                        {% if q == m %}
+                            {% for n, nv in mv.items reversed %}
+                                <div class="ml-4 dropdown {{ q }}-months">
+                                    {% if '-01' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" title="Sausis">Sausis</a>
+                                    {% elif '-02' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-28" id="{{ n }}" id="{{ n }}" title="Vasaris">Vasaris</a>
+                                    {% elif '-03' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Kovas">Kovas</a>
+                                    {% elif '-04' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Balandis">Balandis</a>
+                                    {% elif '-05' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Gegužė">Gegužė</a>
+                                    {% elif '-06' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Birželis">Birželis</a>
+                                    {% elif '-07' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Liepa">Liepa</a>
+                                    {% elif '-08' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Rugpjūtis">Rugpjūtis</a>
+                                    {% elif '-09' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Rugsėjis">Rugsėjis</a>
+                                    {% elif '-10' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Spalis">Spalis</a>
+                                    {% elif '-11' in n %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Lapkritis">Lapkritis</a>
+                                    {% else %}
+                                        <a class="category-panel-block" href="/datasets/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Gruodis">Gruodis</a>
+                                    {% endif %}
+                                    <div class="stays-right">({{ nv }})</div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {%  endfor %}
+{#        <a href="{{ obj.url }}" class="category-panel-block">obj.display_value</a>#}
+{#        <div class="stays-right">(obj.count)</div>#}
+{#    <div class="field">#}
+{#        {% if selected_date_from %}#}
+{#            <input type="date" class="input date_from" name="date_from" id="from" value="{{ selected_date_from|stringformat:'s' }}"#}
+{#                   placeholder="{% translate 'Data nuo' %}">#}
+{#        {% else %}#}
+{#            <input type="date" class="input date_from" name="date_from" id="from"#}
+{#                   placeholder="{% translate 'Data nuo' %}">#}
+{#        {% endif %}#}
+{#    </div>#}
+{#    <div class="field">#}
+{#        {% if selected_date_to %}#}
+{#            <input type="date" class="input date_to" name="date_to" id="to" value="{{ selected_date_to|stringformat:'s' }}"#}
+{#                   placeholder="{% translate 'Data iki' %}">#}
+{#        {% else %}#}
+{#            <input type="date" class="input date_to" name="date_to" id="to"#}
+{#                   placeholder="{% translate 'Data iki' %}">#}
+{#        {% endif %}#}
+{#    </div>#}
 </nav>
+{% block scripts %}
+    <script type="text/javascript">
+        $('.dropdown').css('display', 'none');
+        $('.quarter-toggle').click(function(e) {
+            let target = e.target.id + '-quarters';
+            $('.' + target).toggleClass('is-flex');
+            $('.' + target).toggle();
+        });
+        $('.month-toggle').click(function(e) {
+            let target = e.target.id + '-months';
+            $('.' + target).toggleClass('is-flex');
+            $('.' + target).toggle();
+        });
+    </script>
+{% endblock %}

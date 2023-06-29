@@ -11,6 +11,7 @@ from vitrina.classifiers.models import Licence, Category, Frequency
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.helpers import get_current_domain
 from vitrina.resources.models import DatasetDistribution
+from vitrina.statistics.models import ModelDownloadStats
 
 
 class LicenceSerializer(serializers.ModelSerializer):
@@ -588,4 +589,36 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             instance.save()
             dataset.current_structure = instance
             dataset.save()
+        return instance
+
+
+class ModelDownloadStatsSerializer(serializers.ModelSerializer):
+    source = serializers.CharField(required=True, allow_blank=False, label="")
+    model = serializers.CharField(required=True, allow_blank=False, label="")
+    format = serializers.CharField(required=True, allow_blank=False, label="", source="model_format")
+    time = serializers.DateTimeField(required=True, allow_null=False, label="", source="created")
+    requests = serializers.IntegerField(required=True, allow_null=False, label="", source="model_requests")
+    objects = serializers.IntegerField(required=True, allow_null=False, label="", source="model_objects")
+
+    class Meta:
+        model = ModelDownloadStats
+        fields = [
+            'source',
+            'model',
+            "format",
+            "time",
+            "requests",
+            "objects"
+        ]
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('source', 'model', 'format', 'time'),
+                message=_("Laukai turi būti unikalūs."))
+        ]
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        # requests = self.initial_data['requests']
+        instance.save()
         return instance

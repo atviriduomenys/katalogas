@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.views import get_schema_view
 from rest_framework import status, permissions, exceptions
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin
+from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin, UpdateModelMixin
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -20,7 +20,7 @@ from vitrina.api.permissions import APIKeyPermission
 from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
     DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
-    PatchDatasetDistributionSerializer
+    PatchDatasetDistributionSerializer, ModelDownloadStatsSerializer
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -576,3 +576,20 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    @swagger_auto_schema(
+        operation_summary="Add model statistics",
+        request_body=ModelDownloadStatsSerializer,
+        responses={status.HTTP_200_OK: ModelDownloadStatsSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        serializer = ModelDownloadStatsSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        serializer = ModelDownloadStatsSerializer(instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)

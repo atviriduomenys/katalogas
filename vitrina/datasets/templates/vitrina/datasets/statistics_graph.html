@@ -18,8 +18,9 @@
         </div>
 
         <div class="column is-three-quarters">
-
             <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ dataset_count }}</h1>
+
+            {% include "vitrina/datasets/stats_parameter_select.html" %}
 
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "filter.results" %}</button>

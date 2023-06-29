@@ -234,32 +234,6 @@ class DatasetDistributionPreviewView(View):
         return JsonResponse({'data': data})
 
 
-class DatasetStructureView(TemplateView):
-    template_name = 'vitrina/datasets/structure.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
-        structure = dataset.current_structure
-        context['errors'] = []
-        context['manifest'] = None
-        context['structure'] = structure
-        if structure and structure.file:
-            if errors := detect_read_errors(structure.file.path):
-                context['errors'] = errors
-            else:
-                with open(
-                    structure.file.path,
-                    encoding='utf-8',
-                    errors='replace',
-                ) as f:
-                    reader = csv.DictReader(f)
-                    state = read(reader)
-                context['errors'] = state.errors
-                context['manifest'] = state.manifest
-        return context
-
-
 class DatasetCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,

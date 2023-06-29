@@ -256,7 +256,7 @@ bcrypt = ["bcrypt"]
 name = "django-appconf"
 version = "1.0.5"
 description = "A helper class for handling configuration defaults of packaged apps gracefully."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -513,6 +513,23 @@ python-versions = ">=3.7"
 [package.dependencies]
 django = ">=2.2"
 django-classy-tags = ">=1"
+
+[[package]]
+name = "django-select2"
+version = "8.1.2"
+description = "This is a Django_ integration of Select2_."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+django = ">=3.2"
+django-appconf = ">=0.6.0"
+
+[package.extras]
+docs = ["sphinx"]
+selenium = ["selenium"]
+test = ["pytest", "pytest-cov", "pytest-django", "selenium"]
 
 [[package]]
 name = "django-sortedm2m"
@@ -1542,7 +1559,7 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "a55aa3be09df29b00fed28cd9a91a34bc09e12ffdf0572b66dbba49abd9ef394"
+content-hash = "0d274fa8b2dd00dbcca0713ae053f12dc577ee6f850bf7e81b8f23e4e30514a8"
 
 [metadata.files]
 aldryn-apphooks-config = [
@@ -1767,6 +1784,10 @@ django-sass-processor = [
 django-sekizai = [
     {file = "django-sekizai-3.0.1.tar.gz", hash = "sha256:c7d69af7601ae42b15abb6fdaf3ec0ca309305afa0638544a6119ebdaa7bcf81"},
     {file = "django_sekizai-3.0.1-py3-none-any.whl", hash = "sha256:92c2a82e62d839dcb2ea77728559c9abcb8d135f51e1d592c37c362fddbeeda1"},
+]
+django-select2 = [
+    {file = "django_select2-8.1.2-py3-none-any.whl", hash = "sha256:dc09e09299988dd7cc1f31c27582976377f0e1479101be1f3bb0d1f24216477f"},
+    {file = "django_select2-8.1.2.tar.gz", hash = "sha256:f44685ee1c39090aade01e3ebc256702f05620f3c78a3c268440ad9a66070876"},
 ]
 django-sortedm2m = [
     {file = "django-sortedm2m-3.1.1.tar.gz", hash = "sha256:136f3d4e0820b351608a7141d88ac3ba7fafcd37a9b8361ad00ffe616a790be5"},

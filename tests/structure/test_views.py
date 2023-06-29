@@ -13,11 +13,12 @@ from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
+from reversion.models import Version
 
 from vitrina.cms.factories import FilerFileFactory
-from vitrina.datasets.factories import DatasetStructureFactory
+from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory
+from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, PrefixFactory
 from vitrina.structure.models import Metadata, Enum, EnumItem
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
@@ -1617,3 +1618,226 @@ def test_property_enum_item_delete(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk
     ).count() == 0
+
+
+@pytest.mark.django_db
+def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "invalidName"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create_with_number_as_first_name_letter(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "1nvalidName"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create_with_special_symbol_in_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "Invalid_name1"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, jokie kiti simboliai negalimi."
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create_with_invalid_prepare(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "Model"
+    form['prepare'] = 'sort(id)'
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Duomenų filtre nurodytas modelyje neegzistuojantis laukas: "id".'
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create_with_invalid_uri(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "Model"
+    form['uri'] = 'dcat:invalid:format'
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Nevalidus uri "dcat:invalid:format" formatas.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create_with_invalid_uri_prefix(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "Model"
+    form['uri'] = 'dcat:invalid'
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Neatpažintas "dcat" prefiksas.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_model_create(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    PrefixFactory(name="dcat")
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        uri="dcat:TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+    )
+
+    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    form['name'] = "Model"
+    form['uri'] = 'dcat:model'
+    form['source'] = "MODEL"
+    form['level'] = 3
+    form['title'] = 'Test model'
+    form['description'] = 'Model for testing'
+    form['base'].force_value([model.pk])
+    form['base_level'] = 4
+    form['base_ref'].force_value([prop.pk])
+    form['comment'] = 'Added Model'
+    resp = form.submit()
+    new_model = dataset.model_set.exclude(pk=model.pk).first()
+    assert resp.url == new_model.get_absolute_url()
+    assert new_model.metadata.count() == 1
+    assert new_model.metadata.first().name == 'test/dataset/Model'
+    assert new_model.metadata.first().uri == 'dcat:model'
+    assert new_model.metadata.first().source == 'MODEL'
+    assert new_model.metadata.first().level == 5
+    assert new_model.metadata.first().level_given == 3
+    assert new_model.metadata.first().title == 'Test model'
+    assert new_model.metadata.first().description == 'Model for testing'
+
+    assert new_model.base.model == model
+    assert new_model.base.property_list.count() == 1
+    assert new_model.base.property_list.first().property == prop
+    assert new_model.base.metadata.first().level == 5
+    assert new_model.base.metadata.first().level_given == 4
+    assert new_model.base.metadata.first().name == 'test/dataset/TestModel'
+    assert new_model.base.metadata.first().ref == 'prop'
+
+    assert Version.objects.get_for_object(dataset).count() == 1
+    assert Version.objects.get_for_object(dataset).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
+    assert Version.objects.get_for_object(dataset).first().revision.user == user
+
+
+@pytest.mark.django_db
+def test_model_update(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    PrefixFactory(name="dcat")
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        uri="dcat:TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop1 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop1),
+        object_id=prop1.pk,
+        dataset=dataset,
+        name='prop1',
+        type='integer',
+    )
+    prop2 = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop2),
+        object_id=prop2.pk,
+        dataset=dataset,
+        name='prop2',
+        type='integer',
+    )
+
+    base_model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(base_model),
+        object_id=base_model.pk,
+        dataset=dataset,
+        name="test/dataset/BaseModel"
+    )
+
+    form = app.get(reverse('model-update', args=[dataset.pk, model.name])).forms['model-form']
+    form['name'] = "UpdatedModel"
+    form['prepare'] = "sort(prop1)"
+    form['ref'].force_value([prop2.pk, prop1.pk])
+    form['base'].force_value([base_model.pk])
+    form['comment'] = 'Updated Model'
+    resp = form.submit()
+    model.refresh_from_db()
+    assert resp.url == model.get_absolute_url()
+    assert model.metadata.count() == 1
+    assert model.metadata.first().name == 'test/dataset/UpdatedModel'
+    assert model.metadata.first().prepare == 'sort(prop1)'
+    assert model.metadata.first().prepare_ast == {'args': [{'args': ['prop1'], 'name': 'bind'}], 'name': 'sort'}
+
+    assert model.base.model == base_model
+    assert model.base.metadata.first().name == 'test/dataset/BaseModel'
+    assert model.base.metadata.first().ref == ''
+
+    assert Version.objects.get_for_object(dataset).count() == 1
+    assert Version.objects.get_for_object(dataset).first().revision.comment == \
+           'Redaguotas "UpdatedModel" modelis. Updated Model'
+    assert Version.objects.get_for_object(dataset).first().revision.user == user

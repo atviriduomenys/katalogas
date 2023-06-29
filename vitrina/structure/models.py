@@ -29,6 +29,7 @@ class Prefix(models.Model):
     class Meta:
         db_table = 'prefix'
         verbose_name = _('Prefiksas')
+        verbose_name_plural = _('Prefiksai')
 
     def __str__(self):
         return self.name
@@ -91,8 +92,8 @@ class Metadata(models.Model):
             elif ':' in self.uri:
                 prefix, name = self.uri.split(':', 1)
                 if prefix := Prefix.objects.filter(
-                    name=prefix,
-                    metadata__dataset=self.dataset
+                    Q(name=prefix, metadata__dataset=self.dataset) |
+                    Q(name=prefix, object_id=None, content_type=None)
                 ).first():
                     link = f"{prefix.uri}{name}"
         return link
@@ -107,6 +108,7 @@ class Base(models.Model):
     )
 
     metadata = GenericRelation('Metadata')
+    property_list = GenericRelation('PropertyList')
     objects = models.Manager()
 
     class Meta:
@@ -206,8 +208,23 @@ class Model(models.Model):
     def get_given_props(self):
         return self.model_properties.filter(given=True).order_by('metadata__order')
 
+    def get_props_excluding_base(self):
+        base_props = []
+        for props in self.get_base_props().values():
+            base_props.extend(props.values_list('metadata__name', flat=True))
+
+        return self.get_given_props().exclude(metadata__name__in=base_props)
+
     def get_acl_parents(self):
         return [self.dataset]
+
+    def get_base_props(self):
+        base = self.base
+        base_props = {}
+        while base:
+            base_props[base.model] = base.model.get_given_props()
+            base = base.model.base
+        return base_props
 
     @property
     def access_display_value(self):

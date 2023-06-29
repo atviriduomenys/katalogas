@@ -17,7 +17,8 @@ from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
 from vitrina.cms.factories import FilerFileFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
+    DatasetAttributionFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -1220,3 +1221,138 @@ def test_dataset_change_category(csrf_exempt_django_app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
     assert list(dataset.category.all()) == [category3]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_organization_and_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_without_organization_and_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_existing_organization(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+    organization = OrganizationFactory()
+    DatasetAttributionFactory(
+        dataset=dataset,
+        attribution=attribution,
+        organization=organization
+    )
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        f'Ryšys "{attribution.title}" su šia organizacija jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_existing_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+    DatasetAttributionFactory(
+        dataset=dataset,
+        attribution=attribution,
+        agent="Test organization"
+    )
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        f'Ryšys "{attribution.title}" su šiuo agentu jau egzistuoja.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_organization(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['organization'].force_value(organization.pk)
+    resp = form.submit()
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 1
+    assert dataset.datasetattribution_set.first().organization == organization
+    assert dataset.datasetattribution_set.first().attribution == attribution
+    assert dataset.datasetattribution_set.first().agent is None
+
+
+@pytest.mark.django_db
+def test_dataset_create_attribution_with_agent(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    attribution = AttributionFactory()
+
+    form = app.get(reverse('attribution-add', args=[dataset.pk])).forms['attribution-form']
+    form['attribution'] = attribution.pk
+    form['agent'] = "Test organization"
+    resp = form.submit()
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 1
+    assert dataset.datasetattribution_set.first().agent == "Test organization"
+    assert dataset.datasetattribution_set.first().attribution == attribution
+    assert dataset.datasetattribution_set.first().organization is None
+
+
+@pytest.mark.django_db
+def test_dataset_delete_attribution(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset_attribution = DatasetAttributionFactory()
+    dataset = dataset_attribution.dataset
+
+    resp = app.get(reverse('attribution-delete', args=[
+        dataset.pk,
+        dataset_attribution.pk
+    ]))
+
+    assert resp.url == dataset.get_absolute_url()
+    assert dataset.datasetattribution_set.count() == 0

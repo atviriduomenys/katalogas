@@ -47,10 +47,10 @@ from vitrina.structure.services import create_structure_objects
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
-    DatasetCategoryForm
+    DatasetAttributionForm, DatasetCategoryForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -213,6 +213,7 @@ class DatasetDetailView(
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all(),
             'org_logo': organization.image,
+            'attributions': dataset.datasetattribution_set.order_by('attribution'),
         }
         context_data.update(extra_context_data)
         return context_data
@@ -231,32 +232,6 @@ class DatasetDistributionPreviewView(View):
             rows = itertools.islice(rows, 100)
             data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
-
-
-class DatasetStructureView(TemplateView):
-    template_name = 'vitrina/datasets/structure.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
-        structure = dataset.current_structure
-        context['errors'] = []
-        context['manifest'] = None
-        context['structure'] = structure
-        if structure and structure.file:
-            if errors := detect_read_errors(structure.file.path):
-                context['errors'] = errors
-            else:
-                with open(
-                    structure.file.path,
-                    encoding='utf-8',
-                    errors='replace',
-                ) as f:
-                    reader = csv.DictReader(f)
-                    state = read(reader)
-                context['errors'] = state.errors
-                context['manifest'] = state.manifest
-        return context
 
 
 class DatasetCreateView(
@@ -2247,3 +2222,61 @@ class FilterCategoryView(LoginRequiredMixin, View):
                         'show_checkbox': True if ancestor in group_categories or not group_id else False,
                     }
         return JsonResponse({'categories': category_data})
+
+
+class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
+    model = DatasetAttribution
+    form_class = DatasetAttributionForm
+    template_name = 'vitrina/datasets/attribution_form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        return context
+
+    def form_valid(self, form):
+        self.object: DatasetAttribution = form.save(commit=False)
+        self.object.dataset = self.dataset
+        self.object.save()
+        return redirect(self.dataset.get_absolute_url())
+
+
+class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
+    model = DatasetAttribution
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return self.dataset.get_absolute_url()

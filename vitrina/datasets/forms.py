@@ -1,3 +1,5 @@
+from django.db.models import Count
+from django_select2.forms import ModelSelect2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -15,7 +17,8 @@ from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution
+from vitrina.orgs.models import Organization
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -100,6 +103,72 @@ class DatasetStructureImportForm(forms.ModelForm):
             Field('file'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+
+class OrganizationWidget(ModelSelect2Widget):
+    model = Organization
+    search_fields = ['title__icontains']
+    max_results = 10
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+        queryset = queryset.annotate(
+            attribution_count=Count('datasetattribution')
+        ).order_by('-attribution_count')
+        return queryset
+
+
+class DatasetAttributionForm(forms.ModelForm):
+    organization = forms.ModelChoiceField(
+        label=_("Organizacija"),
+        required=False,
+        queryset=Organization.public.all(),
+        widget=OrganizationWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+    )
+
+    class Meta:
+        model = DatasetAttribution
+        fields = ('attribution', 'organization', 'agent',)
+
+    def __init__(self, dataset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
+        self.helper = FormHelper()
+        self.helper.form_id = "attribution-form"
+        self.helper.layout = Layout(
+            Field('attribution'),
+            Field('organization'),
+            Field('agent'),
+            Submit('submit', _('Sukurti'), css_class='button is-primary'),
+        )
+
+    def clean(self):
+        attribution = self.cleaned_data.get('attribution')
+        organization = self.cleaned_data.get('organization')
+        agent = self.cleaned_data.get('agent')
+
+        if organization and agent:
+            self.add_error('organization', _('Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'))
+
+        elif not organization and not agent:
+            self.add_error('organization', _('Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'))
+
+        elif organization and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            organization=organization,
+            attribution=attribution,
+        ).exists():
+            self.add_error('organization', _(f'Ryšys "{attribution}" su šia organizacija jau egzistuoja.'))
+
+        elif agent and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            agent=agent,
+            attribution=attribution,
+        ).exists():
+            self.add_error('agent', _(f'Ryšys "{attribution}" su šiuo agentu jau egzistuoja.'))
+
+        return self.cleaned_data
 
 
 class AddProjectForm(forms.ModelForm):

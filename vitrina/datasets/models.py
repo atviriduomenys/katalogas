@@ -129,6 +129,32 @@ class Dataset(TranslatableModel):
 
     notes = models.TextField(blank=True, null=True)
 
+    # DCAT 3 fields
+    part_of = models.ManyToManyField(
+        'DatasetRelation',
+        related_name="related_datasets",
+        verbose_name=_("Duomenų rinkinio ryšiai")
+    )
+    type = models.ManyToManyField('Type', verbose_name=_("Tipas"))
+    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
+    endpoint_type = models.ForeignKey(
+        'DataServiceType',
+        on_delete=models.SET_NULL,
+        verbose_name=_("API formatas"),
+        null=True,
+        blank=True
+    )
+    endpoint_description = models.URLField(_("API specifikacija"), null=True, blank=True)
+    endpoint_description_type = models.ForeignKey(
+        'DataServiceSpecType',
+        on_delete=models.SET_NULL,
+        verbose_name=_("API specifikacijos formatas"),
+        null=True,
+        blank=True
+    )
+    service = models.BooleanField(_("DataService rinkinys"), default=False)
+    series = models.BooleanField(_("DataSeries rinkinys"), default=False)
+
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
     meta = models.TextField(blank=True, null=True)
@@ -268,6 +294,21 @@ class Dataset(TranslatableModel):
         if metadata := self.metadata.first():
             return metadata.name
         return ""
+
+    def public_types(self):
+        return list(self.type.filter(show_filter=True).values_list('pk', flat=True))
+
+    def type_order(self):
+        order = 0
+        related_datasets = self.related_datasets.all()
+        part_of = self.part_of.all()
+        if related_datasets and not part_of:
+            order = 3
+        elif related_datasets and part_of:
+            order = 2
+        elif part_of:
+            order = 1
+        return order
 
 
 # TODO: To be merged into Dataset:
@@ -605,3 +646,84 @@ class DatasetAttribution(models.Model):
         db_table = 'dataset_attribution'
 
 
+class Type(TranslatableModel):
+    SERIES = "series"
+    SERVICE = "service"
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), max_length=255),
+    )
+    description = models.TextField(_("Apibūdinimas"), blank=True)
+    show_filter = models.BooleanField(_("Rodyti filtre"), default=False)
+
+    class Meta:
+        db_table = 'type'
+        verbose_name = _("Tipas")
+        verbose_name_plural = _("Tipai")
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
+
+
+class Relation(TranslatableModel):
+    PART_OF = 'part-of'
+    SERIES = "series"
+    SERVICE = "service"
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), max_length=255),
+        inversive_title=models.CharField(_("Atvirkštinio ryšio pavadinimas"), max_length=255)
+    )
+
+    class Meta:
+        db_table = 'relation'
+        verbose_name = _("Ryšys")
+        verbose_name_plural = _("Ryšiai")
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
+
+
+class DatasetRelation(models.Model):
+    relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
+    dataset = models.ForeignKey(
+        Dataset,
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.PROTECT,
+        related_name="dataset_relations"
+    )
+    part_of = models.ForeignKey(
+        Dataset,
+        verbose_name=_("Priklauso rinkiniui"),
+        on_delete=models.PROTECT,
+        related_name="related_datasets"
+    )
+
+    class Meta:
+        db_table = 'dataset_relation'
+        verbose_name = _("Duomenų rinkinių ryšys")
+        verbose_name_plural = _("Duomenų rinkinių ryšiai")
+
+
+class DataServiceType(models.Model):
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+
+    class Meta:
+        db_table = 'data_service_type'
+
+    def __str__(self):
+        return self.title
+
+
+class DataServiceSpecType(models.Model):
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+
+    class Meta:
+        db_table = 'data_service_spec_type'
+
+    def __str__(self):
+        return self.title

@@ -12,6 +12,7 @@
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
+{% block parent_url %}{% url 'dataset-list' %}{% endblock %}
 {% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block content %}
@@ -203,6 +204,54 @@
         {% endfor %}
     </div>
     {% endif %}
+
+    <div class="columns mt-6">
+        <div class="column is-full">
+            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h4>
+            {% if attributions %}
+                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <thead>
+                    <tr>
+                        <th>{% translate "Priskyrimo rūšis" %}</th>
+                        <th>{% translate "Organizacija" %}</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for a in attributions %}
+                        <tr>
+                            <td>{{ a.attribution }}</td>
+                            <td>
+                                {% if a.organization %}
+                                    <a href="{{ a.organization.get_absolute_url }}">{{ a.organization }}</a>
+                                {% else %}
+                                    {{ a.agent }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if can_update_dataset %}
+                                <a href="{%url 'attribution-delete' dataset.pk a.pk %}"
+                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                   class="button is-link is-small is-pulled-right"
+                                   id="delete_attribution">{% translate "Trinti" %}
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if can_update_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'attribution-add' dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_attribution">
+                        {% translate "Priskirti organizaciją" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="columns no-margin-bottom">
         <div class="column is-three-quarters">
             {% comments obj=dataset user=request.user %}

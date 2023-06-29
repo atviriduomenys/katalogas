@@ -59,7 +59,15 @@
                     $('div#div_id_endpoint_description_type').hide();
                 }
             });
-            $('div#div_id_type input').trigger('change');
+            if(!$('div#div_id_type input').val()) {
+                $('div#div_id_endpoint_url').hide();
+                $('div#div_id_endpoint_type').hide();
+                $('div#div_id_endpoint_description').hide();
+                $('div#div_id_endpoint_description_type').hide();
+            }
+            else {
+                $('div#div_id_type input').trigger('change');
+            }
         });
     </script>
 {% endblock %}

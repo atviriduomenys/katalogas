@@ -4,7 +4,7 @@ import uuid
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.structure.models import Model, Metadata, Property, Enum, EnumItem
+from vitrina.structure.models import Model, Metadata, Property, Prefix, Enum, EnumItem
 
 
 class MetadataFactory(DjangoModelFactory):
@@ -53,3 +53,10 @@ class EnumItemFactory(DjangoModelFactory):
         model = EnumItem
 
     enum = factory.SubFactory(EnumFactory)
+
+
+class PrefixFactory(DjangoModelFactory):
+    class Meta:
+        model = Prefix
+
+    name = factory.Faker('word')

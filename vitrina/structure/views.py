@@ -17,14 +17,16 @@ from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
+from reversion import set_comment, set_user
+from reversion.views import RevisionMixin
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.structure import spyna
-from vitrina.structure.forms import EnumForm
-from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum
-from vitrina.structure.services import get_data_from_spinta, export_dataset_structure
+from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm
+from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum,  PropertyList, Base
+from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
 from vitrina.views import HistoryMixin
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -214,6 +216,16 @@ class ModelStructureView(
         context['model'] = self.model
         context['models'] = self.models
         context['props'] = self.props
+        context['prop_dict'] = {
+            prop.name: prop
+            for prop in self.props
+        }
+        if self.can_manage_structure:
+            context['props_without_base'] = self.model.get_props_excluding_base()
+        else:
+            context['props_without_base'] = self.model.get_props_excluding_base().filter(
+                metadata__access__gte=Metadata.PUBLIC
+            )
         context['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -221,6 +233,7 @@ class ModelStructureView(
             self.object,
         )
         context['can_manage_structure'] = self.can_manage_structure
+        context['base_props'] = self.model.get_base_props()
         return context
 
     def get_structure_url(self):
@@ -1087,3 +1100,500 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
+
+
+class ModelCreateView(
+    PermissionRequiredMixin,
+    RevisionMixin,
+    CreateView
+):
+    model = Metadata
+    template_name = 'vitrina/structure/model_form.html'
+    form_class = ModelCreateForm
+
+    dataset: Dataset
+    models: List[Model]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        if has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        ):
+            self.models = Model.objects.filter(dataset=self.dataset).order_by('metadata__name')
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.dataset, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+
+        model = Model.objects.create(dataset=self.dataset)
+
+        self.object.object = model
+        self.object.dataset = self.dataset
+        self.object.uuid = str(uuid.uuid4())
+        self.object.version = 1
+        self.object.name = get_model_name(self.dataset, self.object.name)
+        self.object.level_given = form.cleaned_data.get('level')
+        if form.cleaned_data.get('uri'):
+            self.object.level = 5
+        else:
+            self.object.level = self.object.level_given
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+        self.object.save()
+
+        if base_model := form.cleaned_data.get('base'):
+            base = Base.objects.create(model=base_model)
+            model.base = base
+            model.save()
+
+            if base_model.metadata.first() and base_model.metadata.first().uri:
+                base_level = 5
+            else:
+                base_level = form.cleaned_data.get('base_level')
+            base_ref = form.cleaned_data.get('base_ref')
+
+            Metadata.objects.create(
+                uuid=str(uuid.uuid4()),
+                dataset=self.dataset,
+                content_type=ContentType.objects.get_for_model(Base),
+                object_id=base.pk,
+                name=str(base_model),
+                version=1,
+                level=base_level,
+                level_given=form.cleaned_data.get('base_level'),
+                prepare_ast='',
+                ref=', '.join(base_ref.values_list('metadata__name', flat=True)) if base_ref else ''
+            )
+
+            if base_ref:
+                for i, ref_prop in enumerate(base_ref, start=1):
+                    PropertyList.objects.create(
+                        content_type=ContentType.objects.get_for_model(Base),
+                        object_id=base.pk,
+                        property=ref_prop,
+                        order=i
+                    )
+
+        model.update_level()
+        self.dataset.update_level()
+
+        self.dataset.save()
+        if form.cleaned_data.get('comment'):
+            comment = _(f'Sukurtas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
+        else:
+            comment = _(f'Sukurtas "{model.name}" modelis')
+        set_comment(comment)
+        set_user(self.request.user)
+
+        return redirect(model.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Modelio pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+
+class ModelUpdateView(
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Metadata
+    template_name = 'vitrina/structure/model_form.html'
+    form_class = ModelUpdateForm
+
+    dataset: Dataset
+    model_obj: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        model_name = self.kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model_obj:
+            raise Http404('No Model matches the given query.')
+        metadata = self.model_obj.metadata.first()
+        if not metadata:
+            raise Http404('No Model matches the given query.')
+        return metadata
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+        model = self.object.object
+        model_ref = form.cleaned_data.get('ref')
+
+        self.object.version += 1
+        self.object.name = get_model_name(self.dataset, self.object.name)
+        self.object.level_given = form.cleaned_data.get('level')
+        if form.cleaned_data.get('uri'):
+            self.object.level = 5
+        else:
+            self.object.level = self.object.level_given
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+        self.object.ref = ', '.join(model_ref.values_list('metadata__name', flat=True)) if model_ref else ''
+        self.object.save()
+
+        model.property_list.all().delete()
+        if model_ref:
+            for i, ref_prop in enumerate(model_ref, start=1):
+                PropertyList.objects.create(
+                    content_type=ContentType.objects.get_for_model(Model),
+                    object_id=model.pk,
+                    property=ref_prop,
+                    order=i
+                )
+
+        if base_model := form.cleaned_data.get('base'):
+            if base_model.metadata.first() and base_model.metadata.first().uri:
+                base_level = 5
+            else:
+                base_level = form.cleaned_data.get('base_level')
+
+            if model.base and model.base.model == base_model:
+                base = model.base
+            else:
+                if model.base:
+                    model.base.delete()
+
+                base = Base.objects.create(model=base_model)
+                model.base = base
+                model.save()
+
+                Metadata.objects.create(
+                    uuid=str(uuid.uuid4()),
+                    dataset=self.dataset,
+                    content_type=ContentType.objects.get_for_model(Base),
+                    object_id=base.pk,
+                    name=str(base_model),
+                    version=1,
+                    level=base_level,
+                    level_given=form.cleaned_data.get('base_level'),
+                    prepare_ast=''
+                )
+
+            base_ref = form.cleaned_data.get('base_ref')
+            if base_meta := base.metadata.first():
+                base_meta.level = base_level
+                base_meta.level_given = form.cleaned_data.get('base_level')
+                base_meta.version += 1
+                base_meta.ref = ', '.join(base_ref.values_list('metadata__name', flat=True)) if base_ref else ''
+                base_meta.save()
+
+            base.property_list.all().delete()
+            if base_ref:
+                for i, ref_prop in enumerate(base_ref, start=1):
+                    PropertyList.objects.create(
+                        content_type=ContentType.objects.get_for_model(Base),
+                        object_id=base.pk,
+                        property=ref_prop,
+                        order=i
+                    )
+        elif model.base:
+            model.base.delete()
+
+        model.update_level()
+        self.dataset.update_level()
+
+        self.dataset.save()
+        if form.cleaned_data.get('comment'):
+            comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
+        else:
+            comment = _(f'Redaguotas "{model.name}" modelis')
+        set_comment(comment)
+        set_user(self.request.user)
+
+        return redirect(model.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Modelio redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+            reverse('model-structure', args=[self.dataset.pk, self.model_obj.name]):
+                self.model_obj.title or self.model_obj.name,
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+
+class PropertyCreateView(
+    PermissionRequiredMixin,
+    RevisionMixin,
+    CreateView
+):
+    model = Metadata
+    template_name = 'vitrina/structure/property_form.html'
+    form_class = PropertyForm
+
+    dataset: Dataset
+    model_obj: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = self.kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model_obj:
+            raise Http404('No Model matches the given query.')
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+        prop = Property.objects.create(model=self.model_obj)
+
+        self.object.uuid = str(uuid.uuid4())
+        self.object.object = prop
+        self.object.dataset = self.dataset
+        self.object.version = 1
+        self.object.level_given = self.object.level
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+        if self.object.type == 'ref':
+            ref = form.cleaned_data.get('ref')
+            if ref and ref.metadata.first():
+                self.object.ref = ref.metadata.first().name
+                prop.ref_model = ref
+                prop.save()
+        else:
+            self.object.ref = form.cleaned_data.get('ref_others')
+        self.object.save()
+
+        self.model_obj.update_level()
+        self.dataset.update_level()
+
+        return redirect(prop.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Duomenų lauko pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['model'] = self.model_obj
+        return kwargs
+
+
+class PropertyUpdateView(
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Metadata
+    template_name = 'vitrina/structure/property_form.html'
+    form_class = PropertyForm
+
+    dataset: Dataset
+    model_obj: Model
+    property: Property
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model_obj = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.dataset).first()
+        if not self.model_obj:
+            raise Http404('No Model matches the given query.')
+        prop_name = kwargs.get('prop')
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        metadata = self.property.metadata.first()
+        if not metadata:
+            raise Http404('No Property matches the given query.')
+        return metadata
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+        prop = self.object.object
+
+        self.object.version += 1
+        self.object.level_given = self.object.level
+        if self.object.prepare:
+            self.object.prepare_ast = spyna.parse(self.object.prepare)
+        else:
+            self.object.prepare_ast = ""
+        if self.object.type == 'ref':
+            ref = form.cleaned_data.get('ref')
+            if ref and ref.metadata.first():
+                self.object.ref = ref.metadata.first().name
+                prop.ref_model = ref
+                prop.save()
+        else:
+            self.object.ref = form.cleaned_data.get('ref_others')
+            if prop.ref_model:
+                prop.ref_model = None
+                prop.save()
+        self.object.save()
+
+        self.model_obj.update_level()
+        self.dataset.update_level()
+
+        return redirect(prop.get_absolute_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Duomenų lauko redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-structure', args=[self.dataset.pk]): _('Struktūra'),
+            reverse('model-structure', args=[self.dataset.pk, self.model_obj.name]):
+                self.model_obj.title or self.model_obj.name,
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['model'] = self.model_obj
+        return kwargs
+
+
+class CreateBasePropertyView(PermissionRequiredMixin, View):
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def get(self, request, *args, **kwargs):
+        model = get_object_or_404(Model, pk=kwargs.get('model_id'))
+        base_prop = get_object_or_404(Property, pk=kwargs.get('prop_id'))
+
+        prop = Property.objects.create(model=model)
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=self.dataset,
+            content_type=ContentType.objects.get_for_model(prop),
+            object_id=prop.pk,
+            version=1,
+            type='inherit',
+            name=base_prop.name,
+            prepare_ast=""
+        )
+
+        model.update_level()
+        return redirect(model.get_absolute_url())
+
+
+class DeleteBasePropertyView(PermissionRequiredMixin, View):
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.dataset
+        )
+
+    def get(self, request, *args, **kwargs):
+        prop = get_object_or_404(Property, pk=kwargs.get('prop_id'))
+        model = get_object_or_404(Model, pk=kwargs.get('model_id'))
+        prop.delete()
+        model.update_level()
+        return redirect(model.get_absolute_url())
+

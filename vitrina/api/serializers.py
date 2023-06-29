@@ -11,6 +11,7 @@ from vitrina.classifiers.models import Licence, Category, Frequency
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.helpers import get_current_domain
 from vitrina.resources.models import DatasetDistribution
+from vitrina.statistics.models import ModelDownloadStats
 
 
 class LicenceSerializer(serializers.ModelSerializer):
@@ -141,10 +142,10 @@ class DatasetSerializer(serializers.ModelSerializer):
         label="",
         help_text="dcat:landingPage - Landing page of dataset",
     )
-    theme = serializers.CharField(
-        source='category_title',
+    theme = serializers.ListField(
+        child=serializers.CharField(),
+        source='category_titles',
         required=False,
-        allow_blank=True,
         label="",
         help_text="dcat:theme - Category of the dataset",
     )
@@ -226,7 +227,7 @@ class PostDatasetSerializer(DatasetSerializer):
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
         keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_title', None)
+        theme = validated_data.pop('category_titles', [])
 
         # these fields are not saved in the old code
         validated_data.pop('publisher', None)
@@ -242,8 +243,9 @@ class PostDatasetSerializer(DatasetSerializer):
             instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
         if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
             instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
-        if theme and Category.objects.filter(title=theme).exists():
-            instance.category = Category.objects.filter(title=theme).first()
+        if theme and Category.objects.filter(title__in=theme).exists():
+            for category in Category.objects.filter(title__in=theme):
+                instance.category.add(category)
         for tag in keywords:
             instance.tags.add(tag)
         instance.save()
@@ -271,7 +273,7 @@ class PatchDatasetSerializer(PostDatasetSerializer):
         licence = validated_data.pop('licence', None)
         periodicity = validated_data.pop('frequency', None)
         keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_title', None)
+        theme = validated_data.pop('category_titles', [])
 
         # these fields are not saved in the old code
         validated_data.pop('publisher', None)
@@ -285,8 +287,10 @@ class PatchDatasetSerializer(PostDatasetSerializer):
             instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
         if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
             instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
-        if theme and Category.objects.filter(title=theme).exists():
-            instance.category = Category.objects.filter(title=theme).first()
+        if theme and Category.objects.filter(title__in=theme).exists():
+            instance.category.clear()
+            for category in Category.objects.filter(title__in=theme):
+                instance.category.add(category)
         if keywords:
             instance.tags.all().delete()
             for tag in keywords:
@@ -585,4 +589,36 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             instance.save()
             dataset.current_structure = instance
             dataset.save()
+        return instance
+
+
+class ModelDownloadStatsSerializer(serializers.ModelSerializer):
+    source = serializers.CharField(required=True, allow_blank=False, label="")
+    model = serializers.CharField(required=True, allow_blank=False, label="")
+    format = serializers.CharField(required=True, allow_blank=False, label="", source="model_format")
+    time = serializers.DateTimeField(required=True, allow_null=False, label="", source="created")
+    requests = serializers.IntegerField(required=True, allow_null=False, label="", source="model_requests")
+    objects = serializers.IntegerField(required=True, allow_null=False, label="", source="model_objects")
+
+    class Meta:
+        model = ModelDownloadStats
+        fields = [
+            'source',
+            'model',
+            "format",
+            "time",
+            "requests",
+            "objects"
+        ]
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('source', 'model', 'format', 'time'),
+                message=_("Laukai turi būti unikalūs."))
+        ]
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        # requests = self.initial_data['requests']
+        instance.save()
         return instance

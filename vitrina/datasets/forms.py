@@ -1,16 +1,17 @@
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Value, CharField as _CharField, Case, When
+from django.db.models import Value, CharField as _CharField, Case, When, Count
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField
+from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField, Form, ModelChoiceField, \
+    CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Submit, Layout
+from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
@@ -20,7 +21,8 @@ from vitrina.fields import FilerFileField
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, DatasetRelation, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
+from vitrina.orgs.models import Organization
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -40,12 +42,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         widget=forms.CheckboxSelectMultiple
     )
     description = TranslatedField(label=_('Aprašymas'))
-    groups = forms.ModelMultipleChoiceField(
-        label=_('Grupės'),
-        queryset=DatasetGroup.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
@@ -66,7 +62,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         fields = (
             'is_public',
             'tags',
-            'category',
             'licence',
             'frequency',
             'access_rights',
@@ -93,8 +88,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
-            Field('groups'),
-            Field('category'),
             Field('licence'),
             Field('frequency'),
             Field('type'),
@@ -109,10 +102,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
-        category_choices[0] = (None, "---------")
-        self.fields['category'].choices = category_choices
-
         if not project_instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
@@ -120,10 +109,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
-        else:
-            groups = DatasetGroup.objects.filter(dataset=project_instance).all()
-            if len(groups) > 0:
-                self.initial['groups'] = groups
 
     def clean_type(self):
         type = self.cleaned_data.get('type')
@@ -172,6 +157,72 @@ class DatasetStructureImportForm(forms.ModelForm):
         )
 
 
+class OrganizationWidget(ModelSelect2Widget):
+    model = Organization
+    search_fields = ['title__icontains']
+    max_results = 10
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+        queryset = queryset.annotate(
+            attribution_count=Count('datasetattribution')
+        ).order_by('-attribution_count')
+        return queryset
+
+
+class DatasetAttributionForm(forms.ModelForm):
+    organization = forms.ModelChoiceField(
+        label=_("Organizacija"),
+        required=False,
+        queryset=Organization.public.all(),
+        widget=OrganizationWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+    )
+
+    class Meta:
+        model = DatasetAttribution
+        fields = ('attribution', 'organization', 'agent',)
+
+    def __init__(self, dataset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
+        self.helper = FormHelper()
+        self.helper.form_id = "attribution-form"
+        self.helper.layout = Layout(
+            Field('attribution'),
+            Field('organization'),
+            Field('agent'),
+            Submit('submit', _('Sukurti'), css_class='button is-primary'),
+        )
+
+    def clean(self):
+        attribution = self.cleaned_data.get('attribution')
+        organization = self.cleaned_data.get('organization')
+        agent = self.cleaned_data.get('agent')
+
+        if organization and agent:
+            self.add_error('organization', _('Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'))
+
+        elif not organization and not agent:
+            self.add_error('organization', _('Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'))
+
+        elif organization and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            organization=organization,
+            attribution=attribution,
+        ).exists():
+            self.add_error('organization', _(f'Ryšys "{attribution}" su šia organizacija jau egzistuoja.'))
+
+        elif agent and DatasetAttribution.objects.filter(
+            dataset=self.dataset,
+            agent=agent,
+            attribution=attribution,
+        ).exists():
+            self.add_error('agent', _(f'Ryšys "{attribution}" su šiuo agentu jau egzistuoja.'))
+
+        return self.cleaned_data
+
+
 class AddProjectForm(forms.ModelForm):
     class Meta:
         model = Dataset
@@ -207,6 +258,37 @@ class DatasetMemberUpdateForm(RepresentativeUpdateForm):
 
 class DatasetMemberCreateForm(RepresentativeCreateForm):
     object_model = Dataset
+
+
+class DatasetCategoryForm(Form):
+    search = CharField(label=_("Paieška"), required=False)
+    group = ModelChoiceField(label=_("Grupė"), required=False, queryset=DatasetGroup.objects.all())
+    category = ModelMultipleChoiceField(
+        label=_("Kategorija"),
+        required=False,
+        queryset=Category.objects.all(),
+        widget=CheckboxSelectMultiple
+    )
+
+    def __init__(self, dataset, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-category-form"
+        self.helper.layout = Layout(
+            Field('group'),
+            Field('search'),
+            HTML(f'<div class="mt-4 mb-3"><input type="checkbox" id="show_selected_id"/>'
+                 f'<strong>{_("Rodyti pasirinktas kategorijas")}</strong></div>'),
+            Field('category'),
+            Submit('submit', _("Išsaugoti"), css_class='button is-primary')
+        )
+
+        category_choices = MoveNodeForm.mk_dropdown_tree(Category)
+        category_choices = category_choices[1:]
+        self.fields['category'].choices = category_choices
+        self.initial['category'] = self.dataset.category.all()
 
 
 class PartOfWidget(ModelSelect2Widget):

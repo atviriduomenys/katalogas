@@ -7,7 +7,7 @@ from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, Frequ
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -41,7 +41,6 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
-    category = factory.SubFactory(CategoryFactory)
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
 
@@ -63,6 +62,23 @@ class DatasetFactory(DjangoModelFactory):
         if extracted:
             for tag in extracted:
                 self.tags.add(tag)
+
+
+class AttributionFactory(DjangoModelFactory):
+    class Meta:
+        model = Attribution
+
+    name = factory.Faker('word')
+    title = factory.Faker('catch_phrase')
+
+
+class DatasetAttributionFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetAttribution
+
+    dataset = factory.SubFactory(DatasetFactory)
+    attribution = factory.SubFactory(AttributionFactory)
+    organization = factory.SubFactory(OrganizationFactory)
 
 
 class DatasetStructureFactory(DjangoModelFactory):

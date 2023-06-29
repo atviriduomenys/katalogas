@@ -34,9 +34,9 @@ class DatasetIndex(SearchIndex, Indexable):
 
     def prepare_category(self, obj):
         categories = []
-        if obj.category:
-            categories = [cat.pk for cat in obj.category.get_ancestors() if cat.dataset_set.exists()]
-            categories.append(obj.category.pk)
+        for category in obj.category.all():
+            categories = [cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()]
+            categories.append(category.pk)
         return categories
 
     def prepare_organization(self, obj):

@@ -35,7 +35,7 @@
             <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
                 {% translate "Importuoti" %}
             </a>
-            <a class="button is-primary mb-5 ml-2" href="#">
+            <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk %}">
                 {% translate "Naujas modelis" %}
             </a>
         {% endif %}

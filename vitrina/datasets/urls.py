@@ -2,6 +2,18 @@ from django.urls import path
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import OrganizationStatsView
+from vitrina.datasets.views import QuarterStatsView
+from vitrina.datasets.views import DatasetsTagsView
+from vitrina.datasets.views import YearStatsView
+from vitrina.datasets.views import DatasetsFormatView
+from vitrina.datasets.views import DatasetsFrequencyView
+from vitrina.datasets.views import DatasetsOrganizationsView
+from vitrina.datasets.views import DatasetsCategoriesView
+from vitrina.datasets.views import DatasetsLevelView
+from vitrina.datasets.views import PublicationStatsView
+from vitrina.datasets.views import CategoryStatsView
+from vitrina.datasets.views import JurisdictionStatsView
 from vitrina.datasets.views import CreateMemberView
 from vitrina.datasets.views import DatasetCreateView
 from vitrina.datasets.views import DatasetDetailView
@@ -13,6 +25,8 @@ from vitrina.datasets.views import DatasetMembersView
 from vitrina.datasets.views import DatasetProjectsView
 from vitrina.datasets.views import DatasetStatsView
 from vitrina.datasets.views import DatasetStructureImportView
+from vitrina.datasets.views import DatasetAttributionCreateView
+from vitrina.datasets.views import DatasetAttributionDeleteView
 from vitrina.datasets.views import DatasetUpdateView
 from vitrina.datasets.views import DeleteMemberView
 from vitrina.datasets.views import RemoveProjectView
@@ -21,13 +35,29 @@ from vitrina.datasets.views import autocomplete_tags
 from vitrina.datasets.views import DatasetsStatsView
 from vitrina.datasets.views import DatasetRelationCreateView
 from vitrina.datasets.views import DatasetRelationDeleteView
+from vitrina.datasets.views import DatasetCategoryView
+from vitrina.datasets.views import FilterCategoryView
 
 urlpatterns = [
-    # @GetMapping("/datasets")
+    # @GetMapping("/datasets")`
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
-    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
     # @GetMapping("/dataset/{slug}")
-    path('datasets/stats/yearly', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
+    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
+    path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
+    path('datasets/stats/jurisdiction/', DatasetManagementsView.as_view(), name='dataset-stats-jurisdiction'),
+    path('datasets/stats/jurisdiction/<int:pk>/', JurisdictionStatsView.as_view(),
+         name='dataset-stats-jurisdiction-children'),
+    path('datasets/stats/yearly/', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
+    path('datasets/stats/organization/', DatasetsOrganizationsView.as_view(), name='dataset-stats-organization'),
+    # path('datasets/stats/organization/<int:pk>', OrganizationStatsView.as_view(), name='dataset-stats-organization-children'),
+    path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
+    path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
+    path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tag'),
+    path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-format'),
+    path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
+    path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-publication'),
+    path('datasets/stats/publication/year/<int:year>/', YearStatsView.as_view(), name='dataset-stats-publication-year'),
+    path('datasets/stats/publication/quarter/<str:quarter>/', QuarterStatsView.as_view(), name='dataset-stats-publication-quarter'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
@@ -70,6 +100,11 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
+    path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
+    path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
+    path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
+    path('datasets/<int:dataset_id>/attribution/delete/<int:pk>',
+         DatasetAttributionDeleteView.as_view(), name="attribution-delete"),
     path('datasets/<int:pk>/relation/add/', DatasetRelationCreateView.as_view(), name='dataset-relation-add'),
     path('datasets/<int:dataset_id>/relation/delete/<int:pk>',
          DatasetRelationDeleteView.as_view(), name='dataset-relation-delete'),

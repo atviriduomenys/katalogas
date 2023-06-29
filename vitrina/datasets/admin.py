@@ -4,7 +4,11 @@ from reversion.admin import VersionAdmin
 
 import tagulous
 
-from vitrina.datasets.models import Dataset, DatasetGroup, DataServiceType, DataServiceSpecType, Type, Relation
+from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, Relation
+
+
+class AttributionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'title',)
 
 
 class DatasetAdmin(TranslatableAdmin, VersionAdmin):
@@ -32,7 +36,7 @@ class RelationAdmin(TranslatableAdmin):
 
 
 admin.site.register(Dataset, DatasetAdmin)
-
+admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
 admin.site.register(DataServiceType, DataServiceTypeAdmin)
 admin.site.register(DataServiceSpecType, DataServiceSpecTypeAdmin)

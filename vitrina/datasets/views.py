@@ -105,9 +105,9 @@ class DatasetListView(FacetedSearchView):
             datasets = datasets.order_by('-type_order', 'published')
         elif sorting == 'sort-by-title':
             if self.request.LANGUAGE_CODE == 'lt':
-                datasets = datasets.order_by('lt_title_s')
+                datasets = datasets.order_by('-type_order', 'lt_title_s')
             else:
-                datasets = datasets.order_by('en_title_s')
+                datasets = datasets.order_by('-type_order', 'en_title_s')
         return datasets
 
     def get_context_data(self, **kwargs):

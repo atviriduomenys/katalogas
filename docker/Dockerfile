@@ -28,6 +28,9 @@ COPY static /app/static
 EXPOSE 8000
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libcairo2
+
 ENV DJANGO_SETTINGS_MODULE="vitrina.settings"
 ENV STATIC_ROOT="/app/static"
 ENV DEBUG="false"

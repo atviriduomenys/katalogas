@@ -1,0 +1,42 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        #div_id_part_of .select {
+            width: 100%;
+        }
+        #div_id_part_of .select2-selection__arrow {
+            display: none;
+        }
+        #div_id_part_of #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_part_of .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_part_of .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block current_title %}{% translate "Susiejimas su duomenų rinkiniu" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+

@@ -274,7 +274,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        user_social_account = SocialAccount.objects.filter(user=user).first()
+        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
         if user_social_account:
             extra_data = user_social_account.extra_data
             company_code = extra_data.get('company_code')
@@ -287,16 +287,20 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         user = self.request.user
-        user_social_account = SocialAccount.objects.filter(user=user).first()
+        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
         extra_data = user_social_account.extra_data
         company_code = extra_data.get('company_code')
         company_name = extra_data.get('company_name')
+        org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
-        if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
-            for item in company_name.split(' '):
-                company_name_slug += item[0]
+        if not org:
+            if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+                for item in company_name.split(' '):
+                    company_name_slug += item[0]
+            else:
+                company_name_slug = company_name[0]
         else:
-            company_name_slug = company_name[0]
+             company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
             'coordinator_first_name': user.first_name,
@@ -305,20 +309,26 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             'coordinator_email': user.email,
             'company_code': company_code,
             'company_name':company_name,
-            'company_slug': company_name_slug
+            'company_slug': company_name_slug,
+            'company_slug_read_only': True if org else False
         }
         kwargs['initial'] = initial_dict
         return kwargs
 
     def form_valid(self, form):
-        org_count = len(Organization.objects.all())
-        self.org = form.save(commit=False)
-        self.org.title = form.cleaned_data.get('company_name')
-        self.org.company_code = form.cleaned_data.get('company_code')
-        self.org.slug = slugify(form.cleaned_data.get('company_slug'))
-        self.org.depth = 1
-        self.org.path = get_path(org_count + 1)
-        self.org.save()
+        company_code = form.cleaned_data.get('company_code')
+        org = Organization.objects.filter(company_code=company_code).first()
+        if org:
+            self.org = org
+        else:
+            print('c code')
+            print(company_code)
+            self.org = Organization.add_root(
+                title=form.cleaned_data.get('company_name'),
+                company_code=company_code,
+                slug=slugify(form.cleaned_data.get('company_slug'))
+            )
+    
         user = User.objects.get(email=form.cleaned_data.get('coordinator_email'))
         user.phone = form.cleaned_data.get('coordinator_phone_number')
         user.save()

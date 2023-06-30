@@ -135,32 +135,6 @@ def test_form_submit_with_not_matching_password(app: DjangoTestApp):
     assert resp.html.find(id='error_1_id_confirm_password')
 
 @pytest.mark.haystack
-def test_form_submit_with_already_existing_org(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test_company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    org = OrganizationFactory(
-        company_code='1234-5678'
-    )
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "123"
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_company_code')
-
-@pytest.mark.haystack
 def test_form_submit_with_already_existing_slug(app: DjangoTestApp):
     user = UserFactory(
         email="test@testesttesttest.lt",

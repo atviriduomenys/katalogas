@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DetailView, UpdateView, TemplateVie
 from django.utils.translation import gettext_lazy as _
 from django.http import JsonResponse
 from django.utils.timezone import now, make_aware
+from allauth.socialaccount.models import SocialAccount
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordSetForm, PasswordResetForm, PasswordResetConfirmForm
@@ -42,11 +43,20 @@ class RegisterView(CreateView):
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
-class PasswordSetView(UpdateView):
+class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     template_name = 'base_form.html'
     model = User
     context_object_name = 'user'
     form_class = PasswordSetForm
+
+    def has_permission(self):
+        user = get_object_or_404(User, id=self.request.user.id)
+        soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
+        if soc_acc:
+            return soc_acc.extra_data.get('password_not_set') == True
+
+    def handle_no_permission(self):
+        return redirect('home')
 
     def get_object(self):
         object_id = self.request.user.id
@@ -57,6 +67,10 @@ class PasswordSetView(UpdateView):
         password = form.cleaned_data.get('password')
         user.set_password(password)
         user.save()
+        soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
+        soc_acc.extra_data['password_not_set'] = False
+        soc_acc.save()
+        
         update_session_auth_hash(self.request, user)
         return redirect('home')
 

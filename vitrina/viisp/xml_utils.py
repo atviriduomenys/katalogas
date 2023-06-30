@@ -91,6 +91,7 @@ def get_response_with_user_data(ticket_id, key):
     signed_xml = create_signed_authentication_data_request_xml(ticket_id, key)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
+    resp.raise_for_status()
     data = _parse_user_data(resp.text)
     data['ticket_id'] = ticket_id
     return data
@@ -101,8 +102,11 @@ def create_signed_authentication_request_xml(key, domain):
     _add_elements(base, xml, attributes, element_name='authentication:authenticationAttribute')
     _add_elements(base, xml, user_information, element_name='authentication:userInformation')
     _add_elements(base, xml, (urljoin(domain, callback_url),), element_name='authentication:postbackUrl')
+    print(urljoin(domain, callback_url))
     _add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
     signed_xml = _sign_xml(xml, key).decode('utf-8')
+    with open('test3.xml', 'w') as somefile:
+        somefile.write(signed_xml)
     return signed_xml
 
 def create_signed_authentication_data_request_xml(ticket_id, key):

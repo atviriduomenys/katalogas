@@ -38,7 +38,8 @@ class VIISPProvider(OAuth2Provider):
             comapny_code=data.get("lt_company_Code"),
             company_name=data.get("company_name"),
             coordinator_phone_number=data.get("phone_number"),
-            coordinator_email=data.get("email")
+            coordinator_email=data.get("email"),
+            password_not_set=True
         )
 
     def sociallogin_from_response(self, request, response):

@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 import secrets
+from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
@@ -86,6 +87,8 @@ class DatasetListView(FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
 
+        sorting = self.request.GET.get('sort', None)
+
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
@@ -96,13 +99,23 @@ class DatasetListView(FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
-        return datasets.order_by('-type_order', '-published')
+        if sorting is None or sorting == 'sort-by-date-newest':
+            datasets = datasets.order_by('-type_order', '-published')
+        elif sorting == 'sort-by-date-oldest':
+            datasets = datasets.order_by('-type_order', 'published')
+        elif sorting == 'sort-by-title':
+            if self.request.LANGUAGE_CODE == 'lt':
+                datasets = datasets.order_by('-type_order', 'lt_title_s')
+            else:
+                datasets = datasets.order_by('-type_order', 'en_title_s')
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         facet_fields = context.get('facets').get('fields')
         form = context.get('form')
+        sorting = self.request.GET.get('sort', None)
         extra_context = {
             'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
                                               choices=Dataset.FILTER_STATUSES),
@@ -183,9 +196,11 @@ class DatasetListView(FacetedSearchView):
                 Dataset,
                 self.organization,
             )
+        final = OrderedDict(sorted(final.items(), reverse=True))
         context.update(extra_context)
         context['year_filter'] = final
         context['months'] = months
+        context['sort'] = sorting
         return context
 
 
@@ -775,6 +790,7 @@ class DatasetStatsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         statuses = {}
         stat_groups = {}
         if indicator is None:
@@ -844,7 +860,10 @@ class DatasetStatsView(DatasetListView):
         for v in values:
             if max_count < int(v):
                 max_count = int(v)
-        sorted_value_index = np.flip(np.argsort(values))
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        else:
+            sorted_value_index = np.argsort(values)
         sorted_statuses = {keys[i]: values[i] for i in sorted_value_index}
 
         # data = []
@@ -918,6 +937,7 @@ class DatasetStatsView(DatasetListView):
         context['max_count'] = max_count
         context['active_filter'] = 'status'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 
@@ -931,6 +951,7 @@ class DatasetManagementsView(DatasetListView):
         max_count = 0
         all_orgs = context['jurisdiction_facet']
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         modified_jurisdictions = []
         if indicator is None:
             indicator = 'dataset-count'
@@ -959,7 +980,8 @@ class DatasetManagementsView(DatasetListView):
                 if max_count < org.get('count'):
                     max_count = org.get('count')
             modified_jurisdictions.append(org)
-            print(modified_jurisdictions)
+        if sorting == 'sort-asc':
+            modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['count'], reverse=False)
         if indicator != 'dataset-count':
             for single in modified_jurisdictions:
                 if 'dataset_ids' in single:
@@ -1019,11 +1041,15 @@ class DatasetManagementsView(DatasetListView):
                         max_count = single.get('stats')
                 else:
                     single['stats'] = 0
-            modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=True)
+            if sorting is None or sorting == 'sort-desc':
+                modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=True)
+            else:
+                modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=False)
         context['jurisdiction_data'] = modified_jurisdictions
         context['max_count'] = max_count
         context['active_filter'] = 'jurisdiction'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 
@@ -1037,6 +1063,7 @@ class DatasetsLevelView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         levels = {}
         stat_groups = {}
         if indicator is None:
@@ -1110,12 +1137,16 @@ class DatasetsLevelView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        sorted_value_index = np.flip(np.argsort(values))
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        elif sorting == 'sort-asc':
+            sorted_value_index = np.argsort(values)
         sorted_levels = {keys[i]: values[i] for i in sorted_value_index}
         context['level_data'] = sorted_levels
         context['max_count'] = max_count
         context['active_filter'] = 'level'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 
@@ -1129,6 +1160,7 @@ class DatasetsOrganizationsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         orgs = {}
         stat_groups = {}
         if indicator is None:
@@ -1201,12 +1233,16 @@ class DatasetsOrganizationsView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        sorted_value_index = np.flip(np.argsort(values))
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        else:
+            sorted_value_index = np.argsort(values)
         sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
         context['organization_data'] = sorted_orgs
         context['max_count'] = max_count
         context['active_filter'] = 'organizations'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 class OrganizationStatsView(DatasetListView):
@@ -1242,6 +1278,7 @@ class DatasetsTagsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         tags = {}
         stat_groups = {}
         if indicator is None:
@@ -1301,7 +1338,10 @@ class DatasetsTagsView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        sorted_value_index = np.flip(np.argsort(values))
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        else:
+            sorted_value_index = np.argsort(values)
         sorted_tags = {keys[i]: values[i] for i in sorted_value_index}
         if len(keys) > 100:
             context['trimmed'] = True
@@ -1310,6 +1350,7 @@ class DatasetsTagsView(DatasetListView):
         context['max_count'] = max_count
         context['active_filter'] = 'tag'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 class DatasetsFormatView(DatasetListView):
@@ -1322,6 +1363,7 @@ class DatasetsFormatView(DatasetListView):
             max_count = 0
             datasets = self.get_queryset()
             indicator = self.request.GET.get('indicator', None)
+            sorting = self.request.GET.get('sort', None)
             formats = {}
             stat_groups = {}
             if indicator is None:
@@ -1397,12 +1439,16 @@ class DatasetsFormatView(DatasetListView):
             for v in values:
                 if max_count < v:
                     max_count = v
-            sorted_value_index = np.flip(np.argsort(values))
+            if sorting is None or sorting == 'sort-desc':
+                sorted_value_index = np.flip(np.argsort(values))
+            else:
+                sorted_value_index = np.argsort(values)
             sorted_formats = {keys[i]: values[i] for i in sorted_value_index}
             context['format_data'] = sorted_formats
             context['max_count'] = max_count
             context['active_filter'] = 'format'
             context['active_indicator'] = indicator
+            context['sort'] = sorting
             return context
 
 class DatasetsFrequencyView(DatasetListView):
@@ -1415,6 +1461,7 @@ class DatasetsFrequencyView(DatasetListView):
             max_count = 0
             datasets = self.get_queryset()
             indicator = self.request.GET.get('indicator', None)
+            sorting = self.request.GET.get('sort', None)
             frequencies = {}
             stat_groups = {}
             if indicator is None:
@@ -1490,12 +1537,16 @@ class DatasetsFrequencyView(DatasetListView):
             for v in values:
                 if max_count < v:
                     max_count = v
-            sorted_value_index = np.flip(np.argsort(values))
+            if sorting is None or sorting == 'sort-desc':
+                sorted_value_index = np.flip(np.argsort(values))
+            else:
+                sorted_value_index = np.argsort(values)
             sorted_frequencies = {keys[i]: values[i] for i in sorted_value_index}
             context['frequency_data'] = sorted_frequencies
             context['max_count'] = max_count
             context['active_filter'] = 'frequency'
             context['active_indicator'] = indicator
+            context['sort'] = sorting
             return context
 
 class JurisdictionStatsView(DatasetListView):
@@ -1509,6 +1560,7 @@ class JurisdictionStatsView(DatasetListView):
         current_org = Organization.objects.get(id=self.kwargs.get('pk'))
         child_orgs = current_org.get_children()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         filtered_orgs = []
         if indicator is None:
             indicator = 'dataset-count'
@@ -1536,6 +1588,8 @@ class JurisdictionStatsView(DatasetListView):
                     single_dict['count'] = len(v)
                     if max_count < len(v):
                         max_count = len(v)
+                if sorting == 'sort-asc':
+                    single_dict = sorted(single_dict, key=lambda dd: dd['count'], reverse=False)
                 elif indicator != 'dataset-count':
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
                         models = Model.objects.filter(dataset_id__in=v).values_list('metadata__name', flat=True)
@@ -1592,13 +1646,18 @@ class JurisdictionStatsView(DatasetListView):
                         else:
                             single_dict['count'] = 0
             result.append(single_dict)
-            result = sorted(result, key=lambda dd: dd['count'], reverse=True)
+            if sorting is None or sorting == 'sort-desc':
+                result = sorted(result, key=lambda dd: dd['count'], reverse=True)
+            else:
+                result = sorted(result, key=lambda dd: dd['count'], reverse=False)
+            # result = sorted(result, key=lambda dd: dd['count'], reverse=True)
         context['single_org'] = True
         context['jurisdiction_data'] = result
         context['max_count'] = max_count
         context['current_object'] = self.kwargs.get('pk')
         context['active_filter'] = 'jurisdiction'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 class DatasetsStatsView(DatasetListView):
@@ -1705,6 +1764,7 @@ class DatasetsCategoriesView(DatasetListView):
         parent_cats = context['parent_category_facet']
         all_cats = context['category_facet']
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         modified_cats = []
         if indicator is None:
             indicator = 'dataset-count'
@@ -1733,6 +1793,8 @@ class DatasetsCategoriesView(DatasetListView):
                 if max_count < cat.get('count'):
                     max_count = cat.get('count')
             modified_cats.append(cat)
+        if sorting == 'sort-asc':
+            modified_cats = sorted(modified_cats, key=lambda dd: dd['count'], reverse=False)
         if indicator != 'dataset-count':
             for single in modified_cats:
                 if 'dataset_ids' in single:
@@ -1792,11 +1854,15 @@ class DatasetsCategoriesView(DatasetListView):
                             single['stats'] = 0
                 else:
                     single['stats'] = 0
-            modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
+            if sorting is None or sorting == 'sort-desc':
+                modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
+            else:
+                modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=False)
         context['categories'] = modified_cats
         context['max_count'] = max_count
         context['active_filter'] = 'category'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 class CategoryStatsView(DatasetListView):
@@ -1811,6 +1877,7 @@ class CategoryStatsView(DatasetListView):
         child_titles = []
         cat_titles = []
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         if indicator is None:
             indicator = 'dataset-count'
         for cat in all_cats:
@@ -1836,6 +1903,8 @@ class CategoryStatsView(DatasetListView):
                 if max_count < single_cat.get('count'):
                     max_count = single_cat.get('count')
                 filtered_cats.append(single_cat)
+        if sorting == 'sort-asc':
+            filtered_cats = sorted(filtered_cats, key=lambda dd: dd['count'], reverse=False)
         if indicator != 'dataset-count':
             for k in filtered_cats:
                 id_list = []
@@ -1898,12 +1967,17 @@ class CategoryStatsView(DatasetListView):
                                     max_count = k.get('stats')
                         else:
                             k['stats'] = 0
-            filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
+            if sorting is None or sorting == 'sort-desc':
+                filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
+            else:
+                filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=False)
+            # filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
         context['max_count'] = max_count
         context['categories'] = filtered_cats
         context['current_object'] = self.kwargs.get('pk')
         context['active_filter'] = 'category'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 
@@ -1917,6 +1991,7 @@ class PublicationStatsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         year_stats = {}
         # quarter_stats = {}
         # monthly_stats = {}
@@ -1992,15 +2067,25 @@ class PublicationStatsView(DatasetListView):
                                 year_stats[yr] = level_avg
                     else:
                         year_stats[yr] = 0
-
         for key, value in year_stats.items():
             if max_count < value:
                 max_count = value
-
+        keys = list(year_stats.keys())
+        values = list(year_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
+        elif sorting == 'sort-year-asc':
+            year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
+        elif sorting == 'sort-desc':
+            year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-asc':
+            year_stats = {keys[i]: values[i] for i in sorted_value_index}
         context['year_stats'] = year_stats
         context['max_count'] = max_count
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 class YearStatsView(DatasetListView):
@@ -2013,6 +2098,7 @@ class YearStatsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         year_stats = {}
         quarter_stats = {}
         selected_year = str(self.kwargs['year'])
@@ -2100,12 +2186,24 @@ class YearStatsView(DatasetListView):
         for key, value in quarter_stats.items():
             if max_count < value:
                 max_count = value
+        keys = list(quarter_stats.keys())
+        values = list(quarter_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=False))
+        elif sorting == 'sort-year-asc':
+            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=True))
+        elif sorting == 'sort-asc':
+            quarter_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-desc':
+            quarter_stats = {keys[i]: values[i] for i in sorted_value_index}
         context['selected_year'] = selected_year
         context['year_stats'] = quarter_stats
         context['max_count'] = max_count
         context['current_object'] = str('year/' + selected_year)
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 
@@ -2119,6 +2217,7 @@ class QuarterStatsView(DatasetListView):
         max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
         # year_stats = {}
         # quarter_stats = {}
         monthly_stats = {}
@@ -2198,6 +2297,17 @@ class QuarterStatsView(DatasetListView):
         for m, mv in monthly_stats.items():
             if max_count < mv:
                 max_count = mv
+        keys = list(monthly_stats.keys())
+        values = list(monthly_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=False))
+        elif sorting == 'sort-year-asc':
+            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=True))
+        elif sorting == 'sort-asc':
+            monthly_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-desc':
+            monthly_stats = {keys[i]: values[i] for i in sorted_value_index}
         context['selected_quarter'] = self.kwargs['quarter']
         # context['year_stats'] = quarter_stats
         context['year_stats'] = monthly_stats
@@ -2205,6 +2315,7 @@ class QuarterStatsView(DatasetListView):
         context['current_object'] = str('quarter/' + selected_quarter)
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
+        context['sort'] = sorting
         return context
 
 

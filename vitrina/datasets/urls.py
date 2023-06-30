@@ -47,7 +47,7 @@ urlpatterns = [
     path('datasets/stats/jurisdiction/', DatasetManagementsView.as_view(), name='dataset-stats-jurisdiction'),
     path('datasets/stats/jurisdiction/<int:pk>/', JurisdictionStatsView.as_view(),
          name='dataset-stats-jurisdiction-children'),
-    path('datasets/stats/yearly/', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
+    # path('datasets/stats/yearly/', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
     path('datasets/stats/organization/', DatasetsOrganizationsView.as_view(), name='dataset-stats-organization'),
     # path('datasets/stats/organization/<int:pk>', OrganizationStatsView.as_view(), name='dataset-stats-organization-children'),
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),

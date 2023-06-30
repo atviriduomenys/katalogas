@@ -91,7 +91,20 @@
             </form>
 
             <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
-
+            <div class="is-flex">
+                <div class="stays-right">
+                    <form action="/datasets/" method="GET">
+                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                        <div class="select">
+                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                                <option value="sort-by-date-newest" {% if sort == 'sort-by-date-newest' %}selected{% endif %}>{% translate "Naujausi" %}</option>
+                                <option value="sort-by-date-oldest" {% if sort == 'sort-by-date-oldest' %}selected{% endif %}>{% translate "Seniausi" %}</option>
+                                <option value="sort-by-title" {% if sort == 'sort-by-title' %}selected{% endif %}>{% translate "Pavadinimas" %}</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <div class="show-mobile m-b-md">
                 <button class="button is-primary is-small show-mobile-facets">{% translate "Filtro rezultatai" %}</button>
             </div>

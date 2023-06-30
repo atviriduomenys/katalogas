@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from signxml import XMLSigner, XMLVerifier, methods
 from signxml.algorithms import SignatureMethod, DigestAlgorithm, CanonicalizationMethod
 from lxml import etree as ET
@@ -24,7 +26,7 @@ user_information = ('firstName',
                     'phoneNumber',
                     'companyName')
 
-callback_url = '{}accounts/viisp/complete-login'
+callback_url = '/accounts/viisp/complete-login'
 PID = 'VIISP-AUTH-SERVICE-01'
 CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
 
@@ -82,6 +84,7 @@ def get_response_with_ticket_id(key, domain):
     signed_xml = create_signed_authentication_request_xml(key, domain)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
+    resp.raise_for_status()
     return _parse_ticket_id(resp.text)
 
 def get_response_with_user_data(ticket_id, key):
@@ -97,7 +100,7 @@ def create_signed_authentication_request_xml(key, domain):
     _add_elements(base, xml, providers, element_name='authentication:authenticationProvider')
     _add_elements(base, xml, attributes, element_name='authentication:authenticationAttribute')
     _add_elements(base, xml, user_information, element_name='authentication:userInformation')
-    _add_elements(base, xml, (callback_url.format(domain),), element_name='authentication:postbackUrl')
+    _add_elements(base, xml, (urljoin(domain, callback_url),), element_name='authentication:postbackUrl')
     _add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
     signed_xml = _sign_xml(xml, key).decode('utf-8')
     return signed_xml

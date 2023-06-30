@@ -40,7 +40,6 @@ SECRET_KEY = env('SECRET_KEY', default=(
     'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
 ))
 
-VIISP_AUTH_PRIVATE_KEY = b64decode(env('VIISP_AUTH_PRIVATE_KEY')).decode('ascii')
 VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
 VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
 
@@ -250,11 +249,18 @@ SITE_ID = 1
 # Provider specific settings
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_PROVIDERS = {
-    'vitrina.viisp': {
-        'PROFILE_FIELDS': [
-            'firstName',
-            'lastName'
-        ]
+    'viisp': {
+        'SCOPE': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'FIELDS': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'VERIFIED_EMAIL': True
     }
 }
 
@@ -352,3 +358,5 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'

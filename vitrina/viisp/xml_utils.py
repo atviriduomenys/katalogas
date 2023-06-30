@@ -5,7 +5,9 @@ from xml.dom import minidom
 from bs4 import BeautifulSoup
 from stringcase import snakecase
 from requests import post
-from vitrina.settings import VIISP_PROXY_AUTH, VIISP_AUTH_PRIVATE_KEY
+from vitrina.settings import VIISP_PROXY_AUTH
+import zipfile
+import io
 
 providers = ('auth.lt.identity.card',
              'auth.lt.bank',
@@ -14,14 +16,15 @@ providers = ('auth.lt.identity.card',
              'auth.lt.government.employee.card',
              'auth.tsl.identity.card',)
 
-attributes = ('lt-personal-code',
-              'lt-company-code')
+attributes = ('lt-company-code',)
 
 user_information = ('firstName',
                     'lastName',
-                    'companyName',)
+                    'email',
+                    'phoneNumber',
+                    'companyName')
 
-callback_url = 'http://127.0.0.1:8000/accounts/accounts/viisp/complete-login'
+callback_url = '{}accounts/viisp/complete-login'
 PID = 'VIISP-AUTH-SERVICE-01'
 CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
 
@@ -54,7 +57,7 @@ def _add_elements(base, xml, elements, element_name=None, element=None):
         xml.appendChild(element)
     return base
 
-def _sign_xml(xml):
+def _sign_xml(xml, key):
     root = ET.fromstring(xml.toxml())
     signer = XMLSigner(
             method=methods.enveloped, 
@@ -65,7 +68,7 @@ def _sign_xml(xml):
     ns = {None: signer.namespaces['ds']}
     signer.namespaces = ns
     ET.cleanup_namespaces(root)
-    signed_root = signer.sign(root, key=VIISP_AUTH_PRIVATE_KEY, reference_uri="uniqueNodeId")
+    signed_root = signer.sign(root, key=key, reference_uri="uniqueNodeId")
     return ET.tostring(signed_root, encoding='utf-8')
 
 def _generate_xml(base_element_name):
@@ -75,29 +78,31 @@ def _generate_xml(base_element_name):
     xml.appendChild(pid)
     return base, xml
 
-def get_response_with_ticket_id():
-    signed_xml = create_signed_authentication_request_xml()
+def get_response_with_ticket_id(key, domain):
+    signed_xml = create_signed_authentication_request_xml(key, domain)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
     return _parse_ticket_id(resp.text)
 
-def get_response_with_user_data(ticket_id):
-    signed_xml = create_signed_authentication_data_request_xml(ticket_id)
+def get_response_with_user_data(ticket_id, key):
+    signed_xml = create_signed_authentication_data_request_xml(ticket_id, key)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
-    return _parse_user_data(resp.text)
+    data = _parse_user_data(resp.text)
+    data['ticket_id'] = ticket_id
+    return data
 
-def create_signed_authentication_request_xml():
+def create_signed_authentication_request_xml(key, domain):
     base, xml = _generate_xml('authentication:authenticationRequest')
     _add_elements(base, xml, providers, element_name='authentication:authenticationProvider')
     _add_elements(base, xml, attributes, element_name='authentication:authenticationAttribute')
     _add_elements(base, xml, user_information, element_name='authentication:userInformation')
-    _add_elements(base, xml, (callback_url,), element_name='authentication:postbackUrl')
+    _add_elements(base, xml, (callback_url.format(domain),), element_name='authentication:postbackUrl')
     _add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
-    signed_xml = _sign_xml(xml).decode('utf-8')
+    signed_xml = _sign_xml(xml, key).decode('utf-8')
     return signed_xml
 
-def create_signed_authentication_data_request_xml(ticket_id):
+def create_signed_authentication_data_request_xml(ticket_id, key):
     base, xml = _generate_xml('authentication:authenticationDataRequest')
     ticket = base.createElement('authentication:ticket')
     ticket.appendChild(base.createTextNode(ticket_id))
@@ -106,7 +111,7 @@ def create_signed_authentication_data_request_xml(ticket_id):
     include_source_data = base.createElement('authentication:includeSourceData')
     include_source_data.appendChild(base.createTextNode('true'))
     xml.appendChild(include_source_data)
-    signed_xml = _sign_xml(xml).decode('utf-8')
+    signed_xml = _sign_xml(xml, key).decode('utf-8')
     return signed_xml
 
 def _parse_ticket_id(xml_string):
@@ -118,15 +123,39 @@ def _parse_ticket_id(xml_string):
 
 def _parse_user_data(xml_string):
     soup = BeautifulSoup(xml_string, features='xml')
-    user_information_to_find = ['firstName', 'lastName', 'companyName']
+    user_information_to_find = ['firstName', 'lastName', 'email', 'phoneNumber', 'companyName']
     user_data = {}
-    authentication_attribute = soup.find('authenticationAttribute')
-    attribute = authentication_attribute.find('attribute').text
-    value = authentication_attribute.find('value').text
-    user_data[snakecase(attribute)] = value
+    authentication_attributes = soup.find_all('authenticationAttribute')
+    for auth_attr in authentication_attributes:
+        attribute = auth_attr.find('attribute').text
+        if attribute == 'lt-company-code':  
+            value = auth_attr.find('value').text
+            user_data[snakecase(attribute)] = value
     user_information_data = soup.find_all('userInformation')
     for u_i_data in user_information_data:
         information = u_i_data.find('information').text
         if information in user_information_to_find:
             user_data[snakecase(information)] = u_i_data.find('value').text 
     return user_data
+
+def read_adoc_file(adoc_file):
+    file = adoc_file.read()
+    opened_zip = zipfile.ZipFile(io.BytesIO(file), "r")
+    xml_strings = []
+    signable_metadata_files = [
+        file_name for file_name in opened_zip.namelist() if \
+            'metadata/signableMetadata0.xml' in file_name
+    ]
+    
+    for file in signable_metadata_files:
+        with opened_zip.open('metadata/signableMetadata0.xml') as signature_xml:
+            xml_strings.append(signature_xml.read())
+    return xml_strings
+
+def parse_adoc_xml_signature_data(xml_strings):
+     sa_company_codes = []
+     for xml_string in xml_strings:
+        soup = BeautifulSoup(xml_string, features='xml')
+        signature_authors = soup.find('sig:authors')
+        sa_company_codes += [result.text for result in signature_authors.find_all('sig:code')]
+     return sa_company_codes

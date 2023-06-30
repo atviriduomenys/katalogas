@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
     PasswordResetConfirmView as BasePasswordResetConfirmView
@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.utils.timezone import now, make_aware
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
-from vitrina.users.forms import LoginForm, RegisterForm, PasswordResetForm, PasswordResetConfirmForm
+from vitrina.users.forms import LoginForm, RegisterForm, PasswordSetForm, PasswordResetForm, PasswordResetConfirmForm
 from vitrina.users.forms import UserProfileEditForm
 from vitrina.users.models import User
 from vitrina import settings
@@ -42,6 +42,23 @@ class RegisterView(CreateView):
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
+class PasswordSetView(UpdateView):
+    template_name = 'base_form.html'
+    model = User
+    context_object_name = 'user'
+    form_class = PasswordSetForm
+
+    def get_object(self):
+        object_id = self.request.user.id
+        return User.objects.get(pk=object_id)
+    
+    def form_valid(self, form):
+        user = self.get_object()
+        password = form.cleaned_data.get('password')
+        user.set_password(password)
+        user.save()
+        update_session_auth_hash(self.request, user)
+        return redirect('home')
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

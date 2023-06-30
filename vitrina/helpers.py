@@ -62,5 +62,7 @@ def submit(title=None):
 def get_current_domain(request: WSGIRequest) -> str:
     protocol = "https" if request.is_secure() else "http"
     domain = Site.objects.get_current().domain
-    return request.build_absolute_uri("%s://%s" % (protocol, domain))
-
+    localhost = '127.0.0.1' in domain
+    if not localhost:
+        return request.build_absolute_uri("%s://%s" % (protocol, domain))
+    return request.build_absolute_uri(domain)

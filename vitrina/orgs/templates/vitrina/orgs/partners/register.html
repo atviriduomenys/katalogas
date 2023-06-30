@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Informacija duomenų teikėjo registravimui" %}{% endblock %}
+
+{% block content %}
+  <p>Duomenų teikėjais gali būti tiek valstybinio, tiek privataus sektoriaus atstovai.</p>
+  <p>Prieš registruojantis, jūsų organizacijos atstovas turėtu užpildyti Raštą dėl koordinatoriaus paskyrimo.</p>
+  <p> Šį raštą turėtu pasirašyti jūsų organizacijos, padalinio ar skyriaus vadovas. Elektroniniu būdu pasirašytas raštas ADOC formatu turi būti pateikiamas pildant registracijos <a href="https://data.gov.lt/file/9f12acd4-d9ee-423d-85a1-667e52b67941">formą</a>.</p>
+  <br>
+  <p>
+    <a id="partner-register" href="{% url 'partner-register' %}" class="button is-small is-primary">{% translate "Tęsti" %}</a>
+</p>
+{% endblock %}

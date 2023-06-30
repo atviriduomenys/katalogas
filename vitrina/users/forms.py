@@ -2,8 +2,11 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm
+
+
 
 from django.utils.translation import gettext_lazy as _
 
@@ -83,6 +86,33 @@ class RegisterForm(UserCreationForm):
                            _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
         if 'agree_to_terms' in cleaned_data and not cleaned_data['agree_to_terms']:
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
+        return cleaned_data
+
+class PasswordSetForm(ModelForm):
+    password = CharField(label=_("Slaptažodis"), strip=False,
+                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
+    confirm_password = CharField(label=_("Pakartokite slaptažodį"), strip=False,
+                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+    
+    class Meta:
+        model = User
+        fields = [
+            'password',
+            'confirm_password'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "password-set-form"
+        self.helper.layout = Layout(
+            Field('password', placeholder=_("Slaptažodis")),
+            Field('confirm_password', placeholder=_("Pakartokite slaptažodį")),
+            Submit('submit', _("Pakeisti slatažodį"), css_class='button is-primary')
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
         return cleaned_data
 
 

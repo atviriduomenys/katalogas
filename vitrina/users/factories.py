@@ -7,7 +7,7 @@ from vitrina.users.models import User
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
-        django_get_or_create = ('first_name', 'last_name', 'email', 'phone',)
+        django_get_or_create = ('first_name', 'last_name', 'email', 'phone')
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')

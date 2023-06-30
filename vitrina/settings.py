@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import os
 import environ
 from pathlib import Path
+from base64 import b64decode
 
 from django.utils.translation import gettext_lazy as _
 
@@ -37,6 +39,9 @@ LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
 SECRET_KEY = env('SECRET_KEY', default=(
     'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
 ))
+
+VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
+VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=True)
@@ -86,6 +91,9 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'django_select2',
     'vitrina',
     'vitrina.cms',
@@ -139,7 +147,8 @@ ROOT_URLCONF = 'vitrina.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),
+                 os.path.join(BASE_DIR, 'vitrina', 'templates', 'allauth')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -157,6 +166,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 STATICFILES_FINDERS = (
@@ -233,6 +247,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.django-cms.org/en/latest/how_to/install.html
 # https://docs.django-cms.org/en/latest/reference/configuration.html
 SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_PROVIDERS = {
+    'viisp': {
+        'SCOPE': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'FIELDS': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'VERIFIED_EMAIL': True
+    }
+}
+
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
     ('pages/page.html', _("Puslapis be šoninio meniu")),
@@ -252,6 +285,12 @@ META_USE_TWITTER_PROPERTIES = True
 META_USE_SCHEMAORG_PROPERTIES = True
 META_SITE_PROTOCOL = 'https'
 META_SITE_DOMAIN = 'data.gov.lt'
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.core.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+    "allauth.socialaccount.context_processors.socialaccount",
+)
 
 PARLER_LANGUAGES = {
     None: (
@@ -315,3 +354,11 @@ SWAGGER_SETTINGS = {
 
 VITRINA_TASK_RAISE_1 = 5
 VITRINA_TASK_RAISE_2 = 10
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'

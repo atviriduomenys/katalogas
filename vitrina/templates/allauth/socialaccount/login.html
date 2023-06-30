@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+      <h1>{% translate "Sign in via VIISP" %} </h1>
+      <p>{% translate "You are about to connect a new third party account from VIISP" %}</p>
+      <form method="post">
+        {% csrf_token %}
+        <button class="button is-primary mt-1" type="submit">{% trans "Continue" %}</button>
+      </form>
+    </div>
+</div>
+{% endblock %}

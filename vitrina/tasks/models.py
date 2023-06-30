@@ -28,6 +28,7 @@ class Task(models.Model):
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=255, default=CREATED, choices=STATUSES)
+    role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
 
     class Meta:
         db_table = 'task'

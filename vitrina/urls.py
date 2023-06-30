@@ -17,6 +17,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include
 from django.urls import path
+from allauth.account import views as accviews
+from allauth.socialaccount import views as socaccviews
+
 
 from vitrina import settings
 from vitrina.views import home
@@ -33,7 +36,6 @@ urlpatterns = [
     path('', include('vitrina.messages.urls')),
     path('', include('vitrina.plans.urls')),
     path('', include('vitrina.resources.urls')),
-    path('', include('vitrina.viisp.urls')),
     path('', include('vitrina.catalogs.urls')),
     path('', include('vitrina.users.urls')),
     path('', include('vitrina.datasets.urls')),
@@ -46,5 +48,7 @@ urlpatterns = [
     path("select2/", include("django_select2.urls")),
     path('hitcount/', include('hitcount.urls', namespace='hitcount')),
     path('i18n/', include('django.conf.urls.i18n')),
+    path('accounts/', include('vitrina.viisp.urls')),
     path('', include('cms.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

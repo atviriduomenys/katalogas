@@ -10,19 +10,25 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic import DetailView
+from django.utils.text import slugify
 from itsdangerous import URLSafeSerializer
+from reversion import set_comment
 
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm
-from vitrina.orgs.forms import RepresentativeCreateForm
+from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
+    PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
+from vitrina.tasks.models import Task
+from allauth.socialaccount.models import SocialAccount
+from treebeard.mp_tree import MP_Node
 
 
 class OrganizationListView(ListView):
@@ -255,3 +261,101 @@ class RepresentativeRegisterView(RegisterView):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
+class PartnerRegisterInfoView(TemplateView):
+    template_name = 'vitrina/orgs/partners/register.html'
+
+class PartnerRegisterNoRightsView(TemplateView):
+    template_name = 'vitrina/orgs/partners/no_rights.html'
+
+class PartnerRegisterView(LoginRequiredMixin, CreateView):
+    form_class = PartnerRegisterForm
+    template_name = 'base_form.html'
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
+        if user_social_account:
+            extra_data = user_social_account.extra_data
+            company_code = extra_data.get('company_code')
+            company_name = extra_data.get('company_name')
+            if not company_code and not company_name:
+                return redirect('partner-no-rights')
+        else:
+            return redirect('viisp_login')
+        return super(PartnerRegisterView, self).get(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        user = self.request.user
+        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
+        extra_data = user_social_account.extra_data
+        company_code = extra_data.get('company_code')
+        company_name = extra_data.get('company_name')
+        org = Organization.objects.filter(company_code=company_code).first()
+        company_name_slug = ""
+        if not org:
+            if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+                for item in company_name.split(' '):
+                    company_name_slug += item[0]
+            else:
+                company_name_slug = company_name[0]
+        else:
+             company_name_slug = org.slug
+        kwargs = super().get_form_kwargs()
+        initial_dict = {
+            'coordinator_first_name': user.first_name,
+            'coordinator_last_name': user.last_name,
+            'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
+            'coordinator_email': user.email,
+            'company_code': company_code,
+            'company_name':company_name,
+            'company_slug': company_name_slug,
+            'company_slug_read_only': True if org else False
+        }
+        kwargs['initial'] = initial_dict
+        return kwargs
+
+    def form_valid(self, form):
+        company_code = form.cleaned_data.get('company_code')
+        org = Organization.objects.filter(company_code=company_code).first()
+        if org:
+            self.org = org
+        else:
+            print('c code')
+            print(company_code)
+            self.org = Organization.add_root(
+                title=form.cleaned_data.get('company_name'),
+                company_code=company_code,
+                slug=slugify(form.cleaned_data.get('company_slug'))
+            )
+    
+        user = User.objects.get(email=form.cleaned_data.get('coordinator_email'))
+        user.phone = form.cleaned_data.get('coordinator_phone_number')
+        user.save()
+
+        rep = Representative.objects.create(
+            email = form.cleaned_data.get('coordinator_email'),
+            first_name = form.cleaned_data.get('coordinator_first_name'),
+            last_name = form.cleaned_data.get('coordinator_last_name'),
+            phone = form.cleaned_data.get('coordinator_phone_number'),
+            object_id = self.org.id,
+            role = Representative.COORDINATOR,
+            user = self.request.user,
+            content_type = ContentType.objects.get_for_model(self.org)
+        )
+        rep.save()
+        task = Task.objects.create(
+            title = "Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
+            organization = self.org,
+            user = self.request.user,
+            role=Task.SUPERVISOR
+        )
+        task.save()
+        return redirect(self.org)
+
+def get_path(
+    value: int,
+    steplen: int = MP_Node.steplen,
+    alphabet: str = MP_Node.alphabet,
+) -> str:
+    return MP_Node._int2str(value).rjust(steplen, alphabet[0])

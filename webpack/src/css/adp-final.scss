@@ -1,5 +1,7 @@
 @charset "utf-8";
 
+$link: #007db2;
+
 @import "~bulma/bulma.sass";
 @import "custom/icons";
 
@@ -47,4 +49,17 @@
     font-size: 54px;
   }
 
+}
+
+.breadcrumbs-current {
+  color: #094178;
+  font-size: 1.7rem;
+  white-space: normal;
+  line-height: 30px;
+}
+
+.adp-media.media {
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  padding: 16px;
 }

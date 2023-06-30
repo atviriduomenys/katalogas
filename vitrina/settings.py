@@ -283,6 +283,11 @@ THUMBNAIL_PROCESSORS = (
     'filer.thumbnail_processors.scale_and_crop_with_subject_location',
     'easy_thumbnails.processors.filters'
 )
+THUMBNAIL_ALIASES = {
+    '': {
+        'list': {'size': (480, 320), 'crop': True},
+    },
+}
 
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True

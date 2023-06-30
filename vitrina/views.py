@@ -4,10 +4,14 @@ from django.db.models import Model
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView
+from django.db.models import Count
+
 from reversion.models import Version
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
+from vitrina.requests.models import Request
+from vitrina.projects.models import Project
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
@@ -40,6 +44,27 @@ def home(request):
             Dataset.public.
             select_related('organization').
             order_by('-published')[:3]
+        ),
+        'requests': (
+            Request.public.
+            select_related('organization').
+            order_by('-created')[:3]
+        ),
+        'projects': (
+            Project.public.
+            filter(
+                image__isnull=False,
+            ).
+            order_by('-created')[:3]
+        ),
+        'orgs': (
+            Organization.public.
+            filter(
+                numchild=0,
+                image__isnull=False,
+            ).
+            annotate(datasets=Count('dataset')).
+            order_by('-datasets')[:3]
         ),
     })
 

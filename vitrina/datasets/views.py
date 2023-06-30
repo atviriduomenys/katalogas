@@ -143,6 +143,7 @@ class DatasetListView(FacetedSearchView):
             'selected_date_from': form.cleaned_data.get('date_from'),
             'selected_date_to': form.cleaned_data.get('date_to'),
             'selected_level': get_selected_value(form, 'level'),
+            'q': form.cleaned_data.get('q', ''),
         }
         yearly_stats = {}
         quarter_stats = {}

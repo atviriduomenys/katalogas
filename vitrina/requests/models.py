@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
@@ -96,6 +97,18 @@ class Request(models.Model):
         if self.organization:
             parents.extend(self.organization.get_acl_parents())
         return parents
+
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

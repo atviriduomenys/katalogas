@@ -1,0 +1,92 @@
+{% load i18n %}
+
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+        <p class="title">
+          <span>{% translate "Statistika" %}</span>
+          <span class="icon is-large is-inline-block ml-2">
+            <i class="fas fa-chart-line"></i>
+          </span>
+        </p>
+        <div class="columns is-multiline p-t-lg">
+
+          <div class="column">
+            <div class="card">
+              <div class="card-content">
+                <div class="content">
+                  <p>
+                    <a href="{% url 'users-stats-graph' %}" class="has-text-info-dark is-size-5">
+                      {% translate "Portalo naudotojai" %}
+                    </a>
+                  </p>
+                  <p>
+                     {% translate "Atvirų duomenų protalo naudotojų augimo statistika." %}
+                  </p>
+                </div>
+                <div class="content has-text-right">
+                  <a href="{% url 'users-stats-graph' %}" class="button">
+                    <span>{% translate "Rodyti" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="card">
+              <div class="card-content">
+                <div class="content">
+                  <p>
+                    <a href="{% url 'dataset-stats-jurisdiction' %}" class="has-text-info-dark is-size-5">
+                        {% translate "Valdymo sritys" %}
+                    </a>
+                  </p>
+                  <p>
+                     {% translate "Ministerijų statistika, pagal duomenų rinkinių skaičių." %}
+                  </p>
+                </div>
+                <div class="content has-text-right">
+                  <a href="{% url 'dataset-stats-jurisdiction' %}" class="button">
+                    <span>{% translate "Rodyti" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div class="card">
+              <div class="card-content">
+                <div class="content">
+                  <p>
+                    <a href="{% url 'dataset-stats-category' %}" class="has-text-info-dark is-size-5">
+                        {% translate "Duomenų kategoros" %}
+                    </a>
+                  </p>
+                  <p>
+                     {% translate "5ategorijų statistika pagal duomenų rinkinių skaičių." %}
+                  </p>
+                </div>
+                <div class="content has-text-right">
+                  <a href="{% url 'dataset-stats-category' %}" class="button">
+                    <span>{% translate "Rodyti" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+    </div>
+  </div>
+</section>

@@ -24,7 +24,7 @@
             </div>
             {% for st, stv in status_data.items %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=filter_status_exact%3A{{ st }}"
+                    <a href="/datasets/?selected_facets=status_exact%3A{{ st }}"
                         id="{{ st }}_id">
                         <strong style="color: black;">
                             {% if st == 'HAS_STRUCTURE' %}
@@ -37,7 +37,7 @@
                         </strong>
                     </a>
                     <div class="stays-right">
-                        <a href="/datasets/?selected_facets=filter_status_exact%3A{{ st }}">{{ stv }}</a>
+                        <a href="/datasets/?selected_facets=status_exact%3A{{ st }}">{{ stv }}</a>
                     </div>
                 </div>
                 <progress class="progress is-info"

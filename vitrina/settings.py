@@ -68,6 +68,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     'vitrina.users',
 
+    'django_browser_reload',
+
     # Django CMS
     'sass_processor',
     'sekizai',
@@ -140,6 +142,8 @@ MIDDLEWARE = [
     'cms.middleware.page.CurrentPageMiddleware',
     'cms.middleware.toolbar.ToolbarMiddleware',
     'cms.middleware.language.LanguageCookieMiddleware',
+
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
 ]
 
 ROOT_URLCONF = 'vitrina.urls'
@@ -279,6 +283,11 @@ THUMBNAIL_PROCESSORS = (
     'filer.thumbnail_processors.scale_and_crop_with_subject_location',
     'easy_thumbnails.processors.filters'
 )
+THUMBNAIL_ALIASES = {
+    '': {
+        'list': {'size': (480, 320), 'crop': True},
+    },
+}
 
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True

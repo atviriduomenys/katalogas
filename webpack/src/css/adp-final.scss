@@ -1,9 +1,65 @@
 @charset "utf-8";
 
+$link: #007db2;
+
 @import "~bulma/bulma.sass";
-@import "custom/adp";
-@import "custom/variables";
-@import "custom/utils";
-@import "custom/main";
-@import "custom/mediaqueries";
 @import "custom/icons";
+
+
+.landing-page-image {
+  background: url('images/landing/bg.png');
+  background-repeat: repeat;
+  margin-top: 20px;
+}
+
+#adp-landing-logo {
+    img {
+        margin: 0px 20px;
+        padding-right: 60px;
+    }
+}
+
+#adp-landing-numbers {
+  .column {
+    border-radius: 8px 8px 0px 0px;
+    border-bottom: 8px solid #148bdc;
+    background-color: #ecf7fe;
+    margin: 40px 10px 0px 8px;
+    padding: 0;
+    padding-bottom: 8px;
+
+    a > span {
+        color: #0a66a4;
+    }
+  }
+}
+
+.category-box {
+  background-color: #ecf7fe;
+  padding: 20px 30px;
+  border-left: 4px solid #0a73b9;
+  border-radius: 4px;
+
+  a {
+    color: #0a73b9;
+    font-weight: bold;
+  }
+
+  .category-custom-icon {
+    font-size: 54px;
+  }
+
+}
+
+.breadcrumbs-current {
+  color: #094178;
+  font-size: 1.7rem;
+  white-space: normal;
+  line-height: 30px;
+}
+
+.adp-media.media {
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  padding: 16px;
+}

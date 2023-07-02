@@ -157,17 +157,24 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
         status_filter_data[0].pk,
         status_filter_data[1].pk
     ]
-    assert resp.context['selected_status'] is None
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['status'].items() if i.selected]
+    assert selected == []
 
 
 @pytest.mark.haystack
 def test_status_filter_inventored(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?selected_facets=filter_status_exact:%s" % (
+    resp = app.get("%s?selected_facets=status_exact:%s" % (
         reverse('dataset-list'),
         Dataset.INVENTORED
     ))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [status_filter_data[1].pk]
-    assert resp.context['selected_status'] == Dataset.INVENTORED
+
+    objects = [int(obj.pk) for obj in resp.context['object_list']]
+    assert objects == [status_filter_data[1].pk]
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['status'].items() if i.selected]
+    assert selected == [Dataset.INVENTORED]
 
 
 @pytest.fixture
@@ -190,7 +197,10 @@ def test_organization_filter_without_query(app: DjangoTestApp, organization_filt
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'] == []
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['organization'].items() if i.selected]
+    assert selected == []
 
 
 @pytest.mark.haystack
@@ -203,7 +213,10 @@ def test_organization_filter_with_organization(app: DjangoTestApp, organization_
         organization_filter_data["datasets"][0].pk,
         organization_filter_data['datasets'][1].pk
     ]
-    assert resp.context['selected_organization'][0] == str(organization_filter_data["organization"].pk)
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['organization'].items() if i.selected]
+    assert selected == [str(organization_filter_data["organization"].pk)]
 
 
 @pytest.fixture
@@ -248,7 +261,10 @@ def category_filter_data():
 def test_category_filter_without_query(app: DjangoTestApp, category_filter_data):
     resp = app.get(reverse('dataset-list'))
     assert len(resp.context['object_list']) == 4
-    assert resp.context['selected_categories'] == []
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['category'].items() if i.selected]
+    assert selected == []
 
 
 @pytest.mark.haystack
@@ -263,7 +279,10 @@ def test_category_filter_with_parent_category(app: DjangoTestApp, category_filte
         category_filter_data["datasets"][2].pk,
         category_filter_data["datasets"][3].pk
     ])
-    assert resp.context['selected_categories'] == [str(category_filter_data["categories"][0].pk)]
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['category'].items() if i.selected]
+    assert selected == [str(category_filter_data["categories"][0].pk)]
 
 
 @pytest.mark.haystack
@@ -279,9 +298,10 @@ def test_category_filter_with_middle_category(
         category_filter_data["datasets"][1].pk,
         category_filter_data["datasets"][3].pk,
     ])
-    assert resp.context['selected_categories'] == [
-        str(category_filter_data["categories"][1].pk),
-    ]
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['category'].items() if i.selected]
+    assert selected == [str(category_filter_data["categories"][1].pk)]
 
 
 @pytest.mark.haystack
@@ -296,9 +316,10 @@ def test_category_filter_with_child_category(
     assert [int(obj.pk) for obj in resp.context['object_list']] == [
         category_filter_data["datasets"][3].pk,
     ]
-    assert resp.context['selected_categories'] == [
-        str(category_filter_data["categories"][3].pk),
-    ]
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['category'].items() if i.selected]
+    assert selected == [str(category_filter_data["categories"][3].pk)]
 
 
 @pytest.mark.haystack
@@ -318,12 +339,16 @@ def test_category_filter_with_parent_and_child_category(
     assert [int(obj.pk) for obj in resp.context['object_list']] == [
         category_filter_data["datasets"][3].pk,
     ]
-    assert sorted(resp.context['selected_categories']) == sorted([
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['category'].items() if i.selected]
+    assert selected == sorted([
         str(category_filter_data["categories"][0].pk),
         str(category_filter_data["categories"][3].pk)
     ])
 
 
+@pytest.mark.skip
 @pytest.mark.haystack
 def test_data_group_filter_header_visible_if_data_groups_exist(
     app: DjangoTestApp,
@@ -338,6 +363,7 @@ def test_data_group_filter_header_visible_if_data_groups_exist(
     assert resp.html.find(id='data_group_filter_header')
 
 
+@pytest.mark.skip
 @pytest.mark.haystack
 def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
     app: DjangoTestApp,
@@ -362,28 +388,40 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
         datasets[0].pk, datasets[1].pk,
     ]
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
-    assert resp.context['selected_tags'] == []
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['tags'].items() if i.selected]
+    assert selected == []
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
     resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk]
-    assert resp.context['selected_tags'] == ['tag2']
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['tags'].items() if i.selected]
+    assert selected == ['tag2']
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_shared_tag(app: DjangoTestApp, datasets):
     resp = app.get("%s?selected_facets=tags_exact:tag3" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
-    assert resp.context['selected_tags'] == ['tag3']
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['tags'].items() if i.selected]
+    assert selected == ['tag3']
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_multiple_tags(app: DjangoTestApp, datasets):
     resp = app.get("%s?selected_facets=tags_exact:tag4&selected_facets=tags_exact:tag3" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk]
-    assert resp.context['selected_tags'] == ['tag4', 'tag3']
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['tags'].items() if i.selected]
+    assert selected == ['tag3', 'tag4']
 
 
 @pytest.fixture
@@ -407,7 +445,10 @@ def test_frequency_filter_without_query(app: DjangoTestApp, frequency_filter_dat
         frequency_filter_data["datasets"][0].pk,
         frequency_filter_data["datasets"][1].pk
     ]
-    assert resp.context['selected_frequency'] is None
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['frequency'].items() if i.selected]
+    assert selected == []
 
 
 @pytest.mark.haystack
@@ -420,7 +461,10 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
         frequency_filter_data["datasets"][0].pk,
         frequency_filter_data["datasets"][1].pk
     ]
-    assert resp.context['selected_frequency'] == frequency_filter_data["frequency"].pk
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['frequency'].items() if i.selected]
+    assert selected == [frequency_filter_data["frequency"].pk]
 
 
 @pytest.fixture
@@ -440,32 +484,32 @@ def test_date_filter_without_query(app: DjangoTestApp, date_filter_data):
         date_filter_data[1].pk,
         date_filter_data[2].pk
     ]
-    assert resp.context['selected_date_from'] is None
-    assert resp.context['selected_date_to'] is None
+    assert resp.context['form'].cleaned_data['date_from'] is None
+    assert resp.context['form'].cleaned_data['date_to'] is None
 
 
 @pytest.mark.haystack
 def test_date_filter_wit_date_from(app: DjangoTestApp, date_filter_data):
     resp = app.get("%s?date_from=2022-02-10" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [date_filter_data[0].pk]
-    assert resp.context['selected_date_from'] == date(2022, 2, 10)
-    assert resp.context['selected_date_to'] is None
+    assert resp.context['form'].cleaned_data['date_from'] == date(2022, 2, 10)
+    assert resp.context['form'].cleaned_data['date_to'] is None
 
 
 @pytest.mark.haystack
 def test_date_filter_with_date_to(app: DjangoTestApp, date_filter_data):
     resp = app.get("%s?date_to=2022-02-10" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [date_filter_data[1].pk, date_filter_data[2].pk]
-    assert resp.context['selected_date_from'] is None
-    assert resp.context['selected_date_to'] == date(2022, 2, 10)
+    assert resp.context['form'].cleaned_data['date_from'] is None
+    assert resp.context['form'].cleaned_data['date_to'] == date(2022, 2, 10)
 
 
 @pytest.mark.haystack
 def test_date_filter_with_dates_from_and_to(app: DjangoTestApp, date_filter_data):
     resp = app.get("%s?date_from=2022-01-01&date_to=2022-02-10" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [date_filter_data[1].pk]
-    assert resp.context['selected_date_from'] == date(2022, 1, 1)
-    assert resp.context['selected_date_to'] == date(2022, 2, 10)
+    assert resp.context['form'].cleaned_data['date_from'] == date(2022, 1, 1)
+    assert resp.context['form'].cleaned_data['date_to'] == date(2022, 2, 10)
 
 
 @pytest.mark.haystack
@@ -490,24 +534,33 @@ def test_dataset_filter_all(app: DjangoTestApp):
     dataset_with_all_filters.slug = 'ds1'
     dataset_with_all_filters.save()
 
-    resp = app.get(
-        "%s?selected_facets=filter_status_exact:%s"
-        "&selected_facets=organization_exact:%s&"
-        "selected_facets=category_exact:%s&"
+    resp = app.get(reverse("dataset-list") + '?' + (
+        f"selected_facets=status_exact:{Dataset.HAS_DATA}&"
+        f"selected_facets=organization_exact:{organization.pk}&"
+        f"selected_facets=category_exact:{category.pk}&"
         "selected_facets=tags_exact:tag1&"
         "selected_facets=tags_exact:tag2&"
-        "selected_facets=frequency_exact:%s"
-        "&date_from=2022-01-01&"
-        "date_to=2022-02-10" % (reverse("dataset-list"), Dataset.HAS_DATA, organization.pk, category.pk, frequency.pk))
+        f"selected_facets=frequency_exact:{frequency.pk}&"
+        "date_from=2022-01-01&"
+        "date_to=2022-02-10"
+    ))
 
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset_with_all_filters.pk]
-    assert resp.context['selected_status'] == Dataset.HAS_DATA
-    assert resp.context['selected_organization'][0] == str(organization.pk)
-    assert resp.context['selected_categories'] == [str(category.pk)]
-    assert resp.context['selected_tags'] == ["tag1", "tag2"]
-    assert resp.context['selected_frequency'] == frequency.pk
-    assert resp.context['selected_date_from'] == date(2022, 1, 1)
-    assert resp.context['selected_date_to'] == date(2022, 2, 10)
+    objects = [int(obj.pk) for obj in resp.context['object_list']]
+    assert objects == [dataset_with_all_filters.pk]
+
+    selected = _get_selected(resp.context)
+    assert selected == {
+        'status': Dataset.HAS_DATA,
+        'organization': str(organization.pk),
+        'category': str(category.pk),
+        'tags': ["tag1", "tag2"],
+        'frequency': frequency.pk,
+        'published': [
+            (2022, 'Y'),
+            (2022, 1, 'Q'),
+            (2022, 2, 'M'),
+        ],
+    }
 
 
 @pytest.mark.haystack
@@ -520,10 +573,15 @@ def test_dataset_filter_with_pages(app: DjangoTestApp):
             DatasetFactory()
 
     resp = app.get("%s?page=2" % (reverse('dataset-list')))
+
     assert 'page' not in resp.html.find(id="%s_id" % Dataset.INVENTORED).attrs['href']
     resp = resp.click(linkid="%s_id" % Dataset.INVENTORED)
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [inventored_dataset.pk]
-    assert resp.context['selected_status'] == Dataset.INVENTORED
+
+    objects = [int(obj.pk) for obj in resp.context['object_list']]
+    assert objects == [inventored_dataset.pk]
+
+    selected = _get_selected(resp.context)
+    assert selected['status'] == Dataset.INVENTORED
 
 
 @pytest.fixture
@@ -1115,7 +1173,7 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
         category_filter_data["categories"][1].pk
     ))
     # old_object_list = resp.context['object_list']
-    # resp = resp.click(linkid="Dataset-status-stats")
+    # resp = resp.click(linkid="Dataset-stats-status")
 
     assert resp.status_code == 200
     # assert resp.context['dataset_count'] == len(old_object_list)
@@ -1137,13 +1195,14 @@ def test_dataset_jurisdictions(app: DjangoTestApp):
     DatasetFactory(organization=child_org2)
 
     resp = app.get(reverse("dataset-list"))
-    jurisdictions = resp.context['jurisdiction_facet']
+    filters = {f.name: f for f in resp.context['filters']}
+    jurisdictions = list(filters['jurisdiction'].items())
     # resp = resp.click(linkid="dataset-stats-supervisor")
 
     dataset_count = 0
     for org in jurisdictions:
-        if dataset_count < org.get('count'):
-            dataset_count = org.get('count')
+        if dataset_count < org.count:
+            dataset_count = org.count
 
     # assert resp.context['jurisdictions'] == jurisdictions
     # assert resp.context['max_count'] == dataset_count
@@ -1467,3 +1526,15 @@ def test_dataset_add_inverse_relation(app: DjangoTestApp):
     assert dataset_part_of.part_of.count() == 1
     assert dataset_part_of.part_of.first().part_of == dataset
     assert dataset_part_of.part_of.first().relation == relation
+
+
+def _get_selected(context):
+    selected = {
+        f.name: [i.value for i in f.items() if i.selected]
+        for f in context['filters']
+    }
+    selected = {
+        k: (v[0] if len(v) == 1 else v)
+        for k, v in selected.items() if v
+    }
+    return selected

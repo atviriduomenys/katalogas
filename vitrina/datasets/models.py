@@ -232,7 +232,11 @@ class Dataset(TranslatableModel):
 
     @property
     def formats(self):
-        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [
+            str(obj.get_format()).upper()
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
 
     @property
     def distinct_formats(self):
@@ -309,6 +313,18 @@ class Dataset(TranslatableModel):
         elif part_of:
             order = 1
         return order
+
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
 
 
 # TODO: To be merged into Dataset:

@@ -25,6 +25,7 @@ from vitrina import settings
 from vitrina.views import home
 
 urlpatterns = [
+    path('__reload__/', include('django_browser_reload.urls')),
     path('', home, name="home"),
     path('', include('vitrina.api.urls')),
     path('', include('vitrina.requests.urls')),

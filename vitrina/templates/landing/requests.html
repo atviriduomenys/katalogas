@@ -1,0 +1,63 @@
+{% load i18n %}
+{% load hitcount_tags %}
+{% load i18n parler_tags %}
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container">
+        <p class="title has-text-info-dark">
+          {% translate "Prašymai atverti duomenis" %}
+        </p>
+        <div class="columns is-multiline p-t-lg">
+            {% for request in requests %}
+            <div class="column">
+                <div class="card">
+                  <div class="card-content">
+                    <div class="content">
+                        <p>
+                          <a href="{{ request.get_absolute_url }}" class="has-text-info-dark is-size-5">
+                            {{ request.title }}
+                          </a>
+                        </p>
+                        <p>
+                          <a href="{{ request.organization.get_absolute_url }}" class="has-text-grey">
+                            {{ request.organization.title }}
+                          </a>
+                        </p>
+                        <p>
+                          <a href="{% url "request-list" %}?selected_facets=formats_exact:{{ format }}" class="tag is-link is-light mr-3">
+                              {{ request.get_status_display }}
+                          </a>
+
+                          <span class="icon is-small ml-5">
+                            <i class="fas fa-thumbs-up"></i>
+                            &nbsp;{{ request.get_likes }}
+                          </span>
+                        </p>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="columns">
+            <div class="column has-text-right">
+                <a href="{% url "request-create" %}" class="button is-primary mr-5" id="request-create">
+                    <span class="icon is-small">
+                      <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>{% translate "Registruoti prašymą atverti duomenis" %}</span>
+                </a>
+                <a href="{% url "request-list" %}" class="button">
+                    <span>{% translate "Rodyti daugiau" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+

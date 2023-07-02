@@ -1,4 +1,5 @@
 import numbers
+from typing import Iterable
 
 from django import template
 
@@ -19,3 +20,8 @@ def is_number(value):
 @register.filter()
 def is_dict(value):
     return isinstance(value, dict)
+
+
+@register.filter(name='range')
+def range_(value: int) -> Iterable[int]:
+    return range(value)

@@ -1,9 +1,16 @@
+import builtins
+
 import pytest
 
 from django.apps import apps
 from django.core.management import call_command
 
 from pytest_django.lazy_django import skip_if_no_django
+
+from pprintpp import pprint as pp
+
+
+builtins.pp = pp
 
 
 @pytest.fixture(scope='session', autouse=True)

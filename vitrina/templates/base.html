@@ -62,18 +62,6 @@
     {% include "component/navbar.html" %}
 </header>
 
-{% block breadcrumbs %}
-    <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
-        <div class="container needs-padding">
-            {% block parent_links %}
-                <ul class="p-t-sm">
-                    <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
-                </ul>
-            {% endblock %}
-            <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</span>
-        </div>
-    </nav>
-{% endblock %}
 
 {% block before_cms_toolbar %}{% endblock %}
 {% cms_toolbar %}
@@ -82,6 +70,20 @@
 {% block root %}
     <section class="section">
         <div class="container">
+
+            {% block breadcrumbs %}
+                <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
+                    <div class="container needs-padding">
+                        {% block parent_links %}
+                            <ul class="p-t-sm">
+                                <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
+                            </ul>
+                        {% endblock %}
+                        <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</span>
+                    </div>
+                </nav>
+            {% endblock %}
+
             {% block content %}{% endblock %}
         </div>
     </section>

@@ -112,8 +112,6 @@ def create_signed_authentication_request_xml(key, domain):
     _add_elements(base, xml, (urljoin(domain, callback_url),), element_name='authentication:postbackUrl')
     _add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
     signed_xml = _sign_xml(xml, key).decode('utf-8')
-    with open('test3.xml', 'w') as somefile:
-        somefile.write(signed_xml)
     return signed_xml
 
 

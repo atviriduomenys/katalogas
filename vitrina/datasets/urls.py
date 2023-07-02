@@ -42,7 +42,7 @@ urlpatterns = [
     # @GetMapping("/datasets")`
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
-    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-status-stats"),
+    path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
     path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
     path('datasets/stats/jurisdiction/', DatasetManagementsView.as_view(), name='dataset-stats-jurisdiction'),
     path('datasets/stats/jurisdiction/<int:pk>/', JurisdictionStatsView.as_view(),
@@ -52,10 +52,10 @@ urlpatterns = [
     # path('datasets/stats/organization/<int:pk>', OrganizationStatsView.as_view(), name='dataset-stats-organization-children'),
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
-    path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tag'),
-    path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-format'),
+    path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tags'),
+    path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-formats'),
     path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
-    path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-publication'),
+    path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-published'),
     path('datasets/stats/publication/year/<int:year>/', YearStatsView.as_view(), name='dataset-stats-publication-year'),
     path('datasets/stats/publication/quarter/<str:quarter>/', QuarterStatsView.as_view(), name='dataset-stats-publication-quarter'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),

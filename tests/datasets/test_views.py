@@ -162,7 +162,7 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
 
 @pytest.mark.haystack
 def test_status_filter_inventored(app: DjangoTestApp, status_filter_data):
-    resp = app.get("%s?selected_facets=filter_status_exact:%s" % (
+    resp = app.get("%s?selected_facets=status_exact:%s" % (
         reverse('dataset-list'),
         Dataset.INVENTORED
     ))
@@ -491,7 +491,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
     dataset_with_all_filters.save()
 
     resp = app.get(
-        "%s?selected_facets=filter_status_exact:%s"
+        "%s?selected_facets=status_exact:%s"
         "&selected_facets=organization_exact:%s&"
         "selected_facets=category_exact:%s&"
         "selected_facets=tags_exact:tag1&"
@@ -1115,7 +1115,7 @@ def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp,
         category_filter_data["categories"][1].pk
     ))
     # old_object_list = resp.context['object_list']
-    # resp = resp.click(linkid="Dataset-status-stats")
+    # resp = resp.click(linkid="Dataset-stats-status")
 
     assert resp.status_code == 200
     # assert resp.context['dataset_count'] == len(old_object_list)

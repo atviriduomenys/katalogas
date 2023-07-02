@@ -1,0 +1,70 @@
+{% load util_tags %}
+
+<nav class="category-panel mb-5">
+
+  {% if active_filter != name %}
+  <a href="{% url stats_url_name %}?{{ request.GET.urlencode }}" id="{{ id }}">
+  {% endif %}
+    <p class="category-panel-heading">
+      <span class="icon-text">
+        <span class="icon">
+          <i class="fas fa-chart-bar fa-lg"></i>
+        </span>
+        <span class="has-text-weight-bold">
+          {{ title }}
+        </span>
+      </span>
+    </p>
+  {% if active_filter != name %}
+  </a>
+  {% endif %}
+
+  {% for obj in facet|slice:":10" %}
+  <div class="columns is-gapless  m-0 mt-1">
+
+    <div class="column is-1">
+      {% if obj.filter_value == selected %}
+      <span class="icon">
+        <i class="far fa-check-square"></i>
+      </span>
+      {% else %}
+      <span class="icon">
+        <i class="far fa-square"></i>
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="column is-9">
+
+      {% if obj.filter_value == selected %}
+      <span class="category-panel-block has-text-weight-bold" title="{{ obj.display_value }}">
+      {% else %}
+      <a href="{{ obj.url }}" class="category-panel-block has-text-grey" id="{{ obj.filter_value }}_id">
+      {% endif %}
+
+        {% if name == 'level' %}
+          <span class="icon-text">
+            {% for star in obj.display_value|range %}
+            <i class="fas fa-star"></i>
+            {% endfor %}
+          </span>
+
+        {% else %}
+          {{ obj.display_value }}
+        {% endif %}
+
+      {% if obj.filter_value == selected %}
+      </span>
+      {% else %}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="column is-2 has-text-right">
+      <span class="is-size-6">({{ obj.count }})</span>
+    </div>
+  </div>
+  {% endfor %}
+
+</nav>
+

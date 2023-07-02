@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 import secrets
+from datetime import datetime, date
 from collections import OrderedDict
 
 import pandas as pd
@@ -55,19 +56,20 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Dat
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
+from vitrina.helpers import Filter
+from vitrina.helpers import DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from datetime import datetime
 import pytz
 
 class DatasetListView(FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
-        'filter_status',
+        'status',
         'organization',
         'jurisdiction',
         'category',
@@ -83,6 +85,14 @@ class DatasetListView(FacetedSearchView):
     form_class = DatasetSearchForm
     max_num_facets = 20
     paginate_by = 20
+    date_facet_fields = [
+        {
+            'field': 'published',
+            'start_date': date(2019, 1, 1),
+            'end_date': date.today(),
+            'gap_by': 'month',
+        },
+    ]
 
     def get_queryset(self):
         datasets = super().get_queryset()
@@ -114,74 +124,97 @@ class DatasetListView(FacetedSearchView):
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         facet_fields = context.get('facets').get('fields')
+        date_facets = context['facets']['dates']
         form = context.get('form')
         sorting = self.request.GET.get('sort', None)
+        filter_args = (self.request, form, facet_fields)
         extra_context = {
-            'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
-                                              choices=Dataset.FILTER_STATUSES),
-            'jurisdiction_facet': update_facet_data(self.request, facet_fields, 'jurisdiction', Organization),
-            'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
-            'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
-            'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
+            'filters': [
+                Filter(
+                    *filter_args,
+                    'status',
+                    _("Rinkinio būsena"),
+                    choices=Dataset.FILTER_STATUSES,
+                    multiple=False,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'level',
+                    _("Brandos lygis"),
+                    multiple=False,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'jurisdiction',
+                    _("Valdymo sritis"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'organization',
+                    _("Organizacija"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'category',
+                    _("Kategorija"),
+                    Category,
+                    multiple=True,
+                    is_int=False,
+                    parent='parent_category',
+                ),
+                Filter(
+                    *filter_args,
+                    'tags',
+                    _("Žymė"),
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'frequency',
+                    _("Atnaujinama"),
+                    Frequency,
+                    multiple=False,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'type',
+                    _("Tipas"),
+                    Type,
+                    multiple=True,
+                    is_int=False,
+                    stats=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'formats',
+                    _("Formatas"),
+                    multiple=True,
+                    is_int=False,
+                ),
+                DateFilter(
+                    self.request,
+                    form,
+                    date_facets,
+                    'published',
+                    _("Įkėlimo data"),
+                    multiple=False,
+                    is_int=False,
+                ),
+            ],
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
-            'frequency_facet': update_facet_data(self.request, facet_fields, 'frequency', Frequency),
-            'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
-            'type_facet': update_facet_data(self.request, facet_fields, 'type', Type),
-            'format_facet': update_facet_data(self.request, facet_fields, 'formats'),
-            'published_facet': update_facet_data(self.request, facet_fields, 'published'),
-            'level_facet': update_facet_data(self.request, facet_fields, 'level'),
-            'selected_status': get_selected_value(form, 'filter_status', is_int=False),
-            'selected_jurisdiction': get_selected_value(form, 'jurisdiction', True, False),
-            'selected_organization': get_selected_value(form, 'organization', True, False),
-            'selected_categories': get_selected_value(form, 'category', True, False),
-            'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),
-            'selected_frequency': get_selected_value(form, 'frequency'),
-            'selected_tags': get_selected_value(form, 'tags', True, False),
-            'selected_types': get_selected_value(form, 'type', True, False),
-            'selected_formats': get_selected_value(form, 'formats', True, False),
-            'selected_date_from': form.cleaned_data.get('date_from'),
-            'selected_date_to': form.cleaned_data.get('date_to'),
-            'selected_level': get_selected_value(form, 'level'),
             'q': form.cleaned_data.get('q', ''),
         }
-        yearly_stats = {}
-        quarter_stats = {}
-        monthly_stats = {}
-        for d in datasets:
-            published = d.published
-            if published is not None:
-                year_published = published.year
-                yearly_stats[year_published] = yearly_stats.get(year_published, 0) + 1
-                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                month = str(year_published) + "-" + str('%02d' % published.month)
-                monthly_stats[month] = monthly_stats.get(month, 0) + 1
-        final = {}
-        months = {}
-
-        for key, value in yearly_stats.items():
-            final[key] = {}
-            final[key]['total'] = value
-            final[key]['quarters'] = {}
-            final[key]['months'] = {}
-            for qk, qv in quarter_stats.items():
-                if qk.startswith(str(key)):
-                    final[key]['quarters'][qk] = qv
-
-        for q, qv in quarter_stats.items():
-            y_index = int(q.split('-Q')[0])
-            q_index = int(q.split('-Q')[1])
-            qq = {q: qv}
-            q_months = {}
-            for m, mv in monthly_stats.items():
-                y = int(m.split('-')[0])
-                m_index = m.split('-')[1]
-                m_q = (int(m_index) - 1) // 3 + 1
-                if q_index == m_q and y_index == y:
-                    q_months[m] = mv
-                    qq = q_months
-            months[q] = qq
 
         if is_org_dataset_list(self.request):
             extra_context['organization'] = self.organization
@@ -197,10 +230,7 @@ class DatasetListView(FacetedSearchView):
                 Dataset,
                 self.organization,
             )
-        final = OrderedDict(sorted(final.items(), reverse=True))
         context.update(extra_context)
-        context['year_filter'] = final
-        context['months'] = months
         context['sort'] = sorting
         return context
 
@@ -797,13 +827,13 @@ class DatasetStatsView(DatasetListView):
         if indicator is None:
             indicator = 'dataset-count'
         for d in datasets:
-            statuses[d.filter_status] = statuses.get(d.filter_status, 0) + 1
+            statuses[d.status] = statuses.get(d.status, 0) + 1
         keys = list(statuses.keys())
         if indicator != 'dataset-count':
             for k in keys:
                 id_list = []
                 for d in datasets:
-                    if d.filter_status == k:
+                    if d.status == k:
                         id_list.append(d.pk)
                 stat_groups[k] = id_list
             for item in stat_groups.keys():

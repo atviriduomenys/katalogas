@@ -2,6 +2,11 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import builtins
+
+from pprintpp import pprint as pp
+
+builtins.pp = pp
 
 
 def main():

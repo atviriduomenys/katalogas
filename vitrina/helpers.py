@@ -1,12 +1,312 @@
+import math
+import datetime
+import calendar
 from typing import Optional, List, Any
+from typing import Type
+from typing import Tuple
+from typing import Union
+from typing import Dict
+from typing import Callable
 from urllib.parse import urlencode
+from itertools import groupby
+from operator import itemgetter
 
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
+from django.core.handlers.wsgi import HttpRequest
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Model
+from django.urls import reverse
+from django.core.exceptions import ObjectDoesNotExist
+
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+
+
+class Filter:
+    name: str
+    title: str
+    limit: int = 10
+
+    def __init__(
+        self,
+        request: HttpRequest,
+        form: FacetedSearchForm,
+        fields: Dict[
+            str,  # Field name
+            List[
+                Tuple[
+                    Union[str, int],  # Field value
+                    int,              # Matching objects count
+                ],
+            ],
+        ],
+        name: str,
+        title: str,
+        model: Optional[Type[Model]] = None,
+        *,
+        choices: Optional[Dict] = None,
+        multiple: bool = False,
+        is_int: bool = True,
+        # For tree-like filters
+        parent: str = '',
+        stats: bool = True,
+    ):
+        self.name = name
+        self.title = title
+        self.request = request
+        self.fields = fields
+        self.model = model
+        self.choices = choices
+        self.form = form
+        self.multiple = multiple
+        self.is_int = is_int
+        self.parent = parent
+        self.stats = stats
+
+    def get_stats_url(self):
+        path = reverse(f'dataset-stats-{self.name}')
+        query = self.request.GET.urlencode()
+        return f'{path}?{query}'
+
+    def items(self):
+        fields = self.fields
+
+        selected = get_selected_value(
+            self.form,
+            self.name,
+            self.multiple,
+            self.is_int,
+        )
+
+        if self.parent:
+            selected += get_selected_value(
+                self.form,
+                self.parent,
+                self.multiple,
+                self.is_int,
+            )
+
+            if selected:
+                facet = fields[self.name]
+            else:
+                facet = fields[self.parent]
+
+        else:
+            facet = fields[self.name]
+            facet = facet
+
+        for value, count in facet[:self.limit]:
+            title = value
+
+            if self.model:
+                try:
+                    obj = self.model.objects.get(pk=value)
+                    title = obj.title
+                except ObjectDoesNotExist:
+                    continue
+            elif self.choices:
+                title = self.choices.get(value)
+
+            yield FilterItem(
+                value=value,
+                title=title,
+                count=count,
+                selected=(
+                    value in selected
+                    if self.multiple else
+                    value == selected
+                ),
+                url=get_filter_url(self.request, self.name, value),
+            )
+
+
+DateFacetItem = Tuple[
+    datetime.datetime,  # value
+    int,                # count
+]
+
+
+class Period:
+
+    def facet_sort_key(self, facet_item: DateFacetItem):
+        value, count = facet_item
+        return self.get_value(value)
+
+    def facet(self, facet: List[DateFacetItem]):
+        facet = [
+            (k, sum(c for v, c in g))
+            for k, g in groupby(facet, key=self.facet_sort_key)
+        ]
+        facet = [(v, self.get_title(v), c) for v, c in facet]
+        facet = sorted(facet, key=itemgetter(0))
+        return facet
+
+    def selected(self, date_from, date_to):
+        if date_to < date_from:
+            return []
+        result = []
+        date = date_from
+        while date < date_to:
+            value = self.get_value(date)
+            result.append(value)
+            _, date = self.get_period(value)
+            date += datetime.timedelta(days=1)
+        return result
+
+
+class Yearly(Period):
+
+    def get_value(self, value: datetime.datetime) -> int:
+        return value.year, 'Y'
+
+    def get_title(self, value: int) -> str:
+        year, _ = value
+        return str(year)
+
+    def get_period(
+        self,
+        value: int,
+    ) -> Tuple[datetime.date, datetime.date]:
+        year, _ = value
+        return (
+            datetime.date(year, 1, 1),
+            datetime.date(year, 12, 31)
+        )
+
+
+class Quarterly(Period):
+    titles = {
+        1: _("I ketvirtis"),
+        2: _("II ketvirtis"),
+        3: _("III ketvirtis"),
+        4: _("IV ketvirtis"),
+    }
+
+    def get_value(self, value: datetime.datetime) -> Tuple[int, int]:
+        return (value.year, math.ceil(value.month / 3), 'Q')
+
+    def get_title(self, value: Tuple[int, int]) -> str:
+        year, quarter, _ = value
+        return self.titles[quarter]
+
+    def get_period(
+        self,
+        value: Tuple[int, int],
+    ) -> Tuple[datetime.date, datetime.date]:
+        year, quarter, _ = value
+        month = quarter * 3
+        _, day = calendar.monthrange(year, month)
+        return (
+            datetime.date(year, month - 2, 1),
+            datetime.date(year, month, day)
+        )
+
+
+class Monthly(Period):
+    titles = {
+        1: _("Sausis"),
+        2: _("Vasaris"),
+        3: _("Kovas"),
+        4: _("Balandis"),
+        5: _("Gegužė"),
+        6: _("Birželis"),
+        7: _("Liepa"),
+        8: _("Rugpjūtis"),
+        9: _("Rugsėjis"),
+        10: _("Spalis"),
+        11: _("Lapkritis"),
+        12: _("Gruodis"),
+    }
+
+    def get_value(self, value: datetime.datetime) -> Tuple[int, int]:
+        return (value.year, value.month, 'M')
+
+    def get_date(self, value: Tuple[int, int]) -> datetime.date:
+        year, month, _ = value
+        return datetime.date(value.year, month, 1),
+
+    def get_title(self, value: int) -> str:
+        year, month, _ = value
+        return self.titles[month]
+
+    def get_period(
+        self,
+        value: Tuple[int, int],
+    ) -> Tuple[datetime.date, datetime.date]:
+        year, month, _ = value
+        _, day = calendar.monthrange(year, month)
+        return (
+            datetime.date(year, month, 1),
+            datetime.date(year, month, day)
+        )
+
+
+class DateFilter(Filter):
+    periods = [
+        Yearly(),
+        Quarterly(),
+        Monthly(),
+    ]
+
+    def items(self):
+        fields = self.fields
+        date_facet = fields[self.name]
+
+        date_from = self.form.cleaned_data.get('date_from')
+        date_to = self.form.cleaned_data.get('date_to')
+
+        if date_from and date_to:
+            facets = []
+            selected = []
+            for period in self.periods:
+                if period_selected := period.selected(date_from, date_to):
+                    period_facet = period.facet(date_facet)
+                    facets.append((period, period_facet))
+                    if len(period_facet) > 1:
+                        # XXX: Probably better checkw would be based on
+                        #      delta = date_to - date_from
+                        break
+                    else:
+                        selected += period_selected
+        else:
+            period = self.periods[0]
+            facets = [(period, period.facet(date_facet))]
+            selected = []
+
+        for period, facet in facets:
+            for value, title, count in facet:
+                start, end = period.get_period(value)
+                yield FilterItem(
+                    value=value,
+                    title=title,
+                    count=count,
+                    selected=value in selected,
+                    url=f'?date_from={start}&date_to={end}',
+                )
+
+
+class FilterItem:
+    value: str
+    title: str
+    count: str
+    selected: bool
+
+    def __init__(
+        self,
+        *,
+        value: str,
+        title: str,
+        count: int,
+        selected: int,
+        url: str,
+    ):
+        self.value = value
+        self.title = title
+        self.count = count
+        self.selected = selected
+        self.url = url
 
 
 def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \

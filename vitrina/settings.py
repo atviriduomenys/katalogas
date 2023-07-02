@@ -68,8 +68,6 @@ INSTALLED_APPS = [
     'drf_yasg',
     'vitrina.users',
 
-    'django_browser_reload',
-
     # Django CMS
     'sass_processor',
     'sekizai',
@@ -142,8 +140,6 @@ MIDDLEWARE = [
     'cms.middleware.page.CurrentPageMiddleware',
     'cms.middleware.toolbar.ToolbarMiddleware',
     'cms.middleware.language.LanguageCookieMiddleware',
-
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
 ]
 
 ROOT_URLCONF = 'vitrina.urls'

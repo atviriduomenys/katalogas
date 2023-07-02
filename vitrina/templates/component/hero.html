@@ -11,19 +11,19 @@
                 <div class="column">
                     <div id="adp-landing-numbers" class="columns is-gappless">
                         <div class="column has-text-centered is-3">
-                            <a href="{% url 'organization-list' %}" id="organization-count" class="has-text-white">
+                            <a href="{% url 'organization-list' %}" id="organization-count" class="has-text-white stats">
                                 <span class="is-size-2 has-text-weight-bold">{{ counts.organization }}</span><br>
                                 <span class=" has-text-weight-bold">{% translate "Organizacijos" %}</span>
                             </a>
                         </div>
                         <div class="column has-text-centered is-3">
-                            <a href="{% url 'dataset-list' %}" id="dataset-count" class="has-text-white">
+                            <a href="{% url 'dataset-list' %}" id="dataset-count" class="has-text-white stats">
                                 <span class="is-size-2 has-text-weight-bold">{{ counts.dataset }}</span><br>
                                 <span class=" has-text-weight-bold">{% translate "Duomenų rinkiniai" %}</span>
                             </a>
                         </div>
                         <div class="column has-text-centered is-3">
-                            <a href="{% url 'project-list' %}" id="request-count" class="has-text-white">
+                            <a href="{% url 'project-list' %}" id="request-count" class="has-text-white stats">
                                 <span class="is-size-2 has-text-weight-bold">{{ counts.project }}</span><br>
                                 <span class=" has-text-weight-bold">{% translate "Panaudojimo atvejai" %}</span>
                             </a>

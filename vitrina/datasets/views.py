@@ -183,7 +183,7 @@ class DatasetListView(FacetedSearchView):
                     _("Atnaujinama"),
                     Frequency,
                     multiple=False,
-                    is_int=False,
+                    is_int=True,
                 ),
                 Filter(
                     *filter_args,

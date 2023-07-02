@@ -302,6 +302,7 @@ class FilterItem:
         selected: int,
         url: str,
     ):
+        self.name = value
         self.value = value
         self.title = title
         self.count = count

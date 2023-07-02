@@ -4,9 +4,12 @@ import os
 import sys
 import builtins
 
-from pprintpp import pprint as pp
-
-builtins.pp = pp
+try:
+    from pprintpp import pprint as pp
+except ImportError:
+    pass
+else:
+    builtins.pp = pp
 
 
 def main():

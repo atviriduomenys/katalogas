@@ -3,6 +3,7 @@ from typing import Type
 from django.db.models import Model
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 from django.views.generic import TemplateView
 from django.db.models import Count
 
@@ -90,6 +91,8 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         context.update({
             "detail_url_name": self.get_detail_url_name(),
             "history_url_name": self.get_history_url_name(),
+            'detail_url': self.get_detail_url(),
+            'history_url': self.get_history_url(),
             "history": [
                 {
                     'date': version.revision.date_created,
@@ -100,14 +103,14 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 }
                 for version in (
                     Version.objects.
-                    get_for_object(self.object).
+                    get_for_object(self.get_history_object()).
                     order_by('-revision__date_created')
                 )
             ],
             'can_manage_history': has_perm(
                 self.request.user,
                 Action.HISTORY_VIEW,
-                self.object,
+                self.get_history_object(),
             ),
             'tabs_template_name': self.tabs_template_name,
         })
@@ -119,6 +122,22 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def get_history_url_name(self):
         return self.history_url_name
 
+    def get_detail_url(self):
+        obj = self.get_detail_object()
+        url_name = self.get_detail_url_name()
+        return reverse(url_name, args=[obj.pk])
+
+    def get_history_url(self):
+        obj = self.get_history_object()
+        url_name = self.get_history_url_name()
+        return reverse(url_name, args=[obj.pk])
+
+    def get_history_object(self):
+        return self.object
+
+    def get_detail_object(self):
+        return self.object
+
 
 class HistoryMixin:
     detail_url_name = None
@@ -129,6 +148,8 @@ class HistoryMixin:
         context.update({
             'detail_url_name': self.get_detail_url_name(),
             'history_url_name': self.get_history_url_name(),
+            'detail_url': self.get_detail_url(),
+            'history_url': self.get_history_url(),
             'can_manage_history': has_perm(
                 self.request.user,
                 Action.HISTORY_VIEW,
@@ -143,7 +164,19 @@ class HistoryMixin:
     def get_history_url_name(self):
         return self.history_url_name
 
+    def get_detail_url(self):
+        obj = self.get_detail_object()
+        url_name = self.get_detail_url_name()
+        return reverse(url_name, args=[obj.pk])
+
+    def get_history_url(self):
+        obj = self.get_history_object()
+        url_name = self.get_history_url_name()
+        return reverse(url_name, args=[obj.pk])
+
     def get_history_object(self):
         return self.object
 
+    def get_detail_object(self):
+        return self.object
 

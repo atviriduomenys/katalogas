@@ -76,6 +76,7 @@ class OrganizationDetailView(DetailView):
             Representative,
             organization
         )
+        context_data['organization_id'] = organization.pk
         return context_data
 
 
@@ -126,6 +127,7 @@ class OrganizationMembersView(
             Representative,
             self.object,
         )
+        context_data['organization_id'] = self.object.pk
         return context_data
 
 
@@ -138,6 +140,13 @@ class RepresentativeCreateView(
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
 
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        organization_id = self.kwargs.get('organization_id')
+        self.organization = get_object_or_404(Organization, pk=organization_id)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['object_id'] = self.kwargs.get('object_id')
@@ -147,16 +156,31 @@ class RepresentativeCreateView(
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
 
     def has_permission(self):
-        organization_id = self.kwargs.get('organization_id')
-        organization = get_object_or_404(Organization, pk=organization_id)
-        return has_perm(self.request.user, Action.CREATE, Representative, organization)
+        return has_perm(self.request.user, Action.CREATE, Representative, self.organization)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = "vitrina/orgs/tabs.html"
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization,
+        )
+        context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
+        context['current_title'] = _("Tvarkytojo pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['organization_id'] = self.organization.pk
+        return context
 
     def form_valid(self, form):
         self.object: Representative = form.save(commit=False)
-        organization_id = self.kwargs.get('organization_id')
-        organization = get_object_or_404(Organization, pk=organization_id)
-        self.object.object_id = organization_id
-        self.object.content_type = ContentType.objects.get_for_model(organization)
+        self.object.object_id = self.organization.pk
+        self.object.content_type = ContentType.objects.get_for_model(self.organization)
         try:
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
@@ -175,7 +199,7 @@ class RepresentativeCreateView(
             send_mail(
                 subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
                 message=_(
-                    f'Buvote įtraukti į „{organization}“ organizacijos '
+                    f'Buvote įtraukti į „{self.organization}“ organizacijos '
                     'narių sąrašo, tačiau nesate registruotas Lietuvos '
                     'atvirų duomenų portale. Prašome sekite šia nuoroda, '
                     'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
@@ -205,12 +229,37 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
     form_class = RepresentativeUpdateForm
     template_name = 'base_form.html'
 
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
         representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
         return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = "vitrina/orgs/tabs.html"
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization,
+        )
+        context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
+        context['current_title'] = _("Tvarkytojo redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['organization_id'] = self.organization.pk
+        return context
 
     def form_valid(self, form):
         self.object: Representative = form.save()
@@ -262,11 +311,14 @@ class RepresentativeRegisterView(RegisterView):
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
+
 class PartnerRegisterInfoView(TemplateView):
     template_name = 'vitrina/orgs/partners/register.html'
 
+
 class PartnerRegisterNoRightsView(TemplateView):
     template_name = 'vitrina/orgs/partners/no_rights.html'
+
 
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
@@ -352,6 +404,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         )
         task.save()
         return redirect(self.org)
+
 
 def get_path(
     value: int,

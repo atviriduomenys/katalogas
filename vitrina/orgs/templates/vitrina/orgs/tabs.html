@@ -2,19 +2,19 @@
 <div class="tabs">
     <ul>
         <li class="{%if request.resolver_match.url_name == 'organization-detail' %} is-active {% endif %}">
-            <a href="{% url 'organization-detail' request.resolver_match.kwargs.pk %}">
+            <a href="{% url 'organization-detail' organization_id %}">
                 {% translate "Informacija" %}
             </a>
         </li>
         {% if can_view_members %}
-        <li class="{%if request.resolver_match.url_name == 'organization-members' %} is-active {% endif %}">
-            <a href="{% url 'organization-members' request.resolver_match.kwargs.pk %}">
+        <li class="{%if request.resolver_match.url_name == 'organization-members' or request.resolver_match.url_name == 'representative-create' or request.resolver_match.url_name == 'representative-update' %} is-active {% endif %}">
+            <a href="{% url 'organization-members' organization_id %}">
                 {% translate "Tvarkytojai" %}
             </a>
         </li>
         {% endif %}
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
-            <a href="{% url 'organization-datasets' request.resolver_match.kwargs.pk %}">
+            <a href="{% url 'organization-datasets' organization_id %}">
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>

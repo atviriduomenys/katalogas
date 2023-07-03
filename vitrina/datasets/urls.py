@@ -75,12 +75,12 @@ urlpatterns = [
          AddProjectView.as_view(),
          name='dataset-project-add'),
     path(
-        'datasets/<int:dataset_id>/members/add/',
+        'datasets/<int:pk>/members/add/',
         CreateMemberView.as_view(),
         name='dataset-representative-create',
     ),
     path(
-        'datasets/<int:dataset_id>/members/<int:pk>/change/',
+        'datasets/<int:pk>/members/<int:representative_id>/change/',
         UpdateMemberView.as_view(),
         name='dataset-representative-update',
     ),

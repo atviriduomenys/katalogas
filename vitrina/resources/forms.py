@@ -9,9 +9,12 @@ from crispy_forms.layout import Field, Submit, Layout
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.models import Metadata
 
 
 class DatasetResourceForm(forms.ModelForm):
+    name = forms.CharField(label=_('Kodinis pavadinimas'), required=False)
+    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
     period_start = DateField(
         widget=forms.TextInput(attrs={'type': 'date'}),
         required=False,
@@ -73,6 +76,8 @@ class DatasetResourceForm(forms.ModelForm):
             'format',
             'download_url',
             'file',
+            'name',
+            'access',
         )
 
     def __init__(self, *args, **kwargs):
@@ -84,6 +89,8 @@ class DatasetResourceForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),
             Field('description', placeholder=_("Detalus šaltinio aprašas"), rows="2"),
+            Field('name'),
+            Field('access'),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
@@ -95,6 +102,10 @@ class DatasetResourceForm(forms.ModelForm):
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )
+
+        if resource and resource.metadata.first():
+            self.initial['access'] = resource.metadata.first().access
+            self.initial['name'] = resource.metadata.first().name
 
     def clean(self):
         file = self.cleaned_data.get('file')
@@ -112,3 +123,9 @@ class DatasetResourceForm(forms.ModelForm):
                 "Arba įkelkite duomenų faią."
             ))
         return self.cleaned_data
+
+    def clean_access(self):
+        access = self.cleaned_data.get('access')
+        if access == '':
+            return None
+        return access

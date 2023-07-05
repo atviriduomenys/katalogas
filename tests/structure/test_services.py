@@ -149,7 +149,7 @@ def test_structure_models_and_props(app: DjangoTestApp):
     models = Model.objects.all()
     metadata = Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Model)
-    )
+    ).order_by('order')
     assert models.count() == 2
     assert models[0].dataset == structure.dataset
     assert metadata.count() == 2
@@ -174,7 +174,7 @@ def test_structure_models_and_props(app: DjangoTestApp):
     metadata = Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Property),
         object_id__in=props.values_list('pk', flat=True)
-    )
+    ).order_by('order')
     assert props.count() == 2
     assert metadata.count() == 2
     assert list(metadata.values_list(

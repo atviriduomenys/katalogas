@@ -32,13 +32,17 @@ class CommentView(
 
             if form.cleaned_data.get('register_request'):
                 frequency = form.cleaned_data.get('increase_frequency')
+                title = obj.title
+                if not title and hasattr(obj, 'name'):
+                    title = obj.name
                 new_request = Request.objects.create(
                     status=Request.CREATED,
                     user=request.user,
-                    title=obj.title,
+                    title=title,
                     description=comment.body,
-                    organization=obj.organization,
-                    dataset_id=object_id,
+                    organization=obj.organization if hasattr(obj, 'organization') else None,
+                    object_id=object_id,
+                    content_type=content_type,
                     periodicity=frequency.title if frequency else "",
                 )
                 set_comment(Request.CREATED)
@@ -84,10 +88,12 @@ class ReplyView(LoginRequiredMixin, View):
 
 class ExternalCommentView(
     LoginRequiredMixin,
+    RevisionMixin,
     View
 ):
     def post(self, request, external_content_type, external_object_id):
-        form = CommentForm(None, request.POST)
+        form_class = get_comment_form_class()
+        form = form_class(external_object_id, request.POST)
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -95,6 +101,21 @@ class ExternalCommentView(
             comment.external_object_id = external_object_id
             comment.external_content_type = external_content_type
             comment.type = Comment.USER
+
+            if form.cleaned_data.get('register_request'):
+                new_request = Request.objects.create(
+                    status=Request.CREATED,
+                    user=request.user,
+                    title=external_object_id,
+                    description=comment.body,
+                    external_object_id=external_object_id,
+                    external_content_type=external_content_type,
+                )
+                set_comment(Request.CREATED)
+                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
+                comment.rel_object_id = new_request.pk
+                comment.type = Comment.REQUEST
+
             comment.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))

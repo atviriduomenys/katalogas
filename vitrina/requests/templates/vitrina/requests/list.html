@@ -16,7 +16,9 @@
 
                 <nav class="category-panel">
                     <p class="category-panel-heading">
-                        <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                        <a href="{% url 'request-stats-published' %}?" id="request-stats-published">
+                            <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                        </a>
                     </p>
                     <div class="field">
                         <input

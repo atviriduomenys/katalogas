@@ -4,6 +4,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.urls import reverse
 from filer.fields.file import FilerFileField
 from tagulous.models import TagField
@@ -743,3 +745,33 @@ class DataServiceSpecType(models.Model):
 
     def __str__(self):
         return self.title
+
+
+@receiver(post_save, sender=DatasetGroup)
+@receiver(post_save, sender=Dataset)
+@receiver(post_save, sender=Type)
+@receiver(post_save, sender=Relation)
+def translate_text_field(sender, instance, created, **kwargs):
+    try:
+        if not created:
+            lt_title = instance.title
+            if type(instance) == Dataset:
+                lt_desc = instance.description
+                tr_title = 'atsakymas'
+                tr_desc = 'atsakymas_desc'
+                instance.set_current_language('en')
+                instance.title = tr_title
+                instance.description = tr_desc
+            elif type(instance) == DatasetGroup or type(instance) == Type:
+                tr_title = 'atsakymas'
+                instance.set_current_language('en')
+                instance.title = tr_title
+            else:
+                lt_inversive = instance.inversive_title
+                tr_title = 'atsakymas'
+                tr_inverse = 'atsakymas_inverse'
+                instance.set_current_language('en')
+                instance.title = tr_title
+                instance.inversive_title = tr_inverse
+    except SystemError as e:
+        print(e)

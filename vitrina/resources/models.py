@@ -122,6 +122,7 @@ class DatasetDistribution(models.Model):
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

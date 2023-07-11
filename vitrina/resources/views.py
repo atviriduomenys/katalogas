@@ -193,6 +193,7 @@ class ResourceDetailView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['resource'] = self.object
+        context['dataset'] = self.object.dataset
         context['can_update'] = has_perm(self.request.user, Action.UPDATE, self.object)
         context['can_view_members'] = has_perm(
             self.request.user,
@@ -200,7 +201,7 @@ class ResourceDetailView(
             Representative,
             self.object.dataset,
         )
-        context['params'] = self.object.params.all()
+        context['params'] = self.object.params.all().order_by('name')
         context['models'] = self.object.model_set.all()
         return context
 

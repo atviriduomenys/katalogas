@@ -18,8 +18,10 @@ from reversion.models import Version
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, PrefixFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem
+from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
+    PrefixFactory, ParamItemFactory, ParamFactory
+from vitrina.structure.models import Metadata, Enum, EnumItem, Param
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 
@@ -1841,3 +1843,139 @@ def test_model_update(app: DjangoTestApp):
     assert Version.objects.get_for_object(dataset).first().revision.comment == \
            'Redaguotas "UpdatedModel" modelis. Updated Model'
     assert Version.objects.get_for_object(dataset).first().revision.user == user
+
+
+@pytest.mark.django_db
+def test_param_create_for_resource(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory(is_parameterized=True)
+    dataset = distribution.dataset
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    ct = ContentType.objects.get_for_model(distribution)
+    form = app.get(reverse('param-create', args=[dataset.pk, ct.pk, distribution.pk])).forms['param-form']
+    form['name'] = 'test'
+    form['prepare'] = 'param'
+    form['title'] = 'Test param'
+    form['source'] = 'src'
+    form['description'] = 'Param for testing'
+    resp = form.submit()
+
+    assert resp.url == distribution.get_absolute_url()
+    assert list(distribution.params.values_list('name', flat=True)) == ['test']
+    assert distribution.params.first().paramitem_set.count() == 1
+    assert distribution.params.first().paramitem_set.first().metadata.first().name == 'test'
+    assert distribution.params.first().paramitem_set.first().metadata.first().prepare == 'param'
+    assert distribution.params.first().paramitem_set.first().metadata.first().title == 'Test param'
+    assert distribution.params.first().paramitem_set.first().metadata.first().source == 'src'
+    assert distribution.params.first().paramitem_set.first().metadata.first().description == 'Param for testing'
+
+
+@pytest.mark.django_db
+def test_param_create_for_model(app: DjangoTestApp):
+    model = ModelFactory(is_parameterized=True)
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    ct = ContentType.objects.get_for_model(model)
+    form = app.get(reverse('param-create', args=[dataset.pk, ct.pk, model.pk])).forms['param-form']
+    form['name'] = 'test'
+    form['prepare'] = 'param'
+    form['title'] = 'Test param'
+    form['source'] = 'src'
+    form['description'] = 'Param for testing'
+    resp = form.submit()
+
+    assert resp.url == model.get_absolute_url()
+    assert list(model.params.values_list('name', flat=True)) == ['test']
+    assert model.params.first().paramitem_set.count() == 1
+    assert model.params.first().paramitem_set.first().metadata.first().name == 'test'
+    assert model.params.first().paramitem_set.first().metadata.first().prepare == 'param'
+    assert model.params.first().paramitem_set.first().metadata.first().title == 'Test param'
+    assert model.params.first().paramitem_set.first().metadata.first().source == 'src'
+    assert model.params.first().paramitem_set.first().metadata.first().description == 'Param for testing'
+
+
+@pytest.mark.django_db
+def test_param_update(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory(is_parameterized=True)
+    dataset = distribution.dataset
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+    )
+    app.set_user(representative.user)
+    ct = ContentType.objects.get_for_model(distribution)
+    param = ParamFactory(
+        content_type=ct,
+        object_id=distribution.pk
+    )
+    param_item = ParamItemFactory(param=param)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(param_item),
+        object_id=param_item.pk,
+        dataset=dataset,
+        name="test",
+        title='Test param',
+        prepare='param'
+    )
+
+    form = app.get(reverse('param-update', args=[dataset.pk, param_item.pk])).forms['param-form']
+    form['title'] = 'Updated test param'
+    resp = form.submit()
+
+    assert resp.url == distribution.get_absolute_url()
+    assert distribution.params.first().paramitem_set.count() == 1
+    assert distribution.params.first().paramitem_set.first().metadata.first().title == 'Updated test param'
+
+
+@pytest.mark.django_db
+def test_param_delete(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory(is_parameterized=True)
+    dataset = distribution.dataset
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+    )
+    app.set_user(representative.user)
+    ct = ContentType.objects.get_for_model(distribution)
+    param = ParamFactory(
+        content_type=ct,
+        object_id=distribution.pk
+    )
+    param_item = ParamItemFactory(param=param)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(param_item),
+        object_id=param_item.pk,
+        dataset=dataset,
+        name="test",
+        title='Test param',
+        prepare='param'
+    )
+
+    resp = app.get(reverse('param-delete', args=[dataset.pk, param_item.pk]))
+    assert resp.url == distribution.get_absolute_url()
+    assert distribution.params.first().paramitem_set.count() == 0

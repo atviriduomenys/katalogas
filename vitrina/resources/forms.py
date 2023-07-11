@@ -78,6 +78,7 @@ class DatasetResourceForm(forms.ModelForm):
             'file',
             'name',
             'access',
+            'is_parameterized',
         )
 
     def __init__(self, *args, **kwargs):
@@ -91,6 +92,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('description', placeholder=_("Detalus šaltinio aprašas"), rows="2"),
             Field('name'),
             Field('access'),
+            Field('is_parameterized'),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field('period_start', placeholder=_("Pasirinkite pradžios datą")),

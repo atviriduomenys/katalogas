@@ -18,6 +18,9 @@ from vitrina.structure.views import PropertyCreateView
 from vitrina.structure.views import PropertyUpdateView
 from vitrina.structure.views import CreateBasePropertyView
 from vitrina.structure.views import DeleteBasePropertyView
+from vitrina.structure.views import ParamCreateView
+from vitrina.structure.views import ParamUpdateView
+from vitrina.structure.views import ParamDeleteView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -32,6 +35,10 @@ urlpatterns = [
          PropertyUpdateView.as_view(), name='property-update'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/',
+         ParamCreateView.as_view(), name='param-create'),
+    path('datasets/<int:pk>/params/<int:param_id>/change/', ParamUpdateView.as_view(), name='param-update'),
+    path('datasets/<int:pk>/params/<int:param_id>/delete/', ParamDeleteView.as_view(), name='param-delete'),
     path('datasets/<int:pk>/<int:model_id>/add_prop/<int:prop_id>/',
          CreateBasePropertyView.as_view(), name='base-property-create'),
     path('datasets/<int:pk>/<int:model_id>/delete_prop/<int:prop_id>/',

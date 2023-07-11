@@ -138,10 +138,12 @@ class Model(models.Model):
         verbose_name=_("Bazė"),
         related_name='base_models'
     )
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     objects = models.Manager()
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
+    params = GenericRelation('Param')
 
     class Meta:
         db_table = 'model'

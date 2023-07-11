@@ -16,7 +16,7 @@
 	{% include 'vitrina/datasets/tabs.html' %}
 
     <div class="columns no-margin-bottom">
-         <div class="column is-three-quarters">
+         <div class="column is-full">
             <h3 class="custom-title is-size-4-mobile no-margin-bottom">
                 {{ resource.title }}
             </h3>
@@ -45,11 +45,13 @@
                     {% endif %}
                 </div>
 
-                <div>
-                    {% if resource.description %}
+                {% if resource.description %}
+                <div class="columns">
+                    <div class="column is-three-quarters">
                         <p class="no-margin-bottom">{{ resource.description | linebreaks }}</p>
-                    {% endif %}
+                    </div>
                 </div>
+                {% endif %}
 
                 <div class="columns">
                     <div class="column is-three-quarters">
@@ -93,38 +95,9 @@
                 </div>
             </div>
 
-             <div>
-                 <h4 class="custom-title is-size-4-mobile">{% translate "Parametrai" %}</h4>
-                 <div class="mb-5">
-                     {% if params %}
-                         {% for param in params %}
-                             <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
-                                <thead>
-                                    <tr>
-                                        <th>{{ param.name }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for param_item in param.paramitem_set.all %}
-                                        <tr>
-                                            <td>{{ param_item }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                         {% endfor %}
-                     {% else %}
-                        <p>{% translate "Nėra parametrų." %}</p>
-                     {% endif %}
-                 </div>
-                 {% if can_update %}
-                    <div class="buttons is-right">
-                        <a href="" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                            {% translate "Naujas parametras" %}
-                        </a>
-                    </div>
-                {% endif %}
-             </div>
+             {% if resource.is_parameterized %}
+                {% include 'vitrina/structure/params.html' %}
+             {% endif %}
 
              <div>
                  <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
@@ -133,7 +106,7 @@
                          <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
                             <thead>
                                 <tr>
-                                    <th>{% translate "Modelis" %}</th>
+                                    <th>{% translate "Pavadinimas" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -163,9 +136,11 @@
                 {% endif %}
              </div>
 
-             <div>
-                {% comments obj=resource user=request.user %}
-            </div>
+             <div class="columns">
+                <div class="column is-three-quarters">
+                    {% comments obj=resource user=request.user %}
+                </div>
+             </div>
         </div>
 	</div>
 {% endblock %}

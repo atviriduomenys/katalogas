@@ -47,5 +47,10 @@
                 </a>
             </li>
         {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'dataset-requests' %} is-active {% endif %}">
+            <a href="{% url 'dataset-requests' request.resolver_match.kwargs.pk %}" id="requests-tab">
+                {% translate "Poreikiai" %}
+            </a>
+        </li>
     </ul>
 </div>

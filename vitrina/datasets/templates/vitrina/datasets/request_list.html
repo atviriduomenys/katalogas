@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
+
+{% block parent_title %}
+    {% objectlanguage dataset LANGUAGE_CODE %}
+        {{ dataset.title }}
+    {% endobjectlanguage %}
+{% endblock %}
+
+{% block current_title %}
+{% translate "Poreikių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    <div class="buttons is-right">
+        <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+           href="{% url 'request-create' %}">
+            {% translate "Teikti poreikį" %}
+        </a>
+    </div>
+
+    {% if page_obj %}
+        <table class="table is-fullwidth">
+            <tbody>
+                <tr>
+                    <th></th>
+                </tr>
+                {% for request in page_obj %}
+                    <tr>
+                    <td>
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <div>
+                                    <strong>
+                                        <a href="{{ request.get_absolute_url }}" class="dataset-list-title">
+                                              {{ request.title }}
+                                        </a>
+                                    </strong>
+                                </div>
+                                <p class="dataset-list-description">
+                                    {{ request.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+                    </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% else %}
+        {% translate "Šis duomenų rinkinys neturi jam registruotų poreikių." %}
+    {% endif %}
+    <br/>
+{% endblock %}

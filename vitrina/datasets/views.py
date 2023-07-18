@@ -42,6 +42,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 from vitrina.api.models import ApiKey
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
+from vitrina.requests.models import Request
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.structure.models import Model
@@ -246,6 +247,7 @@ class DatasetDetailView(
     context_object_name = 'dataset'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    requests_url_name = 'dataset-requests'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -741,6 +743,53 @@ class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
             )
         else:
             context['has_projects'] = False
+        return context
+
+
+class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, ListView):
+    model = Request
+    template_name = 'vitrina/datasets/request_list.html'
+    context_object_name = 'requests'
+    paginate_by = 20
+
+    # HistoryMixin
+    object: Dataset
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Request.objects.
+            filter(
+                dataset_id=self.object.pk,
+            ).
+            order_by('-created', 'status')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.object
+        # context['can_add_projects'] = has_perm(
+        #     self.request.user,
+        #     Action.UPDATE,
+        #     self.object,
+        # )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        # if self.request.user.is_authenticated:
+        #     context['has_projects'] = (
+        #         get_projects(self.request.user, self.object, check_existence=True, form_query=True)
+        #     )
+        # else:
+        #     context['has_projects'] = False
         return context
 
 

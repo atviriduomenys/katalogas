@@ -33,6 +33,13 @@
                 {% translate "Projektai" %}
             </a>
         </li>
+        {% if plan_url %}
+            <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
+                <a href="{{ plan_url }}">
+                    {% translate "Planai" %}
+                </a>
+            </li>
+        {% endif %}
         {% if can_view_members %}
             <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
                 <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">

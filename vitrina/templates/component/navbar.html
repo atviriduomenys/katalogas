@@ -57,6 +57,9 @@
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
                                     {% translate "Rinkiniai" %}
                                 </a>
+                                 <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
+                                    {% translate "Planai" %}
+                                </a>
                                 {% endif %}
                                 {% if user.is_staff or user.is_superuser %}
                                 <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">

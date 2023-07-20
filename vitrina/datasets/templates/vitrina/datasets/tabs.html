@@ -2,11 +2,13 @@
 
 <div class="tabs">
     <ul>
-        <li class="{%if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
-            <a href="{% url detail_url_name request.resolver_match.kwargs.pk %}">
+        {% if detail_url %}
+        <li class="{% if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
+            <a href="{{ detail_url }}" id="detail_tab">
                 {% translate "Informacija" %}
             </a>
         </li>
+        {% endif %}
         {% if structure_url %}
         <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure'%} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">
@@ -41,15 +43,19 @@
             </li>
         {% endif %}
         {% if can_view_members %}
-            <li class="{%if request.resolver_match.url_name == 'dataset-members' %} is-active {% endif %}">
-                <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
+            <li class="{% if request.resolver_match.url_name == 'dataset-members' or request.resolver_match.url_name == 'dataset-representative-create' or  request.resolver_match.url_name == 'dataset-representative-update' %} is-active {% endif %}">
+                {% if representative_url %}
+                    <a href="{{ representative_url }}">
+                {% else %}
+                    <a href="{% url 'dataset-members' request.resolver_match.kwargs.pk %}">
+                {% endif %}
                     {% translate "Tvarkytojai" %}
                 </a>
             </li>
         {% endif %}
-        {% if can_manage_history %}
+        {% if can_manage_history and history_url %}
             <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
-                <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
+                <a href="{{ history_url }}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>
             </li>

@@ -234,6 +234,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 Dataset,
                 self.organization,
             )
+            context['organization_id'] = self.organization.pk
         context.update(extra_context)
         context['sort'] = sorting
         return context
@@ -553,6 +554,8 @@ class DatasetMembersView(
 
 
 class CreateMemberView(
+    DatasetStructureMixin,
+    HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     CreateView,
@@ -561,11 +564,8 @@ class CreateMemberView(
     form_class = DatasetMemberCreateForm
     template_name = 'base_form.html'
 
-    dataset: Dataset
-
-    def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=kwargs['dataset_id'])
-        return super().dispatch(request, *args, **kwargs)
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def has_permission(self):
         return has_perm(
@@ -584,6 +584,25 @@ class CreateMemberView(
         kwargs = super().get_form_kwargs()
         kwargs['object_id'] = self.dataset.pk
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = 'vitrina/datasets/tabs.html'
+        context['can_view_members'] = self.has_permission()
+        context['representative_url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['current_title'] = _("Tvarkytojo pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
     def form_valid(self, form):
         self.object: Representative = form.save(commit=False)
@@ -673,6 +692,8 @@ def autocomplete_tags(request, tag_model):
 
 
 class UpdateMemberView(
+    DatasetStructureMixin,
+    HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     UpdateView,
@@ -680,18 +701,41 @@ class UpdateMemberView(
     model = Representative
     form_class = DatasetMemberUpdateForm
     template_name = 'base_form.html'
+    pk_url_kwarg = 'representative_id'
+
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def has_permission(self):
         representative = get_object_or_404(
             Representative,
-            pk=self.kwargs.get('pk'),
+            pk=self.kwargs.get('representative_id'),
         )
         return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
         return reverse('dataset-members', kwargs={
-            'pk': self.kwargs.get('dataset_id'),
+            'pk': self.kwargs.get('pk'),
         })
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = 'vitrina/datasets/tabs.html'
+        context['can_view_members'] = self.has_permission()
+        context['representative_url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['current_title'] = _("Tvarkytojo redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
     def form_valid(self, form):
         self.object: Representative = form.save()

@@ -1,4 +1,5 @@
 import numbers
+from datetime import date
 from typing import Iterable
 
 from django import template
@@ -36,3 +37,8 @@ def define(val=None):
 @assignment_tag
 def get_content_type(obj):
     return ContentType.objects.get_for_model(obj)
+
+
+@register.filter()
+def is_past_due(value):
+    return date.today() > value

@@ -34,7 +34,25 @@ class DatasetGroup(TranslatableModel):
         return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
+class DatasetFile(models.Model):
+    file = FilerFileField(verbose_name=_("Failas"), on_delete=models.CASCADE)
+    dataset = models.ForeignKey(
+        'Dataset',
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.CASCADE,
+        related_name='dataset_files'
+    )
+
+    class Meta:
+        db_table = 'dataset_file'
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
+
 class Dataset(TranslatableModel):
+    UPLOAD_TO = "data/files"
+
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
     METADATA = "METADATA"

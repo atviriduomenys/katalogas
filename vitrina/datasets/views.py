@@ -52,7 +52,8 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
+    Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -344,6 +345,13 @@ class DatasetCreateView(
 
         self.object.save()
         set_comment(Dataset.CREATED)
+
+        for file in form.cleaned_data.get('files', []):
+            DatasetFile.objects.get_or_create(
+                dataset=self.object,
+                file=file,
+            )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -404,6 +412,14 @@ class DatasetUpdateView(
 
         self.object.save()
         set_comment(Dataset.EDITED)
+
+        if 'files' in form.changed_data:
+            for file in form.cleaned_data.get('files', []):
+                DatasetFile.objects.get_or_create(
+                    dataset=self.object,
+                    file=file,
+                )
+
         return HttpResponseRedirect(self.get_success_url())
 
 

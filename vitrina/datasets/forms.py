@@ -17,7 +17,7 @@ from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects
 from vitrina.classifiers.models import Frequency, Licence, Category
-from vitrina.fields import FilerFileField
+from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
 
@@ -56,6 +56,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "nuskaitoma mašininiu būdu"
         )
     )
+    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
 
     class Meta:
         model = Dataset
@@ -71,12 +72,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_type',
             'endpoint_description',
             'endpoint_description_type',
+            'files'
         )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        project_instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if project_instance else _("Sukurti")
+        instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
@@ -86,6 +88,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Duomenų rinkinio pavadinimas')),
             Field('description',
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
+            Field('files'),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
             Field('licence'),
@@ -102,13 +105,15 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        if not project_instance:
+        if not instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
                 self.initial['licence'] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
+        else:
+            self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
 
     def clean_type(self):
         type = self.cleaned_data.get('type')

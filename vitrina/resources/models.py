@@ -121,6 +121,7 @@ class DatasetDistribution(models.Model):
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
+    data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

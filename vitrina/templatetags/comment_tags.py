@@ -70,12 +70,13 @@ def external_comments(content_type, object_id, user, dataset):
     for comment in obj_comments:
         children = comment.descendants(permission=perm)
         comments_array.append((comment, children))
+    comment_form_class = get_comment_form_class()
     return {
         'comments': comments_array,
         'user': user,
         'content_type': content_type,
         'object_id': object_id,
-        'comment_form': CommentForm(None),
+        'comment_form': comment_form_class(None),
         'reply_form': CommentForm(None),
         'submit_button_id': "id_submit_button",
         'external': True,

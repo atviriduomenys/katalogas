@@ -5,7 +5,8 @@ from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, R
     RepresentativeDeleteView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, PartnerRegisterNoRightsView, \
-     PartnerRegisterView
+     PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView
+from vitrina.orgs.views import OrganizationPlansHistoryView
 
 urlpatterns = [
     # @RequestMapping("/organizations")
@@ -23,6 +24,9 @@ urlpatterns = [
     path('partner/register-info/', PartnerRegisterInfoView.as_view(), name='partner-register-info'),
     path('partner/no-rights/', PartnerRegisterNoRightsView.as_view(), name='partner-no-rights'),
     path('partner/register/', PartnerRegisterView.as_view(), name='partner-register'),
+    path('orgs/<int:pk>/plans/', OrganizationPlanView.as_view(), name='organization-plans'),
+    path('orgs/<int:pk>/plans/add/', OrganizationPlanCreateView.as_view(), name='organization-plans-create'),
+    path('orgs/<int:pk>/plans/history/', OrganizationPlansHistoryView.as_view(), name='organization-plans-history'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")
     # @GetMapping("/group")

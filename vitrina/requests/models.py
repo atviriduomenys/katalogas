@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -60,7 +61,6 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -79,11 +79,17 @@ class Request(models.Model):
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 
+    content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"), null=True)
+    object_id = models.PositiveIntegerField(_("Objekto id"), null=True)
+    object = GenericForeignKey('content_type', 'object_id')
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)
+
     objects = models.Manager()
     public = PublicRequestManager()
 
     class Meta:
-        managed = True
         db_table = 'request'
 
     def __str__(self):
@@ -109,6 +115,9 @@ class Request(models.Model):
             ).
             count()
         )
+
+    def is_created(self):
+        return self.status == self.CREATED
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            {% if can_manage_plans %}
+                <div class="buttons is-right">
+                    <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
+                       href="{% url 'dataset-plans-include' dataset.pk %}">
+                        {% translate "Įtraukti į planą" %}
+                    </a>
+                    <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
+                       href="{% url 'dataset-plans-create' dataset.pk %}">
+                        {% translate "Naujas planas" %}
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if plans %}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Pavadinimas" %}</th>
+                        <th>{% translate "Terminas" %}</th>
+                        <th>{% translate "Organizacija" %}</th>
+                        <th>{% translate "Paslaugų teikėjas" %}</th>
+                        <th>{% translate "Projektas" %}</th>
+                        <th>{% translate "Plano įgyvendinimo kaina" %}</th>
+                        {% if can_manage_plans %}
+                            <th></th>
+                        {% endif %}
+                    </tr>
+                    {% for plan in plans %}
+                        <tr>
+                            <td><a href="{{ plan.plan.get_absolute_url }}">{{ plan.plan.title }}</a></td>
+                            <td>
+                                {% if plan.plan.deadline %}
+                                    {% if plan.plan.deadline|is_past_due %}
+                                        <span class="tag is-danger">
+                                    {% else %}
+                                        <span class="tag is-success">
+                                    {% endif %}
+                                        {{ plan.plan.deadline|date:"SHORT_DATE_FORMAT"}}
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plan.plan.receiver %}
+                                    <a href="{{ plan.plan.receiver.get_absolute_url }}">{{ plan.plan.receiver }}</a>
+                                {% else %}
+                                    -
+                                {% endif%}
+                            </td>
+                            <td>
+                            {% if plan.plan.provider %}
+                                {% if plan.plan.provider == plan.plan.receiver %}
+                                    {% translate "Svarankiškai" %}
+                                {% else %}
+                                    <a href="{{ plan.plan.provider.get_absolute_url }}">{{ plan.plan.provider }}</a>
+                                {% endif %}
+                            {% else %}
+                                {{ plan.plan.provider_title|default:"-" }}
+                            </td>
+                            {% endif %}
+                            <td>{{ plan.plan.project.title|default:"-" }}</td>
+                            <td>{{ plan.plan.price|floatformat:2|default:"-" }}</td>
+                            {% if can_manage_plans %}
+                                <td>
+                                    <a href="{% url 'dataset-plans-delete' plan.pk %}"
+                                       class="button is-link is-small is-pulled-right"
+                                       id="delete_dataset_plan">{% translate "Pašalinti" %}</a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>{% translate "Planų nėra." %}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,4 +1,5 @@
 import numbers
+from datetime import date
 from typing import Iterable
 
 from django import template
@@ -25,3 +26,8 @@ def is_dict(value):
 @register.filter(name='range')
 def range_(value: int) -> Iterable[int]:
     return range(value)
+
+
+@register.filter()
+def is_past_due(value):
+    return date.today() > value

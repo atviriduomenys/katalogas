@@ -110,6 +110,9 @@ class Request(models.Model):
             count()
         )
 
+    def is_created(self):
+        return self.status == self.CREATED
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

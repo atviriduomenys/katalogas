@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 
+from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
@@ -60,6 +61,11 @@ class DatasetResourceForm(forms.ModelForm):
         ),
         required=False
     )
+    data_service = forms.ModelChoiceField(
+        label=_("Data service"),
+        required=False,
+        queryset=Dataset.public.all()
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -71,11 +77,13 @@ class DatasetResourceForm(forms.ModelForm):
             'period_end',
             'access_url',
             'format',
+            'data_service',
             'download_url',
             'file',
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dataset, *args, **kwargs):
+        self.dataset = dataset
         super().__init__(*args, **kwargs)
         resource = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if resource else _("Sukurti")
@@ -92,9 +100,15 @@ class DatasetResourceForm(forms.ModelForm):
             Field('access_url'),
             Field('format'),
             Field('download_url'),
+            Field('data_service'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )
+
+        related_datasets = self.dataset.related_datasets.filter(
+            dataset__service=True
+        ).values_list('dataset__pk', flat=True)
+        self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
 
     def clean(self):
         file = self.cleaned_data.get('file')

@@ -40,19 +40,12 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         request: Request = self.object
 
-        dataset = None
-        if request.dataset_id:
-            try:
-                dataset = Dataset.public.get(pk=request.dataset_id)
-            except ObjectDoesNotExist:
-                pass
-
         extra_context_data = {
             "formats": request.format.replace(" ", "").split(",") if request.format else [],
             "changes": request.changes.replace(" ", "").split(",") if request.changes else [],
             "purposes": request.purpose.replace(" ", "").split(",") if request.purpose else [],
             "structure": RequestStructure.objects.filter(request_id=request.pk),
-            "dataset": dataset,
+            "related_object": request.object,
             "status": request.get_status_display(),
             "user_count": 0,
             'can_update_request': has_perm(

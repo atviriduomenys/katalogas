@@ -27,7 +27,7 @@ from vitrina.structure import spyna
 from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm
 from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum,  PropertyList, Base
 from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
-from vitrina.views import HistoryMixin
+from vitrina.views import HistoryMixin, PlanMixin
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
 
@@ -101,10 +101,16 @@ class DatasetStructureMixin(StructureMixin):
         return self.models[0].get_api_url() if self.models else None
 
 
-class DatasetStructureView(HistoryMixin, StructureMixin, TemplateView):
+class DatasetStructureView(
+    HistoryMixin,
+    StructureMixin,
+    PlanMixin,
+    TemplateView
+):
     template_name = 'vitrina/structure/dataset_structure.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     models: List[Model]
@@ -163,12 +169,14 @@ class DatasetStructureView(HistoryMixin, StructureMixin, TemplateView):
 class ModelStructureView(
     HistoryMixin,
     StructureMixin,
+    PlanMixin,
     PermissionRequiredMixin,
     TemplateView
 ):
     template_name = 'vitrina/structure/model_structure.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     model: Model
@@ -254,12 +262,14 @@ class ModelStructureView(
 class PropertyStructureView(
     HistoryMixin,
     StructureMixin,
+    PlanMixin,
     PermissionRequiredMixin,
     TemplateView
 ):
     template_name = 'vitrina/structure/property_structure.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     model: Model
@@ -339,12 +349,14 @@ class PropertyStructureView(
 class ModelDataView(
     HistoryMixin,
     StructureMixin,
+    PlanMixin,
     PermissionRequiredMixin,
     TemplateView
 ):
     template_name = 'vitrina/structure/model_data.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     model: Model
@@ -516,10 +528,17 @@ class ModelDataView(
         return url
 
 
-class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, TemplateView):
+class ObjectDataView(
+    HistoryMixin,
+    StructureMixin,
+    PlanMixin,
+    PermissionRequiredMixin,
+    TemplateView
+):
     template_name = 'vitrina/structure/object_data.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     model: Model
@@ -621,12 +640,14 @@ class ObjectDataView(HistoryMixin, StructureMixin, PermissionRequiredMixin, Temp
 class ApiView(
     HistoryMixin,
     StructureMixin,
+    PlanMixin,
     PermissionRequiredMixin,
     TemplateView
 ):
     template_name = 'vitrina/structure/api.html'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     object: Dataset
     model: Model

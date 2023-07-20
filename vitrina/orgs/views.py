@@ -15,20 +15,25 @@ from django.views.generic import DetailView
 from django.utils.text import slugify
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
+from reversion.models import Version
+from reversion.views import RevisionMixin
 
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm
+from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
     PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
+
+from vitrina.views import PlanMixin, HistoryView
 
 
 class OrganizationListView(ListView):
@@ -62,9 +67,10 @@ class OrganizationListView(ListView):
         return context
 
 
-class OrganizationDetailView(DetailView):
+class OrganizationDetailView(PlanMixin, DetailView):
     model = Organization
     template_name = 'vitrina/orgs/detail.html'
+    plan_url_name = 'organization-plans'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -81,6 +87,7 @@ class OrganizationDetailView(DetailView):
 
 
 class OrganizationMembersView(
+    PlanMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     ListView,
@@ -88,6 +95,7 @@ class OrganizationMembersView(
     template_name = 'vitrina/orgs/members.html'
     context_object_name = 'members'
     paginate_by = 20
+    plan_url_name = 'organization-plans'
 
     object: Organization
 
@@ -412,3 +420,108 @@ def get_path(
     alphabet: str = MP_Node.alphabet,
 ) -> str:
     return MP_Node._int2str(value).rjust(steplen, alphabet[0])
+
+
+class OrganizationPlanView(PlanMixin, TemplateView):
+    template_name = 'vitrina/orgs/plans.html'
+    plan_url_name = 'organization-plans'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        context['plans'] = self.organization.receiver_plans.all()
+        context['can_manage_plans'] = has_perm(
+            self.request.user,
+            Action.PLAN,
+            self.organization
+        )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization
+        )
+        context['history_url'] = reverse('organization-plans-history', args=[self.organization.pk])
+        context['history_url_name'] = 'organization-plans-hisotry'
+        context['can_manage_history'] = has_perm(
+            self.request.user,
+            Action.HISTORY_VIEW,
+            self.organization,
+        )
+        return context
+
+    def get_plan_object(self):
+        return self.organization
+
+
+class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
+    model = Plan
+    form_class = OrganizationPlanForm
+    template_name = 'vitrina/plans/form.html'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.PLAN, self.organization)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Naujas planas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.receiver = self.organization
+        self.object.save()
+        set_comment(_(f'Pridėtas planas "{self.object}".'))
+        return redirect(reverse('organization-plans', args=[self.organization.pk]))
+
+
+class OrganizationPlansHistoryView(PlanMixin, HistoryView):
+    model = Organization
+    detail_url_name = "organization-detail"
+    history_url_name = "organization-plans-history"
+    plan_url_name = 'organization-plans'
+    tabs_template_name = 'vitrina/orgs/tabs.html'
+
+    def get_history_objects(self):
+        organization_plan_ids = Plan.objects.filter(receiver=self.object).values_list('pk', flat=True)
+        return Version.objects.get_for_model(Plan).filter(
+            object_id__in=list(organization_plan_ids)
+        ).order_by('-revision__date_created')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.object.pk]): self.object.title,
+        }
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        return context

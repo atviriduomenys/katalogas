@@ -35,6 +35,13 @@
                 {% translate "Projektai" %}
             </a>
         </li>
+        {% if plan_url %}
+            <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
+                <a href="{{ plan_url }}">
+                    {% translate "Planai" %}
+                </a>
+            </li>
+        {% endif %}
         {% if can_view_members %}
             <li class="{% if request.resolver_match.url_name == 'dataset-members' or request.resolver_match.url_name == 'dataset-representative-create' or  request.resolver_match.url_name == 'dataset-representative-update' %} is-active {% endif %}">
                 {% if representative_url %}

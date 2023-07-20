@@ -32,8 +32,14 @@ class CommentForm(forms.ModelForm):
         self.obj = obj
 
 
-class DatasetCommentForm(CommentForm):
+class RegisterRequestForm(CommentForm):
     register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
+
+    class Meta(CommentForm.Meta):
+        fields = ('is_public', 'register_request', 'body',)
+
+
+class DatasetCommentForm(RegisterRequestForm):
     increase_frequency = forms.ModelChoiceField(
         label=_("Didinti duomenų atnaujinimo periodiškumą"),
         required=False,

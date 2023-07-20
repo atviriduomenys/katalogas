@@ -18,5 +18,19 @@
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>
+        {% if plan_url %}
+            <li class="{% if request.resolver_match.url_name == plan_url_name or request.resolver_match.url_name == 'plan-detail' %} is-active {% endif %}">
+                <a href="{{ plan_url }}">
+                    {% translate "Planai" %}
+                </a>
+            </li>
+        {% endif %}
+        {% if can_manage_history and history_url %}
+            <li class="{% if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+                <a href="{{ history_url }}">
+                    {% translate "Istorija" %}
+                </a>
+            </li>
+        {% endif %}
     </ul>
 </div>

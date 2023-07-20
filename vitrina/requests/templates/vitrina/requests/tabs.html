@@ -1,0 +1,25 @@
+{% load i18n %}
+
+<div class="tabs">
+    <ul>
+        <li class="{%if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
+            <a href="{% url detail_url_name request.resolver_match.kwargs.pk %}">
+                {% translate "Informacija" %}
+            </a>
+        </li>
+        {% if plan_url %}
+            <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
+                <a href="{{ plan_url }}">
+                    {% translate "Planai" %}
+                </a>
+            </li>
+        {% endif %}
+        {% if can_manage_history %}
+            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+                <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
+                    {% translate "Istorija" %}
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</div>

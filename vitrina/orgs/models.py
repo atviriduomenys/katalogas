@@ -80,6 +80,7 @@ class Organization(MP_Node):
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
     role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
     image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
+    provider = models.BooleanField(_("Atvėrimo duomenų teikėjas"), default=False)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)

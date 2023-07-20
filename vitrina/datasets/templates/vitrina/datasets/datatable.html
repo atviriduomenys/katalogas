@@ -28,7 +28,15 @@
                 {% endif %}
             </span></td>
             <td>{{ r.region|default:"-" }}</td>
-            <td class="has-fixed-width-130">{{ r.title|default:"-" }}</td>
+            <td class="has-fixed-width-130">
+                <a href="{{ r.get_absolute_url }}">
+                {% if r.title %}
+                    {{ r.title }}
+                {% else %}
+                    ({% translate "pavadinimas nenurodytas" %})
+                {% endif %}
+                </a>
+            </td>
             <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td>{{ r.size|default:"-" }}</td>

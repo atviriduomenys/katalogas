@@ -2,6 +2,7 @@ import pathlib
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
 
@@ -122,6 +123,7 @@ class DatasetDistribution(models.Model):
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)
@@ -131,6 +133,7 @@ class DatasetDistribution(models.Model):
     filename = models.CharField(max_length=255, blank=True, null=True)
 
     metadata = GenericRelation('vitrina_structure.Metadata')
+    params = GenericRelation('vitrina_structure.Param')
 
     class Meta:
         db_table = 'dataset_distribution'
@@ -169,3 +172,10 @@ class DatasetDistribution(models.Model):
         if self.dataset:
             parents.extend(self.dataset.get_acl_parents())
         return parents
+
+    def get_absolute_url(self):
+        return reverse('resource-detail', kwargs={
+            'pk': self.dataset.pk,
+            'resource_id': self.pk
+        })
+

@@ -114,8 +114,8 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-            "detail_url_name": self.get_detail_url_name(),
-            "history_url_name": self.get_history_url_name(),
+            'detail_url_name': self.get_detail_url_name(),
+            'history_url_name': self.get_history_url_name(),
             'detail_url': self.get_detail_url(),
             'history_url': self.get_history_url(),
             "history": [
@@ -168,7 +168,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
             get_for_object(self.get_history_object()).
             order_by('-revision__date_created')
         )
-    
+
 
 class HistoryMixin:
     detail_url_name = None

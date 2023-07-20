@@ -1,7 +1,7 @@
 import uuid
 import json
 from gettext import ngettext
-from typing import List
+from typing import List, Union
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -23,9 +23,10 @@ from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
-from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm
-from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum,  PropertyList, Base
+from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm
+from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param
 from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
 from vitrina.views import HistoryMixin, PlanMixin
 
@@ -222,6 +223,7 @@ class ModelStructureView(
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
         context['model'] = self.model
+        context['object'] = self.model
         context['models'] = self.models
         context['props'] = self.props
         context['prop_dict'] = {
@@ -242,6 +244,7 @@ class ModelStructureView(
         )
         context['can_manage_structure'] = self.can_manage_structure
         context['base_props'] = self.model.get_base_props()
+        context['params'] = self.model.params.all().order_by('name')
         return context
 
     def get_structure_url(self):
@@ -1162,7 +1165,10 @@ class ModelCreateView(
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
 
-        model = Model.objects.create(dataset=self.dataset)
+        model = Model.objects.create(
+            dataset=self.dataset,
+            is_parameterized=form.cleaned_data.get('is_parameterized', False)
+        )
 
         self.object.object = model
         self.object.dataset = self.dataset
@@ -1286,6 +1292,8 @@ class ModelUpdateView(
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         model = self.object.object
+        model.is_parameterized = form.cleaned_data.get('is_parameterized', False)
+        model.save()
         model_ref = form.cleaned_data.get('ref')
 
         self.object.version += 1
@@ -1618,3 +1626,141 @@ class DeleteBasePropertyView(PermissionRequiredMixin, View):
         model.update_level()
         return redirect(model.get_absolute_url())
 
+
+class ParamCreateView(CreateView):
+    model = Metadata
+    form_class = ParamForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset
+    rel_object: Union[Model, DatasetDistribution]
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        content_type = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.rel_object = get_object_or_404(content_type.model_class(), pk=kwargs.get('object_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Parametro pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+
+        param, created = Param.objects.get_or_create(
+            content_type=ContentType.objects.get_for_model(self.rel_object),
+            object_id=self.rel_object.pk,
+            name=form.cleaned_data.get('name')
+        )
+        param_item = ParamItem.objects.create(param=param)
+
+        self.object.object = param_item
+        self.object.dataset = self.dataset
+        self.object.uuid = str(uuid.uuid4())
+        self.object.version = 1
+        self.object.ref = self.object.name
+        self.object.prepare_ast = spyna.parse(self.object.prepare)
+        self.object.save()
+
+        return redirect(self.rel_object.get_absolute_url())
+
+
+class ParamUpdateView(PermissionRequiredMixin, UpdateView):
+    model = Metadata
+    form_class = ParamForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset
+    param_item: ParamItem
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.param_item = get_object_or_404(ParamItem, pk=kwargs.get('param_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get_object(self, queryset=None):
+        metadata = self.param_item.metadata.first()
+        if not metadata:
+            raise Http404('No Property matches the given query.')
+        return metadata
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Parametro redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object: Metadata = form.save(commit=False)
+
+        param_item = self.object.object
+        rel_object = param_item.param.object
+
+        if 'name' in form.changed_data:
+            if param_item.param.paramitem_set.count() == 1:
+                param_item.param.name = self.object.name
+                param_item.param.save()
+            else:
+                param, created = Param.objects.get_or_create(
+                    content_type=ContentType.objects.get_for_model(rel_object),
+                    object_id=rel_object.pk,
+                    name=form.cleaned_data.get('name')
+                )
+                param_item.param = param
+                param_item.save()
+
+        self.object.version += 1
+        self.object.ref = self.object.name
+        self.object.prepare_ast = spyna.parse(self.object.prepare)
+        self.object.save()
+
+        return redirect(rel_object.get_absolute_url())
+
+
+class ParamDeleteView(PermissionRequiredMixin, DeleteView):
+    model = ParamItem
+    pk_url_kwarg = 'param_id'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+    def get_success_url(self):
+        return self.object.param.object.get_absolute_url()
+
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)

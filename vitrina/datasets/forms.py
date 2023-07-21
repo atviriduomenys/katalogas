@@ -60,6 +60,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         )
     )
     files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
+    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
 
     class Meta:
         model = Dataset
@@ -75,7 +76,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_type',
             'endpoint_description',
             'endpoint_description_type',
-            'files'
+            'files',
+            'name',
         )
 
     def __init__(self, *args, **kwargs):
@@ -89,6 +91,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Ar duomenys vieši')),
             Field('title',
                   placeholder=_('Duomenų rinkinio pavadinimas')),
+            Field('name',
+                  placeholder=_('Duomenų rinkinio kodinis pavadinimas')),
             Field('description',
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
             Field('files'),
@@ -117,6 +121,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 self.initial['frequency'] = default_frequency
         else:
             self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
+            if instance.name:
+                self.initial['name'] = instance.name
 
     def clean_type(self):
         type = self.cleaned_data.get('type')

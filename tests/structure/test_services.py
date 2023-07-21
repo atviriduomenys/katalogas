@@ -112,7 +112,7 @@ def test_structure_datasets(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(Dataset)
     )
     assert metadata.count() == 2
-    assert list(metadata.values_list('name', flat=True)) == [
+    assert sorted(list(metadata.values_list('name', flat=True))) == [
         'datasets/gov/ivpk/adp1',
         'datasets/gov/ivpk/adp2',
     ]

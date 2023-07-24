@@ -87,7 +87,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     form['increase_frequency'] = frequency
     form['body'] = "Test comment"
     resp = form.submit().follow()
-    created_request = Request.objects.filter(content_type=ct, object_id=dataset.pk)
+    created_request = Request.objects.filter(requestobject__object_id=dataset.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
     assert created_comment.count() == 1
@@ -196,7 +196,7 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     form['register_request'] = True
     form['body'] = "Test comment"
     resp = form.submit().follow()
-    created_request = Request.objects.filter(content_type=ct, object_id=model.pk)
+    created_request = Request.objects.filter(requestobject__object_id=model.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=model.pk)
 
     assert created_comment.count() == 1
@@ -245,7 +245,7 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     form['register_request'] = True
     form['body'] = "Test comment"
     resp = form.submit().follow()
-    created_request = Request.objects.filter(content_type=ct, object_id=prop.pk)
+    created_request = Request.objects.filter(requestobject__object_id=prop.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=prop.pk)
 
     assert created_comment.count() == 1
@@ -303,7 +303,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         form['register_request'] = True
         form['body'] = "Test comment"
         resp = form.submit().follow()
-        created_request = Request.objects.filter(external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886')
+        created_request = Request.objects.filter(requestobject__external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886')
         created_comment = Comment.objects.filter(external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886')
 
         assert created_comment.count() == 1

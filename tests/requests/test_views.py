@@ -63,10 +63,7 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_detail_view(app: DjangoTestApp):
-    dataset = DatasetFactory()
     request = RequestFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
         is_existing=True,
         status="REJECTED",
         purpose="science,product",

@@ -19,10 +19,10 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-    <div class="buttons is-right">
+   <div class="buttons is-right">
         <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
-           href="{% url 'request-create' %}">
-            {% translate "Teikti poreikį" %}
+            href="{% url 'dataset-request-add' dataset.pk %}">
+            {% translate "Pridėti poreikį" %}
         </a>
     </div>
 
@@ -30,6 +30,7 @@
         <table class="table is-fullwidth">
             <tbody>
                 <tr>
+                    <th></th>
                     <th></th>
                 </tr>
                 {% for request in page_obj %}
@@ -52,6 +53,14 @@
                         </div>
                     </article>
                     </td>
+                        <td>
+                            <div class="buttons is-right">
+                                <a id="remove-request-{{ request.pk }}-btn"  class="button is-danger is-small"
+                                   href="{% url 'dataset-request-remove' pk=dataset.pk request_id=request.pk %}">
+                                    {% translate "Pašalinti" %}
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

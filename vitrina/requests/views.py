@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -14,7 +15,7 @@ from vitrina.requests.forms import RequestForm, RequestPlanForm
 from django.core.exceptions import ObjectDoesNotExist
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset
-from vitrina.requests.models import Request, RequestStructure
+from vitrina.requests.models import Request, RequestStructure, RequestObject
 
 from django.utils.translation import gettext_lazy as _
 
@@ -45,7 +46,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             "changes": request.changes.replace(" ", "").split(",") if request.changes else [],
             "purposes": request.purpose.replace(" ", "").split(",") if request.purpose else [],
             "structure": RequestStructure.objects.filter(request_id=request.pk),
-            "related_object": request.object,
+            # "related_object": request.object,
             "status": request.get_status_display(),
             "user_count": 0,
             'can_update_request': has_perm(
@@ -266,6 +267,34 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         return context
 
 
+class RequestDeleteDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Request
+    template_name = 'confirm_remove.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request_object = get_object_or_404(Request, pk=self.kwargs.get('pk'))
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.request_object)
+
+    def handle_no_permission(self):
+        return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.dataset.pk}))
+
+    def delete(self, request, *args, **kwargs):
+        request_obj_items = RequestObject.objects.filter(object_id=self.dataset.pk,
+                                                         content_type=ContentType.objects.get_for_model(self.dataset))
+        if len(request_obj_items) > 0:
+            for item in request_obj_items:
+                item.delete()
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('request-datasets', kwargs={'pk': self.request_object.pk})
+
+
 class RequestDeletePlanDetailView(RequestDeletePlanView):
 
     def get_context_data(self, **kwargs):
@@ -310,3 +339,40 @@ class RequestPlansHistoryView(PlanMixin, HistoryView):
             reverse('request-detail', args=[self.object.pk]): self.object.title,
         }
         return context
+
+
+class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
+    template_name = 'vitrina/requests/datasets.html'
+    detail_url_name = 'request-detail'
+    history_url_name = 'request-plans-history'
+    plan_url_name = 'request-plans'
+    context_object_name = 'datasets'
+    paginate_by = 20
+
+    request_obj: Request
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        request_object_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
+                                                          request_id=self.request_obj.pk) \
+            .values_list('object_id', flat=True)
+        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by('-created')
+        return datasets
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['request_obj'] = self.request_obj
+        # context['datasets'] = datasets
+        return context
+
+    def get_plan_object(self):
+        return self.request_obj
+
+    def get_detail_object(self):
+        return self.request_obj
+
+    def get_history_object(self):
+        return self.request_obj

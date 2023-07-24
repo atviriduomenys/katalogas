@@ -1,7 +1,7 @@
 from django.urls import path
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import AddProjectView, RemoveRequestView, AddRequestView
 from vitrina.datasets.views import DatasetRequestsView
 from vitrina.datasets.views import OrganizationStatsView
 from vitrina.datasets.views import QuarterStatsView
@@ -74,8 +74,14 @@ urlpatterns = [
          name='dataset-structure-import'),
     path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),
     path('datasets/<int:pk>/members/', DatasetMembersView.as_view(), name='dataset-members'),
-    path('datasets/<int:pk>/projects/', DatasetProjectsView.as_view(), name='dataset-projects'),
     path('datasets/<int:pk>/requests/', DatasetRequestsView.as_view(), name='dataset-requests'),
+    path('datasets/<int:pk>/requests/<int:request_id>/remove',
+         RemoveRequestView.as_view(),
+         name='dataset-request-remove'),
+    path('datasets/<int:pk>/requests/add',
+         AddRequestView.as_view(),
+         name='dataset-request-add'),
+    path('datasets/<int:pk>/projects/', DatasetProjectsView.as_view(), name='dataset-projects'),
     path('datasets/<int:pk>/projects/<int:project_id>/remove',
          RemoveProjectView.as_view(),
          name='dataset-project-remove'),

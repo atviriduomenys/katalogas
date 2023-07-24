@@ -78,6 +78,7 @@ class Dataset(TranslatableModel):
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
     PROJECT_SET = "PROJECT_SET"
+    REQUEST_SET = "REQUEST_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -86,7 +87,8 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
-        PROJECT_SET: _("Priskirta projektui")
+        PROJECT_SET: _("Priskirta projektui"),
+        REQUEST_SET: _("Priskirta poreikiui")
     }
 
     API_ORIGIN = "api"

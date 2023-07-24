@@ -17,7 +17,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.services import get_projects
+from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
@@ -259,6 +259,34 @@ class AddProjectForm(forms.ModelForm):
         ),
     )
 
+
+class AddRequestForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        fields = ['requests']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.dataset = kwargs.pop('dataset', None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "dataset-add-request-form"
+        self.fields['requests'].queryset = get_requests(self.user, self.dataset)
+        self.helper.layout = Layout(
+            Field('requests'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
+        )
+
+    requests = ModelMultipleChoiceField(
+        label=_('Poreikiai'),
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text=_(
+            "Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų "
+            "rinkinys."
+        ),
+    )
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):
     object_model = Dataset

@@ -158,6 +158,11 @@ class PasswordResetConfirmForm(SetPasswordForm):
 
 
 class UserProfileEditForm(ModelForm):
+    first_name = CharField(label=_("Vardas"), required=False)
+    last_name = CharField(label=_("Pavardė"), required=False)
+    phone = CharField(label=_("Telefono numeris"), required=False)
+    email = EmailField(label=_("El. paštas"), required=True)
+
     class Meta:
         model = User
         fields = [

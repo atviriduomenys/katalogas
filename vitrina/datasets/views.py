@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 import secrets
+import uuid
 from datetime import datetime, date
 from collections import OrderedDict
 
@@ -47,8 +48,8 @@ from vitrina.comments.models import Comment
 from vitrina.requests.models import Request, RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
-from vitrina.structure.models import Model
-from vitrina.structure.services import create_structure_objects
+from vitrina.structure.models import Model, Metadata
+from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
@@ -365,6 +366,16 @@ class DatasetCreateView(
                 file=file,
             )
 
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=self.object,
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            name=form.cleaned_data.get('name'),
+            prepare_ast={},
+            version=1,
+        )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -432,6 +443,27 @@ class DatasetUpdateView(
                     dataset=self.object,
                     file=file,
                 )
+
+        if 'name' in form.changed_data:
+            if metadata := self.object.metadata.first():
+                metadata.name = form.cleaned_data.get('name')
+                metadata.save()
+            else:
+                Metadata.objects.create(
+                    uuid=str(uuid.uuid4()),
+                    dataset=self.object,
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    name=form.cleaned_data.get('name'),
+                    prepare_ast={},
+                    version=1,
+                )
+
+            # Update model names
+            for model in self.object.model_set.all():
+                if model_meta := model.metadata.first():
+                    model_meta.name = get_model_name(self.object, model.name)
+                    model_meta.save()
 
         return HttpResponseRedirect(self.get_success_url())
 

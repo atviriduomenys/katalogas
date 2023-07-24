@@ -10,7 +10,7 @@ from reversion.views import RevisionMixin
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
-from vitrina.requests.models import Request
+from vitrina.requests.models import Request, RequestObject
 
 
 class CommentView(
@@ -41,9 +41,12 @@ class CommentView(
                     title=title,
                     description=comment.body,
                     organization=obj.organization if hasattr(obj, 'organization') else None,
+                    periodicity=frequency.title if frequency else "",
+                )
+                RequestObject.objects.create(
+                    request=new_request,
                     object_id=object_id,
                     content_type=content_type,
-                    periodicity=frequency.title if frequency else "",
                 )
                 set_comment(Request.CREATED)
 
@@ -79,7 +82,7 @@ class ReplyView(LoginRequiredMixin, View):
                 object_id=object_id,
                 parent_id=parent_id,
                 body=form.cleaned_data.get('body'),
-                is_public=form.cleaned_data.get('is_public')
+                is_public=form.cleaned_data.get('is_public'),
             )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -108,6 +111,9 @@ class ExternalCommentView(
                     user=request.user,
                     title=external_object_id,
                     description=comment.body,
+                )
+                RequestObject.objects.create(
+                    request=new_request,
                     external_object_id=external_object_id,
                     external_content_type=external_content_type,
                 )

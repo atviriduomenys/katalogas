@@ -1,6 +1,7 @@
 from django.urls import path
 
-from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView, RequestHistoryView
+from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView, RequestHistoryView, \
+    RequestDatasetView, RequestDeleteDatasetView
 from vitrina.requests.views import RequestDetailView
 from vitrina.requests.views import RequestPlanView
 from vitrina.requests.views import RequestCreatePlanView
@@ -26,6 +27,9 @@ urlpatterns = [
     path('requests/<int:pk>/plans/history/', RequestPlansHistoryView.as_view(), name='request-plans-history'),
     path('requests/plans/<int:pk>/detail/delete/', RequestDeletePlanDetailView.as_view(),
          name='request-plans-delete-detail'),
+    path('requests/<int:pk>/datasets/', RequestDatasetView.as_view(), name='request-datasets'),
+    path('requests/<int:pk>/datasets/<int:dataset_id>/remove', RequestDeleteDatasetView.as_view(),
+         name='request-dataset-remove'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")

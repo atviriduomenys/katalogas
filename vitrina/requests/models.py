@@ -79,13 +79,6 @@ class Request(models.Model):
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
 
-    content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"), null=True)
-    object_id = models.PositiveIntegerField(_("Objekto id"), null=True)
-    object = GenericForeignKey('content_type', 'object_id')
-
-    external_object_id = models.CharField(max_length=255, blank=True, null=True)
-    external_content_type = models.CharField(max_length=255, blank=True, null=True)
-
     objects = models.Manager()
     public = PublicRequestManager()
 
@@ -130,7 +123,7 @@ class RequestEvent(models.Model):
     comment = models.TextField(blank=True, null=True)
     meta = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
-    request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -153,3 +146,13 @@ class RequestStructure(models.Model):
     class Meta:
         managed = True
         db_table = 'request_structure'
+
+
+class RequestObject(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE)
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)

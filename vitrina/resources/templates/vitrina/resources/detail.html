@@ -41,7 +41,7 @@
                     {% if resource.is_external_url %}
                         <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
                     {% else %}
-                        <a href="{{ resource.get_download_url }}">{% translate "Atsisiųsti duomenų šaltinį" %}</a>
+                        <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
                     {% endif %}
                 </div>
 
@@ -59,7 +59,7 @@
                             <tbody>
                                 <tr>
                                     <th>{% translate "Teritorija" %}</th>
-                                    <td>{{ resource.region|default:"" }}</td>
+                                    <td>{{ resource.geo_location|default:"" }}</td>
                                 </tr>
                                 <tr>
                                     <th>{% translate "Periodo pradžia" %}</th>

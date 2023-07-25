@@ -27,7 +27,7 @@
                     <i class="fas fa-lg fa-file-code"></i>
                 {% endif %}
             </span></td>
-            <td>{{ r.region|default:"-" }}</td>
+            <td>{{ r.geo_location|default:"-" }}</td>
             <td class="has-fixed-width-130">
                 <a href="{{ r.get_absolute_url }}">
                 {% if r.title %}
@@ -61,7 +61,7 @@
                             <a class="button is-link is-small preview-button"
                                id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
                         {% endif %}
-                    <a href="{{ r.get_download_url }}"
+                    <a href="{{ r.get_download_url }}" download
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>
                 </td>

@@ -679,6 +679,12 @@ class DatasetAttribution(models.Model):
     class Meta:
         db_table = 'dataset_attribution'
 
+    def __str__(self):
+        if self.organization:
+            return f"{self.attribution} - {self.dataset}, {self.organization}"
+        else:
+            return f"{self.attribution} - {self.dataset}, {self.agent}"
+
 
 class Type(TranslatableModel):
     SERIES = "series"

@@ -59,6 +59,7 @@ Then we can run::
     poetry install
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput
+    poetry run python manage.py createinitialrevisions
 
 To generate static files run::
 

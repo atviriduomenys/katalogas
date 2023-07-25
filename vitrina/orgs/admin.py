@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
+from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
@@ -25,7 +26,7 @@ class RootOrganizationFilter(admin.SimpleListFilter):
             return queryset.filter(path__startswith=org.path)
 
 
-class OrganizationAdmin(TreeAdmin):
+class OrganizationAdmin(VersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
     list_display = ['title', 'numchild',]
     list_filter = (RootOrganizationFilter,)

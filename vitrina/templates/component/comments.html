@@ -20,7 +20,7 @@
             </p>
         </figure>
         {% if external %}
-            <form class="media-content" action="{% url 'external-comment' content_type object_id %}" method="post" id="comment-form">
+            <form class="media-content" action="{% url 'external-comment' dataset.pk content_type object_id %}" method="post" id="comment-form">
         {% else %}
             <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
         {% endif %}

@@ -8,7 +8,7 @@ import tagulous.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0013_merge_0012_auto_20230619_1315_0012_auto_20230619_1503'),
+        ('vitrina_classifiers', '0012_auto_20230619_1315'),
         ('vitrina_datasets', '0017_merge_20230629_0914'),
     ]
 

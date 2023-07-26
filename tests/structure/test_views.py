@@ -1444,6 +1444,8 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
             'metadata__description': "For testing"
         }
     ]
+    assert Version.objects.get_for_object(prop).count() == 1
+    assert Version.objects.get_for_object(prop).first().revision.user == user
 
 
 @pytest.mark.django_db
@@ -1561,6 +1563,8 @@ def test_property_enum_item_update(app: DjangoTestApp):
             'metadata__description': "For testing"
         }
     ]
+    assert Version.objects.get_for_object(prop).count() == 1
+    assert Version.objects.get_for_object(prop).first().revision.user == user
 
 
 @pytest.mark.django_db
@@ -1620,6 +1624,8 @@ def test_property_enum_item_delete(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk
     ).count() == 0
+    assert Version.objects.get_for_object(prop).count() == 1
+    assert Version.objects.get_for_object(prop).first().revision.user == user
 
 
 @pytest.mark.django_db
@@ -1770,9 +1776,9 @@ def test_model_create(app: DjangoTestApp):
     assert new_model.base.metadata.first().name == 'test/dataset/TestModel'
     assert new_model.base.metadata.first().ref == 'prop'
 
-    assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
-    assert Version.objects.get_for_object(dataset).first().revision.user == user
+    assert Version.objects.get_for_object(new_model).count() == 1
+    assert Version.objects.get_for_object(new_model).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
+    assert Version.objects.get_for_object(new_model).first().revision.user == user
 
 
 @pytest.mark.django_db
@@ -1839,10 +1845,10 @@ def test_model_update(app: DjangoTestApp):
     assert model.base.metadata.first().name == 'test/dataset/BaseModel'
     assert model.base.metadata.first().ref == ''
 
-    assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == \
+    assert Version.objects.get_for_object(model).count() == 1
+    assert Version.objects.get_for_object(model).first().revision.comment == \
            'Redaguotas "UpdatedModel" modelis. Updated Model'
-    assert Version.objects.get_for_object(dataset).first().revision.user == user
+    assert Version.objects.get_for_object(model).first().revision.user == user
 
 
 @pytest.mark.django_db
@@ -1915,6 +1921,8 @@ def test_param_create_for_model(app: DjangoTestApp):
     assert model.params.first().paramitem_set.first().metadata.first().title == 'Test param'
     assert model.params.first().paramitem_set.first().metadata.first().source == 'src'
     assert model.params.first().paramitem_set.first().metadata.first().description == 'Param for testing'
+    assert Version.objects.get_for_object(model).count() == 1
+    assert Version.objects.get_for_object(model).first().revision.user == representative.user
 
 
 @pytest.mark.django_db

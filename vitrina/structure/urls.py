@@ -21,16 +21,23 @@ from vitrina.structure.views import DeleteBasePropertyView
 from vitrina.structure.views import ParamCreateView
 from vitrina.structure.views import ParamUpdateView
 from vitrina.structure.views import ParamDeleteView
+from vitrina.structure.views import DatasetStructureHistoryView
+from vitrina.structure.views import ModelHistoryView
+from vitrina.structure.views import PropertyHistoryView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
+    path('datasets/<int:pk>/models/history/', DatasetStructureHistoryView.as_view(), name='dataset-structure-history'),
     path('datasets/<int:pk>/models/add/', ModelCreateView.as_view(), name='model-create'),
     path('datasets/<int:pk>/models/<str:model>/change/', ModelUpdateView.as_view(), name='model-update'),
     path('datasets/<int:pk>/models/<str:model>/add/',
          PropertyCreateView.as_view(), name='property-create'),
     path('datasets/<int:pk>/models/<str:model>/', ModelStructureView.as_view(), name='model-structure'),
+    path('datasets/<int:pk>/models/<str:model>/history/', ModelHistoryView.as_view(), name='model-history'),
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/',
          PropertyStructureView.as_view(), name='property-structure'),
+    path('datasets/<int:pk>/models/<str:model>/<str:prop>/history/',
+         PropertyHistoryView.as_view(), name='property-history'),
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/change/',
          PropertyUpdateView.as_view(), name='property-update'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),

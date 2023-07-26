@@ -857,7 +857,7 @@ class DatasetProjectsView(
         return context
 
 
-class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, ListView):
+class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
     model = Request
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
@@ -867,6 +867,7 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, ListView):
     object: Dataset
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])

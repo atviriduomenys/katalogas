@@ -23,6 +23,7 @@ class Action(Enum):
     HISTORY_VIEW = 'history_view'
     COMMENT = "comment_with_status"
     STRUCTURE = 'structure'
+    PLAN = 'plan'
 
 
 class Role(Enum):
@@ -35,6 +36,8 @@ class Role(Enum):
 
 acl = {
     (Organization, Action.UPDATE): [Role.COORDINATOR],
+    (Organization, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
+    (Organization, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Representative, Action.CREATE): [Role.COORDINATOR],
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
@@ -44,6 +47,7 @@ acl = {
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
@@ -52,11 +56,13 @@ acl = {
     (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
+    (Request, Action.PLAN): [Role.AUTHOR, Role.SUPERVISOR],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
+
 }
 
 

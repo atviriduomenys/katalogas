@@ -6,12 +6,16 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 
+from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.models import Metadata
 
 
 class DatasetResourceForm(forms.ModelForm):
+    name = forms.CharField(label=_('Kodinis pavadinimas'), required=False)
+    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
     period_start = DateField(
         widget=forms.TextInput(attrs={'type': 'date'}),
         required=False,
@@ -60,6 +64,11 @@ class DatasetResourceForm(forms.ModelForm):
         ),
         required=False
     )
+    data_service = forms.ModelChoiceField(
+        label=_("Data service"),
+        required=False,
+        queryset=Dataset.public.all()
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -71,11 +80,16 @@ class DatasetResourceForm(forms.ModelForm):
             'period_end',
             'access_url',
             'format',
+            'data_service',
             'download_url',
             'file',
+            'name',
+            'access',
+            'is_parameterized',
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dataset, *args, **kwargs):
+        self.dataset = dataset
         super().__init__(*args, **kwargs)
         resource = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if resource else _("Sukurti")
@@ -84,6 +98,9 @@ class DatasetResourceForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),
             Field('description', placeholder=_("Detalus šaltinio aprašas"), rows="2"),
+            Field('name'),
+            Field('access'),
+            Field('is_parameterized'),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
@@ -92,9 +109,19 @@ class DatasetResourceForm(forms.ModelForm):
             Field('access_url'),
             Field('format'),
             Field('download_url'),
+            Field('data_service'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )
+
+        related_datasets = self.dataset.related_datasets.filter(
+            dataset__service=True
+        ).values_list('dataset__pk', flat=True)
+        self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
+
+        if resource and resource.metadata.first():
+            self.initial['access'] = resource.metadata.first().access
+            self.initial['name'] = resource.metadata.first().name
 
     def clean(self):
         file = self.cleaned_data.get('file')
@@ -112,3 +139,9 @@ class DatasetResourceForm(forms.ModelForm):
                 "Arba įkelkite duomenų faią."
             ))
         return self.cleaned_data
+
+    def clean_access(self):
+        access = self.cleaned_data.get('access')
+        if access == '':
+            return None
+        return access

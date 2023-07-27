@@ -13,6 +13,10 @@ from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
+from vitrina.plans.factories import PlanFactory
+from vitrina.plans.models import Plan
+from vitrina.requests.factories import RequestFactory
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -361,4 +365,138 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
+
+
+@pytest.mark.django_db
+def test_organization_plan_create_with_no_provider(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.MANAGER
+    )
+    app.set_user(rep.user)
+
+    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
+    form['title'] = "Test plan"
+    form['description'] = "Plan for testing"
+    form['provider'] = ''
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        "Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."
+    ]]
+
+
+@pytest.mark.django_db
+def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.MANAGER
+    )
+    app.set_user(rep.user)
+
+    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
+    form['title'] = "Test plan"
+    form['description'] = "Plan for testing"
+    form['provider'] = organization.pk
+    form['provider_title'] = "Provider"
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        "Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."
+    ]]
+
+
+@pytest.mark.django_db
+def test_organization_plan_create(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.MANAGER
+    )
+    app.set_user(rep.user)
+
+    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
+    form['title'] = "Test plan"
+    form['description'] = "Plan for testing"
+    resp = form.submit()
+
+    assert resp.url == reverse('organization-plans', args=[organization.pk])
+    assert Plan.objects.count() == 1
+    assert Plan.objects.first().title == 'Test plan'
+    assert Plan.objects.first().description == 'Plan for testing'
+    assert Plan.objects.first().receiver == organization
+
+
+@pytest.mark.django_db
+def test_organization_plan_update(app: DjangoTestApp):
+    plan = PlanFactory()
+    ct = ContentType.objects.get_for_model(plan.receiver)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=plan.receiver.pk,
+        role=Representative.MANAGER
+    )
+    app.set_user(rep.user)
+
+    form = app.get(reverse('plan-change', args=[plan.receiver.pk, plan.pk])).forms['plan-form']
+    form['title'] = "Test plan (updated)"
+    form['provider'].force_value(plan.receiver.pk)
+    resp = form.submit()
+
+    assert resp.url == reverse('plan-detail', args=[plan.receiver.pk, plan.pk])
+    assert Plan.objects.count() == 1
+    assert Plan.objects.first().title == "Test plan (updated)"
+    assert Plan.objects.first().provider == plan.receiver
+
+
+@pytest.mark.django_db
+def test_organization_merge_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+
+    organization = OrganizationFactory()
+    resp = app.get(reverse('merge-organizations', args=[organization.pk]), expect_errors=True)
+
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_organization_merge(app: DjangoTestApp):
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    organization = OrganizationFactory()
+    organization_id = organization.pk
+    merge_organization = OrganizationFactory()
+
+    dataset = DatasetFactory(organization=organization)
+    request = RequestFactory(organization=organization)
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+
+    form = app.get(reverse('confirm-organization-merge', args=[
+        organization.pk,
+        merge_organization.pk
+    ])).forms['confirm-merge-form']
+    resp = form.submit()
+
+    assert resp.url == reverse('organization-detail', args=[merge_organization.pk])
+    assert Organization.objects.filter(pk=organization_id).count() == 0
+    assert list(merge_organization.dataset_set.all()) == [dataset]
+    assert list(merge_organization.request_set.all()) == [request]
+    assert list(Representative.objects.filter(
+        content_type=ContentType.objects.get_for_model(merge_organization),
+        object_id=merge_organization.pk
+    )) == [representative]
+
 

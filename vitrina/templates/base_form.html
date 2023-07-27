@@ -17,6 +17,9 @@
 {% endif %}
 
 {% block content %}
+    {% if tabs %}
+        {% include tabs %}
+    {% endif %}
     <div class="columns is-centered">
         <div class="column is-half">
             {% if language_tabs %}

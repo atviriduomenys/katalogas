@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{{ resource.dataset.get_absolute_url }}"><span>{{ resource.dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}{{ resource.title }}{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/datasets/tabs.html' %}
+
+    <div class="columns no-margin-bottom">
+         <div class="column is-full">
+            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
+                {{ resource.title }}
+            </h3>
+
+            {% if can_update %}
+                <div class="buttons is-right">
+                    <a href="{%url 'resource-change' resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Redaguoti" %}
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="content">
+                <div class="mb-3">
+                    <span class="is-size-6">
+                        {% if resource.is_external_url %}
+                            <i class="fas fa-lg fa-file-export"></i>
+                        {% else %}
+                            <i class="fas fa-lg fa-file-code"></i>
+                        {% endif %}
+                    </span>
+                    {% if resource.is_external_url %}
+                        <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                    {% else %}
+                        <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
+                    {% endif %}
+                </div>
+
+                {% if resource.description %}
+                <div class="columns">
+                    <div class="column is-three-quarters">
+                        <p class="no-margin-bottom">{{ resource.description | linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="columns">
+                    <div class="column is-three-quarters">
+                        <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
+                            <tbody>
+                                <tr>
+                                    <th>{% translate "Teritorija" %}</th>
+                                    <td>{{ resource.geo_location|default:"" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Periodo pradžia" %}</th>
+                                    <td>{{ resource.period_start|default:""|date:"SHORT_DATE_FORMAT" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Periodo pabaiga" %}</th>
+                                    <td>{{ resource.period_end|default:""|date:"SHORT_DATE_FORMAT" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Dydis" %}</th>
+                                    <td>{{ resource.size|default:"" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Formatas" %}</th>
+                                    <td>{{ resource.get_format|default:"" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Publikuota" %}</th>
+                                    <td>{{  resource.created|default:""|date:"SHORT_DATE_FORMAT" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Atnaujinta" %}</th>
+                                    {% if resource.dataset.frequency.hours == 0 %}
+                                        <td>{% translate 'Realiu laiku' %}</td>
+                                    {% else %}
+                                        <td>{{ resource.modified|default:""|date:"SHORT_DATE_FORMAT" }}</td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+             {% if resource.is_parameterized %}
+                {% include 'vitrina/structure/params.html' %}
+             {% endif %}
+
+             <div>
+                 <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
+                 <div class="mb-5">
+                     {% if models %}
+                         <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                            <thead>
+                                <tr>
+                                    <th>{% translate "Pavadinimas" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in models %}
+                                    <tr>
+                                        <td><a href="{{ model.get_absolute_url }}">
+                                            {% if model.title %}
+                                                {{ model.title }}
+                                            {% else %}
+                                                {{ model.name }}
+                                            {% endif %}
+                                        </a></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                     {% else %}
+                        <p>{% translate "Modelių nėra." %}</p>
+                     {% endif %}
+                 </div>
+                 {% if can_update %}
+                    <div class="buttons is-right">
+                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                            {% translate "Naujas modelis" %}
+                        </a>
+                    </div>
+                {% endif %}
+             </div>
+
+             <div class="columns">
+                <div class="column is-three-quarters">
+                    {% comments obj=resource user=request.user %}
+                </div>
+             </div>
+        </div>
+	</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from typing import List, Any, Dict, Type
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
@@ -7,6 +8,7 @@ from django.db.models import Q
 
 from vitrina.helpers import get_filter_url
 from vitrina.projects.models import Project
+from vitrina.requests.models import Request, RequestObject
 
 
 def update_facet_data(
@@ -56,3 +58,15 @@ def get_projects(user, dataset, check_existence=False, order_value=None, form_qu
         return projects.exists()
     else:
         return projects
+
+
+def get_requests(user, dataset):
+    if user.is_staff:
+        requests = Request.public.all()
+    else:
+        requests = Request.public.filter(user=user)
+
+    dataset_req_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(dataset),
+                                                   object_id=dataset.pk).values_list('request_id', flat=True)
+    requests = requests.exclude(Q(status=Request.REJECTED) | Q(pk__in=dataset_req_ids))
+    return requests

@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 import secrets
+import uuid
 from datetime import datetime, date
 from collections import OrderedDict
 
@@ -35,24 +36,28 @@ from parler.utils.context import switch_language
 from parler.utils.i18n import get_language
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
+from reversion.models import Version
 from reversion.views import RevisionMixin
 
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.api.models import ApiKey
+from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
+from vitrina.requests.models import Request, RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
-from vitrina.structure.models import Model
-from vitrina.structure.services import create_structure_objects
+from vitrina.structure.models import Model, Metadata
+from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
-from vitrina.views import HistoryView, HistoryMixin
+from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
-    DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm
+    DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
+    Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value
@@ -66,7 +71,8 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 import pytz
 
-class DatasetListView(FacetedSearchView):
+
+class DatasetListView(PlanMixin, FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
         'status',
@@ -230,15 +236,23 @@ class DatasetListView(FacetedSearchView):
                 Dataset,
                 self.organization,
             )
+            context['organization_id'] = self.organization.pk
         context.update(extra_context)
         context['sort'] = sorting
         return context
+
+    def get_plan_url(self):
+        if is_org_dataset_list(self.request):
+            return reverse('organization-plans', args=[self.organization.pk])
+        else:
+            return None
 
 
 class DatasetDetailView(
     LanguageChoiceMixin,
     HistoryMixin,
     DatasetStructureMixin,
+    PlanMixin,
     DetailView
 ):
     model = Dataset
@@ -246,6 +260,7 @@ class DatasetDetailView(
     context_object_name = 'dataset'
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -344,6 +359,23 @@ class DatasetCreateView(
 
         self.object.save()
         set_comment(Dataset.CREATED)
+
+        for file in form.cleaned_data.get('files', []):
+            DatasetFile.objects.get_or_create(
+                dataset=self.object,
+                file=file,
+            )
+
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=self.object,
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            name=form.cleaned_data.get('name'),
+            prepare_ast={},
+            version=1,
+        )
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -404,13 +436,43 @@ class DatasetUpdateView(
 
         self.object.save()
         set_comment(Dataset.EDITED)
+
+        if 'files' in form.changed_data:
+            for file in form.cleaned_data.get('files', []):
+                DatasetFile.objects.get_or_create(
+                    dataset=self.object,
+                    file=file,
+                )
+
+        if 'name' in form.changed_data:
+            if metadata := self.object.metadata.first():
+                metadata.name = form.cleaned_data.get('name')
+                metadata.save()
+            else:
+                Metadata.objects.create(
+                    uuid=str(uuid.uuid4()),
+                    dataset=self.object,
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    name=form.cleaned_data.get('name'),
+                    prepare_ast={},
+                    version=1,
+                )
+
+            # Update model names
+            for model in self.object.model_set.all():
+                if model_meta := model.metadata.first():
+                    model_meta.name = get_model_name(self.object, model.name)
+                    model_meta.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetHistoryView(DatasetStructureMixin, HistoryView):
+class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
+    plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
     def get_context_data(self, **kwargs):
@@ -469,6 +531,7 @@ class DatasetMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     HistoryMixin,
+    PlanMixin,
     DatasetStructureMixin,
     ListView,
 ):
@@ -477,10 +540,11 @@ class DatasetMembersView(
     context_object_name = 'members'
     paginate_by = 20
 
-    # HistroyMixin
+    # HistoryMixin
     object: Dataset
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
@@ -523,6 +587,8 @@ class DatasetMembersView(
 
 
 class CreateMemberView(
+    DatasetStructureMixin,
+    HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     CreateView,
@@ -531,11 +597,8 @@ class CreateMemberView(
     form_class = DatasetMemberCreateForm
     template_name = 'base_form.html'
 
-    dataset: Dataset
-
-    def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=kwargs['dataset_id'])
-        return super().dispatch(request, *args, **kwargs)
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def has_permission(self):
         return has_perm(
@@ -554,6 +617,25 @@ class CreateMemberView(
         kwargs = super().get_form_kwargs()
         kwargs['object_id'] = self.dataset.pk
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = 'vitrina/datasets/tabs.html'
+        context['can_view_members'] = self.has_permission()
+        context['representative_url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['current_title'] = _("Tvarkytojo pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
     def form_valid(self, form):
         self.object: Representative = form.save(commit=False)
@@ -643,6 +725,8 @@ def autocomplete_tags(request, tag_model):
 
 
 class UpdateMemberView(
+    DatasetStructureMixin,
+    HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     UpdateView,
@@ -650,18 +734,41 @@ class UpdateMemberView(
     model = Representative
     form_class = DatasetMemberUpdateForm
     template_name = 'base_form.html'
+    pk_url_kwarg = 'representative_id'
+
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
 
     def has_permission(self):
         representative = get_object_or_404(
             Representative,
-            pk=self.kwargs.get('pk'),
+            pk=self.kwargs.get('representative_id'),
         )
         return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
         return reverse('dataset-members', kwargs={
-            'pk': self.kwargs.get('dataset_id'),
+            'pk': self.kwargs.get('pk'),
         })
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = 'vitrina/datasets/tabs.html'
+        context['can_view_members'] = self.has_permission()
+        context['representative_url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['current_title'] = _("Tvarkytojo redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
     def form_valid(self, form):
         self.object: Representative = form.save()
@@ -703,7 +810,12 @@ class DeleteMemberView(
         })
 
 
-class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
+class DatasetProjectsView(
+    DatasetStructureMixin,
+    HistoryMixin,
+    PlanMixin,
+    ListView
+):
     model = Project
     template_name = 'vitrina/datasets/project_list.html'
     context_object_name = 'projects'
@@ -713,6 +825,7 @@ class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
     object: Dataset
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
@@ -742,6 +855,112 @@ class DatasetProjectsView(DatasetStructureMixin, HistoryMixin, ListView):
         else:
             context['has_projects'] = False
         return context
+
+
+class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
+    model = Request
+    template_name = 'vitrina/datasets/request_list.html'
+    context_object_name = 'requests'
+    paginate_by = 20
+
+    # HistoryMixin
+    object: Dataset
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-history'
+    plan_url_name = 'dataset-plans'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        request_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(self.object),
+                                                   object_id=self.object.pk).values_list('request_id', flat=True)
+        return (
+            Request.objects.
+            filter(
+                pk__in=request_ids
+            ).
+            order_by('-created', 'status')
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.object
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        return context
+
+
+class AddRequestView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView,
+):
+    model = Dataset
+    form_class = AddRequestForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+
+    def get_form_kwargs(self):
+        kwargs = super(AddRequestView, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        kwargs.update({'dataset': self.dataset})
+        return kwargs
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        for request in form.cleaned_data['requests']:
+            RequestObject.objects.create(request=request, object_id=self.object.pk,
+                                         content_type=ContentType.objects.get_for_model(self.object))
+        set_comment(Dataset.REQUEST_SET)
+        self.object.save()
+        return HttpResponseRedirect(
+            reverse('dataset-requests', kwargs={'pk': self.object.pk})
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_title'] = self.dataset
+        context['parent_url'] = self.dataset.get_absolute_url()
+        context['current_title'] = _('Poreikių pridėjimas')
+        return context
+
+class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Dataset
+    template_name = 'confirm_remove.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        self.request_object = get_object_or_404(Request, pk=self.kwargs.get('request_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.UPDATE, self.request_object)
+
+    def handle_no_permission(self):
+        return HttpResponseRedirect(reverse('dataset-requests', kwargs={'pk': self.dataset.pk}))
+
+    def delete(self, request, *args, **kwargs):
+        Comment.objects.filter(rel_object_id=self.request_object.pk,
+                               rel_content_type=ContentType.objects.get_for_model(self.request_object)).delete()
+        self.request_object.delete()
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        return reverse('dataset-requests', kwargs={'pk': self.dataset.pk})
 
 
 class AddProjectView(
@@ -2644,3 +2863,198 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()
+
+
+class DatasetPlanView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
+    TemplateView
+):
+    template_name = 'vitrina/datasets/plans.html'
+    context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-plans-history'
+    plan_url_name = 'dataset-plans'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        context['plans'] = self.dataset.plandataset_set.all()
+        context['can_manage_plans'] = has_perm(
+            self.request.user,
+            Action.PLAN,
+            self.dataset
+        )
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset
+        )
+        return context
+
+    def get_history_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_plan_object(self):
+        return self.dataset
+
+
+class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
+    form_class = DatasetPlanForm
+    template_name = 'base_form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.PLAN, self.dataset)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Duomenų rinkinio įtraukimas į planą")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.dataset = self.dataset
+        self.object.save()
+
+        self.object.plan.save()
+        set_comment(_(f'Į planą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
+        return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
+
+
+class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
+    model = Plan
+    form_class = PlanForm
+    template_name = 'vitrina/plans/form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.PLAN, self.dataset)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Naujas planas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+        }
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['obj'] = self.dataset
+        kwargs['user'] = self.request.user
+        kwargs['organization'] = self.dataset.organization
+        return kwargs
+
+    def form_valid(self, form):
+        self.object = form.save()
+        PlanDataset.objects.create(
+            plan=self.object,
+            dataset=self.dataset
+        )
+        set_comment(_(f'Pridėtas planas "{self.object}". Į planą įtrauktas duomenų rinkinys "{self.dataset}".'))
+        return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
+
+
+class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+    model = PlanDataset
+    template_name = 'confirm_delete.html'
+
+    def has_permission(self):
+        dataset = self.get_object().dataset
+        return has_perm(self.request.user, Action.PLAN, dataset)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        plan = self.object.plan
+        dataset = self.object.dataset
+        self.object.delete()
+
+        plan.save()
+        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        return redirect(reverse('dataset-plans', args=[dataset.pk]))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dataset = self.get_object().dataset
+        context['current_title'] = _("Plano pašalinimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[dataset.pk]): dataset.title,
+        }
+        return context
+
+
+class DatasetDeletePlanDetailView(DatasetDeletePlanView):
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organization = self.get_object().plan.receiver
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[organization.pk]): organization.title,
+        }
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        plan = self.object.plan
+        dataset = self.object.dataset
+        self.object.delete()
+
+        plan.save()
+        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
+
+
+class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
+    model = Dataset
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-plans-history"
+    plan_url_name = 'dataset-plans'
+    tabs_template_name = 'vitrina/datasets/tabs.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        return context
+
+    def get_history_objects(self):
+        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list('plan_id', flat=True)
+        return Version.objects.get_for_model(Plan).filter(
+            object_id__in=list(dataset_plan_ids)
+        ).order_by('-revision__date_created')

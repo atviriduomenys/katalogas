@@ -9,16 +9,89 @@
 {% block content %}
     {% if page_obj %}
     <div class="columns">
-        <div class="column is-one-quarter is-hidden-mobile"></div>
+        <div class="column is-one-quarter is-hidden-mobile">
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Vykdytojas" %}</strong>
+                </p>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Mano užduotys" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Visos užduotys" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+            </nav>
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Būsena" %}</strong>
+                </p>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Registruota" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Priskirta" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Išspręsta" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+            </nav>
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <strong>{% translate "Tipas" %}</strong>
+                </p>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Komentaras" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Prašymas" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+                <div class="is-flex">
+                    <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                        <strong>{% translate "Klaida" %}</strong>
+                    </span>
+                    <div class="stays-right">(15)</div>
+                </div>
+            </nav>
+        </div>
         <div class="column is-three-quarters">
             {% for i in page_obj %}
                 <article class="media is-expanded">
                     <div class="media-content">
                         <div class="content">
-                            <strong class="dataset-list-title">{{ i.title }}</strong>
-                            <p class="dataset-list-description">
-                                {% translate "Sukurta prieš" %}: {{ i.created|timesince }}
-                            </p>
+                            <div class="columns">
+                                <div class="column">
+                                    <a href="{% url 'user-task-view' user.pk i.pk %}">
+                                        <strong class="dataset-list-title">{{ i.title }}</strong>
+                                    </a>
+                                    <p class="dataset-list-description">
+                                        {% translate "Sukurta prieš" %}: {{ i.created|timesince }}
+                                    </p>
+                                </div>
+                                <div class="column">
+                                    <a href="#" class="button is-primary stays-right">Uždaryti</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </article>

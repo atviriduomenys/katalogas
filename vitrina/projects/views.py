@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
@@ -14,6 +15,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
 
 
@@ -78,6 +80,12 @@ class ProjectCreateView(
         self.object.status = Project.CREATED
         self.object.save()
         set_comment(Project.CREATED)
+        Task.objects.create(
+            title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            status='created'
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

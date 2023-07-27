@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from vitrina.orgs.models import Organization
@@ -29,6 +31,10 @@ class Task(models.Model):
     organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=255, default=CREATED, choices=STATUSES)
     role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         db_table = 'task'

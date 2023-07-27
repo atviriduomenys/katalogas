@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Užduotys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Užduotys" %}{% endblock %}
+
+{% block current_title %}{% translate "Užduotys" %}{% endblock %}
+
+{% block content %}
+    {% if task %}
+    <div class="columns">
+        <div class="column is-three-quarters">
+            <article class="media is-expanded">
+                <div class="media-content">
+                    <div class="content">
+                        <div class="columns">
+                            <div class="column">
+                                <p class="dataset-list-title">{{ task.created }}</p>
+                                <p class="dataset-list-description">
+                                    Aprašymas: {{ task.description }}
+                                </p>
+                            </div>
+                            <div class="column">
+                                <a href="#" class="button is-primary stays-right">Uždaryti</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <br/>
+        </div>
+        <div class="column is-one-quarter is-hidden-mobile">
+            <p>Organizacija</p>
+            <p>Sukurta</p>
+            <p>{{ task.created }}</p>
+            <p>Priskirta</p>
+            <p>{{  }}</p>
+            <p>Terminas</p>
+            <p>Vykdytojas</p>
+        </div>
+    </div>
+    <br/>
+    {% else %}
+    <p>{% translate "Užduočių nėra!" %}</p>
+    {% endif %}
+{% endblock %}
+

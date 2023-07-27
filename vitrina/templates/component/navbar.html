@@ -50,6 +50,9 @@
                                 <a href="{% url 'user-profile' pk=user.pk %}" class="navbar-item">
                                     {% translate "Profilis" %}
                                 </a>
+                                <a href="{% url 'user-task-list' pk=user.pk %}" class="navbar-item">
+                                    {% translate "Užduotys" %}
+                                </a>
                                 {% if user.organization %}
                                 <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}

@@ -71,6 +71,12 @@ class CommentView(
             else:
                 comment.type = Comment.USER
             comment.save()
+            Task.objects.create(
+                title=f"Parašytas komentaras objektui: {content_type}, id: {obj.pk}",
+                content_type=content_type,
+                object_id=obj.pk,
+                status='created'
+            )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -91,6 +97,12 @@ class ReplyView(LoginRequiredMixin, View):
                 parent_id=parent_id,
                 body=form.cleaned_data.get('body'),
                 is_public=form.cleaned_data.get('is_public'),
+            )
+            Task.objects.create(
+                title=f"Parašytas atsakymas komentarui: {content_type}, id: {parent_id}",
+                content_type=content_type,
+                object_id=parent_id,
+                status='created'
             )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -158,6 +170,10 @@ class ExternalCommentView(
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
 
+            Task.objects.create(
+                title=f"Parašytas komentaras objektui: {external_content_type}, id: {external_object_id}",
+                status='created'
+            )
             comment.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))

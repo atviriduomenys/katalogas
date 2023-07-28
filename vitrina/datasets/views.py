@@ -272,7 +272,7 @@ class DatasetDetailView(
             'status': dataset.get_status_display(),
             #TODO: harvested functionality needs to be implemented
             'harvested': '',
-            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
+            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all(),

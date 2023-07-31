@@ -34,7 +34,25 @@ class DatasetGroup(TranslatableModel):
         return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
+class DatasetFile(models.Model):
+    file = FilerFileField(verbose_name=_("Failas"), on_delete=models.CASCADE)
+    dataset = models.ForeignKey(
+        'Dataset',
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.CASCADE,
+        related_name='dataset_files'
+    )
+
+    class Meta:
+        db_table = 'dataset_file'
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
+
 class Dataset(TranslatableModel):
+    UPLOAD_TO = "data/files"
+
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
     METADATA = "METADATA"
@@ -60,6 +78,7 @@ class Dataset(TranslatableModel):
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
     PROJECT_SET = "PROJECT_SET"
+    REQUEST_SET = "REQUEST_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -68,7 +87,8 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
-        PROJECT_SET: _("Priskirta projektui")
+        PROJECT_SET: _("Priskirta projektui"),
+        REQUEST_SET: _("Priskirta poreikiui")
     }
 
     API_ORIGIN = "api"
@@ -660,6 +680,12 @@ class DatasetAttribution(models.Model):
 
     class Meta:
         db_table = 'dataset_attribution'
+
+    def __str__(self):
+        if self.organization:
+            return f"{self.attribution} - {self.dataset}, {self.organization}"
+        else:
+            return f"{self.attribution} - {self.dataset}, {self.agent}"
 
 
 class Type(TranslatableModel):

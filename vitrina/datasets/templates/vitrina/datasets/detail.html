@@ -45,6 +45,17 @@
                         {{ dataset.description | linebreaks | urlizetrunc:42 }}
                     {% endobjectlanguage %}
                 </p>
+
+                {% if dataset.dataset_files.all %}
+                    <div class="mb-5">
+                        {% for file in dataset.dataset_files.all %}
+                            <div>
+                                <span><a href="{{ file.file.url }}"><i class="fas fa-file"></i> {{ file.filename_without_path }}</a></span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 {# tags #}
                 {% include "./tags.html" %}
                 {# main info #}

@@ -2,6 +2,7 @@ import builtins
 import functools
 import operator
 
+import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -121,6 +122,7 @@ class Base(models.Model):
         return ""
 
 
+@reversion.register()
 class Model(models.Model):
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
@@ -138,10 +140,12 @@ class Model(models.Model):
         verbose_name=_("Bazė"),
         related_name='base_models'
     )
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     objects = models.Manager()
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
+    params = GenericRelation('Param')
 
     class Meta:
         db_table = 'model'
@@ -238,6 +242,7 @@ class Model(models.Model):
         return ''
 
 
+@reversion.register()
 class Property(models.Model):
     model = models.ForeignKey(
         Model,

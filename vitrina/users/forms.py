@@ -49,11 +49,15 @@ class RegisterForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("El. paštas"), required=True, error_messages={})
-    agree_to_terms = BooleanField(label="Sutinku su", required=False)
+    agree_to_terms = BooleanField(label=_("Sutinku su"), required=False)
     password1 = CharField(label=_("Slaptažodis"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
     password2 = CharField(label=_("Pakartokite slaptažodį"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+
+    error_messages = {
+        'password_mismatch': _('Slaptažodžio laukai nesutapo'),
+    }
 
     class Meta:
         model = User
@@ -158,6 +162,11 @@ class PasswordResetConfirmForm(SetPasswordForm):
 
 
 class UserProfileEditForm(ModelForm):
+    first_name = CharField(label=_("Vardas"), required=False)
+    last_name = CharField(label=_("Pavardė"), required=False)
+    phone = CharField(label=_("Telefonas"), required=False)
+    email = EmailField(label=_("El. paštas"), required=True)
+
     class Meta:
         model = User
         fields = [

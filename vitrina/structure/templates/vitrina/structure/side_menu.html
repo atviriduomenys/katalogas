@@ -1,13 +1,13 @@
-<nav class="category-panel">
+<nav class="menu-panel">
     {% for model in models %}
         <div>
             <span class="has-tooltip-top" data-tooltip="{{ model.name }}">
                 {% if is_data %}
-                    <a href="{{ model.get_data_url }}" class="category-panel-block">
+                    <a href="{{ model.get_data_url }}" class="menu-panel-block">
                 {% elif is_api %}
-                    <a href="{{ model.get_api_url }}" class="category-panel-block">
+                    <a href="{{ model.get_api_url }}" class="menu-panel-block">
                 {% else %}
-                    <a href="{{ model.get_absolute_url }}" class="category-panel-block">
+                    <a href="{{ model.get_absolute_url }}" class="menu-panel-block">
                 {% endif%}
 
                 {% if not show_props and request.resolver_match.kwargs.model == model.name %}
@@ -22,7 +22,7 @@
             {% for prop in props %}
                 <div>
                     <span class="has-tooltip-top" data-tooltip="{{ prop.name }}">
-                        <a href="{{ prop.get_absolute_url }}" class="category-panel-block ml-4">
+                        <a href="{{ prop.get_absolute_url }}" class="menu-panel-block ml-4">
                         {% if request.resolver_match.kwargs.prop == prop.name %}
                             <strong><span id="side_menu_elem">{{ prop.name }}</span></strong>
                         {% else %}
@@ -36,7 +36,7 @@
             {% for action, url in actions.items %}
                 <div>
                     <span>
-                        <a href="{{ url }}" class="category-panel-block ml-4">
+                        <a href="{{ url }}" class="menu-panel-block ml-4">
                             {% with action|add:"-api" as url_name %}
                                 {% if request.resolver_match.url_name == url_name%}
                                     <strong><span id="side_menu_elem">{{ action }}</span></strong>

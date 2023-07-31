@@ -21,6 +21,15 @@
                 	<p class="no-margin-bottom">{{ organization.description | linebreaks }}</p>
             	{% endif %}
             </div>
+
+			{% if request.user.is_superuser %}
+			<div class="buttons">
+				<a href="{% url 'merge-organizations' organization.pk %}" class="button is-primary">
+                    {% translate "Sujungti su kita organizacija" %}
+                </a>
+			</div>
+			{% endif %}
+
         </div>
     
 	    <div class="column is-one-third">

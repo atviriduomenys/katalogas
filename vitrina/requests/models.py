@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -60,7 +61,6 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset_id = models.BigIntegerField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -83,7 +83,6 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        managed = True
         db_table = 'request'
 
     def __str__(self):
@@ -110,6 +109,9 @@ class Request(models.Model):
             count()
         )
 
+    def is_created(self):
+        return self.status == self.CREATED
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):
@@ -121,7 +123,7 @@ class RequestEvent(models.Model):
     comment = models.TextField(blank=True, null=True)
     meta = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
-    request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -144,3 +146,13 @@ class RequestStructure(models.Model):
     class Meta:
         managed = True
         db_table = 'request_structure'
+
+
+class RequestObject(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE)
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)

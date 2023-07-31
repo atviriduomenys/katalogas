@@ -1,17 +1,22 @@
+from urllib.parse import urlparse
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_slug
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-      HiddenInput, FileField, PasswordInput
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField
+from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
+from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.services import is_duplicate_key
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count
+from vitrina.plans.models import Plan
 from vitrina.viisp.xml_utils import read_adoc_file, parse_adoc_xml_signature_data
 from vitrina.users.models import User
 
@@ -196,3 +201,126 @@ class PartnerRegisterForm(ModelForm):
             "Neteisingas slaptažodis"
         ))
         return self.cleaned_data
+
+
+class ProviderWidget(ModelSelect2Widget):
+    model = Organization
+    search_fields = ['title__icontains']
+    dependent_fields = {
+        'organization_id': 'organization_id',
+        'user_id': 'user_id'
+    }
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        ids = []
+        if 'organization_id' in dependent_fields:
+            organization_id = dependent_fields.pop('organization_id')
+            ids.append(organization_id)
+        if 'user_id' in dependent_fields:
+            user_id = dependent_fields.pop('user_id')
+            try:
+                user = User.objects.get(pk=user_id)
+            except ObjectDoesNotExist:
+                user = None
+            if user and user.organization:
+                ids.append(user.organization.pk)
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+
+        provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
+        ids.extend(provider_orgs)
+        queryset = queryset.filter(pk__in=ids)
+        return queryset
+
+
+class OrganizationPlanForm(ModelForm):
+    organization_id = IntegerField(widget=HiddenInput)
+    user_id = IntegerField(widget=HiddenInput)
+    provider = ModelChoiceField(
+        label=_("Paslaugų teikėjas"),
+        required=False,
+        queryset=Organization.objects.all(),
+        widget=ProviderWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+    )
+
+    class Meta:
+        model = Plan
+        fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
+                  'procurement', 'price', 'project', 'organization_id', 'user_id')
+
+    def __init__(self, organization, user, *args, **kwargs):
+        self.organization = organization
+        self.user = user
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.form_id = "plan-form"
+        self.helper.layout = Layout(
+            Field('organization_id'),
+            Field('user_id'),
+            Field('title'),
+            Field('description'),
+            Field('deadline'),
+            Field('provider'),
+            Field('provider_title'),
+            Field('procurement'),
+            Field('price'),
+            Field('project'),
+            Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['organization_id'] = self.organization.pk
+        self.initial['user_id'] = self.user.pk
+
+        if not instance:
+            if self.user.organization and self.user.organization.provider:
+                self.initial['provider'] = self.user.organization
+            else:
+                self.initial['provider'] = self.organization
+
+    def clean(self):
+        provider = self.cleaned_data.get('provider')
+        provider_title = self.cleaned_data.get('provider_title')
+
+        if provider and provider_title:
+            self.add_error(
+                'provider',
+                _('Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu.')
+            )
+        elif not provider and not provider_title:
+            self.add_error(
+                'provider',
+                _('Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas.')
+            )
+
+
+class OrganizationMergeForm(Form):
+    organization = URLField(
+        label=_("Organizacija"),
+        help_text=_("Nurodykite pilną nuorodą į organizaciją, su kuria norite sujungti"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "merge-form"
+        self.helper.layout = Layout(
+            Field('organization'),
+            Submit('submit', _("Tęsti"), css_class='button is-primary')
+        )
+
+    def clean_organization(self):
+        organization = self.cleaned_data.get('organization')
+        if organization:
+            url = urlparse(organization)
+            try:
+                url = resolve(url.path)
+            except Resolver404:
+                raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
+            if (
+                url.url_name != 'organization-detail' or
+                not Organization.objects.filter(pk=url.kwargs.get('pk'))
+            ):
+                raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
+            else:
+                return url.kwargs.get('pk')
+        return organization

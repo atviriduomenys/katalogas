@@ -28,7 +28,7 @@
   <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
   {% endif %}
     <p class="{{ filter.name }}-panel-heading">
-      <span class="icon-text">
+        <span class="icon-text">
         {% if filter.stats %}
         <span class="icon">
           <i class="fas fa-chart-bar fa-lg"></i>
@@ -41,6 +41,13 @@
     </p>
   {% if active_filter != filter.name %}
   </a>
+    {% if filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
+        <input
+            class="input"
+            id="{{ filter.name }}-filter-input"
+            value="{% translate "Paieška" %}..."
+        >
+    {% endif %}
   {% endif %}
 
   {% for item in filter.items %}

@@ -1,5 +1,6 @@
 import pytest
 import pytz
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version
@@ -62,9 +63,7 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_request_detail_view(app: DjangoTestApp):
-    dataset = DatasetFactory()
     request = RequestFactory(
-        dataset_id=dataset.pk,
         is_existing=True,
         status="REJECTED",
         purpose="science,product",

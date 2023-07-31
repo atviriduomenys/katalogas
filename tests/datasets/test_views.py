@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import pytz
 from django.conf import settings
@@ -24,6 +24,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
+from vitrina.plans.factories import PlanFactory
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
@@ -1538,3 +1539,21 @@ def _get_selected(context):
         for k, v in selected.items() if v
     }
     return selected
+
+
+@pytest.mark.django_db
+def test_add_dataset_to_plan(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    plan = PlanFactory(
+        deadline=(date.today() + timedelta(days=1))
+    )
+
+    form = app.get(reverse('dataset-plans-include', args=[dataset.pk])).forms['dataset-plan-form']
+    form['plan'] = plan.pk
+    resp = form.submit()
+
+    assert resp.url == reverse('dataset-plans', args=[dataset.pk])
+    assert dataset.plandataset_set.count() == 1
+    assert dataset.plandataset_set.first().plan == plan

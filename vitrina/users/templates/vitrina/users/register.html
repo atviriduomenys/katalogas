@@ -24,7 +24,7 @@
     <script type="text/javascript">
         $(function () {
             let agree_to_terms_label =  $('#div_id_agree_to_terms').find('label');
-            agree_to_terms_label.append($( '<a id="btn-terms">naudojimo sąlygomis</a>' ));
+            agree_to_terms_label.append($( `<a id="btn-terms">${gettext("naudojimo sąlygomis")}</a>` ));
 
             $('#btn-terms').click(function () {
                 $('.terms-div').toggleClass('is-hidden');

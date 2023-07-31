@@ -388,3 +388,17 @@ class ParamItem(models.Model):
         if metadata := self.metadata.first():
             return metadata.name
         return ""
+
+
+class ManifestType(models.Model):
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+    description = models.TextField(_("Aprašymas"), null=True, blank=True)
+
+    class Meta:
+        db_table = 'manifest_type'
+        verbose_name = _('Manifesto tipas')
+        verbose_name_plural = _('Manifesto tipai')
+
+    def __str__(self):
+        return self.title

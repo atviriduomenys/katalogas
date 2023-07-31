@@ -26,6 +26,7 @@ from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateFor
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
 from vitrina.orgs.models import Organization
 from vitrina.plans.models import PlanDataset, Plan
+from vitrina.structure.models import ManifestType
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -154,21 +155,56 @@ class DatasetSearchForm(FacetedSearchForm):
         return self.searchqueryset.all()
 
 
+def _get_manifest_title(title, description=None):
+    if description:
+        return mark_safe(f'{title}<br/><p class="help">{description}</p>')
+    else:
+        return title
+
+
+def get_manifest_choices():
+    choices = []
+    if not ManifestType.objects.filter(name='dsa'):
+        choices.append((
+            'dsa',
+            _get_manifest_title(_('Duomenų struktūros aprašas'))
+        ))
+    for type in ManifestType.objects.all():
+        choices.append((
+            type.name,
+            _get_manifest_title(type.title, type.description)
+        ))
+    return tuple(choices)
+
+
 class DatasetStructureImportForm(forms.ModelForm):
-    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
+    manifest = forms.ChoiceField(label=_("Schemos tipas"), choices=get_manifest_choices, widget=forms.RadioSelect())
+    file = FilerFileField(label=_("Failas"), required=False, upload_to=DatasetStructure.UPLOAD_TO)
+    url = forms.CharField(label=_("Nuoroda į schemos failą"), required=False)
 
     class Meta:
         model = DatasetStructure
-        fields = ('file',)
+        fields = ('manifest', 'file', 'url',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
+            Field('manifest'),
             Field('file'),
+            Field('url'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+    def clean(self):
+        file = self.cleaned_data.get('file')
+        url = self.cleaned_data.get('url')
+
+        if (not file and not url) or (file and url):
+            self.add_error('file', _('Būtina nurodyti failą arba nuorodą į schemos failą, bet ne abu.'))
+
+        return self.cleaned_data
 
 
 class OrganizationWidget(ModelSelect2Widget):
@@ -293,6 +329,7 @@ class AddRequestForm(forms.ModelForm):
             "rinkinys."
         ),
     )
+
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):
     object_model = Dataset

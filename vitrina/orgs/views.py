@@ -1,5 +1,6 @@
 import secrets
 
+import numpy as np
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -66,6 +67,41 @@ class OrganizationListView(ListView):
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
 
+
+class OrganizationManagementsView(OrganizationListView):
+    template_name = 'vitrina/orgs/jurisdictions.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        stats = {}
+        orgs = Organization.public.all()
+        root_orgs = []
+        sorting = self.request.GET.get('sort', None)
+        for org in orgs:
+            root = org.get_root()
+            if root not in root_orgs:
+                root_orgs.append(root)
+        for root in root_orgs:
+            children_count = len(Organization.get_children(root))
+            if children_count is not None:
+                stats[root.title] = children_count
+        keys = list(stats.keys())
+        values = list(stats.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        elif sorting == 'sort-asc':
+            sorted_value_index = np.argsort(values)
+        stats = {keys[i]: values[i] for i in sorted_value_index}
+        context['jurisdiction_data'] = stats
+        context['max_count'] = max_count
+        context['filter'] = 'jurisdiction'
+        context['sort'] = sorting
+        return context
 
 class OrganizationDetailView(PlanMixin, DetailView):
     model = Organization

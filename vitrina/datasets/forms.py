@@ -164,12 +164,18 @@ def _get_manifest_title(title, description=None):
 
 def get_manifest_choices():
     choices = []
-    if not ManifestType.objects.filter(name='dsa'):
+    if dsa := ManifestType.objects.filter(name='dsa').first():
+        choices.append((
+            dsa.name,
+            _get_manifest_title(dsa.title, dsa.description)
+        ))
+    else:
         choices.append((
             'dsa',
             _get_manifest_title(_('Duomenų struktūros aprašas'))
         ))
-    for type in ManifestType.objects.all():
+
+    for type in ManifestType.objects.exclude(name='dsa'):
         choices.append((
             type.name,
             _get_manifest_title(type.title, type.description)
@@ -196,6 +202,8 @@ class DatasetStructureImportForm(forms.ModelForm):
             Field('url'),
             Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+        self.initial['manifest'] = 'dsa'
 
     def clean(self):
         file = self.cleaned_data.get('file')

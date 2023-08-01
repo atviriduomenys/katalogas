@@ -561,6 +561,7 @@ class OrganizationPlansHistoryView(PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['organization_id'] = self.object.pk
         return context
 
 

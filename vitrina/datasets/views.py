@@ -1199,7 +1199,8 @@ class DatasetManagementsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_orgs = context['jurisdiction_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_jurisdictions = []
@@ -1976,8 +1977,9 @@ class DatasetsStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         modified_cats = []
         for cat in parent_cats:
             current_category = Category.objects.get(title=cat.get('display_value'))
@@ -2011,8 +2013,9 @@ class DatasetsCategoriesView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_cats = []
@@ -2123,7 +2126,8 @@ class CategoryStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         child_titles = []
         cat_titles = []
         indicator = self.request.GET.get('indicator', None)

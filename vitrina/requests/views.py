@@ -28,9 +28,30 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 class RequestListView(ListView):
     model = Request
-    queryset = Request.public.order_by('-created')
     template_name = 'vitrina/requests/list.html'
     paginate_by = 20
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+        queryset = Request.public.all()
+
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+        if date_from:
+            queryset = queryset.filter(created__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(created__lte=date_to)
+        return queryset.order_by("-created")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET.get("q", "")
+        context['selected_date_from'] = self.request.GET.get('date_from')
+        context['selected_date_to'] = self.request.GET.get('date_to')
+        return context
+
 
 class RequestPublicationStatsView(RequestListView):
     template_name = 'vitrina/requests/publications.html'

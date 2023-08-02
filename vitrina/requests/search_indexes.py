@@ -1,10 +1,5 @@
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
-from django.db import models
-
-from haystack import signals
-from haystack.exceptions import NotHandled
 from haystack.indexes import SearchIndex, Indexable
-
 from vitrina.requests.models import Request
 
 
@@ -13,8 +8,10 @@ from vitrina.requests.models import Request
 class RequestIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
     title = CharField(model_attr='title')
-    filter_status = CharField(model_attr='dataset__status',  faceted=True, null=True)
-    organization = IntegerField(model_attr='dataset__organization__pk', faceted=True)
+    status = CharField(model_attr='status', faceted=True, null=True)
+    dataset_status = CharField(model_attr='dataset__status',  faceted=True, default="UNASSIGNED")
+    organization = IntegerField(model_attr='dataset__organization__pk', faceted=True, default=-1)
+    organization_jurisdiction = CharField(model_attr='organization__jurisdiction', faceted=True, default="UNASSIGNED")
     category = MultiValueField(model_attr='dataset__category__pk', faceted=True)
     parent_category = MultiValueField(model_attr='dataset__parent_category', faceted=True, null=True)
     groups = MultiValueField(model_attr='dataset__get_group_list', faceted=True)

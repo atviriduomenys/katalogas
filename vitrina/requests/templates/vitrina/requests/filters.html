@@ -2,10 +2,31 @@
 
 <nav class="category-panel">
     <p class="category-panel-heading">
-        <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
+        <strong>{% translate "Poreikio būsena" as status %}{{ status|upper}}</strong>
     </p>
     {% for obj in status_facet|slice:":10" %}
-        {% if obj.filter_value == selected_status %}
+        {% if selected_status and obj.filter_value == selected_status %}
+            <div class="is-flex">
+                <span class="category-panel-block" title="{{ obj.display_value }}">
+                    <strong>{{ obj.display_value }}</strong>
+                </span>
+                <div class="stays-right">({{ obj.count }})</div>
+            </div>
+        {% else %}
+            <div class="is-flex">
+                <a href="{{ obj.url }}" class="category-panel-block" id="{{ obj.filter_value }}_id">{{ obj.display_value }}</a>
+                <div class="stays-right">({{ obj.count }})</div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Rinkinio būsena" as datasetStatus %}{{ datasetStatus|upper}}</strong>
+    </p>
+    {% for obj in dataset_status_facet|slice:":10" %}
+        {% if selected_dataset_status and obj.filter_value == selected_dataset_status %}
             <div class="is-flex">
                 <span class="category-panel-block" title="{{ obj.display_value }}">
                     <strong>{{ obj.display_value }}</strong>
@@ -27,6 +48,27 @@
     </p>
     {% for obj in organization_facet|slice:":10" %}
         {% if obj.filter_value == selected_organization %}
+            <div class="is-flex">
+                <span class="category-panel-block" title="{{ obj.display_value }}">
+                    <strong>{{ obj.display_value }}</strong>
+                </span>
+                <div class="stays-right">({{ obj.count }})</div>
+            </div>
+        {% else %}
+            <div class="is-flex">
+                <a href="{{ obj.url }}" class="category-panel-block">{{ obj.display_value }}</a>
+                <div class="stays-right">({{ obj.count }})</div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<nav class="category-panel">
+    <p class="category-panel-heading">
+        <strong>{% translate "Valdymo sritis" as jurisdiction %} {{jurisdiction|upper}}</strong>
+    </p>
+    {% for obj in organization_jurisdiction_facet|slice:":10" %}
+        {% if obj.filter_value == selected_jurisdiction %}
             <div class="is-flex">
                 <span class="category-panel-block" title="{{ obj.display_value }}">
                     <strong>{{ obj.display_value }}</strong>
@@ -126,24 +168,102 @@
 
 <nav class="category-panel">
     <p class="category-panel-heading">
-        <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+        <strong>{% translate "Įkėlimo data" as dateTitle %}{{ dateTitle|upper}}</strong>
     </p>
-    <div class="field">
-        {% if selected_date_from %}
-            <input type="date" class="input date_from" name="date_from" id="from" value="{{ selected_date_from|stringformat:'s' }}"
-                   placeholder="{% translate 'Data nuo' %}">
-        {% else %}
-            <input type="date" class="input date_from" name="date_from" id="from"
-                   placeholder="{% translate 'Data nuo' %}">
+
+{% for k, v in year_filter.items %}
+    <div class="is-flex">
+        <a class="category-panel-block quarter-toggle" id="{{ k }}" title="{{ k }}">{{ k }}</a>
+    {% for k2, v2 in v.items %}
+        {% if k2 == 'total' %}
+                <div class="stays-right">({{ v2 }})</div>
+                </div>
         {% endif %}
-    </div>
-    <div class="field">
-        {% if selected_date_to %}
-            <input type="date" class="input date_to" name="date_to" id="to" value="{{ selected_date_to|stringformat:'s' }}"
-                   placeholder="{% translate 'Data iki' %}">
-        {% else %}
-            <input type="date" class="input date_to" name="date_to" id="to"
-                   placeholder="{% translate 'Data iki' %}">
+        {% if k2 == 'quarters' %}
+            {% for q, qv in v2.items reversed %}
+                    <div class="ml-2 dropdown {{ k }}-quarters">
+                    {% if 'Q1' in q %}
+                        <a class="category-panel-block month-toggle" id="{{ q }}" title="I ketvirtis">I ketvirtis</a>
+                    {% elif 'Q2' in q %}
+                        <a class="category-panel-block month-toggle" id="{{ q }}" title="II ketvirtis">II ketvirtis</a>
+                    {% elif 'Q3' in q %}
+                        <a class="category-panel-block month-toggle" id="{{ q }}" title="III ketvirtis">III ketvirtis</a>
+                    {% else %}
+                        <a class="category-panel-block month-toggle" id="{{ q }}" title="IV ketvirtis">IV ketvirtis</a>
+                    {% endif %}
+                    <div class="stays-right">({{ qv }})</div>
+                    </div>
+                {% for m, mv in months.items %}
+                    {% if q == m %}
+                        {% for n, nv in mv.items reversed %}
+                            <div class="ml-4 dropdown {{ q }}-months">
+                                {% if '-01' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" title="Sausis">Sausis</a>
+                                {% elif '-02' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-28" id="{{ n }}" id="{{ n }}" title="Vasaris">Vasaris</a>
+                                {% elif '-03' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Kovas">Kovas</a>
+                                {% elif '-04' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Balandis">Balandis</a>
+                                {% elif '-05' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Gegužė">Gegužė</a>
+                                {% elif '-06' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Birželis">Birželis</a>
+                                {% elif '-07' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Liepa">Liepa</a>
+                                {% elif '-08' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Rugpjūtis">Rugpjūtis</a>
+                                {% elif '-09' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Rugsėjis">Rugsėjis</a>
+                                {% elif '-10' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Spalis">Spalis</a>
+                                {% elif '-11' in n %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Lapkritis">Lapkritis</a>
+                                {% else %}
+                                    <a class="category-panel-block" href="/requests/submitted/?date_from={{ n }}-01&date_to={{ n }}-31" id="{{ n }}" id="{{ n }}" title="Gruodis">Gruodis</a>
+                                {% endif %}
+                                <div class="stays-right">({{ nv }})</div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
         {% endif %}
-    </div>
+    {% endfor %}
+{%  endfor %}
+{#        <a href="{{ obj.url }}" class="category-panel-block">obj.display_value</a>#}
+{#        <div class="stays-right">(obj.count)</div>#}
+{#    <div class="field">#}
+{#        {% if selected_date_from %}#}
+{#            <input type="date" class="input date_from" name="date_from" id="from" value="{{ selected_date_from|stringformat:'s' }}"#}
+{#                   placeholder="{% translate 'Data nuo' %}">#}
+{#        {% else %}#}
+{#            <input type="date" class="input date_from" name="date_from" id="from"#}
+{#                   placeholder="{% translate 'Data nuo' %}">#}
+{#        {% endif %}#}
+{#    </div>#}
+{#    <div class="field">#}
+{#        {% if selected_date_to %}#}
+{#            <input type="date" class="input date_to" name="date_to" id="to" value="{{ selected_date_to|stringformat:'s' }}"#}
+{#                   placeholder="{% translate 'Data iki' %}">#}
+{#        {% else %}#}
+{#            <input type="date" class="input date_to" name="date_to" id="to"#}
+{#                   placeholder="{% translate 'Data iki' %}">#}
+{#        {% endif %}#}
+{#    </div>#}
 </nav>
+{% block scripts %}
+    <script type="text/javascript">
+        $('.dropdown').css('display', 'none');
+        $('.quarter-toggle').click(function(e) {
+            let target = e.target.id + '-quarters';
+            $('.' + target).toggleClass('is-flex');
+            $('.' + target).toggle();
+        });
+        $('.month-toggle').click(function(e) {
+            let target = e.target.id + '-months';
+            $('.' + target).toggleClass('is-flex');
+            $('.' + target).toggle();
+        });
+    </script>
+{% endblock %}

@@ -39,6 +39,7 @@ class Dataset(TranslatableModel):
     PRIORITIZED = "PRIORITIZED"
     FINANCING = "FINANCING"
     HAS_STRUCTURE = "HAS_STRUCTURE"
+    UNASSIGNED = "UNASSIGNED"
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
@@ -50,7 +51,8 @@ class Dataset(TranslatableModel):
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys")
+        METADATA: _("Tik metaduomenys"),
+        UNASSIGNED:_("Nepriskirta")
     }
 
     CREATED = "CREATED"

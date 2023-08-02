@@ -1,19 +1,17 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import CreateView, UpdateView, DetailView
 from vitrina.requests.forms import RequestSearchForm
 from vitrina.orgs.services import has_perm, Action
-from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.helpers import get_selected_value
 from reversion import set_comment
-from vitrina.datasets.services import update_facet_data
+from vitrina.requests.services import update_facet_data
 from haystack.generic_views import FacetedSearchView
 from vitrina.requests.forms import RequestForm
-from django.core.exceptions import ObjectDoesNotExist
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
-from vitrina.classifiers.models import Category, Frequency
+from vitrina.classifiers.models import Category
 from vitrina.requests.models import Request, Organization, RequestStructure
 
 from django.utils.translation import gettext_lazy as _
@@ -23,7 +21,7 @@ from vitrina.views import HistoryView, HistoryMixin
 
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
-    facet_fields = ['filter_status', 'organization', 'category', 'parent_category', 'groups', 'tags']
+    facet_fields = ['status', 'dataset_status', 'organization', 'organization_jurisdiction', 'category', 'parent_category', 'groups', 'tags']
     facet_limit = 100
     paginate_by = 20
     form_class = RequestSearchForm
@@ -37,15 +35,20 @@ class RequestListView(FacetedSearchView):
         facet_fields = context.get('facets').get('fields')
         form = context.get('form')
         extra_context = {
-            'status_facet': update_facet_data(self.request, facet_fields, 'filter_status',
+            'status_facet': update_facet_data(self.request, facet_fields, 'status',
+                                    choices=Request.FILTER_STATUSES),
+            'dataset_status_facet': update_facet_data(self.request, facet_fields, 'dataset_status',
                                               choices=Dataset.FILTER_STATUSES),
             'organization_facet': update_facet_data(self.request, facet_fields, 'organization', Organization),
+            'organization_jurisdiction_facet': update_facet_data(self.request, facet_fields, 'organization_jurisdiction'),
             'category_facet': update_facet_data(self.request, facet_fields, 'category', Category),
             'parent_category_facet': update_facet_data(self.request, facet_fields, 'parent_category', Category),
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'tag_facet': update_facet_data(self.request, facet_fields, 'tags'),
-            'selected_status': get_selected_value(form, 'filter_status', is_int=False),
+            'selected_status': get_selected_value(form, 'status', is_int=False),
+            'selected_dataset_status': get_selected_value(form, 'dataset_status', is_int=False),
             'selected_organization': get_selected_value(form, 'organization'),
+            'selected_organization_jurisdiction': get_selected_value(form, 'organization_jurisdiction'),
             'selected_categories': get_selected_value(form, 'category', True, False),
             'selected_parent_category': get_selected_value(form, 'parent_category', True, False),
             'selected_groups': get_selected_value(form, 'groups', True, False),

@@ -39,6 +39,7 @@ class RepresentativeUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('role'),
@@ -97,6 +98,7 @@ class RepresentativeCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.object_id = object_id
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('email'),
@@ -153,6 +155,7 @@ class PartnerRegisterForm(ModelForm):
     def __init__(self, *args, initial={}, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "partner-register-form"
         self.helper.layout = Layout(
             Field('coordinator_first_name', value=initial.get('coordinator_first_name'), readonly=True),
@@ -253,6 +256,7 @@ class OrganizationPlanForm(ModelForm):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
             Field('organization_id'),
@@ -302,6 +306,7 @@ class OrganizationMergeForm(Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "merge-form"
         self.helper.layout = Layout(
             Field('organization'),

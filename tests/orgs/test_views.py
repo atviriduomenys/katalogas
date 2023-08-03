@@ -478,7 +478,8 @@ def test_organization_merge(app: DjangoTestApp):
     merge_organization = OrganizationFactory()
 
     dataset = DatasetFactory(organization=organization)
-    request = RequestFactory(organization=organization)
+    request = RequestFactory()
+    request.organizations.add(organization)
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk

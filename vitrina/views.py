@@ -48,7 +48,7 @@ def home(request):
         ),
         'requests': (
             Request.public.
-            select_related('organization').
+            prefetch_related('organizations').
             order_by('-created')[:3]
         ),
         'projects': (

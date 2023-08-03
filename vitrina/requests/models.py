@@ -74,7 +74,6 @@ class Request(models.Model):
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
     planned_opening_date = models.DateField(blank=True, null=True)
     purpose = models.CharField(max_length=255, blank=True, null=True)
@@ -87,6 +86,8 @@ class Request(models.Model):
     is_public = models.BooleanField(default=True)
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
+    organizations = models.ManyToManyField(Organization)
+
 
     objects = models.Manager()
     public = PublicRequestManager()
@@ -102,8 +103,8 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        if self.organization:
-            parents.extend(self.organization.get_acl_parents())
+        if self.organizations and self.organizations.first():
+            parents.extend(self.organizations.first().get_acl_parents())
         return parents
     
 
@@ -123,8 +124,8 @@ class Request(models.Model):
         return self.status == self.CREATED
     
     def jurisdiction(self) -> int | None:
-        if self.organization:
-            root_org = self.organization.get_root()
+        if self.dataset:
+            root_org = self.dataset.organization.get_root()
             if root_org.get_children_count() > 1:
                 return root_org.pk
         return None

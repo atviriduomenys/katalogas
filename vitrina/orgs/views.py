@@ -658,7 +658,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
 
         # Merge Request objects
         for obj in self.organization.request_set.all():
-            obj.organization = self.merge_organization
+            obj.organizations.add(self.merge_organization)
             obj.save()
 
         # Merge Representative objects

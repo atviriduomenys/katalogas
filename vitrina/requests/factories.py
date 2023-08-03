@@ -2,8 +2,8 @@ import factory
 import faker
 from factory.django import DjangoModelFactory
 
-from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.requests.models import Request, RequestStructure
 
 
@@ -16,7 +16,6 @@ class RequestFactory(DjangoModelFactory):
     version = 1
     is_existing = True
     is_public = True
-    organization = factory.SubFactory(OrganizationFactory)
     dataset = factory.SubFactory(DatasetFactory)
 
     @classmethod
@@ -24,8 +23,18 @@ class RequestFactory(DjangoModelFactory):
         request = model_class(*args, **kwargs)
         fake = faker.Faker()
         request.title = fake.word()
-        request.save()
         return request
+    
+    @factory.post_generation
+    def organizations(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for org in extracted:
+                self.organizations.add(org)
 
 
 class RequestStructureFactory(DjangoModelFactory):

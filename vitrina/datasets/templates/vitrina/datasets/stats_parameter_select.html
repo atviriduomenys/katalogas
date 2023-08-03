@@ -1,0 +1,45 @@
+{% load i18n parler_tags %}
+<div class="is-flex">
+    <div class="stays-right">
+        <div class="columns">
+            <div class="column">
+                <form action="/datasets/stats/{{ filter }}{% if current_object %}/{{ current_object }}{% endif %}" method="GET">
+                    <input type="hidden" name="indicator" value="{{ active_indicator }}"/>
+                    <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                    <div class="select">
+                        <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                            {% if active_filter == 'publication' %}
+                                <option value="sort-year-desc" {% if sort == 'sort-year-desc' %}selected{% endif %}>{% translate "Naujausi" %}</option>
+                                <option value="sort-year-asc" {% if sort == 'sort-year-asc' %}selected{% endif %}>{% translate "Seniausi" %}</option>
+                            {% endif %}
+                            <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
+                            <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="column">
+                <form action="/datasets/stats/{{ filter }}{% if current_object %}/{{ current_object }}{% endif %}" method="GET">
+                    <input type="hidden" name="sort" value="{{ sort }}"/>
+                    <div><span style="float:right">{% translate "Rodiklis" %}</span></div>
+                    <div class="select">
+                      <select name="indicator" id="stats-parameter" onchange="this.form.submit()">
+                        <option value="download-request-count" {% if active_indicator == 'download-request-count' %}selected{% endif %}>Atsisiuntimų (užklausų) skaičius</option>
+                        <option value="download-object-count" {% if active_indicator == 'download-object-count' %}selected{% endif %}>Atsisiuntimų (objektų) skaičius</option>
+                        <option value="object-count" {% if active_indicator == 'object-count' %}selected{% endif %}>Objektų skaičius</option>
+                        <option value="field-count" {% if active_indicator == 'field-count' %}selected{% endif %}>Savybių (duomenų laukų) skaičius</option>
+                        <option value="model-count" {% if active_indicator == 'model-count' %}selected{% endif %}>Esybių (modelių) skaičius</option>
+                        <option value="distribution-count" {% if active_indicator == 'distribution-count' %}selected{% endif %}>Duomenų šaltinių (distribucijų) skaičius</option>
+                        <option value="dataset-count" {% if active_indicator == 'dataset-count' %}selected{% endif %}>Duomenų rinkinių skaičius</option>
+                        <option value="request-count" {% if active_indicator == 'request-count' %}selected{% endif %}>Poreikių skaičius</option>
+                        <option value="project-count" {% if active_indicator == 'project-count' %}selected{% endif %}>Projektų skaičius</option>
+                        {% if filter != 'level' %}
+                            <option value="level-average" {% if active_indicator == 'level-average' %}selected{% endif %}>Brandos lygis (vidurkis)</option>
+                        {% endif %}
+                      </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -2,8 +2,11 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm
+
+
 
 from django.utils.translation import gettext_lazy as _
 
@@ -20,6 +23,7 @@ class LoginForm(Form):
         self.user_cache = None
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "login-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -46,11 +50,15 @@ class RegisterForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("El. paštas"), required=True, error_messages={})
-    agree_to_terms = BooleanField(label="Sutinku su", required=False)
+    agree_to_terms = BooleanField(label=_("Sutinku su"), required=False)
     password1 = CharField(label=_("Slaptažodis"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
     password2 = CharField(label=_("Pakartokite slaptažodį"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+
+    error_messages = {
+        'password_mismatch': _('Slaptažodžio laukai nesutapo'),
+    }
 
     class Meta:
         model = User
@@ -59,6 +67,7 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "register-form"
         self.helper.layout = Layout(
             Field('first_name', placeholder=_("Vardas")),
@@ -85,11 +94,40 @@ class RegisterForm(UserCreationForm):
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
 
+class PasswordSetForm(ModelForm):
+    password = CharField(label=_("Slaptažodis"), strip=False,
+                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
+    confirm_password = CharField(label=_("Pakartokite slaptažodį"), strip=False,
+                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+    
+    class Meta:
+        model = User
+        fields = [
+            'password',
+            'confirm_password'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "password-set-form"
+        self.helper.layout = Layout(
+            Field('password', placeholder=_("Slaptažodis")),
+            Field('confirm_password', placeholder=_("Pakartokite slaptažodį")),
+            Submit('submit', _("Pakeisti slatažodį"), css_class='button is-primary')
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
 
 class PasswordResetForm(BasePasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -119,6 +157,7 @@ class PasswordResetConfirmForm(SetPasswordForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-confirm-form"
         self.helper.layout = Layout(
             Field('new_password1', placeholder=_("Naujas slaptažodis")),
@@ -128,6 +167,11 @@ class PasswordResetConfirmForm(SetPasswordForm):
 
 
 class UserProfileEditForm(ModelForm):
+    first_name = CharField(label=_("Vardas"), required=False)
+    last_name = CharField(label=_("Pavardė"), required=False)
+    phone = CharField(label=_("Telefonas"), required=False)
+    email = EmailField(label=_("El. paštas"), required=True)
+
     class Meta:
         model = User
         fields = [
@@ -141,6 +185,7 @@ class UserProfileEditForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "user-profile-form"
         self.helper.layout = Layout(
                 Div(Div(Field('first_name', css_class='input', placeholder=_('Vardas')),

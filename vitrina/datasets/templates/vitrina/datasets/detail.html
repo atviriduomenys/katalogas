@@ -12,6 +12,7 @@
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
 {% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
+{% block parent_url %}{% url 'dataset-list' %}{% endblock %}
 {% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block content %}
@@ -44,25 +45,28 @@
                         {{ dataset.description | linebreaks | urlizetrunc:42 }}
                     {% endobjectlanguage %}
                 </p>
+
+                {% if dataset.dataset_files.all %}
+                    <div class="mb-5">
+                        {% for file in dataset.dataset_files.all %}
+                            <div>
+                                <span><a href="{{ file.file.url }}"><i class="fas fa-file"></i> {{ file.filename_without_path }}</a></span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 {# tags #}
                 {% include "./tags.html" %}
                 {# main info #}
                 {% include "./coretable.html" %}
             </div>
-
-                <div class="content structure-block no-margin-bottom">
-                    <h4 class="custom-title is-size-4-mobile is-inline-block">{% translate "Rinkinio struktūra" %}</h4>
-                    <span class="icon info-icon has-tooltip-multiline m-r-md" data-tooltip="{% translate 'Informacija apie duomenų rinkinio duomenis' %}">
-                        <i class="fas fa-info-circle"></i>
-                    </span>
-                     <a href="{% url 'dataset-structure' dataset.pk %}" class="button is-primary structure-button">{% translate "Peržiūrėti" %}</a>
-                </div>
         </div>
         <div class="column is-one-third">
             <div class="dataset-organization">
                 <div class="is-hidden-mobile">
                     {% if org_logo %}
-                        <img src="/image/{{ org_logo }}" class="image max-128x128 m-b-md">
+                        <img src="{{MEDIA_URL}}{{ org_logo.url }}" class="image max-128x128 m-b-md">
                     {% endif %}
                 </div>
 
@@ -122,14 +126,143 @@
             </div>
         </div>
     </div>
-    {% if resources %}
-        <div class="columns no-margin-bottom">
-            <div class="column is-full">
-                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
-                {% include 'vitrina/datasets/datatable.html' %}
+    {% if not dataset.series and not dataset.service %}
+        {% if resources %}
+            <div class="columns no-margin-bottom">
+                <div class="column is-full">
+                    <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
+                    {% include 'vitrina/datasets/datatable.html' %}
+                </div>
             </div>
-        </div>
+        {% else %}
+            {% include 'vitrina/datasets/add_resource.html' %}
+        {% endif %}
     {% endif %}
+    {% if can_update_dataset %}
+        <div class="buttons is-right">
+        <a href="{%url 'dataset-relation-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex">
+            {% translate "Susieti su duomenų rinkiniu" %}
+        </a>
+    </div>
+    {% endif %}
+    {% if part_of %}
+    <div class="mb-6">
+        {% for relation, dataset_relations in part_of %}
+            <div class="columns">
+                <div class="column is-full">
+                    <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation }}</h4>
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                        <thead>
+                            <tr>
+                                <th>{% translate "Duomenų rinkinys" %}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dr in dataset_relations %}
+                                <tr>
+                                    <td><a href="{{ dr.part_of.get_absolute_url }}">{{ dr.part_of }}</a></td>
+                                    <td>
+                                        {% if can_update_dataset %}
+                                        <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
+                                           onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
+                                           class="button is-link is-small is-pulled-right"
+                                           id="delete_resource">{% translate "Trinti" %}
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if related_datasets %}
+    <div class="mb-6">
+        {% for relation, dataset_relations in related_datasets %}
+            <div class="columns">
+                <div class="column is-full">
+                    <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation.inversive_title }}</h4>
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                        <thead>
+                            <tr>
+                                <th>{% translate "Duomenų rinkinys" %}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dr in dataset_relations %}
+                                <tr>
+                                    <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
+                                    <td>
+                                        {% if can_update_dataset %}
+                                        <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
+                                           onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
+                                           class="button is-link is-small is-pulled-right"
+                                           id="delete_resource">{% translate "Trinti" %}
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="columns mt-6">
+        <div class="column is-full">
+            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h4>
+            {% if attributions %}
+                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <thead>
+                    <tr>
+                        <th>{% translate "Priskyrimo rūšis" %}</th>
+                        <th>{% translate "Organizacija" %}</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for a in attributions %}
+                        <tr>
+                            <td>{{ a.attribution }}</td>
+                            <td>
+                                {% if a.organization %}
+                                    <a href="{{ a.organization.get_absolute_url }}">{{ a.organization }}</a>
+                                {% else %}
+                                    {{ a.agent }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if can_update_dataset %}
+                                <a href="{%url 'attribution-delete' dataset.pk a.pk %}"
+                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                   class="button is-link is-small is-pulled-right"
+                                   id="delete_attribution">{% translate "Trinti" %}
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if can_update_dataset %}
+                <div class="buttons is-right">
+                    <a href="{%url 'attribution-add' dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_attribution">
+                        {% translate "Priskirti organizaciją" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="columns no-margin-bottom">
         <div class="column is-three-quarters">
             {% comments obj=dataset user=request.user %}

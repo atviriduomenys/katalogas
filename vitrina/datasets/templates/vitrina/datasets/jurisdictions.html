@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių valdymo sritys" %}
+{% endblock %}
+
+{% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% include "vitrina/datasets/filters.html" %}
+        </div>
+        <div class="column is-three-quarters">
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="jurisdiction" %}
+            <div class="is-flex">
+                <span>{% translate "Valdymo sritis" %}</span>
+                {% include "vitrina/datasets/stats_parameter_translation.html" %}
+            </div>
+            {% if single_org %}
+                {% for o in jurisdiction_data  %}
+                    <div class="is-flex">
+                        <a {% if o.has_orgs == False %}
+                                href="/datasets/{{ o.url }}"
+                            {% else %}
+                                href="/datasets/stats/jurisdiction/{{ o.id }}"
+                            {% endif %}
+                                id="{{ o.id }}">
+                            <strong style="color: black;">{{ o.title }}</strong>
+                        </a>
+                        <div class="stays-right">
+                            <a href="">{{ o.count }}</a>
+                        </div>
+                    </div>
+                    <progress class="progress is-info" value="{{ o.count }}" max="{{ max_count }}"></progress>
+                {% endfor %}
+            {% else %}
+                {% for org in jurisdiction_data %}
+                    <div class="is-flex">
+                        <a {% if org.has_orgs == False %}
+                                href="/datasets/{{ org.url }}"
+                            {% else %}
+                                href="/datasets/stats/jurisdiction/{{ org.filter_value }}?{{ request.GET.urlencode }}"
+                            {% endif %}
+                            id="{{ area.filter_value }}_id">
+                            <strong style="color: black;">{{ org.display_value }}</strong>
+                        </a>
+                        <div class="stays-right">
+                            <a href="/datasets/{{ org.url }}">
+                                {% if active_indicator == 'dataset-count' %}
+                                    {{ org.count }}
+                                {% else %}
+                                    {{ org.stats }}
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                    <progress class="progress is-info"
+                              {% if active_indicator == 'dataset-count' %}
+                                value="{{ org.count }}"
+                              {% else %}
+                                value="{{ org.stats }}"
+                              {% endif %}
+                              max="{{ max_count }}"></progress>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

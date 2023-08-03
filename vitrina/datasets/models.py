@@ -1,6 +1,7 @@
-import datetime
 import pathlib
 import tagulous
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.urls import reverse
@@ -9,7 +10,9 @@ from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
+from random import randrange
 
+from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization
 from vitrina.catalogs.models import Catalog, HarvestingJob
@@ -32,7 +35,25 @@ class DatasetGroup(TranslatableModel):
         return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
+class DatasetFile(models.Model):
+    file = FilerFileField(verbose_name=_("Failas"), on_delete=models.CASCADE)
+    dataset = models.ForeignKey(
+        'Dataset',
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.CASCADE,
+        related_name='dataset_files'
+    )
+
+    class Meta:
+        db_table = 'dataset_file'
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
+
 class Dataset(TranslatableModel):
+    UPLOAD_TO = "data/files"
+
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
     METADATA = "METADATA"
@@ -43,9 +64,7 @@ class Dataset(TranslatableModel):
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (METADATA, _("Parengti metaduomenys")),
-        (PRIORITIZED, _("Įvertinti prioritetai")),
-        (FINANCING, _("Įvertintas finansavimas")),
+        (HAS_STRUCTURE, _("Struktūruotas")),
     }
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
@@ -63,6 +82,7 @@ class Dataset(TranslatableModel):
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
     PROJECT_SET = "PROJECT_SET"
+    REQUEST_SET = "REQUEST_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -71,7 +91,8 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
-        PROJECT_SET: _("Priskirta projektui")
+        PROJECT_SET: _("Priskirta projektui"),
+        REQUEST_SET: _("Priskirta poreikiui")
     }
 
     API_ORIGIN = "api"
@@ -93,7 +114,7 @@ class Dataset(TranslatableModel):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Kategorija'))
+    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
@@ -118,7 +139,6 @@ class Dataset(TranslatableModel):
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    groups = models.ManyToManyField(DatasetGroup)
     tags = TagField(
         blank=True,
         force_lowercase=True,
@@ -132,6 +152,32 @@ class Dataset(TranslatableModel):
     )
 
     notes = models.TextField(blank=True, null=True)
+
+    # DCAT 3 fields
+    part_of = models.ManyToManyField(
+        'DatasetRelation',
+        related_name="related_datasets",
+        verbose_name=_("Duomenų rinkinio ryšiai")
+    )
+    type = models.ManyToManyField('Type', verbose_name=_("Tipas"))
+    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
+    endpoint_type = models.ForeignKey(
+        'DataServiceType',
+        on_delete=models.SET_NULL,
+        verbose_name=_("API formatas"),
+        null=True,
+        blank=True
+    )
+    endpoint_description = models.URLField(_("API specifikacija"), null=True, blank=True)
+    endpoint_description_type = models.ForeignKey(
+        'DataServiceSpecType',
+        on_delete=models.SET_NULL,
+        verbose_name=_("API specifikacijos formatas"),
+        null=True,
+        blank=True
+    )
+    service = models.BooleanField(_("DataService rinkinys"), default=False)
+    series = models.BooleanField(_("DataSeries rinkinys"), default=False)
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
@@ -153,6 +199,8 @@ class Dataset(TranslatableModel):
     financing_required = models.BigIntegerField(blank=True, null=True)
     will_be_financed = models.BooleanField(blank=True, default=False)
     # --------------------------->8-------------------------------------
+
+    metadata = GenericRelation('vitrina_structure.Metadata')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -178,29 +226,41 @@ class Dataset(TranslatableModel):
         return list(self.tags.all().values_list('name', flat=True))
 
     def get_all_groups(self):
-        return self.groups.all()
+        ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
+        return DatasetGroup.objects.filter(pk__in=ids)
 
     def get_group_list(self):
-        return list(self.groups.all().values_list('pk', flat=True))
+        return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct())
 
     def parent_category(self):
-        if self.category:
-            if not self.category.is_root():
-                return self.category.get_root().pk
+        parents = []
+        for category in self.category.all():
+            if not category.is_root():
+                parents.append(category.get_root().pk)
             else:
-                return self.category.pk
+                parents.append(category.pk)
+        return parents
+
+    def level(self):
+        return randrange(5)
 
     @property
     def filter_status(self):
-        if self.datasetstructure_set.exists():
+        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
             return self.HAS_STRUCTURE
-        if self.status == self.HAS_DATA or self.status == self.INVENTORED or self.status == self.METADATA:
+        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
+            return self.HAS_DATA
+        if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
         return None
 
     @property
     def formats(self):
-        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [
+            str(obj.get_format()).upper()
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
 
     @property
     def distinct_formats(self):
@@ -226,8 +286,69 @@ class Dataset(TranslatableModel):
         return [tag.name.strip() for tag in self.tags.tags]
 
     @property
-    def category_title(self):
-        return self.category.title if self.category else ""
+    def category_titles(self):
+        return self.category.values_list('title', flat=True)
+
+    def jurisdiction(self) -> int | None:
+        if self.organization:
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
+
+    def update_level(self):
+        if metadata := self.metadata.first():
+            levels = Metadata.objects.filter(
+                dataset=self,
+                content_type__in=[
+                    ContentType.objects.get_for_model(Model),
+                    ContentType.objects.get_for_model(Base),
+                    ContentType.objects.get_for_model(Property)
+                ],
+                level__isnull=False,
+            ).values_list('level', flat=True)
+
+            if levels:
+                metadata.average_level = sum(levels) / len(levels)
+                metadata.save()
+
+    def get_level(self):
+        if metadata := self.metadata.first():
+            return metadata.average_level
+        return None
+
+    @property
+    def name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ""
+
+    def public_types(self):
+        return list(self.type.filter(show_filter=True).values_list('pk', flat=True))
+
+    def type_order(self):
+        order = 0
+        related_datasets = self.related_datasets.all()
+        part_of = self.part_of.all()
+        if related_datasets and not part_of:
+            order = 3
+        elif related_datasets and part_of:
+            order = 2
+        elif part_of:
+            order = 1
+        return order
+
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
 
 
 # TODO: To be merged into Dataset:
@@ -476,6 +597,9 @@ class DatasetStructure(models.Model):
     def filename_without_path(self):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
+    def get_acl_parents(self):
+        return [self.dataset]
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructureField(models.Model):
@@ -529,3 +653,123 @@ class HarvestedVisit(models.Model):
         managed = False
         db_table = 'harvested_visit'
 # --------------------------->8-------------------------------------
+
+
+class Attribution(models.Model):
+    CREATOR = 'creator'
+    CONTRIBUTOR = 'contributor'
+    PUBLISHER = 'publisher'
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Ryšio identifikatorius"), max_length=255, blank=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
+
+    class Meta:
+        db_table = 'attribution'
+
+    def __str__(self):
+        return self.title if self.title else self.name
+
+
+class DatasetAttribution(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name=_("Duomenų rinkinys"))
+    attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_("Organizacija")
+    )
+    agent = models.CharField(_("Agentas"), max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = 'dataset_attribution'
+
+    def __str__(self):
+        if self.organization:
+            return f"{self.attribution} - {self.dataset}, {self.organization}"
+        else:
+            return f"{self.attribution} - {self.dataset}, {self.agent}"
+
+
+class Type(TranslatableModel):
+    SERIES = "series"
+    SERVICE = "service"
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), max_length=255),
+    )
+    description = models.TextField(_("Apibūdinimas"), blank=True)
+    show_filter = models.BooleanField(_("Rodyti filtre"), default=False)
+
+    class Meta:
+        db_table = 'type'
+        verbose_name = _("Tipas")
+        verbose_name_plural = _("Tipai")
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
+
+
+class Relation(TranslatableModel):
+    PART_OF = 'part-of'
+    SERIES = "series"
+    SERVICE = "service"
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), max_length=255),
+        inversive_title=models.CharField(_("Atvirkštinio ryšio pavadinimas"), max_length=255)
+    )
+
+    class Meta:
+        db_table = 'relation'
+        verbose_name = _("Ryšys")
+        verbose_name_plural = _("Ryšiai")
+
+    def __str__(self):
+        return self.safe_translation_getter('title', language_code=self.get_current_language())
+
+
+class DatasetRelation(models.Model):
+    relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
+    dataset = models.ForeignKey(
+        Dataset,
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.PROTECT,
+        related_name="dataset_relations"
+    )
+    part_of = models.ForeignKey(
+        Dataset,
+        verbose_name=_("Priklauso rinkiniui"),
+        on_delete=models.PROTECT,
+        related_name="related_datasets"
+    )
+
+    class Meta:
+        db_table = 'dataset_relation'
+        verbose_name = _("Duomenų rinkinių ryšys")
+        verbose_name_plural = _("Duomenų rinkinių ryšiai")
+
+
+class DataServiceType(models.Model):
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+
+    class Meta:
+        db_table = 'data_service_type'
+
+    def __str__(self):
+        return self.title
+
+
+class DataServiceSpecType(models.Model):
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+
+    class Meta:
+        db_table = 'data_service_spec_type'
+
+    def __str__(self):
+        return self.title

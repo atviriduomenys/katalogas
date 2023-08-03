@@ -1,9 +1,11 @@
 import csv
+import datetime
 import json
 import operator
 import os
 import sys
 from functools import reduce
+from itertools import chain
 from itertools import groupby
 from pathlib import Path
 from typing import Any
@@ -13,19 +15,106 @@ from typing import NamedTuple
 from typing import Optional
 from typing import TextIO
 from typing import TypedDict
+from typing import Tuple
+from typing import List
+from typing import Dict
 
 from typer import Argument
 from typer import Option
 from typer import run
 
+import xlsxwriter
 import requests
 from pprintpp import pprint as pp
+
+
+QUERY = '''
+query($endCursor: String) {
+  repository(owner: "atviriduomenys", name: "%s") {
+    issues(first: 100, after: $endCursor) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        number
+        state
+        title
+        body
+        labels(first: 10) {
+          nodes {
+            name
+            color
+          }
+        }
+        milestone {
+          number
+          state
+          title
+        }
+        repository {
+          name
+        }
+        projectItems (first: 5) {
+          nodes {
+            project {
+              number
+              title
+            }
+            fieldValues(first: 10) {
+              nodes {
+                ... on ProjectV2ItemFieldIterationValue {
+                  title
+                  startDate
+                  duration
+                  field {
+                    ... on ProjectV2IterationField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldNumberValue {
+                  number
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldSingleSelectValue {
+                  name
+                  field {
+                    ... on ProjectV2SingleSelectField {
+                      name
+                    }
+                  }
+                }
+                ... on ProjectV2ItemFieldTextValue {
+                  text
+                  field {
+                    ... on ProjectV2Field {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      totalCount
+    }
+  }
+}
+'''
 
 
 class Card(TypedDict):
     id: str
     number: int
     title: str
+    body: str
     state: str
     status: str
     repo: str
@@ -40,168 +129,94 @@ class Card(TypedDict):
 
 
 def main(
-    token: str = Argument(..., help="https://github.com/settings/tokens"),
-    project_id: Optional[str] = Argument(None, help=(
-        "Project id (listed if not given)"
+    files: List[str] = Argument(default=None, help=(
+        "List of json files exported with `gh api graphql`."
     )),
-    update: Optional[bool] = Option(False, help="Update cached data."),
+    project: Optional[str] = Option(None, help="Project title."),
     export: Optional[Path] = Option(None, help="Export to CSV file."),
     level: int = Option(4, help=(
         "Show up to (0 - totals, 1 - repo, 2 - milestone, 3 - epic, "
         "4 - sprint, 5 - task)"
-    ))
+    )),
+    order: bool = Option(False, help="Generate order table."),
+    simple: bool = Option(False, help="Generate simple table."),
+    query: str = Option('', '-q', '--query', help="Outpur GraphQL query."),
 ):
-    session = requests.Session()
-    session.headers['Authorization'] = f'Bearer {token}'
+    if query:
+        print(QUERY % query)
+        return
 
-    if project_id is None:
-        _list_projects(session)
-        exit()
+    cards = _extract_cards(files)
 
-    cards = _extract_cached_cards(session, project_id, update=update)
-    cards = _transform_cards(cards)
+    if project is None:
+        _list_projects(cards)
+        return
+
+    cards = _transform_cards(cards, project)
     cards = list(cards)
     if export:
-        if export.name == '-':
-            _cards_to_csv(sys.stdout, cards, level)
-        elif export.suffix == '.csv':
-            with export.open('w') as f:
-                _cards_to_csv(f, cards, level)
+        if order:
+            if export.is_dir():
+                _cards_to_xlsx_order(export, cards)
+            else:
+                raise ValueError("Export path must be a directory.")
+        elif simple:
+            if export.name == '-':
+                _cards_to_simple_csv(sys.stdout, cards)
+            elif export.suffix == '.csv':
+                with export.open('w') as f:
+                    _cards_to_simple_csv(f, cards)
+            else:
+                raise NotImplementedError(
+                    f"Don't know how to export to {export.suffix}"
+                )
         else:
-            raise NotImplementedError(
-                f"Don't know how to export to {export.suffix}"
-            )
+            if export.name == '-':
+                _cards_to_csv(sys.stdout, cards, level)
+            elif export.suffix == '.csv':
+                with export.open('w') as f:
+                    _cards_to_csv(f, cards, level)
+            else:
+                raise NotImplementedError(
+                    f"Don't know how to export to {export.suffix}"
+                )
     else:
         _cards_to_ascii(cards, level)
 
+RawCards = Iterable[Dict[str, Any]]
 
-def _list_projects(session: requests.Session) -> None:
-    pp(session.post('https://api.github.com/graphql', json={'query': '''\
-    query{
-        organization(login: "atviriduomenys"){
-          projectsNext(first: 10) {
-            nodes {
-              id
-              title
-            }
-          }
-        }
-    }
-    '''}).json())
-
-
-def _extract_cached_cards(
-    session: requests.Session,
-    project_id: str,
-    *,
-    update: bool = False,
-) -> Iterator[Card]:
-    cache_dir = os.getenv('XDG_CACHE_HOME', os.path.expanduser('~/.cache'))
-    cache_dir = Path(cache_dir) / 'vitrina'
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / 'github-cards.jsonl'
-
-    if update or not cache_file.exists():
-        cards = _extract_cards(session, project_id)
-        with cache_file.open('w') as f:
-            for card in cards:
-                line = json.dumps(card)
-                f.write(line + '\n')
-
-    with cache_file.open() as f:
-        for line in f:
-            card = json.loads(line.strip())
-            yield card
+def _list_projects(cards: RawCards) -> None:
+    print("Choose project:")
+    seen = set()
+    for card in cards:
+        if 'projectItems' not in card:
+            pp(card)
+        for project in card['projectItems']['nodes']:
+            title = project['project']['title']
+            if title not in seen:
+                print(f"- \"{title}\"")
+                seen.add(title)
 
 
 def _extract_cards(
-    session: requests.Session,
-    project_id: str,
+    files: List[str],
 ) -> Iterator[Card]:
-    loop = True
-    cursor = None
-    while loop:
-        resp = session.post('https://api.github.com/graphql', json={
-            'query': '''\
-             query cards($project: ID!, $cursor: String) {
-              node(id: $project) {
-                id
-                ... on ProjectNext {
-                  id
-                  title
-                  items(first: 10, after: $cursor) {
-                    nodes {
-                      content {
-                        ... on Issue {
-                          id
-                          title
-                          number
-                          state
-                          repository {
-                            name
-                          }
-                          milestone {
-                            title
-                          }
-                          labels(first: 10) {
-                            nodes {
-                              name
-                            }
-                          }
-                        }
-                      }
-                      title
-                      fieldValues(first: 10) {
-                        nodes {
-                          value
-                          projectField {
-                            name
-                            settings
-                          }
-                        }
-                      }
-                    }
-                    edges {
-                      cursor
-                    }
-                    pageInfo {
-                      hasNextPage
-                    }
-                  }
-                }
-              }
-            }
-            ''',
-            'variables': {
-                'project': project_id,
-                'cursor': cursor,
-            }
-        })
-
-        resp.raise_for_status()
-        project = resp.json()
-
-        if project['data']['node'] is None:
-            pp(project['errors'])
-            exit()
-
-        if project['data']['node']['items']['edges']:
-            cursor = project['data']['node']['items']['edges'][-1]['cursor']
-        else:
-            cursor = None
-
-        loop = project['data']['node']['items']['pageInfo']['hasNextPage']
-
-        for card in project['data']['node']['items']['nodes']:
-            yield card
+    for file in files:
+        with open(file) as f:
+            for line in f:
+                yield json.loads(line)
 
 
-def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
+def _transform_cards(
+    cards: Iterable[Card],
+    project_title: Optional[str],
+) -> Iterator[Card]:
     for card in cards:
         row = {
             'id': None,
             'number': None,
             'title': None,
+            'body': '',
             'state': None,
             'status': None,
             'repo': None,
@@ -213,54 +228,54 @@ def _transform_cards(cards: Iterable[Card]) -> Iterator[Card]:
             'milestone': None,
         }
 
-        if card['content']:
-            row['id'] = card['content']['id']
-            row['number'] = card['content']['number']
-            row['title'] = card['content']['title']
-            row['state'] = card['content']['state']
-            row['repo'] = card['content']['repository']['name']
-            row['labels'] = [
-                label['name']
-                for label in card['content']['labels']['nodes']
-            ]
-            if card['content']['milestone']:
-                row['milestone'] = card['content']['milestone']['title']
+        row['id'] = card['id']
+        row['number'] = card['number']
+        row['title'] = card['title']
+        row['body'] = card['body']
+        row['state'] = card['state']
+        row['repo'] = card['repository']['name']
+        row['labels'] = [
+            label['name']
+            for label in card['labels']['nodes']
+        ]
+        if card['milestone']:
+            row['milestone'] = card['milestone']['title']
 
-        data = {}
-        for field in card['fieldValues']['nodes']:
-            name = field['projectField']['name']
-            value = field['value']
-            if 'settings' in field['projectField']:
-                settings = json.loads(field['projectField']['settings'])
-                if settings:
-                    if 'options' in settings:
-                        value = _get_option(value, settings)
-                    elif 'configuration' in settings:
-                        value = _get_iteration(value, settings)
-            data[name] = value
+        for project in card['projectItems']['nodes']:
+            if (
+                project_title is not None and
+                project['project']['title'] != project_title
+            ):
+                continue
 
-        row['status'] = data.get('Status')
-        row['sprint'] = data.get('Iteration', {}).get('title')
-        row['sprint_start'] = data.get('Iteration', {}).get('start_date')
-        row['sprint_duration'] = _toint(
-            data.
-            get('Iteration', {}).
-            get('duration')
-        )
-        row['estimate'] = _toint(data.get('Estimate'))
-        row['spent'] = _toint(data.get('Time spent'))
-        row['epic'] = data.get('Epic')
+            row['project'] = project['project']['title']
 
-        if 'epic' not in row['labels'] and row['spent'] is None:
-            row['spent'] = row['estimate']
+            data = {}
+            for field in project['fieldValues']['nodes']:
+                if 'field' in field:
+                    name = field['field']['name']
+                    data[name] = field
 
-        if row['epic']:
-            row['epic'] = _toint(row['epic'].strip('#'))
+            row['status'] = data.get('Status', {}).get('name')
+            row['sprint'] = data.get('Iteration', {}).get('title')
+            row['sprint_start'] = data.get('Iteration', {}).get('startDate')
+            row['sprint_duration'] = _toint(
+                data.get('Iteration', {}).get('duration')
+            )
+            row['estimate'] = _toint(data.get('Estimate', {}).get('number'))
+            row['spent'] = _toint(data.get('Spent', {}).get('number'))
+            row['epic'] = data.get('Epic', {}).get('text')
 
-        if row['title'] is None:
-            row['title'] = data.get('Title')
+            if 'epic' not in row['labels'] and row['spent'] is None:
+                row['spent'] = row['estimate']
 
-        yield row
+            if row['epic']:
+                row['epic'] = _toint(row['epic'].strip('#'))
+
+            if row['title'] is None:
+                row['title'] = data.get('Title')
+
+            yield row
 
 
 def _toint(v: str | int | None) -> int | None:
@@ -345,6 +360,15 @@ def _cards_to_csv__old(f: TextIO, cards: Iterable[Card]) -> None:
 
 
 def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
+    cols = [
+        'total',
+        'repository',
+        'milestone',
+        'epic',
+        'sprint',
+        'task',
+    ]
+    titles = {col: '' for col in cols}
     header = [
         'epic.estimate',
         'epic.spent',
@@ -354,14 +378,21 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
         'task.%',
         '#',
         'level',
-        'title',
-    ]
+    ] + cols + ['body']
     writer = csv.DictWriter(f, header)
     writer.writeheader()
     for row in _summary_totals(cards):
+        titles = {
+            # col: _get_csv_title(row, col, _level, titles)
+            col: (
+                _get_csv_title(row, col, _level, titles)
+                if _level == row.level else ''
+            )
+            for _level, col in enumerate(cols)
+        }
         if row.level - 1 > level:
             continue
-        writer.writerow({
+        row = {
             'epic.estimate': row.estimate.epic,
             'epic.spent': row.spent.epic,
             'epic.%': _get_epic_spent_percent(row),
@@ -370,8 +401,283 @@ def _cards_to_csv(f: TextIO, cards: Iterable[Card], level: int = 4) -> None:
             'task.%': _get_task_spent_percent(row),
             '#': row.number,
             'level': row.level,
-            'title': row.title,
-        })
+            **titles,
+            'body': row.body,
+        }
+        writer.writerow(row)
+
+
+def _get_csv_title(row, col, level, titles):
+    if row.level == level:
+        return row.title
+    elif row.level > level:
+        return titles[col]
+    else:
+        return ''
+
+
+def _cards_to_xlsx_order(
+    path: Path,
+    cards: Iterable[Card],
+) -> None:
+    cards = list(cards)
+
+    titles = {
+        card['number']: card['title']
+        for card in cards
+    }
+
+    cards = [card for card in cards if card['status'] == 'Done']
+
+    cards = sorted(cards, key=_get_sprint_num)
+
+    repos = {
+        'katalogas': 'Katalogo tobulinimas',
+        'saugykla': 'Saugyklos tobulinimas',
+    }
+
+    formats = {
+        't': {
+            'align': 'center',
+            'valign': 'vcenter',
+        },
+        'd0': {
+            'num_format': 'yyyy-mm-dd',
+        },
+        'd': {
+            'align': 'left',
+            'border': 1,
+            'num_format': 'yyyy-mm-dd',
+        },
+        'h': {
+            'border': 1,
+            'bg_color': '#d9d9d9',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'hb': {
+            'border': 1,
+            'bg_color': '#d9d9d9',
+            'bold': True,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'hc': {
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'c': {
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'rb': {
+            'border': 1,
+            'bold': True,
+            'align': 'right',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'cb': {
+            'border': 1,
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        'b': {
+            'border': 1,
+            'bold': True,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+        '': {
+            'border': 1,
+            'valign': 'vcenter',
+            'text_wrap': True,
+        },
+    }
+
+    wbtypes = [
+        # Užduotims
+        {
+            'title': [
+                'ATVIRŲ DUOMENŲ SĄVOKŲ ŽINYNO MODULIO SUKŪRIMAS IR '
+                'ATVIRŲ DUOMENŲ PORTALO (ADP) PLĖTROS SUKURIANT '
+                'INTEGRACINES SĄSAJAS',
+                'PASLAUGŲ VIEŠOJO PIRKIMO–PARDAVIMO SUTARTIES '
+                'NR. 6F-30(2022)',
+                'UŽDUOTIS PASLAUGŲ SUTEIKIMUI',
+            ],
+            'date': lambda s, e: s - datetime.timedelta(days=2),
+            'filename': 'S{sprint:02}U_{date:%Y-%m-%d}.xlsx',
+            'A1': 'SUDERINO',
+            'B1': '',
+            'A2': 'Užsakovo atstovas - projekto vadovas:',
+            'B2': 'Paslaugų teikėjo atstovas - projekto vadovas',
+            'A3': 'Julius Belickas',
+            'B3': 'Ernestas Vyšniauskas',
+            'body': 1,
+        },
+        # Aktams
+        {
+            'title': [
+                'ATVIRŲ DUOMENŲ SĄVOKŲ ŽINYNO MODULIO SUKŪRIMAS IR '
+                'ATVIRŲ DUOMENŲ PORTALO (ADP) PLĖTROS SUKURIANT '
+                'INTEGRACINES SĄSAJAS',
+                'PASLAUGŲ VIEŠOJO PIRKIMO–PARDAVIMO SUTARTIES '
+                'NR. 6F-30(2022)',
+                'UŽDUOČIŲ PRIĖMIMO AKTAS',
+            ],
+            'date': lambda s, e: e + datetime.timedelta(days=2),
+            'filename': 'S{sprint:02}A_{date:%Y-%m-%d}.xlsx',
+            'A1': 'ĮVYKDė IR PATEIKĖ:',
+            'B1': 'PATIKRINO IR PRIĖMĖ',
+            'A2': 'Paslaugų teikėjo atstovas - projekto vadovas',
+            'B2': 'Užsakovo atstovas - projekto vadovas:',
+            'A3': 'Ernestas Vyšniauskas',
+            'B3': 'Julius Belickas',
+            'body': 0,
+        },
+    ]
+
+    for wbtype in wbtypes:
+        sprints = groupby(cards, key=_get_sprint_num)
+        for sprint, tasks in sprints:
+            task = next(tasks)
+            tasks = chain([task], tasks)
+            start, end = _get_sprint_dates(task)
+            date = wbtype['date'](start, end)
+
+            wb = xlsxwriter.Workbook(
+                path / wbtype['filename'].format(
+                    date=date,
+                    sprint=sprint,
+                )
+            )
+            ws = wb.add_worksheet()
+
+            ws.set_column(0, 0, 30)
+            ws.set_column(1, 1, 20)
+            ws.set_column(2, 2, 80)
+
+            fmt = {k: wb.add_format(v) for k, v in formats.items()}
+
+            r = 1
+            ws.merge_range(
+                f'A{r}:C{r}',
+                '\n'.join(wbtype['title']),
+                fmt['t'],
+            )
+            ws.set_row(r-1, 60)
+
+            r += 1
+            ws.write(f'C{r}', date, fmt['d0'])
+
+            r += 1
+            ws.write(f'A{r}', 'Etapas', fmt['hb'])
+            ws.write(f'B{r}', 'Pirmas', fmt['c'])
+
+            r += 1
+            ws.write(f'A{r}', 'Iteracija', fmt['hb'])
+            ws.write(f'B{r}', sprint, fmt['c'])
+
+            r += 1
+            ws.merge_range(
+                f'A{r}:A{r+1}',
+                'Iteracijos vykdymo periodas',
+                fmt['b'],
+            )
+            ws.write(f'B{r}', 'Pradžia', fmt[''])
+            ws.write(f'C{r}', 'Pabaiga', fmt[''])
+
+            r += 1
+            ws.write(f'B{r}', start, fmt['d'])
+            ws.write(f'C{r}', end, fmt['d'])
+
+            r += 1
+            ws.write(f'A{r}', 'Užduoties pavadinimas', fmt['hb'])
+            ws.write(f'B{r}', 'Laiko sąnaudos, val.', fmt['hb'])
+            ws.write(f'C{r}', 'Užduoties aprašymas', fmt['hb'])
+
+            tnum = 1
+            hours = 0
+            epics = sorted(tasks, key=_by_epic_group)
+            epics = groupby(epics, key=_by_epic_group)
+            for epic, tasks in epics:
+                task = next(tasks)
+                tasks = chain([task], tasks)
+
+                r += 1
+                repo = repos.get(task['repo'], task['repo'])
+                epic = titles.get(epic, '(no epic)')
+                if epic.startswith("Kitos "):
+                    ws.merge_range(
+                        f'A{r}:C{r}',
+                        "Kitų,  pirkimo specifikacijoje neįvardintų "
+                        "Katalogo ir Saugyklos plėtros ir  patobulinimų, "
+                        "kurių nebuvo galima numatyti arba apibrėžti "
+                        "specifikavimo metu, paslaugų teikimas",
+                        fmt['b'],
+                    )
+                else:
+                    ws.merge_range(f'A{r}:C{r}', f"{repo}: {epic}", fmt['b'])
+
+                for task in tasks:
+                    if '---' in task['body']:
+                        body = task['body'].rsplit('---', 1)[wbtype['body']]
+                    else:
+                        body = task['body']
+
+                    title = task['title']
+
+                    r += 1
+                    ws.write(f'A{r}', f"{tnum}. {title}", fmt[''])
+                    ws.write(f'B{r}', task['spent'], fmt['c'])
+                    ws.write(f'C{r}', body, fmt[''])
+
+                    tnum += 1
+                    hours += task['spent']
+
+            r += 1
+            ws.write(f'A{r}', 'Viso val.:', fmt['rb'])
+            ws.write(f'B{r}', hours, fmt['cb'])
+
+            r += 3
+            ws.write(f'A{r}', wbtype['A1'])
+
+            r += 2
+            ws.write(f'A{r}', wbtype['A2'])
+            ws.write(f'C{r}', wbtype['B2'])
+
+            r += 1
+            ws.write(f'A{r}', wbtype['A3'])
+            ws.write(f'C{r}', wbtype['B3'])
+
+            wb.close()
+
+
+def _get_sprint_num(card: Card) -> int:
+    title = card['sprint']
+    if title == '(no sprint)':
+        return 0
+    else:
+        _, num = title.split()
+        return int(num)
+
+
+def _get_sprint_dates(card: Card) -> Tuple[datetime.date, datetime.date]:
+    if card['sprint_start']:
+        start = datetime.date.fromisoformat(card['sprint_start'])
+        duration = card['sprint_duration']
+        end = start + datetime.timedelta(days=duration)
+    else:
+        start = '-'
+        end = '-'
+    return start, end
 
 
 class Hours(NamedTuple):
@@ -382,6 +688,7 @@ class Hours(NamedTuple):
 class Summary(NamedTuple):
     number: int | None
     title: str | None
+    body: str | None
     level: int
     estimate: Hours
     spent: Hours
@@ -426,6 +733,7 @@ def _get_epic_spent_percent(row: Card) -> int | None:
 def _get_task_spent_percent(row: Card) -> int | None:
     if (
         row.estimate.task is not None and
+        row.estimate.task > 0 and
         row.spent.task is not None and
         row.spent.task > 0
     ):
@@ -563,6 +871,7 @@ def _summary_by_task(tasks: list[Card]) -> Iterator[Summary]:
         yield Summary(
             number=task['number'],
             title=task['title'],
+            body=task['body'],
             level=5,
             estimate=Hours(
                 epic=None,
@@ -581,6 +890,7 @@ def _sum(
     level: int,
     estimate: int | None = 0,
     spent: int | None = 0,
+    body: str = '',
     **kwargs,
 ) -> Summary:
     estimate_epic = estimate or 0
@@ -603,8 +913,49 @@ def _sum(
             task=spent_task
         ),
         level=level,
+        body=body,
         **kwargs
     )
+
+
+
+def _cards_to_simple_csv(f: TextIO, cards: Iterable[Card]) -> None:
+    header = [
+        'repo',
+        'epic #',
+        'task #',
+        'task',
+        'sprint',
+        'estimate',
+        'spent',
+        'status',
+        'state',
+    ]
+    writer = csv.DictWriter(f, header)
+    writer.writeheader()
+    for card in sorted(cards, key=lambda c: (
+        (c['sprint_start'] or ''),
+        c['repo'],
+        f"{(c['epic'] or 0):04}",
+        c['title'],
+    )):
+        if 'epic' in card['labels']:
+            continue
+        row = {
+            'repo': card['repo'],
+            'epic #': card['epic'],
+            'task #': card['number'],
+            'task': card['title'],
+            'sprint': (
+                f"{card['sprint']} ({card['sprint_start']})"
+                if card['sprint'] else '-'
+            ),
+            'estimate': card['estimate'],
+            'spent': card['spent'],
+            'status': card['status'],
+            'state': card['state'],
+        }
+        writer.writerow(row)
 
 
 if __name__ == '__main__':

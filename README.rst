@@ -59,6 +59,7 @@ Then we can run::
     poetry install
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput
+    poetry run python manage.py createinitialrevisions
 
 To generate static files run::
 
@@ -99,3 +100,23 @@ Scripts that are run periodically:
 - Script that adds holiday dates to database::
 
     poetry run python scripts/add_holiday_dates.py
+
+
+To set up a visp social account provider:
+
+- Create a viisp_key object in admin panel as a superuser::
+
+  The contents of viisp_key object needs to be an rsa key encoded in base64.
+  Example of a fake key can be found in test resources.
+
+
+- Create visp provider in admin panel as a superuser::
+
+  The data should be as follows:
+  Provider: Viisp
+  Name: viisp
+  Client_id: viisp
+  Sites: Choose the site that matches SITE_ID in settings and points to current domain.
+  The host machine should be connected to vpn or whitelisted to be able to access test env of viisp provider.
+  All other fields should be left unchanged.
+

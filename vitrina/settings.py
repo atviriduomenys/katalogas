@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import sys
 
-import environ
 import os
+import environ
 from pathlib import Path
+from base64 import b64decode
 
 from django.utils.translation import gettext_lazy as _
 
@@ -22,24 +22,34 @@ env = environ.Env()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(env.path(
+    'VITRINA_BASE_PATH',
+    default=Path(__file__).resolve().parent.parent,
+))
 
 # Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(BASE_DIR / '.env')
 
-BASE_DB_PATH = os.path.join(BASE_DIR, 'resources/adp-pg.sql')
-LOCALE_PATHS = [os.path.join(BASE_DIR, 'vitrina/locale/')]
+BASE_DB_PATH = BASE_DIR / 'resources/adp-pg.sql'
+LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# TODO: Fix SECRET_KEY.
-SECRET_KEY = 'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+SECRET_KEY = env('SECRET_KEY', default=(
+    'django-insecure-((hv!%qj6+p@)vnuy6%(@l#0m=n*o@dy3sn3sop0m$!49^*xvy'
+))
+
+VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
+VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'data.gov.lt', 'staging.data.gov.lt']
+ALLOWED_HOSTS = (
+    ['localhost', '127.0.0.1'] +
+    env.list('ALLOWED_HOSTS', default=[])
+)
 
 # Application definition
 
@@ -81,7 +91,10 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
-
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'django_select2',
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
@@ -91,6 +104,7 @@ INSTALLED_APPS = [
     'vitrina.tasks',
     'vitrina.catalogs',
     'vitrina.datasets',
+    'vitrina.statistics',
     'vitrina.structure',
     'vitrina.classifiers',
     'vitrina.projects',
@@ -133,7 +147,8 @@ ROOT_URLCONF = 'vitrina.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),
+                 os.path.join(BASE_DIR, 'vitrina', 'templates', 'allauth')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -151,6 +166,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 STATICFILES_FINDERS = (
@@ -208,9 +228,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
-STATIC_ROOT = 'var/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 
@@ -224,6 +247,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.django-cms.org/en/latest/how_to/install.html
 # https://docs.django-cms.org/en/latest/reference/configuration.html
 SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_PROVIDERS = {
+    'viisp': {
+        'SCOPE': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'FIELDS': [
+            'first_name',
+            'last_name',
+            'email'
+        ],
+        'VERIFIED_EMAIL': True
+    }
+}
+
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
     ('pages/page.html', _("Puslapis be šoninio meniu")),
@@ -237,12 +279,23 @@ THUMBNAIL_PROCESSORS = (
     'filer.thumbnail_processors.scale_and_crop_with_subject_location',
     'easy_thumbnails.processors.filters'
 )
+THUMBNAIL_ALIASES = {
+    '': {
+        'list': {'size': (480, 320), 'crop': True},
+    },
+}
 
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True
 META_USE_SCHEMAORG_PROPERTIES = True
 META_SITE_PROTOCOL = 'https'
 META_SITE_DOMAIN = 'data.gov.lt'
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    "django.core.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+    "allauth.socialaccount.context_processors.socialaccount",
+)
 
 PARLER_LANGUAGES = {
     None: (
@@ -275,13 +328,18 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
-MEDIA_ROOT = BASE_DIR / 'var/media/'
-MEDIA_URL = '/media/'
-
+_search_url = env.search_url()
+_search_url_test = env.str(var="SEARCH_URL_TEST", default='')
+if _search_url_test:
+    _search_url_test = env.search_url(var="SEARCH_URL_TEST")
+else:
+    _search_url_test = {**_search_url, 'INDEX_NAME': 'test'}
 HAYSTACK_CONNECTIONS = {
-    'default': env.search_url(),
-    'test': env.search_url(var="SEARCH_URL_TEST"),
+    'default': _search_url,
+    'test': _search_url_test,
 }
+
+ELASTIC_FACET_SIZE = 50
 
 HAYSTACK_SIGNAL_PROCESSOR = 'vitrina.datasets.search_indexes.CustomSignalProcessor'
 
@@ -301,3 +359,11 @@ SWAGGER_SETTINGS = {
 
 VITRINA_TASK_RAISE_1 = 5
 VITRINA_TASK_RAISE_2 = 10
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'

@@ -1,10 +1,9 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
-from vitrina.orgs.services import has_perm, Action
 
 
 class Comment(models.Model):
@@ -14,11 +13,15 @@ class Comment(models.Model):
     REQUEST = "REQUEST"
     PROJECT = "PROJECT"
     STATUS = "STATUS"
+    STRUCTURE = "STRUCTURE"
+    STRUCTURE_ERROR = "STRUCTURE_ERROR"
     TYPES = (
         (USER, _("Naudotojo komentaras")),
         (REQUEST, _("Prašymo atverti duomenis komentaras")),
         (PROJECT, _("Duomenų rinkinio įtraukimo į projektą komentaras")),
-        (STATUS, _("Statuso keitimo komentaras"))
+        (STATUS, _("Statuso keitimo komentaras")),
+        (STRUCTURE, _("Struktūros importavimo komentaras")),
+        (STRUCTURE_ERROR, _("Struktūros importavimo klaida")),
     )
 
     INVENTORED = "INVENTORED"
@@ -46,30 +49,41 @@ class Comment(models.Model):
     is_public = models.BooleanField(default=True, verbose_name=_("Viešas komentaras"))
     type = models.CharField(max_length=255, choices=TYPES, default=USER)
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='content_type_comments')
-    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name='content_type_comments',
+        null=True
+    )
+    object_id = models.PositiveIntegerField(null=True)
     content_object = GenericForeignKey('content_type', 'object_id')
     rel_content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, blank=True, null=True,
                                          related_name='rel_content_type_comments')
     rel_object_id = models.PositiveIntegerField(blank=True, null=True)
     rel_content_object = GenericForeignKey('rel_content_type', 'rel_object_id')
 
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)
+
     objects = models.Manager()
     public = PublicCommentManager()
 
+    metadata = GenericRelation('vitrina_structure.Metadata')
+
     class Meta:
         db_table = 'comment'
+        ordering = ('-created',)
+        get_latest_by = 'created'
 
-    def descendants(self, user=None, obj=None, include_self=False, permission=False):
+    def descendants(self, include_self=False, permission=False):
         descendants = []
         children = Comment.objects.filter(parent_id=self.pk).order_by('created')
-        if user and obj:
-            if not permission:
-                children = children.filter(is_public=True)
+        if not permission:
+            children = children.filter(is_public=True)
         if include_self:
             descendants.append(self)
         for child in children:
-            descendants.extend(child.descendants(include_self=True))
+            descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
     def body_text(self):
@@ -91,6 +105,16 @@ class Comment(models.Model):
         else:
             body_text = self.body
         return body_text
+
+    @staticmethod
+    def get_statuses():
+        statuses = {}
+        for status in Comment.STATUSES:
+            statuses[status[0]] = status[1]
+        return statuses
+
+    def is_error(self):
+        return self.type == self.STRUCTURE_ERROR
 
 
 # TODO: To be removed.

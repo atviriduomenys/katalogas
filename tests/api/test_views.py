@@ -18,6 +18,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.statistics.models import ModelDownloadStats
 
 
 @pytest.mark.django_db
@@ -305,6 +306,8 @@ def test_get_all_datasets_without_api_key(app: DjangoTestApp):
 def test_get_all_datasets(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory(is_public=False)
+    category = CategoryFactory()
+    dataset.category.add(category)
     dataset_from_another_org1 = DatasetFactory()
     dataset_from_another_org2 = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
@@ -332,7 +335,7 @@ def test_get_all_datasets(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }]
 
 
@@ -368,6 +371,8 @@ def test_get_dataset_from_different_organization(app: DjangoTestApp):
 def test_get_dataset_with_dataset_id(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory()
+    category = CategoryFactory()
+    dataset.category.add(category)
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -395,7 +400,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }
 
 
@@ -421,6 +426,8 @@ def test_get_dataset_with_wrong_internal_id(app: DjangoTestApp):
 def test_get_dataset_with_internal_id(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory(internal_id="test")
+    category = CategoryFactory()
+    dataset.category.add(category)
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -448,7 +455,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }
 
 
@@ -507,7 +514,7 @@ def test_create_dataset(app: DjangoTestApp):
         ],
         'licence': licence.identifier,
         'periodicity': frequency.title,
-        'theme': category.title
+        'theme': [category.title]
     })
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
@@ -515,7 +522,7 @@ def test_create_dataset(app: DjangoTestApp):
     assert list(dataset.tags.all()) == ['tag1', 'tag2']
     assert dataset.licence == licence
     assert dataset.frequency == frequency
-    assert dataset.category == category
+    assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
@@ -535,7 +542,7 @@ def test_create_dataset(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": ['tag1', 'tag2'],
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }
 
 
@@ -572,6 +579,8 @@ def test_update_dataset_from_different_organization(app: DjangoTestApp):
 def test_update_dataset_with_dataset_id(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory()
+    category = CategoryFactory()
+    dataset.category.add(category)
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -604,7 +613,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }
 
 
@@ -612,6 +621,8 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
 def test_update_dataset_with_internal_id(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory(internal_id="test")
+    category = CategoryFactory()
+    dataset.category.add(category)
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -644,7 +655,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": dataset.category.title
+        "theme": [category.title]
     }
 
 
@@ -1802,3 +1813,24 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
         'structureId': structure.pk
     }))
     assert dataset.datasetstructure_set.count() == 0
+
+
+@pytest.mark.django_db
+def test_create_model_statistics(app: DjangoTestApp):
+    res = app.post(reverse('api-download-stats-internal'), {
+        'source': 'get.data.gov.lt',
+        'model': 'naujas_modelis',
+        'format': 'excel',
+        'time': datetime.now(),
+        'requests': 100,
+        'objects': 10
+    }, expect_errors=False)
+    assert res.json == {
+        "source": "get.data.gov.lt",
+        "model": "naujas_modelis",
+        "format": "excel",
+        "time": timezone.localtime(ModelDownloadStats.objects.first().created).isoformat(),
+        "requests": 100,
+        "objects": 10
+    }
+

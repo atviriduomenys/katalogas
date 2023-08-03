@@ -1,0 +1,52 @@
+{% extends "base_form.html" %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        div#div_id_ref .select {
+            width: 100%;
+        }
+        div#div_id_ref .select:not(.is-multiple):not(.is-loading)::after {
+            display: none;
+        }
+        div#div_id_ref .select2-selection__arrow {
+            height: 2em;
+        }
+        #div_id_ref #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_ref .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_ref .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('select#id_type').on('change', function() {
+                let type = $('select#id_type').val();
+                if (type == 'ref') {
+                    $('div#div_id_ref').show();
+                    $('div#div_id_ref_others').hide();
+                } else {
+                    $('div#div_id_ref').hide();
+                    $('div#div_id_ref_others').show();
+                }
+            });
+            $('select#id_type').trigger('change');
+        });
+    </script>
+{% endblock %}

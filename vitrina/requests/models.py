@@ -1,7 +1,8 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.contenttypes.models import ContentType
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
@@ -91,7 +92,6 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        managed = True
         db_table = 'request'
 
     def __str__(self):
@@ -107,6 +107,28 @@ class Request(models.Model):
         return parents
     
 
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
+
+    def is_created(self):
+        return self.status == self.CREATED
+    
+    def jurisdiction(self) -> int | None:
+        if self.organization:
+            root_org = self.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):
@@ -118,7 +140,7 @@ class RequestEvent(models.Model):
     comment = models.TextField(blank=True, null=True)
     meta = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
-    request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -141,3 +163,13 @@ class RequestStructure(models.Model):
     class Meta:
         managed = True
         db_table = 'request_structure'
+
+
+class RequestObject(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE)
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)

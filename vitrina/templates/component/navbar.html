@@ -2,13 +2,13 @@
 {% load i18n parler_tags %}
 {% load menu_tags %}
 
-<nav class="navbar" role="navigation" aria-label="main navigation">
-    <div class="container">
+<nav class="navbar is-info" role="navigation" aria-label="main navigation">
+<div class="container">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/"><img src="{% static 'img/logo.png' %}" alt="logo" height="36">&nbsp;&nbsp;<b><span
-                            class="navbar-title is-dark">Data</span><span class="navbar-title">.gov.lt</span>
-{#                    <span class="logo-beta">BETA</span>#}
-                </b>
+            <a class="navbar-item" href="/">
+                <img src="{% static 'img/logo.png' %}" alt="logo" height="36">
+                &nbsp;&nbsp;
+                <b><span class="navbar-title is-uppercase">data.gov.lt</span></b>
             </a>
             <a
                     role="button"
@@ -57,6 +57,9 @@
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
                                     {% translate "Rinkiniai" %}
                                 </a>
+                                 <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
+                                    {% translate "Planai" %}
+                                </a>
                                 {% endif %}
                                 {% if user.is_staff or user.is_superuser %}
                                 <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">
@@ -77,7 +80,7 @@
                         <form action="{% url 'set_language' %}" method="post" id="languageChange">
                             {% csrf_token %}
                             <input name="next" type="hidden" value="{{ redirect_to }}">
-                            <div class="select is-rounded">
+                            <div class="select">
                                 <select name="language"
                                         onchange="languageChange.submit()">
                                     {% get_current_language as LANGUAGE_CODE %}
@@ -95,5 +98,5 @@
                 </div>
             </div>
         </div>
-    </div>
+</div>
 </nav>

@@ -1,6 +1,9 @@
+import pathlib
+
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput
+from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CheckboxInput
+from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
 
 
@@ -94,3 +97,88 @@ class FilerFileField(FilerFieldMixin, FileField):
 class FilerImageField(FilerFieldMixin, ImageField):
     widget = FilerClearableFileInput
     filer_model = Image
+
+
+class MultipleFileInput(ClearableFileInput):
+    allow_multiple_selected = True
+    template_name = 'component/clearable_multiple_file_input.html'
+    input_text = _("Pridėti")
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        checkbox_name = self.clear_checkbox_name(name)
+        checkbox_id = self.clear_checkbox_id(checkbox_name)
+        context['widget'].update({
+            'checkbox_name': checkbox_name,
+            'checkbox_id': checkbox_id,
+            'is_initial': self.is_initial(value),
+            'input_text': self.input_text,
+            'initial_text': self.initial_text,
+            'clear_checkbox_label': self.clear_checkbox_label,
+            'value': self.get_value(value),
+        })
+        return context
+
+    @staticmethod
+    def get_value(value):
+        res = []
+        if value:
+            for val in value:
+                file = File.objects.get(pk=val)
+                res.append({
+                    'value_text': pathlib.Path(file.file.name).name if file.file else "",
+                    'url': file.file.url
+                })
+        return res
+
+    def is_initial(self, value):
+        files = []
+        if value:
+            for val in value:
+                file = File.objects.get(pk=val)
+                files.append(file)
+        return all(
+            [super(MultipleFileInput, self).is_initial(file) for file in files]
+        ) if files else False
+
+
+class MultipleFilerField(FileField):
+    widget = MultipleFileInput
+
+    def __init__(self, *, upload_to=None, **kwargs):
+        self.upload_to = upload_to
+        super().__init__(**kwargs)
+
+    def clean(self, data, initial=None):
+        if isinstance(data, (list, tuple)):
+            result = [self._clean(d, initial) for d in data]
+        else:
+            result = [self._clean(data, initial)]
+        return [file for file in result if file]
+
+    def _clean(self, data, initial=None):
+        file = super().clean(data, initial)
+        if file is False:
+            if initial and isinstance(initial, list):
+                for obj in initial:
+                    if isinstance(obj, int):
+                        File.objects.get(pk=obj).delete()
+            return None
+        elif isinstance(file, int):
+            file = initial
+        elif isinstance(file, UploadedFile):
+            current_folder = None
+            if self.upload_to:
+                folders = self.upload_to.split('/')
+                for level, folder_name in enumerate(folders):
+                    current_folder, created = Folder.objects.get_or_create(
+                        level=level,
+                        name=folder_name,
+                        parent=current_folder
+                    )
+            file = File.objects.create(
+                file=file,
+                original_filename=file.name,
+                folder=current_folder
+            )
+        return file

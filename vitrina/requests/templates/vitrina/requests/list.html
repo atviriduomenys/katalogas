@@ -9,21 +9,59 @@
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter">
-            <div class="content">
+            <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
+            <a href="{% url 'request-create' %}"
+            class="button is-primary mt-3 m-b-lg">{% translate "Teikti poreikį" %}</a>
+            <div class="content mt-3">
                 {% include "vitrina/requests/filters.html" %}
-                <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
-                <a href="{% url 'request-create' %}"
-                   class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
+                <nav class="category-panel">
+                    <p class="category-panel-heading">
+                        <a href="{% url 'request-stats-published' %}?" id="request-stats-published">
+                            <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                        </a>
+                    </p>
+                    <form method="get" action="{% url 'request-list' %}">
+                        <div class="field">
+                            <input
+                                type="date"
+                                class="input"
+                                name="date_from"
+                                id="from"
+                                value="{{ selected_date_from }}"
+                                onchange="this.form.submit()"
+                            >
+                        </div>
+                        <div class="field">
+                            <input
+                                type="date"
+                                class="input"
+                                name="date_to"
+                                id="to"
+                                value="{{ selected_date_to }}"
+                                onchange="this.form.submit()"
+                            >
+                        </div>
+                        {% if q %}
+                            <input type="hidden" name="q" value="{{ q | escape }}" />
+                        {% endif %}
+                    </form>
+                </nav>
             </div>
         </div>
         <div class="column is-three-quarters">
             <div class="content">
                 <p>{% translate "Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir verslo plėtrai." %}</p>
             </div>
-            <form id="request-filter" class="field has-addons is-fullwidth" action="{% url 'request-list' %}" method="get">
+            <form id="request-filter" class="field has-addons is-fullwidth" method="get" action="{% url 'request-list' %}">
                 <div class="control is-expanded">
-                    <input id="search-input" class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
+                    <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
                            value="{{ q | escape }}"/>
+                    {% if selected_date_from %}
+                        <input type="hidden" name="date_from" value="{{ selected_date_from }}" />
+                    {% endif %}
+                    {% if selected_date_to %}
+                        <input type="hidden" name="date_to" value="{{ selected_date_to }}" />
+                    {% endif %}
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -48,13 +86,13 @@
                                 <strong><a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">{{ i.object.title | escape }}</a></strong>
                                 <div class="columns">
                                     <div class="column">
-                                        <p>{% translate "Būsena" %}: <span><b>{{ i.object.get_status_display }}</b></span></p>
-                                        {% if i.object.organization_title %}
+                                        <p>{% translate "Būsena" %}: <span><b>{{ i.get_status_display }}</b></span></p>
+                                        {% if i.organization.title %}
                                             <p>{% translate "Pasiūlymas organizacijai" %}:
-                                                <span><b>{{ i.object.rganization_title }}</b></span></p>
+                                                <span><b>{{ i.organization.title }}</b></span></p>
                                         {% endif %}
                                         <p class="dataset-list-description">
-                                            {% if i.existing == 'true' %}
+                                            {% if i.is_existing %}
                                                 <b>{% translate "Poreikis papildyti ar pakeisti esamą duomenų rinkinį" %}</b>
                                             {% else %}
                                                 {{ i.object.description }}
@@ -62,8 +100,8 @@
                                         </p>
                                     </div>
                                     <div class="column is-one-third">
-                                        {% if i.registered %}
-                                            <p>{% translate "Registravimo data" %}: {{ i.object.registered|date:"SHORT_DATE_FORMAT" }}</p>
+                                        {% if i.created %}
+                                            <p>{% translate "Registravimo data" %}: {{ i.created|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.modified %}
                                             <p>{% translate "Atnaujinimo data" %}: {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}</p>
@@ -141,6 +179,63 @@
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
                 }
+            });
+
+            let orgFilter = $('#organization-filter-input');
+            orgFilter.on('input', function(){
+                let orgFilterValues = orgFilter.nextAll();
+                orgFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(orgFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                    if (orgFilter.val().length === 0) {
+                        orgFilterValues.each(function() {
+                           $(this).removeClass('is-hidden');
+                        });
+                    }
+                });
+            });
+
+            let catFilter = $('#category-filter-input');
+            catFilter.on('input', function(){
+                let catFilterValues = catFilter.nextAll();
+                catFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(catFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                    if (catFilter.val().length === 0) {
+                        catFilterValues.each(function() {
+                           $(this).removeClass('is-hidden');
+                        });
+                    }
+                });
+            });
+
+            let tagsFilter = $('#tags-filter-input');
+            tagsFilter.on('input', function(){
+                let tagsFilterValues = tagsFilter.nextAll();
+                tagsFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(tagsFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                    if (tagsFilter.val().length === 0) {
+                        tagsFilterValues.each(function() {
+                           $(this).removeClass('is-hidden');
+                        });
+                    }
+                });
             });
 
             function autocomplete(inp, arr) {

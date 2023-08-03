@@ -3,6 +3,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django.utils.translation import gettext_lazy as _
 
+
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -24,7 +25,8 @@ class Category(MP_Node):
     featured = models.BooleanField()
     icon = models.CharField(max_length=255,
                             blank=True,
-                            help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search')
+                            help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
+    groups = models.ManyToManyField(to='vitrina_datasets.DatasetGroup')
 
     node_order_by = ['title']
 

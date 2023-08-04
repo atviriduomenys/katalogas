@@ -769,3 +769,14 @@ class DataServiceSpecType(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class DatasetStructureMapping(models.Model):
+    dataset_id = models.IntegerField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    org = models.CharField(max_length=255, blank=True, null=True)
+    checksum = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'dataset_structure_mapping'

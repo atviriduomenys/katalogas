@@ -18,11 +18,11 @@ repository_dataset_entries = []
 
 
 def main(
-        manifest_path: str = Option("manifest-data/", help=(
-                "Path to where dataset manifest files are saved"
+        manifest_path: str = Option('manifest-data/', help=(
+                'Path to where dataset manifest files are saved'
         )),
 ):
-    pbar = tqdm("Exporting manifest information", total=DatasetStructure.objects.count())
+    pbar = tqdm('Exporting manifest information', total=DatasetStructure.objects.count())
 
     total = 0
     total_xls = 0
@@ -47,119 +47,122 @@ def main(
                 else:
                     random += 1
                 if 'csv' in item.filename:
-                    total += 1
-                    if item.file is not None:
-                        if item.standardized:
-                            checksum = get_digest(item.file.path)
-                            with open(item.file.path, "r", encoding='utf-8', errors='ignore') as file:
-                                reader = csv.reader(file)
-                                for row in reader:
-                                    for field in row:
-                                        if 'datasets/' in field:
-                                            found_ids += 1
-                                            if '"' in field:
-                                                mk1 = field.find('"') + 1
-                                                mk2 = field.rfind('"', mk1)
-                                                sub = field[mk1: mk2]
-                                                if 'ref' in sub:
-                                                    q = sub.rfind('"') + 1
-                                                    code = sub[q:len(sub)]
-                                                    if 'datasets' in code:
+                    # ignore old structure versions
+                    if dataset.current_structure_id == item.pk:
+                        total += 1
+                        if item.file is not None:
+                            if item.standardized:
+                                checksum = get_digest(item.file.path)
+                                with open(item.file.path, 'r', encoding='utf-8', errors='ignore') as file:
+                                    reader = csv.reader(file)
+                                    for row in reader:
+                                        for field in row:
+                                            if 'datasets/' in field:
+                                                found_ids += 1
+                                                if '"' in field:
+                                                    mk1 = field.find('"') + 1
+                                                    mk2 = field.rfind('"', mk1)
+                                                    sub = field[mk1: mk2]
+                                                    if 'ref' in sub:
+                                                        q = sub.rfind('"') + 1
+                                                        code = sub[q:len(sub)]
+                                                        if 'datasets' in code:
+                                                            if code.startswith('/'):
+                                                                code = code[1:]
+                                                            if len(code) > 0:
+                                                                substrings = code.split('/')
+                                                                org_code = substrings[2]
+                                                                org_path = '/'.join(substrings[2:len(substrings) - 1])
+                                                                dataset_code = substrings[-1]
+                                                                if dataset_code[0].islower():
+                                                                    add_org_mapping(org_id, org_code, org_title)
+                                                                    add_dataset_mapping(
+                                                                        dataset_id, code, dataset.lt_title(),
+                                                                        org_title, checksum, False)
+                                                                    dump_current(file, org_path, manifest_path,
+                                                                                 dataset_code)
+                                                    else:
+                                                        code = field[mk1: mk2]
                                                         if code.startswith('/'):
                                                             code = code[1:]
+                                                        elif '""' in code:
+                                                            st = code.find('"/')
+                                                            fin = code.rfind('""')
+                                                            code = code[st: fin].replace('"/', '')
                                                         if len(code) > 0:
-                                                            substrings = code.split('/')
-                                                            org_code = substrings[2]
-                                                            org_path = '/'.join(substrings[2:len(substrings) - 1])
-                                                            dataset_code = substrings[-1]
-                                                            if dataset_code[0].islower():
-                                                                add_org_mapping(org_id, org_code, org_title)
-                                                                add_dataset_mapping(
-                                                                    dataset_id, code, dataset.lt_title(),
-                                                                    org_title, checksum, False)
-                                                                dump_current(file, org_path, manifest_path,
-                                                                             dataset_code)
+                                                            if 'datasets' in code:
+                                                                substrings = code.split('/')
+                                                                org_code = substrings[2]
+                                                                org_path = '/'.join(substrings[2:len(substrings) - 1])
+                                                                dataset_code = substrings[-1]
+                                                                if dataset_code[0].islower():
+                                                                    add_org_mapping(org_id, org_code, org_title)
+                                                                    add_dataset_mapping(dataset_id, code,
+                                                                                        dataset.lt_title(), org_title,
+                                                                                        checksum, False)
+                                                                    dump_current(file, org_path, manifest_path,
+                                                                                 dataset_code)
                                                 else:
-                                                    code = field[mk1: mk2]
-                                                    if code.startswith('/'):
-                                                        code = code[1:]
-                                                    elif '""' in code:
-                                                        st = code.find('"/')
-                                                        fin = code.rfind('""')
-                                                        code = code[st: fin].replace('"/', '')
-                                                    if len(code) > 0:
-                                                        if 'datasets' in code:
-                                                            substrings = code.split('/')
+                                                    sub = field.find('datasets/')
+                                                    if ';' in field:
+                                                        if field.startswith(';;;;;'):
+                                                            field = field[sub:]
+                                                            fin = field.find(';')
+                                                            field = field[:fin]
+                                                        elif field.startswith(';'):
+                                                            field = field[1:]
+                                                            fin = field.find(';')
+                                                            field = field[:fin]
+                                                    if field.startswith('/'):
+                                                        field = field[1:]
+                                                    elif field.startswith('https') or field.startswith('http'):
+                                                        fin = ':format'
+                                                        field = field[sub:]
+                                                        if fin in field:
+                                                            field = field[:field.rfind(fin) - 1]
+                                                    if len(field) > 0:
+                                                        if ';' in field:
+                                                            field = field.replace(';', '')
+                                                        if field.startswith('1'):
+                                                            field = field[1:]
+                                                        if 'ref: ' in field:
+                                                            field = field.replace('ref: ', '')
+                                                        substrings = field.split('/')
+                                                        if len(substrings) > 2:
                                                             org_code = substrings[2]
                                                             org_path = '/'.join(substrings[2:len(substrings) - 1])
-                                                            dataset_code = substrings[-1]
-                                                            if dataset_code[0].islower():
-                                                                add_org_mapping(org_id, org_code, org_title)
-                                                                add_dataset_mapping(dataset_id, code,
-                                                                                    dataset.lt_title(), org_title,
-                                                                                    checksum, False)
-                                                                dump_current(file, org_path, manifest_path,
-                                                                             dataset_code)
-                                            else:
-                                                sub = field.find('datasets/')
-                                                if ';' in field:
-                                                    if field.startswith(';;;;;'):
-                                                        field = field[sub:]
-                                                        fin = field.find(';')
-                                                        field = field[:fin]
-                                                    elif field.startswith(';'):
-                                                        field = field[1:]
-                                                        fin = field.find(';')
-                                                        field = field[:fin]
-                                                if field.startswith('/'):
-                                                    field = field[1:]
-                                                elif field.startswith('https') or field.startswith('http'):
-                                                    fin = ':format'
-                                                    field = field[sub:]
-                                                    if fin in field:
-                                                        field = field[:field.rfind(fin) - 1]
-                                                if len(field) > 0:
-                                                    if ';' in field:
-                                                        field = field.replace(';', '')
-                                                    if field.startswith('1'):
-                                                        field = field[1:]
-                                                    if 'ref: ' in field:
-                                                        field = field.replace('ref: ', '')
-                                                    substrings = field.split('/')
-                                                    if len(substrings) > 2:
-                                                        org_code = substrings[2]
-                                                        org_path = '/'.join(substrings[2:len(substrings) - 1])
-                                                    dataset_code = substrings[-1]
-                                                    add_org_mapping(org_id, org_code, org_title)
-                                                    if dataset_code[0].islower():
-                                                        add_dataset_mapping(dataset_id, field, dataset.lt_title(),
-                                                                            org_title, checksum, False)
-                                                        dump_current(file, org_path, manifest_path, dataset_code)
+                                                        dataset_code = substrings[-1]
+                                                        add_org_mapping(org_id, org_code, org_title)
+                                                        if dataset_code[0].islower():
+                                                            add_dataset_mapping(dataset_id, field, dataset.lt_title(),
+                                                                                org_title, checksum, False)
+                                                            dump_current(file, org_path, manifest_path, dataset_code)
                 elif 'xls' in item.filename or 'xlsx' in item.filename:
-                    if item.file is not None:
-                        checksum = get_digest(item.file.path)
-                        if item.standardized:
-                            dataframe1 = pd.read_excel(item.file.path)
-                            if 'dataset' in dataframe1:
-                                for i in range(0, len(dataframe1)):
-                                    code = dataframe1.iloc[i]['dataset']
-                                    if isinstance(code, str):
-                                        found_ids += 1
-                                        if '/' in code:
-                                            if len(code.split('/')) > 2:
-                                                org_code = code.split('/')[2]
-                                                org_path = '/'.join(code.split('/')[2:len(code.split('/')) - 1])
-                                                add_org_mapping(org_id, org_code, org_title)
-                                            dataset_code = code.split('/')[-1]
-                                            if len(dataset_code) > 0:
-                                                if dataset_code[0].islower():
-                                                    add_dataset_mapping(dataset_id, code, dataset.lt_title(), org_title,
-                                                                        checksum, False)
-                                                    with open(item.file.path, "r", encoding='utf-8') as file:
-                                                        dump_current(file, org_path, manifest_path, dataset_code)
-                    total_xls += 1
-                else:
-                    total_not_csv += 1
+                    if dataset.current_structure_id == item.pk:
+                        if item.file is not None:
+                            checksum = get_digest(item.file.path)
+                            if item.standardized:
+                                dataframe1 = pd.read_excel(item.file.path)
+                                if 'dataset' in dataframe1:
+                                    for i in range(0, len(dataframe1)):
+                                        code = dataframe1.iloc[i]['dataset']
+                                        if isinstance(code, str):
+                                            found_ids += 1
+                                            if '/' in code:
+                                                if len(code.split('/')) > 2:
+                                                    org_code = code.split('/')[2]
+                                                    org_path = '/'.join(code.split('/')[2:len(code.split('/')) - 1])
+                                                    add_org_mapping(org_id, org_code, org_title)
+                                                dataset_code = code.split('/')[-1]
+                                                if len(dataset_code) > 0:
+                                                    if dataset_code[0].islower():
+                                                        add_dataset_mapping(dataset_id, code, dataset.lt_title(), org_title,
+                                                                            checksum, False)
+                                                        with open(item.file.path, 'r', encoding='utf-8') as file:
+                                                            dump_current(file, org_path, manifest_path, dataset_code)
+                        total_xls += 1
+                    else:
+                        total_not_csv += 1
             pbar.update(1)
 
     dump_orgs(organization_entries, manifest_path)
@@ -170,12 +173,12 @@ def main(
             if '.csv' in filename:
                 repo_files.append(os.path.join(root, filename))
 
-    pbar2 = tqdm("Reading repository information", total=len(repo_files))
+    pbar2 = tqdm('Reading repository information', total=len(repo_files))
     with (pbar2):
         df = pd.read_csv(manifest_path + 'datasets.csv', index_col='name')
         for repo_item in repo_files:
             checksum = get_digest(repo_item)
-            with open(repo_item, "r", encoding='utf-8') as f:
+            with open(repo_item, 'r', encoding='utf-8') as f:
                 try:
                     dfe = pd.read_csv(f)
                     if not dfe.columns.empty:
@@ -250,10 +253,10 @@ def dump_orgs(data, manifest_path):
     lst = [[x.org_id, x.name, x.title] for x in data]
     df = pd.DataFrame(lst)
     if not os.path.isfile(path):
-        print(f"Dumping {len(data)} organization entries to orgs.csv")
+        print(f'Dumping {len(data)} organization entries to orgs.csv')
         df.to_csv(path, index=False, header=columns, quoting=csv.QUOTE_ALL)
     else:
-        print("File orgs.csv already exists, updating existing values...")
+        print('File orgs.csv already exists, updating existing values...')
         dfe = pd.read_csv(path, index_col='id')
         new_items = []
         for item in data:
@@ -275,10 +278,10 @@ def dump_datasets(data, manifest_path):
     lst = [[x.dataset_id, x.name, x.title, x.org, x.checksum] for x in data]
     df = pd.DataFrame(lst)
     if not os.path.isfile(path):
-        print(f"Dumping {len(data)} dataset entries to datasets.csv")
+        print(f'Dumping {len(data)} dataset entries to datasets.csv')
         df.to_csv(path, index=False, header=columns, quoting=csv.QUOTE_ALL)
     else:
-        print("File datasets.csv already exists, updating existing values...")
+        print('File datasets.csv already exists, updating existing values...')
         dfe = pd.read_csv(path, index_col='id')
         new_items = []
         for item in data:
@@ -311,7 +314,7 @@ def dump_current(file, org_path, manifest_path, dataset):
     if len(org_path) == 0:
         org_path = 'unknown/'
     if not org_path.endswith('/'):
-        org_path = org_path + "/"
+        org_path = org_path + '/'
     if len(dataset.strip()) == 0:
         dataset = 'unknown' + str(unknown_index)
         unknown_index += 1

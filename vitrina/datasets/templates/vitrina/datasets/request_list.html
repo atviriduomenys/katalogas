@@ -33,7 +33,7 @@
                     <th></th>
                     <th></th>
                 </tr>
-                {% for request in page_obj %}
+                {% for request_obj in page_obj %}
                     <tr>
                     <td>
                     <article class="media">
@@ -41,13 +41,13 @@
                             <div class="content">
                                 <div>
                                     <strong>
-                                        <a href="{{ request.get_absolute_url }}" class="dataset-list-title">
-                                              {{ request.title }}
+                                        <a href="{{ request_obj.request.get_absolute_url }}" class="dataset-list-title">
+                                              {{ request_obj.request.title }}
                                         </a>
                                     </strong>
                                 </div>
                                 <p class="dataset-list-description">
-                                    {{ request.description }}
+                                    {{ request_obj.request.description }}
                                 </p>
                             </div>
                         </div>
@@ -55,8 +55,8 @@
                     </td>
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-request-{{ request.pk }}-btn"  class="button is-danger is-small"
-                                   href="{% url 'dataset-request-remove' pk=dataset.pk request_id=request.pk %}">
+                                <a id="remove-request-{{ request_obj.request.pk }}-btn"  class="button is-danger is-small"
+                                   href="{% url 'dataset-request-remove' dataset.pk request_obj.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>
                             </div>

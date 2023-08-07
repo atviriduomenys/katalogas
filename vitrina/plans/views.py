@@ -48,6 +48,7 @@ class PlanDetailView(PlanMixin, DetailView):
             self.organization,
         )
         context['organization'] = self.organization
+        context['organization_id'] = self.organization.pk
         context['plan_requests'] = self.object.planrequest_set.all()
         context['plan_datasets'] = self.object.plandataset_set.all()
         context['history_url'] = reverse('plan-history', args=[self.organization.pk, self.object.pk])
@@ -154,6 +155,7 @@ class PlanHistoryView(PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['organization_id'] = self.object.pk
         return context
 
     def get_history_objects(self):

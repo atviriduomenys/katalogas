@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max
+from django.db.models import QuerySet, Count, Max, Q
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -48,7 +48,7 @@ from vitrina.comments.models import Comment
 from vitrina.requests.models import Request, RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
-from vitrina.structure.models import Model, Metadata
+from vitrina.structure.models import Model, Metadata, Property
 from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
@@ -858,7 +858,7 @@ class DatasetProjectsView(
 
 
 class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
-    model = Request
+    model = RequestObject
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
     paginate_by = 20
@@ -874,15 +874,20 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        request_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(self.object),
-                                                   object_id=self.object.pk).values_list('request_id', flat=True)
-        return (
-            Request.objects.
-            filter(
-                pk__in=request_ids
-            ).
-            order_by('-created', 'status')
-        )
+        model_ids = Model.objects.filter(dataset=self.object).values_list('pk', flat=True)
+        property_ids = Property.objects.filter(model__pk__in=model_ids).values_list('pk', flat=True)
+        return RequestObject.objects.filter(
+            Q(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk
+            ) | Q(
+                content_type=ContentType.objects.get_for_model(Model),
+                object_id__in=model_ids
+            ) | Q(
+                content_type=ContentType.objects.get_for_model(Property),
+                object_id__in=property_ids
+            )
+        ).order_by('-request__created', 'request__status')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -937,13 +942,14 @@ class AddRequestView(
         context['current_title'] = _('Poreikių pridėjimas')
         return context
 
+
 class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Dataset
     template_name = 'confirm_remove.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        self.request_object = get_object_or_404(Request, pk=self.kwargs.get('request_id'))
+        self.request_object = get_object_or_404(RequestObject, pk=self.kwargs.get('request_id'))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -953,8 +959,10 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return HttpResponseRedirect(reverse('dataset-requests', kwargs={'pk': self.dataset.pk}))
 
     def delete(self, request, *args, **kwargs):
-        Comment.objects.filter(rel_object_id=self.request_object.pk,
-                               rel_content_type=ContentType.objects.get_for_model(self.request_object)).delete()
+        Comment.objects.filter(
+            rel_object_id=self.request_object.request.pk,
+            rel_content_type=ContentType.objects.get_for_model(self.request_object.request)
+        ).delete()
         self.request_object.delete()
         success_url = self.get_success_url()
         return HttpResponseRedirect(success_url)
@@ -1199,7 +1207,8 @@ class DatasetManagementsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_orgs = context['jurisdiction_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_jurisdictions = []
@@ -1976,8 +1985,9 @@ class DatasetsStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         modified_cats = []
         for cat in parent_cats:
             current_category = Category.objects.get(title=cat.get('display_value'))
@@ -2011,8 +2021,9 @@ class DatasetsCategoriesView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_cats = []
@@ -2123,7 +2134,8 @@ class CategoryStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         child_titles = []
         cat_titles = []
         indicator = self.request.GET.get('indicator', None)

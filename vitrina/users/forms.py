@@ -23,6 +23,7 @@ class LoginForm(Form):
         self.user_cache = None
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "login-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -66,6 +67,7 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "register-form"
         self.helper.layout = Layout(
             Field('first_name', placeholder=_("Vardas")),
@@ -108,6 +110,7 @@ class PasswordSetForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-set-form"
         self.helper.layout = Layout(
             Field('password', placeholder=_("Slaptažodis")),
@@ -124,6 +127,7 @@ class PasswordResetForm(BasePasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -153,6 +157,7 @@ class PasswordResetConfirmForm(SetPasswordForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-confirm-form"
         self.helper.layout = Layout(
             Field('new_password1', placeholder=_("Naujas slaptažodis")),
@@ -180,6 +185,7 @@ class UserProfileEditForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "user-profile-form"
         self.helper.layout = Layout(
                 Div(Div(Field('first_name', css_class='input', placeholder=_('Vardas')),

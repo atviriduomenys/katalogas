@@ -94,6 +94,7 @@ class DatasetResourceForm(forms.ModelForm):
         resource = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if resource else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "resource-form"
         self.helper.layout = Layout(
             Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),

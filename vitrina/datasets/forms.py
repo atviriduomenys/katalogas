@@ -85,6 +85,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
             Field('is_public',
@@ -164,6 +165,7 @@ class DatasetStructureImportForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
             Field('file'),
@@ -201,6 +203,7 @@ class DatasetAttributionForm(forms.ModelForm):
         self.dataset = dataset
 
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "attribution-form"
         self.helper.layout = Layout(
             Field('attribution'),
@@ -247,6 +250,7 @@ class AddProjectForm(forms.ModelForm):
         self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-add-project-form"
         self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
         self.helper.layout = Layout(
@@ -276,6 +280,7 @@ class AddRequestForm(forms.ModelForm):
         self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-add-request-form"
         self.fields['requests'].queryset = get_requests(self.user, self.dataset)
         self.helper.layout = Layout(
@@ -376,6 +381,7 @@ class DatasetRelationForm(forms.ModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-relation-form"
         self.helper.layout = Layout(
             Field('organization_id'),
@@ -444,6 +450,7 @@ class DatasetPlanForm(forms.ModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-plan-form"
         self.helper.layout = Layout(
             Field('plan'),
@@ -472,6 +479,7 @@ class PlanForm(OrganizationPlanForm):
         self.obj = obj
         super().__init__(organization, user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
             Field('organization_id'),

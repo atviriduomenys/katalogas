@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Organizacijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Organizacijos" %}{% endblock %}
+
+{% block current_title %}{% translate "Organizacijos" %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            <nav class="category-panel">
+                <p class="category-panel-heading">
+                    <a href="{% url 'organization-stats-jurisdiction'%}?" id="organization-stats-jurisdiction">
+                        <strong>{% translate "Valdymo sritis" as jurisdictionTitle %}{{ jurisdictionTitle|upper}}</strong>
+                    </a>
+                </p>
+                {% if selected_jurisdiction %}
+                    {% for jurisdiction in jurisdictions %}
+                        {% if jurisdiction.title == selected_jurisdiction %}
+                            <div class="is-flex">
+                                <span class="category-panel-block" title="{{ jurisdiction.title }}">
+                                    <strong>{{ jurisdiction.title }}</strong>
+                                </span>
+                                <div class="stays-right">({{ jurisdiction.count }})</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {% for jurisdiction in jurisdictions %}
+                        <div class="{% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %} is-flex ">
+                            <a href="{{ jurisdiction.query }}" class="category-panel-block" title="{{ jurisdiction.title }}">
+                                {{ jurisdiction.title }}
+                            </a>
+                             <div class="stays-right">({{ jurisdiction.count }})</div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                {% if jurisdictions|length > 10 %}
+                    <div>
+                        <span class="facets-more" id="facet-jurisdiction">{% translate "Išskleisti" %}</span>
+                    </div>
+                {% endif %}
+            </nav>
+        </div>
+
+        <div class="column is-three-quarters">
+            <div class="is-flex">
+                <span>{% translate "Valdymo sritis" %}</span>
+                <div class="stays-right">
+                    {% translate "Organizacijų sk." %}
+                </div>
+            </div>
+            <div class="is-flex">
+                <div class="stays-right">
+                    <form action="/organizations/stats/{{ filter }}" method="GET">
+                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                        <div class="select">
+                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                                <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
+                                <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% for org, ov in jurisdiction_data.items %}
+                    <div class="is-flex">
+                        <a href="/organizations/stats/jurisdiction/{{ org.pk }}?{{ request.GET.urlencode }}"
+                            id="{{ area.filter_value }}_id">
+                            <strong style="color: black;">{{ org }}</strong>
+                        </a>
+                        <div class="stays-right">
+                            <a href="/datasets/{{ org.url }}">
+                                {{ ov }}
+                            </a>
+                        </div>
+                    </div>
+                    <progress class="progress is-info"
+                        value="{{ ov }}"
+                        max="{{ max_count }}">
+                    </progress>
+                {% endfor %}
+        </div>
+    </div>
+    {#</section>#}
+    <br/>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+        });
+    </script>
+{% endblock %}

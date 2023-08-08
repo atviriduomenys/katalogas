@@ -15,6 +15,8 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
+from vitrina.requests.factories import RequestFactory
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -453,4 +455,48 @@ def test_organization_plan_update(app: DjangoTestApp):
     assert Plan.objects.count() == 1
     assert Plan.objects.first().title == "Test plan (updated)"
     assert Plan.objects.first().provider == plan.receiver
+
+
+@pytest.mark.django_db
+def test_organization_merge_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+
+    organization = OrganizationFactory()
+    resp = app.get(reverse('merge-organizations', args=[organization.pk]), expect_errors=True)
+
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_organization_merge(app: DjangoTestApp):
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    organization = OrganizationFactory()
+    organization_id = organization.pk
+    merge_organization = OrganizationFactory()
+
+    dataset = DatasetFactory(organization=organization)
+    request = RequestFactory(organization=organization)
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+
+    form = app.get(reverse('confirm-organization-merge', args=[
+        organization.pk,
+        merge_organization.pk
+    ])).forms['confirm-merge-form']
+    resp = form.submit()
+
+    assert resp.url == reverse('organization-detail', args=[merge_organization.pk])
+    assert Organization.objects.filter(pk=organization_id).count() == 0
+    assert list(merge_organization.dataset_set.all()) == [dataset]
+    assert list(merge_organization.request_set.all()) == [request]
+    assert list(Representative.objects.filter(
+        content_type=ContentType.objects.get_for_model(merge_organization),
+        object_id=merge_organization.pk
+    )) == [representative]
+
 

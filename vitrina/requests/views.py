@@ -1,3 +1,7 @@
+from collections import OrderedDict
+
+import numpy as np
+import pandas as pd
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
@@ -24,9 +28,149 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 class RequestListView(ListView):
     model = Request
-    queryset = Request.public.order_by('-created')
     template_name = 'vitrina/requests/list.html'
     paginate_by = 20
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        date_from = self.request.GET.get('date_from')
+        date_to = self.request.GET.get('date_to')
+        queryset = Request.public.all()
+
+        if query:
+            queryset = queryset.filter(title__icontains=query)
+        if date_from:
+            queryset = queryset.filter(created__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(created__lte=date_to)
+        return queryset.order_by("-created")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['q'] = self.request.GET.get("q", "")
+        context['selected_date_from'] = self.request.GET.get('date_from')
+        context['selected_date_to'] = self.request.GET.get('date_to')
+        return context
+
+
+class RequestPublicationStatsView(RequestListView):
+    template_name = 'vitrina/requests/publications.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        requests = self.get_queryset()
+        sorting = self.request.GET.get('sort', None)
+        year_stats = {}
+        for req in requests:
+            published = req.created
+            if published is not None:
+                year_published = published.year
+                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+        for key, value in year_stats.items():
+            if max_count < value:
+                max_count = value
+        keys = list(year_stats.keys())
+        values = list(year_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
+        elif sorting == 'sort-year-asc':
+            year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
+        elif sorting == 'sort-desc':
+            year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-asc':
+            year_stats = {keys[i]: values[i] for i in sorted_value_index}
+        context['year_stats'] = year_stats
+        context['max_count'] = max_count
+        context['filter'] = 'publication'
+        context['sort'] = sorting
+        return context
+
+class RequestYearStatsView(RequestListView):
+    template_name = 'vitrina/requests/publications.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        requests = self.get_queryset()
+        sorting = self.request.GET.get('sort', None)
+        year_stats = {}
+        quarter_stats = {}
+        selected_year = str(self.kwargs['year'])
+        for req in requests:
+            published = req.created
+            if published is not None:
+                year_published = published.year
+                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
+        for key, value in quarter_stats.items():
+            if max_count < value:
+                max_count = value
+        keys = list(quarter_stats.keys())
+        values = list(quarter_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=False))
+        elif sorting == 'sort-year-asc':
+            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=True))
+        elif sorting == 'sort-asc':
+            quarter_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-desc':
+            quarter_stats = {keys[i]: values[i] for i in sorted_value_index}
+        context['selected_year'] = selected_year
+        context['year_stats'] = quarter_stats
+        context['max_count'] = max_count
+        context['current_object'] = str('year/' + selected_year)
+        context['filter'] = 'publication'
+        context['sort'] = sorting
+        return context
+
+
+class RequestQuarterStatsView(RequestListView):
+    template_name = 'vitrina/requests/publications.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        requests = self.get_queryset()
+        sorting = self.request.GET.get('sort', None)
+        monthly_stats = {}
+        selected_quarter = str(self.kwargs['quarter'])
+        for req in requests:
+            published = req.created
+            if published is not None:
+                year_published = published.year
+                if str(year_published) in selected_quarter:
+                    quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+                    if quarter == selected_quarter:
+                        month = str(year_published) + "-" + str('%02d' % published.month)
+                        monthly_stats[month] = monthly_stats.get(month, 0) + 1
+        for m, mv in monthly_stats.items():
+            if max_count < mv:
+                max_count = mv
+        keys = list(monthly_stats.keys())
+        values = list(monthly_stats.values())
+        sorted_value_index = np.argsort(values)
+        if sorting is None or sorting == 'sort-year-desc':
+            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=False))
+        elif sorting == 'sort-year-asc':
+            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=True))
+        elif sorting == 'sort-asc':
+            monthly_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+        elif sorting == 'sort-desc':
+            monthly_stats = {keys[i]: values[i] for i in sorted_value_index}
+        context['selected_quarter'] = self.kwargs['quarter']
+        context['year_stats'] = monthly_stats
+        context['max_count'] = max_count
+        context['current_object'] = str('quarter/' + selected_quarter)
+        context['filter'] = 'publication'
+        context['sort'] = sorting
+        return context
 
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):

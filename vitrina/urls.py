@@ -19,6 +19,7 @@ from django.urls import include
 from django.urls import path
 from allauth.account import views as accviews
 from allauth.socialaccount import views as socaccviews
+from django.views.i18n import JavaScriptCatalog
 
 
 from vitrina import settings
@@ -49,6 +50,7 @@ urlpatterns = [
     path('hitcount/', include('hitcount.urls', namespace='hitcount')),
     path('i18n/', include('django.conf.urls.i18n')),
     path('accounts/', include('vitrina.viisp.urls')),
+    path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
     path('', include('cms.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

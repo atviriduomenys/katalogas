@@ -23,6 +23,7 @@ class ProjectForm(ModelForm):
         project_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if project_instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "project-form"
         self.helper.layout = Layout(
             Field('title', placeholder=_("Pavadinimas")),

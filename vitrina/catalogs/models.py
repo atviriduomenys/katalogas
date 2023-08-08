@@ -46,3 +46,6 @@ class HarvestingJob(models.Model):
     class Meta:
         managed = True
         db_table = 'harvesting_job'
+
+    def __str__(self):
+        return f"{self.title}"

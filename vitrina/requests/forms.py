@@ -25,6 +25,7 @@ class RequestForm(ModelForm):
         request_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if request_instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-form"
         self.helper.layout = Layout(
             Field('title', placeholder=_('Pavadinimas')),
@@ -53,6 +54,7 @@ class RequestPlanForm(ModelForm):
         self.request = request
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-plan-form"
         self.helper.layout = Layout(
             Field('plan'),

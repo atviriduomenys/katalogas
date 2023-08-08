@@ -1,8 +1,11 @@
+from urllib.parse import urlparse
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField
+from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -36,6 +39,7 @@ class RepresentativeUpdateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('role'),
@@ -94,6 +98,7 @@ class RepresentativeCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.object_id = object_id
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('email'),
@@ -150,6 +155,7 @@ class PartnerRegisterForm(ModelForm):
     def __init__(self, *args, initial={}, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "partner-register-form"
         self.helper.layout = Layout(
             Field('coordinator_first_name', value=initial.get('coordinator_first_name'), readonly=True),
@@ -250,6 +256,7 @@ class OrganizationPlanForm(ModelForm):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
             Field('organization_id'),
@@ -288,3 +295,37 @@ class OrganizationPlanForm(ModelForm):
                 'provider',
                 _('Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas.')
             )
+
+
+class OrganizationMergeForm(Form):
+    organization = URLField(
+        label=_("Organizacija"),
+        help_text=_("Nurodykite pilną nuorodą į organizaciją, su kuria norite sujungti"),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "merge-form"
+        self.helper.layout = Layout(
+            Field('organization'),
+            Submit('submit', _("Tęsti"), css_class='button is-primary')
+        )
+
+    def clean_organization(self):
+        organization = self.cleaned_data.get('organization')
+        if organization:
+            url = urlparse(organization)
+            try:
+                url = resolve(url.path)
+            except Resolver404:
+                raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
+            if (
+                url.url_name != 'organization-detail' or
+                not Organization.objects.filter(pk=url.kwargs.get('pk'))
+            ):
+                raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
+            else:
+                return url.kwargs.get('pk')
+        return organization

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
+
+{% block current_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-one-quarter">
+            <div class="content">
+                <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
+                <a href="{% url 'request-create' %}"
+                   class="button is-primary m-t-xs m-b-lg">{% translate "Teikti poreikį" %}</a>
+
+                <nav class="category-panel">
+                    <p class="category-panel-heading">
+                        <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                    </p>
+                    <div class="field">
+                        <input
+                                type="date"
+                                class="input"
+                                name="date_from"
+                                id="from"
+                                value="{{ dateFrom }}"
+                        >
+                    </div>
+                    <div class="field">
+                        <input
+                                type="date"
+                                class="input"
+                                name="date_to"
+                                id="to"
+                                value="{{ dateTo }}"
+                        >
+                    </div>
+                </nav>
+            </div>
+        </div>
+        <div class="column is-three-quarters">
+            <div class="is-flex">
+                <span>{% translate "Registravimo data" %}</span>
+                <div class="stays-right">
+                    {% translate "Poreikių sk." %}
+                </div>
+            </div>
+            <div class="is-flex">
+                <div class="stays-right">
+                    <form action="/requests/stats/{{ filter }}{% if current_object %}/{{ current_object }}{% endif %}" method="GET">
+                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                        <div class="select">
+                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                                <option value="sort-year-desc" {% if sort == 'sort-year-desc' %}selected{% endif %}>{% translate "Naujausi" %}</option>
+                                <option value="sort-year-asc" {% if sort == 'sort-year-asc' %}selected{% endif %}>{% translate "Seniausi" %}</option>
+                                <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
+                                <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if selected_year %}
+                {% for y, yv in year_stats.items reversed %}
+                    {% if selected_year in y %}
+                        <div class="is-flex">
+                            <a href="/requests/stats/publication/quarter/{{ y }}?{{ request.GET.urlencode }}"
+                                id="{{ y }}_id">
+                                <strong style="color: black;">
+                                    {% if 'Q1' in y %}
+                                        I
+                                    {% elif 'Q2' in y %}
+                                        II
+                                    {% elif 'Q3' in y %}
+                                        III
+                                    {% else %}
+                                        IV
+                                    {% endif %}
+                                {% translate "ketvirtis" %}
+                                </strong>
+                            </a>
+                            <div class="stays-right">
+                                {% if 'Q1' in y %}
+                                    <a href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-03-31">{{ yv }}</a>
+                                {% elif 'Q2' in y %}
+                                    <a href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-06-30">{{ yv }}</a>
+                                {% elif 'Q3' in y %}
+                                    <a href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-09-30">{{ yv }}</a>
+                                {% else %}
+                                    <a href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-12-31">{{ yv }}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <progress class="progress is-info"
+                                  value="{{ yv }}"
+                                  max="{{ max_count }}">
+                        </progress>
+                    {% endif %}
+                {% endfor %}
+            {% elif selected_quarter %}
+                {% for y, yv in year_stats.items reversed %}
+{#                    {% for m, mv in yv.items reversed %}#}
+                        <div class="is-flex">
+                            <strong style="color: black;">
+                                {% if '01' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-01-31">
+                                        {% translate "Sausis" %}
+                                    </a>
+                                {% elif '02' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-02-01&date_to={{ y|slice:":4" }}-02-28">
+                                        {% translate "Vasaris" %}
+                                    </a>
+                                {% elif '03' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-03-01&date_to={{ y|slice:":4" }}-03-31">
+                                        {% translate "Kovas" %}
+                                    </a>
+                                {% elif '04' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-04-31">
+                                        {% translate "Balandis" %}
+                                    </a>
+                                {% elif '05' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-05-01&date_to={{ y|slice:":4" }}-05-31">
+                                        {% translate "Gegužė" %}
+                                    </a>
+                                {% elif '06' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-06-01&date_to={{ y|slice:":4" }}-06-30">
+                                        {% translate "Birželis" %}
+                                    </a>
+                                {% elif '07' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-07-31">
+                                        {% translate "Liepa" %}
+                                    </a>
+                                {% elif '08' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-08-01&date_to={{ y|slice:":4" }}-08-31">
+                                        {% translate "Rugpjūtis" %}
+                                    </a>
+                                {% elif '09' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-09-01&date_to={{ y|slice:":4" }}-09-31">
+                                        {% translate "Rugsėjis" %}
+                                    </a>
+                                {% elif '10' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-10-31">
+                                        {% translate "Spalis" %}
+                                    </a>
+                                {% elif '11' in y|slice:"5:" %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-11-01&date_to={{ y|slice:":4" }}-11-31">
+                                        {% translate "Lapkritis" %}
+                                    </a>
+                                {% else %}
+                                    <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-12-01&date_to={{ y|slice:":4" }}-12-31">
+                                        {% translate "Gruodis" %}
+                                    </a>
+                                {% endif %}
+                            </strong>
+                        <div class="stays-right">
+                            <a
+                            {% if '01' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-01-31"
+                            {% elif '02' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-02-01&date_to={{ y|slice:":4" }}-02-28"
+                            {% elif '03' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-03-01&date_to={{ y|slice:":4" }}-03-31"
+                            {% elif '04' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-04-31"
+                            {% elif '05' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-05-01&date_to={{ y|slice:":4" }}-05-31"
+                            {% elif '06' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-06-01&date_to={{ y|slice:":4" }}-06-31"
+                            {% elif '07' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-07-31"
+                            {% elif '08' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-08-01&date_to={{ y|slice:":4" }}-08-31"
+                            {% elif '09' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-09-01&date_to={{ y|slice:":4" }}-09-31"
+                            {% elif '10' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-10-31"
+                            {% elif '11' in y|slice:"5:" %}
+                                 href="/datasets/?date_from={{ y|slice:":4" }}-11-01&date_to={{ y|slice:":4" }}-11-31"
+                            {% else %}
+                                href="/datasets/?date_from={{ y|slice:":4" }}-12-01&date_to={{ y|slice:":4" }}-12-31"
+                            {% endif %}
+                            >{{ yv }}
+                            </a>
+                        </div>
+                    </div>
+                    <progress class="progress is-info"
+                              value="{{ yv }}"
+                              max="{{ max_count }}">
+                    </progress>
+{#                    {% endfor %}#}
+                {% endfor %}
+            {% else %}
+                {% for y, yv in year_stats.items %}
+                    <div class="is-flex">
+                        <a href="/requests/stats/publication/year/{{ y }}?{{ request.GET.urlencode }}"
+                            id="{{ y }}_id">
+                            <strong style="color: black;">{{ y }}</strong>
+                        </a>
+                        <div class="stays-right"><a href="/datasets/?date_from={{ y }}-01-01&date_to={{ y }}-12-31">{{ yv }}</a></div>
+                    </div>
+                    <progress class="progress is-info"
+                          value="{{ yv }}"
+                          max="{{ max_count }}">
+                    </progress>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

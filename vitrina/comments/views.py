@@ -134,6 +134,8 @@ class ExternalCommentView(
                 )
                 RequestObject.objects.create(
                     request=new_request,
+                    object_id=dataset_id,
+                    content_type=ContentType.objects.get_for_model(Dataset),
                     external_object_id=external_object_id,
                     external_content_type=external_content_type,
                 )

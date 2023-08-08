@@ -1,5 +1,6 @@
 import secrets
 
+import numpy as np
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -21,7 +22,7 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm
+from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm, OrganizationMergeForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
     PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
@@ -66,6 +67,41 @@ class OrganizationListView(ListView):
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
 
+
+class OrganizationManagementsView(OrganizationListView):
+    template_name = 'vitrina/orgs/jurisdictions.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        stats = {}
+        orgs = Organization.public.all()
+        root_orgs = []
+        sorting = self.request.GET.get('sort', None)
+        for org in orgs:
+            root = org.get_root()
+            if root not in root_orgs:
+                root_orgs.append(root)
+        for root in root_orgs:
+            children_count = len(Organization.get_children(root))
+            if children_count is not None:
+                stats[root.title] = children_count
+        keys = list(stats.keys())
+        values = list(stats.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        elif sorting == 'sort-asc':
+            sorted_value_index = np.argsort(values)
+        stats = {keys[i]: values[i] for i in sorted_value_index}
+        context['jurisdiction_data'] = stats
+        context['max_count'] = max_count
+        context['filter'] = 'jurisdiction'
+        context['sort'] = sorting
+        return context
 
 class OrganizationDetailView(PlanMixin, DetailView):
     model = Organization
@@ -435,6 +471,7 @@ class OrganizationPlanView(PlanMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['organization'] = self.organization
+        context['organization_id'] = self.organization.pk
         context['plans'] = self.organization.receiver_plans.all()
         context['can_manage_plans'] = has_perm(
             self.request.user,
@@ -524,4 +561,152 @@ class OrganizationPlansHistoryView(PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['organization_id'] = self.object.pk
         return context
+
+
+class OrganizationMergeView(PermissionRequiredMixin, TemplateView):
+    template_name = 'base_form.html'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user and self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Organizacijų sujungimas')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['form'] = OrganizationMergeForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = OrganizationMergeForm(request.POST)
+        if form.is_valid():
+            merge_organization_id = form.cleaned_data.get('organization')
+            return redirect(reverse('confirm-organization-merge', args=[
+                self.organization.pk,
+                merge_organization_id
+            ]))
+        else:
+            context = self.get_context_data(**kwargs)
+            context['form'] = form
+            return render(request, self.template_name, context)
+
+
+class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/confirm_merge.html'
+
+    organization: Organization
+    merge_organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        self.merge_organization = get_object_or_404(Organization, pk=kwargs.get('merge_organization_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user and self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Organizacijų sujungimas')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['organization'] = self.organization
+        context['merge_organization'] = self.merge_organization
+
+        # Related objects
+        context['related_objects'] = {
+            _('Duomenų rinkiniai'): self.organization.dataset_set.all(),
+            _('Ryšiai su duomenų rinkiniais'): self.organization.datasetattribution_set.all(),
+            _('Poreikiai ir pasiūlymai'): self.organization.request_set.all(),
+            _('Tvarkytojai'): Representative.objects.filter(
+                content_type=ContentType.objects.get_for_model(self.organization),
+                object_id=self.organization.pk,
+            ),
+            _('Naudotojai'): self.organization.user_set.all(),
+            _('Vaikinės organizacijos'): self.organization.get_children(),
+            _('Užduotys'): self.organization.task_set.all(),
+            _('Harvestinimo operacija'): self.organization.harvestingjob_set.all(),
+            _('Finansavimo planai'): self.organization.financingplan_set.all(),
+            _('Planai (organizacija paslaugų gavėjas)'): self.organization.receiver_plans.all(),
+            _('Planai (organizacija paslaugų teikėjas)'): self.organization.provider_plans.all(),
+        }
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # Merge Dataset objects
+        for obj in self.organization.dataset_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge DatasetAttribution objects
+        for obj in self.organization.datasetattribution_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge Request objects
+        for obj in self.organization.request_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge Representative objects
+        rep_emails = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.merge_organization),
+            object_id=self.merge_organization.pk
+        ).values_list('email', flat=True)
+        for obj in Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.organization),
+            object_id=self.organization.pk,
+        ).exclude(email__in=rep_emails):
+            obj.object_id = self.merge_organization.pk
+            obj.save()
+
+        # Merge User objects
+        for obj in self.organization.user_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge Organization objects
+        for obj in self.organization.get_children():
+            obj.move(self.merge_organization, 'sorted-child')
+
+        # Merge Task objects
+        for obj in self.organization.task_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge HarvestingJob objects
+        for obj in self.organization.harvestingjob_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge FinancingPlan objects
+        for obj in self.organization.financingplan_set.all():
+            obj.organization = self.merge_organization
+            obj.save()
+
+        # Merge Plan objects
+        for obj in self.organization.receiver_plans.all():
+            obj.receiver = self.merge_organization
+            obj.save()
+
+        for obj in self.organization.provider_plans.all():
+            obj.provider = self.merge_organization
+            obj.save()
+
+        self.organization.delete()
+        return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))

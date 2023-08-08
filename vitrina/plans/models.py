@@ -28,6 +28,9 @@ class FinancingPlan(models.Model):
         db_table = 'financing_plan'
         unique_together = (('organization', 'year'),)
 
+    def __str__(self):
+        return f"Finansavimo planas {self.year}"
+
 
 class FinancingPlanState(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

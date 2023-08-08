@@ -13,7 +13,9 @@
         <div class="column is-one-quarter is-hidden-mobile">
             <nav class="category-panel">
                 <p class="category-panel-heading">
-                    <strong>{% translate "Valdymo sritis" as jurisdictionTitle %}{{ jurisdictionTitle|upper}}</strong>
+                    <a href="{% url 'organization-stats-jurisdiction' %}?" id="organization-stats-jurisdiction">
+                        <strong>{% translate "Valdymo sritis" as jurisdictionTitle %}{{ jurisdictionTitle|upper}}</strong>
+                    </a>
                 </p>
                 {% if selected_jurisdiction %}
                     {% for jurisdiction in jurisdictions %}

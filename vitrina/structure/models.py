@@ -2,6 +2,7 @@ import builtins
 import functools
 import operator
 
+import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -121,6 +122,7 @@ class Base(models.Model):
         return ""
 
 
+@reversion.register()
 class Model(models.Model):
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
@@ -240,6 +242,7 @@ class Model(models.Model):
         return ''
 
 
+@reversion.register()
 class Property(models.Model):
     model = models.ForeignKey(
         Model,

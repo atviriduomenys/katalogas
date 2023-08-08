@@ -16,26 +16,35 @@
 
                 <nav class="category-panel">
                     <p class="category-panel-heading">
-                        <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                        <a href="{% url 'request-stats-published' %}?" id="request-stats-published">
+                            <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
+                        </a>
                     </p>
-                    <div class="field">
-                        <input
+                    <form method="get" action="{% url 'request-list' %}">
+                        <div class="field">
+                            <input
                                 type="date"
                                 class="input"
                                 name="date_from"
                                 id="from"
-                                value="{{ dateFrom }}"
-                        >
-                    </div>
-                    <div class="field">
-                        <input
+                                value="{{ selected_date_from }}"
+                                onchange="this.form.submit()"
+                            >
+                        </div>
+                        <div class="field">
+                            <input
                                 type="date"
                                 class="input"
                                 name="date_to"
                                 id="to"
-                                value="{{ dateTo }}"
-                        >
-                    </div>
+                                value="{{ selected_date_to }}"
+                                onchange="this.form.submit()"
+                            >
+                        </div>
+                        {% if q %}
+                            <input type="hidden" name="q" value="{{ q | escape }}" />
+                        {% endif %}
+                    </form>
                 </nav>
             </div>
         </div>
@@ -43,10 +52,16 @@
             <div class="content">
                 <p>{% translate "Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir verslo plėtrai." %}</p>
             </div>
-            <form class="field has-addons is-fullwidth" method="get">
+            <form class="field has-addons is-fullwidth" method="get" action="{% url 'request-list' %}">
                 <div class="control is-expanded">
                     <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
-                           value="{{ query | escape }}"/>
+                           value="{{ q | escape }}"/>
+                    {% if selected_date_from %}
+                        <input type="hidden" name="date_from" value="{{ selected_date_from }}" />
+                    {% endif %}
+                    {% if selected_date_to %}
+                        <input type="hidden" name="date_to" value="{{ selected_date_to }}" />
+                    {% endif %}
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -57,11 +72,7 @@
                 </p>
             </form>
 
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ items.numFound }}</h1>
-
-            <div class="show-mobile m-b-md">
-                <button class="button is-primary is-small show-mobile-facets">{% translate "Filtruoti rezultatus" %}</button>
-            </div>
+            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
 
             {% for i in page_obj %}
                 <article class="media">
@@ -72,12 +83,12 @@
                                 <div class="columns">
                                     <div class="column">
                                         <p>{% translate "Būsena" %}: <span><b>{{ i.get_status_display }}</b></span></p>
-                                        {% if i.organization_title %}
+                                        {% if i.organization.title %}
                                             <p>{% translate "Pasiūlymas organizacijai" %}:
-                                                <span><b>{{ i.organization_title }}</b></span></p>
+                                                <span><b>{{ i.organization.title }}</b></span></p>
                                         {% endif %}
                                         <p class="dataset-list-description">
-                                            {% if i.existing == 'true' %}
+                                            {% if i.is_existing %}
                                                 <b>{% translate "Poreikis papildyti ar pakeisti esamą duomenų rinkinį" %}</b>
                                             {% else %}
                                                 {{ i.description }}
@@ -85,8 +96,8 @@
                                         </p>
                                     </div>
                                     <div class="column is-one-third">
-                                        {% if i.registered %}
-                                            <p>{% translate "Registravimo data" %}: {{ i.registered|date:"SHORT_DATE_FORMAT" }}</p>
+                                        {% if i.created %}
+                                            <p>{% translate "Registravimo data" %}: {{ i.created|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
                                         {% if i.modified %}
                                             <p>{% translate "Atnaujinimo data" %}: {{ i.modified|date:"SHORT_DATE_FORMAT" }}</p>

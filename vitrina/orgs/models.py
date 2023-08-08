@@ -81,6 +81,7 @@ class Organization(MP_Node):
     role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
     image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
     provider = models.BooleanField(_("Atvėrimo duomenų teikėjas"), default=False)
+    name = models.TextField(max_length=255, blank=True, null=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -175,3 +176,12 @@ class Report(models.Model):
     class Meta:
         managed = True
         db_table = 'report'
+
+
+class OrganizationMapping(models.Model):
+    org_id = models.IntegerField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'organization_mapping'

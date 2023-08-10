@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load comment_tags %}
 
 {% block pageTitle %} | {% translate "Užduotys" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Užduotys" %}{% endblock %}
 
-{% block current_title %}{% translate "Užduotys" %}{% endblock %}
+{% block parent_title %}{% translate "Užduotys" %}{% endblock %}
+{% block current_title %}{{ task.title }}{% endblock %}
 
 {% block content %}
     {% if task %}
@@ -20,9 +22,9 @@
                                     Aprašymas: {{ task.description }}
                                 </p>
                             </div>
-                            <div class="column">
-                                <a href="#" class="button is-primary stays-right">Uždaryti</a>
-                            </div>
+{#                            <div class="column">#}
+{#                                <a href="#" class="button is-primary stays-right">Uždaryti</a>#}
+{#                            </div>#}
                         </div>
                     </div>
                 </div>
@@ -30,16 +32,34 @@
             <br/>
         </div>
         <div class="column is-one-quarter is-hidden-mobile">
-            <p>Organizacija</p>
-            <p>Sukurta</p>
-            <p>{{ task.created }}</p>
-            <p>Priskirta</p>
-            <p>{{  }}</p>
-            <p>Terminas</p>
-            <p>Vykdytojas</p>
+            <div class="mb-3">
+                <p>{% translate "Organizacija" %}</p>
+                <p>{{ org }}</p>
+            </div>
+            <div class="mb-3">
+                <p>{% translate "Sukurta" %}</p>
+                <p>{{ task.created }}</p>
+            </div>
+            <div class="mb-3">
+                <p>{% translate "Priskirta" %}</p>
+                <p>{{ task.created }}</p>
+            </div>
+            <div class="mb-3">
+                <p>{% translate "Terminas" %}</p>
+                <p>{{ task.due_date }}</p>
+            </div>
+            <div class="mb-3">
+                <p>{% translate "Vykdytojas" %}</p>
+                <p>{{ task.user }}</p>
+            </div>
         </div>
     </div>
     <br/>
+    <div class="columns no-margin-bottom">
+    <div class="column is-three-quarters">
+        {% comments obj=task user=request.user %}
+    </div>
+    </div>
     {% else %}
     <p>{% translate "Užduočių nėra!" %}</p>
     {% endif %}

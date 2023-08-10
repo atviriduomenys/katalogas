@@ -23,6 +23,7 @@ from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import spyna
 from vitrina.structure.models import Metadata, Model, Property, Prefix, Enum, EnumItem, PropertyList, Param, \
     ParamItem, Base
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
@@ -67,7 +68,15 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 object_id=structure.pk,
                 type=Comment.STRUCTURE_ERROR
             )
-
+            # create task
+            Task.objects.create(
+                title=f"Rasta klaida duomenyse: {ct}, id: {structure.pk}",
+                content_type=ct,
+                object_id=structure.pk,
+                status=Task.CREATED,
+                # role=Task.SUPERVISOR,
+                user=sys_user
+            )
 
 def _load_datasets(
     state: struct.State,
@@ -367,6 +376,14 @@ def _create_errors(
             object_id=obj.pk,
             type=Comment.STRUCTURE_ERROR,
             body=error,
+        )
+        Task.objects.create(
+            title=f"Rasta klaida duomenyse: {ct}, id: {obj.pk}",
+            content_type=ct,
+            object_id=obj.pk,
+            status=Task.CREATED,
+            # role=Task.SUPERVISOR,
+            user=sys_user
         )
 
 

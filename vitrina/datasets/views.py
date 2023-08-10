@@ -930,12 +930,14 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
-        print(self.dataset)
         Task.objects.create(
             title=f"Poreikis duomenų rinkiniui: {self.dataset}",
             content_type=ContentType.objects.get_for_model(self.dataset),
             object_id=self.dataset.pk,
-            status='created'
+            status=Task.CREATED,
+            user=self.request.user,
+            role=Task.SUPERVISOR,
+            type=Task.REQUEST
         )
         set_comment(Dataset.REQUEST_SET)
         self.object.save()

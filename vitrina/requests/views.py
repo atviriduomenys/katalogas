@@ -23,6 +23,7 @@ from vitrina.requests.models import Request, RequestStructure, RequestObject
 
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 
@@ -222,6 +223,15 @@ class RequestCreateView(
         self.object.status = Request.CREATED
         self.object.save()
         set_comment(Request.CREATED)
+        Task.objects.create(
+            title=f"Užregistruotas naujas poreikis: {ContentType.objects.get_for_model(self.object)},"
+                  f" id: {self.object.pk}",
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            status=Task.CREATED,
+            role=Task.SUPERVISOR,
+            user=self.request.user
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

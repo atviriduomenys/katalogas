@@ -30,6 +30,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from vitrina.datasets.helpers import is_manager_dataset_list
 
 from haystack.generic_views import FacetedSearchView
 from parler.utils.context import switch_language
@@ -108,6 +109,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
+
+        if is_manager_dataset_list(self.request):
+            org_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)]
+            datasets = datasets.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(

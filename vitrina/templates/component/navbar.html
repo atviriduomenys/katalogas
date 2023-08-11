@@ -54,11 +54,18 @@
                                 <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
                                 </a>
-                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
-                                    {% translate "Rinkiniai" %}
-                                </a>
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
                                     {% translate "Planai" %}
+                                </a>
+                                {% endif %}
+                                {% if user.organization %}
+                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
+                                    {% translate "Mano organizacijos rinkiniai" %}
+                                </a>
+                                {% endif %}
+                                {% if user.can_see_manager_dataset_list_url %}
+                                <a href="{% url 'manager-dataset-list' %}" class="navbar-item">
+                                    {% translate "Mano tvarkomi rinkiniai" %}
                                 </a>
                                 {% endif %}
                                 {% if user.is_staff or user.is_superuser %}

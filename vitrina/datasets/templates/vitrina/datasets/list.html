@@ -83,12 +83,12 @@
     <div class="card mb-5">
       <div class="card-content">
         <form id="dataset-filter" class="field has-addons is-fullwidth"
-              action="{% if request.resolver_match.url_name == 'dataset-list' %}
-                          {% url 'dataset-list' %}
-                       {% else %}
-                           {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
-                       {% endif %}"
-              method="get">
+        action="{% if request.resolver_match.url_name == 'dataset-list' or request.resolver_match.url_name == 'manager-dataset-list'%}
+                    {% url 'dataset-list' %}
+                 {% else %}
+                     {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
+                 {% endif %}"
+        method="get">
             <div class="control is-expanded">
                 <input class="input" id="search-input" type="text" name="q"
                        placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"

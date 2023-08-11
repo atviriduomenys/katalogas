@@ -11,6 +11,26 @@
 </nav>
 {% endif %}
 
+{% if user.organization %}
+<nav class="category-panel">
+    <a href="{% url 'organization-datasets' user.organization.pk %}" id="org-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano organizacijos rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
+{% if user.can_see_manager_dataset_list_url %}
+<nav class="category-panel">
+    <a href="{% url 'manager-dataset-list' %}" id="manager-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano tvarkomi rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
 
 
 {# include "vitrina/datasets/partials/filter.html" with #}

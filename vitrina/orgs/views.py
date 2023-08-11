@@ -227,6 +227,9 @@ class RepresentativeCreateView(
         self.object.content_type = ContentType.objects.get_for_model(self.organization)
         try:
             user = User.objects.get(email=self.object.email)
+            if self.object.role == Representative.COORDINATOR:
+                user.organization = self.organization
+                user.save()
         except ObjectDoesNotExist:
             user = None
         if user:
@@ -417,8 +420,6 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         if org:
             self.org = org
         else:
-            print('c code')
-            print(company_code)
             self.org = Organization.add_root(
                 title=form.cleaned_data.get('company_name'),
                 company_code=company_code,

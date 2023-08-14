@@ -36,6 +36,7 @@ def test_request_create(app: DjangoTestApp):
 def test_request_update_with_user_without_permission(app: DjangoTestApp):
     user = UserFactory()
     request = RequestFactory()
+    request.save()
 
     app.set_user(user)
     resp = app.get(reverse("request-update", args=[request.pk]), expect_errors=True)
@@ -94,7 +95,8 @@ def test_request_history_view_without_permission(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_history_view_with_permission(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
-    request = RequestFactory(user=user, organization=user.organization)
+    request = RequestFactory(user=user)
+    request.organizations.add(user.organization)
     app.set_user(user)
 
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']

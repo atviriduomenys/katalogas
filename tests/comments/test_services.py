@@ -8,6 +8,7 @@ from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.factories import UserFactory
 
 
@@ -38,10 +39,12 @@ def test_get_comment_form_class_for_request_with_staff_perm():
 @pytest.mark.django_db
 def test_get_comment_form_class_for_request_with_manager_perm():
     request = RequestFactory()
-    ct = ContentType.objects.get_for_model(request.organization)
+    request.organizations.add(OrganizationFactory())
+    request.save()
+    ct = ContentType.objects.get_for_model(request.organizations.first())
     manager = RepresentativeFactory(
         content_type=ct,
-        object_id=request.organization.pk,
+        object_id=request.organizations.first().pk,
         role=Representative.MANAGER
     )
     res = get_comment_form_class(request, manager.user)
@@ -51,10 +54,12 @@ def test_get_comment_form_class_for_request_with_manager_perm():
 @pytest.mark.django_db
 def test_get_comment_form_class_for_request_with_coordinator_perm():
     request = RequestFactory()
-    ct = ContentType.objects.get_for_model(request.organization)
+    request.organizations.add(OrganizationFactory())
+    request.save()
+    ct = ContentType.objects.get_for_model(request.organizations.first())
     coordinator = RepresentativeFactory(
         content_type=ct,
-        object_id=request.organization.pk,
+        object_id=request.organizations.first().pk,
         role=Representative.COORDINATOR
     )
     res = get_comment_form_class(request, coordinator.user)

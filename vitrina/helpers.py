@@ -99,13 +99,15 @@ class Filter:
 
         for value, count in facet[:self.limit]:
             title = value
-
             if self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
                     title = obj.title
                 except ObjectDoesNotExist:
-                    continue
+                    if value == "-1":
+                        title = "Nepriskirta"
+                    else:
+                        continue
             elif self.choices:
                 title = self.choices.get(value)
 

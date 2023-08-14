@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Value, CharField as _CharField, Case, When, Count
+from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget
@@ -457,7 +457,10 @@ class DatasetPlanForm(forms.ModelForm):
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(deadline__gt=date.today())
+        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
+            Q(deadline__isnull=True) |
+            Q(deadline__gt=date.today())
+        )
 
     def clean_plan(self):
         plan = self.cleaned_data.get('plan')

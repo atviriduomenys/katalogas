@@ -65,7 +65,7 @@ class DatasetResourceForm(forms.ModelForm):
         required=False
     )
     data_service = forms.ModelChoiceField(
-        label=_("Data service"),
+        label=_("Duomenų paslauga"),
         required=False,
         queryset=Dataset.public.all()
     )
@@ -115,9 +115,7 @@ class DatasetResourceForm(forms.ModelForm):
             Submit('submit', button, css_class='button is-primary'),
         )
 
-        related_datasets = self.dataset.related_datasets.filter(
-            dataset__service=True
-        ).values_list('dataset__pk', flat=True)
+        related_datasets = self.dataset.related_datasets.values_list('dataset__pk', flat=True)
         self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
 
         if resource and resource.metadata.first():

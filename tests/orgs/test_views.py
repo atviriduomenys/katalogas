@@ -140,11 +140,6 @@ def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
         }
     ]
 
@@ -155,11 +150,6 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
     assert list(resp.context['object_list']) == [organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
         {
             'title': 'Jurisdiction2',
             'query': "?jurisdiction=Jurisdiction2",
@@ -173,18 +163,7 @@ def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
     assert resp.context['selected_jurisdiction'] == "doesnotexist"
-    assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
-        }
-    ]
+    assert resp.context['jurisdictions'] == []
 
 
 @pytest.mark.django_db
@@ -198,11 +177,6 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
             'query': "?q=1&jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?q=1&jurisdiction=Jurisdiction2",
-            'count': 0
-        }
     ]
 
 

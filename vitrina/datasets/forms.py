@@ -477,14 +477,14 @@ class PlanForm(OrganizationPlanForm):
         fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
                   'procurement', 'price', 'project', 'receiver',)
 
-    def __init__(self, obj, organization, user, *args, **kwargs):
+    def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
-        super().__init__(organization, user, *args, **kwargs)
+        super().__init__(organizations, user, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
+            Field('organizations'),
             Field('user_id'),
             Field('title'),
             Field('description'),
@@ -498,7 +498,8 @@ class PlanForm(OrganizationPlanForm):
             Submit('submit', _('Sukurti'), css_class='button is-primary'),
         )
 
-        orgs = [self.obj.organization.pk]
-        self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=orgs)
-        self.initial['receiver'] = self.obj.organization
+        if self.organizations:
+            organization_ids = [org.pk for org in self.organizations]
+            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+            self.initial['receiver'] = self.organizations[0]
         self.initial['title'] = self.obj.title

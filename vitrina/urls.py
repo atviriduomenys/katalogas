@@ -44,6 +44,7 @@ urlpatterns = [
     path('', include('vitrina.classifiers.urls')),
     path('', include('vitrina.cms.urls')),
     path('', include('vitrina.translate.urls')),
+    path('', include('vitrina.statistics.urls')),
     path('admin/', admin.site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path("select2/", include("django_select2.urls")),

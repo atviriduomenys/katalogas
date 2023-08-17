@@ -1,22 +1,24 @@
 {% load i18n %}
 {% load pagination_tags %}
 
-<div class="pagination">
-    <span class="step-links">
-        {% if page_obj.has_previous %}
-            <a href="?{% query_transform page=1 %}">{% translate "Pradinis" %}</a>
-            <a href="?{% query_transform page=page_obj.previous_page_number %}">{% translate "Atgal" %}</a>
-        {% endif %}
+{% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?{% query_transform page=1 %}">{% translate "Pradinis" %}</a>
+                <a href="?{% query_transform page=page_obj.previous_page_number %}">{% translate "Atgal" %}</a>
+            {% endif %}
 
-        <span class="current">
-            {% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}
-                Puslapis {{ number }} iš {{ total }}.
-            {% endblocktranslate %}
+            <span class="current">
+                {% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}
+                    Puslapis {{ number }} iš {{ total }}.
+                {% endblocktranslate %}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?{% query_transform page=page_obj.next_page_number %}">{% translate "Pirmyn" %}</a>
+                <a href="?{% query_transform page=page_obj.paginator.num_pages %}">{% translate "Paskutinis" %} &raquo;</a>
+            {% endif %}
         </span>
-
-        {% if page_obj.has_next %}
-        <a href="?{% query_transform page=page_obj.next_page_number %}">{% translate "Pirmyn" %}</a>
-            <a href="?{% query_transform page=page_obj.paginator.num_pages %}">{% translate "Paskutinis" %} &raquo;</a>
-        {% endif %}
-    </span>
-</div>
+    </div>
+{% endif %}

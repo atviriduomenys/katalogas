@@ -490,6 +490,26 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         )
         return context
 
+    def get_history_objects(self):
+        model_ids = self.models.values_list('pk', flat=True)
+        if self.can_manage_structure:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True
+            ).values_list('pk', flat=True)
+        else:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True,
+                metadata__access__gte=Metadata.PUBLIC,
+            ).values_list('pk', flat=True)
+
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
+        model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
+        dataset_history_objects = Version.objects.get_for_object(self.object)
+        history_objects = property_history_objects | model_history_objects | dataset_history_objects
+        return history_objects.order_by('-revision__date_created')
+
 
 class DatasetStructureImportView(
     LoginRequiredMixin,

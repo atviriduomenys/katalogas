@@ -68,13 +68,12 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 object_id=structure.pk,
                 type=Comment.STRUCTURE_ERROR
             )
-            # create task
             Task.objects.create(
                 title=f"Rasta klaida duomenyse: {ct}, id: {structure.pk}",
+                description=f"Duomenyse {ct}, id: {structure.pk} aptikta klaida.",
                 content_type=ct,
                 object_id=structure.pk,
                 status=Task.CREATED,
-                # role=Task.SUPERVISOR,
                 user=sys_user
             )
 
@@ -379,10 +378,10 @@ def _create_errors(
         )
         Task.objects.create(
             title=f"Rasta klaida duomenyse: {ct}, id: {obj.pk}",
+            description=f"Duomenyse {ct}, id: {obj.pk} aptikta klaida.",
             content_type=ct,
             object_id=obj.pk,
             status=Task.CREATED,
-            # role=Task.SUPERVISOR,
             user=sys_user
         )
 

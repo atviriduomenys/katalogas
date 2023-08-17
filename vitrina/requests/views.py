@@ -226,10 +226,11 @@ class RequestCreateView(
         Task.objects.create(
             title=f"Užregistruotas naujas poreikis: {ContentType.objects.get_for_model(self.object)},"
                   f" id: {self.object.pk}",
+            description=f"Portale registruotas naujas poreikis duomenų atvėrimui: "
+                        f"{ContentType.objects.get_for_model(self.object)}.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             status=Task.CREATED,
-            role=Task.SUPERVISOR,
             user=self.request.user
         )
         return HttpResponseRedirect(self.get_success_url())

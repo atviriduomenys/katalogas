@@ -932,11 +932,12 @@ class AddRequestView(
                                          content_type=ContentType.objects.get_for_model(self.object))
         Task.objects.create(
             title=f"Poreikis duomenų rinkiniui: {self.dataset}",
+            description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",
             content_type=ContentType.objects.get_for_model(self.dataset),
             object_id=self.dataset.pk,
+            organization=Organization.objects.get(pk=self.dataset.organization_id),
             status=Task.CREATED,
             user=self.request.user,
-            role=Task.SUPERVISOR,
             type=Task.REQUEST
         )
         set_comment(Dataset.REQUEST_SET)

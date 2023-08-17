@@ -12,17 +12,25 @@
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {% for item in cats %}
-                <nav class="category-panel mb-5">
-                        <p class="status-panel-heading" title="{{ item.title }}">
+                <nav class="box category-panel mb-5">
+                        <p class="status-panel-heading" title="{{ item.title }}  {{ item.filter }}">
                             <strong>{% translate item.title %}</strong>
                         </p>
                         {% for sub in item.types %}
-                                <div class="columns">
+                                <div class="columns is-gapless m-0 mt-1">
                                     <div class="column is-1">
-                                        <span class="icon"></span>
+                                        <span class="icon glyphicon-list"></span>
                                     </div>
                                     <div class="column is-9">
-                                        <span class="category-panel-block has-text-grey">{% translate sub.subtype %}</span>
+                                        <a href="{% url 'user-task-list' pk=user.pk %}?filter={{ sub.filter }}"
+                                           class="category-panel-block
+                                           {% if active_filter == sub.filter %}
+                                               has-text-weight-bold
+                                           {% else %}
+                                               has-text-grey
+                                           {% endif %}
+
+                                           ">{% translate sub.subtype %}</a>
                                     </div>
                                     <div class="column is-2 has-text-right">
                                         <span>({{ sub.count }})</span>
@@ -49,22 +57,46 @@
                                     {{ i.created|date:"Y-m-d" }}
                                 </div>
                                 <div class="column">
-                                    {{ i.status }}
+                                    {% translate i.status|title %}
                                 </div>
                                 <div class="column">
-                                    {{ i.user }}
+                                    {% if i.user %}
+                                        {{ i.user }}
+                                    {% endif %}
                                 </div>
                                 <div class="column">
-                                    {% translate "Liko 2 dienos" %}
-{#                                    {% i.due_date|date"Y-m-d" %}#}
+                                    {% if i.is_due_or_expiring|first == True %}
+                                        <span class="has-text-danger">
+                                        {% translate 'Vėluoja' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
+                                            {% translate 'dieną' %}
+                                        {% else %}
+                                            {% translate 'dienas' %}
+                                        {% endif %}
+                                        </span>
+                                    {% elif i.is_due_or_expiring|first == False %}
+                                        <span class="has-text-warning">
+                                        {% translate 'Liko' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
+                                            {% translate 'diena' %}
+                                        {% else %}
+                                            {% translate 'dienos' %}
+                                        {% endif %}
+                                        </span>
+                                    {% else %}
+                                        {{ i.due_date|date:"Y-m-d" }}
+                                    {% endif %}
                                 </div>
                                 <div class="column">
-                                    <a href="{% url 'user-task-close' user.pk i.pk %}" class="button is-primary stays-right">Uždaryti</a>
+                                    <a href="{% url 'user-task-close' user.pk i.pk %}"
+                                       class="button is-primary stays-right">
+                                        {% translate "Uždaryti" %}
+                                    </a>
                                 </div>
                             </div>
                             <div class="columns">
                                 <div class="column is-12">
-                                    <p>Aprašymas</p>
+                                    <p>{{ i.description }}</p>
                                 </div>
                             </div>
                         </div>

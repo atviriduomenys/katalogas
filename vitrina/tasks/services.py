@@ -101,5 +101,5 @@ def get_active_tasks(
     query = functools.reduce(operator.or_, args)
 
     # By default, we are only interested in open tasks.
-    query = functools.reduce(operator.and_, [query, Q(status=Task.CREATED)])
+    query = functools.reduce(operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])])
     return queryset.filter(query)

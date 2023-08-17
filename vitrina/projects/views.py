@@ -82,10 +82,10 @@ class ProjectCreateView(
         set_comment(Project.CREATED)
         Task.objects.create(
             title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
+            description=f"Portale užregistruotas naujas panaudos atvejis.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             status=Task.CREATED,
-            role=Task.SUPERVISOR,
             user=self.request.user,
             type=Task.REQUEST
         )

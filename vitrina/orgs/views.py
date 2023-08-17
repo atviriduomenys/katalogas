@@ -442,10 +442,10 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         rep.save()
         task = Task.objects.create(
             title="Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
+            description=f"Portale užsiregistravo naujas duomenų teikėjas: {self.org.company_code}.",
             organization=self.org,
             user=self.request.user,
             status=Task.CREATED,
-            role=Task.SUPERVISOR,
             type=Task.REQUEST
         )
         task.save()

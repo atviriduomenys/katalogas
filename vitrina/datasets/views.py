@@ -30,6 +30,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from vitrina.datasets.helpers import is_manager_dataset_list
 
 from haystack.generic_views import FacetedSearchView
 from parler.utils.context import switch_language
@@ -109,6 +110,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
+
+        if is_manager_dataset_list(self.request):
+            org_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)]
+            datasets = datasets.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
@@ -485,6 +490,26 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             self.object,
         )
         return context
+
+    def get_history_objects(self):
+        model_ids = self.models.values_list('pk', flat=True)
+        if self.can_manage_structure:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True
+            ).values_list('pk', flat=True)
+        else:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True,
+                metadata__access__gte=Metadata.PUBLIC,
+            ).values_list('pk', flat=True)
+
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
+        model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
+        dataset_history_objects = Version.objects.get_for_object(self.object)
+        history_objects = property_history_objects | model_history_objects | dataset_history_objects
+        return history_objects.order_by('-revision__date_created')
 
 
 class DatasetStructureImportView(
@@ -2892,7 +2917,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['obj'] = self.dataset
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.dataset.organization
+        kwargs['organizations'] = [self.dataset.organization]
         return kwargs
 
     def form_valid(self, form):

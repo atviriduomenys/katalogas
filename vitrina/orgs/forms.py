@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -210,15 +210,15 @@ class ProviderWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     dependent_fields = {
-        'organization_id': 'organization_id',
+        'organizations': 'organizations',
         'user_id': 'user_id'
     }
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         ids = []
-        if 'organization_id' in dependent_fields:
-            organization_id = dependent_fields.pop('organization_id')
-            ids.append(organization_id)
+        if 'organizations__in' in dependent_fields:
+            organizations = dependent_fields.pop('organizations__in')
+            ids.extend(organizations)
         if 'user_id' in dependent_fields:
             user_id = dependent_fields.pop('user_id')
             try:
@@ -236,8 +236,8 @@ class ProviderWidget(ModelSelect2Widget):
 
 
 class OrganizationPlanForm(ModelForm):
-    organization_id = IntegerField(widget=HiddenInput)
-    user_id = IntegerField(widget=HiddenInput)
+    organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
+    user_id = IntegerField(widget=HiddenInput(), required=False)
     provider = ModelChoiceField(
         label=_("Paslaugų teikėjas"),
         required=False,
@@ -248,10 +248,10 @@ class OrganizationPlanForm(ModelForm):
     class Meta:
         model = Plan
         fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
-                  'procurement', 'price', 'project', 'organization_id', 'user_id')
+                  'procurement', 'price', 'project', 'organizations', 'user_id')
 
-    def __init__(self, organization, user, *args, **kwargs):
-        self.organization = organization
+    def __init__(self, organizations, user, *args, **kwargs):
+        self.organizations = organizations
         self.user = user
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
@@ -259,7 +259,7 @@ class OrganizationPlanForm(ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
+            Field('organizations', css_class="hidden"),
             Field('user_id'),
             Field('title'),
             Field('description'),
@@ -272,14 +272,14 @@ class OrganizationPlanForm(ModelForm):
             Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
         )
 
-        self.initial['organization_id'] = self.organization.pk
+        self.initial['organizations'] = self.organizations
         self.initial['user_id'] = self.user.pk
 
         if not instance:
             if self.user.organization and self.user.organization.provider:
                 self.initial['provider'] = self.user.organization
-            else:
-                self.initial['provider'] = self.organization
+            elif self.organizations:
+                self.initial['provider'] = self.organizations[0]
 
     def clean(self):
         provider = self.cleaned_data.get('provider')

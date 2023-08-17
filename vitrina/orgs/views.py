@@ -57,12 +57,22 @@ class OrganizationListView(ListView):
         context = super(OrganizationListView, self).get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
         query = self.request.GET.get("q", "")
-        context['jurisdictions'] = [{
-            'title': jurisdiction,
-            'query': "?%s%sjurisdiction=%s" % ("q=%s" % query if query else "", "&" if query else "", jurisdiction),
-            'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
-        } for jurisdiction in Organization.public.values_list('jurisdiction', flat="True")
-            .distinct().order_by('jurisdiction').exclude(jurisdiction__isnull=True)]
+        context['q'] = query
+        context['jurisdictions'] = [
+            {
+                'title': jurisdiction,
+                'query': "?%s%sjurisdiction=%s" % ("q=%s" % query if query else "", "&" if query else "", jurisdiction),
+                'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
+            } for jurisdiction in (
+                Organization.public.values_list(
+                    'jurisdiction', flat="True"
+                ).distinct().order_by(
+                    'jurisdiction'
+                ).exclude(
+                    jurisdiction__isnull=True
+                )
+            ) if filtered_queryset.filter(jurisdiction=jurisdiction)
+        ]
         context['selected_jurisdiction'] = self.request.GET.get('jurisdiction')
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
@@ -227,6 +237,9 @@ class RepresentativeCreateView(
         self.object.content_type = ContentType.objects.get_for_model(self.organization)
         try:
             user = User.objects.get(email=self.object.email)
+            if self.object.role == Representative.COORDINATOR:
+                user.organization = self.organization
+                user.save()
         except ObjectDoesNotExist:
             user = None
         if user:
@@ -417,8 +430,6 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         if org:
             self.org = org
         else:
-            print('c code')
-            print(company_code)
             self.org = Organization.add_root(
                 title=form.cleaned_data.get('company_name'),
                 company_code=company_code,
@@ -526,7 +537,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.organization
+        kwargs['organizations'] = [self.organization]
         return kwargs
 
     def form_valid(self, form):
@@ -662,7 +673,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
 
         # Merge Request objects
         for obj in self.organization.request_set.all():
-            obj.organization = self.merge_organization
+            obj.organizations.add(self.merge_organization)
             obj.save()
 
         # Merge Representative objects

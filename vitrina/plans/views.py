@@ -77,7 +77,7 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['organization'] = self.organization
+        kwargs['organizations'] = [self.organization]
         kwargs['user'] = self.request.user
         return kwargs
 

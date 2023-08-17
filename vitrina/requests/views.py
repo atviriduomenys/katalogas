@@ -1,7 +1,10 @@
+
+from django.views.generic import CreateView, UpdateView, DetailView
 from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
+from datetime import date
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
@@ -9,17 +12,22 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
 from reversion.models import Version
-
+from haystack.generic_views import FacetedSearchView
+from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action
+from vitrina.helpers import get_selected_value
+from vitrina.helpers import Filter
+from vitrina.helpers import DateFilter
 from reversion import set_comment
+from vitrina.requests.services import update_facet_data
+from reversion.views import RevisionMixin
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject
 
 from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestPlanForm
-from django.core.exceptions import ObjectDoesNotExist
-from reversion.views import RevisionMixin
-from vitrina.datasets.models import Dataset
-from vitrina.requests.models import Request, RequestStructure, RequestObject
+from vitrina.requests.forms import RequestForm, RequestPlanForm, RequestSearchForm
 
 from django.utils.translation import gettext_lazy as _
 
@@ -27,30 +35,120 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 
-class RequestListView(ListView):
-    model = Request
+class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
+    facet_fields = [
+        'status', 
+        'dataset_status', 
+        'organization', 
+        'jurisdiction', 
+        'category', 
+        'parent_category', 
+        'groups', 'tags', 
+        'created'
+    ]
+    max_num_facets = 20
     paginate_by = 20
-
+    form_class = RequestSearchForm
+    date_facet_fields = [
+        {
+            'field': 'created',
+            'start_date': date(2019, 1, 1),
+            'end_date': date.today(),
+            'gap_by': 'month',
+        },
+    ]
+    
     def get_queryset(self):
-        query = self.request.GET.get('q')
-        date_from = self.request.GET.get('date_from')
-        date_to = self.request.GET.get('date_to')
-        queryset = Request.public.all()
-
-        if query:
-            queryset = queryset.filter(title__icontains=query)
-        if date_from:
-            queryset = queryset.filter(created__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(created__lte=date_to)
-        return queryset.order_by("-created")
+        requests = super().get_queryset()
+        sorting = self.request.GET.get('sort', None)
+        options = {"size": ELASTIC_FACET_SIZE}
+        for field in self.facet_fields:
+            requests = requests.facet(field, **options)
+        if sorting is None or sorting == 'sort-by-date-newest':
+            requests = requests.order_by('-type_order', '-created')
+        elif sorting == 'sort-by-date-oldest':
+            requests = requests.order_by('-type_order', 'created')
+        elif sorting == 'sort-by-title':
+            if self.request.LANGUAGE_CODE == 'lt':
+                requests = requests.order_by('-type_order', 'lt_title_s')
+            else:
+                requests = requests.order_by('-type_order', 'en_title_s')
+        return requests
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['q'] = self.request.GET.get("q", "")
-        context['selected_date_from'] = self.request.GET.get('date_from')
-        context['selected_date_to'] = self.request.GET.get('date_to')
+        facet_fields = context.get('facets').get('fields')
+        date_facets = context['facets']['dates']
+        form = context.get('form')
+        filter_args = (self.request, form, facet_fields)
+        sorting = self.request.GET.get('sort', None)
+        extra_context = {
+            'filters': [
+                Filter(
+                    *filter_args,
+                    'status',
+                    _("Poreikio būsena"),
+                    choices=Request.FILTER_STATUSES,
+                    multiple=False,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'dataset_status',
+                    _("Duomenų rinkinio būsena"),
+                    choices=Dataset.FILTER_STATUSES,
+                    multiple=False,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'organization',
+                    _("Organizacija"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'jurisdiction',
+                    _("Valdymo sritis"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'category',
+                    _("Kategorija"),
+                    Category,
+                    multiple=True,
+                    is_int=False,
+                    parent='parent_category',
+                ),
+                Filter(
+                    *filter_args,
+                    'tags',
+                    _("Žymė"),
+                    multiple=True,
+                    is_int=False,
+                ),
+                DateFilter(
+                    self.request,
+                    form,
+                    date_facets,
+                    'created',
+                    _("Pateikimo data"),
+                    multiple=False,
+                    is_int=False,
+                ),
+            ],
+            'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
+            'selected_groups': get_selected_value(form, 'groups', True, False),
+            'q': form.cleaned_data.get('q', ''),
+        }     
+        context.update(extra_context)
+        context['sort'] = sorting
         return context
 
 
@@ -65,10 +163,10 @@ class RequestPublicationStatsView(RequestListView):
         sorting = self.request.GET.get('sort', None)
         year_stats = {}
         for req in requests:
-            published = req.created
-            if published is not None:
-                year_published = published.year
-                year_stats[year_published] = year_stats.get(year_published, 0) + 1
+            created = req.created
+            if created is not None:
+                year_created = created.year
+                year_stats[year_created] = year_stats.get(year_created, 0) + 1
         for key, value in year_stats.items():
             if max_count < value:
                 max_count = value
@@ -102,11 +200,11 @@ class RequestYearStatsView(RequestListView):
         quarter_stats = {}
         selected_year = str(self.kwargs['year'])
         for req in requests:
-            published = req.created
-            if published is not None:
-                year_published = published.year
-                year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+            created = req.created
+            if created is not None:
+                year_created = created.year
+                year_stats[year_created] = year_stats.get(year_created, 0) + 1
+                quarter = str(year_created) + "-Q" + str(pd.Timestamp(created).quarter)
                 quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
         for key, value in quarter_stats.items():
             if max_count < value:
@@ -143,13 +241,13 @@ class RequestQuarterStatsView(RequestListView):
         monthly_stats = {}
         selected_quarter = str(self.kwargs['quarter'])
         for req in requests:
-            published = req.created
-            if published is not None:
-                year_published = published.year
-                if str(year_published) in selected_quarter:
-                    quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
+            created = req.created
+            if created is not None:
+                year_created = created.year
+                if str(year_created) in selected_quarter:
+                    quarter = str(year_created) + "-Q" + str(pd.Timestamp(created).quarter)
                     if quarter == selected_quarter:
-                        month = str(year_published) + "-" + str('%02d' % published.month)
+                        month = str(year_created) + "-" + str('%02d' % created.month)
                         monthly_stats[month] = monthly_stats.get(month, 0) + 1
         for m, mv in monthly_stats.items():
             if max_count < mv:
@@ -336,7 +434,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['obj'] = self.request_obj
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.request_obj.organization
+        kwargs['organizations'] = self.request_obj.organizations.all()
         return kwargs
 
     def form_valid(self, form):

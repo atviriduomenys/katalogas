@@ -3,31 +3,11 @@
 
 {% if stats %}
 <nav class="category-panel">
-  <a href="{% url 'dataset-list' %}?{{ request.GET.urlencode }}">
+  <a href="{% url 'request-list' %}?{{ request.GET.urlencode }}">
     <p class="category-panel-heading">
-      <strong>&lt;- {% translate "Atgal į rinkinių sąrašą" as orgTitle %} {{orgTitle|upper}}</strong>
+      <strong>&lt;- {% translate "Atgal į poreikių sąrašą" as orgTitle %} {{orgTitle|upper}}</strong>
     </p>
   </a>
-</nav>
-{% endif %}
-
-{% if user.organization %}
-<nav class="category-panel">
-    <a href="{% url 'organization-datasets' user.organization.pk %}" id="org-dataset-url">
-        <p class="category-panel-heading">
-            {% translate "Mano organizacijos rinkiniai" %}
-        </p>
-    </a>
-</nav>
-{% endif %}
-
-{% if user.can_see_manager_dataset_list_url %}
-<nav class="category-panel">
-    <a href="{% url 'manager-dataset-list' %}" id="manager-dataset-url">
-        <p class="category-panel-heading">
-            {% translate "Mano tvarkomi rinkiniai" %}
-        </p>
-    </a>
 </nav>
 {% endif %}
 
@@ -36,8 +16,8 @@
 {# include "vitrina/datasets/partials/filter.html" with #}
 {# name='status' #}
 {# title=status_filter #}
-{# stats_url_name='dataset-status-stats' #}
-{# id='Dataset-status-stats' #}
+{# stats_url_name='request-status-stats' #}
+{# id='Request-status-stats' #}
 {# facet=status_facet #}
 {# selected=selected_status #}
 
@@ -45,7 +25,6 @@
 <nav class="category-panel mb-5">
 
   {% if filter.stats and active_filter != filter.name %}
-  <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
   {% endif %}
     <p class="{{ filter.name }}-panel-heading">
         <span class="icon-text">
@@ -60,7 +39,6 @@
       </span>
     </p>
   {% if active_filter != filter.name %}
-  </a>
     {% if filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
         <input
             class="input"
@@ -71,11 +49,7 @@
   {% endif %}
 
   {% for item in filter.items %}
-  {% if item.hidden %}
-  <div class="columns is-gapless is-hidden  m-0 mt-1">
-  {% else %}
   <div class="columns is-gapless  m-0 mt-1">
-  {% endif %}
 
     <div class="column is-1">
       {% if item.selected %}

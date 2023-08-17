@@ -50,9 +50,10 @@ class CommentView(
                     user=request.user,
                     title=title,
                     description=comment.body,
-                    organization=obj.organization if hasattr(obj, 'organization') else None,
                     periodicity=frequency.title if frequency else "",
                 )
+                if hasattr(obj, 'organization'):
+                    new_request.organizations.add(obj.organization)
                 RequestObject.objects.create(
                     request=new_request,
                     object_id=object_id,

@@ -11,6 +11,8 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ['first_name', 'last_name', 'email']
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'organization')
     ordering = ('email',)
+    
+    readonly_fields=('username',)
 
     @admin.display()
     def name(self, obj: User) -> str:

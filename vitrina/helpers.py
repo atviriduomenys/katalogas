@@ -97,15 +97,19 @@ class Filter:
             facet = fields[self.name]
             facet = facet
 
-        for value, count in facet[:self.limit]:
-            title = value
+        show_count = 0
+        for value, count in facet:
 
+            title = value
             if self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
                     title = obj.title
                 except ObjectDoesNotExist:
-                    continue
+                    if value == "-1":
+                        title = "Nepriskirta"
+                    else:
+                        continue
             elif self.choices:
                 title = self.choices.get(value)
 
@@ -119,7 +123,9 @@ class Filter:
                     value == selected
                 ),
                 url=get_filter_url(self.request, self.name, value),
+                hidden=show_count > self.limit
             )
+            show_count += 1
 
 
 DateFacetItem = Tuple[
@@ -292,6 +298,7 @@ class FilterItem:
     title: str
     count: str
     selected: bool
+    hidden: bool
 
     def __init__(
         self,
@@ -301,6 +308,7 @@ class FilterItem:
         count: int,
         selected: int,
         url: str,
+        hidden: bool = False
     ):
         self.name = value
         self.value = value
@@ -308,6 +316,7 @@ class FilterItem:
         self.count = count
         self.selected = selected
         self.url = url
+        self.hidden = hidden
 
 
 def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \

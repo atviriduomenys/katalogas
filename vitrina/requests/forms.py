@@ -4,6 +4,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Field, Submit
 from haystack.forms import FacetedSearchForm
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, RadioSelect, DateField
 from django.utils.safestring import mark_safe
 
@@ -79,7 +80,10 @@ class RequestPlanForm(ModelForm):
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(deadline__gt=date.today())
+        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
+            Q(deadline__isnull=True) |
+            Q(deadline__gt=date.today())
+        )
 
     def clean_plan(self):
         plan = self.cleaned_data.get('plan')

@@ -2906,7 +2906,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['obj'] = self.dataset
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.dataset.organization
+        kwargs['organizations'] = [self.dataset.organization]
         return kwargs
 
     def form_valid(self, form):

@@ -200,3 +200,7 @@ cat /opt/venv/lib/python3.10/site-packages/vitrina/settings.py | grep LOCALE
 #| LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
 exit
 
+
+docker run -it --rm vitrina:latest bash
+ls -l /app/static
+exit

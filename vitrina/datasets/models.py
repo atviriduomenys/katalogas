@@ -223,7 +223,12 @@ class Dataset(TranslatableModel):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
     def get_tag_list(self):
-        return list(self.tags.all().values_list('name', flat=True))
+        return list(self.tags.all().values_list('pk', flat=True))
+
+    def get_tag_title(self, tag_id):
+        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
+            return tag.name
+        return ''
 
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()

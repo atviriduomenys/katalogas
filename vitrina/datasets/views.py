@@ -186,8 +186,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     *filter_args,
                     'tags',
                     _("Žymė"),
+                    Dataset,
                     multiple=True,
                     is_int=False,
+                    display_method="get_tag_title"
                 ),
                 Filter(
                     *filter_args,

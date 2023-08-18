@@ -54,7 +54,7 @@
             </li>
         {% endif %}
         {% if can_manage_history and history_url %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name == 'dataset-history' or request.resolver_match.url_name == 'dataset-structure-history' or request.resolver_match.url_name == 'model-history' or request.resolver_match.url_name == 'property-history' %} is-active {% endif %}">
                 <a href="{{ history_url }}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>

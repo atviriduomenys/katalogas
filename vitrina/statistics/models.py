@@ -39,7 +39,7 @@ class StatRoute(TranslatableModel):
         description=models.TextField(_("Aprašymas"), blank=True, null=True),
     )
     image = FilerImageField(verbose_name=_("Paveiksliukas"), null=True, blank=True, on_delete=models.SET_NULL)
-    url = models.URLField(_("Nuoroda"), max_length=512)
+    url = models.CharField(_("Nuoroda"), max_length=512)
     featured = models.BooleanField(_("Rodoma tituliniame puslapyje"), default=False)
     order = models.IntegerField(_("Eiliškumas"), null=True, blank=True)
 

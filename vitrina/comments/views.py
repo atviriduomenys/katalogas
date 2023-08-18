@@ -200,7 +200,7 @@ class ExternalCommentView(
                 title=f"Parašytas komentaras objektui: {external_content_type}, id: {external_object_id}",
                 description=f"Parašytas naujas komentaras {external_content_type}, id: {external_object_id}.",
                 status=Task.CREATED,
-                user=rep.user,
+                user=request.user,
                 type=Task.COMMENT
             )
             comment.save()

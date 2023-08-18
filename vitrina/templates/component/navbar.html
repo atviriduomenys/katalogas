@@ -57,8 +57,6 @@
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
                                     {% translate "Planai" %}
                                 </a>
-                                {% endif %}
-                                {% if user.organization %}
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load comment_tags %}
+
+{% block pageTitle %} | {% translate "Užduotys" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Užduotys" %}{% endblock %}
+
+{% block parent_title %}{% translate "Užduotys" %}{% endblock %}
+{% block current_title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+    {% if task %}
+    <div class="columns">
+        <div class="column is-three-quarters">
+            <article class="media is-expanded">
+                <div class="media-content">
+                    <div class="content">
+                        <div class="columns">
+                            <div class="column">
+                                <p class="dataset-list-title">{{ task.created }}</p>
+                                <p class="dataset-list-description">
+                                    {% if task.description is not None %}
+                                        {{ task.description }}
+                                    {% endif %}
+                                </p>
+                                {% if task.content_object is not None %}
+                                    <a href="{{ object_url }}">Peržiūrėti objektą, kuriam priskirta užduotis.</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <br/>
+        </div>
+        <div class="column is-one-quarter is-hidden-mobile">
+            <div class="box">
+                <div class="mb-3">
+                    <p>{% translate "Organizacija" %}</p>
+                    <p>{{ org }}</p>
+                </div>
+                <div class="mb-3">
+                    <p>{% translate "Sukurta" %}</p>
+                    <p>{{ task.created|date:"Y-m-d" }}</p>
+                </div>
+                {% if task.assigned %}
+                    <div class="mb-3">
+                        <p>{% translate "Priskirta" %}</p>
+                        <p>{{ task.assigned|date:"Y-m-d" }}</p>
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <p>{% translate "Terminas" %}</p>
+                    <p class="
+                    {% if task.is_due_or_expiring|first == True %}
+                        has-text-danger
+                    {% elif task.is_due_or_expiring|first == False %}
+                        has-text-warning-dark
+                    {% else %}
+                        has-text-success
+                    {% endif %}
+                    ">{{ task.due_date|date:"Y-m-d" }}</p>
+                </div>
+                <div class="mb-3">
+                    <p>{% translate "Vykdytojas" %}</p>
+                    <p>{{ task.user }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br/>
+    {% if not task.COMPLETED %}
+        <div class="columns">
+            <div class="column is-three-quarters has-text-right">
+                <a href="{% url 'user-task-assign' user.pk task.pk %}" class="is-primary button">Priskirti sau</a>
+                <a href="{% url 'user-task-close' user.pk task.pk %}" class="is-danger button">Uždaryti</a>
+            </div>
+        </div>
+    {% endif %}
+    <div class="columns no-margin-bottom">
+    <div class="column is-three-quarters">
+        {% comments obj=task user=request.user %}
+    </div>
+    </div>
+    {% else %}
+    <p>{% translate "Užduočių nėra!" %}</p>
+    {% endif %}
+{% endblock %}
+

@@ -51,14 +51,12 @@
                                     {% translate "Profilis" %}
                                 </a>
                                 {% if user.organization %}
-                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
+                                <a href="{% url 'user-task-list' pk=user.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
                                 </a>
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
                                     {% translate "Planai" %}
                                 </a>
-                                {% endif %}
-                                {% if user.organization %}
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>

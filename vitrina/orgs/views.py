@@ -441,21 +441,23 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         user.save()
 
         rep = Representative.objects.create(
-            email = form.cleaned_data.get('coordinator_email'),
-            first_name = form.cleaned_data.get('coordinator_first_name'),
-            last_name = form.cleaned_data.get('coordinator_last_name'),
-            phone = form.cleaned_data.get('coordinator_phone_number'),
-            object_id = self.org.id,
-            role = Representative.COORDINATOR,
-            user = self.request.user,
-            content_type = ContentType.objects.get_for_model(self.org)
+            email=form.cleaned_data.get('coordinator_email'),
+            first_name=form.cleaned_data.get('coordinator_first_name'),
+            last_name=form.cleaned_data.get('coordinator_last_name'),
+            phone=form.cleaned_data.get('coordinator_phone_number'),
+            object_id=self.org.id,
+            role=Representative.COORDINATOR,
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(self.org)
         )
         rep.save()
         task = Task.objects.create(
-            title = "Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
-            organization = self.org,
-            user = self.request.user,
-            role=Task.SUPERVISOR
+            title="Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
+            description=f"Portale užsiregistravo naujas duomenų teikėjas: {self.org.company_code}.",
+            organization=self.org,
+            user=self.request.user,
+            status=Task.CREATED,
+            type=Task.REQUEST
         )
         task.save()
         return redirect(self.org)

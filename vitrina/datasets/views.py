@@ -52,6 +52,7 @@ from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.structure.models import Model, Metadata, Property
 from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
@@ -954,6 +955,16 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
+        Task.objects.create(
+            title=f"Poreikis duomenų rinkiniui: {self.dataset}",
+            description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",
+            content_type=ContentType.objects.get_for_model(self.dataset),
+            object_id=self.dataset.pk,
+            organization=Organization.objects.get(pk=self.dataset.organization_id),
+            status=Task.CREATED,
+            user=self.request.user,
+            type=Task.REQUEST
+        )
         set_comment(Dataset.REQUEST_SET)
         self.object.save()
         return HttpResponseRedirect(

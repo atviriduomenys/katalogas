@@ -86,13 +86,17 @@
                                 <strong><a href="{{ i.object.get_absolute_url }}" class="dataset-list-title">{{ i.object.title | escape }}</a></strong>
                                 <div class="columns">
                                     <div class="column">
-                                        <p>{% translate "Būsena" %}: <span><b>{{ i.get_status_display }}</b></span></p>
-                                        {% if i.organization.title %}
-                                            <p>{% translate "Pasiūlymas organizacijai" %}:
-                                                <span><b>{{ i.organization.title }}</b></span></p>
+                                        <p>{% translate "Būsena" %}: <span><b>{{ i.object.get_status_display }}</b></span></p>
+                                        {% if i.object.organizations.all %}
+                                        <p>
+                                            {% translate "Pasiūlymas organizacijoms" %}:
+                                            {% for organization in i.object.organizations.all %}
+                                                <br/><span><b>{{ organization.title }}</b></span>
+                                            {% endfor %}
+                                        </p>
                                         {% endif %}
                                         <p class="dataset-list-description">
-                                            {% if i.is_existing %}
+                                            {% if i.object.is_existing %}
                                                 <b>{% translate "Poreikis papildyti ar pakeisti esamą duomenų rinkinį" %}</b>
                                             {% else %}
                                                 {{ i.object.description }}
@@ -100,16 +104,16 @@
                                         </p>
                                     </div>
                                     <div class="column is-one-third">
-                                        {% if i.created %}
-                                            <p>{% translate "Registravimo data" %}: {{ i.created|date:"SHORT_DATE_FORMAT" }}</p>
+                                        {% if i.object.created %}
+                                            <p>{% translate "Registravimo data" %}: {{ i.object.created|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
-                                        {% if i.modified %}
+                                        {% if i.object.modified %}
                                             <p>{% translate "Atnaujinimo data" %}: {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}</p>
                                         {% endif %}
-                                        {% if i.comment_count %}
+                                        {% if i.object.comment_count %}
                                             <p>{% translate "Komentarai" %}: {{ i.object.comment_count }}</p>
                                         {% endif %}
-                                        {% if i.like_count %}
+                                        {% if i.object.like_count %}
                                             <p>{% translate "Patinka" %}: {{ i.object.like_count }}</p>
                                         {% endif %}
                                     </div>

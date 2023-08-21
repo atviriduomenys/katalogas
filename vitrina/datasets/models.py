@@ -222,6 +222,9 @@ class Dataset(TranslatableModel):
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
+    def get_tag_object_list(self):
+        return list(self.tags.all().values('name', 'pk'))
+
     def get_tag_list(self):
         return list(self.tags.all().values_list('pk', flat=True))
 

@@ -54,7 +54,7 @@ def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
     dataset = DatasetFactory(tags=('tag-1', 'tag-2', 'tag-3'), status="HAS_DATA")
     resp = app.get(dataset.get_absolute_url())
     assert len(resp.context['tags']) == 3
-    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+    assert resp.context['tags'] == [{'name': 'tag-1', 'pk': 1}, {'name': 'tag-2', 'pk': 2}, {'name': 'tag-3', 'pk': 3}]
 
 
 @pytest.mark.django_db
@@ -506,32 +506,32 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
 
 @pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
+    resp = app.get("%s?selected_facets=tags_exact:2" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag2']
+    assert selected == ['2']
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_shared_tag(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag3" % reverse("dataset-list"))
+    resp = app.get("%s?selected_facets=tags_exact:3" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag3']
+    assert selected == ['3']
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_multiple_tags(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag4&selected_facets=tags_exact:tag3" % reverse("dataset-list"))
+    resp = app.get("%s?selected_facets=tags_exact:4&selected_facets=tags_exact:3" % reverse("dataset-list"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag3', 'tag4']
+    assert selected == ['3', '4']
 
 
 @pytest.fixture
@@ -648,8 +648,8 @@ def test_dataset_filter_all(app: DjangoTestApp):
         f"selected_facets=status_exact:{Dataset.HAS_DATA}&"
         f"selected_facets=organization_exact:{organization.pk}&"
         f"selected_facets=category_exact:{category.pk}&"
-        "selected_facets=tags_exact:tag1&"
-        "selected_facets=tags_exact:tag2&"
+        "selected_facets=tags_exact:1&"
+        "selected_facets=tags_exact:2&"
         f"selected_facets=frequency_exact:{frequency.pk}&"
         "date_from=2022-01-01&"
         "date_to=2022-02-10"
@@ -663,7 +663,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
         'status': Dataset.HAS_DATA,
         'organization': str(organization.pk),
         'category': str(category.pk),
-        'tags': ["tag1", "tag2"],
+        'tags': ["1", "2"],
         'frequency': frequency.pk,
         'published': [
             (2022, 'Y'),

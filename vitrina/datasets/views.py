@@ -186,8 +186,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     *filter_args,
                     'tags',
                     _("Žymė"),
+                    Dataset,
                     multiple=True,
                     is_int=False,
+                    display_method="get_tag_title"
                 ),
                 Filter(
                     *filter_args,
@@ -273,7 +275,7 @@ class DatasetDetailView(
         dataset = context_data.get('dataset')
         organization = get_object_or_404(Organization, id=dataset.organization.pk)
         extra_context_data = {
-            'tags': dataset.get_tag_list(),
+            'tags': dataset.get_tag_object_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
             #TODO: harvested functionality needs to be implemented

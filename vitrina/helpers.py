@@ -52,6 +52,7 @@ class Filter:
         # For tree-like filters
         parent: str = '',
         stats: bool = True,
+        display_method: str = None
     ):
         self.name = name
         self.title = title
@@ -64,6 +65,7 @@ class Filter:
         self.is_int = is_int
         self.parent = parent
         self.stats = stats
+        self.display_method = display_method
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -101,7 +103,10 @@ class Filter:
         for value, count in facet:
 
             title = value
-            if self.model:
+            if self.model and self.display_method and getattr(self.model, self.display_method):
+                method = getattr(self.model, self.display_method)
+                title = method(self.model, value)
+            elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
                     title = obj.title

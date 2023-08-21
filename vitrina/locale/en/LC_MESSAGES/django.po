@@ -1758,3 +1758,18 @@ msgstr "User profile edit"
 
 #~ msgid "Patinka:"
 #~ msgstr "Likes:"
+
+#: .\vitrina\users\forms.py:54
+msgid "Sutinku su"
+msgstr "I agree to"
+
+#: .\vitrina\users\templates\vitrina\users\register.html:24
+msgid "naudojimo sąlygomis"
+msgstr "terms of use"
+
+
+#: .\vitrina\users\forms.py:61
+msgid "Slaptažodžio laukai nesutapo"
+msgstr "The two password fields didn't match"
+
+

@@ -1767,9 +1767,28 @@ msgstr "I agree to"
 msgid "naudojimo sąlygomis"
 msgstr "terms of use"
 
-
 #: .\vitrina\users\forms.py:61
 msgid "Slaptažodžio laukai nesutapo"
 msgstr "The two password fields didn't match"
 
+#: .\vitrina\users\templates\vitrina\users\login.html:27
+#: .\vitrina\templates\allauth\socialaccount\login.html:10
+msgid "Prisijungti su VIISP"
+msgstr "Sign in via VIISP"
+
+#: .\vitrina\templates\allauth\socialaccount\login.html:11
+msgid "Ketinate prijungti naują trečiosios šalies paskyrą iš VIISP"
+msgstr "You are about to connect a new third party account from VIISP"
+
+#: .\vitrina\templates\allauth\socialaccount\login.html:14
+msgid "Tęsti"
+msgstr "Continue"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:24
+msgid "Norite prisijungti su kita platforma?"
+msgstr "Do you want to login with a different platform?"
+
+#: .\vitrina\users\templates\vitrina\users\login.html:25
+msgid "Jeigu norite prisijungti su duomenimis iš kitos platformos tai galite padaryti čia."
+msgstr "If you want to login with credentials from a different platform, you can do it here."
 

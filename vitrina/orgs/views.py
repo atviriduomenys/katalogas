@@ -21,6 +21,7 @@ from reversion.views import RevisionMixin
 
 from vitrina import settings
 from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm, OrganizationMergeForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
@@ -245,6 +246,9 @@ class RepresentativeCreateView(
         if user:
             self.object.user = user
             self.object.save()
+            if not user.organization:
+                user.organization = self.organization
+                user.save()
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -334,6 +338,10 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.organization
+            self.object.user.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -364,6 +372,14 @@ class RepresentativeRegisterView(RegisterView):
             if representative:
                 representative.user = user
                 representative.save()
+
+                if isinstance(representative.content_object, Organization):
+                    user.organization = representative.content_object
+                    user.save()
+                elif isinstance(representative.content_object, Dataset):
+                    user.organization = representative.content_object.organization
+                    user.save()
+
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})

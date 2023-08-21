@@ -257,6 +257,9 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
+    assert Representative.objects.filter(
+        email="manager@gmail.com"
+    ).first().user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -301,6 +304,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     assert resp.url == reverse('home')
     assert User.objects.filter(email='new@gmail.com').count() == 1
     assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
+    assert new_representative.user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -339,6 +343,7 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
+    assert representative_data['representative_manager'].user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db

@@ -1075,6 +1075,7 @@ def test_dataset_members_add_member(app: DjangoTestApp):
         email='test@example.com',
     )
     assert rep.user == user
+    assert rep.user.organization == dataset.organization
     assert rep.role == Representative.MANAGER
     assert rep.has_api_access is False
     assert rep.apikey_set.count() == 0
@@ -1145,6 +1146,7 @@ def test_dataset_members_update_member(app: DjangoTestApp):
 
     manager.refresh_from_db()
     assert manager.role == Representative.MANAGER
+    assert manager.user.organization == dataset.organization
 
     assert len(mail.outbox) == 0
 

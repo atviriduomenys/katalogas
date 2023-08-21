@@ -679,6 +679,10 @@ class CreateMemberView(
         if user:
             self.object.user = user
             self.object.save()
+
+            if not user.organization:
+                user.organization = self.dataset.organization
+                user.save()
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -817,6 +821,11 @@ class UpdateMemberView(
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.dataset.organization
+            self.object.user.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 

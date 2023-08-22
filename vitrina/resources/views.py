@@ -25,15 +25,20 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     context_object_name = 'datasetdistribution'
     form_class = DatasetResourceForm
 
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        return has_perm(self.request.user, Action.CREATE, DatasetDistribution)
+        return has_perm(self.request.user, Action.CREATE, DatasetDistribution, self.dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-            return redirect(dataset)
+            return redirect(self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,8 +50,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
 
     def form_valid(self, form):
         resource = form.save(commit=False)
-        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-        resource.dataset = dataset
+        resource.dataset = self.dataset
         if resource.download_url:
             resource.type = 'URL'
         resource.save()
@@ -54,7 +58,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         name = form.cleaned_data.get('name')
         if not name:
             name = Metadata.objects.filter(
-                dataset=dataset,
+                dataset=self.dataset,
                 content_type=ContentType.objects.get_for_model(DatasetDistribution),
                 name__iregex=r"resource[0-9]+"
             ).order_by('name').values_list('name', flat=True).last()
@@ -70,7 +74,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
                 name = f"resource{n}"
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
-            dataset=dataset,
+            dataset=self.dataset,
             content_type=ContentType.objects.get_for_model(resource),
             object_id=resource.pk,
             name=name,
@@ -83,7 +87,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['dataset'] = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        kwargs['dataset'] = self.dataset
         return kwargs
 
 

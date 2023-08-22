@@ -71,7 +71,7 @@ class Dataset(TranslatableModel):
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
         METADATA: _("Tik metaduomenys"),
-        UNASSIGNED:_("Nepriskirta")
+        UNASSIGNED: _("Nepriskirta")
     }
 
     CREATED = "CREATED"
@@ -260,7 +260,7 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return None
+        return self.UNASSIGNED
 
     @property
     def formats(self):

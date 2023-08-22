@@ -31,6 +31,7 @@ class EnumForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.prop = prop
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "enum-form"
         self.helper.layout = Layout(
             Field('value'),
@@ -275,6 +276,7 @@ class ModelCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "model-form"
         self.helper.layout = Layout(
             Field('name'),
@@ -552,6 +554,7 @@ class PropertyForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.model = model
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "property-form"
         self.helper.layout = Layout(
             Field('dataset_id'),
@@ -678,6 +681,7 @@ class ParamForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "param-form"
         self.helper.layout = Layout(
             Field('name'),

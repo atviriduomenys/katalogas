@@ -5,10 +5,12 @@
 {% block pageTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
 
-{% block parent_title %}
-    {% objectlanguage dataset LANGUAGE_CODE %}
-        {{ dataset.title }}
-    {% endobjectlanguage %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
 {% endblock %}
 
 {% block current_title %}
@@ -33,7 +35,7 @@
                     <th></th>
                     <th></th>
                 </tr>
-                {% for request in page_obj %}
+                {% for request_obj in page_obj %}
                     <tr>
                     <td>
                     <article class="media">
@@ -41,13 +43,13 @@
                             <div class="content">
                                 <div>
                                     <strong>
-                                        <a href="{{ request.get_absolute_url }}" class="dataset-list-title">
-                                              {{ request.title }}
+                                        <a href="{{ request_obj.request.get_absolute_url }}" class="dataset-list-title">
+                                              {{ request_obj.request.title }}
                                         </a>
                                     </strong>
                                 </div>
                                 <p class="dataset-list-description">
-                                    {{ request.description }}
+                                    {{ request_obj.request.description }}
                                 </p>
                             </div>
                         </div>
@@ -55,8 +57,8 @@
                     </td>
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-request-{{ request.pk }}-btn"  class="button is-danger is-small"
-                                   href="{% url 'dataset-request-remove' pk=dataset.pk request_id=request.pk %}">
+                                <a id="remove-request-{{ request_obj.request.pk }}-btn"  class="button is-danger is-small"
+                                   href="{% url 'dataset-request-remove' dataset.pk request_obj.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>
                             </div>

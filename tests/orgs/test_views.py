@@ -140,11 +140,6 @@ def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
         }
     ]
 
@@ -155,11 +150,6 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
     assert list(resp.context['object_list']) == [organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
         {
             'title': 'Jurisdiction2',
             'query': "?jurisdiction=Jurisdiction2",
@@ -173,18 +163,7 @@ def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
     assert resp.context['selected_jurisdiction'] == "doesnotexist"
-    assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
-        }
-    ]
+    assert resp.context['jurisdictions'] == []
 
 
 @pytest.mark.django_db
@@ -198,11 +177,6 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
             'query': "?q=1&jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?q=1&jurisdiction=Jurisdiction2",
-            'count': 0
-        }
     ]
 
 
@@ -283,6 +257,9 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
+    assert Representative.objects.filter(
+        email="manager@gmail.com"
+    ).first().user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -327,6 +304,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     assert resp.url == reverse('home')
     assert User.objects.filter(email='new@gmail.com').count() == 1
     assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
+    assert new_representative.user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -365,6 +343,7 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
+    assert representative_data['representative_manager'].user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -478,7 +457,8 @@ def test_organization_merge(app: DjangoTestApp):
     merge_organization = OrganizationFactory()
 
     dataset = DatasetFactory(organization=organization)
-    request = RequestFactory(organization=organization)
+    request = RequestFactory()
+    request.organizations.add(organization)
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk

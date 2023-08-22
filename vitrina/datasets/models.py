@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.urls import reverse
+
 from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
@@ -59,6 +60,7 @@ class Dataset(TranslatableModel):
     PRIORITIZED = "PRIORITIZED"
     FINANCING = "FINANCING"
     HAS_STRUCTURE = "HAS_STRUCTURE"
+    UNASSIGNED = "UNASSIGNED"
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
@@ -68,6 +70,8 @@ class Dataset(TranslatableModel):
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
+        METADATA: _("Tik metaduomenys"),
+        UNASSIGNED: _("Nepriskirta")
     }
 
     CREATED = "CREATED"
@@ -218,8 +222,16 @@ class Dataset(TranslatableModel):
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
+    def get_tag_object_list(self):
+        return list(self.tags.all().values('name', 'pk'))
+
     def get_tag_list(self):
-        return list(self.tags.all().values_list('name', flat=True))
+        return list(self.tags.all().values_list('pk', flat=True))
+
+    def get_tag_title(self, tag_id):
+        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
+            return tag.name
+        return ''
 
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
@@ -248,7 +260,7 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return None
+        return self.UNASSIGNED
 
     @property
     def formats(self):
@@ -775,3 +787,14 @@ class DataServiceSpecType(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class DatasetStructureMapping(models.Model):
+    dataset_id = models.IntegerField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    org = models.CharField(max_length=255, blank=True, null=True)
+    checksum = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'dataset_structure_mapping'

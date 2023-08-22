@@ -12,6 +12,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request
 from vitrina.resources.models import DatasetDistribution
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
@@ -62,6 +63,7 @@ acl = {
     (Project, Action.DELETE): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
+    (Task, Action.UPDATE): [Role.ALL],
 
 }
 

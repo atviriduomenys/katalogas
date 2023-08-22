@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max
+from django.db.models import QuerySet, Count, Max, Q
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -30,6 +30,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from vitrina.datasets.helpers import is_manager_dataset_list
 
 from haystack.generic_views import FacetedSearchView
 from parler.utils.context import switch_language
@@ -48,9 +49,10 @@ from vitrina.comments.models import Comment
 from vitrina.requests.models import Request, RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
-from vitrina.structure.models import Model, Metadata
+from vitrina.structure.models import Model, Metadata, Property
 from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
@@ -108,6 +110,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
+
+        if is_manager_dataset_list(self.request):
+            org_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)]
+            datasets = datasets.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
@@ -180,8 +186,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     *filter_args,
                     'tags',
                     _("Žymė"),
+                    Dataset,
                     multiple=True,
                     is_int=False,
+                    display_method="get_tag_title"
                 ),
                 Filter(
                     *filter_args,
@@ -267,12 +275,12 @@ class DatasetDetailView(
         dataset = context_data.get('dataset')
         organization = get_object_or_404(Organization, id=dataset.organization.pk)
         extra_context_data = {
-            'tags': dataset.get_tag_list(),
+            'tags': dataset.get_tag_object_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
             #TODO: harvested functionality needs to be implemented
             'harvested': '',
-            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution),
+            'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all(),
@@ -483,7 +491,32 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         return context
+
+    def get_history_objects(self):
+        model_ids = self.models.values_list('pk', flat=True)
+        if self.can_manage_structure:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True
+            ).values_list('pk', flat=True)
+        else:
+            property_ids = Property.objects.filter(
+                model__pk__in=model_ids,
+                given=True,
+                metadata__access__gte=Metadata.PUBLIC,
+            ).values_list('pk', flat=True)
+
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
+        model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
+        dataset_history_objects = Version.objects.get_for_object(self.object)
+        history_objects = property_history_objects | model_history_objects | dataset_history_objects
+        return history_objects.order_by('-revision__date_created')
 
 
 class DatasetStructureImportView(
@@ -648,6 +681,10 @@ class CreateMemberView(
         if user:
             self.object.user = user
             self.object.save()
+
+            if not user.organization:
+                user.organization = self.dataset.organization
+                user.save()
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -786,6 +823,11 @@ class UpdateMemberView(
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.dataset.organization
+            self.object.user.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -858,7 +900,7 @@ class DatasetProjectsView(
 
 
 class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
-    model = Request
+    model = RequestObject
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
     paginate_by = 20
@@ -874,15 +916,20 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        request_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(self.object),
-                                                   object_id=self.object.pk).values_list('request_id', flat=True)
-        return (
-            Request.objects.
-            filter(
-                pk__in=request_ids
-            ).
-            order_by('-created', 'status')
-        )
+        model_ids = Model.objects.filter(dataset=self.object).values_list('pk', flat=True)
+        property_ids = Property.objects.filter(model__pk__in=model_ids).values_list('pk', flat=True)
+        return RequestObject.objects.filter(
+            Q(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk
+            ) | Q(
+                content_type=ContentType.objects.get_for_model(Model),
+                object_id__in=model_ids
+            ) | Q(
+                content_type=ContentType.objects.get_for_model(Property),
+                object_id__in=property_ids
+            )
+        ).order_by('-request__created', 'request__status')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -924,6 +971,16 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
+        Task.objects.create(
+            title=f"Poreikis duomenų rinkiniui: {self.dataset}",
+            description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",
+            content_type=ContentType.objects.get_for_model(self.dataset),
+            object_id=self.dataset.pk,
+            organization=Organization.objects.get(pk=self.dataset.organization_id),
+            status=Task.CREATED,
+            user=self.request.user,
+            type=Task.REQUEST
+        )
         set_comment(Dataset.REQUEST_SET)
         self.object.save()
         return HttpResponseRedirect(
@@ -937,13 +994,14 @@ class AddRequestView(
         context['current_title'] = _('Poreikių pridėjimas')
         return context
 
+
 class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Dataset
     template_name = 'confirm_remove.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        self.request_object = get_object_or_404(Request, pk=self.kwargs.get('request_id'))
+        self.request_object = get_object_or_404(RequestObject, pk=self.kwargs.get('request_id'))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -953,8 +1011,10 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return HttpResponseRedirect(reverse('dataset-requests', kwargs={'pk': self.dataset.pk}))
 
     def delete(self, request, *args, **kwargs):
-        Comment.objects.filter(rel_object_id=self.request_object.pk,
-                               rel_content_type=ContentType.objects.get_for_model(self.request_object)).delete()
+        Comment.objects.filter(
+            rel_object_id=self.request_object.request.pk,
+            rel_content_type=ContentType.objects.get_for_model(self.request_object.request)
+        ).delete()
         self.request_object.delete()
         success_url = self.get_success_url()
         return HttpResponseRedirect(success_url)
@@ -1297,7 +1357,8 @@ class DatasetManagementsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_orgs = context['jurisdiction_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_jurisdictions = []
@@ -2079,8 +2140,9 @@ class DatasetsStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         modified_cats = []
         for cat in parent_cats:
             current_category = Category.objects.get(title=cat.get('display_value'))
@@ -2114,8 +2176,9 @@ class DatasetsCategoriesView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        parent_cats = context['parent_category_facet']
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         modified_cats = []
@@ -2226,7 +2289,8 @@ class CategoryStatsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
-        all_cats = context['category_facet']
+        facet_fields = context.get('facets').get('fields')
+        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         child_titles = []
         cat_titles = []
         indicator = self.request.GET.get('indicator', None)
@@ -2972,7 +3036,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['obj'] = self.dataset
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.dataset.organization
+        kwargs['organizations'] = [self.dataset.organization]
         return kwargs
 
     def form_valid(self, form):

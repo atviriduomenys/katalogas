@@ -99,7 +99,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     assert created_request.count() == 1
     assert created_request.first().title == dataset.title
     assert created_request.first().description == created_comment.first().body
-    assert created_request.first().organization == dataset.organization
+    assert created_request.first().organizations.first() == dataset.organization
     assert created_request.first().periodicity == frequency.title
     assert Version.objects.get_for_object(created_request.first()).count() == 1
     assert Version.objects.get_for_object(created_request.first()).first().revision.comment == Request.CREATED

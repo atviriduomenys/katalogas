@@ -5,7 +5,7 @@ from reversion.admin import VersionAdmin
 
 
 class RequestAdmin(VersionAdmin):
-    list_filter = ('organization',)
+    list_filter = ('organizations',)
 
 
 admin.site.register(Request, RequestAdmin)

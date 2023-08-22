@@ -1524,7 +1524,7 @@ class PropertyCreateView(
         self.dataset.update_level()
 
         # Save history
-        set_comment(_(f'Pridėtas "{self.model_obj}" modelio duomenų laukas "{self.object.name}".'))
+        set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -1885,7 +1885,7 @@ class DatasetStructureHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'dataset-structure-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -1918,6 +1918,12 @@ class DatasetStructureHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
         return context
 
     def get_structure_url(self):
@@ -1961,7 +1967,7 @@ class ModelHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'model-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -2014,6 +2020,19 @@ class ModelHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
+        if self.model_obj.name:
+            context['parent_links'].update({
+                reverse('model-structure', args=[
+                    self.kwargs.get('pk'),
+                    self.model_obj.name
+                ]): self.model_obj.title or self.model_obj.name
+            })
         return context
 
     def get_structure_url(self):
@@ -2035,14 +2054,6 @@ class ModelHistoryView(
     def get_api_url(self):
         return self.model_obj.get_api_url()
 
-    def get_history_url(self):
-        if self.model_obj.name:
-            return reverse(self.history_url_name, kwargs={
-                'pk': self.object.pk,
-                'model': self.model_obj.name,
-            })
-        return None
-
     def get_history_objects(self):
         property_ids = self.props.values_list('pk', flat=True)
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
@@ -2058,7 +2069,7 @@ class PropertyHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'property-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -2114,6 +2125,24 @@ class PropertyHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
+        if self.model_obj.name and self.property.name:
+            context['parent_links'].update({
+                reverse('model-structure', args=[
+                    self.kwargs.get('pk'),
+                    self.model_obj.name
+                ]): self.model_obj.title or self.model_obj.name,
+                reverse('property-structure', kwargs={
+                    'pk': self.kwargs.get('pk'),
+                    'model': self.model_obj.name,
+                    'prop': self.property.name,
+                }): self.property.title or self.property.name,
+            })
         return context
 
     def get_structure_url(self):
@@ -2135,15 +2164,6 @@ class PropertyHistoryView(
 
     def get_api_url(self):
         return self.model_obj.get_api_url()
-
-    def get_history_url(self):
-        if self.model_obj.name and self.property.name:
-            return reverse(self.history_url_name, kwargs={
-                'pk': self.object.pk,
-                'model': self.model_obj.name,
-                'prop': self.property.name,
-            })
-        return None
 
     def get_history_objects(self):
         return Version.objects.get_for_object(self.property).order_by('-revision__date_created')

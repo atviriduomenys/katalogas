@@ -1,6 +1,6 @@
 {% load static %}
 {% load i18n parler_tags %}
-{% load menu_tags %}
+{% load navigation_tags %}
 
 <nav class="navbar is-info" role="navigation" aria-label="main navigation">
 <div class="container">
@@ -26,7 +26,7 @@
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
             <div class="navbar-end">
-                {% show_menu 0 100 100 100 "menu.html" %}
+                {% show_menu %}
                 {% for m in menu %}
                     {% if m.children %}
                         <div class="navbar-item has-dropdown is-hoverable">
@@ -51,14 +51,19 @@
                                     {% translate "Profilis" %}
                                 </a>
                                 {% if user.organization %}
-                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
+                                <a href="{% url 'user-task-list' pk=user.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
-                                </a>
-                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
-                                    {% translate "Rinkiniai" %}
                                 </a>
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
                                     {% translate "Planai" %}
+                                </a>
+                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
+                                    {% translate "Mano organizacijos rinkiniai" %}
+                                </a>
+                                {% endif %}
+                                {% if user.can_see_manager_dataset_list_url %}
+                                <a href="{% url 'manager-dataset-list' %}" class="navbar-item">
+                                    {% translate "Mano tvarkomi rinkiniai" %}
                                 </a>
                                 {% endif %}
                                 {% if user.is_staff or user.is_superuser %}

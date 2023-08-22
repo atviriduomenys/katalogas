@@ -18,7 +18,8 @@ from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
-    DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, DatasetRelationFactory
+    DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
+    DatasetRelationFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory
@@ -54,7 +55,9 @@ def test_dataset_detail_tags(app: DjangoTestApp, dataset_detail_data):
     dataset = DatasetFactory(tags=('tag-1', 'tag-2', 'tag-3'), status="HAS_DATA")
     resp = app.get(dataset.get_absolute_url())
     assert len(resp.context['tags']) == 3
-    assert resp.context['tags'] == ['tag-1', 'tag-2', 'tag-3']
+    assert resp.context['tags'] == [{'name': 'tag-1', 'pk': dataset.tags.get(name="tag-1").pk},
+                                    {'name': 'tag-2', 'pk': dataset.tags.get(name="tag-2").pk},
+                                    {'name': 'tag-3', 'pk': dataset.tags.get(name="tag-3").pk}]
 
 
 @pytest.mark.django_db
@@ -107,9 +110,130 @@ def search_datasets():
 
 
 @pytest.mark.haystack
+def test_org_dataset_url_is_hidden_for_anon_user(app: DjangoTestApp):
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='org-dataset-url')
+
+
+@pytest.mark.haystack
+def test_manager_dataset_url_is_hidden_for_anon_user(app: DjangoTestApp):
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='manager-dataset-url')
+
+
+@pytest.mark.haystack
+def test_org_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='org-dataset-url')
+
+
+@pytest.mark.haystack
+def test_manager_dataset_url_is_hidden_for_normal_user(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='manager-dataset-url')
+
+
+@pytest.mark.haystack
+def test_manager_dataset_url_is_hidden_for_manager_if_no_datasets(app: DjangoTestApp):
+    org = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+    )
+    app.set_user(rep.user)
+    resp = app.get(reverse('dataset-list'))
+    assert not resp.html.find(id='manager-dataset-url')
+
+
+@pytest.mark.haystack
+def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='org-dataset-url')
+
+
+@pytest.mark.haystack
+def test_manager_dataset_url_is_shown_for_manager(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    ct = ContentType.objects.get_for_model(Dataset)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+    )
+    app.set_user(rep.user)
+    resp = app.get(reverse('dataset-list'))
+    assert resp.html.find(id='manager-dataset-url')
+
+
+@pytest.mark.haystack
+def test_org_datasets_are_shown_for_coordinator(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(title='testt', organization=org)
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    resp = resp.click(linkid='org-dataset-url')
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk]
+
+
+@pytest.mark.haystack
+def test_manager_datasets_are_shown_for_manager(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    ct = ContentType.objects.get_for_model(Dataset)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+    )
+    app.set_user(rep.user)
+    resp = app.get(reverse('dataset-list'))
+    resp = resp.click(linkid='manager-dataset-url')
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk]
+
+
+@pytest.mark.haystack
+def test_datasets_from_multiple_orgs_are_shown_for_manager(app: DjangoTestApp):
+    org = OrganizationFactory()
+    org2 = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    dataset2 = DatasetFactory(organization=org2)
+    ct = ContentType.objects.get_for_model(Dataset)
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+        user=user
+    )
+    rep2 = RepresentativeFactory(
+        content_type=ct,
+        object_id=org2.pk,
+        role=Representative.MANAGER,
+        user=user
+    )
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    resp = resp.click(linkid='manager-dataset-url')
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset.pk, dataset2.pk]
+
+
+@pytest.mark.haystack
 def test_search_without_query(app: DjangoTestApp, search_datasets):
     resp = app.get(reverse('dataset-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk,
+                                                                    search_datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -127,7 +251,8 @@ def test_search_with_query_that_matches_one(app: DjangoTestApp, search_datasets)
 @pytest.mark.haystack
 def test_search_with_query_that_matches_all(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "rinkinys"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk,
+                                                                    search_datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -135,7 +260,8 @@ def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestAp
     for dataset in search_datasets:
         dataset.set_current_language('en')
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "Dataset"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk, search_datasets[0].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk, search_datasets[2].pk,
+                                                                    search_datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -288,8 +414,8 @@ def test_category_filter_with_parent_category(app: DjangoTestApp, category_filte
 
 @pytest.mark.haystack
 def test_category_filter_with_middle_category(
-    app: DjangoTestApp,
-    category_filter_data: dict[str, list[Category]],
+        app: DjangoTestApp,
+        category_filter_data: dict[str, list[Category]],
 ):
     resp = app.get("%s?selected_facets=category_exact:%s" % (
         reverse("dataset-list"),
@@ -307,8 +433,8 @@ def test_category_filter_with_middle_category(
 
 @pytest.mark.haystack
 def test_category_filter_with_child_category(
-    app: DjangoTestApp,
-    category_filter_data: dict[str, list[Category]],
+        app: DjangoTestApp,
+        category_filter_data: dict[str, list[Category]],
 ):
     resp = app.get("%s?selected_facets=category_exact:%s" % (
         reverse("dataset-list"),
@@ -325,18 +451,18 @@ def test_category_filter_with_child_category(
 
 @pytest.mark.haystack
 def test_category_filter_with_parent_and_child_category(
-    app: DjangoTestApp,
-    category_filter_data: dict[str, list[Category]],
+        app: DjangoTestApp,
+        category_filter_data: dict[str, list[Category]],
 ):
     resp = app.get((
-        '%s?'
-        'selected_facets=category_exact:%s&'
-        'selected_facets=category_exact:%s'
-    ) % (
-        reverse("dataset-list"),
-        category_filter_data["categories"][0].pk,
-        category_filter_data["categories"][3].pk
-    ))
+                       '%s?'
+                       'selected_facets=category_exact:%s&'
+                       'selected_facets=category_exact:%s'
+                   ) % (
+                       reverse("dataset-list"),
+                       category_filter_data["categories"][0].pk,
+                       category_filter_data["categories"][3].pk
+                   ))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [
         category_filter_data["datasets"][3].pk,
     ]
@@ -352,7 +478,7 @@ def test_category_filter_with_parent_and_child_category(
 @pytest.mark.skip
 @pytest.mark.haystack
 def test_data_group_filter_header_visible_if_data_groups_exist(
-    app: DjangoTestApp,
+        app: DjangoTestApp,
 ):
     group = DatasetGroupFactory()
     category = CategoryFactory()
@@ -367,7 +493,7 @@ def test_data_group_filter_header_visible_if_data_groups_exist(
 @pytest.mark.skip
 @pytest.mark.haystack
 def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
-    app: DjangoTestApp,
+        app: DjangoTestApp,
 ):
     dataset = DatasetFactory()
     resp = app.get(reverse('dataset-list'))
@@ -397,32 +523,37 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
 
 @pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag2" % reverse("dataset-list"))
+    tag_id = datasets[0].tags.get(name="tag2").pk
+    resp = app.get("%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag2']
+    assert selected == [str(tag_id)]
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_shared_tag(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag3" % reverse("dataset-list"))
+    tag_id = datasets[0].tags.get(name="tag3").pk
+    resp = app.get("%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[0].pk, datasets[1].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag3']
+    assert selected == [str(tag_id)]
 
 
 @pytest.mark.haystack
 def test_tag_filter_with_multiple_tags(app: DjangoTestApp, datasets):
-    resp = app.get("%s?selected_facets=tags_exact:tag4&selected_facets=tags_exact:tag3" % reverse("dataset-list"))
+    tag_id_1 = datasets[1].tags.get(name="tag3").pk
+    tag_id_2 = datasets[1].tags.get(name="tag4").pk
+    resp = app.get("%s?selected_facets=tags_exact:%s&selected_facets=tags_exact:%s" % (
+        reverse("dataset-list"), tag_id_1, tag_id_2))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [datasets[1].pk]
 
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['tags'].items() if i.selected]
-    assert selected == ['tag3', 'tag4']
+    assert selected == [str(tag_id_1), str(tag_id_2)]
 
 
 @pytest.fixture
@@ -535,12 +666,15 @@ def test_dataset_filter_all(app: DjangoTestApp):
     dataset_with_all_filters.slug = 'ds1'
     dataset_with_all_filters.save()
 
+    tag_id_1 = dataset_with_all_filters.tags.get(name="tag1").pk
+    tag_id_2 = dataset_with_all_filters.tags.get(name="tag2").pk
+
     resp = app.get(reverse("dataset-list") + '?' + (
         f"selected_facets=status_exact:{Dataset.HAS_DATA}&"
         f"selected_facets=organization_exact:{organization.pk}&"
         f"selected_facets=category_exact:{category.pk}&"
-        "selected_facets=tags_exact:tag1&"
-        "selected_facets=tags_exact:tag2&"
+        f"selected_facets=tags_exact:{tag_id_1}&"
+        f"selected_facets=tags_exact:{tag_id_2}&"
         f"selected_facets=frequency_exact:{frequency.pk}&"
         "date_from=2022-01-01&"
         "date_to=2022-02-10"
@@ -554,7 +688,7 @@ def test_dataset_filter_all(app: DjangoTestApp):
         'status': Dataset.HAS_DATA,
         'organization': str(organization.pk),
         'category': str(category.pk),
-        'tags': ["tag1", "tag2"],
+        'tags': [str(tag_id_1), str(tag_id_2)],
         'frequency': frequency.pk,
         'published': [
             (2022, 'Y'),
@@ -966,6 +1100,7 @@ def test_dataset_members_add_member(app: DjangoTestApp):
         email='test@example.com',
     )
     assert rep.user == user
+    assert rep.user.organization == dataset.organization
     assert rep.role == Representative.MANAGER
     assert rep.has_api_access is False
     assert rep.apikey_set.count() == 0
@@ -1036,6 +1171,7 @@ def test_dataset_members_update_member(app: DjangoTestApp):
 
     manager.refresh_from_db()
     assert manager.role == Representative.MANAGER
+    assert manager.user.organization == dataset.organization
 
     assert len(mail.outbox) == 0
 

@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Value, CharField as _CharField, Case, When, Count
+from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget
@@ -85,6 +85,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
             Field('is_public',
@@ -141,7 +142,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
     def search(self):
         sqs = super().search()
-
+        sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
         if self.cleaned_data.get('date_from'):
@@ -153,7 +154,6 @@ class DatasetSearchForm(FacetedSearchForm):
     def no_query_found(self):
         return self.searchqueryset.all()
 
-
 class DatasetStructureImportForm(forms.ModelForm):
     file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
@@ -164,6 +164,7 @@ class DatasetStructureImportForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
             Field('file'),
@@ -201,6 +202,7 @@ class DatasetAttributionForm(forms.ModelForm):
         self.dataset = dataset
 
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "attribution-form"
         self.helper.layout = Layout(
             Field('attribution'),
@@ -247,6 +249,7 @@ class AddProjectForm(forms.ModelForm):
         self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-add-project-form"
         self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
         self.helper.layout = Layout(
@@ -276,6 +279,7 @@ class AddRequestForm(forms.ModelForm):
         self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-add-request-form"
         self.fields['requests'].queryset = get_requests(self.user, self.dataset)
         self.helper.layout = Layout(
@@ -376,6 +380,7 @@ class DatasetRelationForm(forms.ModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-relation-form"
         self.helper.layout = Layout(
             Field('organization_id'),
@@ -444,13 +449,17 @@ class DatasetPlanForm(forms.ModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-plan-form"
         self.helper.layout = Layout(
             Field('plan'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(deadline__gt=date.today())
+        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
+            Q(deadline__isnull=True) |
+            Q(deadline__gt=date.today())
+        )
 
     def clean_plan(self):
         plan = self.cleaned_data.get('plan')
@@ -468,13 +477,14 @@ class PlanForm(OrganizationPlanForm):
         fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
                   'procurement', 'price', 'project', 'receiver',)
 
-    def __init__(self, obj, organization, user, *args, **kwargs):
+    def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
-        super().__init__(organization, user, *args, **kwargs)
+        super().__init__(organizations, user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
+            Field('organizations'),
             Field('user_id'),
             Field('title'),
             Field('description'),
@@ -488,7 +498,8 @@ class PlanForm(OrganizationPlanForm):
             Submit('submit', _('Sukurti'), css_class='button is-primary'),
         )
 
-        orgs = [self.obj.organization.pk]
-        self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=orgs)
-        self.initial['receiver'] = self.obj.organization
+        if self.organizations:
+            organization_ids = [org.pk for org in self.organizations]
+            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+            self.initial['receiver'] = self.organizations[0]
         self.initial['title'] = self.obj.title

@@ -48,6 +48,7 @@ from vitrina.datasets.views import DatasetDeletePlanDetailView
 urlpatterns = [
     # @GetMapping("/datasets")`
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
     path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block pageTitle %} | {% translate "Organizacijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Organizacijos" %}{% endblock %}
+
+{% block current_title %}{% translate "Organizacijos" %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            <div class="card">
+                <div class="card-content">
+                    <nav class="category-panel mb-5">
+                        <a href="{% url 'organization-stats-jurisdiction' %}?" id="organization-stats-jurisdiction">
+                            <p class="jurisdiction-panel-heading">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                      <i class="fas fa-chart-bar fa-lg"></i>
+                                    </span>
+                                    <span class="has-text-weight-bold">
+                                      {% translate "Valdymo sritis" %}
+                                    </span>
+                                </span>
+                            </p>
+                        </a>
+
+
+                        {% if selected_jurisdiction %}
+                            {% for jurisdiction in jurisdictions %}
+                                {% if jurisdiction.title == selected_jurisdiction %}
+                                <div class="columns is-gapless  m-0 mt-1">
+                                    <span class="icon" onclick="removeFilter('{{ jurisdiction.title }}')" style="cursor: pointer;">
+                                        <i class="far fa-check-square"></i>
+                                    </span>
+
+                                    <div class="column is-9">
+                                        <span class="category-panel-block has-text-weight-bold">{{ jurisdiction.title }}</span>
+                                    </div>
+
+                                    <div class="column is-2 has-text-right">
+                                      <span class="is-size-6">({{ jurisdiction.count }})</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {% for jurisdiction in jurisdictions %}
+                                <div class="columns is-gapless  m-0 mt-1 {% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %}">
+                                    <span class="icon">
+                                        <i class="far fa-square"></i>
+                                    </span>
+
+                                    <div class="column is-9">
+                                        <a href="{{ jurisdiction.query }}"
+                                           class="category-panel-block has-text-grey"
+                                           title="{{ jurisdiction.title }}"
+                                        >
+                                            {{ jurisdiction.title }}
+                                        </a>
+                                    </div>
+
+                                    <div class="column is-2 has-text-right">
+                                      <span class="is-size-6">({{ jurisdiction.count }})</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        {% if not selected_jurisdiction and jurisdictions|length > 10 %}
+                            <div>
+                                <a class="facets-more" id="facet-jurisdiction">{% translate "Išskleisti" %}</a>
+                            </div>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <div class="column is-three-quarters">
+            <div class="is-flex">
+                <span>{% translate "Valdymo sritis" %}</span>
+                <div class="stays-right">
+                    {% translate "Organizacijų sk." %}
+                </div>
+            </div>
+            <div class="is-flex">
+                <div class="stays-right">
+                    <form action="/organizations/stats/{{ filter }}" method="GET">
+                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                        <div class="select">
+                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
+                                <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
+                                <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% for org, ov in jurisdiction_data.items %}
+                    <div class="is-flex">
+                        <a href="/organizations/stats/jurisdiction/{{ org.pk }}?{{ request.GET.urlencode }}"
+                            id="{{ area.filter_value }}_id">
+                            <strong style="color: black;">{{ org }}</strong>
+                        </a>
+                        <div class="stays-right">
+                            <a href="/datasets/{{ org.url }}">
+                                {{ ov }}
+                            </a>
+                        </div>
+                    </div>
+                    <progress class="progress is-info"
+                        value="{{ ov }}"
+                        max="{{ max_count }}">
+                    </progress>
+                {% endfor %}
+        </div>
+    </div>
+    {#</section>#}
+    <br/>
+{% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+        });
+
+         function removeFilter(jurisdiction) {
+            let search = decodeURIComponent(location.search.substring(1));
+            let searchParams = search.split('&');
+            let query = "";
+            for (let param of searchParams) {
+                if (
+                    !param.startsWith("jurisdiction=") ||
+                    param.replaceAll("jurisdiction=", "").replaceAll("+", " ") != jurisdiction
+                ) {
+                    query = query ? `${query}&${param}` : `?${param}`;
+                }
+            }
+            location.href = `${location.origin}${location.pathname}${query}`;
+        }
+    </script>
+{% endblock %}

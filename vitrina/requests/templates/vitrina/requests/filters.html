@@ -52,24 +52,26 @@
   <div class="columns is-gapless  m-0 mt-1">
 
     <div class="column is-1">
-      {% if item.selected %}
-      <span class="icon">
-        <i class="far fa-check-square"></i>
-      </span>
-      {% else %}
-      <span class="icon">
-        <i class="far fa-square"></i>
-      </span>
-      {% endif %}
+      <a href="{{ item.url }}" class="has-text-dark">
+        {% if item.selected %}
+        <span class="icon">
+          <i class="far fa-check-square"></i>
+        </span>
+        {% else %}
+        <span class="icon">
+          <i class="far fa-square"></i>
+        </span>
+        {% endif %}
+      </a>
     </div>
 
     <div class="column is-9">
 
-      {% if item.selected %}
-      <span class="category-panel-block has-text-weight-bold">
-      {% else %}
-      <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
-      {% endif %}
+        {% if item.selected %}
+        <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
+        {% else %}
+        <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
+        {% endif %}
 
         {% if filter.name == 'level' %}
           <span class="icon-text">
@@ -82,11 +84,7 @@
           {{ item.title }}
         {% endif %}
 
-      {% if item.selected %}
-      </span>
-      {% else %}
       </a>
-      {% endif %}
     </div>
 
     <div class="column is-2 has-text-right">

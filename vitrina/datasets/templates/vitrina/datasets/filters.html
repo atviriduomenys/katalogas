@@ -71,53 +71,50 @@
   {% endif %}
 
   {% for item in filter.items %}
-  {% if item.hidden %}
-  <div class="columns is-gapless is-hidden  m-0 mt-1">
-  {% else %}
-  <div class="columns is-gapless  m-0 mt-1">
-  {% endif %}
-
-    <div class="column is-1">
-      {% if item.selected %}
-      <span class="icon">
-        <i class="far fa-check-square"></i>
-      </span>
+      {% if item.hidden %}
+      <div class="columns is-gapless is-hidden  m-0 mt-1">
       {% else %}
-      <span class="icon">
-        <i class="far fa-square"></i>
-      </span>
-      {% endif %}
-    </div>
-
-    <div class="column is-9">
-
-      {% if item.selected %}
-      <span class="category-panel-block has-text-weight-bold">
-      {% else %}
-      <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
+      <div class="columns is-gapless  m-0 mt-1">
       {% endif %}
 
-        {% if filter.name == 'level' %}
-          <span class="icon-text">
-            {% for star in item.value|range %}
-            <i class="fas fa-star"></i>
-            {% endfor %}
-          </span>
+        <div class="column is-1">
+            <a href="{{ item.url }}" class="has-text-dark">
+              {% if item.selected %}
+              <span class="icon">
+                <i class="far fa-check-square"></i>
+              </span>
+              {% else %}
+              <span class="icon">
+                <i class="far fa-square"></i>
+              </span>
+              {% endif %}
+            </a>
+        </div>
 
-        {% else %}
-          {{ item.title }}
-        {% endif %}
+        <div class="column is-9">
 
-      {% if item.selected %}
-      </span>
-      {% else %}
-      </a>
-      {% endif %}
-    </div>
+          {% if item.selected %}
+          <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
+          {% else %}
+          <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
+          {% endif %}
 
-    <div class="column is-2 has-text-right">
-      <span class="is-size-6">({{ item.count }})</span>
-    </div>
+            {% if filter.name == 'level' %}
+              <span class="icon-text">
+                {% for star in item.value|range %}
+                <i class="fas fa-star"></i>
+                {% endfor %}
+              </span>
+
+            {% else %}
+              {{ item.title }}
+            {% endif %}
+          </a>
+        </div>
+
+        <div class="column is-2 has-text-right">
+          <span class="is-size-6">({{ item.count }})</span>
+        </div>
   </div>
   {% endfor %}
 

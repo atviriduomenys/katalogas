@@ -118,6 +118,7 @@ class Filter:
             elif self.choices:
                 title = self.choices.get(value)
 
+            is_selected = value in selected if self.multiple else value == selected
             yield FilterItem(
                 value=value,
                 title=title,
@@ -127,7 +128,7 @@ class Filter:
                     if self.multiple else
                     value == selected
                 ),
-                url=get_filter_url(self.request, self.name, value),
+                url=get_filter_url(self.request, self.name, value, is_selected),
                 hidden=show_count > self.limit
             )
             show_count += 1
@@ -289,12 +290,13 @@ class DateFilter(Filter):
         for period, facet in facets:
             for value, title, count in facet:
                 start, end = period.get_period(value)
+                is_selected = value in selected
                 yield FilterItem(
                     value=value,
                     title=title,
                     count=count,
-                    selected=value in selected,
-                    url=f'?date_from={start}&date_to={end}',
+                    selected=is_selected,
+                    url=get_date_filter_url(self.request, start, end, is_selected),
                 )
 
 
@@ -342,14 +344,39 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
     return selected_value
 
 
-def get_filter_url(request: WSGIRequest, key: str, value: str) -> str:
+def get_filter_url(request: WSGIRequest, key: str, value: str, selected: bool = False) -> str:
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
-    if "selected_facets" in query_dict:
-        query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+    if selected:
+        val = '%s_exact:%s' % (key, value)
+        if val in query_dict.get('selected_facets', []):
+            query_dict['selected_facets'].remove(val)
     else:
-        query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+        if "selected_facets" in query_dict:
+            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+        else:
+            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    return "?" + urlencode(query_dict, True)
+
+
+def get_date_filter_url(
+    request: WSGIRequest,
+    start: datetime.date,
+    end: datetime.date,
+    selected: bool = False
+) -> str:
+    query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    if selected:
+        if 'date_from' in query_dict:
+            query_dict.pop('date_from')
+        if 'date_to' in query_dict:
+            query_dict.pop('date_to')
+    else:
+        query_dict['date_from'] = start
+        query_dict['date_to'] = end
     return "?" + urlencode(query_dict, True)
 
 

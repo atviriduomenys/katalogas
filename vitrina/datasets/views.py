@@ -155,7 +155,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     'level',
                     _("Brandos lygis"),
                     multiple=False,
-                    is_int=False,
+                    is_int=True,
                 ),
                 Filter(
                     *filter_args,

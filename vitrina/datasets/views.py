@@ -1042,8 +1042,7 @@ class DatasetStatsView(DatasetListView):
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
         duration = self.request.GET.get('duration', None)
-        first = Dataset.objects.all().first()
-        start_date = first.created
+        start_date = Dataset.objects.all().first().created
         statuses = {}
         stat_groups = {}
         chart_data = []
@@ -1095,7 +1094,6 @@ class DatasetStatsView(DatasetListView):
             .values('object_id', 'status', 'year', 'month')
 
         comm_statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
-        print(len(dataset_status))
 
         if duration is None:
             duration = 'duration-yearly'
@@ -1200,7 +1198,6 @@ class DatasetStatsView(DatasetListView):
             total = 0
             temp = []
             for label in labels:
-                print('month: ', label.month)
                 if indicator == 'dataset-count':
                     if status == 'HAS_DATA':
                         comm_val = 'OPENED'
@@ -1512,8 +1509,12 @@ class DatasetsOrganizationsView(DatasetListView):
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         orgs = {}
         stat_groups = {}
+        chart_data = []
+        
         if indicator is None:
             indicator = 'dataset-count'
         for d in datasets:
@@ -1591,6 +1592,7 @@ class DatasetsOrganizationsView(DatasetListView):
         sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
         context['organization_data'] = sorted_orgs
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'organizations'
         context['active_indicator'] = indicator
         context['sort'] = sorting

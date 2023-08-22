@@ -3,7 +3,6 @@ from typing import List, Any, Dict, Type
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
-
 from django.db.models import Q
 
 from vitrina.helpers import get_filter_url

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load i18n parler_tags %}
 
-{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageTitle %} | {% translate "Duomenų rinkinių organizacijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių organizacijos" %}{% endblock %}
 
 {% block current_title %}
-{% translate "Duomenų rinkinių valdymo sritys" %}
+{% translate "Duomenų rinkinių organizacijos" %}
 {% endblock %}
 
 {% block content %}
@@ -36,4 +36,50 @@
             {% endfor %}
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
 {% endblock %}

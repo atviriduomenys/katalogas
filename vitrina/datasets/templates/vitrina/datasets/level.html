@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n parler_tags %}
+{% load util_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkinių brandos lygiai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkinių brandos lygiai" %}{% endblock %}
@@ -22,18 +23,74 @@
                 <span>{% translate "Brandos lygis" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" with filter="level" %}
             </div>
-            {% for m, mv in level_data.items %}
+             {% include "vitrina/datasets/stats_graph.html" %}
+
+            {% for level in level_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=filter_level_exact%3A{{ m }}"
-                        id="{{ m }}_id">
-                        <strong style="color: black;">{{ m }}</strong>
+                    <a href="/datasets/?selected_facets=filter_level_exact%3A{{ level.filter_value }}"
+                        id="{{ level.filter_value }}_id">
+                        <strong class="has-text-black">
+                            {% if level.filter_value %}
+                                {% for star in level.filter_value|range %}
+                                    <i class="fas fa-star"></i>
+                                {% endfor %}
+                            {% else %}
+                                {{ level.display_value }}
+                            {% endif %}
+                        </strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=filter_level_exact%3A{{ m }}">{{ mv }}</a></div>
+                    <div class="stays-right"><a href="/datasets/?selected_facets=filter_level_exact%3A{{ level.filter_value }}">{{ level.count }}</a></div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ mv }}"
+                          value="{{ level.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
 {% endblock %}

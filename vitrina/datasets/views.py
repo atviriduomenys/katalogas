@@ -1129,9 +1129,9 @@ class DatasetStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         statuses = {}
         stat_groups = {}
@@ -1142,17 +1142,6 @@ class DatasetStatsView(DatasetListView):
                                'HAS_DATA': 'Atverti duomenys',
                                'OPENED': 'Atverti duomenys',
                                'INVENTORED': 'Inventorintas'}
-
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
 
         most_recent_comments = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
@@ -1170,13 +1159,16 @@ class DatasetStatsView(DatasetListView):
 
         comm_statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
 
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for d in datasets:
             if d.status is not None:
                 statuses[d.status] = statuses.get(d.status, 0) + 1
@@ -1188,7 +1180,6 @@ class DatasetStatsView(DatasetListView):
                     if d.status == k:
                         id_list.append(d.pk)
                 stat_groups[k] = id_list
-                # print('stat_groups: ', stat_groups)
             for item in stat_groups.keys():
                 if indicator == 'download-request-count' or indicator == 'download-object-count':
                     models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name',
@@ -1245,16 +1236,11 @@ class DatasetStatsView(DatasetListView):
         for v in values:
             if max_count < int(v):
                 max_count = int(v)
-        if sorting is None or sorting == 'sort-desc':
+        if sorting == 'sort-desc':
             sorted_value_index = np.flip(np.argsort(values))
         else:
             sorted_value_index = np.argsort(values)
         sorted_statuses = {keys[i]: values[i] for i in sorted_value_index}
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for status in statuses:
@@ -1341,7 +1327,7 @@ class DatasetStatsView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['status_data'] = sorted_statuses
         context['max_count'] = max_count
@@ -1421,6 +1407,7 @@ class DatasetManagementsView(DatasetListView):
                         'created'
                     )
                 elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+                    #todo pasidomėti ar čia taip iš tiesų
                     count = get_count_by_frequency(
                         frequency,
                         label,
@@ -1429,6 +1416,7 @@ class DatasetManagementsView(DatasetListView):
                         field
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+                    #todo pasidomėti ar čia taip iš tiesų
                     count += get_count_by_frequency(
                         frequency,
                         label,
@@ -1481,11 +1469,11 @@ class DatasetManagementsView(DatasetListView):
 
 
 def get_count_by_frequency(
-    frequency,
-    label,
-    queryset,
-    field,
-    aggregate_field = None,
+        frequency,
+        label,
+        queryset,
+        field,
+        aggregate_field=None,
 ):
     if frequency == 'Y':
         query = {
@@ -1681,9 +1669,9 @@ class DatasetsOrganizationsView(DatasetListView):
         max_count = 0
         facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         orgs = {}
         stat_groups = {}
@@ -1692,24 +1680,16 @@ class DatasetsOrganizationsView(DatasetListView):
         top_orgs = update_facet_data(self.request, facet_fields, 'organization', Organization)
         sorted_top_orgs = sorted(top_orgs, key=lambda org: org['count'], reverse=True)[:10]
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for d in datasets:
             current = Organization.objects.get(id=d.organization[0])
             orgs[current] = orgs.get(current, 0) + 1
@@ -1780,16 +1760,11 @@ class DatasetsOrganizationsView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        if sorting is None or sorting == 'sort-desc':
+        if sorting == 'sort-desc':
             sorted_value_index = np.flip(np.argsort(values))
         else:
             sorted_value_index = np.argsort(values)
         sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for index, o in enumerate(sorted_top_orgs):
@@ -1849,7 +1824,7 @@ class DatasetsOrganizationsView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['organization_data'] = sorted_orgs
         context['max_count'] = max_count
@@ -1894,9 +1869,9 @@ class DatasetsTagsView(DatasetListView):
         max_count = 0
         facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         tags = {}
         stat_groups = {}
@@ -1905,24 +1880,16 @@ class DatasetsTagsView(DatasetListView):
         top_tags = update_facet_data(self.request, facet_fields, 'tags', None)
         sorted_top_tags = sorted(top_tags, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for d in datasets:
             if d.tags is not None:
                 for t in d.tags:
@@ -1980,7 +1947,7 @@ class DatasetsTagsView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        if sorting is None or sorting == 'sort-desc':
+        if sorting == 'sort-desc':
             sorted_value_index = np.flip(np.argsort(values))
         else:
             sorted_value_index = np.argsort(values)
@@ -1988,11 +1955,6 @@ class DatasetsTagsView(DatasetListView):
         if len(keys) > 100:
             context['trimmed'] = True
             sorted_tags = dict(itertools.islice(sorted_tags.items(), 100))
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for index, t in enumerate(sorted_top_tags):
@@ -2053,7 +2015,7 @@ class DatasetsTagsView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['tag_data'] = sorted_tags
         context['max_count'] = max_count
@@ -2074,9 +2036,9 @@ class DatasetsFormatView(DatasetListView):
         max_count = 0
         facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         formats = {}
         stat_groups = {}
@@ -2085,24 +2047,16 @@ class DatasetsFormatView(DatasetListView):
         top_formats = update_facet_data(self.request, facet_fields, 'formats', None)
         sorted_top_formats = sorted(top_formats, key=lambda org: org['count'], reverse=True)[:10]
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for d in datasets:
             if d.formats is not None:
                 for f in d.formats:
@@ -2175,16 +2129,11 @@ class DatasetsFormatView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        if sorting is None or sorting == 'sort-desc':
+        if sorting == 'sort-desc':
             sorted_value_index = np.flip(np.argsort(values))
         else:
             sorted_value_index = np.argsort(values)
         sorted_formats = {keys[i]: values[i] for i in sorted_value_index}
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for index, f in enumerate(sorted_top_formats):
@@ -2244,7 +2193,7 @@ class DatasetsFormatView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['format_data'] = sorted_formats
         context['max_count'] = max_count
@@ -2265,9 +2214,9 @@ class DatasetsFrequencyView(DatasetListView):
         max_count = 0
         facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         frequencies = {}
         stat_groups = {}
@@ -2276,24 +2225,16 @@ class DatasetsFrequencyView(DatasetListView):
         top_freqs = update_facet_data(self.request, facet_fields, 'frequency', None)
         sorted_top_freqs = sorted(top_freqs, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for d in datasets:
             if d.frequency is not None:
                 freq = Frequency.objects.get(id=d.frequency)
@@ -2366,16 +2307,11 @@ class DatasetsFrequencyView(DatasetListView):
         for v in values:
             if max_count < v:
                 max_count = v
-        if sorting is None or sorting == 'sort-desc':
+        if sorting == 'sort-desc':
             sorted_value_index = np.flip(np.argsort(values))
         else:
             sorted_value_index = np.argsort(values)
         sorted_frequencies = {keys[i]: values[i] for i in sorted_value_index}
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for index, f in enumerate(sorted_top_freqs):
@@ -2435,7 +2371,7 @@ class DatasetsFrequencyView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['frequency_data'] = sorted_frequencies
         context['max_count'] = max_count
@@ -2456,11 +2392,10 @@ class JurisdictionStatsView(DatasetListView):
         max_count = 0
         current_org = Organization.objects.get(id=self.kwargs.get('pk'))
         child_orgs = current_org.get_children()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         filtered_orgs = []
-        if indicator is None:
-            indicator = 'dataset-count'
+
         for org in child_orgs:
             modified = {}
             id_list = []
@@ -2543,7 +2478,7 @@ class JurisdictionStatsView(DatasetListView):
                         else:
                             single_dict['count'] = 0
             result.append(single_dict)
-            if sorting is None or sorting == 'sort-desc':
+            if sorting == 'sort-desc':
                 result = sorted(result, key=lambda dd: dd['count'], reverse=True)
             else:
                 result = sorted(result, key=lambda dd: dd['count'], reverse=False)
@@ -2663,9 +2598,9 @@ class DatasetsCategoriesView(DatasetListView):
         facet_fields = context.get('facets').get('fields')
         parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
         all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         modified_cats = []
         chart_data = []
@@ -2673,24 +2608,8 @@ class DatasetsCategoriesView(DatasetListView):
         top_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         sorted_top_cats = sorted(top_cats, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
         for cat in parent_cats:
             id_list = []
             current_category = Category.objects.get(title=cat.get('display_value'))
@@ -2778,7 +2697,7 @@ class DatasetsCategoriesView(DatasetListView):
                             single['stats'] = 0
                 else:
                     single['stats'] = 0
-            if sorting is None or sorting == 'sort-desc':
+            if sorting == 'sort-desc':
                 modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
             else:
                 modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=False)
@@ -2846,7 +2765,7 @@ class DatasetsCategoriesView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['categories'] = modified_cats
         context['max_count'] = max_count
@@ -2983,33 +2902,25 @@ class PublicationStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        duration = self.request.GET.get('duration', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         year_stats = {}
         # quarter_stats = {}
         # monthly_stats = {}
         chart_data = []
 
-        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
-                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
-                    'object-count': 'Objektų skaičius',
-                    'field-count': 'Savybių (duomenų laukų) skaičius',
-                    'model-count': 'Esybių (modelių) skaičius',
-                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
-                    'dataset-count': 'Duomenų rinkinių skaičius',
-                    'request-count': 'Poreikių skaičius',
-                    'project-count': 'Projektų skaičius',
-                    'level-average': 'Brandos lygis'}
-
-        if duration is None:
-            duration = 'duration-yearly'
-
         frequency, ff = get_frequency_and_format(duration)
 
-        if indicator is None:
-            indicator = 'dataset-count'
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
         for dataset in datasets:
             published = dataset.published
             if published is not None:
@@ -3086,7 +2997,7 @@ class PublicationStatsView(DatasetListView):
         keys = list(year_stats.keys())
         values = list(year_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting is None or sorting == 'sort-year-desc':
+        if sorting == 'sort-year-desc':
             year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
         elif sorting == 'sort-year-asc':
             year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
@@ -3094,11 +3005,6 @@ class PublicationStatsView(DatasetListView):
             year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
         elif sorting == 'sort-asc':
             year_stats = {keys[i]: values[i] for i in sorted_value_index}
-
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
 
         sort = 0
         for index, y in enumerate(year_stats.keys()):
@@ -3157,7 +3063,7 @@ class PublicationStatsView(DatasetListView):
 
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
-        context['yAxis_title'] = _(y_titles[indicator])
+        context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['year_stats'] = year_stats
         context['max_count'] = max_count
@@ -3177,13 +3083,12 @@ class YearStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         year_stats = {}
         quarter_stats = {}
         selected_year = str(self.kwargs['year'])
-        if indicator is None:
-            indicator = 'dataset-count'
+
         for dataset in datasets:
             published = dataset.published
             if published is not None:
@@ -3270,7 +3175,7 @@ class YearStatsView(DatasetListView):
         keys = list(quarter_stats.keys())
         values = list(quarter_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting is None or sorting == 'sort-year-desc':
+        if sorting == 'sort-year-desc':
             quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=False))
         elif sorting == 'sort-year-asc':
             quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=True))
@@ -3297,14 +3202,13 @@ class QuarterStatsView(DatasetListView):
         context = super().get_context_data(**kwargs)
         max_count = 0
         datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         # year_stats = {}
         # quarter_stats = {}
         monthly_stats = {}
         selected_quarter = str(self.kwargs['quarter'])
-        if indicator is None:
-            indicator = 'dataset-count'
+
         for dataset in datasets:
             published = dataset.published
             if published is not None:
@@ -3381,7 +3285,7 @@ class QuarterStatsView(DatasetListView):
         keys = list(monthly_stats.keys())
         values = list(monthly_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting is None or sorting == 'sort-year-desc':
+        if sorting == 'sort-year-desc':
             monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=False))
         elif sorting == 'sort-year-asc':
             monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=True))

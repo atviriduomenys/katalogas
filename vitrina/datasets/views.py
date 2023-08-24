@@ -1143,21 +1143,6 @@ class DatasetStatsView(DatasetListView):
                                'OPENED': 'Atverti duomenys',
                                'INVENTORED': 'Inventorintas'}
 
-        inventored_styles = {'borderColor': 'black',
-                             'backgroundColor': 'rgba(255, 179, 186, 0.9)',
-                             'fill': True,
-                             'sort': 1}
-
-        structured_styles = {'borderColor': 'black',
-                             'backgroundColor': 'rgba(186,225,255, 0.9)',
-                             'fill': True,
-                             'sort': 2}
-
-        opened_styles = {'borderColor': 'black',
-                         'backgroundColor': 'rgba(255, 223, 186, 0.9)',
-                         'fill': True,
-                         'sort': 3}
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -1188,21 +1173,7 @@ class DatasetStatsView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -1285,7 +1256,9 @@ class DatasetStatsView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for status in statuses:
+            sort += 1
             total = 0
             temp = []
             for label in labels:
@@ -1355,15 +1328,14 @@ class DatasetStatsView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': str(status_translations[status]), 'data': temp, 'borderWidth': 1}
-
-            if status == 'INVENTORED':
-                dict.update(inventored_styles)
-            elif status == 'HAS_STRUCTURE' or status == 'STRUCTURED':
-                dict.update(structured_styles)
-            elif status == 'HAS_DATA' or status == 'OPENED':
-                dict.update(opened_styles)
-            chart_data.append(dict)
+            dt = {
+                'label': str(status_translations[status]),
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
@@ -1720,49 +1692,6 @@ class DatasetsOrganizationsView(DatasetListView):
         top_orgs = update_facet_data(self.request, facet_fields, 'organization', Organization)
         sorted_top_orgs = sorted(top_orgs, key=lambda org: org['count'], reverse=True)[:10]
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6},
-            {'borderColor': 'black',
-             'backgroundColor': 'DarkOrange',
-             'fill': True,
-             'sort': 7},
-            {'borderColor': 'black',
-             'backgroundColor': 'Gold',
-             'fill': True,
-             'sort': 8},
-            {'borderColor': 'black',
-             'backgroundColor': 'LightSalmon',
-             'fill': True,
-             'sort': 9},
-            {'borderColor': 'black',
-             'backgroundColor': 'Magenta',
-             'fill': True,
-             'sort': 10}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -1777,21 +1706,7 @@ class DatasetsOrganizationsView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -1876,7 +1791,9 @@ class DatasetsOrganizationsView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, o in enumerate(sorted_top_orgs):
+            sort += 1
             oo = Organization.objects.get(pk=o['filter_value'])
             org_dataset_ids = Dataset.objects.filter(organization=oo).values_list('pk', flat=True)
             total = 0
@@ -1919,9 +1836,14 @@ class DatasetsOrganizationsView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': o['display_value'], 'data': temp, 'borderWidth': 1}
-            dict.update(styles[index])
-            chart_data.append(dict)
+            dt = {
+                'label': o['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
@@ -1983,49 +1905,6 @@ class DatasetsTagsView(DatasetListView):
         top_tags = update_facet_data(self.request, facet_fields, 'tags', None)
         sorted_top_tags = sorted(top_tags, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6},
-            {'borderColor': 'black',
-             'backgroundColor': 'DarkOrange',
-             'fill': True,
-             'sort': 7},
-            {'borderColor': 'black',
-             'backgroundColor': 'Gold',
-             'fill': True,
-             'sort': 8},
-            {'borderColor': 'black',
-             'backgroundColor': 'LightSalmon',
-             'fill': True,
-             'sort': 9},
-            {'borderColor': 'black',
-             'backgroundColor': 'Magenta',
-             'fill': True,
-             'sort': 10}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -2040,21 +1919,7 @@ class DatasetsTagsView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -2129,7 +1994,9 @@ class DatasetsTagsView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, t in enumerate(sorted_top_tags):
+            sort += 1
             dataset_ids = datasets.filter(tags__in=t['display_value']).values_list('pk', flat=True)
             dt = Dataset.objects.filter(pk=dataset_ids[0]).get()
             t_title = dt.get_tag_title(t['filter_value'])
@@ -2173,8 +2040,13 @@ class DatasetsTagsView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            tmp_dict = {'label': t_title, 'data': temp, 'borderWidth': 1}
-            tmp_dict.update(styles[index])
+            tmp_dict = {
+                'label': t_title,
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort,
+            }
             chart_data.append(tmp_dict)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
@@ -2213,53 +2085,6 @@ class DatasetsFormatView(DatasetListView):
         top_formats = update_facet_data(self.request, facet_fields, 'formats', None)
         sorted_top_formats = sorted(top_formats, key=lambda org: org['count'], reverse=True)[:10]
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6},
-            {'borderColor': 'black',
-             'backgroundColor': 'DarkOrange',
-             'fill': True,
-             'sort': 7},
-            {'borderColor': 'black',
-             'backgroundColor': 'Gold',
-             'fill': True,
-             'sort': 8},
-            {'borderColor': 'black',
-             'backgroundColor': 'LightSalmon',
-             'fill': True,
-             'sort': 9},
-            {'borderColor': 'black',
-             'backgroundColor': 'Magenta',
-             'fill': True,
-             'sort': 10},
-            {'borderColor': 'black',
-             'backgroundColor': 'Tan',
-             'fill': True,
-             'sort': 11}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -2274,21 +2099,7 @@ class DatasetsFormatView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -2375,7 +2186,9 @@ class DatasetsFormatView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, f in enumerate(sorted_top_formats):
+            sort += 1
             frmt = Format.objects.filter(title__iexact=f['filter_value'])
             dataset_ids = DatasetDistribution.objects.filter(format__in=frmt).values_list('dataset', flat=True)
             total = 0
@@ -2418,9 +2231,14 @@ class DatasetsFormatView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': f['display_value'], 'data': temp, 'borderWidth': 1}
-            dict.update(styles[index])
-            chart_data.append(dict)
+            dt = {
+                'label': f['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
@@ -2458,49 +2276,6 @@ class DatasetsFrequencyView(DatasetListView):
         top_freqs = update_facet_data(self.request, facet_fields, 'frequency', None)
         sorted_top_freqs = sorted(top_freqs, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6},
-            {'borderColor': 'black',
-             'backgroundColor': 'DarkOrange',
-             'fill': True,
-             'sort': 7},
-            {'borderColor': 'black',
-             'backgroundColor': 'Gold',
-             'fill': True,
-             'sort': 8},
-            {'borderColor': 'black',
-             'backgroundColor': 'LightSalmon',
-             'fill': True,
-             'sort': 9},
-            {'borderColor': 'black',
-             'backgroundColor': 'Magenta',
-             'fill': True,
-             'sort': 10}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -2515,21 +2290,7 @@ class DatasetsFrequencyView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -2616,7 +2377,9 @@ class DatasetsFrequencyView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, f in enumerate(sorted_top_freqs):
+            sort += 1
             freq = Frequency.objects.get(pk=f['filter_value'])
             dataset_ids = Dataset.objects.filter(frequency=freq).values_list('pk', flat=True)
             total = 0
@@ -2659,9 +2422,14 @@ class DatasetsFrequencyView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': f['display_value'], 'data': temp, 'borderWidth': 1}
-            dict.update(styles[index])
-            chart_data.append(dict)
+            dt = {
+                'label': f['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
@@ -2905,49 +2673,6 @@ class DatasetsCategoriesView(DatasetListView):
         top_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         sorted_top_cats = sorted(top_cats, key=lambda cat: cat['count'], reverse=True)[:10]
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6},
-            {'borderColor': 'black',
-             'backgroundColor': 'DarkOrange',
-             'fill': True,
-             'sort': 7},
-            {'borderColor': 'black',
-             'backgroundColor': 'Gold',
-             'fill': True,
-             'sort': 8},
-            {'borderColor': 'black',
-             'backgroundColor': 'LightSalmon',
-             'fill': True,
-             'sort': 9},
-            {'borderColor': 'black',
-             'backgroundColor': 'Magenta',
-             'fill': True,
-             'sort': 10}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -2962,21 +2687,7 @@ class DatasetsCategoriesView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -3077,7 +2788,9 @@ class DatasetsCategoriesView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, c in enumerate(sorted_top_cats):
+            sort += 1
             cc = Category.objects.get(pk=c['filter_value'])
             cat_dataset_ids = Dataset.objects.filter(category=cc).values_list('pk', flat=True)
             total = 0
@@ -3120,9 +2833,14 @@ class DatasetsCategoriesView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': c['display_value'], 'data': temp, 'borderWidth': 1}
-            dict.update(styles[index])
-            chart_data.append(dict)
+            dt = {
+                'label': c['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
@@ -3274,33 +2992,6 @@ class PublicationStatsView(DatasetListView):
         # monthly_stats = {}
         chart_data = []
 
-        styles = [
-            {'borderColor': 'black',
-             'backgroundColor': 'Blue',
-             'fill': True,
-             'sort': 1},
-            {'borderColor': 'black',
-             'backgroundColor': 'Chocolate',
-             'fill': True,
-             'sort': 2},
-            {'borderColor': 'black',
-             'backgroundColor': 'Red',
-             'fill': True,
-             'sort': 3},
-            {'borderColor': 'black',
-             'backgroundColor': 'Green',
-             'fill': True,
-             'sort': 4},
-            {'borderColor': 'black',
-             'backgroundColor': 'Yellow',
-             'fill': True,
-             'sort': 5},
-            {'borderColor': 'black',
-             'backgroundColor': 'Crimson',
-             'fill': True,
-             'sort': 6}
-        ]
-
         y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
                     'download-object-count': 'Atsisiuntimų (objektų) skaičius',
                     'object-count': 'Objektų skaičius',
@@ -3315,21 +3006,7 @@ class PublicationStatsView(DatasetListView):
         if duration is None:
             duration = 'duration-yearly'
 
-        if duration == 'duration-yearly':
-            frequency = 'Y'
-            ff = 'Y'
-        elif duration == 'duration-quarterly':
-            frequency = 'Q'
-            ff = 'Y M'
-        elif duration == 'duration-monthly':
-            frequency = 'M'
-            ff = 'Y m'
-        elif duration == 'duration-weekly':
-            frequency = 'W'
-            ff = 'Y W'
-        else:
-            frequency = 'D'
-            ff = 'Y m d'
+        frequency, ff = get_frequency_and_format(duration)
 
         if indicator is None:
             indicator = 'dataset-count'
@@ -3423,7 +3100,9 @@ class PublicationStatsView(DatasetListView):
                                      end=datetime.now(),
                                      freq=frequency).tolist()
 
+        sort = 0
         for index, y in enumerate(year_stats.keys()):
+            sort += 1
             dataset_ids = Dataset.objects.filter(created__year=y).values_list('pk', flat=True)
             total = 0
             temp = []
@@ -3465,9 +3144,14 @@ class PublicationStatsView(DatasetListView):
                     temp.append({'x': _date(label.start_time, ff), 'y': total})
                 else:
                     temp.append({'x': _date(label, ff), 'y': total})
-            dict = {'label': y, 'data': temp, 'borderWidth': 1}
-            dict.update(styles[index])
-            chart_data.append(dict)
+            dt = {
+                'label': y,
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
 
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 

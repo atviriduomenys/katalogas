@@ -559,6 +559,12 @@ class DatasetResourceMigrate(models.Model):
         managed = False
         db_table = 'dataset_resource_migrate'
 
+class DatasetStructureLink(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    dataset_id = models.IntegerField(blank=False, null=False)
+    class Meta:
+        managed = True
+        db_table = 'dataset_structure_link'
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):

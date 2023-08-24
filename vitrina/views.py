@@ -218,3 +218,8 @@ class HistoryMixin:
     def get_detail_object(self):
         return self.object
 
+class ChartMixin:
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context

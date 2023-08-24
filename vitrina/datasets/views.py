@@ -16,8 +16,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max, Q
-from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import QuerySet, Count, Max, Q, Sum
+from django.db.models.functions import ExtractYear, ExtractMonth, ExtractQuarter, ExtractWeek
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -62,13 +62,13 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Dat
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value
+from vitrina.helpers import get_selected_value, get_filter_url
 from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 import pytz
@@ -112,7 +112,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             datasets = datasets.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
-            org_ids = [rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)]
+            org_ids = [rep.object_id for rep in
+                       self.request.user.representative_set.filter(role=Representative.MANAGER)]
             datasets = datasets.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
@@ -278,7 +279,7 @@ class DatasetDetailView(
             'tags': dataset.get_tag_object_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
-            #TODO: harvested functionality needs to be implemented
+            # TODO: harvested functionality needs to be implemented
             'harvested': '',
             'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
@@ -1090,6 +1091,35 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return reverse('dataset-projects', kwargs={'pk': self.dataset.pk})
 
 
+Y_TITLES = {
+    'download-request-count': _('Atsisiuntimų (užklausų) skaičius'),
+    'download-object-count': _('Atsisiuntimų (objektų) skaičius'),
+    'object-count': _('Objektų skaičius'),
+    'field-count': _('Savybių (duomenų laukų) skaičius'),
+    'model-count': _('Esybių (modelių) skaičius'),
+    'distribution-count': _('Duomenų šaltinių (distribucijų) skaičius'),
+    'dataset-count': _('Duomenų rinkinių skaičius'),
+    'request-count': _('Poreikių skaičius'),
+    'project-count': _('Projektų skaičius'),
+    'level-average': _('Brandos lygis')
+}
+
+DATASET_INDICATOR_FIELDS = {
+    'object-count': 'object_count',
+    'field-count': 'field_count',
+    'model-count': 'model_count',
+    'distribution-count': 'distribution_count',
+    'request-count': 'request_count',
+    'project-count': 'project_count',
+    'level-average': 'maturity_level'
+}
+
+MODEL_INDICATOR_FIELDS = {
+    'download-request-count': 'model_requests',
+    'download-object-count': 'model_objects',
+}
+
+
 class DatasetStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/status.html'
@@ -1101,12 +1131,55 @@ class DatasetStatsView(DatasetListView):
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         statuses = {}
         stat_groups = {}
+        chart_data = []
+
+        status_translations = {'HAS_STRUCTURE': 'Įkelta duomenų struktūra',
+                               'STRUCTURED': 'Įkelta duomenų struktūra',
+                               'HAS_DATA': 'Atverti duomenys',
+                               'OPENED': 'Atverti duomenys',
+                               'INVENTORED': 'Inventorintas'}
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        most_recent_comments = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=datasets.values_list('pk', flat=True),
+            status__isnull=False).values('object_id') \
+            .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change') \
+            .order_by('latest_status_change')
+
+        dataset_status = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=most_recent_comments.values('object_id'),
+            created__in=most_recent_comments.values('latest_status_change')) \
+            .annotate(year=ExtractYear('created'), month=ExtractMonth('created')) \
+            .values('object_id', 'status', 'year', 'month')
+
+        comm_statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
         if indicator is None:
             indicator = 'dataset-count'
         for d in datasets:
-            statuses[d.status] = statuses.get(d.status, 0) + 1
+            if d.status is not None:
+                statuses[d.status] = statuses.get(d.status, 0) + 1
         keys = list(statuses.keys())
         if indicator != 'dataset-count':
             for k in keys:
@@ -1115,9 +1188,11 @@ class DatasetStatsView(DatasetListView):
                     if d.status == k:
                         id_list.append(d.pk)
                 stat_groups[k] = id_list
+                # print('stat_groups: ', stat_groups)
             for item in stat_groups.keys():
                 if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name',
+                                                                                                flat=True)
                     total = 0
                     if len(models) > 0:
                         for m in models:
@@ -1164,7 +1239,7 @@ class DatasetStatsView(DatasetListView):
                                 lev = []
                                 if st.maturity_level is not None:
                                     lev.append(st.maturity_level)
-                                level_avg = int(sum(lev)/len(lev))
+                                level_avg = int(sum(lev) / len(lev))
                                 statuses[item] = level_avg
         values = list(statuses.values())
         for v in values:
@@ -1176,75 +1251,101 @@ class DatasetStatsView(DatasetListView):
             sorted_value_index = np.argsort(values)
         sorted_statuses = {keys[i]: values[i] for i in sorted_value_index}
 
-        # data = []
-        # status_translations = Comment.get_statuses()
-        #
-        # inventored_styles = {'borderColor': 'black',
-        #                      'backgroundColor': 'rgba(255, 179, 186, 0.9)',
-        #                      'fill': True,
-        #                      'sort': 1}
-        # structured_styles = {'borderColor': 'black',
-        #                      'backgroundColor': 'rgba(186,225,255, 0.9)',
-        #                      'fill': True,
-        #                      'sort': 2}
-        # opened_styles = {'borderColor': 'black',
-        #                  'backgroundColor': 'rgba(255, 223, 186, 0.9)',
-        #                  'fill': True,
-        #                  'sort': 3}
-        #
-        # most_recent_comments = Comment.objects.filter(
-        #     content_type=ContentType.objects.get_for_model(Dataset),
-        #     object_id__in=datasets.values_list('pk', flat=True),
-        #     status__isnull=False).values('object_id')\
-        #     .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change')\
-        #     .order_by('latest_status_change')
-        #
-        # dataset_status = Comment.objects.filter(
-        #     content_type=ContentType.objects.get_for_model(Dataset),
-        #     object_id__in=most_recent_comments.values('object_id'),
-        #     created__in=most_recent_comments.values('latest_status_change'))\
-        #     .annotate(year=ExtractYear('created'), month=ExtractMonth('created'))\
-        #     .values('object_id', 'status', 'year', 'month')
-        #
-        # start_date = most_recent_comments.first().get('latest_status_change') if most_recent_comments else None
-        # statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
-        #
-        # if start_date:
-        #     labels = pd.period_range(start=start_date,
-        #                              end=datetime.date.today(),
-        #                              freq='M').tolist()
-        #
-        #     for item in statuses:
-        #         total = 0
-        #         temp = []
-        #         for label in labels:
-        #             total += dataset_status.filter(status=item, year=label.year, month=label.month)\
-        #                 .values('object_id')\
-        #                 .annotate(count=Count('object_id', distinct=True))\
-        #                 .count()
-        #             temp.append({'x': _date(label, 'y b'), 'y': total})
-        #         dict = {'label': str(status_translations[item]),
-        #                 'data': temp,
-        #                 'borderWidth': 1}
-        #
-        #         if item == 'INVENTORED':
-        #             dict.update(inventored_styles)
-        #         elif item == 'STRUCTURED':
-        #             dict.update(structured_styles)
-        #         elif item == 'OPENED':
-        #             dict.update(opened_styles)
-        #
-        #         data.append(dict)
-        # data = sorted(data, key=lambda x: x['sort'])
-        # context['data'] = json.dumps(data)
-        # context['graph_title'] = _('Duomenų rinkinių kiekis laike')
-        # context['dataset_count'] = len(datasets)
-        # context['yAxis_title'] = _('Duomenų rinkiniai')
-        # context['xAxis_title'] = _('Laikas')
-        # context['stats'] = 'status'
-        # context['by_indicator'] = stat_groups
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for status in statuses:
+            sort += 1
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    if status == 'HAS_DATA':
+                        comm_val = 'OPENED'
+                    elif status == 'HAS_STRUCTURE':
+                        comm_val = 'STRUCTURED'
+                    else:
+                        comm_val = 'INVENTORED'
+                    total += dataset_status.filter(status=comm_val, year=label.year) \
+                        .values('object_id') \
+                        .annotate(count=Count('object_id', distinct=True)) \
+                        .count()
+
+                elif indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[status]).values_list('metadata__name',
+                                                                                                  flat=True)
+                    per_datasets = 0
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            per_datasets += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            per_datasets += m_st.model_objects
+                            total = per_datasets
+
+                else:
+                    if status in stat_groups:
+                        ids = stat_groups[status]
+                        stat = DatasetStats.objects.filter(dataset_id__in=ids, created__year=label.year)
+                        per_datasets = 0
+                        if len(stat) > 0:
+                            for st in stat:
+                                if indicator == 'request-count':
+                                    if st.request_count is not None:
+                                        per_datasets += st.request_count
+                                elif indicator == 'project-count':
+                                    if st.project_count is not None:
+                                        per_datasets += st.project_count
+                                elif indicator == 'distribution-count':
+                                    if st.distribution_count is not None:
+                                        per_datasets += st.distribution_count
+                                elif indicator == 'object-count':
+                                    if st.object_count is not None:
+                                        per_datasets += st.object_count
+                                elif indicator == 'field-count':
+                                    if st.field_count is not None:
+                                        per_datasets += st.field_count
+                                elif indicator == 'model-count':
+                                    if st.model_count is not None:
+                                        per_datasets += st.model_count
+                                elif indicator == 'level-average':
+                                    lev = []
+                                    if st.maturity_level is not None:
+                                        lev.append(st.maturity_level)
+                                    level_avg = int(sum(lev) / len(lev))
+                                    per_datasets = level_avg
+
+                        total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': str(status_translations[status]),
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
         context['status_data'] = sorted_statuses
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'status'
         context['active_indicator'] = indicator
         context['sort'] = sorting
@@ -1258,110 +1359,192 @@ class DatasetManagementsView(DatasetListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         facet_fields = context.get('facets').get('fields')
         all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        modified_jurisdictions = []
-        if indicator is None:
-            indicator = 'dataset-count'
-        for org in all_orgs:
-            id_list = []
-            current = Organization.objects.get(title=org.get('display_value'))
-            org_datasets = Dataset.objects.filter(organization=current).values_list('id', flat=True)
-            if len(org_datasets) > 0:
-                for d in org_datasets:
-                    id_list.append(d)
-                org['dataset_ids'] = id_list
-            children = current.get_children()
-            child_titles = []
-            if len(children) > 0:
-                exists = 0
-                for ch in children:
-                    child_titles.append(ch.title)
-                for single in all_orgs:
-                    if single['display_value'] in child_titles:
-                        exists += 1
-                if exists == 0:
-                    org['has_orgs'] = False
-            else:
-                org['has_orgs'] = False
-            if indicator == 'dataset-count':
-                if max_count < org.get('count'):
-                    max_count = org.get('count')
-            modified_jurisdictions.append(org)
-        if sorting == 'sort-asc':
-            modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['count'], reverse=False)
-        if indicator != 'dataset-count':
-            for single in modified_jurisdictions:
-                if 'dataset_ids' in single:
-                    if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list('metadata__name', flat=True)
-                        total = 0
-                        if len(models) > 0:
-                            for m in models:
-                                model_stats = ModelDownloadStats.objects.filter(model=m)
-                                if len(model_stats) > 0:
-                                    for m_st in model_stats:
-                                        if indicator == 'download-request-count':
-                                            if m_st is not None:
-                                                total += m_st.model_requests
-                                        elif indicator == 'download-object-count':
-                                            if m_st is not None:
-                                                total += m_st.model_objects
-                        single['stats'] = total
-                    else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    single['stats'] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    single['stats'] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    single['stats'] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    single['stats'] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    single['stats'] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    single['stats'] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    single['stats'] = level_avg
-                        else:
-                            single['stats'] = 0
-                    if max_count < single.get('stats'):
-                        max_count = single.get('stats')
+        all_orgs = sorted(all_orgs, key=lambda jur: jur['count'], reverse=True)
+        top_jurisdictions = sorted(all_orgs, key=lambda jur: jur['count'], reverse=True)[:10]
+
+        start_date = Dataset.objects.all().first().created
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        jurisdiction_data = []
+        chart_data = []
+        frequency, ff = get_frequency_and_format(duration)
+
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        datasets = context['object_list']
+
+        for jurisdiction in all_orgs:
+            count = 0
+            data = []
+            statistics = []
+            jurisdiction_dataset_ids = datasets.filter(
+                jurisdiction=jurisdiction['filter_value']
+            ).values_list('pk', flat=True)
+            jurisdiction_datasets = Dataset.public.filter(pk__in=jurisdiction_dataset_ids)
+
+            if DATASET_INDICATOR_FIELDS.get(indicator):
+                statistic_ids = DatasetStats.objects.filter(
+                    dataset_id__in=jurisdiction_dataset_ids
+                ).order_by(
+                    'dataset_id',
+                    '-created'
+                ).distinct(
+                    'dataset_id'
+                ).values_list(
+                            'pk', flat=True)
+                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+            elif MODEL_INDICATOR_FIELDS.get(indicator):
+                model_names = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Model),
+                    dataset__pk__in=jurisdiction_dataset_ids
+                ).values_list('name', flat=True)
+                statistics = ModelDownloadStats.objects.filter(
+                    model__in=model_names
+                )
+
+            for label in labels:
+
+                if indicator == 'dataset-count':
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        jurisdiction_datasets,
+                        'created'
+                    )
+                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+                    count = get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    ) or count
+                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    )
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
                 else:
-                    single['stats'] = 0
-            if sorting is None or sorting == 'sort-desc':
-                modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=True)
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            if jurisdiction in top_jurisdictions:
+                dt = {
+                    'label': jurisdiction['display_value'],
+                    'data': data,
+                    'borderWidth': 1,
+                    'fill': True,
+                }
+                chart_data.append(dt)
+
+            if data:
+                jurisdiction['count'] = data[-1]['y']
             else:
-                modified_jurisdictions = sorted(modified_jurisdictions, key=lambda dd: dd['stats'], reverse=False)
-        context['jurisdiction_data'] = modified_jurisdictions
+                jurisdiction['count'] = 0
+            jurisdiction_data.append(jurisdiction)
+
+        if sorting == 'sort-desc':
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            jurisdiction_data = sorted(jurisdiction_data, key=lambda x: x['count'], reverse=True)
+        else:
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
+            jurisdiction_data = sorted(jurisdiction_data, key=lambda x: x['count'])
+
+        max_count = max([x['count'] for x in jurisdiction_data]) if jurisdiction_data else 0
+
+        context['jurisdiction_data'] = jurisdiction_data
         context['max_count'] = max_count
         context['active_filter'] = 'jurisdiction'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio valdymo sritį laike')
+        context['yAxis_title'] = Y_TITLES[indicator]
+        context['xAxis_title'] = _('Laikas')
+        context['duration'] = duration
+
         return context
+
+
+def get_count_by_frequency(
+    frequency,
+    label,
+    queryset,
+    field,
+    aggregate_field = None,
+):
+    if frequency == 'Y':
+        query = {
+            f"{field}__year": label.year
+        }
+    elif frequency == 'Q':
+        queryset = queryset.annotate(
+            quarter=ExtractQuarter('created')
+        )
+        query = {
+            f"{field}__year": label.year,
+            "quarter": label.quarter
+        }
+    elif frequency == 'M':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month
+        }
+    elif frequency == 'W':
+        queryset = queryset.annotate(
+            week=ExtractWeek('created')
+        )
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            "week": label.week
+        }
+    else:
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__day": label.day
+        }
+
+    if aggregate_field:
+        return queryset.filter(**query).aggregate(
+            Sum(aggregate_field)
+        )[f"{aggregate_field}__sum"] or 0
+    else:
+        return queryset.filter(**query).count()
+
+
+def get_frequency_and_format(duration):
+    if duration == 'duration-yearly':
+        frequency = 'Y'
+        ff = 'Y'
+    elif duration == 'duration-quarterly':
+        frequency = 'Q'
+        ff = 'Y M'
+    elif duration == 'duration-monthly':
+        frequency = 'M'
+        ff = 'Y m'
+    elif duration == 'duration-weekly':
+        frequency = 'W'
+        ff = 'Y W'
+    else:
+        frequency = 'D'
+        ff = 'Y m d'
+    return frequency, ff
 
 
 class DatasetsLevelView(DatasetListView):
@@ -1371,93 +1554,120 @@ class DatasetsLevelView(DatasetListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        levels = {}
-        stat_groups = {}
-        if indicator is None:
-            indicator = 'dataset-count'
-        for d in datasets:
-            lev = d.level
-            levels[lev] = levels.get(lev, 0) + 1
-        keys = list(levels.keys())
-        if indicator != 'dataset-count':
-            for le in levels.keys():
-                id_list = []
-                for d in datasets:
-                    if d.level is not None:
-                        if d.level == le:
-                            id_list.append(d.pk)
-                stat_groups[le] = id_list
-            for item in stat_groups.keys():
-                if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
-                    total = 0
-                    if len(models) > 0:
-                        for m in models:
-                            model_stats = ModelDownloadStats.objects.filter(model=m)
-                            if len(model_stats) > 0:
-                                for m_st in model_stats:
-                                    if indicator == 'download-request-count':
-                                        if m_st is not None:
-                                            total += m_st.model_requests
-                                    elif indicator == 'download-object-count':
-                                        if m_st is not None:
-                                            total += m_st.model_objects
-                    levels[item] = total
+        datasets = context['object_list']
+        facet_fields = context.get('facets').get('fields')
+        levels = update_facet_data(self.request, facet_fields, 'level', None)
+
+        start_date = Dataset.objects.all().first().created
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        level_data = []
+        chart_data = []
+        frequency, ff = get_frequency_and_format(duration)
+
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        for level in levels:
+            count = 0
+            data = []
+            statistics = []
+            level_dataset_ids = datasets.filter(
+                level=level['filter_value']
+            ).values_list('pk', flat=True)
+            level_datasets = Dataset.public.filter(pk__in=level_dataset_ids)
+
+            if DATASET_INDICATOR_FIELDS.get(indicator):
+                statistic_ids = DatasetStats.objects.filter(
+                    dataset_id__in=level_dataset_ids
+                ).order_by(
+                    'dataset_id',
+                    '-created'
+                ).distinct(
+                    'dataset_id'
+                ).values_list(
+                    'pk', flat=True)
+                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+            elif MODEL_INDICATOR_FIELDS.get(indicator):
+                model_names = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Model),
+                    dataset__pk__in=level_dataset_ids
+                ).values_list('name', flat=True)
+                statistics = ModelDownloadStats.objects.filter(
+                    model__in=model_names
+                )
+
+            for label in labels:
+
+                if indicator == 'dataset-count':
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        level_datasets,
+                        'created'
+                    )
+                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+                    count = get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    ) or count
+                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    )
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
                 else:
-                    stats = DatasetStats.objects.filter(maturity_level__in=stat_groups[item])
-                    if len(stats) > 0:
-                        total = 0
-                        for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                levels[item] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                levels[item] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                levels[item] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                levels[item] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                levels[item] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                levels[item] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                levels[item] = level_avg
-                    else:
-                        levels[item] = 0
-        values = list(levels.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        if sorting is None or sorting == 'sort-desc':
-            sorted_value_index = np.flip(np.argsort(values))
-        elif sorting == 'sort-asc':
-            sorted_value_index = np.argsort(values)
-        sorted_levels = {keys[i]: values[i] for i in sorted_value_index}
-        context['level_data'] = sorted_levels
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            dt = {
+                'label': "★" * level['filter_value'],
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
+
+            if data:
+                level['count'] = data[-1]['y']
+            else:
+                level['count'] = 0
+            level_data.append(level)
+
+        if sorting == 'sort-desc':
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            level_data = sorted(level_data, key=lambda x: x['count'], reverse=True)
+        else:
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
+            level_data = sorted(level_data, key=lambda x: x['count'])
+
+        max_count = max([x['count'] for x in level_data]) if level_data else 0
+
+        context['level_data'] = level_data
         context['max_count'] = max_count
         context['active_filter'] = 'level'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio brandos lygį laike')
+        context['yAxis_title'] = Y_TITLES[indicator]
+        context['xAxis_title'] = _('Laikas')
+        context['duration'] = duration
+
         return context
 
 
@@ -1469,16 +1679,41 @@ class DatasetsOrganizationsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
+        facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         orgs = {}
         stat_groups = {}
+        chart_data = []
+
+        top_orgs = update_facet_data(self.request, facet_fields, 'organization', Organization)
+        sorted_top_orgs = sorted(top_orgs, key=lambda org: org['count'], reverse=True)[:10]
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
         if indicator is None:
             indicator = 'dataset-count'
         for d in datasets:
             current = Organization.objects.get(id=d.organization[0])
             orgs[current] = orgs.get(current, 0) + 1
+
         keys = list(orgs.keys())
         if indicator != 'dataset-count':
             for k in keys:
@@ -1489,7 +1724,8 @@ class DatasetsOrganizationsView(DatasetListView):
                 stat_groups[k] = id_list
             for item in stat_groups.keys():
                 if indicator == 'download-request-count' or indicator == 'download-object-count':
-                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name',
+                                                                                                flat=True)
                     total = 0
                     if len(models) > 0:
                         for m in models:
@@ -1549,12 +1785,80 @@ class DatasetsOrganizationsView(DatasetListView):
         else:
             sorted_value_index = np.argsort(values)
         sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, o in enumerate(sorted_top_orgs):
+            sort += 1
+            oo = Organization.objects.get(pk=o['filter_value'])
+            org_dataset_ids = Dataset.objects.filter(organization=oo).values_list('pk', flat=True)
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(organization=oo, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=org_dataset_ids, created__year=label.year)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': o['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
         context['organization_data'] = sorted_orgs
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'organizations'
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
+
 
 class OrganizationStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -1579,6 +1883,7 @@ class OrganizationStatsView(DatasetListView):
         context['active_indicator'] = indicator
         return context
 
+
 class DatasetsTagsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/tag.html'
@@ -1587,17 +1892,43 @@ class DatasetsTagsView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         max_count = 0
+        facet_fields = context.get('facets').get('fields')
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         tags = {}
         stat_groups = {}
+        chart_data = []
+
+        top_tags = update_facet_data(self.request, facet_fields, 'tags', None)
+        sorted_top_tags = sorted(top_tags, key=lambda cat: cat['count'], reverse=True)[:10]
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
         if indicator is None:
             indicator = 'dataset-count'
         for d in datasets:
             if d.tags is not None:
                 for t in d.tags:
-                    tags[t.strip().capitalize()] = tags.get(t.strip().capitalize(), 0) + 1
+                    dataset = Dataset.objects.get(pk=d.pk)
+                    tag_title = dataset.get_tag_title(t).capitalize()
+                    tags[tag_title] = tags.get(tag_title, 0) + 1
         keys = list(tags.keys())
         if indicator != 'dataset-count':
             for k in keys:
@@ -1657,208 +1988,463 @@ class DatasetsTagsView(DatasetListView):
         if len(keys) > 100:
             context['trimmed'] = True
             sorted_tags = dict(itertools.islice(sorted_tags.items(), 100))
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, t in enumerate(sorted_top_tags):
+            sort += 1
+            dataset_ids = datasets.filter(tags__in=t['display_value']).values_list('pk', flat=True)
+            dt = Dataset.objects.filter(pk=dataset_ids[0]).get()
+            t_title = dt.get_tag_title(t['filter_value'])
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids, created__year=label.year)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            tmp_dict = {
+                'label': t_title,
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort,
+            }
+            chart_data.append(tmp_dict)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
         context['tag_data'] = sorted_tags
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'tag'
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
 
-class DatasetsFormatView(DatasetListView):
-        facet_fields = DatasetListView.facet_fields
-        template_name = 'vitrina/datasets/formats.html'
-        paginate_by = 0
 
-        def get_context_data(self, **kwargs):
-            context = super().get_context_data(**kwargs)
-            max_count = 0
-            datasets = self.get_queryset()
-            indicator = self.request.GET.get('indicator', None)
-            sorting = self.request.GET.get('sort', None)
-            formats = {}
-            stat_groups = {}
-            if indicator is None:
-                indicator = 'dataset-count'
-            for d in datasets:
-                if d.formats is not None:
-                    for f in d.formats:
-                        formats[f.strip().title()] = formats.get(f.strip().title(), 0) + 1
-            keys = list(formats.keys())
-            if indicator != 'dataset-count':
-                for k in keys:
-                    id_list = []
-                    for d in datasets:
-                        if d.formats is not None:
-                            for format in d.formats:
-                                if format.strip().title() == k:
-                                    id_list.append(d.pk)
-                    stat_groups[k] = id_list
-                for item in stat_groups.keys():
-                    if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
+class DatasetsFormatView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/formats.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        facet_fields = context.get('facets').get('fields')
+        datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
+        formats = {}
+        stat_groups = {}
+        chart_data = []
+
+        top_formats = update_facet_data(self.request, facet_fields, 'formats', None)
+        sorted_top_formats = sorted(top_formats, key=lambda org: org['count'], reverse=True)[:10]
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
+        if indicator is None:
+            indicator = 'dataset-count'
+        for d in datasets:
+            if d.formats is not None:
+                for f in d.formats:
+                    formats[f.strip().title()] = formats.get(f.strip().title(), 0) + 1
+        keys = list(formats.keys())
+        if indicator != 'dataset-count':
+            for k in keys:
+                id_list = []
+                for d in datasets:
+                    if d.formats is not None:
+                        for format in d.formats:
+                            if format.strip().title() == k:
+                                id_list.append(d.pk)
+                stat_groups[k] = id_list
+            for item in stat_groups.keys():
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name',
+                                                                                                flat=True)
+                    total = 0
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    formats[item] = total
+                else:
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
                         total = 0
-                        if len(models) > 0:
-                            for m in models:
-                                model_stats = ModelDownloadStats.objects.filter(model=m)
-                                if len(model_stats) > 0:
-                                    for m_st in model_stats:
-                                        if indicator == 'download-request-count':
-                                            if m_st is not None:
-                                                total += m_st.model_requests
-                                        elif indicator == 'download-object-count':
-                                            if m_st is not None:
-                                                total += m_st.model_objects
-                        formats[item] = total
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                formats[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                formats[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                formats[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                formats[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                formats[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                formats[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                formats[item] = level_avg
                     else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    formats[item] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    formats[item] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    formats[item] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    formats[item] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    formats[item] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    formats[item] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    formats[item] = level_avg
-                        else:
-                            formats[item] = 0
-            values = list(formats.values())
-            for v in values:
-                if max_count < v:
-                    max_count = v
-            if sorting is None or sorting == 'sort-desc':
-                sorted_value_index = np.flip(np.argsort(values))
-            else:
-                sorted_value_index = np.argsort(values)
-            sorted_formats = {keys[i]: values[i] for i in sorted_value_index}
-            context['format_data'] = sorted_formats
-            context['max_count'] = max_count
-            context['active_filter'] = 'format'
-            context['active_indicator'] = indicator
-            context['sort'] = sorting
-            return context
+                        formats[item] = 0
+        values = list(formats.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        else:
+            sorted_value_index = np.argsort(values)
+        sorted_formats = {keys[i]: values[i] for i in sorted_value_index}
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, f in enumerate(sorted_top_formats):
+            sort += 1
+            frmt = Format.objects.filter(title__iexact=f['filter_value'])
+            dataset_ids = DatasetDistribution.objects.filter(format__in=frmt).values_list('dataset', flat=True)
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids, created__year=label.year)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': f['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
+        context['format_data'] = sorted_formats
+        context['max_count'] = max_count
+        context['duration'] = duration
+        context['active_filter'] = 'format'
+        context['active_indicator'] = indicator
+        context['sort'] = sorting
+        return context
+
 
 class DatasetsFrequencyView(DatasetListView):
-        facet_fields = DatasetListView.facet_fields
-        template_name = 'vitrina/datasets/frequency.html'
-        paginate_by = 0
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/frequency.html'
+    paginate_by = 0
 
-        def get_context_data(self, **kwargs):
-            context = super().get_context_data(**kwargs)
-            max_count = 0
-            datasets = self.get_queryset()
-            indicator = self.request.GET.get('indicator', None)
-            sorting = self.request.GET.get('sort', None)
-            frequencies = {}
-            stat_groups = {}
-            if indicator is None:
-                indicator = 'dataset-count'
-            for d in datasets:
-                if d.frequency is not None:
-                    freq = Frequency.objects.get(id=d.frequency)
-                    frequencies[freq] = frequencies.get(freq, 0) + 1
-            keys = list(frequencies.keys())
-            if indicator != 'dataset-count':
-                for k in keys:
-                    id_list = []
-                    for d in datasets:
-                        if d.frequency is not None:
-                            freq = Frequency.objects.get(id=d.frequency)
-                            if freq == k:
-                                id_list.append(d.pk)
-                    stat_groups[k] = id_list
-                for item in stat_groups.keys():
-                    if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name', flat=True)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        facet_fields = context.get('facets').get('fields')
+        datasets = self.get_queryset()
+        indicator = self.request.GET.get('indicator', None)
+        sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
+        frequencies = {}
+        stat_groups = {}
+        chart_data = []
+
+        top_freqs = update_facet_data(self.request, facet_fields, 'frequency', None)
+        sorted_top_freqs = sorted(top_freqs, key=lambda cat: cat['count'], reverse=True)[:10]
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
+        if indicator is None:
+            indicator = 'dataset-count'
+        for d in datasets:
+            if d.frequency is not None:
+                freq = Frequency.objects.get(id=d.frequency)
+                frequencies[freq] = frequencies.get(freq, 0) + 1
+        keys = list(frequencies.keys())
+        if indicator != 'dataset-count':
+            for k in keys:
+                id_list = []
+                for d in datasets:
+                    if d.frequency is not None:
+                        freq = Frequency.objects.get(id=d.frequency)
+                        if freq == k:
+                            id_list.append(d.pk)
+                stat_groups[k] = id_list
+            for item in stat_groups.keys():
+                if indicator == 'download-request-count' or indicator == 'download-object-count':
+                    models = Model.objects.filter(dataset_id__in=stat_groups[item]).values_list('metadata__name',
+                                                                                                flat=True)
+                    total = 0
+                    if len(models) > 0:
+                        for m in models:
+                            model_stats = ModelDownloadStats.objects.filter(model=m)
+                            if len(model_stats) > 0:
+                                for m_st in model_stats:
+                                    if indicator == 'download-request-count':
+                                        if m_st is not None:
+                                            total += m_st.model_requests
+                                    elif indicator == 'download-object-count':
+                                        if m_st is not None:
+                                            total += m_st.model_objects
+                    frequencies[item] = total
+                else:
+                    stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
+                    if len(stats) > 0:
                         total = 0
-                        if len(models) > 0:
-                            for m in models:
-                                model_stats = ModelDownloadStats.objects.filter(model=m)
-                                if len(model_stats) > 0:
-                                    for m_st in model_stats:
-                                        if indicator == 'download-request-count':
-                                            if m_st is not None:
-                                                total += m_st.model_requests
-                                        elif indicator == 'download-object-count':
-                                            if m_st is not None:
-                                                total += m_st.model_objects
-                        frequencies[item] = total
+                        for st in stats:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    total += st.request_count
+                                frequencies[item] = total
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    total += st.project_count
+                                frequencies[item] = total
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    total += st.distribution_count
+                                frequencies[item] = total
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    total += st.object_count
+                                frequencies[item] = total
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    total += st.field_count
+                                frequencies[item] = total
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    total += st.model_count
+                                frequencies[item] = total
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                frequencies[item] = level_avg
                     else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    frequencies[item] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    frequencies[item] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    frequencies[item] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    frequencies[item] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    frequencies[item] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    frequencies[item] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    frequencies[item] = level_avg
-                        else:
-                            frequencies[item] = 0
-            values = list(frequencies.values())
-            for v in values:
-                if max_count < v:
-                    max_count = v
-            if sorting is None or sorting == 'sort-desc':
-                sorted_value_index = np.flip(np.argsort(values))
-            else:
-                sorted_value_index = np.argsort(values)
-            sorted_frequencies = {keys[i]: values[i] for i in sorted_value_index}
-            context['frequency_data'] = sorted_frequencies
-            context['max_count'] = max_count
-            context['active_filter'] = 'frequency'
-            context['active_indicator'] = indicator
-            context['sort'] = sorting
-            return context
+                        frequencies[item] = 0
+        values = list(frequencies.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        if sorting is None or sorting == 'sort-desc':
+            sorted_value_index = np.flip(np.argsort(values))
+        else:
+            sorted_value_index = np.argsort(values)
+        sorted_frequencies = {keys[i]: values[i] for i in sorted_value_index}
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, f in enumerate(sorted_top_freqs):
+            sort += 1
+            freq = Frequency.objects.get(pk=f['filter_value'])
+            dataset_ids = Dataset.objects.filter(frequency=freq).values_list('pk', flat=True)
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(frequency=freq, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids, created__year=label.year)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': f['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
+        context['frequency_data'] = sorted_frequencies
+        context['max_count'] = max_count
+        context['duration'] = duration
+        context['active_filter'] = 'frequency'
+        context['active_indicator'] = indicator
+        context['sort'] = sorting
+        return context
+
 
 class JurisdictionStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -1971,6 +2557,7 @@ class JurisdictionStatsView(DatasetListView):
         context['sort'] = sorting
         return context
 
+
 class DatasetsStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/categories.html'
@@ -2078,7 +2665,30 @@ class DatasetsCategoriesView(DatasetListView):
         all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         modified_cats = []
+        chart_data = []
+
+        top_cats = update_facet_data(self.request, facet_fields, 'category', Category)
+        sorted_top_cats = sorted(top_cats, key=lambda cat: cat['count'], reverse=True)[:10]
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
         if indicator is None:
             indicator = 'dataset-count'
         for cat in parent_cats:
@@ -2112,7 +2722,8 @@ class DatasetsCategoriesView(DatasetListView):
             for single in modified_cats:
                 if 'dataset_ids' in single:
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list('metadata__name', flat=True)
+                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list(
+                            'metadata__name', flat=True)
                         total = 0
                         if len(models) > 0:
                             for m in models:
@@ -2171,12 +2782,80 @@ class DatasetsCategoriesView(DatasetListView):
                 modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
             else:
                 modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=False)
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, c in enumerate(sorted_top_cats):
+            sort += 1
+            cc = Category.objects.get(pk=c['filter_value'])
+            cat_dataset_ids = Dataset.objects.filter(category=cc).values_list('pk', flat=True)
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(category=cc, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=cat_dataset_ids, created__year=label.year)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': c['display_value'],
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
         context['categories'] = modified_cats
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'category'
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
+
 
 class CategoryStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -2306,9 +2985,29 @@ class PublicationStatsView(DatasetListView):
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None)
         sorting = self.request.GET.get('sort', None)
+        duration = self.request.GET.get('duration', None)
+        start_date = Dataset.objects.all().first().created
         year_stats = {}
         # quarter_stats = {}
         # monthly_stats = {}
+        chart_data = []
+
+        y_titles = {'download-request-count': 'Atsisiuntimų (užklausų) skaičius',
+                    'download-object-count': 'Atsisiuntimų (objektų) skaičius',
+                    'object-count': 'Objektų skaičius',
+                    'field-count': 'Savybių (duomenų laukų) skaičius',
+                    'model-count': 'Esybių (modelių) skaičius',
+                    'distribution-count': 'Duomenų šaltinių (distribucijų) skaičius',
+                    'dataset-count': 'Duomenų rinkinių skaičius',
+                    'request-count': 'Poreikių skaičius',
+                    'project-count': 'Projektų skaičius',
+                    'level-average': 'Brandos lygis'}
+
+        if duration is None:
+            duration = 'duration-yearly'
+
+        frequency, ff = get_frequency_and_format(duration)
+
         if indicator is None:
             indicator = 'dataset-count'
         for dataset in datasets:
@@ -2377,7 +3076,7 @@ class PublicationStatsView(DatasetListView):
                                 lev = []
                                 if st.maturity_level is not None:
                                     lev.append(st.maturity_level)
-                                level_avg = int(sum(lev)/len(lev))
+                                level_avg = int(sum(lev) / len(lev))
                                 year_stats[yr] = level_avg
                     else:
                         year_stats[yr] = 0
@@ -2395,12 +3094,79 @@ class PublicationStatsView(DatasetListView):
             year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
         elif sorting == 'sort-asc':
             year_stats = {keys[i]: values[i] for i in sorted_value_index}
+
+        if start_date:
+            labels = pd.period_range(start=start_date,
+                                     end=datetime.now(),
+                                     freq=frequency).tolist()
+
+        sort = 0
+        for index, y in enumerate(year_stats.keys()):
+            sort += 1
+            dataset_ids = Dataset.objects.filter(created__year=y).values_list('pk', flat=True)
+            total = 0
+            temp = []
+            for label in labels:
+                if indicator == 'dataset-count':
+                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
+                else:
+                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                    per_datasets = 0
+                    if len(stat) > 0:
+                        for st in stat:
+                            if indicator == 'request-count':
+                                if st.request_count is not None:
+                                    per_datasets += st.request_count
+                            elif indicator == 'project-count':
+                                if st.project_count is not None:
+                                    per_datasets += st.project_count
+                            elif indicator == 'distribution-count':
+                                if st.distribution_count is not None:
+                                    per_datasets += st.distribution_count
+                            elif indicator == 'object-count':
+                                if st.object_count is not None:
+                                    per_datasets += st.object_count
+                            elif indicator == 'field-count':
+                                if st.field_count is not None:
+                                    per_datasets += st.field_count
+                            elif indicator == 'model-count':
+                                if st.model_count is not None:
+                                    per_datasets += st.model_count
+                            elif indicator == 'level-average':
+                                lev = []
+                                if st.maturity_level is not None:
+                                    lev.append(st.maturity_level)
+                                level_avg = int(sum(lev) / len(lev))
+                                per_datasets = level_avg
+
+                    total = per_datasets
+                if frequency == 'W':
+                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                else:
+                    temp.append({'x': _date(label, ff), 'y': total})
+            dt = {
+                'label': y,
+                'data': temp,
+                'borderWidth': 1,
+                'fill': True,
+                'sort': sort
+            }
+            chart_data.append(dt)
+
+        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+
+        context['data'] = json.dumps(chart_data)
+        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['yAxis_title'] = _(y_titles[indicator])
+        context['xAxis_title'] = _('Laikas')
         context['year_stats'] = year_stats
         context['max_count'] = max_count
+        context['duration'] = duration
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
+
 
 class YearStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
@@ -2446,7 +3212,8 @@ class YearStatsView(DatasetListView):
                     for fd in filtered_datasets:
                         dataset_ids.append(fd.pk)
                     if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name', flat=True)
+                        models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name',
+                                                                                              flat=True)
                         total = 0
                         if len(models) > 0:
                             for m in models:

@@ -1,4 +1,4 @@
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
+from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField
 from django.db import models
 
 from haystack import signals

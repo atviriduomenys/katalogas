@@ -83,16 +83,19 @@
     <div class="card mb-5">
       <div class="card-content">
         <form id="dataset-filter" class="field has-addons is-fullwidth"
-        action="{% if request.resolver_match.url_name == 'dataset-list' or request.resolver_match.url_name == 'manager-dataset-list'%}
-                    {% url 'dataset-list' %}
-                 {% else %}
-                     {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
-                 {% endif %}"
+        action="{{ search_url }}"
         method="get">
             <div class="control is-expanded">
                 <input class="input" id="search-input" type="text" name="q"
                        placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
                        value="{{ q | escape }}"/>
+                {% for k, values in search_query.items %}
+                    {% for v in values %}
+                        {% if k != 'q' %}
+                            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             </div>
             <p class="control">
                 <button class="button is-primary" type="submit">
@@ -105,10 +108,6 @@
 
         <div class="buttons is-right">
 
-          <div class="show-mobile m-b-md">
-            <button class="button is-primary show-mobile-facets">{% translate "Filtro rezultatai" %}</button>
-          </div>
-
           {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
           <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
               {% translate "Pridėti rinkinį" %}
@@ -118,22 +117,21 @@
           <div class="dropdown is-hoverable is-block is-right">
             <div class="dropdown-trigger">
               <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
-                {% if sort == 'sort-by-date-oldest' %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-up-alt"></i>
+                  {% if sort %}
+                      {% for sort_option in sort_options %}
+                        {% if sort == sort_option.key %}
+                            <span class="icon is-small">
+                              <i class="{{ sort_option.icon }}"></i>
+                            </span>
+                            <span>{{ sort_option.title }}</span>
+                        {% endif %}
+                      {% endfor %}
+                  {% else %}
+                    <span class="icon is-slikuotamall">
+                      <i class="{{ sort_options.0.icon }}"></i>
                     </span>
-                    <span>{% translate "Seniausi" %}</span>
-                {% elif sort == 'sort-by-pavadinimas' %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-down-alt"></i>
-                    </span>
-                    <span>{% translate "Pagal pavadinimą" %}</span>
-                {% else %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-down-alt"></i>
-                    </span>
-                    <span>{% translate "Naujausi" %}</span>
-                {% endif %}
+                    <span>{{ sort_options.0.title }}</span>
+                  {% endif %}
                 <span class="icon is-small">
                   <i class="fas fa-angle-down" aria-hidden="true"></i>
                 </span>
@@ -141,24 +139,14 @@
             </div>
             <div class="dropdown-menu" id="dropdown-menu4" role="menu">
               <div class="dropdown-content">
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-date-newest">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-down-alt"></i>
-                  </span>
-                  <span>{% translate "Naujausi" %}</span>
-                </a>
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-date-oldest">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-up-alt"></i>
-                  </span>
-                  <span>{% translate "Seniausi" %}</span>
-                </a>
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-title">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-down-alt"></i>
-                  </span>
-                  <span>{% translate "Pagal pavadinimą" %}</span>
-                </a>
+                  {% for sort_option in sort_options %}
+                    <a class="dropdown-item" href="{{ sort_option.url }}">
+                      <span class="icon is-small">
+                        <i class="{{ sort_option.icon }}"></i>
+                      </span>
+                      <span>{{ sort_option.title }}</span>
+                    </a>
+                  {% endfor %}
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import secrets
 import uuid
 from datetime import datetime, date
 from collections import OrderedDict
+from urllib.parse import urlencode
 
 import pandas as pd
 import numpy as np
@@ -122,15 +123,17 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
-        if sorting is None or sorting == 'sort-by-date-newest':
+        if sorting is None:
             datasets = datasets.order_by('-type_order', '-published')
+        elif sorting == 'sort-by-date-newest':
+            datasets = datasets.order_by('-published', '-type_order')
         elif sorting == 'sort-by-date-oldest':
-            datasets = datasets.order_by('-type_order', 'published')
+            datasets = datasets.order_by('published', '-type_order')
         elif sorting == 'sort-by-title':
             if self.request.LANGUAGE_CODE == 'lt':
-                datasets = datasets.order_by('-type_order', 'lt_title_s')
+                datasets = datasets.order_by('lt_title_s', '-type_order')
             else:
-                datasets = datasets.order_by('-type_order', 'en_title_s')
+                datasets = datasets.order_by('en_title_s', '-type_order')
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -231,7 +234,18 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'q': form.cleaned_data.get('q', ''),
         }
 
+        search_query_dict = dict(self.request.GET.copy())
+        if 'query' in search_query_dict:
+            search_query_dict.pop('query')
+        context['search_query'] = search_query_dict
+
+        sort_query_dict = dict(self.request.GET.copy())
+        if 'sort' in sort_query_dict:
+            sort_query_dict.pop('sort')
+        sort_query = urlencode(sort_query_dict, True)
+
         if is_org_dataset_list(self.request):
+            url = reverse('organization-datasets', args=[self.organization.pk])
             extra_context['organization'] = self.organization
             extra_context['can_view_members'] = has_perm(
                 self.request.user,
@@ -246,6 +260,41 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 self.organization,
             )
             context['organization_id'] = self.organization.pk
+        else:
+            url = reverse('dataset-list')
+
+        context['search_url'] = url
+        context['sort_options'] = [
+            {
+                'title': "---------",
+                'url':
+                    f"{url}?{sort_query}" if sort_query else f"{url}",
+                'icon': "fas fa-sort-amount-down-alt",
+                'key': 'sort-by-default'
+            },
+            {
+                'title': _("Naujausi"),
+                'url':
+                    f"{url}?{sort_query}&sort=sort-by-date-newest" if sort_query else f"{url}?sort=sort-by-date-newest",
+                'icon': "fas fa-sort-amount-down-alt",
+                'key': 'sort-by-date-newest'
+             },
+            {
+                'title': _("Seniausi"),
+                'url':
+                    f"{url}?{sort_query}&sort=sort-by-date-oldest" if sort_query else f"{url}?sort=sort-by-date-oldest",
+                'icon': "fas fa-sort-amount-up-alt",
+                'key': 'sort-by-date-oldest'
+            },
+            {
+                'title': _("Pagal pavadinimą"),
+                'url':
+                    f"{url}?{sort_query}&sort=sort-by-title" if sort_query else f"{url}?sort=sort-by-title",
+                'icon': "fas fa-sort-amount-down-alt",
+                'key': 'sort-by-title'
+            },
+        ]
+
         context.update(extra_context)
         context['sort'] = sorting
         return context

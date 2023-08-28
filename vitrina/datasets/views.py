@@ -1141,7 +1141,8 @@ class DatasetStatsView(DatasetListView):
                                'STRUCTURED': 'Įkelta duomenų struktūra',
                                'HAS_DATA': 'Atverti duomenys',
                                'OPENED': 'Atverti duomenys',
-                               'INVENTORED': 'Inventorintas'}
+                               'INVENTORED': 'Inventorintas',
+                               'UNASSIGNED': 'Nepriskirtas'}
 
         most_recent_comments = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),

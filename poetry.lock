@@ -1092,13 +1092,13 @@ webtest = ">=1.3.3"
 
 [[package]]
 name = "djangocms-admin-style"
-version = "3.2.4"
+version = "3.2.5"
 description = "Adds pretty CSS styles for the django CMS admin interface."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "djangocms-admin-style-3.2.4.tar.gz", hash = "sha256:0d981ccedf4252113acfd812a48d3284eb38d6b610d83c92e85f6bb681bd8bca"},
-    {file = "djangocms_admin_style-3.2.4-py3-none-any.whl", hash = "sha256:f540d32026108c22f4b9f69347780fe04c63b9d699902f41d763f44780bb9cbb"},
+    {file = "djangocms-admin-style-3.2.5.tar.gz", hash = "sha256:abbe89d369c0779f7e5f839887a77bdb21660b547e83605d6a4a6df958ace7a5"},
+    {file = "djangocms_admin_style-3.2.5-py3-none-any.whl", hash = "sha256:fc51677f12dbec6996590c430c90c9fe8efa32ceadfee383a576ed092be07526"},
 ]
 
 [[package]]
@@ -1303,13 +1303,13 @@ doc = ["Sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "19.3.0"
+version = "19.3.1"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-19.3.0-py3-none-any.whl", hash = "sha256:bee54278d6e1289573317604ab6f4782acca724396bf261eaf1890de228e553d"},
-    {file = "Faker-19.3.0.tar.gz", hash = "sha256:7d6ed00de3eef9bd57504500c67ee034cab959e4248f9c24aca33e08af82ca93"},
+    {file = "Faker-19.3.1-py3-none-any.whl", hash = "sha256:e2722fdf622cf24e974aaba15a3dee97a6f8b98d869bd827ff1af9c87695af46"},
+    {file = "Faker-19.3.1.tar.gz", hash = "sha256:a6624d9574623bb27dfca33fff94581cd7b23b562901db8ad59acbde9a52543e"},
 ]
 
 [package.dependencies]
@@ -1974,13 +1974,13 @@ test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-co
 
 [[package]]
 name = "pluggy"
-version = "1.2.0"
+version = "1.3.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pluggy-1.2.0-py3-none-any.whl", hash = "sha256:c2fd55a7d7a3863cba1a013e4e2414658b1d07b6bc57b3919e0c63c9abb99849"},
-    {file = "pluggy-1.2.0.tar.gz", hash = "sha256:d12f0c4b579b15f5e054301bb226ee85eeeba08ffec228092f8defbaa3a4c4b3"},
+    {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
+    {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
 ]
 
 [package.extras]

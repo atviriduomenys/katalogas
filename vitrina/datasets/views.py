@@ -1752,17 +1752,10 @@ class DatasetsOrganizationsView(DatasetListView):
             org_datasets = Dataset.public.filter(pk__in=org_dataset_ids)
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=org_dataset_ids
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                    'pk', flat=True
                 )
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -1908,17 +1901,9 @@ class DatasetsTagsView(DatasetListView):
             tag.update({'title': t_title})
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=tag_ids
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                    'pk', flat=True
                 )
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -2036,17 +2021,9 @@ class DatasetsFormatView(DatasetListView):
             tag_datasets = Dataset.public.filter(pk__in=format_ids)
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=format_ids
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                    'pk', flat=True
                 )
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -2168,17 +2145,9 @@ class DatasetsFrequencyView(DatasetListView):
             freq.update({'title': obj_title})
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=frequency_datasets
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                    'pk', flat=True
                 )
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -2469,31 +2438,99 @@ class DatasetsCategoriesView(DatasetListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         facet_fields = context.get('facets').get('fields')
         parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
         all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
+        all_cats = sorted(all_cats, key=lambda cat: cat['count'], reverse=True)
+        top_cats = sorted(all_cats, key=lambda cat: cat['count'], reverse=True)[:10]
+
+        datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
-        modified_cats = []
+        category_data = []
         chart_data = []
-
-        top_cats = update_facet_data(self.request, facet_fields, 'category', Category)
-        sorted_top_cats = sorted(top_cats, key=lambda cat: cat['count'], reverse=True)[:10]
-
         frequency, ff = get_frequency_and_format(duration)
 
-        for cat in parent_cats:
-            id_list = []
-            current_category = Category.objects.get(title=cat.get('display_value'))
-            category_datasets = Dataset.objects.filter(category=current_category)
-            if len(category_datasets) > 0:
-                for d in category_datasets:
-                    id_list.append(d.pk)
-                cat['dataset_ids'] = id_list
-            children = Category.get_children(current_category)
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        for cat in all_cats:
+            count = 0
+            data = []
+            statistics = []
+            cat_ids = datasets.filter(
+                category=cat['filter_value']
+            ).values_list('pk', flat=True)
+            cat_datasets = Dataset.public.filter(pk__in=cat_ids)
+
+            if DATASET_INDICATOR_FIELDS.get(indicator):
+                statistics = DatasetStats.objects.filter(
+                    dataset_id__in=cat_ids
+                )
+            elif MODEL_INDICATOR_FIELDS.get(indicator):
+                model_names = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Model),
+                    dataset__pk__in=cat_ids
+                ).values_list('name', flat=True)
+                statistics = ModelDownloadStats.objects.filter(
+                    model__in=model_names
+                )
+
+            for label in labels:
+                if indicator == 'dataset-count':
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        cat_datasets,
+                        'created'
+                    )
+                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+                    # todo pasidomėti ar čia taip iš tiesų
+                    count = get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    ) or count
+                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+                    # todo pasidomėti ar čia taip iš tiesų
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    )
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                else:
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            if cat in top_cats:
+                dt = {
+                    'label': cat['display_value'],
+                    'data': data,
+                    'borderWidth': 1,
+                    'fill': True,
+                }
+                chart_data.append(dt)
+
+            if data:
+                cat['count'] = data[-1]['y']
+            else:
+                cat['count'] = 0
+
+            obj = get_object_or_404(Category, pk=cat['filter_value'])
+            children = Category.get_children(obj)
             child_titles = []
             if len(children) > 0:
                 existing_count = 0
@@ -2503,146 +2540,26 @@ class DatasetsCategoriesView(DatasetListView):
                     if single['display_value'] in child_titles:
                         existing_count += 1
                 if existing_count == 0:
-                    cat['has_cats'] = False
+                    cat.update({'has_cats': False})
             else:
-                cat['has_cats'] = False
-            if indicator == 'dataset-count':
-                if max_count < cat.get('count'):
-                    max_count = cat.get('count')
-            modified_cats.append(cat)
-        if sorting == 'sort-asc':
-            modified_cats = sorted(modified_cats, key=lambda dd: dd['count'], reverse=False)
-        if indicator != 'dataset-count':
-            for single in modified_cats:
-                if 'dataset_ids' in single:
-                    if indicator == 'download-request-count' or indicator == 'download-object-count':
-                        models = Model.objects.filter(dataset_id__in=single['dataset_ids']).values_list(
-                            'metadata__name', flat=True)
-                        total = 0
-                        if len(models) > 0:
-                            for m in models:
-                                model_stats = ModelDownloadStats.objects.filter(model=m)
-                                if len(model_stats) > 0:
-                                    for m_st in model_stats:
-                                        if indicator == 'download-request-count':
-                                            if m_st is not None:
-                                                total += m_st.model_requests
-                                        elif indicator == 'download-object-count':
-                                            if m_st is not None:
-                                                total += m_st.model_objects
-                        single['stats'] = total
-                    else:
-                        stats = DatasetStats.objects.filter(dataset_id__in=single['dataset_ids'])
-                        if len(stats) > 0:
-                            total = 0
-                            for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    single['stats'] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    single['stats'] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    single['stats'] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    single['stats'] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    single['stats'] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    single['stats'] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    single['stats'] = level_avg
-                                if max_count < single.get('stats'):
-                                    max_count = single.get('stats')
-                        else:
-                            single['stats'] = 0
-                else:
-                    single['stats'] = 0
-            if sorting == 'sort-desc':
-                modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=True)
-            else:
-                modified_cats = sorted(modified_cats, key=lambda dd: dd['stats'], reverse=False)
+                cat.update({'has_cats': False})
 
-        if start_date:
-            labels = pd.period_range(start=start_date,
-                                     end=datetime.now(),
-                                     freq=frequency).tolist()
+            category_data.append(cat)
 
-        sort = 0
-        for index, c in enumerate(sorted_top_cats):
-            sort += 1
-            cc = Category.objects.get(pk=c['filter_value'])
-            cat_dataset_ids = Dataset.objects.filter(category=cc).values_list('pk', flat=True)
-            total = 0
-            temp = []
-            for label in labels:
-                if indicator == 'dataset-count':
-                    total += Dataset.objects.filter(category=cc, created__year=label.year).count()
-                else:
-                    stat = DatasetStats.objects.filter(dataset_id__in=cat_dataset_ids, created__year=label.year)
-                    per_datasets = 0
-                    if len(stat) > 0:
-                        for st in stat:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    per_datasets += st.request_count
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    per_datasets += st.project_count
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    per_datasets += st.distribution_count
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    per_datasets += st.object_count
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    per_datasets += st.field_count
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    per_datasets += st.model_count
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                per_datasets = level_avg
+        if sorting == 'sort-desc':
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            category_data = sorted(category_data, key=lambda x: x['count'], reverse=True)
+        else:
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
+            category_data = sorted(category_data, key=lambda x: x['count'])
 
-                    total = per_datasets
-                if frequency == 'W':
-                    temp.append({'x': _date(label.start_time, ff), 'y': total})
-                else:
-                    temp.append({'x': _date(label, ff), 'y': total})
-            dt = {
-                'label': c['display_value'],
-                'data': temp,
-                'borderWidth': 1,
-                'fill': True,
-                'sort': sort
-            }
-            chart_data.append(dt)
+        max_count = max([x['count'] for x in category_data]) if category_data else 0
 
-        chart_data = sorted(chart_data, key=lambda x: x['sort'])
-
+        context['category_data'] = category_data
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
-        context['categories'] = modified_cats
         context['max_count'] = max_count
         context['duration'] = duration
         context['active_filter'] = 'category'
@@ -2760,7 +2677,7 @@ class CategoryStatsView(DatasetListView):
                 filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=False)
             # filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
         context['max_count'] = max_count
-        context['categories'] = filtered_cats
+        context['category_data'] = filtered_cats
         context['current_object'] = self.kwargs.get('pk')
         context['active_filter'] = 'category'
         context['active_indicator'] = indicator

@@ -23,7 +23,7 @@
                 <span>{% translate "Kategorija" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for cat in categories %}
+            {% for cat in category_data %}
                 <div class="is-flex">
                     <a {% if cat.has_cats == False %}
                             href="/datasets/{{ cat.url }}"

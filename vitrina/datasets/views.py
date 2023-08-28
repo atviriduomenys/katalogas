@@ -1868,20 +1868,18 @@ class DatasetsTagsView(DatasetListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         facet_fields = context.get('facets').get('fields')
+        all_tags = update_facet_data(self.request, facet_fields, 'tags', None)
+        all_tags = sorted(all_tags, key=lambda tag: tag['count'], reverse=True)
+        top_tags = sorted(all_tags, key=lambda tag: tag['count'], reverse=True)[:10]
+
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
-        tags = {}
-        stat_groups = {}
+        tag_data = []
         chart_data = []
-
-        top_tags = update_facet_data(self.request, facet_fields, 'tags', None)
-        sorted_top_tags = sorted(top_tags, key=lambda cat: cat['count'], reverse=True)[:10]
-
         frequency, ff = get_frequency_and_format(duration)
 
         labels = []
@@ -1892,139 +1890,106 @@ class DatasetsTagsView(DatasetListView):
                 freq=frequency
             ).tolist()
 
-        for d in datasets:
-            if d.tags is not None:
-                for t in d.tags:
-                    dataset = Dataset.objects.get(pk=d.pk)
-                    tag_title = dataset.get_tag_title(t).capitalize()
-                    tags[tag_title] = tags.get(tag_title, 0) + 1
-        keys = list(tags.keys())
-        if indicator != 'dataset-count':
-            for k in keys:
-                id_list = []
-                for d in datasets:
-                    if d.tags is not None:
-                        for tag in d.tags:
-                            if tag == k:
-                                id_list.append(d.pk)
-                stat_groups[k] = id_list
-            for item in stat_groups.keys():
-                stats = DatasetStats.objects.filter(dataset_id__in=stat_groups[item])
-                if len(stats) > 0:
-                    total = 0
-                    for st in stats:
-                        if indicator == 'request-count':
-                            if st.request_count is not None:
-                                total += st.request_count
-                            tags[item] = total
-                        elif indicator == 'project-count':
-                            if st.project_count is not None:
-                                total += st.project_count
-                            tags[item] = total
-                        elif indicator == 'distribution-count':
-                            if st.distribution_count is not None:
-                                total += st.distribution_count
-                            tags[item] = total
-                        elif indicator == 'object-count':
-                            if st.object_count is not None:
-                                total += st.object_count
-                            tags[item] = total
-                        elif indicator == 'field-count':
-                            if st.field_count is not None:
-                                total += st.field_count
-                            tags[item] = total
-                        elif indicator == 'model-count':
-                            if st.model_count is not None:
-                                total += st.model_count
-                            tags[item] = total
-                        elif indicator == 'level-average':
-                            lev = []
-                            if st.maturity_level is not None:
-                                lev.append(st.maturity_level)
-                            level_avg = int(sum(lev) / len(lev))
-                            tags[item] = level_avg
-                else:
-                    tags[item] = 0
-        values = list(tags.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        if sorting == 'sort-desc':
-            sorted_value_index = np.flip(np.argsort(values))
-        else:
-            sorted_value_index = np.argsort(values)
-        sorted_tags = {keys[i]: values[i] for i in sorted_value_index}
-        if len(keys) > 100:
-            context['trimmed'] = True
-            sorted_tags = dict(itertools.islice(sorted_tags.items(), 100))
+        for tag in all_tags:
+            count = 0
+            data = []
+            statistics = []
+            tag_ids = datasets.filter(
+                tags=tag['filter_value']
+            ).values_list('pk', flat=True)
+            tag_datasets = Dataset.public.filter(pk__in=tag_ids)
 
-        sort = 0
-        for index, t in enumerate(sorted_top_tags):
-            sort += 1
-            dataset_ids = datasets.filter(tags__in=t['display_value']).values_list('pk', flat=True)
-            dt = Dataset.objects.filter(pk=dataset_ids[0]).get()
-            t_title = dt.get_tag_title(t['filter_value'])
-            total = 0
-            temp = []
+            dataset = Dataset.objects.filter(pk=tag_ids[0]).get()
+            t_title = dataset.get_tag_title(tag['filter_value'])
+            tag.update({'title': t_title})
+
+            if DATASET_INDICATOR_FIELDS.get(indicator):
+                statistic_ids = DatasetStats.objects.filter(
+                    dataset_id__in=tag_ids
+                ).order_by(
+                    'dataset_id',
+                    '-created'
+                ).distinct(
+                    'dataset_id'
+                ).values_list(
+                    'pk', flat=True
+                )
+                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+            elif MODEL_INDICATOR_FIELDS.get(indicator):
+                model_names = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Model),
+                    dataset__pk__in=tag_ids
+                ).values_list('name', flat=True)
+                statistics = ModelDownloadStats.objects.filter(
+                    model__in=model_names
+                )
+
             for label in labels:
                 if indicator == 'dataset-count':
-                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
-                else:
-                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids, created__year=label.year)
-                    per_datasets = 0
-                    if len(stat) > 0:
-                        for st in stat:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    per_datasets += st.request_count
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    per_datasets += st.project_count
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    per_datasets += st.distribution_count
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    per_datasets += st.object_count
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    per_datasets += st.field_count
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    per_datasets += st.model_count
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                per_datasets = level_avg
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        tag_datasets,
+                        'created'
+                    )
+                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+                    # todo pasidomėti ar čia taip iš tiesų
+                    count = get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    ) or count
+                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+                    # todo pasidomėti ar čia taip iš tiesų
+                    count += get_count_by_frequency(
+                        frequency,
+                        label,
+                        statistics,
+                        'created',
+                        field
+                    )
 
-                    total = per_datasets
                 if frequency == 'W':
-                    temp.append({'x': _date(label.start_time, ff), 'y': total})
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
                 else:
-                    temp.append({'x': _date(label, ff), 'y': total})
-            tmp_dict = {
-                'label': t_title,
-                'data': temp,
-                'borderWidth': 1,
-                'fill': True,
-                'sort': sort,
-            }
-            chart_data.append(tmp_dict)
+                    data.append({'x': _date(label, ff), 'y': count})
 
-        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+            if tag in top_tags:
+                dt = {
+                    'label': t_title,
+                    'data': data,
+                    'borderWidth': 1,
+                    'fill': True,
+                }
+                chart_data.append(dt)
 
+            if data:
+                tag['count'] = data[-1]['y']
+            else:
+                tag['count'] = 0
+            tag_data.append(tag)
+
+        if sorting == 'sort-desc':
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            tag_data = sorted(tag_data, key=lambda x: x['count'], reverse=True)
+        else:
+            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
+            tag_data = sorted(tag_data, key=lambda x: x['count'])
+
+        max_count = max([x['count'] for x in tag_data]) if tag_data else 0
+
+        context['tag_data'] = tag_data
+        context['max_count'] = max_count
+        context['active_filter'] = 'tag'
+        context['active_indicator'] = indicator
+        context['sort'] = sorting
         context['data'] = json.dumps(chart_data)
         context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
-        context['tag_data'] = sorted_tags
-        context['max_count'] = max_count
         context['duration'] = duration
-        context['active_filter'] = 'tag'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
         return context
 
 

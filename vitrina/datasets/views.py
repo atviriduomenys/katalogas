@@ -1428,16 +1428,9 @@ class DatasetManagementsView(DatasetListView):
             jurisdiction_datasets = Dataset.public.filter(pk__in=jurisdiction_dataset_ids)
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=jurisdiction_dataset_ids
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                            'pk', flat=True)
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+                )
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -1463,7 +1456,9 @@ class DatasetManagementsView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     #todo pasidomėti ar čia taip iš tiesų
@@ -1519,11 +1514,13 @@ class DatasetManagementsView(DatasetListView):
 
 
 def get_count_by_frequency(
-        frequency,
-        label,
-        queryset,
-        field,
-        aggregate_field=None,
+    frequency,
+    label,
+    queryset,
+    field,
+    aggregate_field=None,
+    group_field=None,
+    only_latest=False,
 ):
     if frequency == 'Y':
         query = {
@@ -1559,9 +1556,21 @@ def get_count_by_frequency(
         }
 
     if aggregate_field:
-        return queryset.filter(**query).aggregate(
-            Sum(aggregate_field)
-        )[f"{aggregate_field}__sum"] or 0
+        if only_latest and group_field:
+            queryset_ids = queryset.order_by(
+                group_field, f"-{field}"
+            ).distinct(
+                group_field
+            ).values_list('pk', flat=True)
+            queryset = queryset.filter(pk__in=queryset_ids)
+
+            return queryset.filter(**query).aggregate(
+                Sum(aggregate_field)
+            )[f"{aggregate_field}__sum"] or 0
+        else:
+            return queryset.filter(**query).aggregate(
+                Sum(aggregate_field)
+            )[f"{aggregate_field}__sum"] or 0
     else:
         return queryset.filter(**query).count()
 
@@ -1622,16 +1631,9 @@ class DatasetsLevelView(DatasetListView):
             level_datasets = Dataset.public.filter(pk__in=level_dataset_ids)
 
             if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistic_ids = DatasetStats.objects.filter(
+                statistics = DatasetStats.objects.filter(
                     dataset_id__in=level_dataset_ids
-                ).order_by(
-                    'dataset_id',
-                    '-created'
-                ).distinct(
-                    'dataset_id'
-                ).values_list(
-                    'pk', flat=True)
-                statistics = DatasetStats.objects.filter(pk__in=statistic_ids)
+                )
             elif MODEL_INDICATOR_FIELDS.get(indicator):
                 model_names = Metadata.objects.filter(
                     content_type=ContentType.objects.get_for_model(Model),
@@ -1656,7 +1658,9 @@ class DatasetsLevelView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     count += get_count_by_frequency(

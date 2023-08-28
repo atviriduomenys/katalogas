@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.db.models import Sum
 from django.urls import reverse
 
 from filer.fields.file import FilerFileField
@@ -357,6 +358,22 @@ class Dataset(TranslatableModel):
             ).
             count()
         )
+
+    def get_download_count(self):
+        from vitrina.statistics.models import ModelDownloadStats
+        model_names = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            dataset__pk=self.pk
+        ).values_list('name', flat=True)
+        return (
+            ModelDownloadStats.objects.
+            filter(
+                model__in=model_names
+            ).
+            aggregate(
+                Sum('model_requests')
+            )
+        )["model_requests__sum"] or 0
 
 
 # TODO: To be merged into Dataset:

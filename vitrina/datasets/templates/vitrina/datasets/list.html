@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n parler_tags %}
+{% load hitcount_tags %}
+{% load util_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -42,6 +44,10 @@
             /*when navigating through the items using the arrow keys:*/
             background-color: #007db2 !important;
             color: #ffffff;
+        }
+        .divider-right {
+          border-right: 1px solid #dcdcdc;
+          height: 100%;
         }
     </style>
 {% endblock %}
@@ -178,64 +184,100 @@
 
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
-                <article class="media adp-media">
-                    <div class="media-content">
-                        <div class="content">
-                            <div>
-                                <strong>
-                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.title }}
-                                        {% endobjectlanguage %}
-                                    </a>
-                                </strong>
+                <article class="media adp-media is-block">
+                    <div class="columns">
+                        {% define i.object.get_icon as icon %}
+                        {% if icon %}
+                            <div class="column is-2 is-align-self-center">
+                                <div class="category-icon has-text-centered">
+                                    <span
+                                        style="font-size: 80px;"
+                                        class="category-custom-icon icon-{{ icon }}">
+                                    </span>
+                                </div>
                             </div>
 
-                            <div class="tags mt-2 mb-1">
-                              <span class="tag is-white has-text-grey">
-                                  {% translate "Publikuota" %}:
-                                  {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
-                              </span>
-                              {% if i.object.modified and i.object.modified > i.object.published %}
-                              <span class="tag is-white has-text-grey">
-                                  {% translate "Atnaujinta" %}:
-                                  {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
-                              </span>
-                              {% endif %}
+                            <div class="column is-8">
+                        {% else %}
+                            <div class="column is-10">
+                        {% endif %}
+                            <div class="media-content divider-right pr-1">
+                                <div class="content">
+                                    <div>
+                                        <strong>
+                                            <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                                {% objectlanguage i.object LANGUAGE_CODE %}
+                                                    {{ i.object.title }}
+                                                {% endobjectlanguage %}
+                                            </a>
+                                        </strong>
+                                    </div>
 
-                              {% if i.object.organization.title %}
-                              <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-grey dataset-list-organization">
-                                {{ i.object.organization.title }}
-                              </a>
-                              {% endif %}
+                                    <div class="tags mt-2 mb-1">
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Publikuota" %}:
+                                          {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                      </span>
+                                      {% if i.object.modified and i.object.modified > i.object.published %}
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Atnaujinta" %}:
+                                          {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                      </span>
+                                      {% endif %}
+
+                                      {% if i.object.organization.title %}
+                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-grey dataset-list-organization">
+                                        {{ i.object.organization.title }}
+                                      </a>
+                                      {% endif %}
+                                    </div>
+
+
+                                    <p class="dataset-list-description my-1">
+                                        {% if i.object %}
+                                            {% objectlanguage i.object LANGUAGE_CODE %}
+                                                {{ i.object.description }}
+                                            {% endobjectlanguage %}
+                                        {% else %}
+                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                            -
+                                        {% endif %}
+                                    </p>
+
+                                    <div class="tags mt-3 mb-1">
+                                      {% for group in i.object.get_all_groups %}
+                                      <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                      </p>
+                                      {% endfor %}
+
+                                      {% for t in i.object.distinct_formats %}
+                                      <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
+                                          {{ t }}
+                                      </a>
+                                      {% endfor %}
+                                    </div>
+
+                                </div>
                             </div>
+                        </div>
 
-
-                            <p class="dataset-list-description my-1">
-                                {% if i.object %}
-                                    {% objectlanguage i.object LANGUAGE_CODE %}
-                                        {{ i.object.description }}
-                                    {% endobjectlanguage %}
-                                {% else %}
-                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                    -
-                                {% endif %}
-                            </p>
-
-                            <div class="tags mt-3 mb-1">
-                              {% for group in i.object.get_all_groups %}
-                              <p class="tag is-link" style="background-color:Gainsboro; color: black;">
-                                {{ group }}
-                              </p>
-                              {% endfor %}
-
-                              {% for t in i.object.distinct_formats %}
-                              <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
-                                  {{ t }}
-                              </a>
-                              {% endfor %}
+                        <div class="column is-2 is-align-self-center">
+                            <div class="has-text-centered">
+                                {% get_hit_count for i.object as total_hits %}
+                                <div>
+                                    <i class="fa fa-eye"></i>
+                                    <span>{{ total_hits }}</span>
+                                </div>
+                                <div>
+                                    <i class="fa fa-thumbs-up"></i>
+                                    <span>{{ i.object.get_likes }}</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                    <span>{{ i.object.get_download_count }}</span>
+                                </div>
                             </div>
-
                         </div>
                     </div>
                 </article>

@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.db.models import Sum
 from django.urls import reverse
 
 from filer.fields.file import FilerFileField
@@ -326,6 +327,20 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def get_icon(self):
+        root_category_ids = []
+        for cat in self.category.all():
+            root_category_ids.append(cat.get_root().pk)
+
+        if root_category_ids:
+            category = Category.objects.filter(
+                pk__in=root_category_ids,
+                icon__isnull=False,
+            ).order_by('title').first()
+            if category:
+                return category.icon
+        return None
+
     @property
     def name(self):
         if metadata := self.metadata.first():
@@ -358,6 +373,22 @@ class Dataset(TranslatableModel):
             ).
             count()
         )
+
+    def get_download_count(self):
+        from vitrina.statistics.models import ModelDownloadStats
+        model_names = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            dataset__pk=self.pk
+        ).values_list('name', flat=True)
+        return (
+            ModelDownloadStats.objects.
+            filter(
+                model__in=model_names
+            ).
+            aggregate(
+                Sum('model_requests')
+            )
+        )["model_requests__sum"] or 0
 
 
 # TODO: To be merged into Dataset:

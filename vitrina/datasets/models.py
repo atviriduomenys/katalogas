@@ -326,6 +326,20 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def get_icon(self):
+        root_category_ids = []
+        for cat in self.category.all():
+            root_category_ids.append(cat.get_root().pk)
+
+        if root_category_ids:
+            category = Category.objects.filter(
+                pk__in=root_category_ids,
+                icon__isnull=False,
+            ).order_by('title').first()
+            if category:
+                return category.icon
+        return None
+
     @property
     def name(self):
         if metadata := self.metadata.first():

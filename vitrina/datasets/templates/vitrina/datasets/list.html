@@ -2,6 +2,7 @@
 {% load static %}
 {% load i18n parler_tags %}
 {% load hitcount_tags %}
+{% load util_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -183,18 +184,23 @@
 
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
-                <article class="media adp-media">
+                <article class="media adp-media is-block">
                     <div class="columns">
-                        <div class="column is-2 is-align-self-center">
-                            <div class="category-icon has-text-centered">
-                                <span
-                                    style="font-size: 80px;"
-                                    class="category-custom-icon icon-{{ i.object.category.first.get_root.icon }}">
-                                </span>
+                        {% define i.object.get_icon as icon %}
+                        {% if icon %}
+                            <div class="column is-2 is-align-self-center">
+                                <div class="category-icon has-text-centered">
+                                    <span
+                                        style="font-size: 80px;"
+                                        class="category-custom-icon icon-{{ icon }}">
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="column is-8">
+                            <div class="column is-8">
+                        {% else %}
+                            <div class="column is-10">
+                        {% endif %}
                             <div class="media-content divider-right pr-1">
                                 <div class="content">
                                     <div>

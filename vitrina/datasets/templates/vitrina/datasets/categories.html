@@ -35,20 +35,12 @@
                     </a>
                     <div class="stays-right">
                         <a href="/datasets/{{ cat.url }}">
-                            {% if active_indicator == 'dataset-count' %}
-                                {{ cat.count }}
-                            {% else %}
-                                {{ cat.stats }}
-                            {% endif %}
+                            {{ cat.count }}
                         </a>
                     </div>
                 </div>
                 <progress class="progress is-info"
-                          {% if active_indicator == 'dataset-count' %}
-                            value="{{ cat.count }}"
-                          {% else %}
-                            value="{{ cat.stats }}"
-                          {% endif %}
+                          value="{{ cat.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

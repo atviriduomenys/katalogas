@@ -17,8 +17,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max, Q, Sum
-from django.db.models.functions import ExtractYear, ExtractMonth, ExtractQuarter, ExtractWeek
+from django.db.models import QuerySet, Count, Max, Q
+from django.db.models.functions import ExtractYear, ExtractMonth
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -58,12 +58,12 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
-from vitrina.datasets.services import update_facet_data, get_projects
+from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.helpers import get_selected_value
 from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -1207,8 +1207,6 @@ class DatasetStatsView(DatasetListView):
             .annotate(year=ExtractYear('created'), month=ExtractMonth('created')) \
             .values('object_id', 'status', 'year', 'month')
 
-        comm_statuses = dataset_status.order_by('status').values_list('status', flat=True).distinct()
-
         frequency, ff = get_frequency_and_format(duration)
 
         labels = []
@@ -1513,87 +1511,6 @@ class DatasetManagementsView(DatasetListView):
         return context
 
 
-def get_count_by_frequency(
-    frequency,
-    label,
-    queryset,
-    field,
-    aggregate_field=None,
-    group_field=None,
-    only_latest=False,
-):
-    if frequency == 'Y':
-        query = {
-            f"{field}__year": label.year
-        }
-    elif frequency == 'Q':
-        queryset = queryset.annotate(
-            quarter=ExtractQuarter('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            "quarter": label.quarter
-        }
-    elif frequency == 'M':
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month
-        }
-    elif frequency == 'W':
-        queryset = queryset.annotate(
-            week=ExtractWeek('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            "week": label.week
-        }
-    else:
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            f"{field}__day": label.day
-        }
-
-    if aggregate_field:
-        if only_latest and group_field:
-            queryset_ids = queryset.order_by(
-                group_field, f"-{field}"
-            ).distinct(
-                group_field
-            ).values_list('pk', flat=True)
-            queryset = queryset.filter(pk__in=queryset_ids)
-
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-        else:
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-    else:
-        return queryset.filter(**query).count()
-
-
-def get_frequency_and_format(duration):
-    if duration == 'duration-yearly':
-        frequency = 'Y'
-        ff = 'Y'
-    elif duration == 'duration-quarterly':
-        frequency = 'Q'
-        ff = 'Y M'
-    elif duration == 'duration-monthly':
-        frequency = 'M'
-        ff = 'Y m'
-    elif duration == 'duration-weekly':
-        frequency = 'W'
-        ff = 'Y W'
-    else:
-        frequency = 'D'
-        ff = 'Y m d'
-    return frequency, ff
-
-
 class DatasetsLevelView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/level.html'
@@ -1780,7 +1697,9 @@ class DatasetsOrganizationsView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     #todo pasidomėti ar čia taip iš tiesų
@@ -1928,7 +1847,9 @@ class DatasetsTagsView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     # todo pasidomėti ar čia taip iš tiesų
@@ -2048,7 +1969,9 @@ class DatasetsFormatView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     # todo pasidomėti ar čia taip iš tiesų
@@ -2172,7 +2095,9 @@ class DatasetsFrequencyView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     # todo pasidomėti ar čia taip iš tiesų
@@ -2498,7 +2423,9 @@ class DatasetsCategoriesView(DatasetListView):
                         label,
                         statistics,
                         'created',
-                        field
+                        field,
+                        'dataset_id',
+                        True
                     ) or count
                 elif field := MODEL_INDICATOR_FIELDS.get(indicator):
                     # todo pasidomėti ar čia taip iš tiesų

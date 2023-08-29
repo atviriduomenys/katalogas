@@ -4,6 +4,18 @@
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
 {% block current_title %}{{ organization.title }}{% endblock %}
 
+{% block head %}
+    <style>
+        .max-128x128 {
+		  	max-width: 128px;
+		  	max-height: 128px;
+		  	height: auto;
+		  	width: auto;
+		}
+    </style>
+{% endblock %}
+
+
 {% block content %}
 
 	{% include 'vitrina/orgs/tabs.html' %}
@@ -33,43 +45,45 @@
         </div>
     
 	    <div class="column is-one-third">
-	            <div class="dataset-organization">
+	            <div>
 	                <div class="is-hidden-mobile">
 	                    {% if organization.image %}
-	                        <img src="{{ organization.image.url }}" class="image max-128x128 m-b-md">
+							<figure class="image max-128x128">
+	                        	<img src="{{ organization.image.url }}" class="image max-128x128 m-b-md">
+							</figure>
 	                    {% endif %}
 	                </div>
 
 	                {% if ancestors %}
-	                	<p class="dataset-meta-title">{% translate "Pavaldus" %}</p>
+	                	<p class="has-text-grey">{% translate "Pavaldus" %}</p>
 	                	{% for anc in ancestors %}
-							<p class="dataset-meta-value">{{ anc }}</p>
+							<p class="has-text-dark">{{ anc }}</p>
 						{% endfor %}
 	                {% endif %}
 
 	                {% if organization.company_code %}
-	                	<p class="dataset-meta-title">{% translate "Įmonės kodas" %}</p>
-	                	<p class="dataset-meta-value"> {{ organization.company_code }}</p>
+	                	<p class="has-text-grey">{% translate "Įmonės kodas" %}</p>
+	                	<p class="has-text-dark"> {{ organization.company_code }}</p>
 	                {% endif %}
 
 	                {% if organization.email %}
-	                	<p class="dataset-meta-title">{% translate "El. paštas" %}</p>
-	                	<p class="dataset-meta-value"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
+	                	<p class="has-text-grey">{% translate "El. paštas" %}</p>
+	                	<p class="has-text-dark"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
 	                {% endif %}
 
 	                {% if organization.address %}
-	                	<p class="dataset-meta-title">{% translate "Buveinės adresas" %}</p>
-	                	<p class="dataset-meta-value">{{ organization.address }}</p>
+	                	<p class="has-text-grey">{% translate "Buveinės adresas" %}</p>
+	                	<p class="has-text-dark">{{ organization.address }}</p>
 	                {% endif %}
 
 	                {% if organization.phone %}
-	                	<p class="dataset-meta-title">{% translate "Telefonas" %}</p>
-	                	<p class="dataset-meta-value">{{ organization.phone }}</p>
+	                	<p class="has-text-grey">{% translate "Telefonas" %}</p>
+	                	<p class="has-text-dark">{{ organization.phone }}</p>
 	                {% endif %}
 
 	                {% if organization.website %}
-	                	<p class="dataset-meta-title">{% translate "Tinklalapis" %}</p>
-	                	<p class="dataset-meta-value">
+	                	<p class="has-text-grey">{% translate "Tinklalapis" %}</p>
+	                	<p class="has-text-dark">
 	                		<a href="{{ organization.website }}"
 	                        	target="_blank">{{ organization.website }}
 	                    	</a>

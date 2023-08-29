@@ -32,8 +32,10 @@
                                 {% translate "Įkelta duomenų struktūra" %}
                             {% elif st == 'HAS_DATA' %}
                                 {% translate "Atverti duomenys" %}
-                            {% else %}
+                            {% elif st == 'INVENTORED' %}
                                 {% translate "Inventorintas" %}
+                            {% else %}
+                                {% translate 'Nepriskirta' %}
                             {% endif %}
                         </strong>
                     </a>

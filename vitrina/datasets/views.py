@@ -1301,8 +1301,10 @@ class DatasetStatsView(DatasetListView):
                         comm_val = 'OPENED'
                     elif status == 'HAS_STRUCTURE':
                         comm_val = 'STRUCTURED'
-                    else:
+                    elif status == 'INVENTORED':
                         comm_val = 'INVENTORED'
+                    else:
+                        comm_val = None
                     total += dataset_status.filter(status=comm_val, year=label.year) \
                         .values('object_id') \
                         .annotate(count=Count('object_id', distinct=True)) \

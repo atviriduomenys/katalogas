@@ -23,26 +23,20 @@
                 <span>{% translate "Rinkinio būsena" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for st, stv in status_data.items %}
+            {% for st in status_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=status_exact%3A{{ st }}"
-                        id="{{ st }}_id">
+                    <a href="/datasets/?selected_facets=status_exact%3A{{ st.filter_value }}"
+                        id="{{ st.filter_value }}_id">
                         <strong style="color: black;">
-                            {% if st == 'HAS_STRUCTURE' %}
-                                {% translate "Įkelta duomenų struktūra" %}
-                            {% elif st == 'HAS_DATA' %}
-                                {% translate "Atverti duomenys" %}
-                            {% else %}
-                                {% translate "Inventorintas" %}
-                            {% endif %}
+                            {{ st.display_value }}
                         </strong>
                     </a>
                     <div class="stays-right">
-                        <a href="/datasets/?selected_facets=status_exact%3A{{ st }}">{{ stv }}</a>
+                        <a href="/datasets/?selected_facets=status_exact%3A{{ st.filter_value }}">{{ st.count }}</a>
                     </div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ stv }}"
+                          value="{{ st.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

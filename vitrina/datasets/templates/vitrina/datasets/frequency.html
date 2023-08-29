@@ -23,16 +23,16 @@
                 <span>{% translate "Atnaujinama" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for freq, fv in frequency_data.items %}
+            {% for freq in frequency_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=frequency_exact%3A{{ freq.id }}"
-                        id="{{ freq.id }}_id">
-                        <strong style="color: black;">{{ freq }}</strong>
+                    <a href="/datasets/?selected_facets=frequency_exact%3A{{ freq.filter_value }}"
+                        id="{{ freq.filter_value }}_id">
+                        <strong style="color: black;">{{ freq.title }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=frequency_exact%3A{{ freq.id }}">{{ fv }}</a></div>
+                    <div class="stays-right"><a href="/datasets/?selected_facets=frequency_exact%3A{{ freq.filter_value }}">{{ freq.count }}</a></div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ fv }}"
+                          value="{{ freq.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

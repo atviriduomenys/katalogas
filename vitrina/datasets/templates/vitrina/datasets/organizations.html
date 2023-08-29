@@ -23,15 +23,17 @@
                 <span>{% translate "Organizacija" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for org, ov in organization_data.items %}
+            {% for org in organization_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}" id="{{ org.id }}_id">
-                        <strong style="color: black;">{{ org.title }}</strong>
+                    <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}" id="{{ org.id }}_id">
+                        <strong style="color: black;">{{ org.display_value }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}">{{ ov }}</a></div>
+                    <div class="stays-right">
+                        <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}">{{ org.count }}</a>
+                    </div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ ov }}"
+                          value="{{ org.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

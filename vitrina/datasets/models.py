@@ -201,6 +201,7 @@ class Dataset(TranslatableModel):
     # --------------------------->8-------------------------------------
 
     metadata = GenericRelation('vitrina_structure.Metadata')
+    comments = GenericRelation('vitrina_comments.Comment')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()

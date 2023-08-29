@@ -4,7 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.db.models.functions import ExtractQuarter, ExtractWeek
 
 from vitrina.helpers import get_filter_url
 from vitrina.projects.models import Project
@@ -70,3 +71,84 @@ def get_requests(user, dataset):
                                                    object_id=dataset.pk).values_list('request_id', flat=True)
     requests = requests.exclude(Q(status=Request.REJECTED) | Q(pk__in=dataset_req_ids))
     return requests
+
+
+def get_count_by_frequency(
+    frequency,
+    label,
+    queryset,
+    field,
+    aggregate_field=None,
+    group_field=None,
+    only_latest=False,
+):
+    if frequency == 'Y':
+        query = {
+            f"{field}__year": label.year
+        }
+    elif frequency == 'Q':
+        queryset = queryset.annotate(
+            quarter=ExtractQuarter('created')
+        )
+        query = {
+            f"{field}__year": label.year,
+            "quarter": label.quarter
+        }
+    elif frequency == 'M':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month
+        }
+    elif frequency == 'W':
+        queryset = queryset.annotate(
+            week=ExtractWeek('created')
+        )
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            "week": label.week
+        }
+    else:
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__day": label.day
+        }
+
+    if aggregate_field:
+        if only_latest and group_field:
+            queryset_ids = queryset.order_by(
+                group_field, f"-{field}"
+            ).distinct(
+                group_field
+            ).values_list('pk', flat=True)
+            queryset = queryset.filter(pk__in=queryset_ids)
+
+            return queryset.filter(**query).aggregate(
+                Sum(aggregate_field)
+            )[f"{aggregate_field}__sum"] or 0
+        else:
+            return queryset.filter(**query).aggregate(
+                Sum(aggregate_field)
+            )[f"{aggregate_field}__sum"] or 0
+    else:
+        return queryset.filter(**query).count()
+
+
+def get_frequency_and_format(duration):
+    if duration == 'duration-yearly':
+        frequency = 'Y'
+        ff = 'Y'
+    elif duration == 'duration-quarterly':
+        frequency = 'Q'
+        ff = 'Y M'
+    elif duration == 'duration-monthly':
+        frequency = 'M'
+        ff = 'Y m'
+    elif duration == 'duration-weekly':
+        frequency = 'W'
+        ff = 'Y W'
+    else:
+        frequency = 'D'
+        ff = 'Y m d'
+    return frequency, ff

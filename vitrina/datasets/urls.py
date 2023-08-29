@@ -1,9 +1,10 @@
 from django.urls import path
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import AddProjectView, RemoveRequestView, AddRequestView
+from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import RemoveRequestView
+from vitrina.datasets.views import AddRequestView
 from vitrina.datasets.views import DatasetRequestsView
-from vitrina.datasets.views import OrganizationStatsView
 from vitrina.datasets.views import QuarterStatsView
 from vitrina.datasets.views import DatasetsTagsView
 from vitrina.datasets.views import YearStatsView
@@ -33,7 +34,6 @@ from vitrina.datasets.views import DeleteMemberView
 from vitrina.datasets.views import RemoveProjectView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetsStatsView
 from vitrina.datasets.views import DatasetRelationCreateView
 from vitrina.datasets.views import DatasetRelationDeleteView
 from vitrina.datasets.views import DatasetCategoryView

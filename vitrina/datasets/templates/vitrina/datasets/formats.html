@@ -23,16 +23,16 @@
                 <span>{% translate "Formatas" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for format, fv in format_data.items %}
+            {% for format in format_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=formats_exact%3A{{ format|upper }}"
-                        id="{{ format }}_id">
-                        <strong style="color: black;">{{ format }}</strong>
+                    <a href="/datasets/?selected_facets=formats_exact%3A{{ format.display_value }}"
+                        id="{{ format.filter_value }}_id">
+                        <strong style="color: black;">{{ format.display_value }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=formats_exact%3A{{ format|upper }}">{{ fv }}</a></div>
+                    <div class="stays-right"><a href="/datasets/?selected_facets=formats_exact%3A{{ format.display_value }}">{{ format.count }}</a></div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ fv }}"
+                          value="{{ format.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

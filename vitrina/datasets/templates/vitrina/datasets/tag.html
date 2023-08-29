@@ -26,16 +26,16 @@
         {% if trimmed %}
             <p>{% translate "Rodomi pirmi 100 rezultatų" %}</p>
         {% endif %}
-            {% for tag, tv in tag_data.items %}
+            {% for tag in tag_data %}
                 <div class="is-flex">
-                    <a href="/datasets?selected_facets=tags_exact%3A{{ tag.split|join:"+" }}"
-                        id="{{ tag }}_id">
-                        <strong style="color: black;">{{ tag }}</strong>
+                    <a href="/datasets?selected_facets=tags_exact%3A{{ tag.filter_value }}"
+                        id="{{ tag.filter_value }}_id">
+                        <strong style="color: black;">{{ tag.title }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets?selected_facets=tags_exact%3A{{ tag.split|join:"+" }}">{{ tv }}</a></div>
+                    <div class="stays-right"><a href="/datasets?selected_facets=tags_exact%3A{{ tag.filter_value }}">{{ tag.count }}</a></div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ tv }}"
+                          value="{{ tag.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>

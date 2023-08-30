@@ -148,10 +148,6 @@ def test_table_io(tmp_path: Path, format: str):
 
     path = (tmp_path / f'manifest.{format}')
     write_table(format, path, table)
-    print('------------------')
-    for row in read_table(format, path):
-        print(row)
-    print('------------------')
     assert list(read_table(format, path)) == table
 
 

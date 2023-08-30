@@ -5,7 +5,7 @@ from parler.models import TranslatableModel, TranslatedFields
 
 
 class ModelDownloadStats(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True)
     source = models.CharField(max_length=255, blank=True, null=True)
     model = models.CharField(max_length=255, blank=True, null=True)
     model_format = models.CharField(max_length=255, blank=True, null=True)

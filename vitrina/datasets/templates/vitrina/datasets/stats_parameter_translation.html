@@ -1,23 +1,5 @@
 {% load i18n parler_tags %}
 
 <div class="stays-right">
-    {% if active_indicator == 'request-count' %}
-        {% translate "Poreikių sk." %}
-    {% elif active_indicator == 'object-count' %}
-        {% translate "Objektų skaičius" %}
-    {% elif active_indicator == 'model-count' %}
-        {% translate "Esybių (modelių) skaičius" %}
-    {% elif active_indicator == 'field-count' %}
-        {% translate "Savybių (duomenų laukų) skaičius" %}
-    {% elif active_indicator == 'project-count' %}
-        {% translate "Projektų sk." %}
-    {% elif active_indicator == 'level-average' %}
-        {% if filter != 'level' %}
-            {% translate "Brandos lygis (vidurkis)" %}
-        {% endif %}
-    {% elif active_indicator == 'distribution-count' %}
-        {% translate "Duomenų šaltinių (distribucijų) skaičius" %}
-    {% else %}
-        {% translate "Duomenų rinkinių sk." %}
-    {% endif %}
+    {{ yAxis_title }}
 </div>

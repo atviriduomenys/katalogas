@@ -32,7 +32,7 @@
                           {% with formats=dataset.distinct_formats %}
 
                           {% for format in formats %}
-                          <a href="{% url "dataset-list" %}?selected_facets=formats_exact:{{ format }}" class="tag is-link is-light mr-3">
+                          <a href="{% url "dataset-list" %}?selected_facets=formats_exact:{{ format.pk }}" class="tag is-link is-light mr-3">
                               {{ format }}
                           </a>
                           {% endfor %}

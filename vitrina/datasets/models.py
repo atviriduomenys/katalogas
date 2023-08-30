@@ -267,14 +267,21 @@ class Dataset(TranslatableModel):
     @property
     def formats(self):
         return [
-            str(obj.get_format()).upper()
+            obj.get_format()
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
+
+    def filter_formats(self):
+        return [
+            obj.get_format().pk
             for obj in self.datasetdistribution_set.all()
             if obj.get_format()
         ]
 
     @property
     def distinct_formats(self):
-        return sorted(set(self.formats))
+        return sorted(set(self.formats), key=lambda x: x.title)
 
     def get_acl_parents(self):
         parents = [self]

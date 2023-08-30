@@ -25,11 +25,11 @@
             </div>
             {% for format in format_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=formats_exact%3A{{ format.display_value }}"
+                    <a href="/datasets/?selected_facets=formats_exact%3A{{ format.filter_value }}"
                         id="{{ format.filter_value }}_id">
                         <strong style="color: black;">{{ format.display_value }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=formats_exact%3A{{ format.display_value }}">{{ format.count }}</a></div>
+                    <div class="stays-right"><a href="/datasets/?selected_facets=formats_exact%3A{{ format.filter_value }}">{{ format.count }}</a></div>
                 </div>
                 <progress class="progress is-info"
                           value="{{ format.count }}"

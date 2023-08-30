@@ -252,7 +252,7 @@
                                       {% endfor %}
 
                                       {% for t in i.object.distinct_formats %}
-                                      <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
+                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-link is-light">
                                           {{ t }}
                                       </a>
                                       {% endfor %}

@@ -267,7 +267,7 @@ def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestAp
 @pytest.mark.haystack
 def test_search_with_query_containing_special_characters(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "du\"<'>\\"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk]
+    assert [int(obj.pk) for obj in resp.context['object_list']] == []
 
 
 @pytest.fixture

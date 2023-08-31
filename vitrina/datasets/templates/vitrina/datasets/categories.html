@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load i18n parler_tags %}
 
-{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageTitle %} | {% translate "Duomenų rinkinių kategorijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių kategorijos" %}{% endblock %}
 
 {% block current_title %}
-{% translate "Duomenų rinkinių valdymo sritys" %}
+{% translate "Duomenų rinkinių kategorijos" %}
 {% endblock %}
 
 {% block content %}
@@ -18,11 +18,14 @@
         </div>
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" with filter="category" %}
+            {% if data %}
+                {% include "vitrina/datasets/stats_graph.html" %}
+            {% endif %}
             <div class="is-flex">
                 <span>{% translate "Kategorija" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for cat in categories %}
+            {% for cat in category_data %}
                 <div class="is-flex">
                     <a {% if cat.has_cats == False %}
                             href="/datasets/{{ cat.url }}"
@@ -34,22 +37,60 @@
                     </a>
                     <div class="stays-right">
                         <a href="/datasets/{{ cat.url }}">
-                            {% if active_indicator == 'dataset-count' %}
-                                {{ cat.count }}
-                            {% else %}
-                                {{ cat.stats }}
-                            {% endif %}
+                            {{ cat.count }}
                         </a>
                     </div>
                 </div>
                 <progress class="progress is-info"
-                          {% if active_indicator == 'dataset-count' %}
-                            value="{{ cat.count }}"
-                          {% else %}
-                            value="{{ cat.stats }}"
-                          {% endif %}
+                          value="{{ cat.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
 {% endblock %}

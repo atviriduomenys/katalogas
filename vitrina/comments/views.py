@@ -1,16 +1,26 @@
+from datetime import datetime, timezone
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from reversion import set_comment
 from reversion.views import RevisionMixin
+from django.utils.translation import gettext_lazy as _
 
+from vitrina import settings
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
-from vitrina.requests.models import Request
+from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain
+from vitrina.orgs.models import Representative
+from vitrina.requests.models import Request, RequestObject
+from vitrina.tasks.models import Task
+from vitrina.users.models import User
 
 
 class CommentView(
@@ -32,14 +42,22 @@ class CommentView(
 
             if form.cleaned_data.get('register_request'):
                 frequency = form.cleaned_data.get('increase_frequency')
+                title = obj.title
+                if not title and hasattr(obj, 'name'):
+                    title = obj.name
                 new_request = Request.objects.create(
                     status=Request.CREATED,
                     user=request.user,
-                    title=obj.title,
+                    title=title,
                     description=comment.body,
-                    organization=obj.organization,
-                    dataset_id=object_id,
                     periodicity=frequency.title if frequency else "",
+                )
+                if hasattr(obj, 'organization'):
+                    new_request.organizations.add(obj.organization)
+                RequestObject.objects.create(
+                    request=new_request,
+                    object_id=object_id,
+                    content_type=content_type,
                 )
                 set_comment(Request.CREATED)
 
@@ -56,6 +74,16 @@ class CommentView(
             else:
                 comment.type = Comment.USER
             comment.save()
+            Task.objects.create(
+                title=f"Parašytas komentaras objektui: {content_type}, id: {obj.pk}",
+                organization=obj.organization if hasattr(obj, 'organization') else None,
+                description=f"Prie {content_type} {obj.pk} parašytas naujas komentaras.",
+                content_type=content_type,
+                object_id=obj.pk,
+                status=Task.CREATED,
+                user=request.user,
+                type=Task.COMMENT
+            )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -68,15 +96,35 @@ class ReplyView(LoginRequiredMixin, View):
         form = CommentForm(obj, request.POST)
 
         if form.is_valid():
-            Comment.objects.create(
+            comm = Comment.objects.create(
                 type=Comment.USER,
                 user=request.user,
                 content_type=content_type,
                 object_id=object_id,
                 parent_id=parent_id,
                 body=form.cleaned_data.get('body'),
-                is_public=form.cleaned_data.get('is_public')
+                is_public=form.cleaned_data.get('is_public'),
             )
+            comm_ct = ContentType.objects.get_for_model(comm)
+            parent_comm = Comment.objects.get(pk=parent_id)
+            Task.objects.create(
+                title=f"Parašytas atsakymas komentarui: {comm_ct}, id: {parent_id}",
+                organization=obj.organization if hasattr(obj, 'organization') else None,
+                description=f"Komentarui {parent_id} parašytas naujas atsakymas.",
+                content_type=content_type,
+                object_id=object_id,
+                comment_object=comm,
+                status=Task.CREATED,
+                user=request.user,
+                type=Task.COMMENT
+            )
+            comment_task = Task.objects.filter(
+                comment_object=parent_comm
+            ).first()
+            if comment_task:
+                comment_task.status = Task.COMPLETED
+                comment_task.completed = datetime.now(timezone.utc)
+                comment_task.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -84,10 +132,12 @@ class ReplyView(LoginRequiredMixin, View):
 
 class ExternalCommentView(
     LoginRequiredMixin,
+    RevisionMixin,
     View
 ):
-    def post(self, request, external_content_type, external_object_id):
-        form = CommentForm(None, request.POST)
+    def post(self, request, dataset_id, external_content_type, external_object_id):
+        form_class = get_comment_form_class()
+        form = form_class(external_object_id, request.POST)
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -95,6 +145,64 @@ class ExternalCommentView(
             comment.external_object_id = external_object_id
             comment.external_content_type = external_content_type
             comment.type = Comment.USER
+
+            if form.cleaned_data.get('register_request'):
+                new_request = Request.objects.create(
+                    status=Request.CREATED,
+                    user=request.user,
+                    title=external_object_id,
+                    description=comment.body,
+                )
+                RequestObject.objects.create(
+                    request=new_request,
+                    object_id=dataset_id,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    external_object_id=external_object_id,
+                    external_content_type=external_content_type,
+                )
+                representatives = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    object_id=dataset_id)
+                dataset = Dataset.objects.get(pk=dataset_id)
+                emails = []
+                title = f'Klaida duomenyse: {external_object_id}, {dataset.name}/{external_content_type}'
+                for rep in representatives:
+                    emails.append(rep.email)
+                    Task.objects.create(
+                        title=title,
+                        description=f"Aptikta klaida duomenyse {external_object_id},"
+                                    f" {dataset.name}/{external_content_type}.",
+                        user=rep.user,
+                        status=Task.CREATED,
+                        type=Task.ERROR
+                    )
+
+                url = f"{get_current_domain(self.request)}/datasets/" \
+                      f"{dataset_id}/data/{external_content_type}/{external_object_id}"
+
+                send_mail(
+                    subject=title,
+                    message=_(
+                        f'Gautas pranešimas, kad duomenyse yra klaida:\n'
+                        f'{url}\n'
+                        f'Klaida užregistruota objektui: {external_object_id},'
+                        f' {dataset.name}/{external_content_type}'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[emails],
+                )
+                set_comment(Request.CREATED)
+                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
+                comment.rel_object_id = new_request.pk
+                comment.type = Comment.REQUEST
+
+            Task.objects.create(
+                title=f"Parašytas komentaras objektui: {external_content_type}, id: {external_object_id}",
+                description=f"Parašytas naujas komentaras {external_content_type}, id: {external_object_id}.",
+                status=Task.CREATED,
+                user=request.user,
+                type=Task.COMMENT
+            )
             comment.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -118,6 +226,15 @@ class ExternalReplyView(LoginRequiredMixin, View):
                 parent_id=parent_id,
                 body=form.cleaned_data.get('body'),
                 is_public=form.cleaned_data.get('is_public')
+            )
+            Task.objects.create(
+                title=f"Parašytas atsakymas komentarui: {external_content_type}, id: {parent_id}",
+                description=f"Atsakyta į komentarą {external_content_type}, id: {parent_id}.",
+                content_type=external_content_type,
+                object_id=parent_id,
+                status=Task.CREATED,
+                user=request.user,
+                type=Task.COMMENT
             )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))

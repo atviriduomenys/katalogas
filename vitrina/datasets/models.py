@@ -4,7 +4,9 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.db.models import Sum
 from django.urls import reverse
+
 from filer.fields.file import FilerFileField
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
@@ -34,13 +36,32 @@ class DatasetGroup(TranslatableModel):
         return self.safe_translation_getter('title', language_code=self.get_current_language())
 
 
+class DatasetFile(models.Model):
+    file = FilerFileField(verbose_name=_("Failas"), on_delete=models.CASCADE)
+    dataset = models.ForeignKey(
+        'Dataset',
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.CASCADE,
+        related_name='dataset_files'
+    )
+
+    class Meta:
+        db_table = 'dataset_file'
+
+    def filename_without_path(self):
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+
+
 class Dataset(TranslatableModel):
+    UPLOAD_TO = "data/files"
+
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
     METADATA = "METADATA"
     PRIORITIZED = "PRIORITIZED"
     FINANCING = "FINANCING"
     HAS_STRUCTURE = "HAS_STRUCTURE"
+    UNASSIGNED = "UNASSIGNED"
     STATUSES = {
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
@@ -50,6 +71,8 @@ class Dataset(TranslatableModel):
         HAS_DATA: _("Atverti duomenys"),
         INVENTORED: _("Tik inventorintas"),
         HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
+        METADATA: _("Tik metaduomenys"),
+        UNASSIGNED: _("Nepriskirta")
     }
 
     CREATED = "CREATED"
@@ -60,6 +83,7 @@ class Dataset(TranslatableModel):
     DATA_UPDATED = "DATA_UPDATED"
     DELETED = "DELETED"
     PROJECT_SET = "PROJECT_SET"
+    REQUEST_SET = "REQUEST_SET"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -68,7 +92,8 @@ class Dataset(TranslatableModel):
         DATA_ADDED: _("Pridėti duomenys"),
         DATA_UPDATED: _("Redaguoti duomenys"),
         DELETED: _("Ištrinta"),
-        PROJECT_SET: _("Priskirta projektui")
+        PROJECT_SET: _("Priskirta projektui"),
+        REQUEST_SET: _("Priskirta poreikiui")
     }
 
     API_ORIGIN = "api"
@@ -177,6 +202,7 @@ class Dataset(TranslatableModel):
     # --------------------------->8-------------------------------------
 
     metadata = GenericRelation('vitrina_structure.Metadata')
+    comments = GenericRelation('vitrina_comments.Comment')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -198,8 +224,16 @@ class Dataset(TranslatableModel):
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
+    def get_tag_object_list(self):
+        return list(self.tags.all().values('name', 'pk'))
+
     def get_tag_list(self):
-        return list(self.tags.all().values_list('name', flat=True))
+        return list(self.tags.all().values_list('pk', flat=True))
+
+    def get_tag_title(self, tag_id):
+        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
+            return tag.name
+        return ''
 
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
@@ -228,15 +262,26 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return None
+        return self.UNASSIGNED
 
     @property
     def formats(self):
-        return [str(obj.get_format()).upper() for obj in self.datasetdistribution_set.all() if obj.get_format()]
+        return [
+            obj.get_format()
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
+
+    def filter_formats(self):
+        return [
+            obj.get_format().pk
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
 
     @property
     def distinct_formats(self):
-        return sorted(set(self.formats))
+        return sorted(set(self.formats), key=lambda x: x.title)
 
     def get_acl_parents(self):
         parents = [self]
@@ -289,6 +334,20 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def get_icon(self):
+        root_category_ids = []
+        for cat in self.category.all():
+            root_category_ids.append(cat.get_root().pk)
+
+        if root_category_ids:
+            category = Category.objects.filter(
+                pk__in=root_category_ids,
+                icon__isnull=False,
+            ).order_by('title').first()
+            if category:
+                return category.icon
+        return None
+
     @property
     def name(self):
         if metadata := self.metadata.first():
@@ -309,6 +368,34 @@ class Dataset(TranslatableModel):
         elif part_of:
             order = 1
         return order
+
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
+
+    def get_download_count(self):
+        from vitrina.statistics.models import ModelDownloadStats
+        model_names = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            dataset__pk=self.pk
+        ).values_list('name', flat=True)
+        return (
+            ModelDownloadStats.objects.
+            filter(
+                model__in=model_names
+            ).
+            aggregate(
+                Sum('model_requests')
+            )
+        )["model_requests__sum"] or 0
 
 
 # TODO: To be merged into Dataset:
@@ -511,6 +598,12 @@ class DatasetResourceMigrate(models.Model):
         managed = False
         db_table = 'dataset_resource_migrate'
 
+class DatasetStructureLink(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    dataset_id = models.IntegerField(blank=False, null=False)
+    class Meta:
+        managed = True
+        db_table = 'dataset_structure_link'
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):
@@ -645,6 +738,12 @@ class DatasetAttribution(models.Model):
     class Meta:
         db_table = 'dataset_attribution'
 
+    def __str__(self):
+        if self.organization:
+            return f"{self.attribution} - {self.dataset}, {self.organization}"
+        else:
+            return f"{self.attribution} - {self.dataset}, {self.agent}"
+
 
 class Type(TranslatableModel):
     SERIES = "series"
@@ -727,3 +826,14 @@ class DataServiceSpecType(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class DatasetStructureMapping(models.Model):
+    dataset_id = models.IntegerField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    org = models.CharField(max_length=255, blank=True, null=True)
+    checksum = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'dataset_structure_mapping'

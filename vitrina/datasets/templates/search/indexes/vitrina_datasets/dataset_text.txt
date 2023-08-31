@@ -1,6 +1,6 @@
 {{ object.en_title }}
 {{ object.lt_title }}
-{{ object.filter_status }}
+{{ object.status }}
 {{ object.organization.title }}
 {{ object.category.title }}
 {{ object.frequency.title }}

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n parler_tags %}
+{% load hitcount_tags %}
+{% load util_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -43,12 +45,33 @@
             background-color: #007db2 !important;
             color: #ffffff;
         }
+        .divider-right {
+          border-right: 1px solid #dcdcdc;
+          height: 100%;
+        }
     </style>
 {% endblock %}
 
-{% if request.resolver_match.url_name == 'organization-datasets' %}
-    {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
-{% endif %}
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+    <li>
+        <a href="#">
+            <span>{% translate "Organizacija" %}</span>
+        </a>
+    </li>
+    {% endif %}
+</ul>
+{% endblock %}
 
 {% block current_title %}
 {% if request.resolver_match.url_name == 'organization-datasets' %}
@@ -62,86 +85,198 @@
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% endif %}
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <form id="dataset-filter" class="field has-addons is-fullwidth"
+        action="{{ search_url }}"
+        method="get">
+            <div class="control is-expanded">
+                <input class="input" id="search-input" type="text" name="q"
+                       placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
+                       value="{{ q | escape }}"/>
+                {% for k, values in search_query.items %}
+                    {% for v in values %}
+                        {% if k != 'q' %}
+                            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            <p class="control">
+                <button class="button is-primary" type="submit">
+                    <span class="icon is-large">
+                        <i class="fa fa-search"></i>
+                    </span>
+                </button>
+            </p>
+        </form>
+
+        <div class="buttons is-right">
+
+          {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
+          <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+              {% translate "Pridėti rinkinį" %}
+          </a>
+          {% endif %}
+
+          <div class="dropdown is-hoverable is-block is-right">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
+                  {% if sort %}
+                      {% for sort_option in sort_options %}
+                        {% if sort == sort_option.key %}
+                            <span class="icon is-small">
+                              <i class="{{ sort_option.icon }}"></i>
+                            </span>
+                            <span>{{ sort_option.title }}</span>
+                        {% endif %}
+                      {% endfor %}
+                  {% else %}
+                    <span class="icon is-slikuotamall">
+                      <i class="{{ sort_options.0.icon }}"></i>
+                    </span>
+                    <span>{{ sort_options.0.title }}</span>
+                  {% endif %}
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu4" role="menu">
+              <div class="dropdown-content">
+                  {% for sort_option in sort_options %}
+                    <a class="dropdown-item" href="{{ sort_option.url }}">
+                      <span class="icon is-small">
+                        <i class="{{ sort_option.icon }}"></i>
+                      </span>
+                      <span>{{ sort_option.title }}</span>
+                    </a>
+                  {% endfor %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <div class="columns">
-        <div class="column is-one-quarter is-hidden-mobile">
-            {% include "vitrina/datasets/filters.html" %}
+        <div class="column is-6 is-5-desktop is-4-widescreen is-hidden-mobile">
+            <div class="card">
+                <div class="card-content">
+                  {% include "vitrina/datasets/filters.html" %}
+                </div>
+            </div>
         </div>
 
-        <div class="column is-three-quarters">
+        <div class="column">
 
-            <form id="dataset-filter" class="field has-addons is-fullwidth"
-                  action="{% if request.resolver_match.url_name == 'dataset-list' %}
-                              {% url 'dataset-list' %}
-                           {% else %}
-                               {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
-                           {% endif %}"
-                  method="get">
-                <div class="control is-expanded">
-                    <input class="input" id="search-input" type="text" name="q"
-                           placeholder="{% translate 'Ieškoti duomenų rinkinio' %}"
-                           value="{{ q | escape }}"/>
+            <div class="buttons">
+              <div class="control">
+                <div class="tags">
+                  <span class="tag is-white is-medium has-text-grey">{% translate "Rasta duomenų rinkinių" %}:</span>
+                  <span class="tag is-medium">{{ paginator.count }}</span>
                 </div>
-                <p class="control">
-                    <button class="button is-primary" type="submit">
-                        <span class="icon is-large">
-                            <i class="fa fa-search"></i>
-                        </span>
-                    </button>
-                </p>
-            </form>
-
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
-
-            <div class="show-mobile m-b-md">
-                <button class="button is-primary is-small show-mobile-facets">{% translate "Filtro rezultatai" %}</button>
+              </div>
             </div>
-            {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
-                <div class="buttons is-right">
-                    <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Pridėti rinkinį" %}
-                    </a>
-                </div>
-            {% endif %}
+
+
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
-                <article class="media">
-                    <div class="media-content">
-                        <div class="content">
-                            <div>
-                                <strong>
-                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.title }}
-                                        {% endobjectlanguage %}
-                                    </a>
-                                </strong>
+                <article class="media adp-media is-block">
+                    <div class="columns">
+                        {% define i.object.get_icon as icon %}
+                        {% if icon %}
+                            <div class="column is-2 is-align-self-center">
+                                <div class="category-icon has-text-centered">
+                                    <span
+                                        style="font-size: 80px;"
+                                        class="category-custom-icon icon-{{ icon }}">
+                                    </span>
+                                </div>
                             </div>
-                            {% for group in i.object.get_all_groups %}
-                                <p class="tag is-link" style="background-color:Gainsboro; color: black;">
-                                    {{ group }}
-                                </p>
-                            {% endfor %}
-                            {% if i.object.organization_title %}
-                                <p>
-                                    <small class="dataset-list-organization">{{ i.object.organization_title }}</small>
-                                </p>
-                            {% endif %}
-                            <p class="dataset-list-description">
-                                {% if i.object %}
-                                    {% objectlanguage i.object LANGUAGE_CODE %}
-                                        {{ i.object.description }}
-                                    {% endobjectlanguage %}
-                                {% else %}
-                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                    -
-                                {% endif %}
-                            </p>
-                            <div class="tags">
-                                {% for t in i.object.distinct_formats %}
-                                <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
-                                    {{ t }}
-                                </a>
-                                {% endfor %}
+
+                            <div class="column is-8">
+                        {% else %}
+                            <div class="column is-10">
+                        {% endif %}
+                            <div class="media-content divider-right pr-1">
+                                <div class="content">
+                                    <div>
+                                        <strong>
+                                            <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                                {% objectlanguage i.object LANGUAGE_CODE %}
+                                                    {{ i.object.title }}
+                                                {% endobjectlanguage %}
+                                            </a>
+                                        </strong>
+                                    </div>
+
+                                    <div class="tags mt-2 mb-1">
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Publikuota" %}:
+                                          {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                      </span>
+                                      {% if i.object.modified and i.object.modified > i.object.published %}
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Atnaujinta" %}:
+                                          {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                      </span>
+                                      {% endif %}
+
+                                      {% if i.object.organization.title %}
+                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-grey dataset-list-organization">
+                                        {{ i.object.organization.title }}
+                                      </a>
+                                      {% endif %}
+                                    </div>
+
+
+                                    <p class="dataset-list-description my-1">
+                                        {% if i.object %}
+                                            {% objectlanguage i.object LANGUAGE_CODE %}
+                                                {{ i.object.description }}
+                                            {% endobjectlanguage %}
+                                        {% else %}
+                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                            -
+                                        {% endif %}
+                                    </p>
+
+                                    <div class="tags mt-3 mb-1">
+                                      {% for group in i.object.get_all_groups %}
+                                      <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                      </p>
+                                      {% endfor %}
+
+                                      {% for t in i.object.distinct_formats %}
+                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-link is-light">
+                                          {{ t }}
+                                      </a>
+                                      {% endfor %}
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column is-2 is-align-self-center">
+                            <div class="has-text-centered">
+                                {% get_hit_count for i.object as total_hits %}
+                                <div>
+                                    <i class="fa fa-eye"></i>
+                                    <span>{{ total_hits }}</span>
+                                </div>
+                                <div>
+                                    <i class="fa fa-thumbs-up"></i>
+                                    <span>{{ i.object.get_likes }}</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                    <span>{{ i.object.get_download_count }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -152,6 +287,7 @@
         </div>
     </div>
 {% endblock %}
+
 {% block extraContent %}
     {% include '../component/requestBlock.twig' %}
 {% endblock %}
@@ -208,6 +344,78 @@
                     searchParams.set('date_to', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
+                }
+            });
+
+            let orgFilter = $('#organization-filter-input');
+            orgFilter.on('input', function(){
+                let orgFilterValues = orgFilter.nextAll();
+                if (orgFilter.val().length !== 0) {
+                    orgFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(orgFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    orgFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    orgFilterValues = orgFilterValues.slice(0, 10)
+                    orgFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
+                }
+            });
+
+            let catFilter = $('#category-filter-input');
+            catFilter.on('input', function(){
+                let catFilterValues = catFilter.nextAll();
+                if (catFilter.val().length !== 0) {
+                    catFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(catFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    catFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    catFilterValues = catFilterValues.slice(0, 10)
+                    catFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
+                }
+            });
+
+            let tagsFilter = $('#tags-filter-input');
+            tagsFilter.on('input', function(){
+                let tagsFilterValues = tagsFilter.nextAll();
+                if (tagsFilter.val().length !== 0) {
+                    tagsFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(tagsFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    tagsFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    tagsFilterValues = tagsFilterValues.slice(0, 10)
+                    tagsFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
                 }
             });
 

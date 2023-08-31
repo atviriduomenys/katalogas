@@ -9,7 +9,7 @@
 {% block current_title %}{{ request_object.title }}{% endblock %}
 
 {% block content %}
-    {% include 'component/tabs.html' %}
+    {% include 'vitrina/requests/tabs.html' %}
 
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
@@ -42,6 +42,12 @@
 
             {% if can_update_request %}
             <div class="buttons is-right">
+                {% if request_object.is_created %}
+                    <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
+                       href="{% url 'request-plans-include' request_object.pk %}">
+                        {% translate "Įtraukti į planą" %}
+                    </a>
+                {% endif %}
                 <a href="{%url 'request-update' pk=request_object.pk %}" class="button is-primary">
                     {% translate "Keisti" %}
                 </a>

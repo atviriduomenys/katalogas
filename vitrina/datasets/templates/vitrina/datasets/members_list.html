@@ -4,6 +4,13 @@
 {% block pageTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
 
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
+{% endblock %}
 {% block current_title %}
 {% translate "Duomenų rinkinio narių sąrašas" %}
 {% endblock %}
@@ -48,11 +55,11 @@
                     <td>
                         <div class="buttons is-right">
                             <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
-                               href="{% url 'dataset-representative-update' dataset_id=dataset.pk pk=m.pk %}">
+                               href="{% url 'dataset-representative-update' dataset.pk m.pk %}">
                                 {% translate "Redaguoti" %}
                             </a>
                             <a id="delete-member-{{ m.pk }}-btn"  class="button is-danger is-small"
-                               href="{% url 'dataset-representative-delete' dataset_id=dataset.pk pk=m.pk %}">
+                               href="{% url 'dataset-representative-delete' dataset.pk m.pk %}">
                                 {% translate "Pašalinti" %}
                             </a>
                         </div>

@@ -1,0 +1,59 @@
+{% load i18n %}
+{% load thumbnail %}
+
+<section class="hero is-info">
+  <div class="hero-body">
+    <div class="container">
+        <p class="title">
+          <span>{% translate "Statistika" %}</span>
+          <span class="icon is-large is-inline-block ml-2">
+            <i class="fas fa-chart-line"></i>
+          </span>
+        </p>
+        <div class="columns is-multiline p-t-lg">
+
+          {% for stat_route in stat_routes %}
+            <div class="column">
+              <div class="card">
+                <div class="card-content">
+                  <div class="content">
+                    {% if stat_route.image %}
+                    <figure class="image is-3by2">
+                        <img src="{{ stat_route.image|thumbnail_url:'list' }}">
+                    </figure>
+                    {% endif %}
+                    <p>
+                      <a href="{{ stat_route.url }}" class="has-text-info-dark is-size-5">
+                        {{ stat_route.title }}
+                      </a>
+                    </p>
+                    <p>
+                       {{ stat_route.description }}
+                    </p>
+                  </div>
+                  <div class="content has-text-right">
+                    <a href="{{ stat_route.url }}" class="button">
+                      <span>{% translate "Rodyti" %}</span>
+                      <span class="icon is-small">
+                        <i class="fas fa-solid fa-chevron-right"></i>
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="columns">
+          <div class="column has-text-right">
+              <a href='{% url "stat-route-list" %}' class="button">
+                  <span>{% translate "Rodyti daugiau" %}</span>
+                  <span class="icon is-small">
+                    <i class="fas fa-solid fa-chevron-right"></i>
+                  </span>
+              </a>
+          </div>
+        </div>
+    </div>
+  </div>
+</section>

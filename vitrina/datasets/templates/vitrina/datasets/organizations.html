@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load i18n parler_tags %}
 
-{% block pageTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Duomenų rinkinių valdymo sritys" %}{% endblock %}
+{% block pageTitle %} | {% translate "Duomenų rinkinių organizacijos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių organizacijos" %}{% endblock %}
 
 {% block current_title %}
-{% translate "Duomenų rinkinių valdymo sritys" %}
+{% translate "Duomenų rinkinių organizacijos" %}
 {% endblock %}
 
 {% block content %}
@@ -18,21 +18,72 @@
         </div>
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" with filter="organization" %}
+            {% if data %}
+                {% include "vitrina/datasets/stats_graph.html" %}
+            {% endif %}
             <div class="is-flex">
                 <span>{% translate "Organizacija" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% for org, ov in organization_data.items %}
+            {% for org in organization_data %}
                 <div class="is-flex">
-                    <a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}" id="{{ org.id }}_id">
-                        <strong style="color: black;">{{ org.title }}</strong>
+                    <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}" id="{{ org.id }}_id">
+                        <strong style="color: black;">{{ org.display_value }}</strong>
                     </a>
-                    <div class="stays-right"><a href="/datasets/?selected_facets=organization_exact%3A{{ org.id }}">{{ ov }}</a></div>
+                    <div class="stays-right">
+                        <a href="/datasets/?selected_facets=organization_exact%3A{{ org.filter_value }}">{{ org.count }}</a>
+                    </div>
                 </div>
                 <progress class="progress is-info"
-                          value="{{ ov }}"
+                          value="{{ org.count }}"
                           max="{{ max_count }}"></progress>
             {% endfor %}
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
 {% endblock %}

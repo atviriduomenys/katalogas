@@ -1,0 +1,62 @@
+{% load i18n %}
+{% load hitcount_tags %}
+{% load thumbnail %}
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container">
+        <p class="title has-text-info-dark">
+          {% translate "Duomenų teikėjai" %}
+        </p>
+        <div class="columns is-multiline p-t-lg">
+            {% for org in orgs %}
+            <div class="column">
+                <div class="card">
+                  <div class="card-content">
+                    <div class="content">
+                        {% if org.image %}
+                        <figure class="image is-3by2">
+                            <img src="{{ org.image|thumbnail_url:'list' }}">
+                        </figure>
+                        {% endif %}
+                        <p>
+                          <a href="{{ org.get_absolute_url }}" class="has-text-info-dark is-size-5">
+                            {{ org.title }}
+                          </a>
+                        </p>
+                        {% with parent=org.get_parent %}
+                        {% if parent %}
+                        <p>
+                          <a href="{{ parent.get_absolute_url }}" class="has-text-grey">
+                            {{ parent.title }}
+                          </a>
+                        </p>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="columns">
+            <div class="column has-text-right">
+                <a href="{% url 'partner-register-info' %}" class="button is-primary mr-5">
+                    <span class="icon is-small">
+                      <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>{% translate "Registruoti duomenų teikėją" %}</span>
+                </a>
+                <a href="{% url "organization-list" %}" class="button">
+                    <span>{% translate "Rodyti daugiau" %}</span>
+                    <span class="icon is-small">
+                      <i class="fas fa-solid fa-chevron-right"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+

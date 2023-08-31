@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-three-quarters">
+            <form id="confirm-merge-form" method="post">
+                {% csrf_token %}
+                <strong>
+                    <p>{% translate "Ar tikrai norite sujungti" %} "{{ organization }}" {% translate "organizaciją su" %} "{{ merge_organization }}" ?</p>
+                     <br/>
+                </strong>
+                <p>{% translate "Sujungus organizacijas" %}, "{{ organization }}" {% translate "organizacijos duomenys bus perkelti prie" %}
+                    "{{ merge_organization }}" {% translate "organizacijos" %}.</p>
+
+                <div class="mb-3 mt-5">
+                    <strong><p>{% translate "Perkeliami duomenys" %}:</p></strong>
+                </div>
+
+                {% for title, queryset in related_objects.items %}
+                    {% if queryset %}
+                        <div class="mb-3">
+                            <strong><p>{{ title }}:</p></strong>
+                            <ul>
+                                {% for obj in queryset %}
+                                    <li>{{ obj }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <a href="{% url 'organization-detail' organization.pk %}" class="button is-danger">{% translate 'Atšaukti' %}</a>
+                <input class="button is-primary" type="submit" value="{% translate 'Patvirtinti' %}">
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,10 +1,13 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
 
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
 from vitrina.users.models import User
+from vitrina.datasets.models import Dataset
 
 
 CREATED = "CREATED"
@@ -37,6 +40,13 @@ class Request(models.Model):
         (ANSWERED, _("Atsakytas")),
         (APPROVED, _("Patvirtintas"))
     }
+    FILTER_STATUSES = {
+        CREATED: _("Pateiktas"),
+        REJECTED: _("Atmestas"),
+        OPENED: _("Atvertas"),
+        ANSWERED: _("Atsakytas"),
+        APPROVED: _("Patvirtintas")
+    }
 
     EDITED = "EDITED"
     STATUS_CHANGED = "STATUS_CHANGED"
@@ -59,12 +69,11 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset_id = models.BigIntegerField(blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
     planned_opening_date = models.DateField(blank=True, null=True)
     purpose = models.CharField(max_length=255, blank=True, null=True)
@@ -77,12 +86,13 @@ class Request(models.Model):
     is_public = models.BooleanField(default=True)
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
+    organizations = models.ManyToManyField(Organization)
+
 
     objects = models.Manager()
     public = PublicRequestManager()
 
     class Meta:
-        managed = True
         db_table = 'request'
 
     def __str__(self):
@@ -93,9 +103,32 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        if self.organization:
-            parents.extend(self.organization.get_acl_parents())
+        if self.organizations and self.organizations.first():
+            parents.extend(self.organizations.first().get_acl_parents())
         return parents
+    
+
+    def get_likes(self):
+        from vitrina.likes.models import Like
+        content_type = ContentType.objects.get_for_model(self)
+        return (
+            Like.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.pk,
+            ).
+            count()
+        )
+
+    def is_created(self):
+        return self.status == self.CREATED
+    
+    def jurisdiction(self) -> int | None:
+        if self.dataset:
+            root_org = self.dataset.organization.get_root()
+            if root_org.get_children_count() > 1:
+                return root_org.pk
+        return None
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -108,7 +141,7 @@ class RequestEvent(models.Model):
     comment = models.TextField(blank=True, null=True)
     meta = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
-    request = models.ForeignKey(Request, models.DO_NOTHING, blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -131,3 +164,13 @@ class RequestStructure(models.Model):
     class Meta:
         managed = True
         db_table = 'request_structure'
+
+
+class RequestObject(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE)
+
+    external_object_id = models.CharField(max_length=255, blank=True, null=True)
+    external_content_type = models.CharField(max_length=255, blank=True, null=True)

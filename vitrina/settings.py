@@ -31,7 +31,9 @@ BASE_DIR = Path(env.path(
 environ.Env.read_env(BASE_DIR / '.env')
 
 BASE_DB_PATH = BASE_DIR / 'resources/adp-pg.sql'
-LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
+LOCALE_PATHS = [
+    env.path('VITRINA_LOCALE_PATH', default=BASE_DIR / 'vitrina/locale/'),
+]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -229,10 +231,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
@@ -265,6 +267,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'VERIFIED_EMAIL': True
     }
 }
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
@@ -279,6 +282,11 @@ THUMBNAIL_PROCESSORS = (
     'filer.thumbnail_processors.scale_and_crop_with_subject_location',
     'easy_thumbnails.processors.filters'
 )
+THUMBNAIL_ALIASES = {
+    '': {
+        'list': {'size': (480, 320), 'crop': True},
+    },
+}
 
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True
@@ -362,3 +370,17 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}

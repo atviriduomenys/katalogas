@@ -316,11 +316,15 @@ class RequestCreateView(
         return has_perm(self.request.user, Action.CREATE, Request)
 
     def form_valid(self, form):
+        organizations = form.cleaned_data.get('organizations')
         self.object = form.save(commit=False)
         self.object.user = self.request.user
         self.object.status = Request.CREATED
         self.object.save()
         set_comment(Request.CREATED)
+        for org in organizations:
+            self.object.organizations.add(org)
+        self.object.save()
         Task.objects.create(
             title=f"Užregistruotas naujas poreikis: {ContentType.objects.get_for_model(self.object)},"
                   f" id: {self.object.pk}",
@@ -337,7 +341,6 @@ class RequestCreateView(
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
         return context_data
-
 
 class RequestUpdateView(
     LoginRequiredMixin,

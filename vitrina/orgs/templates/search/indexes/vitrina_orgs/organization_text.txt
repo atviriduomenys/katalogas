@@ -1,0 +1,2 @@
+{{ object.title }}
+{{ object.dataset_tags }}

@@ -105,6 +105,15 @@ class Organization(MP_Node):
         parents.extend(self.get_ancestors())
         return parents
 
+    def dataset_tags(self):
+        from vitrina.datasets.models import Dataset
+        tags = []
+        for dataset in Dataset.objects.filter(organization=self.pk).all():
+            for tag in dataset.get_tag_list():
+                if tag not in tags:
+                    tags.append(tag)
+        return tags
+
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'

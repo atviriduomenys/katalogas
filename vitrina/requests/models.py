@@ -130,6 +130,72 @@ class Request(models.Model):
                 return root_org.pk
         return None
 
+    def dataset_statuses(self):
+        statuses = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset.status not in statuses:
+                statuses.append(dataset.status)
+        return statuses
+
+    def dataset_organizations(self):
+        orgs = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset.organization not in orgs:
+                orgs.append(dataset.status)
+        return orgs
+
+    def dataset_organizations(self):
+        orgs = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset.organization not in orgs:
+                orgs.append(dataset.organization.pk)
+        return orgs
+
+    def dataset_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset.category not in cats:
+                cats.append(dataset.category)
+        return cats
+
+    def dataset_parent_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            for category in dataset.parent_category():
+                if category not in cats:
+                    cats.append(category)
+        return cats
+
+    def dataset_group_list(self):
+        groups = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            for group in dataset.get_group_list():
+                if group not in groups:
+                    groups.append(group)
+        return groups
+
+    def dataset_get_tag_list(self):
+        tags = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(request_id=self.pk)]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            for tag in dataset.get_tag_list():
+                if tag not in tags:
+                    tags.append(tag)
+        return tags
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

@@ -11,6 +11,7 @@ from vitrina.requests.factories import RequestFactory, RequestStructureFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
+from vitrina.orgs.factories import OrganizationFactory
 
 timezone = pytz.timezone(settings.TIME_ZONE)
 
@@ -18,11 +19,14 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 @pytest.mark.django_db
 def test_request_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-
+    orgs = [OrganizationFactory(title='1'), OrganizationFactory(title='2')]
     app.set_user(user)
     form = app.get(reverse("request-create")).forms['request-form']
     form['title'] = "Request"
     form['description'] = "Description"
+    resp = form.submit()
+    form = resp.forms['request-form']
+    form['organizations'] = orgs
     resp = form.submit()
     added_request = Request.objects.filter(title="Request")
     assert added_request.count() == 1
@@ -47,11 +51,14 @@ def test_request_update_with_user_without_permission(app: DjangoTestApp):
 def test_request_update_with_permitted_user(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     request = RequestFactory(user=user)
-
+    orgs = [OrganizationFactory(title='4'), OrganizationFactory(title='5')]
     app.set_user(user)
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
+    resp = form.submit()
+    form = resp.forms['request-form']
+    form['organizations'] = orgs
     resp = form.submit()
     request.refresh_from_db()
     assert resp.status_code == 302
@@ -95,6 +102,7 @@ def test_request_history_view_without_permission(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_history_view_with_permission(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
+    orgs = [OrganizationFactory(title='9'), OrganizationFactory(title='10')]
     request = RequestFactory(user=user)
     request.organizations.add(user.organization)
     app.set_user(user)
@@ -102,6 +110,9 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
+    resp = form.submit()
+    form = resp.forms['request-form']
+    form['organizations'] = orgs
     resp = form.submit().follow()
     resp = resp.click(linkid="history-tab")
     assert resp.context['detail_url_name'] == 'request-detail'

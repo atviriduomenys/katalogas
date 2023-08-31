@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Informacija duomenų teikėjo registravimui" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Viisp autentifikacija pavyko, tačiau nesutampa el.paštas iš viisp platformos." %}</p>
+  <p>{% translate "Pakeiskite savo el.paštą čia arba viisp sistemoje. Jie turi sutapti. Taip pat patikrinkit ar naudojat organizaciją atstovaujančio juridinio asmens profilį viisp platformoje." %}</p>
+{% endblock %}

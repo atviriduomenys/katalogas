@@ -4,7 +4,7 @@ from vitrina.datasets.views import DatasetListView
 from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
     RepresentativeDeleteView, OrganizationManagementsView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
-     RepresentativeRegisterView, PartnerRegisterInfoView, PartnerRegisterNoRightsView, \
+     RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView
 from vitrina.orgs.views import OrganizationPlansHistoryView
 from vitrina.orgs.views import OrganizationMergeView
@@ -25,7 +25,6 @@ urlpatterns = [
          name='representative-delete'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
     path('partner/register-info/', PartnerRegisterInfoView.as_view(), name='partner-register-info'),
-    path('partner/no-rights/', PartnerRegisterNoRightsView.as_view(), name='partner-no-rights'),
     path('partner/register/', PartnerRegisterView.as_view(), name='partner-register'),
     path('orgs/<int:pk>/plans/', OrganizationPlanView.as_view(), name='organization-plans'),
     path('orgs/<int:pk>/plans/add/', OrganizationPlanCreateView.as_view(), name='organization-plans-create'),

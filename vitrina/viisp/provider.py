@@ -35,11 +35,11 @@ class VIISPProvider(OAuth2Provider):
 
     def extract_extra_data(self, data):
         return dict(
-            comapny_code=data.get("lt_company_Code"),
+            company_code=data.get('lt_company_code'),
             company_name=data.get("company_name"),
             coordinator_phone_number=data.get("phone_number"),
             coordinator_email=data.get("email"),
-            password_not_set=True
+            password_not_set=True   
         )
 
     def sociallogin_from_response(self, request, response):
@@ -68,6 +68,6 @@ class VIISPProvider(OAuth2Provider):
             user.set_unusable_password()
             adapter.populate_user(request, sociallogin, common_fields)
         return sociallogin
-
+    
 provider_classes = [VIISPProvider]
 providers.registry.register(VIISPProvider)

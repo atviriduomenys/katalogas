@@ -388,11 +388,6 @@ class RepresentativeRegisterView(RegisterView):
 class PartnerRegisterInfoView(TemplateView):
     template_name = 'vitrina/orgs/partners/register.html'
 
-
-class PartnerRegisterNoRightsView(TemplateView):
-    template_name = 'vitrina/orgs/partners/no_rights.html'
-
-
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
     template_name = 'base_form.html'
@@ -404,8 +399,6 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             extra_data = user_social_account.extra_data
             company_code = extra_data.get('company_code')
             company_name = extra_data.get('company_name')
-            if not company_code and not company_name:
-                return redirect('partner-no-rights')
         else:
             return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
@@ -418,13 +411,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         company_name = extra_data.get('company_name')
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
-        if not org:
+        if not org and company_name:
             if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:
                 company_name_slug = company_name[0]
-        else:
+        elif org:
              company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
@@ -446,6 +439,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         if org:
             self.org = org
         else:
+            Organization.fix_tree(fix_paths=True)
             self.org = Organization.add_root(
                 title=form.cleaned_data.get('company_name'),
                 company_code=company_code,

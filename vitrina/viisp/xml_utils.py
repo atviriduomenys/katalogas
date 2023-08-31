@@ -29,6 +29,7 @@ user_information = ('firstName',
                     'companyName')
 
 callback_url = '/accounts/viisp/complete-login'
+callback_url_token = '/accounts/viisp/complete-login/{}'
 PID = 'VIISP-AUTH-SERVICE-01'
 CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
 
@@ -86,8 +87,8 @@ def _generate_xml(base_element_name):
     return base, xml
 
 
-def get_response_with_ticket_id(key, domain):
-    signed_xml = create_signed_authentication_request_xml(key, domain)
+def get_response_with_ticket_id(key, domain, token=None):
+    signed_xml = create_signed_authentication_request_xml(key, domain, token)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
     resp.raise_for_status()
@@ -104,12 +105,15 @@ def get_response_with_user_data(ticket_id, key):
     return data
 
 
-def create_signed_authentication_request_xml(key, domain):
+def create_signed_authentication_request_xml(key, domain, token=None):
     base, xml = _generate_xml('authentication:authenticationRequest')
     _add_elements(base, xml, providers, element_name='authentication:authenticationProvider')
     _add_elements(base, xml, attributes, element_name='authentication:authenticationAttribute')
     _add_elements(base, xml, user_information, element_name='authentication:userInformation')
-    _add_elements(base, xml, (urljoin(domain, callback_url),), element_name='authentication:postbackUrl')
+    if token:
+        _add_elements(base, xml, (urljoin(domain, callback_url) + "/{}".format(token),), element_name='authentication:postbackUrl')
+    else:
+        _add_elements(base, xml, (urljoin(domain, callback_url),), element_name='authentication:postbackUrl')
     _add_elements(base, xml, ('correlationData',), element_name='authentication:customData')
     signed_xml = _sign_xml(xml, key).decode('utf-8')
     return signed_xml

@@ -120,3 +120,9 @@ To set up a visp social account provider:
   The host machine should be connected to vpn or whitelisted to be able to access test env of viisp provider.
   All other fields should be left unchanged.
 
+ Create a viisp_token_key object in admin panel as a superuser::
+ The contents of viisp_token_key object needs be a token generated with fernet:
+ 
+    from cryptography.fernet import Fernet
+    key = Fernet.generate_key
+

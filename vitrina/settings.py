@@ -384,3 +384,5 @@ LOGGING = {
         'level': 'WARNING',
     },
 }
+CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False

@@ -22,15 +22,15 @@ def test_logged_in_not_unverified_user_accesses_data_provider_form(app: DjangoTe
     assert resp.url == '/accounts/viisp/login'
 
 @pytest.mark.haystack
-def test_logged_in_verified_user_with_no_rights_accesses_data_provider_form(app: DjangoTestApp):
+def test_logged_in_verified_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory(email="test@test.lt", password="123")
     temp_user_account = SocialAccount.objects.create(user=user)
     app.set_user(user)
     resp = app.get(reverse('partner-register'))
-    assert resp.url == '/partner/no-rights/'
+    assert resp.html.find(id='partner-register-form')
 
 @pytest.mark.haystack
-def test_logged_in_verified_user_with_rights_accesses_data_provider_form(app: DjangoTestApp):
+def test_logged_in_coordinator_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory(email="test@test.lt", password="123")
     extra_data = {
         'company_code': '1234-5678',

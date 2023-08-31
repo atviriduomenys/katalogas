@@ -19,7 +19,7 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 @pytest.mark.django_db
 def test_request_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    orgs = [OrganizationFactory(title='1'), OrganizationFactory(title='2')]
+    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
     app.set_user(user)
     form = app.get(reverse("request-create")).forms['request-form']
     form['title'] = "Request"
@@ -51,7 +51,7 @@ def test_request_update_with_user_without_permission(app: DjangoTestApp):
 def test_request_update_with_permitted_user(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     request = RequestFactory(user=user)
-    orgs = [OrganizationFactory(title='4'), OrganizationFactory(title='5')]
+    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
     app.set_user(user)
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
@@ -102,7 +102,7 @@ def test_request_history_view_without_permission(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_history_view_with_permission(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
-    orgs = [OrganizationFactory(title='9'), OrganizationFactory(title='10')]
+    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
     request = RequestFactory(user=user)
     request.organizations.add(user.organization)
     app.set_user(user)

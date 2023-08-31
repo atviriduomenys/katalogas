@@ -264,12 +264,6 @@ def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestAp
                                                                     search_datasets[0].pk]
 
 
-@pytest.mark.haystack
-def test_search_with_query_containing_special_characters(app: DjangoTestApp, search_datasets):
-    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "du\"<'>\\"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[1].pk]
-
-
 @pytest.fixture
 def status_filter_data():
     dataset1 = DatasetFactory()

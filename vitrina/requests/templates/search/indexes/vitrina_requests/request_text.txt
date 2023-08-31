@@ -1,6 +1,6 @@
 {{ object.title }}
 {{ object.status }}
-{{ object.dataset.status }}
+{{ object.dataset_statuses }}
 {{ object.dataset.organization.title }}
 {{ object.dataset.organization.jurisdiction }}
 {{ object.dataset.category.title }}

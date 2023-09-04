@@ -536,7 +536,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['current_title'] = _("Naujas terminas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -554,7 +554,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
         self.object = form.save(commit=False)
         self.object.receiver = self.organization
         self.object.save()
-        set_comment(_(f'Pridėtas planas "{self.object}".'))
+        set_comment(_(f'Pridėtas terminas "{self.object}".'))
         return redirect(reverse('organization-plans', args=[self.organization.pk]))
 
 

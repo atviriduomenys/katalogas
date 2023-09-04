@@ -425,7 +425,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['current_title'] = _("Naujas terminas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
@@ -449,7 +449,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.request_obj.status = Request.APPROVED
         self.request_obj.save()
 
-        set_comment(_(f'Pridėtas planas "{self.object}". Į planą įtrauktas poreikis "{self.request_obj}".'))
+        set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
         return redirect(reverse('request-plans', args=[self.request_obj.pk]))
 
 
@@ -473,7 +473,7 @@ class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Poreikio įtraukimas į planą")
+        context['current_title'] = _("Poreikio įtraukimas į terminą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
@@ -489,7 +489,7 @@ class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
         self.request_obj.save()
 
         self.object.plan.save()
-        set_comment(_(f'Į planą "{self.object.plan}" įtrauktas poreikis "{self.request_obj}".'))
+        set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas poreikis "{self.request_obj}".'))
         return redirect(reverse('request-plans', args=[self.request_obj.pk]))
 
 
@@ -508,13 +508,13 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas poreikis "{request_obj}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse('request-plans', args=[request_obj.pk]))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         request = self.get_object().request
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
@@ -570,7 +570,7 @@ class RequestDeletePlanDetailView(RequestDeletePlanView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas poreikis "{request_obj}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 

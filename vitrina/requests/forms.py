@@ -95,7 +95,7 @@ class PlanChoiceField(ModelChoiceField):
 
 class RequestPlanForm(ModelForm):
     plan = PlanChoiceField(
-        label=_("Planas"),
+        label=_("Terminas"),
         widget=RadioSelect(),
         queryset=Plan.objects.all()
     )

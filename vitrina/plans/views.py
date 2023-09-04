@@ -83,7 +83,7 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Plano redagavimas")
+        context['current_title'] = _("Termino redagavimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -93,7 +93,7 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
-        set_comment(_(f'Redaguotas planas "{self.object}"'))
+        set_comment(_(f'Redaguotas terminas "{self.object}"'))
         return resp
 
 
@@ -120,7 +120,7 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -130,7 +130,7 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         resp = super().delete(request, *args, **kwargs)
-        set_comment(_(f'Pašalintas planas "{self.object}"'))
+        set_comment(_(f'Pašalintas terminas "{self.object}"'))
         return resp
 
 

@@ -3253,7 +3253,7 @@ class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Duomenų rinkinio įtraukimas į planą")
+        context['current_title'] = _("Duomenų rinkinio įtraukimas į terminą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3267,7 +3267,7 @@ class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
         self.object.save()
 
         self.object.plan.save()
-        set_comment(_(f'Į planą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
+        set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
         return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
 
 
@@ -3287,7 +3287,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['current_title'] = _("Naujas terminas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3308,7 +3308,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
             plan=self.object,
             dataset=self.dataset
         )
-        set_comment(_(f'Pridėtas planas "{self.object}". Į planą įtrauktas duomenų rinkinys "{self.dataset}".'))
+        set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
         return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
 
 
@@ -3327,13 +3327,13 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
         return redirect(reverse('dataset-plans', args=[dataset.pk]))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dataset = self.get_object().dataset
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3361,7 +3361,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 

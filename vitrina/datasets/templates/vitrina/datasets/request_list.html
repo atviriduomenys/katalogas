@@ -21,12 +21,14 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
+    {% if can_add_request and user_requests %}
    <div class="buttons is-right">
         <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
             href="{% url 'dataset-request-add' dataset.pk %}">
             {% translate "Pridėti poreikį" %}
         </a>
     </div>
+    {% endif %}
 
     {% if page_obj %}
         <table class="table is-fullwidth">

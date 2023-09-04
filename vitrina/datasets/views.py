@@ -58,7 +58,8 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
-from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format
+from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
+    get_requests
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
@@ -991,6 +992,16 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
             Representative,
             self.object,
         )
+        context['can_add_request'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+        if self.request.user.is_authenticated:
+            context['user_requests'] = get_requests(self.request.user, self.dataset)
+        else:
+            context['user_requests'] = []
         return context
 
 

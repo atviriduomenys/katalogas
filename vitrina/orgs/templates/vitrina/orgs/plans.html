@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block current_title %}{% translate "Planas" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -20,7 +20,7 @@
                 <div class="buttons is-right">
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                        href="{% url 'organization-plans-create' organization.pk %}">
-                        {% translate "Naujas planas" %}
+                        {% translate "Naujas terminas" %}
                     </a>
                 </div>
             {% endif %}
@@ -33,7 +33,7 @@
                         <th>{% translate "Terminas" %}</th>
                         <th>{% translate "Paslaugų teikėjas" %}</th>
                         <th>{% translate "Projektas" %}</th>
-                        <th>{% translate "Plano įgyvendinimo kaina" %}</th>
+                        <th>{% translate "Įgyvendinimo kaina" %}</th>
                     </tr>
                     {% for plan in plans %}
                         <tr>
@@ -69,7 +69,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>{% translate "Planų nėra." %}</p>
+                <p>{% translate "Plano nėra." %}</p>
             {% endif %}
         </div>
     </div>

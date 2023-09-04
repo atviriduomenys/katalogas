@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block current_title %}{% translate "Planas" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -21,11 +21,11 @@
                     {% if request_obj.is_created %}
                         <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                            href="{% url 'request-plans-include' request_obj.pk %}">
-                            {% translate "Įtraukti į planą" %}
+                            {% translate "Įtraukti į terminą" %}
                         </a>
                         <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                            href="{% url 'request-plans-create' request_obj.pk %}">
-                            {% translate "Naujas planas" %}
+                            {% translate "Naujas terminas" %}
                         </a>
                     {% endif %}
                 </div>
@@ -40,7 +40,7 @@
                         <th>{% translate "Organizacija" %}</th>
                         <th>{% translate "Paslaugų teikėjas" %}</th>
                         <th>{% translate "Projektas" %}</th>
-                        <th>{% translate "Plano įgyvendinimo kaina" %}</th>
+                        <th>{% translate "Įgyvendinimo kaina" %}</th>
                         {% if can_manage_plans %}
                             <th></th>
                         {% endif %}
@@ -93,7 +93,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>{% translate "Planų nėra." %}</p>
+                <p>{% translate "Plano nėra." %}</p>
             {% endif %}
         </div>
     </div>

@@ -436,7 +436,7 @@ class PlanChoiceField(ModelChoiceField):
 
 class DatasetPlanForm(forms.ModelForm):
     plan = PlanChoiceField(
-        label=_("Planas"),
+        label=_("Terminas"),
         widget=forms.RadioSelect(),
         queryset=Plan.objects.all()
     )

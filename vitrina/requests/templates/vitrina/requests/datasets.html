@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block current_title %}{% translate "Planas" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -25,7 +25,7 @@
                         </a>
                         <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                            href="{% url 'request-plans-create' request_obj.pk %}">
-                            {% translate "Naujas planas" %}
+                            {% translate "Naujas terminas" %}
                         </a>
                     {% endif %}
                 </div>

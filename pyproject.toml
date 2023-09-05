@@ -48,6 +48,7 @@ markdown = "^3.4.3"
 pygments = "^2.15.1"
 django-select2 = "^8.1.2"
 openpyxl = "^3.1.2"
+user-agents = "^2.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

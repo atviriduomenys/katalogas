@@ -53,12 +53,11 @@ def main(
     else:
         with open(state_file, 'r') as state:
             current_state = json.load(state)
-            for val in current_state.values():
-                if target in val:
-                    for i in val.values():
-                        existing_size = i.get('size')
-                        existing_offset = i.get('lines')
-                        existing_bytes = i.get('offset')
+            for val in current_state.get('files'):
+                if target == val:
+                    existing_size = current_state.get('files').get(target).get('size')
+                    existing_offset = current_state.get('files').get(target).get('lines')
+                    existing_bytes = current_state.get('files').get(target).get('offset')
 
     if not os.path.exists(os.path.dirname(bot_status_file)):
         os.makedirs(os.path.dirname(bot_status_file))
@@ -68,7 +67,7 @@ def main(
     else:
         with open(bot_status_file, 'r') as state:
             if os.path.getsize(bot_status_file) > 0:
-                bots_found = json.load(state).get('agents')
+                bots_found = json.load(state)
 
     if os.path.exists(config_file):
         with open(config_file, 'r') as config:
@@ -81,34 +80,70 @@ def main(
         if file_size != existing_size:
             with open(target) as f:
                 bytesread = 0
-                for index, line in enumerate(f):
-                    if index > existing_offset:
-                        bytesread += len(line)
-                        if 'txn' in line:
-                            entry = json.loads(line)
-                            txn = entry['txn']
+                lines = 0
+                if existing_offset > 0:
+                    f.seek(existing_offset)
+                while True:
+                    line1 = f.readline()
+                    line2 = f.readline()
+                    bytesread += len(line1)
+                    bytesread += len(line2)
+                    lines += 2
+                    if 'txn' in line1 and 'txn' in line2:
+                        entry1 = json.loads(line1)
+                        entry2 = json.loads(line2)
+                        entry = entry1 | entry2
+                        txn1 = entry1['txn']
+                        txn2 = entry2['txn']
+                        if txn1 == txn2:
                             timestamp = entry['time']
                             dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                            if txn not in transactions:
-                                transactions[txn] = {'time': dt}
-                            if 'model' in entry:
-                                model = entry['model']
-                                transactions[txn]['model'] = model
-                            if 'objects' in entry:
-                                objects = entry['objects']
-                                transactions[txn]['objects'] = objects
-                            if 'format' in entry:
-                                frmt = entry['format']
-                                transactions[txn]['format'] = frmt
-                            if 'type' in entry:
-                                transactions[txn]['type'] = entry['type']
-                            if 'agent' in entry:
-                                transactions[txn]['agent'] = entry['agent']
+                        if 'time' in entry.keys() and 'model' in entry.keys() and 'objects' in entry.keys():
+                            model = entry.get('model')
+                            objects = entry.get('objects')
+                            date = dt.date()
+                            hour = dt.hour
+                            frmt = ''
+                            agent = ''
+                            requests = 0
+
+                            if 'format' in entry.keys():
+                                frmt = entry.get('format')
+                            if 'type' in entry.keys():
+                                if entry.get('type') == 'request':
+                                    requests = 1
+                            if 'agent' in entry.keys():
+                                agent = entry.get('agent')
+                            obj = [{'date': date, 'hour': hour, 'format': frmt, 'reqs': requests, 'count': objects,
+                                   'agent': agent}]
+                            if model not in final_stats:
+                                final_stats[model] = obj
+                            if agent in bots:
+                                bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
+                            else:
+                                format_string = '%Y-%m-%d %H:%M:%S'
+                                date_string = dt.strftime(format_string)
+                                data = {
+                                    "source": source,
+                                    "model": model,
+                                    "format": frmt,
+                                    "time": date_string,
+                                    "requests": requests,
+                                    "objects": objects
+                                }
+                                r = req.post(url=endpoint, data=data)
+                                print(f"Status Code: {r.status_code}, Response: {r.json()}")
+
+                    with open(bot_status_file, "w+") as bot_file:
+                        bot_file.write(json.dumps(bots_found, indent=4))
+
+                    if not line1 or not line2:
+                        break
 
                 state_entry = {
                     target: {
                         'size': file_size,
-                        'line': index,
+                        'lines': lines,
                         'offset': bytesread
                     }}
 
@@ -119,71 +154,11 @@ def main(
             with open(state_file, "w") as outfile:
                 outfile.write(json.dumps(current_state, indent=4))
 
-            for v in transactions.values():
-                if 'time' in v and 'model' in v and 'objects' in v:
-                    model = v['model']
-                    objects = v['objects']
-                    exact = v['time']
-                    date = exact.date()
-                    hour = exact.hour
-                    frmt = ''
-                    agent = ''
-                    requests = 0
-                    if 'format' in v:
-                        frmt = v['format']
-                    if 'type' in v:
-                        if v['type'] == 'request':
-                            requests = 1
-                    if 'agent' in v:
-                        agent = v['agent']
-                    dt = [{'date': date, 'hour': hour, 'format': frmt, 'reqs': requests, 'count': objects,
-                           'agent': agent}]
-                    if model not in final_stats:
-                        final_stats[model] = dt
-                    else:
-                        if any(d['date'] == date for d in final_stats[model]):
-                            for index, dictionary in enumerate(final_stats[model]):
-                                if dictionary.get('hour') == hour:
-                                    count = final_stats[model][index]['count']
-                                    reqs = final_stats[model][index]['reqs']
-                                    final_stats[model][index] = {'date': date, 'hour': hour, 'format': frmt,
-                                                                 'reqs': reqs + 1,
-                                                                 'count': count + objects,
-                                                                 'agent': agent}
-                                    break
-                        else:
-                            final_stats[model].append(
-                                {'date': date, 'hour': hour, 'format': frmt, 'reqs': requests, 'count': objects,
-                                 'agent': agent})
-
-            for model, v in final_stats.items():
-                for val in v:
-                    agent = val.get('agent')
-                    if agent in bots:
-                        bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
-                    else:
-                        format_string = '%Y-%m-%d %H:%M:%S'
-                        date = val.get('date')
-                        time = datetime.min.time()
-                        hour = val.get('hour')
-                        full_date = datetime.combine(date, time).replace(hour=hour)
-                        date_string = full_date.strftime(format_string)
-                        data = {
-                            "source": source,
-                            "model": model,
-                            "format": val.get('format'),
-                            "time": date_string,
-                            "requests": val.get('reqs'),
-                            "objects": val.get('count')
-                        }
-                        r = req.post(url=endpoint, data=data)
-                        print(f"Status Code: {r.status_code}, Response: {r.json()}")
-
             with open(bot_status_file, "w+") as bot_file:
                 bot_file.write(json.dumps(bots_found, indent=4))
 
             print(f'Total model entries found: {len(final_stats.keys())}')
-            print(f'Total transaction entries in file: {len(transactions)}')
+            # print(f'Total transaction entries in file: {len(transactions)}')
             print(f'Peak Memory Usage = {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}')
 
 def parse_user_agent(agent):

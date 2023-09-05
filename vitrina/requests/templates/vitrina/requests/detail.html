@@ -45,7 +45,7 @@
                 {% if request_object.is_created %}
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                        href="{% url 'request-plans-include' request_object.pk %}">
-                        {% translate "Įtraukti į planą" %}
+                        {% translate "Įtraukti į terminą" %}
                     </a>
                 {% endif %}
                 <a href="{%url 'request-update' pk=request_object.pk %}" class="button is-primary">

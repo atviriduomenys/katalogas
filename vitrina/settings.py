@@ -332,6 +332,7 @@ PASSWORD_HASHERS = [
 ]
 
 _search_url = env.search_url()
+_search_url['ENGINE'] = 'vitrina.datasets.search_backends.ElasticSearchEngine'
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')
 if _search_url_test:
     _search_url_test = env.search_url(var="SEARCH_URL_TEST")
@@ -384,3 +385,5 @@ LOGGING = {
         'level': 'WARNING',
     },
 }
+CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False

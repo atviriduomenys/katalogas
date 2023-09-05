@@ -14,38 +14,6 @@
             class="button is-primary mt-3 m-b-lg">{% translate "Teikti poreikį" %}</a>
             <div class="content mt-3">
                 {% include "vitrina/requests/filters.html" %}
-                <nav class="category-panel">
-                    <p class="category-panel-heading">
-                        <a href="{% url 'request-stats-published' %}?" id="request-stats-published">
-                            <strong>{% translate "Registravimo data" as regDate %} {{ regDate | upper }}</strong>
-                        </a>
-                    </p>
-                    <form method="get" action="{% url 'request-list' %}">
-                        <div class="field">
-                            <input
-                                type="date"
-                                class="input"
-                                name="date_from"
-                                id="from"
-                                value="{{ selected_date_from }}"
-                                onchange="this.form.submit()"
-                            >
-                        </div>
-                        <div class="field">
-                            <input
-                                type="date"
-                                class="input"
-                                name="date_to"
-                                id="to"
-                                value="{{ selected_date_to }}"
-                                onchange="this.form.submit()"
-                            >
-                        </div>
-                        {% if q %}
-                            <input type="hidden" name="q" value="{{ q | escape }}" />
-                        {% endif %}
-                    </form>
-                </nav>
             </div>
         </div>
         <div class="column is-three-quarters">
@@ -56,12 +24,6 @@
                 <div class="control is-expanded">
                     <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
                            value="{{ q | escape }}"/>
-                    {% if selected_date_from %}
-                        <input type="hidden" name="date_from" value="{{ selected_date_from }}" />
-                    {% endif %}
-                    {% if selected_date_to %}
-                        <input type="hidden" name="date_to" value="{{ selected_date_to }}" />
-                    {% endif %}
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit">
@@ -167,23 +129,6 @@
             var searchParams = new URLSearchParams(currentUrl.search);
             var selectedDate = null;
             var datasetTitles = "datasetSuggestions";
-
-            $('.date_from').change(function() {
-                var date = $('.date_from').val();
-                if (date != null) {
-                    searchParams.set('date_from', date);
-                    currentUrl.search = searchParams.toString();
-                    window.location = currentUrl.toString();
-                }
-            });
-            $('.date_to').change(function() {
-                var date = $('.date_to').val();
-                if (date != null) {
-                    searchParams.set('date_to', date);
-                    currentUrl.search = searchParams.toString();
-                    window.location = currentUrl.toString();
-                }
-            });
 
             let orgFilter = $('#organization-filter-input');
             orgFilter.on('input', function(){

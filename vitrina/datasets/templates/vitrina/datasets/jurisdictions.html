@@ -18,11 +18,11 @@
         </div>
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" with filter="jurisdiction" %}
+            {% include "vitrina/datasets/stats_graph.html" %}
             <div class="is-flex">
                 <span>{% translate "Valdymo sritis" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
-            {% include "vitrina/datasets/stats_graph.html" %}
 
             {% if single_org %}
                 {% for o in jurisdiction_data  %}

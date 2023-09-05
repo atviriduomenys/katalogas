@@ -160,13 +160,13 @@ class PartnerRegisterForm(ModelForm):
         self.helper.layout = Layout(
             Field('coordinator_first_name', value=initial.get('coordinator_first_name'), readonly=True),
             Field('coordinator_last_name', value=initial.get('coordinator_last_name'), readonly=True),
-            Field('coordinator_phone_number', value=initial.get('coordinator_phone_number'), readonly=True),
+            Field('coordinator_phone_number', value=initial.get('coordinator_phone_number') or ''),
             Field('coordinator_email', value=initial.get('coordinator_email'), readonly=True),
             Field('password'),
             Field('confirm_password'),
-            Field('company_code', value=initial.get('company_code'), readonly=True),
-            Field('company_name', value=initial.get('company_name'), readonly=True),
-            Field('company_slug',  value=initial.get('company_slug'), readonly=initial.get('company_slug_read_only')),
+            Field('company_code', value=initial.get('company_code') or ''),
+            Field('company_name', value=initial.get('company_name') or ''),
+            Field('company_slug',  value=initial.get('company_slug') or ''),
             Field('adoc_file'),
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )
@@ -181,10 +181,10 @@ class PartnerRegisterForm(ModelForm):
         sa_company_codes = parse_adoc_xml_signature_data(file_contents)
         company_code = self.cleaned_data.get('company_code')
         company_slug = self.cleaned_data.get('company_slug')
-       # if company_code not in sa_company_codes:
-       #     self.add_error('adoc_file', _(
-       #     "Failas nepasirašytas arba blogai pasirašytas."
-       # ))
+        if company_code not in sa_company_codes:
+            self.add_error('adoc_file', _(
+            "Failas nepasirašytas arba blogai pasirašytas."
+        ))
         if (
             Organization.objects.
             filter(

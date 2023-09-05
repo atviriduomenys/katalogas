@@ -5,22 +5,45 @@ from crispy_forms.layout import Layout, Div, Field, Submit
 from haystack.forms import FacetedSearchForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, RadioSelect, DateField
+from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, Textarea, ModelChoiceField, RadioSelect, DateField
 from django.utils.safestring import mark_safe
+from django_select2.forms import Select2MultipleWidget
+
 
 from vitrina.plans.models import PlanRequest, Plan
 from vitrina.requests.models import Request
+from vitrina.orgs.models import Organization
 
 from django.utils.translation import gettext_lazy as _
+
+
+class ProviderWidget(Select2MultipleWidget):
+    empty_label = "Pasirinkite organizacijas"
+    search_fields = ("title__icontains",)
+    queryset = Organization.objects.order_by('created')
+
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        base_attrs = super().build_attrs(base_attrs, extra_attrs)
+        base_attrs.update(
+            {"data-minimum-input-length": 0, "data-placeholder": self.empty_label}
+        )
+        return base_attrs
+
 
 
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
+    organizations = ModelMultipleChoiceField(
+        label="Organizacija",
+        widget=ProviderWidget,
+        queryset=ProviderWidget.queryset,
+        to_field_name="pk"
+    )
 
     class Meta:
         model = Request
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'organizations']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,11 +52,21 @@ class RequestForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-form"
-        self.helper.layout = Layout(
-            Field('title', placeholder=_('Pavadinimas')),
-            Field('description', placeholder=_('Aprašymas')),
-            Submit('submit', button, css_class='button is-primary')
-        )
+        if (kwargs and kwargs.get('data') and kwargs.get('data').get('title') and kwargs.get('data').get('description')):
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas'), readonly=True),
+                Field('description', placeholder=_('Aprašymas'), readonly=True),
+                Field('organizations', placeholder=_('Organizacijos')),
+                Submit('submit', button, css_class='button is-primary')
+            )
+            button = _("Redaguoti") if request_instance else _("Sukurti")
+        else:
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas')),
+                Field('description', placeholder=_('Aprašymas')),
+                Submit('submit', button, css_class='button is-primary')
+            )
+            button = _("Tęsti")
 
 
 class RequestSearchForm(FacetedSearchForm):
@@ -53,6 +86,8 @@ class RequestSearchForm(FacetedSearchForm):
 
     def no_query_found(self):
         return self.searchqueryset.all()
+
+
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
@@ -60,7 +95,7 @@ class PlanChoiceField(ModelChoiceField):
 
 class RequestPlanForm(ModelForm):
     plan = PlanChoiceField(
-        label=_("Planas"),
+        label=_("Terminas"),
         widget=RadioSelect(),
         queryset=Plan.objects.all()
     )

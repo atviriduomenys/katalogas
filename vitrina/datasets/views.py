@@ -58,7 +58,8 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
-from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format
+from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
+    get_requests
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
@@ -216,6 +217,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     *filter_args,
                     'formats',
                     _("Formatas"),
+                    Format,
                     multiple=True,
                     is_int=False,
                 ),
@@ -990,6 +992,16 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
             Representative,
             self.object,
         )
+        context['can_add_request'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.dataset
+        )
+
+        if self.request.user.is_authenticated:
+            context['user_requests'] = get_requests(self.request.user, self.dataset)
+        else:
+            context['user_requests'] = []
         return context
 
 
@@ -1346,7 +1358,7 @@ class DatasetStatsView(DatasetListView):
         max_count = max([x['count'] for x in status_data]) if status_data else 0
 
         context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio būseną laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['status_data'] = status_data
@@ -1368,7 +1380,6 @@ class DatasetManagementsView(DatasetListView):
         facet_fields = context.get('facets').get('fields')
         all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
         all_orgs = sorted(all_orgs, key=lambda jur: jur['count'], reverse=True)
-        top_jurisdictions = sorted(all_orgs, key=lambda jur: jur['count'], reverse=True)[:10]
 
         start_date = Dataset.objects.all().first().created
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -1445,14 +1456,13 @@ class DatasetManagementsView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if jurisdiction in top_jurisdictions:
-                dt = {
-                    'label': jurisdiction['display_value'],
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': jurisdiction['display_value'],
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 jurisdiction['count'] = data[-1]['y']
@@ -1474,8 +1484,8 @@ class DatasetManagementsView(DatasetListView):
         context['active_filter'] = 'jurisdiction'
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio valdymo sritį laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio valdymo sritį laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -1594,7 +1604,7 @@ class DatasetsLevelView(DatasetListView):
         context['active_indicator'] = indicator
         context['sort'] = sorting
         context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio brandos lygį laike')
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -1612,7 +1622,6 @@ class DatasetsOrganizationsView(DatasetListView):
         facet_fields = context.get('facets').get('fields')
         all_orgs = update_facet_data(self.request, facet_fields, 'organization', Organization)
         all_orgs = sorted(all_orgs, key=lambda org: org['count'], reverse=True)
-        top_orgs = sorted(all_orgs, key=lambda org: org['count'], reverse=True)[:10]
 
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -1688,14 +1697,13 @@ class DatasetsOrganizationsView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if org in top_orgs:
-                dt = {
-                    'label': org['display_value'],
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': org['display_value'],
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 org['count'] = data[-1]['y']
@@ -1717,8 +1725,8 @@ class DatasetsOrganizationsView(DatasetListView):
         context['active_filter'] = 'organizations'
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio organizaciją laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -1746,6 +1754,7 @@ class OrganizationStatsView(DatasetListView):
         context['max_count'] = max_count
         context['active_filter'] = 'organizations'
         context['active_indicator'] = indicator
+        context['yAxis_title'] = Y_TITLES[indicator]
         return context
 
 
@@ -1759,7 +1768,6 @@ class DatasetsTagsView(DatasetListView):
         facet_fields = context.get('facets').get('fields')
         all_tags = update_facet_data(self.request, facet_fields, 'tags', None)
         all_tags = sorted(all_tags, key=lambda tag: tag['count'], reverse=True)
-        top_tags = sorted(all_tags, key=lambda tag: tag['count'], reverse=True)[:10]
 
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -1838,14 +1846,13 @@ class DatasetsTagsView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if tag in top_tags:
-                dt = {
-                    'label': t_title,
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': t_title,
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 tag['count'] = data[-1]['y']
@@ -1867,8 +1874,8 @@ class DatasetsTagsView(DatasetListView):
         context['active_filter'] = 'tag'
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio žymes laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -1883,9 +1890,8 @@ class DatasetsFormatView(DatasetListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         facet_fields = context.get('facets').get('fields')
-        all_formats = update_facet_data(self.request, facet_fields, 'formats', None)
+        all_formats = update_facet_data(self.request, facet_fields, 'formats', Format)
         all_formats = sorted(all_formats, key=lambda format: format['count'], reverse=True)
-        top_formats = sorted(all_formats, key=lambda format: format['count'], reverse=True)[:10]
 
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -1960,14 +1966,13 @@ class DatasetsFormatView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if format in top_formats:
-                dt = {
-                    'label': format['display_value'],
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': format['display_value'],
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 format['count'] = data[-1]['y']
@@ -1989,8 +1994,8 @@ class DatasetsFormatView(DatasetListView):
         context['active_filter'] = 'format'
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio formatą laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -2007,7 +2012,6 @@ class DatasetsFrequencyView(DatasetListView):
         facet_fields = context.get('facets').get('fields')
         all_freqs = update_facet_data(self.request, facet_fields, 'frequency', None)
         all_freqs = sorted(all_freqs, key=lambda freq: freq['count'], reverse=True)
-        top_freqs = sorted(all_freqs, key=lambda freq: freq['count'], reverse=True)[:10]
 
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -2086,14 +2090,13 @@ class DatasetsFrequencyView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if freq in top_freqs:
-                dt = {
-                    'label': obj_title,
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': obj_title,
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 freq['count'] = data[-1]['y']
@@ -2115,8 +2118,8 @@ class DatasetsFrequencyView(DatasetListView):
         context['active_filter'] = 'frequency'
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio atnaujinimą laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
@@ -2339,7 +2342,6 @@ class DatasetsCategoriesView(DatasetListView):
         parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
         all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         all_cats = sorted(all_cats, key=lambda cat: cat['count'], reverse=True)
-        top_cats = sorted(all_cats, key=lambda cat: cat['count'], reverse=True)[:10]
 
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
@@ -2414,14 +2416,13 @@ class DatasetsCategoriesView(DatasetListView):
                 else:
                     data.append({'x': _date(label, ff), 'y': count})
 
-            if cat in top_cats:
-                dt = {
-                    'label': cat['display_value'],
-                    'data': data,
-                    'borderWidth': 1,
-                    'fill': True,
-                }
-                chart_data.append(dt)
+            dt = {
+                'label': cat['display_value'],
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            chart_data.append(dt)
 
             if data:
                 cat['count'] = data[-1]['y']
@@ -2455,8 +2456,8 @@ class DatasetsCategoriesView(DatasetListView):
         max_count = max([x['count'] for x in category_data]) if category_data else 0
 
         context['category_data'] = category_data
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['data'] = json.dumps(chart_data[:10])
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio kategoriją laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['max_count'] = max_count
@@ -2581,6 +2582,7 @@ class CategoryStatsView(DatasetListView):
         context['active_filter'] = 'category'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['yAxis_title'] = Y_TITLES[indicator]
         return context
 
 
@@ -2753,7 +2755,7 @@ class PublicationStatsView(DatasetListView):
         chart_data = sorted(chart_data, key=lambda x: x['sort'])
 
         context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _('Rodiklis pagal rinkinio būseną laike')
+        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio įkėlimo datą laike')
         context['yAxis_title'] = Y_TITLES[indicator]
         context['xAxis_title'] = _('Laikas')
         context['year_stats'] = year_stats
@@ -2881,6 +2883,7 @@ class YearStatsView(DatasetListView):
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['yAxis_title'] = Y_TITLES[indicator]
         return context
 
 
@@ -2992,6 +2995,7 @@ class QuarterStatsView(DatasetListView):
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['yAxis_title'] = Y_TITLES[indicator]
         return context
 
 
@@ -3249,7 +3253,7 @@ class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Duomenų rinkinio įtraukimas į planą")
+        context['current_title'] = _("Duomenų rinkinio įtraukimas į terminą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3263,7 +3267,7 @@ class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
         self.object.save()
 
         self.object.plan.save()
-        set_comment(_(f'Į planą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
+        set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
         return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
 
 
@@ -3283,7 +3287,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['current_title'] = _("Naujas terminas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3304,7 +3308,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
             plan=self.object,
             dataset=self.dataset
         )
-        set_comment(_(f'Pridėtas planas "{self.object}". Į planą įtrauktas duomenų rinkinys "{self.dataset}".'))
+        set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
         return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
 
 
@@ -3323,13 +3327,13 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
         return redirect(reverse('dataset-plans', args=[dataset.pk]))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         dataset = self.get_object().dataset
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
@@ -3357,7 +3361,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 

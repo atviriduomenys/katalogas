@@ -19,11 +19,11 @@
         </div>
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" with filter="level" %}
+            {% include "vitrina/datasets/stats_graph.html" %}
             <div class="is-flex">
                 <span>{% translate "Brandos lygis" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" with filter="level" %}
             </div>
-             {% include "vitrina/datasets/stats_graph.html" %}
 
             {% for level in level_data %}
                 <div class="is-flex">

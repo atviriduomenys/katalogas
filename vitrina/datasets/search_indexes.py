@@ -1,4 +1,4 @@
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
+from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField
 from django.db import models
 
 from haystack import signals
@@ -9,7 +9,7 @@ from vitrina.datasets.models import Dataset
 
 
 class DatasetIndex(SearchIndex, Indexable):
-    text = CharField(document=True, use_template=True)
+    text = EdgeNgramField(document=True, use_template=True)
     lt_title = CharField(model_attr='lt_title')
     lt_title_s = CharField(model_attr='lt_title', indexed=False, stored=True)
     en_title = CharField(model_attr='en_title')
@@ -20,7 +20,7 @@ class DatasetIndex(SearchIndex, Indexable):
     category = MultiValueField(model_attr='category__pk', faceted=True)
     parent_category = MultiValueField(model_attr='parent_category', faceted=True, null=True)
     tags = MultiValueField(model_attr='get_tag_list', faceted=True)
-    formats = MultiValueField(model_attr='formats', faceted=True)
+    formats = MultiValueField(model_attr='filter_formats', faceted=True)
     frequency = IntegerField(model_attr='frequency__pk', faceted=True)
     published = DateTimeField(model_attr='published', null=True, faceted=True)
     status = CharField(model_attr='filter_status', faceted=True, null=True)

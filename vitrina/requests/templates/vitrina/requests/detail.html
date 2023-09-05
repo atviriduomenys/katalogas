@@ -40,19 +40,19 @@
                 </div>
             </div>
 
-            {% if can_update_request %}
             <div class="buttons is-right">
-                {% if request_object.is_created %}
+                {% if request_object.is_created and can_manage_plans %}
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                        href="{% url 'request-plans-include' request_object.pk %}">
                         {% translate "Įtraukti į terminą" %}
                     </a>
                 {% endif %}
+                {% if can_update_request %}
                 <a href="{%url 'request-update' pk=request_object.pk %}" class="button is-primary">
                     {% translate "Keisti" %}
                 </a>
+                {% endif %}
             </div>
-            {% endif %}
 
             <div class="content">{{ request_object.description|linebreaks|urlizetrunc:72 }}</div>
             {% include "vitrina/requests/requestCoretable.html" %}

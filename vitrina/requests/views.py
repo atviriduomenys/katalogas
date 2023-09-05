@@ -15,7 +15,7 @@ from reversion.models import Version
 from haystack.generic_views import FacetedSearchView
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, is_representative
 from vitrina.helpers import get_selected_value
 from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
@@ -296,7 +296,12 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 self.request.user,
                 Action.UPDATE,
                 request
-            )
+            ),
+            'can_manage_plans': has_perm(
+                self.request.user,
+                Action.PLAN,
+                request
+            ) and is_representative(self.request.user)
         }
         context_data.update(extra_context_data)
         return context_data
@@ -341,6 +346,7 @@ class RequestCreateView(
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
         return context_data
+
 
 class RequestUpdateView(
     LoginRequiredMixin,
@@ -396,7 +402,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
             self.request.user,
             Action.PLAN,
             self.request_obj
-        )
+        ) and is_representative(self.request.user)
         return context
 
     def get_plan_object(self):
@@ -421,7 +427,11 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.request_obj)
+        return has_perm(
+            self.request.user,
+            Action.PLAN,
+            self.request_obj
+        ) and is_representative(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -464,7 +474,11 @@ class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.request_obj)
+        return has_perm(
+            self.request.user,
+            Action.PLAN,
+            self.request_obj
+        ) and is_representative(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -499,7 +513,11 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         request = self.get_object().request
-        return has_perm(self.request.user, Action.PLAN, request)
+        return has_perm(
+            self.request.user,
+            Action.PLAN,
+            request
+        ) and is_representative(self.request.user)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

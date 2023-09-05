@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import pytest
 import pytz
 from django.contrib.contenttypes.models import ContentType
@@ -7,11 +9,12 @@ from reversion.models import Version
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.plans.factories import PlanFactory
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 timezone = pytz.timezone(settings.TIME_ZONE)
 
@@ -120,3 +123,36 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     assert len(resp.context['history']) == 1
     assert resp.context['history'][0]['action'] == "Redaguota"
     assert resp.context['history'][0]['user'] == user
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_with_non_representative(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    request = RequestFactory(user=user)
+
+    resp = app.get(reverse('request-plans-include', args=[request.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_with_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+    )
+    app.set_user(representative.user)
+    request = RequestFactory(user=representative.user)
+    plan = PlanFactory(
+        deadline=(date.today() + timedelta(days=1))
+    )
+
+    form = app.get(reverse('request-plans-include', args=[request.pk])).forms['request-plan-form']
+    form['plan'] = plan.pk
+    resp = form.submit()
+
+    assert resp.url == reverse('request-plans', args=[request.pk])
+    assert request.planrequest_set.count() == 1
+    assert request.planrequest_set.first().plan == plan

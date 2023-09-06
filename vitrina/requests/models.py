@@ -240,3 +240,8 @@ class RequestObject(models.Model):
 
     external_object_id = models.CharField(max_length=255, blank=True, null=True)
     external_content_type = models.CharField(max_length=255, blank=True, null=True)
+
+class RequestAssignment(models.Model):
+    organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
+    request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
+    status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)

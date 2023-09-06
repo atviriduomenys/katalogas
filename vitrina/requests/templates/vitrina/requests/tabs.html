@@ -26,5 +26,10 @@
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>
+        <li class="{%if request.resolver_match.url_name == 'request-organizations' %} is-active {% endif %}">
+            <a href="{% url 'request-organizations' request.resolver_match.kwargs.pk %}" id="request-tab">
+                {% translate "Organizacijos" %}
+            </a>
+        </li>
     </ul>
 </div>

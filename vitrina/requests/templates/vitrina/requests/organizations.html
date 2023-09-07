@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Organizacijos" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai ir pasiūlymai' %}</span></a></li>
+        <li><a href="{% url 'request-detail' request_obj.pk %}"><span>{{ request_obj.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/requests/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+                <div class="buttons is-right">
+                    <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk mode='single'  %}">
+                        {% translate "Pridėti / šalinti organizacijas" %}
+                    </a>
+                    <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk mode='plural'  %}">
+                        {% translate "Pridėti organizaciją ir visas pavaldžias jai organizacijas" %}
+                    </a>
+                </div>  
+            {% if organizations %}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    {% for organization in organizations %}
+                        <tr>
+                        <td>
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <div>
+                                            <strong>
+                                                <a href="{{ organization.get_absolute_url }}" class="organization-list-title">
+                                                    {{ organization.organization.title }}
+                                                </a>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </td>
+                        <td>
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <div>
+                                            <strong>
+                                                    {{ organization.status }}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% include "vitrina/common/pagination.html" %}
+        </div>
+        {% else %}
+        <p>{% translate "Organizacijų nėra." %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

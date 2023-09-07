@@ -42,7 +42,7 @@
 {# selected=selected_status #}
 
 {% for filter in filters %}
-<nav class="category-panel mb-5">
+<nav class="category-panel mb-5" id="filter_id">
 
   {% if filter.stats and active_filter != filter.name %}
   <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">

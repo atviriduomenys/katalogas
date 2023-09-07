@@ -32,7 +32,7 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
-        return self.get_model().public.filter(translations__title__isnull=False).distinct()
+        return self.get_model().objects.all().filter(translations__title__isnull=False).distinct()
 
     def prepare_category(self, obj):
         categories = []

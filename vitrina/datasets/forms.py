@@ -154,6 +154,7 @@ class DatasetSearchForm(FacetedSearchForm):
     def no_query_found(self):
         return self.searchqueryset.all()
 
+
 class DatasetStructureImportForm(forms.ModelForm):
     file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
 
@@ -297,6 +298,7 @@ class AddRequestForm(forms.ModelForm):
             "rinkinys."
         ),
     )
+
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):
     object_model = Dataset

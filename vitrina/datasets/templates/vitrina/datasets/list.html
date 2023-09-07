@@ -181,7 +181,6 @@
               </div>
             </div>
 
-
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
                 <article class="media adp-media is-block">
@@ -231,6 +230,15 @@
                                       </a>
                                       {% endif %}
                                     </div>
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Duomenų rinkinys viešinamas" %}:
+                                          {% if i.object.is_public %}
+                                          {% translate "Taip" %}
+                                          {% else %}
+                                          {% translate "Ne" %}
+                                          {% endif %}
+                                      </span>
+
 
 
                                     <p class="dataset-list-description my-1">

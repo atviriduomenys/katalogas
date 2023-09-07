@@ -59,7 +59,7 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
-    get_requests
+    get_requests, get_datasets_for_user
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
@@ -107,6 +107,12 @@ class DatasetListView(PlanMixin, FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
 
+        user = self.request.user
+        if user.is_authenticated:
+            if not (user.is_staff or user.is_superuser):
+                dataset_ids = get_datasets_for_user(user)
+                datasets = datasets.filter(django_id__in=dataset_ids)
+
         sorting = self.request.GET.get('sort', None)
 
         options = {"size": ELASTIC_FACET_SIZE}
@@ -124,6 +130,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 pk=self.kwargs['pk'],
             )
             datasets = datasets.filter(organization=self.organization.pk)
+
         if sorting is None:
             datasets = datasets.order_by('-type_order', '-published')
         elif sorting == 'sort-by-date-newest':
@@ -330,6 +337,7 @@ class DatasetDetailView(
             'tags': dataset.get_tag_object_list(),
             'subscription': [],
             'status': dataset.get_status_display(),
+            'public_status': dataset.is_public,
             # TODO: harvested functionality needs to be implemented
             'harvested': '',
             'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),

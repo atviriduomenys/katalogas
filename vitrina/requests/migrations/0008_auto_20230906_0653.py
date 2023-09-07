@@ -17,12 +17,17 @@ class Migration(migrations.Migration):
         for request in requests:
             if len(request.organizations.all()) > 0:
                 for org in request.organizations.all():
-                    reqA = RequestAssignment.objects.create(
+                    request_assignment_exists = RequestAssignment.objects.filter(
                         organization=org,
-                        request=request,
-                        status=request.status
-                    )
-                    reqA.save()
+                        request=request
+                    ).first()
+                    if not request_assignment_exists:
+                        reqA = RequestAssignment.objects.create(
+                            organization=org,
+                            request=request,
+                            status=request.status
+                        )
+                        reqA.save()
 
 
     operations = [

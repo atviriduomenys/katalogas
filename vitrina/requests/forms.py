@@ -81,7 +81,8 @@ class RequestAddOrgForm(ModelForm):
         label="Organizacija",
         widget=ProviderWidget,
         queryset=Organization.objects.filter(),
-        to_field_name="pk"
+        to_field_name="pk",
+        required=False
     )
 
     class Meta:
@@ -97,7 +98,7 @@ class RequestAddOrgForm(ModelForm):
         self.helper.layout = Layout(
             Field('title', value=initial.get('title'), placeholder=_('Pavadinimas'), readonly=True),
             Field('description', placeholder=_('Aprašymas'), readonly=True),
-            Field('organizations', placeholder=_('Organizacijos')),
+            Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
             Submit('submit', button, css_class='button is-primary')
         )
         self.fields['description'].initial = initial.get('description')

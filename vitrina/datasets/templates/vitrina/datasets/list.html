@@ -347,6 +347,30 @@
                 }
             });
 
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                let manFilterValues = manFilter.nextAll();
+                if (manFilter.val().length !== 0) {
+                    manFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(manFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    manFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    manFilterValues = manFilterValues.slice(0, 10)
+                    manFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
+                }
+            });
+
             let orgFilter = $('#organization-filter-input');
             orgFilter.on('input', function(){
                 let orgFilterValues = orgFilter.nextAll();

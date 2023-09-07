@@ -22,14 +22,13 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 @pytest.mark.django_db
 def test_request_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
+    orgs = [OrganizationFactory(), OrganizationFactory()]
     app.set_user(user)
     form = app.get(reverse("request-create")).forms['request-form']
     form['title'] = "Request"
     form['description'] = "Description"
-    resp = form.submit()
-    form = resp.forms['request-form']
-    form['organizations'] = orgs
+    resp = form.submit().follow()
+    form = resp.forms['request-add-org-form']
     resp = form.submit()
     added_request = Request.objects.filter(title="Request")
     assert added_request.count() == 1
@@ -54,14 +53,10 @@ def test_request_update_with_user_without_permission(app: DjangoTestApp):
 def test_request_update_with_permitted_user(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     request = RequestFactory(user=user)
-    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
     app.set_user(user)
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
-    resp = form.submit()
-    form = resp.forms['request-form']
-    form['organizations'] = orgs
     resp = form.submit()
     request.refresh_from_db()
     assert resp.status_code == 302
@@ -113,9 +108,6 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
-    resp = form.submit()
-    form = resp.forms['request-form']
-    form['organizations'] = orgs
     resp = form.submit().follow()
     resp = resp.click(linkid="history-tab")
     assert resp.context['detail_url_name'] == 'request-detail'

@@ -27,11 +27,6 @@
         <div class="column is-three-quarters">
             <div class="content">
                 <div class="request-title">
-                    {% if not request_object.is_existing %}
-                        <p class="is-size-4">{% translate "Naujų duomenų atvėrimo poreikis" %}: </p>
-                    {% else %}
-                        <p class="is-size-4">{% translate "Esamo duomenų rinkinio papildymo poreikis" %}: </p>
-                    {% endif %}
                     {% get_hit_count for request_object as total_hits %}
                     <p class="is-pulled-right">{% translate "Poreikio peržiūros" %}:
                         <b id="total_hits">{{ total_hits }}</b>

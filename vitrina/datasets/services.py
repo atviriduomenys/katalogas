@@ -156,35 +156,37 @@ def get_frequency_and_format(duration):
     return frequency, ff
 
 
-def get_all_not_deleted_datasets():
-    return Dataset.objects.all().filter(deleted__isnull=True,
-                                        deleted_on__isnull=True,
-                                        organization_id__isnull=False,)
+def get_public_dataset_id_list():
+    public_datasets = Dataset.objects.filter(is_public=True)
+    public_dataset_id_list = [dataset.id for dataset in public_datasets]
+    return public_dataset_id_list
 
 
 def filter_datasets_for_user(user, datasets):
-    not_deleted_datasets = get_all_not_deleted_datasets()
     coordinator_orgs = [rep.object_id for rep in
-                        user.representative_set.filter(role=Representative.COORDINATOR)]
-    public_datasets = not_deleted_datasets.filter(is_public=True)
-    managed_datasets = not_deleted_datasets.filter(organization__in=coordinator_orgs)
-    dataset_id_list = [dataset.id for dataset in public_datasets] +\
-                      [dataset.id for dataset in managed_datasets]
-    return datasets.filter(django_id__in=dataset_id_list)
+                        user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))]
+    public_dataset_id_list = get_public_dataset_id_list()
+    coordinated_datasets = Dataset.objects.filter(organization_id__in=coordinator_orgs)
+    dataset_id_list = public_dataset_id_list + [dataset.id for dataset in coordinated_datasets]
+    datasets = datasets.filter(django_id__in=dataset_id_list)
+    return datasets
 
 
 def get_datasets_for_user(user, datasets):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
             return filter_datasets_for_user(user, datasets)
-        elif user.is_staff or user.is_superuser:
-            return get_all_not_deleted_datasets()
+        else:
+            return datasets
     else:
-        return Dataset.public.all()
+        id_list = get_public_dataset_id_list()
+        datasets = datasets.filter(django_id__in=id_list)
+        return datasets
 
 
 def get_all_not_deleted_orgs():
-    return Organization.objects.filter(deleted__isnull=True, deleted_on__isnull=True)
+    orgs = Organization.objects.filter(deleted__isnull=True, deleted_on__isnull=True)
+    return orgs
 
 
 def filter_orgs_for_user(user):
@@ -192,15 +194,18 @@ def filter_orgs_for_user(user):
     public_orgs = [org.id for org in non_deleted_orgs.filter(is_public=True)]
     coordinator_orgs = [org.object_id for org in
                         user.representative_set.filter(role=Representative.COORDINATOR)]
-    org_ids = coordinator_orgs + public_orgs
-    return Organization.objects.filter(id__in=org_ids)
+    manager_orgs = [org.object_id for org in
+                    user.representative_set.filter(role=Representative.MANAGER)]
+    org_ids = coordinator_orgs + public_orgs + manager_orgs
+    orgs = Organization.objects.filter(id__in=org_ids)
+    return orgs
 
 
 def get_orgs_for_user(user):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
             return filter_orgs_for_user(user)
-        elif user.is_staff or user.is_superuser:
+        else:
             return get_all_not_deleted_orgs()
     else:
         return Organization.public.all()

@@ -106,13 +106,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
 
     def get_queryset(self):
         datasets = super().get_queryset()
-
-        user = self.request.user
-        if user.is_authenticated:
-            if not (user.is_staff or user.is_superuser):
-                dataset_ids = get_datasets_for_user(user)
-                datasets = datasets.filter(django_id__in=dataset_ids)
-
+        datasets = get_datasets_for_user(self.request.user, datasets)
         sorting = self.request.GET.get('sort', None)
 
         options = {"size": ELASTIC_FACET_SIZE}

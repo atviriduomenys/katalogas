@@ -156,17 +156,31 @@ def get_frequency_and_format(duration):
     return frequency, ff
 
 
-def get_datasets_for_user(user):
-    not_deleted_datasets = Dataset.objects.all().filter(deleted__isnull=True,
-                                                        deleted_on__isnull=True,
-                                                        organization_id__isnull=False,)
+def get_all_not_deleted_datasets():
+    return Dataset.objects.all().filter(deleted__isnull=True,
+                                        deleted_on__isnull=True,
+                                        organization_id__isnull=False,)
+
+
+def filter_datasets_for_user(user, datasets):
+    not_deleted_datasets = get_all_not_deleted_datasets()
     coordinator_orgs = [rep.object_id for rep in
                         user.representative_set.filter(role=Representative.COORDINATOR)]
     public_datasets = not_deleted_datasets.filter(is_public=True)
     managed_datasets = not_deleted_datasets.filter(organization__in=coordinator_orgs)
-    dataset_ids = [dataset.id for dataset in public_datasets] +\
-                  [dataset.id for dataset in managed_datasets]
-    return dataset_ids
+    dataset_id_list = [dataset.id for dataset in public_datasets] +\
+                      [dataset.id for dataset in managed_datasets]
+    return datasets.filter(django_id__in=dataset_id_list)
+
+
+def get_datasets_for_user(user, datasets):
+    if user.is_authenticated:
+        if not (user.is_staff or user.is_superuser):
+            return filter_datasets_for_user(user, datasets)
+        elif user.is_staff or user.is_superuser:
+            return get_all_not_deleted_datasets()
+    else:
+        return Dataset.public.all()
 
 
 def get_all_not_deleted_orgs():

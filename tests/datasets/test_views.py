@@ -16,7 +16,6 @@ from webtest import Upload
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
-from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
     DatasetRelationFactory
@@ -154,7 +153,7 @@ def test_manager_dataset_url_is_hidden_for_manager_if_no_datasets(app: DjangoTes
 @pytest.mark.haystack
 def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
     org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
+    DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
     app.set_user(user)
     resp = app.get(reverse('dataset-list'))
@@ -164,7 +163,7 @@ def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
 @pytest.mark.haystack
 def test_manager_dataset_url_is_shown_for_manager(app: DjangoTestApp):
     org = OrganizationFactory()
-    dataset = DatasetFactory(organization=org)
+    DatasetFactory(organization=org)
     ct = ContentType.objects.get_for_model(Dataset)
     rep = RepresentativeFactory(
         content_type=ct,
@@ -489,7 +488,7 @@ def test_data_group_filter_header_visible_if_data_groups_exist(
 def test_data_group_filter_header_not_visible_if_data_groups_do_not_exist(
         app: DjangoTestApp,
 ):
-    dataset = DatasetFactory()
+    DatasetFactory()
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='data_group_filter_header')
 

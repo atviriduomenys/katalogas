@@ -9,7 +9,7 @@ from django.db.models.functions import ExtractQuarter, ExtractWeek
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 
@@ -167,3 +167,26 @@ def get_datasets_for_user(user):
     dataset_ids = [dataset.id for dataset in public_datasets] +\
                   [dataset.id for dataset in managed_datasets]
     return dataset_ids
+
+
+def get_all_not_deleted_orgs():
+    return Organization.objects.filter(deleted__isnull=True, deleted_on__isnull=True)
+
+
+def filter_orgs_for_user(user):
+    non_deleted_orgs = get_all_not_deleted_orgs()
+    public_orgs = [org.id for org in non_deleted_orgs.filter(is_public=True)]
+    coordinator_orgs = [org.object_id for org in
+                        user.representative_set.filter(role=Representative.COORDINATOR)]
+    org_ids = coordinator_orgs + public_orgs
+    return Organization.objects.filter(id__in=org_ids)
+
+
+def get_orgs_for_user(user):
+    if user.is_authenticated:
+        if not (user.is_staff or user.is_superuser):
+            return filter_orgs_for_user(user)
+        elif user.is_staff or user.is_superuser:
+            return get_all_not_deleted_orgs()
+    else:
+        return Organization.public.all()

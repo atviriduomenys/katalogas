@@ -42,8 +42,9 @@ class DatasetIndex(SearchIndex, Indexable):
         return categories
 
     def prepare_organization(self, obj):
-        if obj.organization.pk != obj.jurisdiction:
-            return obj.organization.pk
+        if obj.organization:
+            if obj.organization.pk != obj.jurisdiction:
+                return obj.organization.pk
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

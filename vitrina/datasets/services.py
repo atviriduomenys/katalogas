@@ -7,7 +7,9 @@ from django.core.handlers.wsgi import HttpRequest
 from django.db.models import Q, Sum
 from django.db.models.functions import ExtractQuarter, ExtractWeek
 
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
+from vitrina.orgs.models import Representative
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 
@@ -152,3 +154,16 @@ def get_frequency_and_format(duration):
         frequency = 'D'
         ff = 'Y m d'
     return frequency, ff
+
+
+def get_datasets_for_user(user):
+    not_deleted_datasets = Dataset.objects.all().filter(deleted__isnull=True,
+                                                        deleted_on__isnull=True,
+                                                        organization_id__isnull=False,)
+    coordinator_orgs = [rep.object_id for rep in
+                        user.representative_set.filter(role=Representative.COORDINATOR)]
+    public_datasets = not_deleted_datasets.filter(is_public=True)
+    managed_datasets = not_deleted_datasets.filter(organization__in=coordinator_orgs)
+    dataset_ids = [dataset.id for dataset in public_datasets] +\
+                  [dataset.id for dataset in managed_datasets]
+    return dataset_ids

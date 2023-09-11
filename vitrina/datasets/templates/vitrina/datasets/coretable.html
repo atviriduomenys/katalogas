@@ -166,10 +166,12 @@
     {% endif %}
     <tr>
         <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
+        <td>{{ dataset.created|date:"SHORT_DATETIME_FORMAT" }}</td>
     </tr>
     {% if dataset.modified %}
         <tr>
             <th>{% translate "Paskutinio atnaujinimo data" %}</th>
+            <td>{{ dataset.modified|date:"SHORT_DATETIME_FORMAT" }}</td>
         </tr>
     {% endif %}
     <tr>

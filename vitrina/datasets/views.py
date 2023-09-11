@@ -22,6 +22,7 @@ from django.db.models.functions import ExtractYear, ExtractMonth, ExtractWeek, E
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
@@ -405,6 +406,9 @@ class DatasetCreateView(
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 
+        if self.object.is_public:
+            self.object.published = timezone.now()
+
         types = form.cleaned_data.get('type')
         self.object.type.set(types)
         if types.filter(name=Type.SERVICE):
@@ -481,6 +485,11 @@ class DatasetUpdateView(
         self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
+
+        if self.object.is_public and not self.object.published:
+            self.object.published = timezone.now()
+        elif not self.object.is_public and self.object.published:
+            self.object.published = None
 
         types = form.cleaned_data.get('type')
         self.object.type.set(types)

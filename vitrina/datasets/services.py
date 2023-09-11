@@ -7,7 +7,9 @@ from django.core.handlers.wsgi import HttpRequest
 from django.db.models import Q, Sum
 from django.db.models.functions import ExtractQuarter, ExtractWeek
 
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
+from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 
@@ -152,3 +154,58 @@ def get_frequency_and_format(duration):
         frequency = 'D'
         ff = 'Y m d'
     return frequency, ff
+
+
+def get_public_dataset_id_list():
+    public_datasets = Dataset.objects.filter(is_public=True)
+    public_dataset_id_list = [dataset.id for dataset in public_datasets]
+    return public_dataset_id_list
+
+
+def filter_datasets_for_user(user, datasets):
+    coordinator_orgs = [rep.object_id for rep in
+                        user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))]
+    public_dataset_id_list = get_public_dataset_id_list()
+    coordinated_datasets = Dataset.objects.filter(organization_id__in=coordinator_orgs)
+    dataset_id_list = public_dataset_id_list + [dataset.id for dataset in coordinated_datasets]
+    datasets = datasets.filter(django_id__in=dataset_id_list)
+    return datasets
+
+
+def get_datasets_for_user(user, datasets):
+    if user.is_authenticated:
+        if not (user.is_staff or user.is_superuser):
+            return filter_datasets_for_user(user, datasets)
+        else:
+            return datasets
+    else:
+        id_list = get_public_dataset_id_list()
+        datasets = datasets.filter(django_id__in=id_list)
+        return datasets
+
+
+def get_all_not_deleted_orgs():
+    orgs = Organization.objects.filter(deleted__isnull=True, deleted_on__isnull=True)
+    return orgs
+
+
+def filter_orgs_for_user(user):
+    non_deleted_orgs = get_all_not_deleted_orgs()
+    public_orgs = [org.id for org in non_deleted_orgs.filter(is_public=True)]
+    coordinator_orgs = [org.object_id for org in
+                        user.representative_set.filter(role=Representative.COORDINATOR)]
+    manager_orgs = [org.object_id for org in
+                    user.representative_set.filter(role=Representative.MANAGER)]
+    org_ids = coordinator_orgs + public_orgs + manager_orgs
+    orgs = Organization.objects.filter(id__in=org_ids)
+    return orgs
+
+
+def get_orgs_for_user(user):
+    if user.is_authenticated:
+        if not (user.is_staff or user.is_superuser):
+            return filter_orgs_for_user(user)
+        else:
+            return get_all_not_deleted_orgs()
+    else:
+        return Organization.public.all()

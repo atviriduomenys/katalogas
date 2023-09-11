@@ -111,6 +111,9 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         datasets = get_datasets_for_user(self.request.user, datasets)
         sorting = self.request.GET.get('sort', None)
 
+        if self.request.GET.get('q') and not sorting:
+            sorting = 'sort-by-relevance'
+
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
             datasets = datasets.facet(field, **options)
@@ -127,17 +130,17 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             )
             datasets = datasets.filter(organization=self.organization.pk)
 
-        if sorting is None:
-            datasets = datasets.order_by('-type_order', '-published')
-        elif sorting == 'sort-by-date-newest':
-            datasets = datasets.order_by('-published', '-type_order')
+        if not sorting or sorting == 'sort-by-date-newest':
+            datasets = datasets.order_by('-published_created_s')
         elif sorting == 'sort-by-date-oldest':
-            datasets = datasets.order_by('published', '-type_order')
+            datasets = datasets.order_by('published_created_s')
         elif sorting == 'sort-by-title':
             if self.request.LANGUAGE_CODE == 'lt':
                 datasets = datasets.order_by('lt_title_s', '-type_order')
             else:
                 datasets = datasets.order_by('en_title_s', '-type_order')
+        elif sorting == 'sort-by-relevance':
+            datasets = datasets.order_by('-type_order')
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -271,13 +274,6 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         context['search_url'] = url
         context['sort_options'] = [
             {
-                'title': "---------",
-                'url':
-                    f"{url}?{sort_query}" if sort_query else f"{url}",
-                'icon': "fas fa-sort-amount-down-alt",
-                'key': 'sort-by-default'
-            },
-            {
                 'title': _("Naujausi"),
                 'url':
                     f"{url}?{sort_query}&sort=sort-by-date-newest" if sort_query else f"{url}?sort=sort-by-date-newest",
@@ -298,9 +294,19 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 'icon': "fas fa-sort-amount-down-alt",
                 'key': 'sort-by-title'
             },
+            {
+                'title': _("Tinkamiausi"),
+                'url':
+                    f"{url}?{sort_query}&sort=sort-by-relevance" if sort_query else f"{url}?sort=sort-by-relevance",
+                'icon': "fas fa-sort-amount-down-alt",
+                'key': 'sort-by-relevance'
+            },
         ]
 
         context.update(extra_context)
+
+        if self.request.GET.get('q') and not sorting:
+            sorting = 'sort-by-relevance'
         context['sort'] = sorting
         return context
 

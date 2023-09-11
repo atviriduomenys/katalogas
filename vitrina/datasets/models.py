@@ -334,6 +334,9 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def published_created_sort(self):
+        return self.published or self.created
+
     def get_icon(self):
         root_category_ids = []
         for cat in self.category.all():

@@ -21,7 +21,8 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-    {% if can_add_projects and has_projects %}
+{#    {% if can_add_projects and has_projects %}#}
+    {% if has_projects %}
         <div class="buttons is-right">
             <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
                href="{% url 'dataset-project-add' dataset.pk %}">

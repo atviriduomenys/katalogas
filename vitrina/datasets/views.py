@@ -21,7 +21,7 @@ from django.db.models import QuerySet, Count, Max, Q
 from django.db.models.functions import ExtractYear, ExtractMonth, ExtractWeek, ExtractQuarter, ExtractDay
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
@@ -50,6 +50,7 @@ from vitrina.comments.models import Comment
 from vitrina.requests.models import Request, RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
+from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
 from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
@@ -1183,22 +1184,83 @@ MODEL_INDICATOR_FIELDS = {
 }
 
 
-class DatasetStatsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/status.html'
-    paginate_by = 0
+class DatasetStatsMixin(StatsMixin):
+    model = Dataset
+    filters_template_name = 'vitrina/datasets/filters.html'
+    parameter_select_template_name = 'vitrina/datasets/stats_parameter_select.html'
+    default_indicator = 'dataset-count'
+    list_url = reverse_lazy('dataset-list')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_data_for_indicator(self, indicator, filter_queryset):
+        data = filter_queryset
+        if DATASET_INDICATOR_FIELDS.get(indicator):
+            data = DatasetStats.objects.filter(
+                dataset_id__in=filter_queryset.values_list('pk', flat=True)
+            )
+        elif MODEL_INDICATOR_FIELDS.get(indicator):
+            model_names = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                dataset__pk__in=filter_queryset.values_list('pk', flat=True)
+            ).values_list('name', flat=True)
+            data = ModelDownloadStats.objects.filter(
+                model__in=model_names
+            )
+        return data
+
+    def get_count(self, label, indicator, frequency, filter_queryset, count):
+        data = self.get_data_for_indicator(indicator, filter_queryset)
+        if indicator == 'dataset-count':
+            count += get_count_by_frequency(
+                frequency,
+                label,
+                data,
+                'created'
+            )
+        elif field := DATASET_INDICATOR_FIELDS.get(indicator):
+            count = get_count_by_frequency(
+                frequency,
+                label,
+                data,
+                'created',
+                field,
+                'dataset_id',
+                True
+            ) or count
+        elif field := MODEL_INDICATOR_FIELDS.get(indicator):
+            count += get_count_by_frequency(
+                frequency,
+                label,
+                data,
+                'created',
+                field
+            )
+        return count
+
+    def get_title_for_indicator(self, indicator):
+        return Y_TITLES.get(indicator) or indicator
+
+
+class DatasetStatsView(DatasetStatsMixin, DatasetListView):
+    title = _("Būsena")
+    current_title = _("Duomenų rinkinių būsenos")
+    filter = 'status'
+    filter_choices = Dataset.FILTER_STATUSES
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike')
+
+    def update_context_data(self, context):
         facet_fields = context.get('facets').get('fields')
-        statuses = update_facet_data(self.request, facet_fields, 'status', choices=Dataset.FILTER_STATUSES)
-        datasets = self.get_queryset()
+        statuses = self.get_filter_data(facet_fields)
+        datasets = context['object_list']
+
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        chart_data = []
-        status_data = []
+        start_date = self.get_start_date()
+
+        time_chart_data = []
+        bar_chart_data = []
 
         most_recent_comments = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
@@ -1229,14 +1291,7 @@ class DatasetStatsView(DatasetListView):
         )
 
         frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
+        labels = self.get_time_labels(start_date, frequency)
 
         for status in statuses:
             count = 0
@@ -1342,397 +1397,77 @@ class DatasetStatsView(DatasetListView):
                 'borderWidth': 1,
                 'fill': True,
             }
-            chart_data.append(dt)
+            time_chart_data.append(dt)
 
             if data:
                 status['count'] = data[-1]['y']
             else:
                 status['count'] = 0
-            status_data.append(status)
+            bar_chart_data.append(status)
 
         if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            status_data = sorted(status_data, key=lambda x: x['count'], reverse=True)
+            time_chart_data = sorted(time_chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'], reverse=True)
         else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            status_data = sorted(status_data, key=lambda x: x['count'])
+            time_chart_data = sorted(time_chart_data, key=lambda x: x['data'][-1]['y'])
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'])
 
-        max_count = max([x['count'] for x in status_data]) if status_data else 0
+        max_count = max([x['count'] for x in bar_chart_data]) if bar_chart_data else 0
 
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio būseną laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['status_data'] = status_data
-        context['max_count'] = max_count
-        context['duration'] = duration
-        context['active_filter'] = 'status'
+        context['title'] = self.title
+        context['current_title'] = self.current_title
+        context['tabs_template_name'] = self.tabs_template_name
+        context['filters_template_name'] = self.filters_template_name
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['list_url'] = self.list_url
+        context['has_time_graph'] = self.has_time_graph
+
+        context['active_filter'] = self.filter
         context['active_indicator'] = indicator
         context['sort'] = sorting
-        return context
-
-
-class DatasetManagementsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/jurisdictions.html'
-    paginate_by = 0
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        all_orgs = update_facet_data(self.request, facet_fields, 'jurisdiction', Organization)
-        all_orgs = sorted(all_orgs, key=lambda jur: jur['count'], reverse=True)
-
-        start_date = Dataset.objects.all().first().created
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        jurisdiction_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        datasets = context['object_list']
-
-        for jurisdiction in all_orgs:
-            count = 0
-            data = []
-            statistics = []
-            jurisdiction_dataset_ids = datasets.filter(
-                jurisdiction=jurisdiction['filter_value']
-            ).values_list('pk', flat=True)
-            jurisdiction_datasets = Dataset.public.filter(pk__in=jurisdiction_dataset_ids)
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=jurisdiction_dataset_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=jurisdiction_dataset_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        jurisdiction_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    #todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    #todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': jurisdiction['display_value'],
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                jurisdiction['count'] = data[-1]['y']
-            else:
-                jurisdiction['count'] = 0
-            jurisdiction_data.append(jurisdiction)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            jurisdiction_data = sorted(jurisdiction_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            jurisdiction_data = sorted(jurisdiction_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in jurisdiction_data]) if jurisdiction_data else 0
-
-        context['jurisdiction_data'] = jurisdiction_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'jurisdiction'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio valdymo sritį laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
         context['duration'] = duration
+
+        context['graph_title'] = self.get_graph_title(indicator)
+        context['xAxis_title'] = _('Laikas')
+        context['yAxis_title'] = self.get_title_for_indicator(indicator)
+        context['time_chart_data'] = json.dumps(time_chart_data)
+
+        context['bar_chart_data'] = bar_chart_data
+        context['max_count'] = max_count
 
         return context
 
 
-class DatasetsLevelView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/level.html'
-    paginate_by = 0
+class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
+    title = _("Valdymo sritis")
+    current_title = _("Duomenų rinkinių valdymo sritys")
+    filter = 'jurisdiction'
+    filter_model = Organization
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        datasets = context['object_list']
-        facet_fields = context.get('facets').get('fields')
-        levels = update_facet_data(self.request, facet_fields, 'level', None)
-
-        start_date = Dataset.objects.all().first().created
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        level_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        for level in levels:
-            count = 0
-            data = []
-            statistics = []
-            level_dataset_ids = datasets.filter(
-                level=level['filter_value']
-            ).values_list('pk', flat=True)
-            level_datasets = Dataset.public.filter(pk__in=level_dataset_ids)
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=level_dataset_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=level_dataset_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        level_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': "★" * level['filter_value'],
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                level['count'] = data[-1]['y']
-            else:
-                level['count'] = 0
-            level_data.append(level)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            level_data = sorted(level_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            level_data = sorted(level_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in level_data]) if level_data else 0
-
-        context['level_data'] = level_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'level'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['duration'] = duration
-
-        return context
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike')
 
 
-class DatasetsOrganizationsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/organizations.html'
-    paginate_by = 0
+class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
+    title = _("Brandos lygis")
+    current_title = _("Duomenų rinkinių brandos lygiai")
+    filter = 'level'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        all_orgs = update_facet_data(self.request, facet_fields, 'organization', Organization)
-        all_orgs = sorted(all_orgs, key=lambda org: org['count'], reverse=True)
+    def get_display_value(self, item):
+        return "★" * item['filter_value']
 
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        org_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
+    def get_graph_title(self, indicator):
+        return _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
 
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
 
-        for org in all_orgs:
-            count = 0
-            data = []
-            statistics = []
-            org_dataset_ids = datasets.filter(
-                organization=org['filter_value']
-            ).values_list('pk', flat=True)
-            org_datasets = Dataset.public.filter(pk__in=org_dataset_ids)
+class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
+    title = _("Organizacija")
+    current_title = _("Duomenų rinkinių organizacijos")
+    filter = 'organization'
+    filter_model = Organization
 
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=org_dataset_ids
-                )
-
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=org_dataset_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        org_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    #todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    #todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': org['display_value'],
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                org['count'] = data[-1]['y']
-            else:
-                org['count'] = 0
-            org_data.append(org)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            org_data = sorted(org_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            org_data = sorted(org_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in org_data]) if org_data else 0
-
-        context['organization_data'] = org_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'organizations'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio organizaciją laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['duration'] = duration
-        return context
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
 
 
 class OrganizationStatsView(DatasetListView):
@@ -1760,372 +1495,38 @@ class OrganizationStatsView(DatasetListView):
         return context
 
 
-class DatasetsTagsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/tag.html'
-    paginate_by = 0
+class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
+    title = _("Žymė")
+    current_title = _("Duomenų rinkinių žymės")
+    filter = 'tags'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        all_tags = update_facet_data(self.request, facet_fields, 'tags', None)
-        all_tags = sorted(all_tags, key=lambda tag: tag['count'], reverse=True)
+    def get_display_value(self, item):
+        if tag := Dataset.tags.tag_model.objects.filter(pk=item['filter_value']).first():
+            return tag.name
+        return item['display_value']
 
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        tag_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        for tag in all_tags:
-            count = 0
-            data = []
-            statistics = []
-            tag_ids = datasets.filter(
-                tags=tag['filter_value']
-            ).values_list('pk', flat=True)
-            tag_datasets = Dataset.public.filter(pk__in=tag_ids)
-
-            dataset = Dataset.objects.filter(pk=tag_ids[0]).get()
-            t_title = dataset.get_tag_title(tag['filter_value'])
-            tag.update({'title': t_title})
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=tag_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=tag_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        tag_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': t_title,
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                tag['count'] = data[-1]['y']
-            else:
-                tag['count'] = 0
-            tag_data.append(tag)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            tag_data = sorted(tag_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            tag_data = sorted(tag_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in tag_data]) if tag_data else 0
-
-        context['tag_data'] = tag_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'tag'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio žymes laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['duration'] = duration
-        return context
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike')
 
 
-class DatasetsFormatView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/formats.html'
-    paginate_by = 0
+class DatasetsFormatView(DatasetStatsMixin, DatasetListView):
+    title = _("Formatas")
+    current_title = _("Duomenų rinkinių formatai")
+    filter = 'formats'
+    filter_model = Format
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        all_formats = update_facet_data(self.request, facet_fields, 'formats', Format)
-        all_formats = sorted(all_formats, key=lambda format: format['count'], reverse=True)
-
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        format_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        for format in all_formats:
-            count = 0
-            data = []
-            statistics = []
-            format_ids = datasets.filter(
-                formats=format['filter_value']
-            ).values_list('pk', flat=True)
-            tag_datasets = Dataset.public.filter(pk__in=format_ids)
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=format_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=format_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        tag_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': format['display_value'],
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                format['count'] = data[-1]['y']
-            else:
-                format['count'] = 0
-            format_data.append(format)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            format_data = sorted(format_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            format_data = sorted(format_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in format_data]) if format_data else 0
-
-        context['format_data'] = format_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'format'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio formatą laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['duration'] = duration
-        return context
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike')
 
 
-class DatasetsFrequencyView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/frequency.html'
-    paginate_by = 0
+class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
+    title = _("Atnaujinama")
+    current_title = _("Duomenų rinkinių atnaujinimo dažnumas")
+    filter = 'frequency'
+    filter_model = Frequency
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        all_freqs = update_facet_data(self.request, facet_fields, 'frequency', None)
-        all_freqs = sorted(all_freqs, key=lambda freq: freq['count'], reverse=True)
-
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        frequency_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        for freq in all_freqs:
-            count = 0
-            data = []
-            statistics = []
-            frequency_ids = datasets.filter(
-                frequency=freq['filter_value']
-            ).values_list('pk', flat=True)
-            frequency_datasets = Dataset.public.filter(pk__in=frequency_ids)
-
-            obj = Frequency.objects.filter(pk=freq['filter_value']).get()
-            obj_title = obj.title
-            freq.update({'title': obj_title})
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=frequency_datasets
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=frequency_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        frequency_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': obj_title,
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                freq['count'] = data[-1]['y']
-            else:
-                freq['count'] = 0
-            frequency_data.append(freq)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            frequency_data = sorted(frequency_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            frequency_data = sorted(frequency_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in frequency_data]) if frequency_data else 0
-
-        context['frequency_data'] = frequency_data
-        context['max_count'] = max_count
-        context['active_filter'] = 'frequency'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio atnaujinimą laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['duration'] = duration
-        return context
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike')
 
 
 class JurisdictionStatsView(DatasetListView):
@@ -2239,235 +1640,23 @@ class JurisdictionStatsView(DatasetListView):
         return context
 
 
-class DatasetsStatsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/categories.html'
-    paginate_by = 0
+class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
+    title = _("Kategorija")
+    current_title = _("Duomenų rinkinių kategorijos")
+    filter = 'category'
+    filter_model = Category
 
-    # def get_date_labels(self):
-    #     oldest_dataset_date = Dataset.objects.order_by('created').first().created
-    #     return period_range(start=oldest_dataset_date, end=now(), freq='Y').astype(str).tolist()
-    #
-    # def get_categories(self):
-    #     return [
-    #         {'title': cat.title, 'id': cat.id} for cat in Category.objects.filter(featured=True).order_by('title')
-    #     ]
-    #
-    # def get_color(self, year):
-    #     color_map = {
-    #         '2019': '#03256C',
-    #         '2020': '#2541B2',
-    #         '2021': '#1768AC',
-    #         "2022": '#06BEE1',
-    #         "2023": "#4193A2",
-    #         # FIXME: this should net be hardcoded, use colormaps:
-    #         #        https://matplotlib.org/stable/tutorials/colors/colormaps.html
-    #         #        (maybe `winter`?)
-    #     }
-    #     return color_map.get(year)
-    #
-    # def get_statistics_data(self):
-    #     categories = self.get_categories()
-    #     query_set = self.get_queryset()
-    #     data = {
-    #         'labels': [cat.get('title') for cat in categories]
-    #     }
-    #     datasets = []
-    #     date_labels = self.get_date_labels()
-    #     for date_label in date_labels:
-    #         dataset_counts = []
-    #         for category in categories:
-    #             filtered_ids = query_set.filter(category__id=category.get('id')).values_list('pk', flat=True)
-    #             created_date = datetime.datetime(int(date_label), 1, 1)
-    #             created_date = make_aware(created_date)
-    #             dataset_counts.append(
-    #                 Dataset.objects.filter(id__in=filtered_ids, created__lt=created_date).count()
-    #             )
-    #         datasets.append(
-    #             {
-    #                 'label': date_label,
-    #                 'data': dataset_counts,
-    #                 'backgroundColor': self.get_color(date_label)
-    #
-    #             }
-    #         )
-    #     data['datasets'] = datasets
-    #     return data, query_set
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     max_count = 0
-    #     data, qs = self.get_statistics_data()
-    #     context['data'] = data
-    #     context['dataset_count'] = len(qs)
-    #     context['graph_title'] = 'Duomenų rinkinių atvėrimo progresas'
-    #     return context
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        max_count = 0
-        facet_fields = context.get('facets').get('fields')
-        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
-        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
-        modified_cats = []
-        for cat in parent_cats:
-            current_category = Category.objects.get(title=cat.get('display_value'))
-            children = Category.get_children(current_category)
-            child_titles = []
-            if len(children) > 0:
-                existing_count = 0
-                for child in children:
-                    child_titles.append(child.title)
-                for single in all_cats:
-                    if single['display_value'] in child_titles:
-                        existing_count += 1
-                if existing_count == 0:
-                    cat['has_cats'] = False
-            else:
-                cat['has_cats'] = False
-            if max_count < cat.get('count'):
-                max_count = cat.get('count')
-            modified_cats.append(cat)
-        context['categories'] = modified_cats
-        context['max_count'] = max_count
-        context['active_filter'] = 'categories'
-        return context
-
-
-class DatasetsCategoriesView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/categories.html'
-    paginate_by = 0
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        facet_fields = context.get('facets').get('fields')
-        parent_cats = update_facet_data(self.request, facet_fields, 'parent_category', Category)
-        all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
-        all_cats = sorted(all_cats, key=lambda cat: cat['count'], reverse=True)
-
-        datasets = self.get_queryset()
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
-        category_data = []
-        chart_data = []
-        frequency, ff = get_frequency_and_format(duration)
-
-        labels = []
-        if start_date:
-            labels = pd.period_range(
-                start=start_date,
-                end=datetime.now(),
-                freq=frequency
-            ).tolist()
-
-        for cat in all_cats:
-            count = 0
-            data = []
-            statistics = []
-            cat_ids = datasets.filter(
-                category=cat['filter_value']
-            ).values_list('pk', flat=True)
-            cat_datasets = Dataset.public.filter(pk__in=cat_ids)
-
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=cat_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=cat_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
-
-            for label in labels:
-                if indicator == 'dataset-count':
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        cat_datasets,
-                        'created'
-                    )
-                elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count = get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field,
-                        'dataset_id',
-                        True
-                    ) or count
-                elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                    # todo pasidomėti ar čia taip iš tiesų
-                    count += get_count_by_frequency(
-                        frequency,
-                        label,
-                        statistics,
-                        'created',
-                        field
-                    )
-
-                if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
-                else:
-                    data.append({'x': _date(label, ff), 'y': count})
-
-            dt = {
-                'label': cat['display_value'],
-                'data': data,
-                'borderWidth': 1,
-                'fill': True,
-            }
-            chart_data.append(dt)
-
-            if data:
-                cat['count'] = data[-1]['y']
-            else:
-                cat['count'] = 0
-
-            obj = get_object_or_404(Category, pk=cat['filter_value'])
-            children = Category.get_children(obj)
-            child_titles = []
-            if len(children) > 0:
-                existing_count = 0
-                for child in children:
-                    child_titles.append(child.title)
-                for single in all_cats:
-                    if single['display_value'] in child_titles:
-                        existing_count += 1
-                if existing_count == 0:
-                    cat.update({'has_cats': False})
-            else:
-                cat.update({'has_cats': False})
-
-            category_data.append(cat)
-
-        if sorting == 'sort-desc':
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
-            category_data = sorted(category_data, key=lambda x: x['count'], reverse=True)
-        else:
-            chart_data = sorted(chart_data, key=lambda x: x['data'][-1]['y'])
-            category_data = sorted(category_data, key=lambda x: x['count'])
-
-        max_count = max([x['count'] for x in category_data]) if category_data else 0
-
-        context['category_data'] = category_data
-        context['data'] = json.dumps(chart_data[:10])
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio kategoriją laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
-        context['max_count'] = max_count
-        context['duration'] = duration
-        context['active_filter'] = 'category'
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        return context
+    def update_item_data(self, item):
+        obj = get_object_or_404(Category, pk=item['filter_value'])
+        children = obj.get_children()
+        if len(children) > 0:
+            item.update({
+                'full_url': reverse('dataset-stats-category-children', args=[obj.pk])
+            })
+        return item
 
 
 class CategoryStatsView(DatasetListView):
@@ -2482,10 +1671,8 @@ class CategoryStatsView(DatasetListView):
         all_cats = update_facet_data(self.request, facet_fields, 'category', Category)
         child_titles = []
         cat_titles = []
-        indicator = self.request.GET.get('indicator', None)
-        sorting = self.request.GET.get('sort', None)
-        if indicator is None:
-            indicator = 'dataset-count'
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         for cat in all_cats:
             cat_titles.append(cat['display_value'])
         filtered_cats = []
@@ -2590,7 +1777,7 @@ class CategoryStatsView(DatasetListView):
 
 class PublicationStatsView(DatasetListView):
     facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/publications.html'
+    template_name = 'vitrina/datasets/published_dates.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
@@ -2602,8 +1789,6 @@ class PublicationStatsView(DatasetListView):
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
         year_stats = {}
-        # quarter_stats = {}
-        # monthly_stats = {}
         chart_data = []
 
         frequency, ff = get_frequency_and_format(duration)
@@ -2766,6 +1951,7 @@ class PublicationStatsView(DatasetListView):
         context['active_filter'] = 'publication'
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['has_time_graph'] = True
         return context
 
 

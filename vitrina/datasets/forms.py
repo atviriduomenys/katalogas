@@ -64,7 +64,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
             RegexValidator(
                 '([a-z])\w+\/',
-                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir pasvirūjų brūkšnių"
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir pasvirųjų brūkšnių"
             )
         ])
 

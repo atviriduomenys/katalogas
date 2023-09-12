@@ -36,7 +36,7 @@
             </div>
 
             <div class="buttons is-right">
-                {% if request_object.is_created and can_manage_plans %}
+                {% if request_object.is_not_closed and can_manage_plans %}
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                        href="{% url 'request-plans-include' request_object.pk %}">
                         {% translate "Įtraukti į terminą" %}

@@ -4,7 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
+    DateField, DateInput
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -243,6 +244,11 @@ class OrganizationPlanForm(ModelForm):
         required=False,
         queryset=Organization.objects.all(),
         widget=ProviderWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+    )
+    deadline = DateField(
+        label=_("Įgyvendinimo terminas"),
+        required=False,
+        widget=DateInput(attrs={'type': 'date'})
     )
 
     class Meta:

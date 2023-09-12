@@ -2,6 +2,7 @@ import uuid
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Exists, OuterRef
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, UpdateView, DeleteView, DetailView
@@ -10,6 +11,8 @@ from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.plans.models import Plan
+from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
 from django.utils.translation import gettext_lazy as _
@@ -82,6 +85,22 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
             access=form.cleaned_data.get('access') or None,
             version=1,
         )
+
+        if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
+            dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
+            for plan in dataset_plans:
+                if (
+                    plan.planrequest_set.filter(
+                        request__status=Request.OPENED
+                    ).count() == plan.planrequest_set.count() and
+                    plan.plandataset_set.annotate(
+                        has_distributions=Exists(DatasetDistribution.objects.filter(
+                            dataset_id=OuterRef('dataset_id'),
+                        ))
+                    ).count() == plan.plandataset_set.count()
+                ):
+                    plan.is_closed = True
+                    plan.save()
 
         return redirect(resource.get_absolute_url())
 

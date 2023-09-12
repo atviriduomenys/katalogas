@@ -16,21 +16,6 @@
 
     <div class="columns">
         <div class="column">
-            {% if can_manage_plans %}
-                <div class="buttons is-right">
-                    {% if request_obj.is_created %}
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-include' request_obj.pk %}">
-                            {% translate "Įtraukti į planą" %}
-                        </a>
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-create' request_obj.pk %}">
-                            {% translate "Naujas terminas" %}
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-
             {% if datasets %}
                 <table class="table is-fullwidth">
                     <tbody>

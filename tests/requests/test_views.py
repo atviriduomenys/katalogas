@@ -148,3 +148,14 @@ def test_add_request_to_plan_with_representative(app: DjangoTestApp):
     assert resp.url == reverse('request-plans', args=[request.pk])
     assert request.planrequest_set.count() == 1
     assert request.planrequest_set.first().plan == plan
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_with_closed_request(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    request = RequestFactory(status=Request.REJECTED)
+
+    resp = app.get(reverse('request-plans-include', args=[request.pk]), expect_errors=True)
+    assert resp.status_code == 403
+

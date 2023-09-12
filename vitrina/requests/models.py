@@ -120,8 +120,8 @@ class Request(models.Model):
             count()
         )
 
-    def is_created(self):
-        return self.status == self.CREATED
+    def is_not_closed(self):
+        return self.status != self.REJECTED and self.status != self.OPENED
     
     def jurisdiction(self) -> int | None:
         if self.dataset:

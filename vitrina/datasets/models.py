@@ -372,6 +372,11 @@ class Dataset(TranslatableModel):
             order = 1
         return order
 
+    def get_plan_title(self):
+        if self.datasetdistribution_set.exists():
+            return _("Duomenų rinkinio papildymas")
+        return _("Duomenų atvėrimas")
+
     def get_likes(self):
         from vitrina.likes.models import Like
         content_type = ContentType.objects.get_for_model(self)

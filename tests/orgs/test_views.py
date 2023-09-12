@@ -480,3 +480,23 @@ def test_organization_merge(app: DjangoTestApp):
     )) == [representative]
 
 
+@pytest.mark.django_db
+def test_organization_open_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get(reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 2
+
+
+@pytest.mark.django_db
+def test_organization_closed_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get("%s?status=closed" % reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 1

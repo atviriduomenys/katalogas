@@ -4,7 +4,7 @@ from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.requests.models import Request, RequestStructure
+from vitrina.requests.models import Request, RequestStructure, RequestObject
 
 
 class RequestFactory(DjangoModelFactory):
@@ -47,3 +47,10 @@ class RequestStructureFactory(DjangoModelFactory):
     data_notes = factory.Faker('catch_phrase')
     data_type = factory.Faker('catch_phrase')
     dictionary_title = factory.Faker('catch_phrase')
+
+
+class RequestObjectFactory(DjangoModelFactory):
+    class Meta:
+        model = RequestObject
+
+    request = factory.SubFactory(RequestFactory)

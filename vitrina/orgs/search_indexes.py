@@ -1,8 +1,6 @@
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField
+from haystack.fields import CharField
 from haystack.indexes import SearchIndex, Indexable
 from vitrina.orgs.models import Organization
-
-
 
 
 class OrganizationIndex(SearchIndex, Indexable):
@@ -13,4 +11,4 @@ class OrganizationIndex(SearchIndex, Indexable):
         return Organization
 
     def index_queryset(self, using=None):
-        return self.get_model().public.filter().distinct()
+        return self.get_model().objects.all().filter().distinct()

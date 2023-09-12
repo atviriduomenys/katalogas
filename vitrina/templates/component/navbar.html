@@ -60,6 +60,9 @@
                                 <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>
+                                <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
+                                    {% translate "Mano poreikiai" %}
+                                </a>
                                 {% endif %}
                                 {% if user.can_see_manager_dataset_list_url %}
                                 <a href="{% url 'manager-dataset-list' %}" class="navbar-item">

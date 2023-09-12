@@ -214,8 +214,13 @@
 
                                     <div class="tags mt-2 mb-1">
                                       <span class="tag is-white has-text-grey">
-                                          {% translate "Publikuota" %}:
-                                          {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% if i.object.published %}
+                                              {% translate "Publikuota" %}:
+                                              {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% else %}
+                                              {% translate "Sukurta" %}:
+                                              {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                          {% endif %}
                                       </span>
                                       {% if i.object.modified and i.object.modified > i.object.published %}
                                       <span class="tag is-white has-text-grey">
@@ -352,6 +357,30 @@
                     searchParams.set('date_to', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
+                }
+            });
+
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                let manFilterValues = manFilter.nextAll();
+                if (manFilter.val().length !== 0) {
+                    manFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(manFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    manFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    manFilterValues = manFilterValues.slice(0, 10)
+                    manFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
                 }
             });
 

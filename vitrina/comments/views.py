@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import send_mail
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -18,7 +19,9 @@ from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
+from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject
+from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
@@ -65,12 +68,29 @@ class CommentView(
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
 
-            elif form.cleaned_data.get('status'):
+            elif status := form.cleaned_data.get('status'):
                 comment.type = Comment.STATUS
-                obj.status = form.cleaned_data.get('status')
+                obj.status = status
                 obj.comment = comment.body
                 obj.save()
                 set_comment(type(obj).STATUS_CHANGED)
+
+                if isinstance(obj, Request) and status == Request.OPENED:
+                    request_plans = Plan.objects.filter(planrequest__request=obj)
+
+                    for plan in request_plans:
+                        if (
+                            plan.planrequest_set.filter(
+                                request__status=Request.OPENED
+                            ).count() == plan.planrequest_set.count() and
+                            plan.plandataset_set.annotate(
+                                has_distributions=Exists(DatasetDistribution.objects.filter(
+                                    dataset_id=OuterRef('dataset_id'),
+                                ))
+                            ).count() == plan.plandataset_set.count()
+                        ):
+                            plan.is_closed = True
+                            plan.save()
             else:
                 comment.type = Comment.USER
             comment.save()

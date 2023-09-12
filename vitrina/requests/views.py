@@ -15,6 +15,8 @@ from django.db.models import Case, When
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
 from reversion.models import Version
 from haystack.generic_views import FacetedSearchView
+
+from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action, is_representative
@@ -504,13 +506,18 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['request_obj'] = self.request_obj
-        context['plans'] = self.request_obj.planrequest_set.all()
+        if status == 'closed':
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=True)
+        else:
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
             self.request_obj
         ) and is_representative(self.request.user)
+        context['selected_tab'] = status
         return context
 
     def get_plan_object(self):
@@ -539,7 +546,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and is_representative(self.request.user)
+        ) and is_representative(self.request.user) and self.request_obj.is_not_closed()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -564,8 +571,18 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
             plan=self.object,
             request=self.request_obj
         )
-        self.request_obj.status = Request.APPROVED
-        self.request_obj.save()
+
+        if self.request_obj.status != Request.APPROVED:
+            self.request_obj.status = Request.APPROVED
+            self.request_obj.save()
+
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.APPROVED
+            )
 
         set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
         return redirect(reverse('request-plans', args=[self.request_obj.pk]))
@@ -586,7 +603,7 @@ class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and is_representative(self.request.user)
+        ) and is_representative(self.request.user) and self.request_obj.is_not_closed()
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -607,8 +624,18 @@ class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView)
         self.object = form.save(commit=False)
         self.object.request = self.request_obj
         self.object.save()
-        self.request_obj.status = Request.APPROVED
-        self.request_obj.save()
+
+        if self.request_obj.status != Request.APPROVED:
+            self.request_obj.status = Request.APPROVED
+            self.request_obj.save()
+
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.APPROVED
+            )
 
         self.object.plan.save()
         set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas poreikis "{self.request_obj}".'))

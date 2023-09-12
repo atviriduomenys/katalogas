@@ -25,6 +25,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
+from vitrina.plans.models import Plan
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
@@ -1775,3 +1776,34 @@ def test_dataset_update_from_non_public_to_public(app: DjangoTestApp):
 
     assert dataset.is_public is True
     assert dataset.published is not None
+
+
+@pytest.mark.django_db
+def test_add_dataset_to_plan_title(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization)
+
+    form = app.get(reverse('dataset-plans-create', args=[dataset.pk])).forms['plan-form']
+    form.submit()
+
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 1
+    assert plan.first().title == "Duomenų atvėrimas"
+
+
+@pytest.mark.django_db
+def test_add_dataset_to_plan_title_with_distribution(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization)
+    DatasetDistributionFactory(dataset=dataset)
+
+    form = app.get(reverse('dataset-plans-create', args=[dataset.pk])).forms['plan-form']
+    form.submit()
+
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 1
+    assert plan.first().title == "Duomenų rinkinio papildymas"

@@ -334,6 +334,9 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def published_created_sort(self):
+        return self.published or self.created
+
     def get_icon(self):
         root_category_ids = []
         for cat in self.category.all():
@@ -368,6 +371,11 @@ class Dataset(TranslatableModel):
         elif part_of:
             order = 1
         return order
+
+    def get_plan_title(self):
+        if self.datasetdistribution_set.exists():
+            return _("Duomenų rinkinio papildymas")
+        return _("Duomenų atvėrimas")
 
     def get_likes(self):
         from vitrina.likes.models import Like

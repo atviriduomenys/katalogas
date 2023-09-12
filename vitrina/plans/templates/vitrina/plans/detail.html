@@ -22,16 +22,27 @@
                 {{ plan.title }}
             </h3>
 
-            {% if can_manage %}
-                <div class="buttons is-right">
-                    <a href="{%url 'plan-change' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Keisti" %}
-                    </a>
-                    <a href="{%url 'plan-delete' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Trinti" %}
-                    </a>
-                </div>
-            {% endif %}
+             <div class="buttons is-right">
+                 {% if can_close %}
+                    {% if plan.is_closed %}
+                        <a href="{%url 'plan-open' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Atidaryti" %}
+                         </a>
+                    {% else %}
+                         <a href="{%url 'plan-close' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Uždaryti" %}
+                         </a>
+                    {% endif %}
+                 {% endif %}
+                 {% if can_manage %}
+                     <a href="{%url 'plan-change' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Keisti" %}
+                     </a>
+                     <a href="{%url 'plan-delete' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Trinti" %}
+                     </a>
+                 {% endif %}
+             </div>
 
             <div class="content">
                 {% if plan.description %}

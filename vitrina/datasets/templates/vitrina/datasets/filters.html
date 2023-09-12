@@ -42,7 +42,7 @@
 {# selected=selected_status #}
 
 {% for filter in filters %}
-<nav class="category-panel mb-5">
+<nav class="category-panel mb-5" id="filter_id">
 
   {% if filter.stats and active_filter != filter.name %}
   <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
@@ -61,11 +61,11 @@
     </p>
   {% if active_filter != filter.name %}
   </a>
-    {% if filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
+    {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            value="{% translate "Paieška" %}..."
+            placeholder="{% translate "Paieška" %}..."
         >
     {% endif %}
   {% endif %}

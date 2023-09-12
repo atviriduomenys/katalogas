@@ -105,6 +105,7 @@ class Plan(models.Model):
     procurement = models.URLField(_("Nuoroda į viešąjį pirkimą"), null=True, blank=True)
     price = models.FloatField(_("Pirkimo kaina EUR"), null=True, blank=True)
     project = models.ForeignKey(Project, verbose_name=_("Projektas"), on_delete=models.PROTECT, null=True, blank=True)
+    is_closed = models.BooleanField(_("Uždarytas"), default=False)
 
     objects = models.Manager()
 

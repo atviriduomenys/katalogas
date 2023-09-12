@@ -2,8 +2,8 @@
 {% load static %}
 {% load i18n parler_tags %}
 
-{% block pageTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
+{% block pageTitle %} | {% translate "Panaudojimo atvejų sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Panaudojimo atvejų sąrašas" %}{% endblock %}
 
 {% block parent_links %}
     <ul class="p-t-sm">
@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block current_title %}
-{% translate "Projektų sąrašas" %}
+{% translate "Panaudojimo atvejų sąrašas" %}
 {% endblock %}
 
 {% block content %}
@@ -25,7 +25,7 @@
         <div class="buttons is-right">
             <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
                href="{% url 'dataset-project-add' dataset.pk %}">
-                {% translate "Pridėti projektą" %}
+                {% translate "Pridėti panaudojimo atvejį" %}
             </a>
         </div>
     {% endif %}
@@ -74,7 +74,7 @@
         </table>
         {% include "vitrina/common/pagination.html" %}
     {% else %}
-        {% translate "Šio duomenų rinkinio duomenys nėra naudojami nei viename projekte." %}
+        {% translate "Šio duomenų rinkinio duomenys nėra naudojami nei viename panaudojimo atvejyje." %}
     {% endif %}
     <br/>
 {% endblock %}

@@ -14,6 +14,7 @@ class DatasetIndex(SearchIndex, Indexable):
     lt_title_s = CharField(model_attr='lt_title', indexed=False, stored=True)
     en_title = CharField(model_attr='en_title')
     en_title_s = CharField(model_attr='en_title', indexed=False, stored=True)
+    published_created_s = DateTimeField(model_attr='published_created_sort', indexed=False, stored=True)
     jurisdiction = MultiValueField(model_attr='jurisdiction', faceted=True, null=True)
     organization = MultiValueField(model_attr='organization__pk', faceted=True, null=True)
     groups = MultiValueField(model_attr='get_group_list', faceted=True)
@@ -32,7 +33,10 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
-        return self.get_model().public.filter(translations__title__isnull=False).distinct()
+        return self.get_model().objects.all().filter(deleted__isnull=True,
+                                                     deleted_on__isnull=True,
+                                                     organization_id__isnull=False,
+                                                     translations__title__isnull=False).distinct()
 
     def prepare_category(self, obj):
         categories = []
@@ -42,8 +46,9 @@ class DatasetIndex(SearchIndex, Indexable):
         return categories
 
     def prepare_organization(self, obj):
-        if obj.organization.pk != obj.jurisdiction:
-            return obj.organization.pk
+        if obj.organization:
+            if obj.organization.pk != obj.jurisdiction:
+                return obj.organization.pk
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

@@ -10,7 +10,8 @@ from reversion.models import Version
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.plans.factories import PlanFactory
-from vitrina.requests.factories import RequestFactory, RequestStructureFactory
+from vitrina.plans.models import Plan
+from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
@@ -148,3 +149,48 @@ def test_add_request_to_plan_with_representative(app: DjangoTestApp):
     assert resp.url == reverse('request-plans', args=[request.pk])
     assert request.planrequest_set.count() == 1
     assert request.planrequest_set.first().plan == plan
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_with_closed_request(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    request = RequestFactory(status=Request.REJECTED)
+
+    resp = app.get(reverse('request-plans-include', args=[request.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_title(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    request = RequestFactory()
+    request.organizations.add(organization)
+
+    form = app.get(reverse('request-plans-create', args=[request.pk])).forms['plan-form']
+    form.submit()
+
+    plan = Plan.objects.filter(planrequest__request=request)
+    assert plan.count() == 1
+    assert plan.first().title == "Duomenų rinkinio papildymas"
+
+
+@pytest.mark.django_db
+def test_add_request_to_plan_title_error(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    request_object = RequestObjectFactory(
+        external_object_id="123",
+        external_content_type="datasets/Model"
+    )
+    request_object.request.organizations.add(organization)
+
+    form = app.get(reverse('request-plans-create', args=[request_object.request.pk])).forms['plan-form']
+    form.submit()
+
+    plan = Plan.objects.filter(planrequest__request=request_object.request)
+    assert plan.count() == 1
+    assert plan.first().title == "Klaidų duomenyse pataisymas"

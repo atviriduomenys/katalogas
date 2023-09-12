@@ -145,7 +145,7 @@
     </div>
     {% if not dataset.series and not dataset.service %}
         {% if resources %}
-            <div class="columns no-margin-bottom">
+            <div class="columns no-margin-bottom" id="resources">
                 <div class="column is-full">
                     <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
                     {% include 'vitrina/datasets/datatable.html' %}

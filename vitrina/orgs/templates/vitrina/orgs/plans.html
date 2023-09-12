@@ -34,6 +34,22 @@
                 </div>
             {% endif %}
 
+            <div class="tabs is-toggle">
+                <ul>
+                    <li class="{% if selected_tab == 'opened' %}is-active{% endif %}">
+                        <a href="{% url 'organization-plans' organization.pk %}?status=opened">
+                            <span>{% translate "Aktualūs" %}</span>
+                        </a>
+                    </li>
+                    <li class="{% if selected_tab == 'closed' %}is-active{% endif %}">
+                        <a href="{% url 'organization-plans' organization.pk %}?status=closed">
+                            <span>{% translate "Uždaryti" %}</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
             {% if plans %}
                 <div class="table-container">
                     <table class="table is-fullwidth">

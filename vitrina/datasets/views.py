@@ -2411,8 +2411,12 @@ class DatasetPlanView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['dataset'] = self.dataset
-        context['plans'] = self.dataset.plandataset_set.all()
+        if status == 'closed':
+            context['plans'] = self.dataset.plandataset_set.filter(plan__is_closed=True)
+        else:
+            context['plans'] = self.dataset.plandataset_set.filter(plan__is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
@@ -2424,6 +2428,7 @@ class DatasetPlanView(
             Representative,
             self.dataset
         )
+        context['selected_tab'] = status
         return context
 
     def get_history_object(self):

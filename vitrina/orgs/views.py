@@ -496,9 +496,13 @@ class OrganizationPlanView(PlanMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['organization'] = self.organization
         context['organization_id'] = self.organization.pk
-        context['plans'] = self.organization.receiver_plans.all()
+        if status == 'closed':
+            context['plans'] = self.organization.receiver_plans.filter(is_closed=True)
+        else:
+            context['plans'] = self.organization.receiver_plans.filter(is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
@@ -517,6 +521,7 @@ class OrganizationPlanView(PlanMixin, TemplateView):
             Action.HISTORY_VIEW,
             self.organization,
         )
+        context['selected_tab'] = status
         return context
 
     def get_plan_object(self):

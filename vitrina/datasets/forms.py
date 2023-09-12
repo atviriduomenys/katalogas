@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
@@ -60,7 +61,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         )
     )
     files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
-    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
+    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
+            RegexValidator(
+                '([a-z])\w+\/',
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir pasvirųjų brūkšnių"
+            )
+        ])
 
     class Meta:
         model = Dataset
@@ -153,6 +159,7 @@ class DatasetSearchForm(FacetedSearchForm):
 
     def no_query_found(self):
         return self.searchqueryset.all()
+
 
 class DatasetStructureImportForm(forms.ModelForm):
     file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
@@ -297,6 +304,7 @@ class AddRequestForm(forms.ModelForm):
             "rinkinys."
         ),
     )
+
 
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):
     object_model = Dataset
@@ -502,4 +510,4 @@ class PlanForm(OrganizationPlanForm):
             organization_ids = [org.pk for org in self.organizations]
             self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
             self.initial['receiver'] = self.organizations[0]
-        self.initial['title'] = self.obj.title
+        self.initial['title'] = self.obj.get_plan_title()

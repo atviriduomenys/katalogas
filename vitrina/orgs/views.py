@@ -22,6 +22,7 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import get_orgs_for_user, get_all_not_deleted_orgs
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm, OrganizationMergeForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
@@ -46,7 +47,7 @@ class OrganizationListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
-        orgs = Organization.public.all()
+        orgs = get_orgs_for_user(self.request.user)
 
         if query:
             orgs = orgs.filter(title__icontains=query)
@@ -113,6 +114,7 @@ class OrganizationManagementsView(OrganizationListView):
         context['filter'] = 'jurisdiction'
         context['sort'] = sorting
         return context
+
 
 class OrganizationDetailView(PlanMixin, DetailView):
     model = Organization
@@ -388,6 +390,7 @@ class RepresentativeRegisterView(RegisterView):
 class PartnerRegisterInfoView(TemplateView):
     template_name = 'vitrina/orgs/partners/register.html'
 
+
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
     template_name = 'base_form.html'
@@ -412,7 +415,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
         if not org and company_name:
-            if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:

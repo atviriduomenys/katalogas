@@ -78,6 +78,23 @@
             </td>
         </tr>
     {% endif %}
+    {% if public_status != None %}
+        <tr>
+            <th>
+                {% translate "Duomenų rinkinys viešinamas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Duomenų rinkinio viešumo būsena' %}"><i
+                            class="fas fa-info-circle"></i></span>
+            </th>
+            <td>
+              {% if public_status %}
+              {% translate "Taip" %}
+              {% else %}
+              {% translate "Ne" %}
+              {% endif %}
+            </td>
+        </tr>
+    {% endif %}
     {% if harvested %}
         <tr>
             <th>
@@ -149,10 +166,12 @@
     {% endif %}
     <tr>
         <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
+        <td>{{ dataset.created|date:"SHORT_DATETIME_FORMAT" }}</td>
     </tr>
     {% if dataset.modified %}
         <tr>
             <th>{% translate "Paskutinio atnaujinimo data" %}</th>
+            <td>{{ dataset.modified|date:"SHORT_DATETIME_FORMAT" }}</td>
         </tr>
     {% endif %}
     <tr>

@@ -18,7 +18,7 @@
         <div class="column">
             {% if can_manage_plans %}
                 <div class="buttons is-right">
-                    {% if request_obj.is_created %}
+                    {% if request_obj.is_not_closed %}
                         <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                            href="{% url 'request-plans-include' request_obj.pk %}">
                             {% translate "Įtraukti į terminą" %}

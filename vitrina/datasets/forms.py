@@ -504,4 +504,4 @@ class PlanForm(OrganizationPlanForm):
             organization_ids = [org.pk for org in self.organizations]
             self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
             self.initial['receiver'] = self.organizations[0]
-        self.initial['title'] = self.obj.title
+        self.initial['title'] = self.obj.get_plan_title()

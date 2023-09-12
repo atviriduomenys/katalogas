@@ -39,5 +39,6 @@ services:
       - 127.0.0.1:9200:9200
     environment:
       discovery.type: 'single-node'
+      indices.query.bool.max_clause_count: 8192
     volumes:
       - ./var/elasticsearch:/usr/share/elasticsearch/data

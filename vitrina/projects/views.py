@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
@@ -36,7 +37,10 @@ class ProjectListView(ListView):
     def get_queryset(self):
         qs = super().get_queryset()
         if not self.has_update_perm:
-            qs = qs.filter(status=Project.APPROVED)
+            if self.request.user.is_authenticated:
+                qs = qs.filter(Q(status=Project.APPROVED) | Q(user=self.request.user))
+            else:
+                qs = qs.filter(status=Project.APPROVED)
         return qs.order_by('-created')
 
     def get_context_data(self, **kwargs):

@@ -13,6 +13,7 @@ class OrganizationFactory(DjangoModelFactory):
 
     title = factory.Faker('company')
     kind = factory.Faker('word')
+    is_public = True
     version = 1
 
     @classmethod

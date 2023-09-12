@@ -181,7 +181,6 @@
               </div>
             </div>
 
-
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
                 <article class="media adp-media is-block">
@@ -215,8 +214,13 @@
 
                                     <div class="tags mt-2 mb-1">
                                       <span class="tag is-white has-text-grey">
-                                          {% translate "Publikuota" %}:
-                                          {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% if i.object.published %}
+                                              {% translate "Publikuota" %}:
+                                              {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% else %}
+                                              {% translate "Sukurta" %}:
+                                              {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                          {% endif %}
                                       </span>
                                       {% if i.object.modified and i.object.modified > i.object.published %}
                                       <span class="tag is-white has-text-grey">
@@ -231,6 +235,15 @@
                                       </a>
                                       {% endif %}
                                     </div>
+                                      <span class="tag is-white has-text-grey">
+                                          {% translate "Duomenų rinkinys viešinamas" %}:
+                                          {% if i.object.is_public %}
+                                          {% translate "Taip" %}
+                                          {% else %}
+                                          {% translate "Ne" %}
+                                          {% endif %}
+                                      </span>
+
 
 
                                     <p class="dataset-list-description my-1">

@@ -506,13 +506,18 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['request_obj'] = self.request_obj
-        context['plans'] = self.request_obj.planrequest_set.all()
+        if status == 'closed':
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=True)
+        else:
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
             self.request_obj
         ) and is_representative(self.request.user)
+        context['selected_tab'] = status
         return context
 
     def get_plan_object(self):

@@ -28,8 +28,6 @@ def test_request_create(app: DjangoTestApp):
     form = app.get(reverse("request-create")).forms['request-form']
     form['title'] = "Request"
     form['description'] = "Description"
-    resp = form.submit().follow()
-    form = resp.forms['request-add-org-form']
     resp = form.submit()
     added_request = Request.objects.filter(title="Request")
     assert added_request.count() == 1

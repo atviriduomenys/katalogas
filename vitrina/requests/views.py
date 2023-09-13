@@ -32,7 +32,7 @@ from vitrina.classifiers.models import Category
 from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 
 from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestAddOrgForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
+from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
 
 from django.utils.translation import gettext_lazy as _
 
@@ -310,29 +310,6 @@ class RequestCreateView(
         return has_perm(self.request.user, Action.CREATE, Request)
 
     def form_valid(self, form):
-        self.request.session['title'] = form.cleaned_data.get('title')
-        self.request.session['description'] = form.cleaned_data.get('description')
-        return HttpResponseRedirect(reverse('request-add-org'))
-
-    def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        context_data['current_title'] = _('Poreikio registravimas')
-        return context_data
-
-class RequestAddOrgView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    RevisionMixin,
-    CreateView,
-):
-    model = Request
-    form_class = RequestAddOrgForm
-    template_name = 'base_form.html'
-
-    def has_permission(self):
-        return has_perm(self.request.user, Action.CREATE, Request)
-
-    def form_valid(self, form):
         orgs = form.cleaned_data.get('organizations')
         self.object = form.save(commit=False)
         self.object.user = self.request.user
@@ -364,15 +341,6 @@ class RequestAddOrgView(
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
         return context_data
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['initial'] = {}
-        if 'title' in self.request.session:
-            kwargs['initial']['title'] = self.request.session['title']
-        if 'description' in self.request.session:
-            kwargs['initial']['description'] = self.request.session['description']
-        return kwargs
 
 class RequestOrgEditView(
     LoginRequiredMixin,

@@ -122,22 +122,6 @@ class RequestListView(FacetedSearchView):
                     multiple=True,
                     is_int=False,
                 ),
-                Filter(
-                    *filter_args,
-                    'category',
-                    _("Kategorija"),
-                    Category,
-                    multiple=True,
-                    is_int=False,
-                    parent='parent_category',
-                ),
-                Filter(
-                    *filter_args,
-                    'tags',
-                    _("Žymė"),
-                    multiple=True,
-                    is_int=False,
-                ),
                 DateFilter(
                     self.request,
                     form,

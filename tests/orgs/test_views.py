@@ -90,7 +90,7 @@ def organizations():
 @pytest.mark.django_db
 def test_search_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db
@@ -108,7 +108,7 @@ def test_search_with_query_that_matches_one(app: DjangoTestApp, organizations):
 @pytest.mark.django_db
 def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=%s" % (reverse('organization-list'), "organization"))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db

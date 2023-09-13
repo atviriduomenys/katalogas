@@ -56,27 +56,6 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
-
-    class Meta:
-        model = Request
-        fields = ['title', 'description']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        request_instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if request_instance else _("Toliau")
-        self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
-        self.helper.form_id = "request-form"
-        self.helper.layout = Layout(
-            Field('title', placeholder=_('Pavadinimas')),
-            Field('description', placeholder=_('Aprašymas')),
-            Submit('submit', button, css_class='button is-primary')
-        )
-
-class RequestAddOrgForm(ModelForm):
-    title = CharField(label=_("Pavadinimas"))
-    description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
         label="Organizacija",
         widget=ProviderWidget,
@@ -87,21 +66,30 @@ class RequestAddOrgForm(ModelForm):
 
     class Meta:
         model = Request
-        fields = ['title', 'description', 'organizations']
+        fields = ['title', 'description']
 
-    def __init__(self, *args, initial={}, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        button = _("Sukurti")
+        request_instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if request_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
-        self.helper.form_id = "request-add-org-form"
-        self.helper.layout = Layout(
-            Field('title', value=initial.get('title'), placeholder=_('Pavadinimas'), readonly=True),
-            Field('description', placeholder=_('Aprašymas'), readonly=True),
-            Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
-            Submit('submit', button, css_class='button is-primary')
-        )
-        self.fields['description'].initial = initial.get('description')
+        self.helper.form_id = "request-form"
+        if request_instance:
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas')),
+                Field('description', placeholder=_('Aprašymas')),
+                Submit('submit', button, css_class='button is-primary')
+            )
+        else:
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas')),
+                Field('description', placeholder=_('Aprašymas')),
+                Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
+                Submit('submit', button, css_class='button is-primary')
+            )
+
+
 
 class RequestEditOrgForm(ModelForm):
     organizations = ModelMultipleChoiceField(

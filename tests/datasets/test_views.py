@@ -110,6 +110,21 @@ def search_datasets():
 
 
 @pytest.mark.haystack
+def test_dataset_list_view_anon_user_with_datasets(app: DjangoTestApp):
+    DatasetFactory()
+    DatasetFactory()
+    DatasetFactory()
+    resp = app.get(reverse('dataset-list'))
+    assert len(resp.context['object_list']) == 3
+
+
+@pytest.mark.haystack
+def test_dataset_list_view_anon_user_without_datasets(app: DjangoTestApp):
+    resp = app.get(reverse('dataset-list'))
+    assert len(resp.context['object_list']) == 0
+
+
+@pytest.mark.haystack
 def test_org_dataset_url_is_hidden_for_anon_user(app: DjangoTestApp):
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='org-dataset-url')

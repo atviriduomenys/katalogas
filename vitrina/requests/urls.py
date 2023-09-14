@@ -1,7 +1,6 @@
 from django.urls import path
 
-from vitrina.requests.views import RequestAddOrgView, \
-    RequestDatasetView, RequestOrganizationView, RequestDeleteDatasetView
+from vitrina.requests.views import RequestDatasetView, RequestOrganizationView, RequestDeleteDatasetView
 from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView, RequestHistoryView, \
     RequestPublicationStatsView, RequestYearStatsView, RequestQuarterStatsView, RequestOrgEditView
 from vitrina.requests.views import RequestDetailView
@@ -22,7 +21,6 @@ urlpatterns = [
     # @GetMapping("/requests/info")
     # @GetMapping("/requests/request")
     path('requests/add/', RequestCreateView.as_view(), name='request-create'),
-    path('requests/add-org/', RequestAddOrgView.as_view(), name='request-add-org'),
     path('requests/<int:pk>/change/', RequestUpdateView.as_view(), name='request-update'),
     path('requests/<int:pk>/history/', RequestHistoryView.as_view(), name='request-history'),
     path('requests/<int:pk>/plans/', RequestPlanView.as_view(), name='request-plans'),

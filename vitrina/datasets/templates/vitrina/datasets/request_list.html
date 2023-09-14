@@ -21,15 +21,6 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-    {% if can_add_request and user_requests %}
-   <div class="buttons is-right">
-        <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
-            href="{% url 'dataset-request-add' dataset.pk %}">
-            {% translate "Pridėti poreikį" %}
-        </a>
-    </div>
-    {% endif %}
-
     {% if page_obj %}
         <table class="table is-fullwidth">
             <tbody>
@@ -71,7 +62,21 @@
         </table>
         {% include "vitrina/common/pagination.html" %}
     {% else %}
-        {% translate "Šis duomenų rinkinys neturi jam registruotų poreikių." %}
+        <div class="columns">
+            <div class="column">
+                {% translate "Šis duomenų rinkinys neturi jam registruotų poreikių." %}
+            </div>
+            {% if can_add_request and user_requests %}
+                <div class="column">
+                    <div class="buttons is-right">
+                    <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+                        href="{% url 'dataset-request-add' dataset.pk %}">
+                        {% translate "Pridėti poreikį" %}
+                    </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     {% endif %}
     <br/>
 {% endblock %}

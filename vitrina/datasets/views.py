@@ -148,7 +148,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         context = super().get_context_data(**kwargs)
         datasets = self.get_queryset()
         facet_fields = context.get('facets').get('fields')
-        date_facets = context['facets']['dates']
+        date_facets = context.get('facets').get('dates')
         form = context.get('form')
         sorting = self.request.GET.get('sort', None)
         filter_args = (self.request, form, facet_fields)

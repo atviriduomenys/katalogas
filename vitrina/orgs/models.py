@@ -52,9 +52,11 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
+    GROUP = "group"
     MINISTRY = "ministry"
     MUNICIPALITY = "municipality"
     ROLES = (
+        (GROUP, _("Grupė")),
         (MINISTRY, _("Ministerija")),
         (MUNICIPALITY, _("Savivaldybė"))
     )

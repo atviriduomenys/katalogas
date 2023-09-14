@@ -949,6 +949,11 @@ class DatasetProjectsView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['dataset'] = self.object
+        context['can_add_projects'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.object,
+        )
         context['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1151,7 +1156,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.project)
+        return has_perm(self.request.user, Action.UPDATE, self.project) or self.request.user == self.project.user
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.dataset.pk}))

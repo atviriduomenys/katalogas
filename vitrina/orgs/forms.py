@@ -282,10 +282,8 @@ class OrganizationPlanForm(ModelForm):
         self.initial['user_id'] = self.user.pk
 
         if not instance:
-            if self.user.organization and self.user.organization.provider:
+            if self.user.organization:
                 self.initial['provider'] = self.user.organization
-            elif self.organizations:
-                self.initial['provider'] = self.organizations[0]
 
     def clean(self):
         provider = self.cleaned_data.get('provider')

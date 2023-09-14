@@ -28,12 +28,8 @@
             {% if can_manage_plans %}
                 <div class="buttons is-right">
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                       href="{% url 'dataset-plans-include' dataset.pk %}">
-                        {% translate "Įtraukti į terminą" %}
-                    </a>
-                    <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
                        href="{% url 'dataset-plans-create' dataset.pk %}">
-                        {% translate "Naujas terminas" %}
+                        {% translate "Įtraukti į planą" %}
                     </a>
                 </div>
             {% endif %}

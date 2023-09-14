@@ -549,6 +549,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-plans', args=[self.organization.pk]): _("Planas"),
         }
         return context
 

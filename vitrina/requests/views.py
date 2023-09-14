@@ -1,3 +1,4 @@
+from typing import List
 
 from django.views.generic import CreateView, UpdateView, DetailView
 from collections import OrderedDict
@@ -9,7 +10,7 @@ from datetime import date
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.db.models import Case, When
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
@@ -482,15 +483,15 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
         return self.request_obj
 
 
-class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    model = Plan
-    form_class = PlanForm
-    template_name = 'vitrina/plans/form.html'
+class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView):
+    template_name = 'vitrina/plans/plan_form.html'
 
     request_obj: Request
+    organizations: List[Organization]
 
     def dispatch(self, request, *args, **kwargs):
         self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
+        self.organizations = self.request_obj.organizations.all()
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -502,96 +503,55 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas terminas")
+        context['obj'] = self.request_obj
+        context['create_form'] = PlanForm(self.request_obj, self.organizations, self.request.user)
+        context['include_form'] = RequestPlanForm(self.request_obj)
+        context['current_title'] = _("Įtraukti į planą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
             reverse('request-detail', args=[self.request_obj.pk]): self.request_obj.title,
+            reverse('request-plans', args=[self.request_obj.pk]): _("Planas"),
         }
         return context
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['obj'] = self.request_obj
-        kwargs['user'] = self.request.user
-        kwargs['organizations'] = self.request_obj.organizations.all()
-        return kwargs
+    def post(self, request, *args, **kwargs):
+        form_type = request.POST.get('form_type')
+        if form_type == 'create_form':
+            form = PlanForm(self.request_obj, self.organizations, request.user, request.POST)
+        else:
+            form = RequestPlanForm(self.request_obj, request.POST)
 
-    def form_valid(self, form):
-        self.object = form.save()
-        PlanRequest.objects.create(
-            plan=self.object,
-            request=self.request_obj
-        )
+        if form.is_valid():
+            if form_type == 'create_form':
+                plan = form.save()
+                PlanRequest.objects.create(
+                    plan=plan,
+                    request=self.request_obj
+                )
+                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
 
-        if self.request_obj.status != Request.APPROVED:
-            self.request_obj.status = Request.APPROVED
-            self.request_obj.save()
+            else:
+                plan_request = form.save(commit=False)
+                plan_request.request = self.request_obj
+                plan_request.save()
+                plan = plan_request.plan
+                plan.save()
+                set_comment(_(f'Į terminą "{plan}" įtrauktas poreikis "{self.request_obj}".'))
 
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(self.request_obj),
                 object_id=self.request_obj.pk,
                 user=self.request.user,
-                type=Comment.STATUS,
-                status=Comment.APPROVED
+                type=Comment.PLAN,
+                rel_content_type=ContentType.objects.get_for_model(plan),
+                rel_object_id=plan.pk
             )
-
-        set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
-        return redirect(reverse('request-plans', args=[self.request_obj.pk]))
-
-
-class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    form_class = RequestPlanForm
-    template_name = 'base_form.html'
-
-    request_obj: Dataset
-
-    def dispatch(self, request, *args, **kwargs):
-        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def has_permission(self):
-        return has_perm(
-            self.request.user,
-            Action.PLAN,
-            self.request_obj
-        ) and is_representative(self.request.user) and self.request_obj.is_not_closed()
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request_obj
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Poreikio įtraukimas į terminą")
-        context['parent_links'] = {
-            reverse('home'): _('Pradžia'),
-            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
-            reverse('request-detail', args=[self.request_obj.pk]): self.request_obj.title,
-        }
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.request = self.request_obj
-        self.object.save()
-
-        if self.request_obj.status != Request.APPROVED:
-            self.request_obj.status = Request.APPROVED
-            self.request_obj.save()
-
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(self.request_obj),
-                object_id=self.request_obj.pk,
-                user=self.request.user,
-                type=Comment.STATUS,
-                status=Comment.APPROVED
-            )
-
-        self.object.plan.save()
-        set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas poreikis "{self.request_obj}".'))
-        return redirect(reverse('request-plans', args=[self.request_obj.pk]))
+            return redirect(reverse('request-plans', args=[self.request_obj.pk]))
+        else:
+            context = self.get_context_data(**kwargs)
+            context[form_type] = form
+            return render(request=request, template_name=self.template_name, context=context)
 
 
 class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):

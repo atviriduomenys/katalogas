@@ -382,7 +382,7 @@ def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
     form['title'] = "Test plan"
     form['description'] = "Plan for testing"
-    form['provider'] = organization.pk
+    form['provider'].force_value(organization.pk)
     form['provider_title'] = "Provider"
     resp = form.submit()
 
@@ -400,6 +400,8 @@ def test_organization_plan_create(app: DjangoTestApp):
         object_id=organization.pk,
         role=Representative.MANAGER
     )
+    rep.user.organization = organization
+    rep.user.save()
     app.set_user(rep.user)
 
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']

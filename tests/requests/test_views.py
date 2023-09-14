@@ -124,7 +124,7 @@ def test_add_request_to_plan_with_non_representative(app: DjangoTestApp):
     app.set_user(user)
     request = RequestFactory(user=user)
 
-    resp = app.get(reverse('request-plans-include', args=[request.pk]), expect_errors=True)
+    resp = app.get(reverse('request-plans-create', args=[request.pk]), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -142,7 +142,7 @@ def test_add_request_to_plan_with_representative(app: DjangoTestApp):
         deadline=(date.today() + timedelta(days=1))
     )
 
-    form = app.get(reverse('request-plans-include', args=[request.pk])).forms['request-plan-form']
+    form = app.get(reverse('request-plans-create', args=[request.pk])).forms['request-plan-form']
     form['plan'] = plan.pk
     resp = form.submit()
 
@@ -157,7 +157,7 @@ def test_add_request_to_plan_with_closed_request(app: DjangoTestApp):
     app.set_user(user)
     request = RequestFactory(status=Request.REJECTED)
 
-    resp = app.get(reverse('request-plans-include', args=[request.pk]), expect_errors=True)
+    resp = app.get(reverse('request-plans-create', args=[request.pk]), expect_errors=True)
     assert resp.status_code == 403
 
 

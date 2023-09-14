@@ -1692,7 +1692,7 @@ def test_add_dataset_to_plan(app: DjangoTestApp):
         deadline=(date.today() + timedelta(days=1))
     )
 
-    form = app.get(reverse('dataset-plans-include', args=[dataset.pk])).forms['dataset-plan-form']
+    form = app.get(reverse('dataset-plans-create', args=[dataset.pk])).forms['dataset-plan-form']
     form['plan'] = plan.pk
     resp = form.submit()
 

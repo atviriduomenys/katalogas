@@ -38,8 +38,8 @@
             <div class="buttons is-right">
                 {% if request_object.is_not_closed and can_manage_plans %}
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                       href="{% url 'request-plans-include' request_object.pk %}">
-                        {% translate "Įtraukti į terminą" %}
+                       href="{% url 'request-plans-create' request_object.pk %}">
+                        {% translate "Įtraukti į planą" %}
                     </a>
                 {% endif %}
                 {% if can_update_request %}

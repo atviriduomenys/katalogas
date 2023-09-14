@@ -5,7 +5,8 @@ from crispy_forms.layout import Layout, Div, Field, Submit
 from haystack.forms import FacetedSearchForm, SearchForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, Textarea, ModelChoiceField, RadioSelect, DateField
+from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, \
+    Textarea, ModelChoiceField, RadioSelect, DateField, HiddenInput
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2MultipleWidget
 from vitrina.requests.search_indexes import RequestIndex
@@ -126,6 +127,7 @@ class RequestEditOrgForm(ModelForm):
             Submit('submit', button, css_class='button is-primary')
         )
 
+
 class RequestSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
@@ -147,7 +149,10 @@ class RequestSearchForm(FacetedSearchForm):
 
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
-        return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+        if obj.deadline:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+        else:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class RequestPlanForm(ModelForm):
@@ -156,6 +161,7 @@ class RequestPlanForm(ModelForm):
         widget=RadioSelect(),
         queryset=Plan.objects.all()
     )
+    form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
         model = PlanRequest
@@ -168,6 +174,7 @@ class RequestPlanForm(ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-plan-form"
         self.helper.layout = Layout(
+            Field('form_type'),
             Field('plan'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )

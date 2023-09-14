@@ -50,8 +50,10 @@
                         {% if selected_jurisdiction %}
                             {% for jurisdiction in jurisdictions %}
                                 {% if jurisdiction.title == selected_jurisdiction %}
-                                <div class="columns is-gapless  m-0 mt-1">
-                                    <span class="icon" onclick="removeFilter('{{ jurisdiction.title }}')" style="cursor: pointer;">
+                                <div class="columns is-gapless  m-0 mt-1" style="cursor: pointer;"
+                                     onclick="removeFilter('{{ jurisdiction.title }}')"
+                                >
+                                    <span class="icon">
                                         <i class="far fa-check-square"></i>
                                     </span>
 

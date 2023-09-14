@@ -118,15 +118,15 @@ def test_filter_without_query(app: DjangoTestApp, organizations):
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
         {
+            'title': 'Jurisdiction2',
+            'query': "?jurisdiction=Jurisdiction2",
+            'count': 2
+        },
+        {
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 2
-        }
     ]
 
 

@@ -30,8 +30,10 @@
                         {% if selected_jurisdiction %}
                             {% for jurisdiction in jurisdictions %}
                                 {% if jurisdiction.title == selected_jurisdiction %}
-                                <div class="columns is-gapless  m-0 mt-1">
-                                    <span class="icon" onclick="removeFilter('{{ jurisdiction.title }}')" style="cursor: pointer;">
+                                <div class="columns is-gapless  m-0 mt-1" style="cursor: pointer;"
+                                     onclick="removeFilter('{{ jurisdiction.title }}')"
+                                >
+                                    <span class="icon">
                                         <i class="far fa-check-square"></i>
                                     </span>
 
@@ -78,13 +80,7 @@
         </div>
 
         <div class="column is-three-quarters">
-            <div class="is-flex">
-                <span>{% translate "Valdymo sritis" %}</span>
-                <div class="stays-right">
-                    {% translate "Organizacijų sk." %}
-                </div>
-            </div>
-            <div class="is-flex">
+            <div class="is-flex mb-3">
                 <div class="stays-right">
                     <form action="/organizations/stats/{{ filter }}" method="GET">
                         <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
@@ -97,21 +93,26 @@
                     </form>
                 </div>
             </div>
+            <div class="is-flex mb-3">
+                <span>{% translate "Valdymo sritis" %}</span>
+                <div class="stays-right">
+                    {% translate "Organizacijų sk." %}
+                </div>
+            </div>
 
-            {% for org, ov in jurisdiction_data.items %}
+            {% for jurisdiction in jurisdiction_data %}
                     <div class="is-flex">
-                        <a href="/organizations/stats/jurisdiction/{{ org.pk }}?{{ request.GET.urlencode }}"
-                            id="{{ area.filter_value }}_id">
-                            <strong style="color: black;">{{ org }}</strong>
+                        <a href="{% url 'organization-list' %}{{ jurisdiction.query }}">
+                            <strong style="color: black;">{{ jurisdiction.title }}</strong>
                         </a>
                         <div class="stays-right">
-                            <a href="/datasets/{{ org.url }}">
-                                {{ ov }}
+                            <a href="{% url 'organization-list' %}{{ jurisdiction.query }}">
+                                {{ jurisdiction.count }}
                             </a>
                         </div>
                     </div>
                     <progress class="progress is-info"
-                        value="{{ ov }}"
+                        value="{{ jurisdiction.count }}"
                         max="{{ max_count }}">
                     </progress>
                 {% endfor %}

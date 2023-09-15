@@ -30,7 +30,7 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
     def build_attrs(self, base_attrs, extra_attrs=None):
         base_attrs = super().build_attrs(base_attrs, extra_attrs)
         base_attrs.update(
-            {"data-minimum-input-length": 0, "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius, kad matytumet daugiau rezultatų", "style": "width: 650px"}
+            {"data-minimum-input-length": 0, "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius, kad matytumet daugiau rezultatų", "style": "min-width: 650px;"}
         )
         return base_attrs
 

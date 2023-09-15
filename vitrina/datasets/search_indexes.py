@@ -1,4 +1,4 @@
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField
+from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField, BooleanField
 from django.db import models
 
 from haystack import signals
@@ -28,6 +28,8 @@ class DatasetIndex(SearchIndex, Indexable):
     level = IntegerField(model_attr='get_level', faceted=True, null=True)
     type = MultiValueField(model_attr='public_types', faceted=True)
     type_order = IntegerField(model_attr='type_order')
+    is_public = BooleanField(model_attr='is_public', faceted=True, null=False)
+    managers = MultiValueField(model_attr='get_managers', faceted=True)
 
     def get_model(self):
         return Dataset

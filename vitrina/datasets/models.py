@@ -15,7 +15,7 @@ from random import randrange
 
 from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
@@ -291,6 +291,12 @@ class Dataset(TranslatableModel):
 
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
+
+    def get_managers(self):
+        ct = ContentType.objects.get_for_model(Dataset)
+        return list(Representative.objects.filter(
+            content_type=ct, object_id=self.id
+        ).values_list('user_id', flat=True))
 
     @property
     def language_array(self):

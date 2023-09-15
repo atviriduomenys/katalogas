@@ -142,6 +142,8 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
+    objects = models.Manager()
+
     class Meta:
         db_table = 'representative'
         unique_together = ['content_type', 'object_id', 'user']

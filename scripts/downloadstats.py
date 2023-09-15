@@ -1,11 +1,17 @@
 import resource
 import os
 import json
+import urllib.parse
+
 from pathlib import Path
 from datetime import datetime
-import requests as req
-from typer import run, Option
+
 import user_agents
+import requests as req
+
+from typer import run, Option
+from typer import Argument
+from collections import deque
 
 bots = {
     'SemrushBot',
@@ -21,43 +27,39 @@ bots = {
     'Adsbot'
 }
 
-config_file = os.path.expanduser('~') + '/.config/vitrina/downloadstats.json'
-state_file = os.path.expanduser('~') + '/.local/share/vitrina/state.json'
-bot_status_file = os.path.expanduser('~') + '/.local/share/vitrina/downloadstats.json'
-current_state = {}
-
-entries = []
-lines = []
-transactions = {}
-
 
 def main(
-        s: str = Option("get.data.gov.lt accesslog.dev-1.json", help=(
-                "source url and log file absolute path"
-        )),
-        endpoint: str = Option("http://localhost:8000/partner/api/1/downloads", help=(
-            "api endpoint for posting data"
-        ))
+    name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
+    logfile: str = Argument(..., help=(
+        "log file to read stats from, i.e. accesslog.json"
+    )),
+    target: str = Option("http://localhost:8000", help=(
+        "target server url"
+    )),
+    config_file: str = Option('/.config/vitrina/downloadstats.json'),
+    state_file: str = Option('/.local/share/vitrina/state.json'),
+    bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
 ):
+    config_file = os.path.expanduser('~') + config_file
+    state_file = os.path.expanduser('~') + state_file
+    bot_status_file = os.path.expanduser('~') + bot_status_file
+    current_state = {}
+
     bots_found = {'agents': {}}
     final_stats = {}
-    source = s.split(' ')[0]
-    target = s.split(' ')[1]
-    file_size = os.path.getsize(target)
+    file_size = os.path.getsize(logfile)
     existing_size = 0
     existing_offset = 0
-    existing_bytes = 0
 
     if not os.path.exists(os.path.dirname(state_file)):
         os.makedirs(os.path.dirname(state_file))
     else:
-        with open(state_file, 'r') as state:
-            current_state = json.load(state)
-            for val in current_state.get('files'):
-                if target == val:
-                    existing_size = current_state.get('files').get(target).get('size')
-                    existing_offset = current_state.get('files').get(target).get('lines')
-                    existing_bytes = current_state.get('files').get(target).get('offset')
+        with open(state_file, 'r') as f:
+            current_state = json.load(f)
+        state = current_state.get('files').get(logfile)
+        if state is not None:
+            existing_size = state.get('size')
+            existing_offset = state.get('offset')
 
     if not os.path.exists(os.path.dirname(bot_status_file)):
         os.makedirs(os.path.dirname(bot_status_file))
@@ -65,101 +67,118 @@ def main(
         file = Path(bot_status_file)
         file.touch(exist_ok=True)
     else:
-        with open(bot_status_file, 'r') as state:
+        with open(bot_status_file, 'r') as f:
             if os.path.getsize(bot_status_file) > 0:
-                bots_found = json.load(state)
+                bots_found = json.load(f)
 
     if os.path.exists(config_file):
         with open(config_file, 'r') as config:
             bot_list = json.load(config).get('bots')
             bots.update(bot_list)
 
-    if not os.path.exists(target):
-        print(f'File {target} not found. Aborting.')
-    else:
-        if file_size != existing_size:
-            with open(target) as f:
-                bytesread = 0
-                lines = 0
-                if existing_offset > 0:
-                    f.seek(existing_offset)
-                while True:
-                    line1 = f.readline()
-                    line2 = f.readline()
-                    bytesread += len(line1)
-                    bytesread += len(line2)
-                    lines += 2
-                    if 'txn' in line1 and 'txn' in line2:
-                        entry1 = json.loads(line1)
-                        entry2 = json.loads(line2)
-                        entry = entry1 | entry2
-                        txn1 = entry1['txn']
-                        txn2 = entry2['txn']
-                        if txn1 == txn2:
-                            timestamp = entry['time']
-                            dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                        if 'time' in entry.keys() and 'model' in entry.keys() and 'objects' in entry.keys():
-                            model = entry.get('model')
-                            objects = entry.get('objects')
-                            date = dt.date()
-                            hour = dt.hour
-                            frmt = ''
-                            agent = ''
-                            requests = 0
+    if not os.path.exists(logfile):
+        print(f'File {logfile} not found. Aborting.')
+        return
 
-                            if 'format' in entry.keys():
-                                frmt = entry.get('format')
-                            if 'type' in entry.keys():
-                                if entry.get('type') == 'request':
-                                    requests = 1
-                            if 'agent' in entry.keys():
-                                agent = entry.get('agent')
-                            obj = [{'date': date, 'hour': hour, 'format': frmt, 'reqs': requests, 'count': objects,
-                                   'agent': agent}]
+    if file_size == existing_size:
+        # File did not change?
+        return
+
+    endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
+    session = req.Session()
+
+    transactions = {}
+
+    d = deque([], maxlen=1000)
+    with open(logfile) as f:
+        bytesread = 0
+        if existing_offset > 0:
+            f.seek(existing_offset)
+        for line in f:
+            bytesread += len(str.encode(line))
+            d.append(line)
+        for i in d:
+            if 'txn' in i:
+                entry = json.loads(i)
+                txn = entry['txn']
+                timestamp = entry['time']
+                dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+                requests = 1
+                if txn not in transactions:
+                    transactions[txn] = {'time': dt}
+                if 'model' in entry:
+                    model = entry.get('model')
+                    transactions[txn]['model'] = model
+                if 'objects' in entry:
+                    objects = entry.get('objects')
+                    transactions[txn]['objects'] = objects
+                if 'format' in entry:
+                    frmt = entry.get('format')
+                    transactions[txn]['format'] = frmt
+                if 'type' in entry:
+                    transactions[txn]['type'] = entry.get('type')
+                    transactions[txn]['requests'] = requests
+                if 'agent' in entry:
+                    transactions[txn]['agent'] = entry.get('agent')
+                if txn in transactions:
+                    if transactions[txn].get('objects') is not None and transactions[txn].get('model') is not None:
+                        model = transactions[txn].get('model')
+                        dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+                        date = dt.date()
+                        hour = dt.hour
+                        agent = entry.get('agent', '')
+                        obj = [
+                            {
+                                'date': date,
+                                'hour': hour,
+                                'format': frmt,
+                                'reqs': requests,
+                                'count': objects,
+                                'agent': agent,
+                            }
+                        ]
+                        if len(model) > 0:
                             if model not in final_stats:
                                 final_stats[model] = obj
-                            if agent in bots:
-                                bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
-                            else:
-                                format_string = '%Y-%m-%d %H:%M:%S'
-                                date_string = dt.strftime(format_string)
-                                data = {
-                                    "source": source,
-                                    "model": model,
-                                    "format": frmt,
-                                    "time": date_string,
-                                    "requests": requests,
-                                    "objects": objects
-                                }
-                                r = req.post(url=endpoint, data=data)
-                                print(f"Status Code: {r.status_code}, Response: {r.json()}")
+                        if agent in bots:
+                            bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
+                        else:
+                            format_string = '%Y-%m-%d %H:%M:%S'
+                            date_string = dt.strftime(format_string)
+                            data = {
+                                "source": name,
+                                "model": model,
+                                "format": frmt,
+                                "time": date_string,
+                                "requests": requests,
+                                "objects": objects
+                            }
+                            transactions.pop(txn)
+                            r = session.post(endpoint_url, data=data)
+                            print(f"Status Code: {r.status_code}, Response: {r.json()}")
 
-                    with open(bot_status_file, "w+") as bot_file:
-                        bot_file.write(json.dumps(bots_found, indent=4))
+                with open(bot_status_file, "w+") as bot_file:
+                    bot_file.write(json.dumps(bots_found, indent=4))
 
-                    if not line1 or not line2:
-                        break
+            state_entry = {
+                logfile: {
+                    'size': file_size,
+                    'offset': bytesread
+                }
+            }
 
-                state_entry = {
-                    target: {
-                        'size': file_size,
-                        'lines': lines,
-                        'offset': bytesread
-                    }}
+    current_state.get('files', {}).update(state_entry)
 
-            f.close()
+    with open(state_file, "w") as outfile:
+        outfile.write(json.dumps(current_state, indent=4))
 
-            current_state.get('files', {}).update(state_entry)
+    with open(bot_status_file, "w+") as bot_file:
+        bot_file.write(json.dumps(bots_found, indent=4))
 
-            with open(state_file, "w") as outfile:
-                outfile.write(json.dumps(current_state, indent=4))
+    print(f'Total model entries found: {len(final_stats.keys())}')
+    print(f'Total transaction entries in file: {len(transactions)}')
+    print(f'Peak Memory Usage = {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}')
 
-            with open(bot_status_file, "w+") as bot_file:
-                bot_file.write(json.dumps(bots_found, indent=4))
-
-            print(f'Total model entries found: {len(final_stats.keys())}')
-            # print(f'Total transaction entries in file: {len(transactions)}')
-            print(f'Peak Memory Usage = {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}')
 
 def parse_user_agent(agent):
     if isinstance(agent, str):

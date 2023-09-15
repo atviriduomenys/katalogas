@@ -24,10 +24,6 @@
     {% if page_obj %}
         <table class="table is-fullwidth">
             <tbody>
-                <tr>
-                    <th></th>
-                    <th></th>
-                </tr>
                 {% for request_obj in page_obj %}
                     <tr>
                     <td>
@@ -50,7 +46,7 @@
                     </td>
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-request-{{ request_obj.request.pk }}-btn"  class="button is-danger is-small"
+                                <a id="remove-request-{{ request_obj.request.pk }}-btn"  class="button is-link is-small"
                                    href="{% url 'dataset-request-remove' dataset.pk request_obj.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>

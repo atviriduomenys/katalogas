@@ -32,12 +32,6 @@
     {% if page_obj %}
         <table class="table is-fullwidth">
             <tbody>
-                <tr>
-                    <th></th>
-                    {% if can_add_projects %}
-                        <th></th>
-                    {% endif %}
-                </tr>
                 {% for project in page_obj %}
                     <tr>
                     <td>
@@ -61,7 +55,7 @@
                     {% if can_add_projects or project.user == request.user %}
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-project-{{ project.pk }}-btn"  class="button is-danger is-small"
+                                <a id="remove-project-{{ project.pk }}-btn"  class="button is-link is-small"
                                    href="{% url 'dataset-project-remove' pk=dataset.pk project_id=project.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>

@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -48,6 +49,7 @@ class OrganizationListView(ListView):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
         orgs = get_orgs_for_user(self.request.user).exclude(role=Organization.GROUP)
+        orgs = orgs.exclude(Q(title__isnull=True) | Q(title=""))
 
         if query:
             orgs = orgs.filter(title__icontains=query)
@@ -171,6 +173,7 @@ class OrganizationMembersView(
             self.object,
         )
         context_data['organization_id'] = self.object.pk
+        context_data['organization'] = self.object
         return context_data
 
 

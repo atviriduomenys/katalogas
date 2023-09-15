@@ -1255,6 +1255,12 @@ class DatasetStatsMixin(StatsMixin):
     def get_title_for_indicator(self, indicator):
         return Y_TITLES.get(indicator) or indicator
 
+    def get_parent_links(self):
+        return {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+        }
+
 
 class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     title = _("Būsena")

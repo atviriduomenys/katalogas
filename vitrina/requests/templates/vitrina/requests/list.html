@@ -29,10 +29,12 @@
                 <div class="control is-expanded">
                     <input class="input" type="text" name="q"
                            placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
-                           value="{{ q | escape }}"/>
+                           value="{{ q | escape }}"
+                           title="{% translate 'Ieškoti' %}"
+                    />
                 </div>
                 <p class="control">
-                    <button class="button is-primary" type="submit">
+                    <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
                         <span class="icon is-large">
                             <i class="fa fa-search"></i>
                         </span>
@@ -65,7 +67,7 @@
             <div class="buttons">
               <div class="control">
                 <div class="tags">
-                    <span class="tag is-white is-medium has-text-grey">{% translate "Paieškos rezultatai" %}:</span>
+                    <span class="tag is-white is-medium has-text-dark">{% translate "Paieškos rezultatai" %}:</span>
                     <span class="tag is-medium">{{ paginator.count }}</span>
                 </div>
               </div>
@@ -77,37 +79,37 @@
                         <div class="column is-2 is-align-self-center">
                             <div class="category-icon has-text-centered">
                                 {% if i.status == 'REJECTED' %}
-                                    <span class="icon">
+                                    <span class="icon image is-64x64 is-inline-block">
                                         <i
-                                            style="font-size: 80px;"
+                                            style="font-size: 68px;"
                                             class="far fa-times-circle has-text-danger">
                                         </i>
                                     </span>
                                 {% elif i.status == 'APPROVED' %}
-                                    <span class="icon">
+                                    <span class="icon image is-64x64 is-inline-block">
                                         <i
-                                            style="font-size: 80px;"
+                                            style="font-size: 68px;"
                                             class="far fa-eye has-text-info">
                                         </i>
                                     </span>
                                 {% elif i.status == 'STATUS_CHANGED' %}
-                                    <span class="icon">
+                                    <span class="icon image is-64x64 is-inline-block">
                                         <i
-                                            style="font-size: 80px;"
+                                            style="font-size: 68px;"
                                             class="far fa-calendar-check has-text-warning">
                                         </i>
                                     </span>
                                 {% elif i.status == 'OPENED' %}
-                                    <span class="icon">
+                                    <span class="icon image is-64x64 is-inline-block">
                                         <i
-                                            style="font-size: 80px;"
+                                            style="font-size: 68px;"
                                             class="far fa-check-square has-text-success">
                                         </i>
                                     </span>
                                 {% else %}
-                                    <span class="icon">
+                                    <span class="icon image is-64x64 is-inline-block">
                                         <i
-                                            style="font-size: 80px;"
+                                            style="font-size: 68px;"
                                             class="far fa-file has-text-dark">
                                         </i>
                                     </span>
@@ -126,12 +128,12 @@
                                 </div>
 
                                 <div class="tags mt-2 mb-1">
-                                    <span class="tag is-white has-text-grey">
+                                    <span class="tag is-white has-text-dark">
                                         {% translate "Būsena" %}:
                                         {{ i.object.get_status_display }}
                                     </span>
                                     {% if i.object.organizations.all %}
-                                        <span class="tag is-white has-text-grey">
+                                        <span class="tag is-white has-text-dark">
                                             {% for organization in i.object.organizations.all %}
                                                 <a href="{{ organization.get_absolute_url }}">
                                                     {{ organization.title }}
@@ -143,13 +145,13 @@
 
                                 <div class="tags mt-2 mb-1">
                                     {% if i.object.created %}
-                                        <span class="tag is-white has-text-grey">
+                                        <span class="tag is-white has-text-dark">
                                             {% translate "Registravimo data" %}:
                                             {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
                                         </span>
                                     {% endif %}
                                     {% if i.object.modified %}
-                                        <span class="tag is-white has-text-grey">
+                                        <span class="tag is-white has-text-dark">
                                             {% translate "Atnaujinimo data" %}:
                                             {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
                                         </span>

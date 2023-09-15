@@ -29,6 +29,7 @@ class CommentForm(forms.ModelForm):
     def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['body'].label = False
+        self.fields['body'].widget.attrs.update({'title': _("Komentaras")})
         self.obj = obj
 
 

@@ -61,7 +61,7 @@
                             <th>{% translate "Įgyvendina" %}</th>
                             <th>{% translate "Poreikis" %}</th>
                             {% if can_manage_plans %}
-                                <th></th>
+                                <td></td>
                             {% endif %}
                         </tr>
                         {% for plan in plans %}
@@ -85,9 +85,9 @@
                                 <td>
                                     {% if plan.plan.deadline %}
                                         {% if plan.plan.deadline|is_past_due %}
-                                            <span class="tag is-danger">
+                                            <span class="tag is-danger is-light">
                                         {% else %}
-                                            <span class="tag is-success">
+                                            <span class="tag is-success is-light">
                                         {% endif %}
                                             {{ plan.plan.deadline|date:"SHORT_DATE_FORMAT"}}
                                         </span>

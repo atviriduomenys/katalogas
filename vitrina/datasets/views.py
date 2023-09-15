@@ -5,6 +5,7 @@ import secrets
 import uuid
 from datetime import datetime, date
 from collections import OrderedDict
+from typing import List
 from urllib.parse import urlencode
 
 import pandas as pd
@@ -20,7 +21,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q
 from django.db.models.functions import ExtractYear, ExtractMonth, ExtractWeek, ExtractQuarter, ExtractDay
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.text import slugify
@@ -1135,7 +1136,7 @@ class AddProjectView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+        return get_projects(self.request.user, self.dataset, check_existence=True, form_query=True)
 
     def get_form_kwargs(self):
         kwargs = super(AddProjectView, self).get_form_kwargs()
@@ -1173,7 +1174,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.project)
+        return has_perm(self.request.user, Action.UPDATE, self.project) or self.request.user == self.project.user
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('dataset-projects', kwargs={'pk': self.dataset.pk}))
@@ -2458,53 +2459,15 @@ class DatasetPlanView(
         return self.dataset
 
 
-class DatasetIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    form_class = DatasetPlanForm
-    template_name = 'base_form.html'
+class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView):
+    template_name = 'vitrina/plans/plan_form.html'
 
     dataset: Dataset
+    organizations: List[Organization]
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.dataset)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['dataset'] = self.dataset
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Duomenų rinkinio įtraukimas į terminą")
-        context['parent_links'] = {
-            reverse('home'): _('Pradžia'),
-            reverse('dataset-list'): _('Duomenų rinkiniai'),
-            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
-        }
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.dataset = self.dataset
-        self.object.save()
-
-        self.object.plan.save()
-        set_comment(_(f'Į terminą "{self.object.plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
-        return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
-
-
-class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    model = Plan
-    form_class = PlanForm
-    template_name = 'vitrina/plans/form.html'
-
-    dataset: Dataset
-
-    def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.organizations = [self.dataset.organization]
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2512,29 +2475,55 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas terminas")
+        context['obj'] = self.dataset
+        context['create_form'] = PlanForm(self.dataset, self.organizations, self.request.user)
+        context['include_form'] = DatasetPlanForm(self.dataset)
+        context['current_title'] = _("Įtraukti į planą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
             reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-plans', args=[self.dataset.pk]): _("Planas"),
         }
         return context
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['obj'] = self.dataset
-        kwargs['user'] = self.request.user
-        kwargs['organizations'] = [self.dataset.organization]
-        return kwargs
+    def post(self, request, *args, **kwargs):
+        form_type = request.POST.get('form_type')
+        if form_type == 'create_form':
+            form = PlanForm(self.dataset, self.organizations, request.user, request.POST)
+        else:
+            form = DatasetPlanForm(self.dataset, request.POST)
 
-    def form_valid(self, form):
-        self.object = form.save()
-        PlanDataset.objects.create(
-            plan=self.object,
-            dataset=self.dataset
-        )
-        set_comment(_(f'Pridėtas terminas "{self.object}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
-        return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
+        if form.is_valid():
+            if form_type == 'create_form':
+                plan = form.save()
+                PlanDataset.objects.create(
+                    plan=plan,
+                    dataset=self.dataset
+                )
+                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
+
+            else:
+                plan_dataset = form.save(commit=False)
+                plan_dataset.dataset = self.dataset
+                plan_dataset.save()
+                plan = plan_dataset.plan
+                plan.save()
+                set_comment(_(f'Į terminą "{plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
+
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.dataset),
+                object_id=self.dataset.pk,
+                user=self.request.user,
+                type=Comment.PLAN,
+                rel_content_type=ContentType.objects.get_for_model(plan),
+                rel_object_id=plan.pk
+            )
+            return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
+        else:
+            context = self.get_context_data(**kwargs)
+            context[form_type] = form
+            return render(request=request, template_name=self.template_name, context=context)
 
 
 class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):

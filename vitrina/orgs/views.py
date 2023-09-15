@@ -51,7 +51,7 @@ class OrganizationListView(ListView):
             orgs = orgs.filter(title__icontains=query)
         if jurisdiction:
             orgs = orgs.filter(jurisdiction=jurisdiction)
-        return orgs.order_by("-created")
+        return orgs.order_by("title")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationListView, self).get_context_data(**kwargs)
@@ -73,6 +73,7 @@ class OrganizationListView(ListView):
                 )
             ) if filtered_queryset.filter(jurisdiction=jurisdiction)
         ]
+        context['jurisdictions'] = sorted(context['jurisdictions'], key=lambda x: x['count'], reverse=True)
         context['selected_jurisdiction'] = self.request.GET.get('jurisdiction')
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
@@ -84,30 +85,15 @@ class OrganizationManagementsView(OrganizationListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
-        stats = {}
-        orgs = Organization.public.all()
-        root_orgs = []
-        sorting = self.request.GET.get('sort', None)
-        for org in orgs:
-            root = org.get_root()
-            if root not in root_orgs:
-                root_orgs.append(root)
-        for root in root_orgs:
-            children_count = len(Organization.get_children(root))
-            if children_count is not None:
-                stats[root.title] = children_count
-        keys = list(stats.keys())
-        values = list(stats.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        if sorting is None or sorting == 'sort-desc':
-            sorted_value_index = np.flip(np.argsort(values))
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        jurisdictions = context.get('jurisdictions')
+        if sorting == 'sort-desc':
+            jurisdictions = sorted(jurisdictions, key=lambda x: x['count'], reverse=True)
         elif sorting == 'sort-asc':
-            sorted_value_index = np.argsort(values)
-        stats = {keys[i]: values[i] for i in sorted_value_index}
-        context['jurisdiction_data'] = stats
+            jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
+        max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
+
+        context['jurisdiction_data'] = jurisdictions
         context['max_count'] = max_count
         context['filter'] = 'jurisdiction'
         context['sort'] = sorting
@@ -547,6 +533,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-plans', args=[self.organization.pk]): _("Planas"),
         }
         return context
 

@@ -12,7 +12,7 @@ from webtest import Upload
 @pytest.mark.haystack
 def test_anonymous_user_accesses_data_provider_form(app: DjangoTestApp):
     resp = app.get(reverse('partner-register'))
-    assert resp.url == '/login/?next=/partner/register/'
+    assert resp.url == '/login/?next=/accounts/viisp/partner-register/'
 
 @pytest.mark.haystack
 def test_logged_in_not_unverified_user_accesses_data_provider_form(app: DjangoTestApp):

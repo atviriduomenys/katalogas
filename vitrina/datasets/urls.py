@@ -40,7 +40,6 @@ from vitrina.datasets.views import DatasetCategoryView
 from vitrina.datasets.views import FilterCategoryView
 from vitrina.datasets.views import DatasetPlanView
 from vitrina.datasets.views import DatasetCreatePlanView
-from vitrina.datasets.views import DatasetIncludePlanView
 from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
@@ -125,7 +124,6 @@ urlpatterns = [
          DatasetRelationDeleteView.as_view(), name='dataset-relation-delete'),
     path('datasets/<int:pk>/plans/', DatasetPlanView.as_view(), name='dataset-plans'),
     path('datasets/<int:pk>/plans/add/', DatasetCreatePlanView.as_view(), name='dataset-plans-create'),
-    path('datasets/<int:pk>/plans/include/', DatasetIncludePlanView.as_view(), name='dataset-plans-include'),
     path('datasets/plans/<int:pk>/delete/', DatasetDeletePlanView.as_view(), name='dataset-plans-delete'),
     path('datasets/plans/<int:pk>/detail/delete/', DatasetDeletePlanDetailView.as_view(),
          name='dataset-plans-delete-detail'),

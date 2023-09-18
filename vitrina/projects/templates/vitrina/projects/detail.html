@@ -55,7 +55,6 @@
             </div>
         </div>
         <div class="column is-two-quarters">
-            <h3 class="title is-size-4-mobile">{{ project.get_title }}</h3>
             {% if can_update_project %}
                 <div class="buttons is-right">
                     <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">

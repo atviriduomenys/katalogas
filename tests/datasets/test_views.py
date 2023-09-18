@@ -125,6 +125,34 @@ def test_dataset_list_view_anon_user_without_datasets(app: DjangoTestApp):
 
 
 @pytest.mark.haystack
+def test_dataset_list_view_all_shown_for_staff(app: DjangoTestApp):
+    org1 = OrganizationFactory()
+    org2 = OrganizationFactory()
+    DatasetFactory(organization=org1, is_public=False)
+    DatasetFactory(organization=org1)
+    DatasetFactory(organization=org2)
+    DatasetFactory(organization=org2, is_public=False)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert len(resp.context['object_list']) == 4
+
+
+@pytest.mark.haystack
+def test_dataset_list_view_public_shown_for_regular_user(app: DjangoTestApp):
+    org1 = OrganizationFactory()
+    org2 = OrganizationFactory()
+    DatasetFactory(organization=org1, is_public=False)
+    DatasetFactory(organization=org1)
+    DatasetFactory(organization=org2)
+    DatasetFactory(organization=org2, is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    resp = app.get(reverse('dataset-list'))
+    assert len(resp.context['object_list']) == 2
+
+
+@pytest.mark.haystack
 def test_org_dataset_url_is_hidden_for_anon_user(app: DjangoTestApp):
     resp = app.get(reverse('dataset-list'))
     assert not resp.html.find(id='org-dataset-url')

@@ -23,11 +23,9 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.services import get_orgs_for_user, get_all_not_deleted_orgs
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm, OrganizationMergeForm
-from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
-    PartnerRegisterForm
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm
+from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.plans.models import Plan
@@ -48,7 +46,7 @@ class OrganizationListView(ListView):
     def get_queryset(self):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
-        orgs = get_orgs_for_user(self.request.user).exclude(role=Organization.GROUP)
+        orgs = Organization.public.all()
         orgs = orgs.exclude(Q(title__isnull=True) | Q(title=""))
 
         if query:

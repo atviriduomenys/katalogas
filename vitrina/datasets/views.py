@@ -323,6 +323,7 @@ class DatasetDetailView(
     HistoryMixin,
     DatasetStructureMixin,
     PlanMixin,
+    PermissionRequiredMixin,
     DetailView
 ):
     model = Dataset
@@ -331,6 +332,13 @@ class DatasetDetailView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        if dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -788,6 +796,7 @@ class CreateMemberView(
                 representative=self.object
             )
 
+        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -899,6 +908,7 @@ class UpdateMemberView(
             self.object.user.organization = self.dataset.organization
             self.object.user.save()
 
+        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -921,6 +931,13 @@ class DeleteMemberView(
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),
         })
+
+    def delete(self, request, *args, **kwargs):
+        super().delete((self, request, args, kwargs))
+        if self.object.content_type == ContentType.objects.get_for_model(Dataset):
+            dataset = Dataset.objects.get(id=self.object.object_id)
+            dataset.save()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class DatasetProjectsView(

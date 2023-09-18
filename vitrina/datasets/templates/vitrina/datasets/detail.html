@@ -37,11 +37,6 @@
 
     <div class="columns no-margin-bottom">
         <div class="column">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                {% objectlanguage dataset LANGUAGE_CODE %}
-                    {{ dataset.title }}
-                {% endobjectlanguage %}
-            </h3>
             <p>
                 {% translate "Duomenų rinkinio peržiūros" %}:
                 {% get_hit_count for dataset as total_hits %}

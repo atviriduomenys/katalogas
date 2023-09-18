@@ -52,12 +52,13 @@
                 <div class="mb-3">
                     <p>{% translate "Terminas" %}</p>
                     <p class="
+                    tag is-light
                     {% if task.is_due_or_expiring|first == True %}
-                        has-text-danger
+                        is-danger
                     {% elif task.is_due_or_expiring|first == False %}
-                        has-text-warning-dark
+                        is-warning
                     {% else %}
-                        has-text-success
+                        is-success
                     {% endif %}
                     ">{{ task.due_date|date:"Y-m-d" }}</p>
                 </div>
@@ -73,7 +74,7 @@
         <div class="columns">
             <div class="column is-three-quarters has-text-right">
                 <a href="{% url 'user-task-assign' user.pk task.pk %}" class="is-primary button">Priskirti sau</a>
-                <a href="{% url 'user-task-close' user.pk task.pk %}" class="is-danger button">Uždaryti</a>
+                <a href="{% url 'user-task-close' user.pk task.pk %}" class="is-link button">Uždaryti</a>
             </div>
         </div>
     {% endif %}

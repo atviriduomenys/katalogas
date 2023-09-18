@@ -16,10 +16,10 @@
                     {% if jurisdiction_query %}
                         <input type="hidden" name="jurisdiction" value="{{ jurisdiction_query }}" />
                     {% endif %}
-                    <input class="input" type="text" name="q" placeholder="Ieškoti organizacijos" value="{{ q }}" />
+                    <input class="input" type="text" name="q" placeholder="{% translate 'Ieškoti organizacijos' %}" value="{{ q }}" title="{% translate 'Paieška' %}"/>
                 </div>
                 <p class="control">
-                    <button class="button is-primary" type="submit">
+                    <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
                         <span class="icon is-large">
                             <i class="fas fa-search"></i>
                         </span>
@@ -76,7 +76,7 @@
 
                                     <div class="column is-9">
                                         <a href="{{ jurisdiction.query }}"
-                                           class="category-panel-block has-text-grey"
+                                           class="category-panel-block has-text-dark"
                                            title="{{ jurisdiction.title }}"
                                         >
                                             {{ jurisdiction.title }}

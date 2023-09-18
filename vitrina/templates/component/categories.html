@@ -4,31 +4,28 @@
 <section class="hero">
   <div class="hero-body">
     <div class="container">
-        <p class="title has-text-info-dark">
+        <h1 class="title has-text-info-dark">
             {% translate "Duomenų rinkinių kategorijos" %}
-        </p>
+        </h1>
         <div class="columns is-multiline p-t-lg">
             {% for cat in categories %}
                 <div class="column is-3-fullhd is-3-desktop is-4-tablet">
                     <div class="container category-box">
-                        <div class="columns is-vcentered">
-                            <div class="column is-4">
-                                <a href="{% url "dataset-list" %}?selected_facets=category_exact:{{ cat.id }}"
-                                        title="{{ cat.description }}"
-                                        class="category-icon">
-                                    {% if cat.icon %}
-                                        <span class="category-custom-icon icon-{{ cat.icon }}"></span>
-                                    {% endif %}
-                                </a>
-                            </div>
-                            <div class="column is-8">
-                                <a href="{% url "dataset-list" %}?selected_facets=category_exact:{{ cat.id }}"
-                                        title="{{ cat.description }}"
-                                        class="category-icon">
+                        <a href="{% url 'dataset-list' %}?selected_facets=category_exact:{{ cat.id }}"
+                                title="{{ cat.description }}"
+                                class="category-icon"
+                        >
+                            <div class="columns is-vcentered">
+                                <div class="column is-4">
+                                        {% if cat.icon %}
+                                            <span class="category-custom-icon icon-{{ cat.icon }}"></span>
+                                        {% endif %}
+                                </div>
+                                <div class="column is-8">
                                     <span class="category-icon-text">{{ cat.title }}</span>
-                                </a>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                 </div>
             {% endfor %}

@@ -2,11 +2,11 @@
 {% load i18n parler_tags %}
 {% load navigation_tags %}
 
-<nav class="navbar is-info" role="navigation" aria-label="main navigation">
+<nav class="navbar is-link" role="navigation" aria-label="main navigation">
 <div class="container">
         <div class="navbar-brand">
             <a class="navbar-item" href="/">
-                <img src="{% static 'img/logo.png' %}" alt="logo" height="36">
+                <img src="{% static 'img/logo.png' %}" alt="herbas" height="36">
                 &nbsp;&nbsp;
                 <b><span class="navbar-title is-uppercase">data.gov.lt</span></b>
             </a>
@@ -90,7 +90,9 @@
                             <input name="next" type="hidden" value="{{ redirect_to }}">
                             <div class="select">
                                 <select name="language"
-                                        onchange="languageChange.submit()">
+                                        onchange="languageChange.submit()"
+                                        aria-label="{% translate 'Kalbos pasirinkimas' %}"
+                                >
                                     {% get_current_language as LANGUAGE_CODE %}
                                     {% get_available_languages as LANGUAGES %}
                                     {% get_language_info_list for LANGUAGES as languages %}

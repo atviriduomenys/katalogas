@@ -41,6 +41,7 @@ class StatsMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = self.update_context_data(context)
+        context['parent_links'] = self.get_parent_links()
         return context
 
     def update_context_data(self, context):
@@ -174,3 +175,6 @@ class StatsMixin:
 
     def update_item_data(self, item):
         return item
+
+    def get_parent_links(self):
+        return {}

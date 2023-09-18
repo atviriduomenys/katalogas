@@ -82,9 +82,9 @@
                                  <td>
                                     {% if plan.deadline %}
                                         {% if plan.deadline|is_past_due %}
-                                            <span class="tag is-danger">
+                                            <span class="tag is-danger is-light">
                                         {% else %}
-                                            <span class="tag is-success">
+                                            <span class="tag is-success is-light">
                                         {% endif %}
                                             {{ plan.deadline|date:"SHORT_DATE_FORMAT"}}
                                         </span>

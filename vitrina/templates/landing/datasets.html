@@ -4,12 +4,12 @@
 
 {% get_current_language as LANGUAGE_CODE %}
 
-<section class="hero is-info">
+<section class="hero is-link">
   <div class="hero-body">
     <div class="container">
-        <p class="title">
+        <h3 class="title">
           {% translate "Duomenų rinkiniai" %}
-        </p>
+        </h3>
         <div class="columns is-multiline p-t-lg">
             {% for dataset in datasets %}
             <div class="column">
@@ -24,7 +24,7 @@
                           </a>
                         </p>
                         <p>
-                          <a href="{{ dataset.organization.get_absolute_url }}" class="has-text-grey">
+                          <a href="{{ dataset.organization.get_absolute_url }}" class="has-text-dark">
                             {{ dataset.organization.title }}
                           </a>
                         </p>
@@ -32,7 +32,7 @@
                           {% with formats=dataset.distinct_formats %}
 
                           {% for format in formats %}
-                          <a href="{% url "dataset-list" %}?selected_facets=formats_exact:{{ format.pk }}" class="tag is-link is-light mr-3">
+                          <a href="{% url "dataset-list" %}?selected_facets=formats_exact:{{ format.pk }}" class="tag is-info is-light mr-3">
                               {{ format }}
                           </a>
                           {% endfor %}

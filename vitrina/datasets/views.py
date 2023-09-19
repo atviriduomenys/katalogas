@@ -423,6 +423,14 @@ class DatasetCreateView(
 
         if self.object.is_public:
             self.object.published = timezone.now()
+            self.object.status = Dataset.INVENTORED
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.INVENTORED,
+            )
 
         types = form.cleaned_data.get('type')
         self.object.type.set(types)
@@ -503,6 +511,15 @@ class DatasetUpdateView(
 
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
+            if not self.object.status:
+                self.object.status = Dataset.INVENTORED
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    user=self.request.user,
+                    type=Comment.STATUS,
+                    status=Comment.INVENTORED,
+                )
         elif not self.object.is_public and self.object.published:
             self.object.published = None
 

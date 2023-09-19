@@ -18,13 +18,13 @@ class TaskListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = Task.objects.filter(status__in=[Task.CREATED, Task.ASSIGNED])
+        queryset = get_active_tasks(self.request.user, super().get_queryset())
         task_filter = self.request.GET.get('filter')
         if task_filter is None:
             queryset = queryset
         else:
             if task_filter == 'user':
-                queryset = get_active_tasks(self.request.user, super().get_queryset())
+                queryset = Task.objects.filter(user=self.request.user)
             elif task_filter == 'all':
                 queryset = queryset
             elif task_filter == Task.CREATED.lower():
@@ -44,9 +44,9 @@ class TaskListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        all_tasks = Task.objects.all()
+        all_tasks = get_active_tasks(self.request.user)
         all_active_tasks = all_tasks.filter(status__in=[Task.CREATED, Task.ASSIGNED])
-        active_user_tasks = get_active_tasks(self.request.user)
+        active_user_tasks = Task.objects.filter(user=self.request.user)
         closed_tasks = all_tasks.filter(status=Task.COMPLETED)
         cats = [
             {'title': 'Vykdytojas', 'types':

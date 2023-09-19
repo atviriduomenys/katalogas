@@ -8,7 +8,10 @@ from django.db.models import Q, Sum
 from django.db.models.functions import ExtractQuarter, ExtractWeek
 from haystack.backends import SQ
 
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
+from vitrina.orgs.models import Organization
+from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 
@@ -63,15 +66,45 @@ def get_projects(user, dataset, check_existence=False, order_value=None, form_qu
 
 
 def get_requests(user, dataset):
-    if user.is_staff:
+    if user.is_staff or user.is_superuser:
         requests = Request.public.all()
     else:
-        requests = Request.public.filter(user=user)
+        if has_perm(user, Action.UPDATE, dataset):
+            user_orgs = []
+            if user.organization:
+                user_orgs.append(user.organization.pk)
+            for rep in user.representative_set.all():
+                if isinstance(rep.content_object, Organization):
+                    user_orgs.append(rep.content_object.pk)
+                elif isinstance(rep.content_object, Dataset):
+                    user_orgs.append(rep.content_object.organization.pk)
+            requests = Request.public.filter(Q(user=user) | Q(organizations__pk__in=user_orgs))
+        else:
+            requests = Request.public.filter(user=user)
 
-    dataset_req_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(dataset),
-                                                   object_id=dataset.pk).values_list('request_id', flat=True)
+    dataset_req_ids = RequestObject.objects.filter(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
+    ).values_list('request_id', flat=True)
     requests = requests.exclude(Q(status=Request.REJECTED) | Q(pk__in=dataset_req_ids))
     return requests
+
+
+def has_remove_from_request_perm(dataset, request, user):
+    if user.is_authenticated:
+        if user.is_staff or user.is_superuser or request.user == user:
+            return True
+        if has_perm(user, Action.UPDATE, dataset):
+            user_orgs = []
+            if user.organization:
+                user_orgs.append(user.organization.pk)
+            for rep in user.representative_set.all():
+                if isinstance(rep.content_object, Organization):
+                    user_orgs.append(rep.content_object.pk)
+                elif isinstance(rep.content_object, Dataset):
+                    user_orgs.append(rep.content_object.organization.pk)
+            return request.organizations.filter(pk__in=user_orgs).exists()
+    return False
 
 
 def get_count_by_frequency(

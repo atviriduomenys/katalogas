@@ -62,7 +62,7 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
-    get_requests, get_datasets_for_user
+    get_requests, get_datasets_for_user, has_remove_from_request_perm
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
@@ -1028,12 +1028,6 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
             Representative,
             self.object,
         )
-        context['can_add_request'] = has_perm(
-            self.request.user,
-            Action.UPDATE,
-            self.dataset
-        )
-
         if self.request.user.is_authenticated:
             context['user_requests'] = get_requests(self.request.user, self.dataset)
         else:
@@ -1056,7 +1050,7 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.dataset)
+        return get_requests(self.request.user, self.dataset)
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -1103,7 +1097,11 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.request_object)
+        return has_remove_from_request_perm(
+            self.dataset,
+            self.request_object.request,
+            self.request.user
+        )
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('dataset-requests', kwargs={'pk': self.dataset.pk}))

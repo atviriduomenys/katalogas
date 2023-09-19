@@ -63,8 +63,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
             RegexValidator(
-                '([a-z])\w+\/',
-                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir pasvirųjų brūkšnių"
+                '([a-z]+\/?)+',
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
             )
         ])
 

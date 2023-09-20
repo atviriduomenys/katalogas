@@ -113,7 +113,15 @@
                       </span>
 
                     {% else %}
-                      {{ item.title }}
+                      {% if 'orgs' in request.path %}
+                        {% if filter.name == 'organization'%}
+                            <strong>{{ item.title }}</strong>
+                        {% else %}
+                            {{ item.title }}
+                        {% endif %}
+                      {% else %}
+                        {{ item.title }}
+                      {% endif %}
                     {% endif %}
                   </div>
                   </div>

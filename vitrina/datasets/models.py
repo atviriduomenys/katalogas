@@ -262,7 +262,7 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return self.UNASSIGNED
+        return None
 
     @property
     def formats(self):

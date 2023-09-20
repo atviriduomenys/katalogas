@@ -18,10 +18,6 @@
 
     <div class="columns no-margin-bottom">
          <div class="column is-full">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                {{ resource.title }}
-            </h3>
-
             {% if can_update %}
                 <div class="buttons is-right">
                     <a href="{%url 'resource-change' resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">

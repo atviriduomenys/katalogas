@@ -1821,6 +1821,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
+        max_count = 0
         stats_for_period = {}
         year_stats = {}
         chart_data = []
@@ -1876,11 +1877,12 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
                         year_stats[yr] = total
                     else:
                         year_stats[yr] = 0
-        keys = list(year_stats.keys())
-        values = list(year_stats.values())
-        sorted_value_index = np.argsort(values)
-        year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
-        max_count = year_stats[max(year_stats, key=lambda key: year_stats[key])]
+        if year_stats:
+            keys = list(year_stats.keys())
+            values = list(year_stats.values())
+            sorted_value_index = np.argsort(values)
+            year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+            max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
 
         data = []
         total = 0

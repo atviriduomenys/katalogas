@@ -8,7 +8,6 @@
 
 {% block content %}
 
-    {% if page_obj %}
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
             {% for item in cats %}
@@ -40,6 +39,8 @@
                 </nav>
             {% endfor %}
         </div>
+
+        {% if page_obj %}
         <div class="column is-three-quarters">
             {% for i in page_obj %}
                 <article class="box media is-expanded">
@@ -106,10 +107,12 @@
             <br/>
             {% include "vitrina/common/pagination.html" %}
         </div>
+        {% else %}
+            <div class="column is-three-quarters">
+                <p>{% translate "Užduočių nėra!" %}</p>
+            </div>
+        {% endif %}
     </div>
-    <br/>
-    {% else %}
-    <p>{% translate "Užduočių nėra!" %}</p>
-    {% endif %}
+
 {% endblock %}
 

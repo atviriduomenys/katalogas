@@ -26,24 +26,27 @@
 
   {% if filter.stats and active_filter != filter.name %}
   {% endif %}
-    <p class="{{ filter.name }}-panel-heading">
-        <span class="icon-text">
-        {% if filter.stats %}
-        <span class="icon">
-          <i class="fas fa-chart-bar fa-lg"></i>
-        </span>
-        {% endif %}
-        <span class="has-text-weight-bold">
-          {{ filter.title }}
-        </span>
-      </span>
-    </p>
+    {% if filter.name != 'category' %}
+        <p class="{{ filter.name }}-panel-heading">
+            <span class="icon-text">
+            {% if filter.stats %}
+            <span class="icon">
+              <i class="fas fa-chart-bar fa-lg"></i>
+            </span>
+            {% endif %}
+            <span class="has-text-weight-bold">
+              {{ filter.title }}
+            </span>
+          </span>
+        </p>
+    {% endif %}
   {% if active_filter != filter.name %}
-    {% if filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
+    {% if filter.name == 'organization' or filter.name == 'tags' %}
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            value="{% translate "Paieška" %}..."
+            placeholder="{% translate 'Paieška' %}..."
+            title="{% translate 'Paieška' %}"
         >
     {% endif %}
   {% endif %}
@@ -51,41 +54,39 @@
   {% for item in filter.items %}
   <div class="columns is-gapless  m-0 mt-1">
 
-    <div class="column is-1">
-      <a href="{{ item.url }}" class="has-text-dark">
-        {% if item.selected %}
-        <span class="icon">
-          <i class="far fa-check-square"></i>
-        </span>
-        {% else %}
-        <span class="icon">
-          <i class="far fa-square"></i>
-        </span>
-        {% endif %}
-      </a>
-    </div>
+      <div class="column is-10">
+          {% if item.selected %}
+          <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
+          {% else %}
+          <a href="{{ item.url }}" class="category-panel-block has-text-dark" id="{{ item.name }}_id">
+          {% endif %}
+              <div class="columns">
+              <div class="column is-1">
+                  {% if item.selected %}
+                  <span class="icon">
+                    <i class="far fa-check-square"></i>
+                  </span>
+                  {% else %}
+                  <span class="icon">
+                    <i class="far fa-square"></i>
+                  </span>
+                  {% endif %}
+              </div>
+              <div class="column is-11">
+                  {% if filter.name == 'level' %}
+                  <span class="icon-text">
+                    {% for star in item.value|range %}
+                    <i class="fas fa-star"></i>
+                    {% endfor %}
+                  </span>
 
-    <div class="column is-9">
-
-        {% if item.selected %}
-        <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
-        {% else %}
-        <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
-        {% endif %}
-
-        {% if filter.name == 'level' %}
-          <span class="icon-text">
-            {% for star in item.value|range %}
-            <i class="fas fa-star"></i>
-            {% endfor %}
-          </span>
-
-        {% else %}
-          {{ item.title }}
-        {% endif %}
-
-      </a>
-    </div>
+                {% else %}
+                  {{ item.title }}
+                {% endif %}
+              </div>
+              </div>
+          </a>
+      </div>
 
     <div class="column is-2 has-text-right">
       <span class="is-size-6">({{ item.count }})</span>

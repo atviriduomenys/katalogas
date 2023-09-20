@@ -4,7 +4,7 @@
         <tbody>
         {% for site in items %}
             <tr>
-                <td>{% if site.image %}<a href="{{ site.url }}" target="_blank"><img class="externalsite-thumb-image" src="{{ site.image.url }}"></a>{% endif %}</td>
+                <td>{% if site.image %}<a href="{{ site.url }}" target="_blank"><img class="externalsite-thumb-image" src="{{ site.image.url }}" alt="{{ site.title }}"></a>{% endif %}</td>
                 <td class="is-middle">{{ site.title }}</td>
                 <td class="is-middle"><a href="{{ site.url }}" target="_blank">{{ site.url }}</a></td>
             </tr>

@@ -3,7 +3,7 @@
 <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
     <thead>
     <tr>
-        <th></th>
+        <td></td>
         <th>{% translate "Teritorija" %}</th>
         <th>{% translate "Pavadinimas" %}</th>
         <th>{% translate "Periodo pradžia" %}</th>
@@ -12,9 +12,9 @@
         <th class="has-text-centered">{% translate "Formatas" %}</th>
         <th>{% translate "Publikuota" %}</th>
         <th>{% translate "Atnaujinta" %}</th>
-        <th></th>
-        <th></th>
-        <th></th>
+        <td></td>
+        <td></td>
+        <td></td>
     </tr>
     </thead>
     <tbody>
@@ -29,7 +29,7 @@
             </span></td>
             <td>{{ r.geo_location|default:"-" }}</td>
             <td class="has-fixed-width-130">
-                <a href="{{ r.get_absolute_url }}">
+                <a href="{{ r.get_absolute_url }}" class="has-text-info-dark">
                 {% if r.title %}
                     {{ r.title }}
                 {% else %}

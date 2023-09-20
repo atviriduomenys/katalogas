@@ -3,12 +3,12 @@
 {% load i18n parler_tags %}
 {% load thumbnail %}
 
-<section class="hero is-info">
+<section class="hero is-link">
   <div class="hero-body">
     <div class="container">
-        <p class="title">
+        <h3 class="title">
           {% translate "Duomenų panaudojimo atvejai" %}
-        </p>
+        </h3>
         <div class="columns is-multiline p-t-lg">
             {% for project in projects %}
             <div class="column">
@@ -17,7 +17,7 @@
                     <div class="content">
                         {% if project.image %}
                         <figure class="image is-3by2">
-                            <img src="{{ project.image|thumbnail_url:'list' }}">
+                            <img src="{{ project.image|thumbnail_url:'list' }}" alt="{{ project.get_title }}">
                         </figure>
                         {% endif %}
                         <p>

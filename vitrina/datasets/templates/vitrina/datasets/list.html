@@ -94,7 +94,7 @@
             <div class="control is-expanded">
                 <input class="input" id="search-input" type="text" name="q"
                        placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
-                       value="{{ q | escape }}"/>
+                       value="{{ q | escape }}" title="{% translate 'Paieška' %}"/>
                 {% for k, values in search_query.items %}
                     {% for v in values %}
                         {% if k != 'q' %}
@@ -104,7 +104,7 @@
                 {% endfor %}
             </div>
             <p class="control">
-                <button class="button is-primary" type="submit">
+                <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
                     <span class="icon is-large">
                         <i class="fa fa-search"></i>
                     </span>
@@ -146,7 +146,7 @@
             <div class="dropdown-menu" id="dropdown-menu4" role="menu">
               <div class="dropdown-content">
                   {% for sort_option in sort_options %}
-                    <a class="dropdown-item" href="{{ sort_option.url }}">
+                    <a class="dropdown-item" href="{{ sort_option.url }}" role="menuitem">
                       <span class="icon is-small">
                         <i class="{{ sort_option.icon }}"></i>
                       </span>
@@ -175,7 +175,7 @@
             <div class="buttons">
               <div class="control">
                 <div class="tags">
-                  <span class="tag is-white is-medium has-text-grey">{% translate "Rasta duomenų rinkinių" %}:</span>
+                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų rinkinių" %}:</span>
                   <span class="tag is-medium">{{ paginator.count }}</span>
                 </div>
               </div>
@@ -213,24 +213,29 @@
                                     </div>
 
                                     <div class="tags mt-2 mb-1">
-                                      <span class="tag is-white has-text-grey">
-                                          {% translate "Publikuota" %}:
-                                          {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                      <span class="tag is-white has-text-dark">
+                                          {% if i.object.published %}
+                                              {% translate "Publikuota" %}:
+                                              {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% else %}
+                                              {% translate "Sukurta" %}:
+                                              {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                          {% endif %}
                                       </span>
                                       {% if i.object.modified and i.object.modified > i.object.published %}
-                                      <span class="tag is-white has-text-grey">
+                                      <span class="tag is-white has-text-dark">
                                           {% translate "Atnaujinta" %}:
                                           {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
                                       </span>
                                       {% endif %}
 
                                       {% if i.object.organization.title %}
-                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-grey dataset-list-organization">
+                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-dark dataset-list-organization">
                                         {{ i.object.organization.title }}
                                       </a>
                                       {% endif %}
                                     </div>
-                                      <span class="tag is-white has-text-grey">
+                                      <span class="tag is-white has-text-dark">
                                           {% translate "Duomenų rinkinys viešinamas" %}:
                                           {% if i.object.is_public %}
                                           {% translate "Taip" %}
@@ -254,13 +259,13 @@
 
                                     <div class="tags mt-3 mb-1">
                                       {% for group in i.object.get_all_groups %}
-                                      <p class="tag is-link" style="background-color:Gainsboro; color: black;">
+                                      <p class="tag is-info is-light" style="background-color:Gainsboro; color: black;">
                                         {{ group }}
                                       </p>
                                       {% endfor %}
 
                                       {% for t in i.object.distinct_formats %}
-                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-link is-light">
+                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-info is-light">
                                           {{ t }}
                                       </a>
                                       {% endfor %}
@@ -352,6 +357,30 @@
                     searchParams.set('date_to', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
+                }
+            });
+
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                let manFilterValues = manFilter.nextAll();
+                if (manFilter.val().length !== 0) {
+                    manFilterValues.each(function() {
+                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
+                    let containsWord = childElementStrings.filter(item => item.startsWith(manFilter.val().toLowerCase()));
+                    if (containsWord.length === 0) {
+                        $(this).addClass('is-hidden');
+                    } else {
+                        $(this).removeClass('is-hidden');
+                    }
+                });
+                } else {
+                    manFilterValues.each(function() {
+                    $(this).addClass('is-hidden');
+                });
+                    manFilterValues = manFilterValues.slice(0, 10)
+                    manFilterValues.each(function() {
+                        $(this).removeClass('is-hidden');
+                    });
                 }
             });
 

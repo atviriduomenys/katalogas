@@ -1,4 +1,5 @@
-from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField
+from django.contrib.contenttypes.models import ContentType
+from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField, BooleanField
 from django.db import models
 
 from haystack import signals
@@ -6,6 +7,7 @@ from haystack.exceptions import NotHandled
 from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
+from vitrina.requests.models import RequestObject, Request
 
 
 class DatasetIndex(SearchIndex, Indexable):
@@ -14,6 +16,7 @@ class DatasetIndex(SearchIndex, Indexable):
     lt_title_s = CharField(model_attr='lt_title', indexed=False, stored=True)
     en_title = CharField(model_attr='en_title')
     en_title_s = CharField(model_attr='en_title', indexed=False, stored=True)
+    published_created_s = DateTimeField(model_attr='published_created_sort', indexed=False, stored=True)
     jurisdiction = MultiValueField(model_attr='jurisdiction', faceted=True, null=True)
     organization = MultiValueField(model_attr='organization__pk', faceted=True, null=True)
     groups = MultiValueField(model_attr='get_group_list', faceted=True)
@@ -27,6 +30,8 @@ class DatasetIndex(SearchIndex, Indexable):
     level = IntegerField(model_attr='get_level', faceted=True, null=True)
     type = MultiValueField(model_attr='public_types', faceted=True)
     type_order = IntegerField(model_attr='type_order')
+    is_public = BooleanField(model_attr='is_public', faceted=True, null=False)
+    managers = MultiValueField(model_attr='get_managers', faceted=True)
 
     def get_model(self):
         return Dataset
@@ -65,8 +70,15 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         for using in using_backends:
             try:
                 index = self.connections[using].get_unified_index().get_index(sender)
+
                 if index.index_queryset().filter(pk=instance.pk):
                     index.update_object(instance, using=using)
+                    if isinstance(instance, Dataset):
+                        req_index = self.connections[using].get_unified_index().get_index(Request)
+                        reqs = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(instance),
+                                                            object_id=instance.pk)
+                        for req in reqs:
+                            req_index.update_object(req.request, using=using)
                 else:
                     index.remove_object(instance, using=using)
 

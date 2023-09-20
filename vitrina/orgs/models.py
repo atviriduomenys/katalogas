@@ -52,9 +52,11 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
+    GROUP = "group"
     MINISTRY = "ministry"
     MUNICIPALITY = "municipality"
     ROLES = (
+        (GROUP, _("Grupė")),
         (MINISTRY, _("Ministerija")),
         (MUNICIPALITY, _("Savivaldybė"))
     )
@@ -139,6 +141,8 @@ class Representative(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+
+    objects = models.Manager()
 
     class Meta:
         db_table = 'representative'

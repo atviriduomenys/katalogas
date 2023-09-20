@@ -1,5 +1,6 @@
 from django.views import View
 from django.views.generic import TemplateView
+from django.urls import reverse
 from django.shortcuts import render, redirect
 from allauth.socialaccount import providers
 from allauth.socialaccount.providers.oauth2.views import (
@@ -66,7 +67,7 @@ class VIISPCompleteLoginView(View):
                 request,
                 user,
                 email_verification=False,
-                redirect_url=login.get_redirect_url(request),
+                redirect_url='partner-register',
                 signal_kwargs={"sociallogin": login},
             )
         return complete_social_login(request, login)

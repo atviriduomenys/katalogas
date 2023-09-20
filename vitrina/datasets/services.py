@@ -8,10 +8,12 @@ from django.core.handlers.wsgi import HttpRequest
 
 from django.db.models import Q, Sum
 from django.db.models.functions import ExtractQuarter, ExtractWeek
+from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
-from vitrina.orgs.models import Representative, Organization
+from vitrina.orgs.models import Organization
+from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 
@@ -66,15 +68,45 @@ def get_projects(user, dataset, check_existence=False, order_value=None, form_qu
 
 
 def get_requests(user, dataset):
-    if user.is_staff:
+    if user.is_staff or user.is_superuser:
         requests = Request.public.all()
     else:
-        requests = Request.public.filter(user=user)
+        if has_perm(user, Action.UPDATE, dataset):
+            user_orgs = []
+            if user.organization:
+                user_orgs.append(user.organization.pk)
+            for rep in user.representative_set.all():
+                if isinstance(rep.content_object, Organization):
+                    user_orgs.append(rep.content_object.pk)
+                elif isinstance(rep.content_object, Dataset):
+                    user_orgs.append(rep.content_object.organization.pk)
+            requests = Request.public.filter(Q(user=user) | Q(organizations__pk__in=user_orgs))
+        else:
+            requests = Request.public.filter(user=user)
 
-    dataset_req_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(dataset),
-                                                   object_id=dataset.pk).values_list('request_id', flat=True)
+    dataset_req_ids = RequestObject.objects.filter(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
+    ).values_list('request_id', flat=True)
     requests = requests.exclude(Q(status=Request.REJECTED) | Q(pk__in=dataset_req_ids))
     return requests
+
+
+def has_remove_from_request_perm(dataset, request, user):
+    if user.is_authenticated:
+        if user.is_staff or user.is_superuser or request.user == user:
+            return True
+        if has_perm(user, Action.UPDATE, dataset):
+            user_orgs = []
+            if user.organization:
+                user_orgs.append(user.organization.pk)
+            for rep in user.representative_set.all():
+                if isinstance(rep.content_object, Organization):
+                    user_orgs.append(rep.content_object.pk)
+                elif isinstance(rep.content_object, Dataset):
+                    user_orgs.append(rep.content_object.organization.pk)
+            return request.organizations.filter(pk__in=user_orgs).exists()
+    return False
 
 
 def get_count_by_frequency(
@@ -237,37 +269,11 @@ def filter_datasets_for_user(user, datasets):
 def get_datasets_for_user(user, datasets):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
-            return filter_datasets_for_user(user, datasets)
+            if user.representative_set:
+                return datasets.filter(SQ(is_public='true') | SQ(managers__contains=user.id))
+            else:
+                return datasets.filter(is_public='true')
         else:
             return datasets
     else:
-        id_list = get_public_dataset_id_list()
-        datasets = datasets.filter(django_id__in=id_list)
-        return datasets
-
-
-def get_all_not_deleted_orgs():
-    orgs = Organization.objects.filter(deleted__isnull=True, deleted_on__isnull=True)
-    return orgs
-
-
-def filter_orgs_for_user(user):
-    non_deleted_orgs = get_all_not_deleted_orgs()
-    public_orgs = [org.id for org in non_deleted_orgs.filter(is_public=True)]
-    coordinator_orgs = [org.object_id for org in
-                        user.representative_set.filter(role=Representative.COORDINATOR)]
-    manager_orgs = [org.object_id for org in
-                    user.representative_set.filter(role=Representative.MANAGER)]
-    org_ids = coordinator_orgs + public_orgs + manager_orgs
-    orgs = Organization.objects.filter(id__in=org_ids)
-    return orgs
-
-
-def get_orgs_for_user(user):
-    if user.is_authenticated:
-        if not (user.is_staff or user.is_superuser):
-            return filter_orgs_for_user(user)
-        else:
-            return get_all_not_deleted_orgs()
-    else:
-        return Organization.public.all()
+        return datasets.filter(is_public='true')

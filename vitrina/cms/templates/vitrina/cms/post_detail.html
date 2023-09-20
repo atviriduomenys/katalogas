@@ -11,7 +11,7 @@
             {% if post.main_image %}
                 <div class="column is-3">
                     <figure>
-                        <img class="newsitem-thumb-image" src="{{ post.main_image.url }}" />
+                        <img class="newsitem-thumb-image" src="{{ post.main_image.url }}" alt="{{ post.title }}" />
                     </figure>
                 </div>
             {% endif %}

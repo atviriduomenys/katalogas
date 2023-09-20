@@ -90,7 +90,7 @@ def organizations():
 @pytest.mark.django_db
 def test_search_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db
@@ -108,25 +108,25 @@ def test_search_with_query_that_matches_one(app: DjangoTestApp, organizations):
 @pytest.mark.django_db
 def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=%s" % (reverse('organization-list'), "organization"))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db
 def test_filter_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
+        {
+            'title': 'Jurisdiction2',
+            'query': "?jurisdiction=Jurisdiction2",
+            'count': 2
+        },
         {
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 2
-        }
     ]
 
 
@@ -382,7 +382,7 @@ def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
     form['title'] = "Test plan"
     form['description'] = "Plan for testing"
-    form['provider'] = organization.pk
+    form['provider'].force_value(organization.pk)
     form['provider_title'] = "Provider"
     resp = form.submit()
 
@@ -400,6 +400,8 @@ def test_organization_plan_create(app: DjangoTestApp):
         object_id=organization.pk,
         role=Representative.MANAGER
     )
+    rep.user.organization = organization
+    rep.user.save()
     app.set_user(rep.user)
 
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
@@ -480,3 +482,23 @@ def test_organization_merge(app: DjangoTestApp):
     )) == [representative]
 
 
+@pytest.mark.django_db
+def test_organization_open_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get(reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 2
+
+
+@pytest.mark.django_db
+def test_organization_closed_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get("%s?status=closed" % reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 1

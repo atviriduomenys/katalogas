@@ -825,7 +825,7 @@ class GetAllApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:
@@ -864,7 +864,7 @@ class GetOneApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:
@@ -902,7 +902,7 @@ class ChangesApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:

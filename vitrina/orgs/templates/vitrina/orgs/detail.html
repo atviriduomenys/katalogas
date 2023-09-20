@@ -49,41 +49,41 @@
 	                <div class="is-hidden-mobile">
 	                    {% if organization.image %}
 							<figure class="image max-128x128">
-	                        	<img src="{{ organization.image.url }}" class="image max-128x128 m-b-md">
+	                        	<img src="{{ organization.image.url }}" class="image max-128x128 m-b-md" alt="{{ organization.title }}">
 							</figure>
 	                    {% endif %}
 	                </div>
 
 	                {% if ancestors %}
-	                	<p class="has-text-grey">{% translate "Pavaldus" %}</p>
+	                	<p class="has-text-dark">{% translate "Pavaldus" %}</p>
 	                	{% for anc in ancestors %}
-							<p class="has-text-dark">{{ anc }}</p>
+							<p class="has-text-black">{{ anc }}</p>
 						{% endfor %}
 	                {% endif %}
 
 	                {% if organization.company_code %}
-	                	<p class="has-text-grey">{% translate "Įmonės kodas" %}</p>
-	                	<p class="has-text-dark"> {{ organization.company_code }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Įmonės kodas" %}</p>
+	                	<p class="has-text-black"> {{ organization.company_code }}</p>
 	                {% endif %}
 
 	                {% if organization.email %}
-	                	<p class="has-text-grey">{% translate "El. paštas" %}</p>
-	                	<p class="has-text-dark"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
+	                	<p class="has-text-dark mt-1">{% translate "El. paštas" %}</p>
+	                	<p class="has-text-black"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
 	                {% endif %}
 
 	                {% if organization.address %}
-	                	<p class="has-text-grey">{% translate "Buveinės adresas" %}</p>
-	                	<p class="has-text-dark">{{ organization.address }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Buveinės adresas" %}</p>
+	                	<p class="has-text-black">{{ organization.address }}</p>
 	                {% endif %}
 
 	                {% if organization.phone %}
-	                	<p class="has-text-grey">{% translate "Telefonas" %}</p>
-	                	<p class="has-text-dark">{{ organization.phone }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Telefonas" %}</p>
+	                	<p class="has-text-black">{{ organization.phone }}</p>
 	                {% endif %}
 
 	                {% if organization.website %}
-	                	<p class="has-text-grey">{% translate "Tinklalapis" %}</p>
-	                	<p class="has-text-dark">
+	                	<p class="has-text-dark mt-1">{% translate "Tinklalapis" %}</p>
+	                	<p class="has-text-black">
 	                		<a href="{{ organization.website }}"
 	                        	target="_blank">{{ organization.website }}
 	                    	</a>

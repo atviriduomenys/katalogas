@@ -15,7 +15,7 @@ from random import randrange
 
 from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
@@ -262,7 +262,7 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return self.UNASSIGNED
+        return None
 
     @property
     def formats(self):
@@ -291,6 +291,12 @@ class Dataset(TranslatableModel):
 
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
+
+    def get_managers(self):
+        ct = ContentType.objects.get_for_model(Dataset)
+        return list(Representative.objects.filter(
+            content_type=ct, object_id=self.id
+        ).values_list('user_id', flat=True))
 
     @property
     def language_array(self):
@@ -334,6 +340,9 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def published_created_sort(self):
+        return self.published or self.created
+
     def get_icon(self):
         root_category_ids = []
         for cat in self.category.all():
@@ -368,6 +377,11 @@ class Dataset(TranslatableModel):
         elif part_of:
             order = 1
         return order
+
+    def get_plan_title(self):
+        if self.datasetdistribution_set.exists():
+            return _("Duomenų rinkinio papildymas")
+        return _("Duomenų atvėrimas")
 
     def get_likes(self):
         from vitrina.likes.models import Like

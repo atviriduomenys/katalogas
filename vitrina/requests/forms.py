@@ -5,7 +5,8 @@ from crispy_forms.layout import Layout, Div, Field, Submit
 from haystack.forms import FacetedSearchForm, SearchForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, Textarea, ModelChoiceField, RadioSelect, DateField
+from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, \
+    Textarea, ModelChoiceField, RadioSelect, DateField, HiddenInput
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2MultipleWidget
 from vitrina.requests.search_indexes import RequestIndex
@@ -29,7 +30,7 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
     def build_attrs(self, base_attrs, extra_attrs=None):
         base_attrs = super().build_attrs(base_attrs, extra_attrs)
         base_attrs.update(
-            {"data-minimum-input-length": 0, "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius, kad matytumet daugiau rezultatų", "style": "width: 650px"}
+            {"data-minimum-input-length": 0, "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius, kad matytumet daugiau rezultatų", "style": "min-width: 650px;"}
         )
         return base_attrs
 
@@ -56,27 +57,6 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
-
-    class Meta:
-        model = Request
-        fields = ['title', 'description']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        request_instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if request_instance else _("Toliau")
-        self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
-        self.helper.form_id = "request-form"
-        self.helper.layout = Layout(
-            Field('title', placeholder=_('Pavadinimas')),
-            Field('description', placeholder=_('Aprašymas')),
-            Submit('submit', button, css_class='button is-primary')
-        )
-
-class RequestAddOrgForm(ModelForm):
-    title = CharField(label=_("Pavadinimas"))
-    description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
         label="Organizacija",
         widget=ProviderWidget,
@@ -87,21 +67,30 @@ class RequestAddOrgForm(ModelForm):
 
     class Meta:
         model = Request
-        fields = ['title', 'description', 'organizations']
+        fields = ['title', 'description']
 
-    def __init__(self, *args, initial={}, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        button = _("Sukurti")
+        request_instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if request_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
-        self.helper.form_id = "request-add-org-form"
-        self.helper.layout = Layout(
-            Field('title', value=initial.get('title'), placeholder=_('Pavadinimas'), readonly=True),
-            Field('description', placeholder=_('Aprašymas'), readonly=True),
-            Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
-            Submit('submit', button, css_class='button is-primary')
-        )
-        self.fields['description'].initial = initial.get('description')
+        self.helper.form_id = "request-form"
+        if request_instance:
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas')),
+                Field('description', placeholder=_('Aprašymas')),
+                Submit('submit', button, css_class='button is-primary')
+            )
+        else:
+            self.helper.layout = Layout(
+                Field('title', placeholder=_('Pavadinimas')),
+                Field('description', placeholder=_('Aprašymas')),
+                Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
+                Submit('submit', button, css_class='button is-primary')
+            )
+
+
 
 class RequestEditOrgForm(ModelForm):
     organizations = ModelMultipleChoiceField(
@@ -126,6 +115,7 @@ class RequestEditOrgForm(ModelForm):
             Submit('submit', button, css_class='button is-primary')
         )
 
+
 class RequestSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
@@ -147,7 +137,10 @@ class RequestSearchForm(FacetedSearchForm):
 
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
-        return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+        if obj.deadline:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+        else:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class RequestPlanForm(ModelForm):
@@ -156,6 +149,7 @@ class RequestPlanForm(ModelForm):
         widget=RadioSelect(),
         queryset=Plan.objects.all()
     )
+    form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
         model = PlanRequest
@@ -168,6 +162,7 @@ class RequestPlanForm(ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-plan-form"
         self.helper.layout = Layout(
+            Field('form_type'),
             Field('plan'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )

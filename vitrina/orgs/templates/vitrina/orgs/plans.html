@@ -11,6 +11,15 @@
     </ul>
 {% endblock %}
 
+{% block head %}
+    <style>
+        .list_item {
+		  	list-style-type: disc;
+		  	margin-left: 1em;
+		}
+    </style>
+{% endblock %}
+
 {% block content %}
     {% include 'vitrina/orgs/tabs.html' %}
 
@@ -25,49 +34,97 @@
                 </div>
             {% endif %}
 
+            <div class="tabs is-toggle">
+                <ul>
+                    <li class="{% if selected_tab == 'opened' %}is-active{% endif %}">
+                        <a href="{% url 'organization-plans' organization.pk %}?status=opened">
+                            <span>{% translate "Aktualūs" %}</span>
+                        </a>
+                    </li>
+                    <li class="{% if selected_tab == 'closed' %}is-active{% endif %}">
+                        <a href="{% url 'organization-plans' organization.pk %}?status=closed">
+                            <span>{% translate "Uždaryti" %}</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
             {% if plans %}
-                <table class="table is-fullwidth">
-                    <tbody>
-                    <tr>
-                        <th>{% translate "Pavadinimas" %}</th>
-                        <th>{% translate "Terminas" %}</th>
-                        <th>{% translate "Paslaugų teikėjas" %}</th>
-                        <th>{% translate "Projektas" %}</th>
-                        <th>{% translate "Įgyvendinimo kaina" %}</th>
-                    </tr>
-                    {% for plan in plans %}
+                <div class="table-container">
+                    <table class="table is-fullwidth">
+                        <tbody>
                         <tr>
-                            <td><a href="{{ plan.get_absolute_url }}">{{ plan.title }}</a></td>
-                            <td>
-                                {% if plan.deadline %}
-                                    {% if plan.deadline|is_past_due %}
-                                        <span class="tag is-danger">
-                                    {% else %}
-                                        <span class="tag is-success">
-                                    {% endif %}
-                                        {{ plan.deadline|date:"SHORT_DATE_FORMAT"}}
-                                    </span>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>
-                            {% if plan.provider %}
-                                {% if plan.provider == plan.receiver %}
-                                    {% translate "Svarankiškai" %}
-                                {% else %}
-                                    <a href="{{ plan.provider.get_absolute_url }}">{{ plan.provider }}</a>
-                                {% endif %}
-                            {% else %}
-                                {{ plan.provider_title|default:"-" }}
-                            </td>
-                            {% endif %}
-                            <td>{{ plan.project.title|default:"-" }}</td>
-                            <td>{{ plan.price|floatformat:2|default:"-" }}</td>
+                            <th>{% translate "Duomenų rinkinys" %}</th>
+                            <th>{% translate "Terminas" %}</th>
+                            <th>{% translate "Užduotis" %}</th>
+                            <th>{% translate "Įgyvendina" %}</th>
+                            <th>{% translate "Poreikis" %}</th>
                         </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                        {% for plan in plans %}
+                            <tr>
+                                <td>
+                                    {% if plan.plandataset_set.count > 1 %}
+                                        <ul>
+                                            {% for obj in plan.plandataset_set.all %}
+                                                <li class="list_item"><a href="{{ obj.dataset.get_absolute_url }}">{{ obj.dataset }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        {% define plan.plandataset_set.first as obj %}
+                                        {% if obj %}
+                                            <a href="{{ obj.dataset.get_absolute_url }}">{{ obj.dataset }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                 <td>
+                                    {% if plan.deadline %}
+                                        {% if plan.deadline|is_past_due %}
+                                            <span class="tag is-danger is-light">
+                                        {% else %}
+                                            <span class="tag is-success is-light">
+                                        {% endif %}
+                                            {{ plan.deadline|date:"SHORT_DATE_FORMAT"}}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ plan.get_absolute_url }}">{{ plan.title }}</a></td>
+                                <td>
+                                {% if plan.provider %}
+                                    {% if plan.provider == plan.receiver %}
+                                        {% translate "Svarankiškai" %}
+                                    {% else %}
+                                        <a href="{{ plan.provider.get_absolute_url }}">{{ plan.provider }}</a>
+                                    {% endif %}
+                                {% else %}
+                                    {{ plan.provider_title|default:"-" }}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if plan.planrequest_set.count > 1 %}
+                                        <ul>
+                                            {% for obj in plan.planrequest_set.all %}
+                                            <li class="list_item"><a href="{{ obj.request.get_absolute_url }}">{{ obj.request }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        {% define plan.planrequest_set.first as obj %}
+                                        {% if obj %}
+                                            <a href="{{ obj.request.get_absolute_url }}">{{ obj.request }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
                 <p>{% translate "Plano nėra." %}</p>
             {% endif %}

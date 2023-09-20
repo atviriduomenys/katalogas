@@ -24,35 +24,34 @@ class TaskListView(LoginRequiredMixin, ListView):
             queryset = queryset
         else:
             if task_filter == 'user':
-                queryset = Task.objects.filter(user=self.request.user)
+                queryset = queryset.filter(user=self.request.user)
             elif task_filter == 'all':
                 queryset = queryset
             elif task_filter == Task.CREATED.lower():
-                queryset = Task.objects.filter(status=Task.CREATED)
+                queryset = queryset.filter(status=Task.CREATED)
             elif task_filter == Task.ASSIGNED.lower():
-                queryset = Task.objects.filter(status=Task.ASSIGNED)
+                queryset = queryset.filter(status=Task.ASSIGNED)
             elif task_filter == Task.COMPLETED.lower():
-                queryset = Task.objects.filter(status=Task.COMPLETED)
+                queryset = queryset.filter(status=Task.COMPLETED)
             elif task_filter == Task.COMMENT.lower():
-                queryset = Task.objects.filter(type=Task.COMMENT)
+                queryset = queryset.filter(type=Task.COMMENT)
             elif task_filter == Task.REQUEST.lower():
-                queryset = Task.objects.filter(type=Task.REQUEST)
+                queryset = queryset.filter(type=Task.REQUEST)
             else:
-                queryset = Task.objects.filter(type__in=[Task.ERROR, Task.ERROR_FREQUENCY, Task.ERROR_DISTRIBUTION])
+                queryset = queryset.filter(type__in=[Task.ERROR, Task.ERROR_FREQUENCY, Task.ERROR_DISTRIBUTION])
 
         return queryset.order_by('due_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         all_tasks = get_active_tasks(self.request.user)
-        all_active_tasks = all_tasks.filter(status__in=[Task.CREATED, Task.ASSIGNED])
-        active_user_tasks = Task.objects.filter(user=self.request.user)
+        active_user_tasks = all_tasks.filter(user=self.request.user)
         closed_tasks = all_tasks.filter(status=Task.COMPLETED)
         cats = [
             {'title': 'Vykdytojas', 'types':
                 [
                     {'subtype': 'Mano užduotys', 'count': active_user_tasks.count(), 'filter': 'user'},
-                    {'subtype': 'Visos užduotys', 'count': all_active_tasks.count(), 'filter': 'all'}
+                    {'subtype': 'Visos užduotys', 'count': all_tasks.count(), 'filter': 'all'}
                 ]
              },
             {'title': 'Būsena', 'types':

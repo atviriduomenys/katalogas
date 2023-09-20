@@ -52,6 +52,7 @@ EOF
 # Run migrations, this might take aboult 10 minutes to complete.
 # It is recommended to save final result in a dump file and next time load the
 # dump file, to avoid running all the migrations again.
+poetry run python manage.py migrate sites
 poetry run python manage.py migrate
 
 # Another set of migrations implemented as scripts

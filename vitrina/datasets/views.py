@@ -62,7 +62,8 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
-    get_requests, get_datasets_for_user, has_remove_from_request_perm
+    get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
+    get_total_by_indicator_from_stats, has_remove_from_request_perm
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.datasets.structure import detect_read_errors, read
@@ -1644,36 +1645,8 @@ class JurisdictionStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    single_dict['count'] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    single_dict['count'] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    single_dict['count'] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    single_dict['count'] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    single_dict['count'] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    single_dict['count'] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    single_dict['count'] = level_avg
+                                total = get_total_by_indicator_from_stats(st, indicator, total)
+                            single_dict['count'] = total
                             if max_count < single_dict.get('count'):
                                 max_count = single_dict.get('count')
                         else:
@@ -1829,19 +1802,26 @@ class CategoryStatsView(DatasetListView):
         return context
 
 
-class PublicationStatsView(DatasetListView):
+class PublicationStatsView(DatasetStatsMixin, DatasetListView):
+    title = _("Įkėlimo data")
+    current_title = _("Duomenų rinkinių kiekis metuose")
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/published_dates.html'
+    filter = 'published'
+    filter_model = Category
     paginate_by = 0
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
+        stats_for_period = {}
         year_stats = {}
         chart_data = []
 
@@ -1859,11 +1839,10 @@ class PublicationStatsView(DatasetListView):
             published = dataset.published
             if published is not None:
                 year_published = published.year
-                year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                # quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                # quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                # month = str(year_published) + "-" + str('%02d' % published.month)
-                # monthly_stats[month] = monthly_stats.get(month, 0) + 1
+                year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
+                period = str(pd.to_datetime(published).to_period(frequency))
+                stats_for_period[period] = stats_for_period.get(period, 0) + 1
+
         if indicator != 'dataset-count':
             for yr in year_stats.keys():
                 start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
@@ -1893,118 +1872,59 @@ class PublicationStatsView(DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                year_stats[yr] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                year_stats[yr] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                year_stats[yr] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                year_stats[yr] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                year_stats[yr] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                year_stats[yr] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                year_stats[yr] = level_avg
+                            total = get_total_by_indicator_from_stats(st, indicator, total)
+                        year_stats[yr] = total
                     else:
                         year_stats[yr] = 0
-        for key, value in year_stats.items():
-            if max_count < value:
-                max_count = value
         keys = list(year_stats.keys())
         values = list(year_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
-        elif sorting == 'sort-year-asc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
-        elif sorting == 'sort-desc':
-            year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-asc':
-            year_stats = {keys[i]: values[i] for i in sorted_value_index}
+        year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+        max_count = year_stats[max(year_stats, key=lambda key: year_stats[key])]
 
-        sort = 0
-        for index, y in enumerate(year_stats.keys()):
-            sort += 1
-            dataset_ids = Dataset.objects.filter(created__year=y).values_list('pk', flat=True)
-            total = 0
-            temp = []
-            for label in labels:
-                if indicator == 'dataset-count':
-                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
-                else:
-                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
-                    per_datasets = 0
-                    if len(stat) > 0:
-                        for st in stat:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    per_datasets += st.request_count
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    per_datasets += st.project_count
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    per_datasets += st.distribution_count
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    per_datasets += st.object_count
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    per_datasets += st.field_count
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    per_datasets += st.model_count
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                per_datasets = level_avg
+        data = []
+        total = 0
+        for label in labels:
+            dataset_count = stats_for_period.get(str(label), 0)
+            if indicator == 'dataset-count':
+                total += dataset_count
+            else:
+                dataset_ids = Dataset.objects.filter(created__year=label.year).values_list('pk', flat=True)
+                stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                per_datasets = 0
+                if len(stat) > 0:
+                    for st in stat:
+                        per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
+                total += per_datasets
 
-                    total = per_datasets
-                if frequency == 'W':
-                    temp.append({'x': _date(label.start_time, ff), 'y': total})
-                else:
-                    temp.append({'x': _date(label, ff), 'y': total})
-            dt = {
-                'label': y,
-                'data': temp,
-                'borderWidth': 1,
-                'fill': True,
-                'sort': sort
-            }
-            chart_data.append(dt)
+            if frequency == 'W':
+                data.append({'x': _date(label.start_time, ff), 'y': total})
+            else:
+                data.append({'x': _date(label, ff), 'y': total})
 
-        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+        dt = {
+            'label': 'Duomenų rinkinių kiekis',
+            'data': data,
+            'borderWidth': 1,
+            'fill': True,
+        }
+        chart_data.append(dt)
 
+        context['title'] = self.title
+        context['current_title'] = self.current_title
         context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio įkėlimo datą laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
         context['year_stats'] = year_stats
         context['max_count'] = max_count
-        context['duration'] = duration
-        context['active_filter'] = 'publication'
+
+        context['graph_title'] = self.get_graph_title(indicator)
+        context['yAxis_title'] = self.get_title_for_indicator(indicator)
+        context['xAxis_title'] = _('Laikas')
+
+        context['active_filter'] = self.filter
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
         context['has_time_graph'] = True
         return context
 
@@ -2072,36 +1992,8 @@ class YearStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    quarter_stats[k] = level_avg
+                                total += get_total_by_indicator_from_stats(st, indicator, total)
+                            quarter_stats[k] = total
                         else:
                             quarter_stats[k] = 0
         for key, value in quarter_stats.items():
@@ -2110,14 +2002,7 @@ class YearStatsView(DatasetListView):
         keys = list(quarter_stats.keys())
         values = list(quarter_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=False))
-        elif sorting == 'sort-year-asc':
-            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=True))
-        elif sorting == 'sort-asc':
-            quarter_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-desc':
-            quarter_stats = {keys[i]: values[i] for i in sorted_value_index}
+        quarter_stats = sort_publication_stats_reversed(sorting, values, keys, quarter_stats, sorted_value_index)
         context['selected_year'] = selected_year
         context['year_stats'] = quarter_stats
         context['max_count'] = max_count
@@ -2140,8 +2025,6 @@ class QuarterStatsView(DatasetListView):
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        # year_stats = {}
-        # quarter_stats = {}
         monthly_stats = {}
         selected_quarter = str(self.kwargs['quarter'])
 
@@ -2183,36 +2066,8 @@ class QuarterStatsView(DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                monthly_stats[k] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                monthly_stats[k] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                monthly_stats[k] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                monthly_stats[k] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                monthly_stats[k] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                monthly_stats[k] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                monthly_stats[k] = level_avg
+                            total += get_total_by_indicator_from_stats(st, indicator, total)
+                        monthly_stats[k] = total
                     else:
                         monthly_stats[k] = 0
         for m, mv in monthly_stats.items():
@@ -2221,16 +2076,8 @@ class QuarterStatsView(DatasetListView):
         keys = list(monthly_stats.keys())
         values = list(monthly_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=False))
-        elif sorting == 'sort-year-asc':
-            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=True))
-        elif sorting == 'sort-asc':
-            monthly_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-desc':
-            monthly_stats = {keys[i]: values[i] for i in sorted_value_index}
+        monthly_stats = sort_publication_stats_reversed(sorting, values, keys, monthly_stats, sorted_value_index)
         context['selected_quarter'] = self.kwargs['quarter']
-        # context['year_stats'] = quarter_stats
         context['year_stats'] = monthly_stats
         context['max_count'] = max_count
         context['current_object'] = str('quarter/' + selected_quarter)

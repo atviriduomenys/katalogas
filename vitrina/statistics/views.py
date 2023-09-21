@@ -6,7 +6,8 @@ from django.views.generic import ListView
 from django.template.defaultfilters import date as _date
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.datasets.services import get_frequency_and_format, update_facet_data
+from vitrina.datasets.services import get_frequency_and_format, update_facet_data, get_query_for_frequency, \
+    get_values_for_frequency
 from vitrina.statistics.models import StatRoute
 
 
@@ -56,6 +57,8 @@ class StatsMixin:
 
         frequency, ff = get_frequency_and_format(duration)
         labels = self.get_time_labels(start_date, frequency)
+        date_field = self.get_date_field()
+        values = get_values_for_frequency(frequency, date_field)
 
         bar_chart_data = []
         time_chart_data = []
@@ -68,14 +71,12 @@ class StatsMixin:
             filter_queryset_ids = queryset.filter(**query).values_list('pk', flat=True)
             filter_queryset = self.get_index_queryset().filter(pk__in=filter_queryset_ids)
 
+            count_data = self.get_data_for_indicator(indicator, values, filter_queryset)
+
             for label in labels:
-                count = self.get_count(
-                    label,
-                    indicator,
-                    frequency,
-                    filter_queryset,
-                    count
-                )
+                label_query = get_query_for_frequency(frequency, date_field, label)
+                label_count_data = count_data.filter(**label_query)
+                count = self.get_count(label, indicator, frequency, label_count_data, count)
 
                 if frequency == 'W':
                     data.append({'x': _date(label.start_time, ff), 'y': count})
@@ -91,10 +92,7 @@ class StatsMixin:
             }
             time_chart_data.append(dt)
 
-            if data:
-                item['count'] = data[-1]['y']
-            else:
-                item['count'] = 0
+            item['count'] = self.get_item_count(data, indicator)
             item['display_value'] = display_value
             item = self.update_item_data(item)
             bar_chart_data.append(item)
@@ -122,7 +120,7 @@ class StatsMixin:
         context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
-        context['xAxis_title'] = _('Laikas')
+        context['xAxis_title'] = self.get_time_axis_title(indicator)
         context['yAxis_title'] = self.get_title_for_indicator(indicator)
         context['time_chart_data'] = json.dumps(time_chart_data[:self.max_values_in_time_chart])
 
@@ -141,7 +139,7 @@ class StatsMixin:
         )
 
     def get_start_date(self):
-        if obj := self.model.objects.all().first():
+        if obj := self.model.objects.order_by('created').first():
             return obj.created
         return datetime.now()
 
@@ -156,12 +154,12 @@ class StatsMixin:
         return labels
 
     def get_index_queryset(self):
-        return self.model.public.all()
+        return self.model.objects.all()
 
-    def get_data_for_indicator(self, indicator, filter_queryset):
-        return filter_queryset
+    def get_data_for_indicator(self, indicator, values, filter_queryset):
+        return []
 
-    def get_count(self, label, indicator, frequency, filter_queryset, count):
+    def get_count(self, label, indicator, frequency, data, count):
         return 0
 
     def get_title_for_indicator(self, indicator):
@@ -178,3 +176,14 @@ class StatsMixin:
 
     def get_parent_links(self):
         return {}
+
+    def get_date_field(self):
+        return 'created'
+
+    def get_time_axis_title(self, indicator):
+        return _('Laikas')
+
+    def get_item_count(self, data, indicator):
+        if data:
+            return data[-1]['y']
+        return 0

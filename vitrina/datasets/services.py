@@ -109,68 +109,6 @@ def has_remove_from_request_perm(dataset, request, user):
     return False
 
 
-def get_count_by_frequency(
-    frequency,
-    label,
-    queryset,
-    field,
-    aggregate_field=None,
-    group_field=None,
-    only_latest=False,
-):
-    if frequency == 'Y':
-        query = {
-            f"{field}__year": label.year
-        }
-    elif frequency == 'Q':
-        queryset = queryset.annotate(
-            quarter=ExtractQuarter('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            "quarter": label.quarter
-        }
-    elif frequency == 'M':
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month
-        }
-    elif frequency == 'W':
-        queryset = queryset.annotate(
-            week=ExtractWeek('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            "week": label.week
-        }
-    else:
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            f"{field}__day": label.day
-        }
-
-    if aggregate_field:
-        if only_latest and group_field:
-            queryset_ids = queryset.order_by(
-                group_field, f"-{field}"
-            ).distinct(
-                group_field
-            ).values_list('pk', flat=True)
-            queryset = queryset.filter(pk__in=queryset_ids)
-
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-        else:
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-    else:
-        return queryset.filter(**query).count()
-
-
 def get_frequency_and_format(duration):
     if duration == 'duration-yearly':
         frequency = 'Y'
@@ -191,6 +129,50 @@ def get_frequency_and_format(duration):
         frequency = 'Y'
         ff = 'Y'
     return frequency, ff
+
+
+def get_values_for_frequency(frequency, field):
+    if frequency == 'Y':
+        values = [f"{field}__year"]
+    elif frequency == 'Q':
+        values = [f"{field}__year", f"{field}__quarter"]
+    elif frequency == 'M':
+        values = [f"{field}__year", f"{field}__month"]
+    elif frequency == 'W':
+        values = [f"{field}__year", f"{field}__month", f"{field}__week"]
+    else:
+        values = [f"{field}__year", f"{field}__month", f"{field}__day"]
+    return values
+
+
+def get_query_for_frequency(frequency, field, label):
+    if frequency == 'Y':
+        query = {
+            f"{field}__year": label.year
+        }
+    elif frequency == 'Q':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__quarter": label.quarter
+        }
+    elif frequency == 'M':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month
+        }
+    elif frequency == 'W':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__week": label.week
+        }
+    else:
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__day": label.day
+        }
+    return query
 
 
 def sort_publication_stats(sorting, values, keys, stats, sorted_value_index):
@@ -246,7 +228,9 @@ def get_total_by_indicator_from_stats(st, indicator, total):
         lev = []
         if st.maturity_level is not None:
             lev.append(st.maturity_level)
-        level_avg = int(sum(lev) / len(lev))
+        level_avg = 0
+        if lev:
+            level_avg = int(sum(lev) / len(lev))
         return level_avg
 
 

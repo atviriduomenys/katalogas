@@ -14,7 +14,7 @@
         </li>
         {% endif %}
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
-            <a href="{% url 'organization-datasets' organization_id %}">
+            <a href="{% url 'organization-datasets' organization_id %}?selected_facets=organization_exact:{{organization_id}}">
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>

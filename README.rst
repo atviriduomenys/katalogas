@@ -57,6 +57,7 @@ By default pgloader creates a schema with the same name as in source database. S
 Then we can run::
 
     poetry install
+    poetry run python manage.py migrate sites
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput
     poetry run python manage.py createinitialrevisions

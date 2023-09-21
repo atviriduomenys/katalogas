@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from haystack.fields import CharField, IntegerField, MultiValueField, DateTimeField, EdgeNgramField, BooleanField
 from django.db import models
 
@@ -6,6 +7,7 @@ from haystack.exceptions import NotHandled
 from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
+from vitrina.requests.models import RequestObject, Request
 
 
 class DatasetIndex(SearchIndex, Indexable):
@@ -68,8 +70,15 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         for using in using_backends:
             try:
                 index = self.connections[using].get_unified_index().get_index(sender)
+
                 if index.index_queryset().filter(pk=instance.pk):
                     index.update_object(instance, using=using)
+                    if isinstance(instance, Dataset):
+                        req_index = self.connections[using].get_unified_index().get_index(Request)
+                        reqs = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(instance),
+                                                            object_id=instance.pk)
+                        for req in reqs:
+                            req_index.update_object(req.request, using=using)
                 else:
                     index.remove_object(instance, using=using)
 

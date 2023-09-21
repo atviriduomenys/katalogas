@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.settings import VITRINA_TASK_RAISE_2, VITRINA_TASK_RAISE_1
 from vitrina.tasks.models import Task, Holiday
@@ -70,7 +71,6 @@ def get_active_tasks(
     )
 
     orgs = user.representative_set.filter(
-        content_type=ContentType.objects.get_for_model(Organization),
         object_id__isnull=False,
     )
 
@@ -80,7 +80,10 @@ def get_active_tasks(
     ]
 
     for org in orgs:
-        org = org.content_object
+        if isinstance(org.content_object, Organization):
+            org = org.content_object
+        elif isinstance(org.content_object, Dataset):
+            org = org.content_object.organization
         args += [
             # 2. User can see his represented org tasks.
             Q(organization=org) |

@@ -29,7 +29,7 @@
                 {% for i in page_obj %}
                 <article class="has-margin-bottom has-line-bottom">
                     <div class="columns single-item reverse-columns">
-                        <div class="column {% if i.getImageUUID %}is-10{% else %}is-12{% endif %}">
+                        <div class="column {% if i.image %}is-10{% else %}is-12{% endif %}">
                             <p>
                                 <a href="{{ i.get_absolute_url }}" class="usecase-url">
                                     {{ i.get_title }}
@@ -44,10 +44,10 @@
                             </p>
                             <p>{{ i.description|truncatewords:42 }}</p>
                         </div>
-                        {% if i.getImageUUID %}
+                        {% if i.image %}
                             <div class="column is-2">
                                 <figure class="image">
-                                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                                    <img class="max-256x256" src="{{ i.image.url }}" alt="{{ i.title }}">
                                 </figure>
                             </div>
                         {% endif %}

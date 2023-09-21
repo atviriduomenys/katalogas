@@ -921,13 +921,13 @@ Django = ">=2.1"
 
 [[package]]
 name = "django-reversion"
-version = "5.0.4"
+version = "5.0.5"
 description = "An extension to the Django web framework that provides version control for model instances."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-reversion-5.0.4.tar.gz", hash = "sha256:c12bab452d31dd3c244456cf1df383acf14ba147cf99404c5e44412596de42fc"},
-    {file = "django_reversion-5.0.4-py3-none-any.whl", hash = "sha256:a591cbce8621b5d036a37617554668b5ef2eb9777682e3af20b6401ee87cfbc5"},
+    {file = "django-reversion-5.0.5.tar.gz", hash = "sha256:253c691b0a4e0be1deec0b62c38c9fbb75b6e5a8fd81d3b58a26f46135970106"},
+    {file = "django_reversion-5.0.5-py3-none-any.whl", hash = "sha256:0106c11c8c87b233539a755c6ba81227923e5d4cdc327bde90f48df8d21b56fd"},
 ]
 
 [package.dependencies]
@@ -1078,13 +1078,13 @@ Django = ">=3.2"
 
 [[package]]
 name = "django-webtest"
-version = "1.9.10"
+version = "1.9.11"
 description = "Instant integration of Ian Bicking's WebTest (http://docs.pylonsproject.org/projects/webtest/) with Django's testing framework."
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-webtest-1.9.10.tar.gz", hash = "sha256:c8c32041791cdae468e443097c432c67cf17cad339e1ab88b01a6c4841ee4c74"},
-    {file = "django_webtest-1.9.10-py3-none-any.whl", hash = "sha256:ef075e98b38fe3836dc533c2924d3e37c6bb3483008c40567115518a0303b1af"},
+    {file = "django-webtest-1.9.11.tar.gz", hash = "sha256:9597d26ced599bc5d4d9366bb451469fc9707b4779f79543cdf401ae6c5aeb35"},
+    {file = "django_webtest-1.9.11-py3-none-any.whl", hash = "sha256:e29baf8337e7fe7db41ce63ca6661f7b5c77fe56f506f48b305e09313f5475b4"},
 ]
 
 [package.dependencies]
@@ -1092,14 +1092,17 @@ webtest = ">=1.3.3"
 
 [[package]]
 name = "djangocms-admin-style"
-version = "3.2.5"
+version = "3.2.6"
 description = "Adds pretty CSS styles for the django CMS admin interface."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "djangocms-admin-style-3.2.5.tar.gz", hash = "sha256:abbe89d369c0779f7e5f839887a77bdb21660b547e83605d6a4a6df958ace7a5"},
-    {file = "djangocms_admin_style-3.2.5-py3-none-any.whl", hash = "sha256:fc51677f12dbec6996590c430c90c9fe8efa32ceadfee383a576ed092be07526"},
+    {file = "djangocms-admin-style-3.2.6.tar.gz", hash = "sha256:f093c65c92db09713726d71280ecea602d5f348c9ad3b02281f7af245a0598db"},
+    {file = "djangocms_admin_style-3.2.6-py3-none-any.whl", hash = "sha256:17b59c24d649771ad243cd050114b2acaac8f6d8eecf4539a8dc7740d590f075"},
 ]
+
+[package.dependencies]
+Django = "*"
 
 [[package]]
 name = "djangocms-apphook-setup"
@@ -2427,13 +2430,12 @@ files = [
 
 [[package]]
 name = "reportlab"
-version = "4.0.4"
+version = "4.0.5"
 description = "The Reportlab Toolkit"
 optional = false
 python-versions = ">=3.7,<4"
 files = [
-    {file = "reportlab-4.0.4-py3-none-any.whl", hash = "sha256:3dcda79ce04baf70721e2ec54854722644262cac2feec3d5c4c5e77015504cb0"},
-    {file = "reportlab-4.0.4.tar.gz", hash = "sha256:7f70b3b56aff5f11cb4136c51a0f5a56fe6e4c8fbbac7b903076db99a8ef31c1"},
+    {file = "reportlab-4.0.5-py3-none-any.whl", hash = "sha256:1344dbe779b9049a1888105503837d0e5b62163bf5c6b33bd1fbe84bad484f50"},
 ]
 
 [package.dependencies]
@@ -2848,13 +2850,13 @@ six = "*"
 
 [[package]]
 name = "urllib3"
-version = "2.0.4"
+version = "2.0.5"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.4-py3-none-any.whl", hash = "sha256:de7df1803967d2c2a98e4b11bb7d6bd9210474c46e8a0401514e3a42a75ebde4"},
-    {file = "urllib3-2.0.4.tar.gz", hash = "sha256:8d22f86aae8ef5e410d4f539fde9ce6b2113a001bb4d189e0aed70642d602b11"},
+    {file = "urllib3-2.0.5-py3-none-any.whl", hash = "sha256:ef16afa8ba34a1f989db38e1dbbe0c302e4289a47856990d0682e374563ce35e"},
+    {file = "urllib3-2.0.5.tar.gz", hash = "sha256:13abf37382ea2ce6fb744d4dad67838eec857c9f4f57009891805e0b5e123594"},
 ]
 
 [package.extras]

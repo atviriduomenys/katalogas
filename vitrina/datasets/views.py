@@ -1088,7 +1088,6 @@ class AddRequestView(
             object_id=self.dataset.pk,
             organization=Organization.objects.get(pk=self.dataset.organization_id),
             status=Task.CREATED,
-            user=self.request.user,
             type=Task.REQUEST
         )
         set_comment(Dataset.REQUEST_SET)

@@ -36,7 +36,7 @@
                         {% endif %}
                     </span>
                     {% if resource.is_external_url %}
-                        <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                        <a href="{{ resource.get_download_url }}">{% translate "Atsisiųsti duomenų šaltinį" %}</a>
                     {% else %}
                         <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
                     {% endif %}

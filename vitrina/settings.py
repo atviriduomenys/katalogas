@@ -98,6 +98,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'django_select2',
+    'django_browser_reload',
+    'debug_toolbar',
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
@@ -143,6 +145,9 @@ MIDDLEWARE = [
     'cms.middleware.page.CurrentPageMiddleware',
     'cms.middleware.toolbar.ToolbarMiddleware',
     'cms.middleware.language.LanguageCookieMiddleware',
+
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'vitrina.urls'
@@ -388,3 +393,7 @@ LOGGING = {
 }
 CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]

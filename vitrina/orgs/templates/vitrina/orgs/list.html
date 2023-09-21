@@ -100,7 +100,14 @@
         </div>
 
         <div class="column is-three-quarters">
-            <h1 class="title is-size-5-mobile">{% translate "Paieškos rezultatai" %}: {{ paginator.count }}</h1>
+            <div class="buttons">
+              <div class="control">
+                <div class="tags">
+                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta organizacijų" %}:</span>
+                  <span class="tag is-medium">{{ paginator.count }}</span>
+                </div>
+              </div>
+            </div>
 
             {% for i in page_obj %}
                 <article class="media is-expanded">

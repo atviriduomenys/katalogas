@@ -16,6 +16,11 @@
             </a>
         </li>
         {% endif %}
+        <li class="{%if request.resolver_match.url_name == 'dataset-requests' %} is-active {% endif %}">
+            <a href="{% url 'dataset-requests' request.resolver_match.kwargs.pk %}" id="requests-tab">
+                {% translate "Poreikiai" %}
+            </a>
+        </li>
         {% if data_url %}
         <li class="{% if request.resolver_match.url_name == 'object-data' or request.resolver_match.url_name == 'model-data' %} is-active {% endif %}">
             <a href="{{ data_url }}" id="data_tab">
@@ -60,10 +65,5 @@
                 </a>
             </li>
         {% endif %}
-        <li class="{%if request.resolver_match.url_name == 'dataset-requests' %} is-active {% endif %}">
-            <a href="{% url 'dataset-requests' request.resolver_match.kwargs.pk %}" id="requests-tab">
-                {% translate "Poreikiai" %}
-            </a>
-        </li>
     </ul>
 </div>

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from filer.fields.image import FilerImageField
@@ -18,7 +20,7 @@ class ModelDownloadStats(models.Model):
 
 
 class DatasetStats(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    created = models.DateField(blank=True, null=True, default=datetime.today)
     dataset_id = models.IntegerField(blank=False, null=False)
     object_count = models.IntegerField(blank=True, null=True)
     field_count = models.IntegerField(blank=True, null=True)

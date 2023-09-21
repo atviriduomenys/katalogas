@@ -13,7 +13,7 @@ def assign_dataset_status(apps, schema_editor):
 
     sys_user = User.objects.filter(email=settings.SYSTEM_USER_EMAIL).first()
     if not sys_user:
-        User.objects.create(
+        sys_user = User.objects.create(
             first_name="Sistemos",
             last_name="Naudotojas",
             email=settings.SYSTEM_USER_EMAIL,

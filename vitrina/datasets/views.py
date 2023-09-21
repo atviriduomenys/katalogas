@@ -1265,15 +1265,13 @@ class DatasetStatsMixin(StatsMixin):
                 'created'
             )
         elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-            count = get_count_by_frequency(
+            count += get_count_by_frequency(
                 frequency,
                 label,
                 data,
                 'created',
-                field,
-                'dataset_id',
-                True
-            ) or count
+                field
+            )
         elif field := MODEL_INDICATOR_FIELDS.get(indicator):
             count += get_count_by_frequency(
                 frequency,

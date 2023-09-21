@@ -151,7 +151,7 @@ def get_count_by_frequency(
 
     if aggregate_field:
         if only_latest and group_field:
-            queryset_ids = queryset.order_by(
+            queryset_ids = queryset.filter(**query).order_by(
                 group_field, f"-{field}"
             ).distinct(
                 group_field

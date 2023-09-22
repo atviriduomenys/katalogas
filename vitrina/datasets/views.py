@@ -1357,7 +1357,10 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
             for label in labels:
                 label_query = get_query_for_frequency(frequency, date_field, label)
-                if indicator != 'dataset-count':
+                if (
+                    status['filter_value'] == Dataset.UNASSIGNED or
+                    indicator != 'dataset-count'
+                ):
                     label_count_data = count_data.filter(**label_query)
                     count = self.get_count(label, indicator, frequency, label_count_data, count)
                 else:

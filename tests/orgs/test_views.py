@@ -1,5 +1,9 @@
+import io
+
 import pytest
 from datetime import datetime
+
+from PIL import Image
 from freezegun import freeze_time
 import pytz
 from django.contrib.contenttypes.models import ContentType
@@ -8,6 +12,7 @@ from django.urls import reverse
 
 from django_webtest import DjangoTestApp
 from itsdangerous import URLSafeSerializer
+from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
@@ -502,3 +507,61 @@ def test_organization_closed_plans(app: DjangoTestApp):
 
     resp = app.get("%s?status=closed" % reverse('organization-plans', args=[organization.pk]))
     assert len(resp.context['plans']) == 1
+
+
+@pytest.mark.django_db
+def test_change_form_no_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert settings.LOGIN_URL in response.location
+
+
+@pytest.mark.django_db
+def test_change_form_wrong_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert str(org.id) in response.location
+
+
+def generate_photo_file(height, length) -> bytes:
+    file = io.BytesIO()
+    image = Image.new('RGBA', size=(height, length), color=(155, 0, 0))
+    image.save(file, 'png')
+    file.name = 'img.png'
+    return file.getvalue()
+
+
+@pytest.mark.django_db
+def test_change_form_correct_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    jurisdiction = OrganizationFactory(role='test')
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'edited org description'
+    form['jurisdiction'] = jurisdiction.id
+    form['image'] = Upload('img.png', generate_photo_file(256, 256), 'image')
+
+    resp = form.submit()
+    org.refresh_from_db()
+
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-detail', kwargs={'pk': org.id})
+    assert org.title == 'Edited title'
+    assert org.description == 'edited org description'
+
+
+@pytest.mark.django_db
+def test_click_edit_button(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
+    response.click(linkid='change_organization')
+    assert response.status_code == 200

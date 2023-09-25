@@ -5,7 +5,7 @@ from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
     HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
-    DateField, DateInput
+    DateField, DateInput, Textarea
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -15,11 +15,89 @@ from crispy_forms.layout import Layout, Field, Submit
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.services import is_duplicate_key
+from vitrina.fields import FilerImageField
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.viisp.xml_utils import read_adoc_file, parse_adoc_xml_signature_data
 from vitrina.users.models import User
+
+
+class OrganizationUpdateForm(ModelForm):
+    company_code = CharField(label=_('Registracijos numeris'), required=True)
+    title = CharField(label=_('Pavadinimas'), required=True)
+    name = CharField(label=_('Kodinis pavadinimas'), required=True)
+    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
+                                    label=_('Jurisdikcija'),
+                                    required=True)
+    image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
+    email = CharField(label=_('Elektroninis paštas'), required=True)
+    phone = CharField(label=_('Telefono numeris'), required=True)
+    address = CharField(label=_('Adresas'), required=True)
+    description = CharField(label=_('Aprašymas'), widget=Textarea, required=False)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'company_code',
+            'title',
+            'name',
+            'kind',
+            'jurisdiction',
+            'image',
+            'website',
+            'email',
+            'phone',
+            'address',
+            'provider',
+            'description',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        org_instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if org_instance else _("Sukurti")
+        parent = self.instance.get_parent()
+        if parent:
+            self.fields['jurisdiction'].initial = parent
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "organization-form"
+        self.helper.layout = Layout(
+            Field('company_code', placeholder=_("Registracijos numeris")),
+            Field('title', placeholder=_("Pavadinimas")),
+            Field('name', placeholder=_('Kodinis pavadinimas')),
+            Field('kind', placeholder=_("Tipas")),
+            Field('jurisdiction', placeholder=_("Jurisdikcija")),
+            Field('image', placeholder=_("Logotipas")),
+            Field('website', placeholder=_("Tinklalapis")),
+            Field('email', placeholder=_("Elektroninis paštas")),
+            Field('phone', placeholder=_("Telefono numeris")),
+            Field('address', placeholder=_("Adresas")),
+            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('description', placeholder=_("Aprašymas")),
+            Submit('submit', button, css_class='button is-primary')
+        )
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            if not name.islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any((not c.isalnum() and c != '_') for c in name):
+                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.width != 256 or image.height != 256:
+                raise ValidationError(_("Nuotraukos dydis turi būti 256x256."))
+        return image
+
 
 class RepresentativeUpdateForm(ModelForm):
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
@@ -124,6 +202,7 @@ class RepresentativeCreateForm(ModelForm):
                 "Narys su šiuo el. pašto adresu jau egzistuoja."
             ))
         return super().clean()
+
 
 class PartnerRegisterForm(ModelForm):
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))

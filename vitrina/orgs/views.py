@@ -1,6 +1,5 @@
 import secrets
 
-import numpy as np
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -24,7 +23,7 @@ from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
@@ -117,6 +116,12 @@ class OrganizationDetailView(PlanMixin, DetailView):
             Representative,
             organization
         )
+        context_data['can_update_organization'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            Representative,
+            organization
+        )
         context_data['organization_id'] = organization.pk
         return context_data
 
@@ -173,6 +178,55 @@ class OrganizationMembersView(
         context_data['organization_id'] = self.object.pk
         context_data['organization'] = self.object
         return context_data
+
+
+class OrganizationUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Organization
+    form_class = OrganizationUpdateForm
+    template_name = 'base_form.html'
+    view_url_name = 'organization:edit'
+    context_object_name = 'organization'
+
+    def has_permission(self):
+        org = self.get_object()
+        return has_perm(self.request.user, Action.UPDATE, org)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            org = get_object_or_404(Organization, id=self.kwargs['pk'])
+            return redirect(org)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Organizacijos redagavimas')
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        organization = self.get_object()
+        parent = organization.get_parent()
+        if parent:
+            kwargs['initial'] = {'jurisdiction': parent}
+        return kwargs
+
+    def get(self, request, *args, **kwargs):
+        return super(OrganizationUpdateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
+        if not self.object.get_parent() == form.cleaned_data['jurisdiction']:
+            form.cleaned_data['jurisdiction'].fix_tree(fix_paths=True)
+            self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class RepresentativeCreateView(

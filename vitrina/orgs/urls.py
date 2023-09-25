@@ -2,7 +2,7 @@ from django.urls import path
 
 from vitrina.datasets.views import DatasetListView
 from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
-    RepresentativeDeleteView, OrganizationManagementsView
+    RepresentativeDeleteView, OrganizationManagementsView, OrganizationUpdateView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView
@@ -15,6 +15,7 @@ urlpatterns = [
     path('organizations/', OrganizationListView.as_view(), name='organization-list'),
     path('organizations/stats/jurisdiction/', OrganizationManagementsView.as_view(), name='organization-stats-jurisdiction'),
     path('orgs/<int:pk>/', OrganizationDetailView.as_view(), name='organization-detail'),
+    path('orgs/<int:pk>/update/', OrganizationUpdateView.as_view(), name='organization-change'),
     path('orgs/<int:pk>/members/', OrganizationMembersView.as_view(), name='organization-members'),
     path('orgs/<int:pk>/datasets/', DatasetListView.as_view(), name='organization-datasets'),
     path('orgs/<int:organization_id>/members/add/', RepresentativeCreateView.as_view(),

@@ -26,8 +26,16 @@
                 <div class="column">
                     <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ organization.title }}</h3>
                 </div>
+				{% if can_update_organization %}
+					<div class="column buttons is-one-third">
+						<a href="{%url 'organization-change' pk=organization.id %}"
+						   class="button is-primary is-normal m-t-md is-size-6-mobile"
+						   id="change_organization">
+							{% translate "Redaguoti organizaciją" %}
+						</a>
+					</div>
+            	{% endif %}
             </div>
-
             <div class="content">
                 {% if organization.description %}
                 	<p class="no-margin-bottom">{{ organization.description | linebreaks }}</p>

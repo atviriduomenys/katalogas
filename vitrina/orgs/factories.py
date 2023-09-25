@@ -1,6 +1,7 @@
 import factory
 from django.utils import timezone
 from factory.django import DjangoModelFactory
+from faker import Faker
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.factories import UserFactory
@@ -13,6 +14,11 @@ class OrganizationFactory(DjangoModelFactory):
 
     title = factory.Faker('company')
     kind = factory.Faker('word')
+    name = factory.Faker('word')
+    company_code = factory.Faker('bothify', text='?????????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    email = factory.Faker('email')
+    phone = Faker().phone_number()
+    address = Faker().address()
     is_public = True
     version = 1
 

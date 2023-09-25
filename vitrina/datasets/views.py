@@ -2423,6 +2423,11 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         return context
 
     def get_history_objects(self):

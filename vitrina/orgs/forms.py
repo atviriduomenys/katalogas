@@ -291,7 +291,6 @@ class ProviderWidget(ModelSelect2Widget):
     search_fields = ['title__icontains']
     dependent_fields = {
         'organizations': 'organizations',
-        'user_id': 'user_id'
     }
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
@@ -299,14 +298,6 @@ class ProviderWidget(ModelSelect2Widget):
         if 'organizations__in' in dependent_fields:
             organizations = dependent_fields.pop('organizations__in')
             ids.extend(organizations)
-        if 'user_id' in dependent_fields:
-            user_id = dependent_fields.pop('user_id')
-            try:
-                user = User.objects.get(pk=user_id)
-            except ObjectDoesNotExist:
-                user = None
-            if user and user.organization:
-                ids.append(user.organization.pk)
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
         provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
@@ -361,7 +352,13 @@ class OrganizationPlanForm(ModelForm):
         self.initial['user_id'] = self.user.pk
 
         if not instance:
-            if self.user.organization:
+            if len(self.organizations) == 1:
+                self.initial['provider'] = self.organizations[0]
+            elif (
+                    self.user.organization and
+                    self.user.organization.provider and
+                    self.user.organization in self.organizations
+            ):
                 self.initial['provider'] = self.user.organization
 
     def clean(self):

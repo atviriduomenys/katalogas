@@ -5,7 +5,7 @@ from django.views import View
 from django.views.generic import DetailView, UpdateView, DeleteView
 from django.utils.translation import gettext_lazy as _
 from reversion import set_comment
-from reversion.models import Version
+from reversion.models import Version, Revision
 from reversion.views import RevisionMixin
 
 from vitrina.orgs.forms import OrganizationPlanForm
@@ -132,8 +132,13 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         return context
 
     def delete(self, request, *args, **kwargs):
+        from datetime import datetime
         resp = super().delete(request, *args, **kwargs)
-        set_comment(_(f'Pašalintas terminas "{self.object}"'))
+        revision = Revision.objects.create(
+            date_created=datetime.now(),
+            user=self.request.user,
+            comment=f'Pašalintas terminas "{self.object}"',
+        )
         return resp
 
 

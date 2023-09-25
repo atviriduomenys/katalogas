@@ -510,16 +510,11 @@ class PlanForm(OrganizationPlanForm):
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        organization_ids = [org.pk for org in self.organizations]
-        if self.user.organization:
-            if self.user.organization.provider:
-                self.initial['receiver'] = self.user.organization
-                organization_ids.append(self.user.organization.pk)
-                self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
-            else:
-                self.initial['receiver'] = self.user.organization
-                self.fields['receiver'].widget = HiddenInput()
+        if len(self.organizations) == 1:
+            self.initial['receiver'] = self.organizations[0]
+            self.fields['receiver'].widget = HiddenInput()
         else:
+            organization_ids = [org.pk for org in self.organizations]
             self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
 
         self.initial['title'] = self.obj.get_plan_title()

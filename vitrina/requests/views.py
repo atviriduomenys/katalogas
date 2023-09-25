@@ -20,7 +20,7 @@ from haystack.generic_views import FacetedSearchView
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
-from vitrina.orgs.services import has_perm, Action, is_representative
+from vitrina.orgs.services import has_perm, Action
 from vitrina.orgs.models import Representative
 from vitrina.helpers import get_selected_value
 from vitrina.helpers import Filter
@@ -291,7 +291,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 self.request.user,
                 Action.PLAN,
                 request
-            ) and is_representative(self.request.user)
+            )
         }
         context_data.update(extra_context_data)
         return context_data
@@ -342,6 +342,7 @@ class RequestCreateView(
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
         return context_data
+
 
 class RequestOrgEditView(
     LoginRequiredMixin,
@@ -469,7 +470,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and is_representative(self.request.user)
+        )
         context['selected_tab'] = status
         return context
 
@@ -491,7 +492,15 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
 
     def dispatch(self, request, *args, **kwargs):
         self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
-        self.organizations = self.request_obj.organizations.all()
+        if self.request.user.is_authenticated:
+            if self.request.user.is_staff or self.request.user.is_superuser:
+                self.organizations = self.request_obj.organizations.all()
+            else:
+                self.organizations = self.request_obj.organizations.filter(
+                    representatives__user=self.request.user
+                )
+        else:
+            self.organizations = []
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -499,7 +508,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and is_representative(self.request.user) and self.request_obj.is_not_closed()
+        ) and self.request_obj.is_not_closed()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -564,7 +573,7 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
             self.request.user,
             Action.PLAN,
             request
-        ) and is_representative(self.request.user)
+        )
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

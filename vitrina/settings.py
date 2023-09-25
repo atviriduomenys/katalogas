@@ -285,7 +285,7 @@ THUMBNAIL_PROCESSORS = (
 )
 THUMBNAIL_ALIASES = {
     '': {
-        'list': {'size': (480, 320), 'crop': True},
+        'list': {'size': (480, 320)},
     },
 }
 

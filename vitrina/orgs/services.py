@@ -58,7 +58,7 @@ acl = {
     (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.PLAN): [Role.AUTHOR, Role.SUPERVISOR],
+    (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
@@ -154,15 +154,3 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
         ).
         count()
     )
-
-
-def is_representative(user: User) -> bool:
-    if user.is_authenticated:
-        if user.is_staff or user.is_superuser:
-            return True
-        else:
-            return Representative.objects.filter(
-                user=user,
-                content_type=ContentType.objects.get_for_model(Organization)
-            ).exists()
-    return False

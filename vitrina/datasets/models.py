@@ -203,6 +203,7 @@ class Dataset(TranslatableModel):
 
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
+    representatives = GenericRelation('vitrina_orgs.Representative')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -262,7 +263,7 @@ class Dataset(TranslatableModel):
             return self.HAS_DATA
         if self.status == self.INVENTORED or self.status == self.METADATA:
             return self.status
-        return None
+        return self.UNASSIGNED
 
     @property
     def formats(self):

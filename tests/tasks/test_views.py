@@ -46,7 +46,7 @@ def set_up_data():
 
 
 @pytest.mark.django_db
-def test_task_list_without_role_and_organization(app: DjangoTestApp, set_up_data):
+def test_task_list_with_user(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data['user'])
     resp = app.get('%s?filter=user' % reverse("user-task-list", kwargs={'pk': set_up_data['user'].pk}))
     assert list(resp.context["object_list"]) == [set_up_data['task_for_user']]
@@ -55,12 +55,5 @@ def test_task_list_without_role_and_organization(app: DjangoTestApp, set_up_data
 @pytest.mark.django_db
 def test_task_list_with_organization(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data['user_with_organization'])
-    resp = app.get('%s?filter=user' % reverse("user-task-list", kwargs={'pk': set_up_data['user_with_organization'].pk}))
-    assert list(resp.context["object_list"]) == [set_up_data['task_for_organization']]
-
-
-@pytest.mark.django_db
-def test_task_list_with_user(app: DjangoTestApp, set_up_data):
-    app.set_user(set_up_data['user_with_organization'])
-    resp = app.get('%s?filter=user' % reverse("user-task-list", kwargs={'pk': set_up_data['user_with_organization'].pk}))
+    resp = app.get('%s?filter=all' % reverse("user-task-list", kwargs={'pk': set_up_data['user_with_organization'].pk}))
     assert list(resp.context["object_list"]) == [set_up_data['task_for_organization']]

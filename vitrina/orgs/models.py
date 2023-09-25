@@ -1,4 +1,4 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
@@ -93,6 +93,7 @@ class Organization(MP_Node):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     node_order_by = ["title"]
+    representatives = GenericRelation('Representative')
 
     class Meta:
         db_table = 'organization'

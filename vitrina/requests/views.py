@@ -492,7 +492,15 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
 
     def dispatch(self, request, *args, **kwargs):
         self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
-        self.organizations = self.request_obj.organizations.all()
+        if self.request.user.is_authenticated:
+            if self.request.user.is_staff or self.request.user.is_superuser:
+                self.organizations = self.request_obj.organizations.all()
+            else:
+                self.organizations = self.request_obj.organizations.filter(
+                    representatives__user=self.request.user
+                )
+        else:
+            self.organizations = []
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):

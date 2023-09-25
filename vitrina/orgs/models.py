@@ -1,4 +1,4 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
@@ -82,13 +82,14 @@ class Organization(MP_Node):
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
     role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
     image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
-    provider = models.BooleanField(_("Atvėrimo duomenų teikėjas"), default=False)
+    provider = models.BooleanField(_("Duomenų atvėrimo paslaugų teikėjas"), default=False)
     name = models.TextField(max_length=255, blank=True, null=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     node_order_by = ["title"]
+    representatives = GenericRelation('Representative')
 
     class Meta:
         db_table = 'organization'

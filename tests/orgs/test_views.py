@@ -539,10 +539,12 @@ def generate_photo_file(height, length) -> bytes:
 def test_change_form_correct_login(app: DjangoTestApp):
     org = OrganizationFactory()
     jurisdiction = OrganizationFactory(role='test')
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
     form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+
     form['title'] = 'Edited title'
     form['description'] = 'edited org description'
     form['jurisdiction'] = jurisdiction.id

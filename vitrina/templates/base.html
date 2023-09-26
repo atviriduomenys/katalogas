@@ -4,6 +4,7 @@
 {% load sass_tags %}
 {% load i18n %}
 {% get_current_language as LANGUAGE_CODE %}
+
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
@@ -28,6 +29,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     <script src="{% url 'javascript-catalog' %}"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ GOOGLE_ANALITICS_ID }}"></script>
 
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}

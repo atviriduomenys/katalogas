@@ -47,3 +47,8 @@ def get_content_type(obj):
 @register.filter()
 def is_past_due(value):
     return date.today() > value
+
+
+@assignment_tag
+def get_google_analytics_id(obj):
+    return ContentType.objects.get_for_model(obj)

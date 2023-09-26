@@ -127,3 +127,5 @@ To set up a visp social account provider:
     from cryptography.fernet import Fernet
     key = Fernet.generate_key
 
+To use google analytics go to http://127.0.0.1:8000/admin/extra_settings/setting/ add setting GOOGLE_ANALYTICS_ID
+and set provided google analytics id.

@@ -136,6 +136,7 @@ def test_add_request_to_plan_with_representative(app: DjangoTestApp):
     )
     app.set_user(representative.user)
     request = RequestFactory(user=representative.user)
+    request.organizations.add(organization)
     plan = PlanFactory(
         deadline=(date.today() + timedelta(days=1))
     )

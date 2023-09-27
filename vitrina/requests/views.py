@@ -333,8 +333,7 @@ class RequestCreateView(
                         f"{ContentType.objects.get_for_model(self.object)}.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            status=Task.CREATED,
-            user=self.request.user
+            status=Task.CREATED
         )
         return HttpResponseRedirect(self.get_success_url())
 

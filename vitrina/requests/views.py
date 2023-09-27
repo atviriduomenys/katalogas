@@ -547,6 +547,15 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 rel_content_type=ContentType.objects.get_for_model(plan),
                 rel_object_id=plan.pk
             )
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.PLANNED
+            )
+            self.request_obj.status = Request.PLANNED
+            self.request_obj.save()
             return redirect(reverse('request-plans', args=[self.request_obj.pk]))
         else:
             context = self.get_context_data(**kwargs)

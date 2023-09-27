@@ -151,6 +151,8 @@ class DatasetSearchForm(FacetedSearchForm):
         sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
+        if self.cleaned_data.get('q'):
+             sqs = self.searchqueryset.autocomplete(content__contains = self.cleaned_data['q'])
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):

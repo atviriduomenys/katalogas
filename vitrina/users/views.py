@@ -72,7 +72,9 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         soc_acc.save()
         
         update_session_auth_hash(self.request, user)
-        return redirect('home')
+        soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
+        company_code = soc_acc.extra_data.get('company_code')
+        return redirect('partner-register')
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

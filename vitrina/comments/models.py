@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
@@ -13,6 +14,7 @@ class Comment(models.Model):
     REQUEST = "REQUEST"
     PROJECT = "PROJECT"
     STATUS = "STATUS"
+    PLAN = "PLAN"
     STRUCTURE = "STRUCTURE"
     STRUCTURE_ERROR = "STRUCTURE_ERROR"
     TYPES = (
@@ -20,6 +22,7 @@ class Comment(models.Model):
         (REQUEST, _("Prašymo atverti duomenis komentaras")),
         (PROJECT, _("Duomenų rinkinio įtraukimo į projektą komentaras")),
         (STATUS, _("Statuso keitimo komentaras")),
+        (PLAN, _("Įtraukimo į planą komentaras")),
         (STRUCTURE, _("Struktūros importavimo komentaras")),
         (STRUCTURE_ERROR, _("Struktūros importavimo klaida")),
     )
@@ -102,6 +105,11 @@ class Comment(models.Model):
             )
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
+        elif self.type == self.PLAN:
+            body_text = mark_safe(
+                f'Įtraukta į planą '
+                f'<a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
+            )
         else:
             body_text = self.body
         return body_text

@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
@@ -16,27 +16,9 @@
 
     <div class="columns">
         <div class="column">
-            {% if can_manage_plans %}
-                <div class="buttons is-right">
-                    {% if request_obj.is_created %}
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-include' request_obj.pk %}">
-                            {% translate "Įtraukti į planą" %}
-                        </a>
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-create' request_obj.pk %}">
-                            {% translate "Naujas planas" %}
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-
             {% if datasets %}
                 <table class="table is-fullwidth">
                     <tbody>
-                    <tr>
-                        <th></th>
-                    </tr>
                     {% for dataset in datasets %}
                         <tr>
                         <td>
@@ -59,7 +41,7 @@
                         </td>
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
+                                <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
                                    href="{% url 'request-dataset-remove' pk=request_obj.pk dataset_id=dataset.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>

@@ -18,10 +18,12 @@
         </div>
         <div class="column is-three-quarters">
             {% include "vitrina/datasets/stats_parameter_select.html" with filter="jurisdiction" %}
+            {% include "vitrina/statistics/stats_graph.html" %}
             <div class="is-flex">
                 <span>{% translate "Valdymo sritis" %}</span>
                 {% include "vitrina/datasets/stats_parameter_translation.html" %}
             </div>
+
             {% if single_org %}
                 {% for o in jurisdiction_data  %}
                     <div class="is-flex">
@@ -52,23 +54,62 @@
                         </a>
                         <div class="stays-right">
                             <a href="/datasets/{{ org.url }}">
-                                {% if active_indicator == 'dataset-count' %}
-                                    {{ org.count }}
-                                {% else %}
-                                    {{ org.stats }}
-                                {% endif %}
+                                {{ org.count }}
                             </a>
                         </div>
                     </div>
                     <progress class="progress is-info"
-                              {% if active_indicator == 'dataset-count' %}
-                                value="{{ org.count }}"
-                              {% else %}
-                                value="{{ org.stats }}"
-                              {% endif %}
+                              value="{{ org.count }}"
                               max="{{ max_count }}"></progress>
                 {% endfor %}
             {% endif %}
         </div>
     </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+        })
+    </script>
 {% endblock %}

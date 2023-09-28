@@ -610,12 +610,6 @@ class ModelDownloadStatsSerializer(serializers.ModelSerializer):
             "requests",
             "objects"
         ]
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=model.objects.all(),
-                fields=('source', 'model', 'format', 'time'),
-                message=_("Laukai turi būti unikalūs."))
-        ]
 
     def create(self, validated_data):
         instance = super().create(validated_data)

@@ -52,6 +52,7 @@ class Filter:
         # For tree-like filters
         parent: str = '',
         stats: bool = True,
+        display_method: str = None
     ):
         self.name = name
         self.title = title
@@ -64,6 +65,7 @@ class Filter:
         self.is_int = is_int
         self.parent = parent
         self.stats = stats
+        self.display_method = display_method
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -97,18 +99,26 @@ class Filter:
             facet = fields[self.name]
             facet = facet
 
-        for value, count in facet[:self.limit]:
-            title = value
+        show_count = 0
+        for value, count in facet:
 
-            if self.model:
+            title = value
+            if self.model and self.display_method and getattr(self.model, self.display_method):
+                method = getattr(self.model, self.display_method)
+                title = method(self.model, value)
+            elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
                     title = obj.title
                 except ObjectDoesNotExist:
-                    continue
+                    if value == "-1":
+                        title = "Nepriskirta"
+                    else:
+                        continue
             elif self.choices:
                 title = self.choices.get(value)
 
+            is_selected = value in selected if self.multiple else value == selected
             yield FilterItem(
                 value=value,
                 title=title,
@@ -118,8 +128,10 @@ class Filter:
                     if self.multiple else
                     value == selected
                 ),
-                url=get_filter_url(self.request, self.name, value),
+                url=get_filter_url(self.request, self.name, value, is_selected),
+                hidden=show_count > self.limit
             )
+            show_count += 1
 
 
 DateFacetItem = Tuple[
@@ -278,12 +290,13 @@ class DateFilter(Filter):
         for period, facet in facets:
             for value, title, count in facet:
                 start, end = period.get_period(value)
+                is_selected = value in selected
                 yield FilterItem(
                     value=value,
                     title=title,
                     count=count,
-                    selected=value in selected,
-                    url=f'?date_from={start}&date_to={end}',
+                    selected=is_selected,
+                    url=get_date_filter_url(self.request, start, end, is_selected),
                 )
 
 
@@ -292,6 +305,7 @@ class FilterItem:
     title: str
     count: str
     selected: bool
+    hidden: bool
 
     def __init__(
         self,
@@ -301,6 +315,7 @@ class FilterItem:
         count: int,
         selected: int,
         url: str,
+        hidden: bool = False
     ):
         self.name = value
         self.value = value
@@ -308,6 +323,7 @@ class FilterItem:
         self.count = count
         self.selected = selected
         self.url = url
+        self.hidden = hidden
 
 
 def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \
@@ -355,10 +371,35 @@ def get_date_filter_url(
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
-    if "selected_facets" in query_dict:
-        query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+    if selected:
+        val = '%s_exact:%s' % (key, value)
+        if val in query_dict.get('selected_facets', []):
+            query_dict['selected_facets'].remove(val)
     else:
-        query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+        if "selected_facets" in query_dict:
+            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+        else:
+            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    return "?" + urlencode(query_dict, True)
+
+
+def get_date_filter_url(
+    request: WSGIRequest,
+    start: datetime.date,
+    end: datetime.date,
+    selected: bool = False
+) -> str:
+    query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    if selected:
+        if 'date_from' in query_dict:
+            query_dict.pop('date_from')
+        if 'date_to' in query_dict:
+            query_dict.pop('date_to')
+    else:
+        query_dict['date_from'] = start
+        query_dict['date_to'] = end
     return "?" + urlencode(query_dict, True)
 
 

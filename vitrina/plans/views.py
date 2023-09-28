@@ -1,16 +1,18 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import DetailView, UpdateView, DeleteView
 from django.utils.translation import gettext_lazy as _
 from reversion import set_comment
-from reversion.models import Version
+from reversion.models import Version, Revision
 from reversion.views import RevisionMixin
 
 from vitrina.orgs.forms import OrganizationPlanForm
 from vitrina.orgs.models import Representative, Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.plans.models import Plan
+from vitrina.plans.services import has_plan_close_permission
 from vitrina.views import PlanMixin, HistoryView
 
 
@@ -47,6 +49,7 @@ class PlanDetailView(PlanMixin, DetailView):
             Action.HISTORY_VIEW,
             self.organization,
         )
+        context['can_close'] = has_plan_close_permission(self.request.user, self.object)
         context['organization'] = self.organization
         context['organization_id'] = self.organization.pk
         context['plan_requests'] = self.object.planrequest_set.all()
@@ -77,13 +80,13 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['organization'] = self.organization
+        kwargs['organizations'] = [self.organization]
         kwargs['user'] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Plano redagavimas")
+        context['current_title'] = _("Termino redagavimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -93,7 +96,7 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
-        set_comment(_(f'Redaguotas planas "{self.object}"'))
+        set_comment(_(f'Redaguotas terminas "{self.object}"'))
         return resp
 
 
@@ -120,7 +123,7 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -129,8 +132,13 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         return context
 
     def delete(self, request, *args, **kwargs):
+        from datetime import datetime
         resp = super().delete(request, *args, **kwargs)
-        set_comment(_(f'Pašalintas planas "{self.object}"'))
+        revision = Revision.objects.create(
+            date_created=datetime.now(),
+            user=self.request.user,
+            comment=f'Pašalintas terminas "{self.object}"',
+        )
         return resp
 
 
@@ -170,3 +178,24 @@ class PlanHistoryView(PlanMixin, HistoryView):
 
     def get_plan_url(self):
         return self.plan.get_absolute_url()
+
+
+class PlanCloseView(PermissionRequiredMixin, View):
+    plan: Plan
+    is_closed = True
+
+    def dispatch(self, request, *args, **kwargs):
+        self.plan = get_object_or_404(Plan, pk=kwargs.get('plan_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_plan_close_permission(self.request.user, self.plan)
+
+    def get(self, request, *args, **kwargs):
+        self.plan.is_closed = self.is_closed
+        self.plan.save()
+        return redirect(self.plan.get_absolute_url())
+
+
+class PlanOpenView(PlanCloseView):
+    is_closed = False

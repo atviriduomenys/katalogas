@@ -1,7 +1,8 @@
 from datetime import date
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Value, CharField as _CharField, Case, When, Count
+from django.core.validators import RegexValidator
+from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget
@@ -9,7 +10,7 @@ from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
 from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField, Form, ModelChoiceField, \
-    CheckboxSelectMultiple
+    CheckboxSelectMultiple, HiddenInput
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -60,7 +61,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         )
     )
     files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
-    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
+    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
+            RegexValidator(
+                '([a-z]+\/?)+',
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+            )
+        ])
 
     class Meta:
         model = Dataset
@@ -142,9 +148,13 @@ class DatasetSearchForm(FacetedSearchForm):
 
     def search(self):
         sqs = super().search()
-
+        sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
+        if self.cleaned_data.get('q'):
+             q = self.searchqueryset.autocomplete(text__contains = self.cleaned_data['q'])
+             if len(q) != 0: 
+                 sqs = q
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):
@@ -299,6 +309,7 @@ class AddRequestForm(forms.ModelForm):
         ),
     )
 
+
 class DatasetMemberUpdateForm(RepresentativeUpdateForm):
     object_model = Dataset
 
@@ -432,19 +443,23 @@ class DatasetRelationForm(forms.ModelForm):
 
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
-        return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+        if obj.deadline:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+        else:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class DatasetPlanForm(forms.ModelForm):
     plan = PlanChoiceField(
-        label=_("Planas"),
+        label=_("Terminas"),
         widget=forms.RadioSelect(),
         queryset=Plan.objects.all()
     )
+    form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
         model = PlanDataset
-        fields = ('plan',)
+        fields = ('plan', 'form_type',)
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
@@ -453,11 +468,15 @@ class DatasetPlanForm(forms.ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-plan-form"
         self.helper.layout = Layout(
+            Field('form_type'),
             Field('plan'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(deadline__gt=date.today())
+        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
+            Q(deadline__isnull=True) |
+            Q(deadline__gt=date.today())
+        )
 
     def clean_plan(self):
         plan = self.cleaned_data.get('plan')
@@ -470,19 +489,21 @@ class DatasetPlanForm(forms.ModelForm):
 
 
 class PlanForm(OrganizationPlanForm):
+    form_type = CharField(widget=HiddenInput(), initial="create_form")
+
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
-                  'procurement', 'price', 'project', 'receiver',)
+        fields = ('title', 'description', 'deadline', 'provider', 'provider_title', 'receiver',)
 
-    def __init__(self, obj, organization, user, *args, **kwargs):
+    def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
-        super().__init__(organization, user, *args, **kwargs)
+        super().__init__(organizations, user, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
+            Field('form_type'),
+            Field('organizations'),
             Field('user_id'),
             Field('title'),
             Field('description'),
@@ -490,13 +511,14 @@ class PlanForm(OrganizationPlanForm):
             Field('receiver'),
             Field('provider'),
             Field('provider_title'),
-            Field('procurement'),
-            Field('price'),
-            Field('project'),
-            Submit('submit', _('Sukurti'), css_class='button is-primary'),
+            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        orgs = [self.obj.organization.pk]
-        self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=orgs)
-        self.initial['receiver'] = self.obj.organization
-        self.initial['title'] = self.obj.title
+        if len(self.organizations) == 1:
+            self.initial['receiver'] = self.organizations[0]
+            self.fields['receiver'].widget = HiddenInput()
+        else:
+            organization_ids = [org.pk for org in self.organizations]
+            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+
+        self.initial['title'] = self.obj.get_plan_title()

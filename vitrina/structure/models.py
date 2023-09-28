@@ -124,6 +124,7 @@ class Base(models.Model):
 
 @reversion.register()
 class Model(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
         'vitrina_resources.DatasetDistribution',
@@ -146,6 +147,7 @@ class Model(models.Model):
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
     params = GenericRelation('Param')
+    requests = GenericRelation('vitrina_requests.RequestObject')
 
     class Meta:
         db_table = 'model'
@@ -244,6 +246,7 @@ class Model(models.Model):
 
 @reversion.register()
 class Property(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     model = models.ForeignKey(
         Model,
         models.CASCADE,
@@ -272,6 +275,7 @@ class Property(models.Model):
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
     enums = GenericRelation('Enum')
+    requests = GenericRelation('vitrina_requests.RequestObject')
 
     class Meta:
         db_table = 'property'

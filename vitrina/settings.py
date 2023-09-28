@@ -31,7 +31,9 @@ BASE_DIR = Path(env.path(
 environ.Env.read_env(BASE_DIR / '.env')
 
 BASE_DB_PATH = BASE_DIR / 'resources/adp-pg.sql'
-LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
+LOCALE_PATHS = [
+    env.path('VITRINA_LOCALE_PATH', default=BASE_DIR / 'vitrina/locale/'),
+]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -64,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.redirects',
+    'django.contrib.humanize',
     'rest_framework',
     'drf_yasg',
     'vitrina.users',
@@ -229,10 +232,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
@@ -265,6 +268,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'VERIFIED_EMAIL': True
     }
 }
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
@@ -281,7 +285,7 @@ THUMBNAIL_PROCESSORS = (
 )
 THUMBNAIL_ALIASES = {
     '': {
-        'list': {'size': (480, 320), 'crop': True},
+        'list': {'size': (480, 320)},
     },
 }
 
@@ -329,6 +333,7 @@ PASSWORD_HASHERS = [
 ]
 
 _search_url = env.search_url()
+_search_url['ENGINE'] = 'vitrina.datasets.search_backends.ElasticSearchEngine'
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')
 if _search_url_test:
     _search_url_test = env.search_url(var="SEARCH_URL_TEST")
@@ -367,3 +372,19 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
+CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False

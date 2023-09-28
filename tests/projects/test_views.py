@@ -2,7 +2,6 @@ import io
 
 import pytest
 from PIL import Image
-from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version

@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
@@ -14,6 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
 
 
@@ -34,7 +37,10 @@ class ProjectListView(ListView):
     def get_queryset(self):
         qs = super().get_queryset()
         if not self.has_update_perm:
-            qs = qs.filter(status=Project.APPROVED)
+            if self.request.user.is_authenticated:
+                qs = qs.filter(Q(status=Project.APPROVED) | Q(user=self.request.user))
+            else:
+                qs = qs.filter(status=Project.APPROVED)
         return qs.order_by('-created')
 
     def get_context_data(self, **kwargs):
@@ -78,6 +84,15 @@ class ProjectCreateView(
         self.object.status = Project.CREATED
         self.object.save()
         set_comment(Project.CREATED)
+        Task.objects.create(
+            title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
+            description=f"Portale užregistruotas naujas panaudos atvejis.",
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            status=Task.CREATED,
+            user=self.request.user,
+            type=Task.REQUEST
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

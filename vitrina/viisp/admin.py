@@ -1,9 +1,13 @@
 from django.contrib import admin
 
-from vitrina.viisp.models import ViispKey
+from vitrina.viisp.models import ViispKey, ViispTokenKey
 
 
-class ViispAdmin(admin.ModelAdmin):
+class ViispKeyAdmin(admin.ModelAdmin):
     list_display = ('key_content',)
 
-admin.site.register(ViispKey, ViispAdmin)
+class ViispTokenKeyAdmin(admin.ModelAdmin):
+    list_display = ('key_content',)
+
+admin.site.register(ViispKey, ViispKeyAdmin)
+admin.site.register(ViispTokenKey, ViispTokenKeyAdmin)

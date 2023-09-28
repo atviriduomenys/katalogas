@@ -2,40 +2,36 @@
 {% load static %}
 {% load i18n parler_tags %}
 
-{% block pageTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Projektų sąrašas" %}{% endblock %}
+{% block pageTitle %} | {% translate "Panaudojimo atvejų sąrašas" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Panaudojimo atvejų sąrašas" %}{% endblock %}
 
-{% block parent_title %}
-    {% objectlanguage dataset LANGUAGE_CODE %}
-        {{ dataset.title }}
-    {% endobjectlanguage %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
 {% endblock %}
 
 {% block current_title %}
-{% translate "Projektų sąrašas" %}
+{% translate "Panaudojimo atvejų sąrašas" %}
 {% endblock %}
 
 {% block content %}
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-    {% if can_add_projects and has_projects %}
+    {% if has_projects %}
         <div class="buttons is-right">
             <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
                href="{% url 'dataset-project-add' dataset.pk %}">
-                {% translate "Pridėti projektą" %}
+                {% translate "Pridėti panaudojimo atvejį" %}
             </a>
         </div>
     {% endif %}
     {% if page_obj %}
         <table class="table is-fullwidth">
             <tbody>
-                <tr>
-                    <th></th>
-                    {% if can_add_projects %}
-                        <th></th>
-                    {% endif %}
-                </tr>
                 {% for project in page_obj %}
                     <tr>
                     <td>
@@ -59,7 +55,7 @@
                     {% if can_add_projects or project.user == request.user %}
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-project-{{ project.pk }}-btn"  class="button is-danger is-small"
+                                <a id="remove-project-{{ project.pk }}-btn"  class="button is-link is-small"
                                    href="{% url 'dataset-project-remove' pk=dataset.pk project_id=project.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>
@@ -72,7 +68,7 @@
         </table>
         {% include "vitrina/common/pagination.html" %}
     {% else %}
-        {% translate "Šio duomenų rinkinio duomenys nėra naudojami nei viename projekte." %}
+        {% translate "Šio duomenų rinkinio duomenys nėra naudojami nei viename panaudojimo atvejyje." %}
     {% endif %}
     <br/>
 {% endblock %}

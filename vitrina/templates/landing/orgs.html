@@ -5,9 +5,9 @@
 <section class="hero">
   <div class="hero-body">
     <div class="container">
-        <p class="title has-text-info-dark">
+        <h3 class="title has-text-info-dark">
           {% translate "Duomenų teikėjai" %}
-        </p>
+        </h3>
         <div class="columns is-multiline p-t-lg">
             {% for org in orgs %}
             <div class="column">
@@ -16,7 +16,7 @@
                     <div class="content">
                         {% if org.image %}
                         <figure class="image is-3by2">
-                            <img src="{{ org.image|thumbnail_url:'list' }}">
+                            <img src="{{ org.image|thumbnail_url:'list' }}" alt="{{ org.title }}">
                         </figure>
                         {% endif %}
                         <p>
@@ -27,7 +27,7 @@
                         {% with parent=org.get_parent %}
                         {% if parent %}
                         <p>
-                          <a href="{{ parent.get_absolute_url }}" class="has-text-grey">
+                          <a href="{{ parent.get_absolute_url }}" class="has-text-dark">
                             {{ parent.title }}
                           </a>
                         </p>

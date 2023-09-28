@@ -1,9 +1,10 @@
 from django.urls import path
 
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import AddProjectView, RemoveRequestView, AddRequestView
+from vitrina.datasets.views import AddProjectView
+from vitrina.datasets.views import RemoveRequestView
+from vitrina.datasets.views import AddRequestView
 from vitrina.datasets.views import DatasetRequestsView
-from vitrina.datasets.views import OrganizationStatsView
 from vitrina.datasets.views import QuarterStatsView
 from vitrina.datasets.views import DatasetsTagsView
 from vitrina.datasets.views import YearStatsView
@@ -33,14 +34,12 @@ from vitrina.datasets.views import DeleteMemberView
 from vitrina.datasets.views import RemoveProjectView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetsStatsView
 from vitrina.datasets.views import DatasetRelationCreateView
 from vitrina.datasets.views import DatasetRelationDeleteView
 from vitrina.datasets.views import DatasetCategoryView
 from vitrina.datasets.views import FilterCategoryView
 from vitrina.datasets.views import DatasetPlanView
 from vitrina.datasets.views import DatasetCreatePlanView
-from vitrina.datasets.views import DatasetIncludePlanView
 from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
@@ -52,6 +51,7 @@ urlpatterns = [
     path('update-dataset-cat-filters/', update_dataset_category_filters, name='update-dataset-cat-filters'),
     path('update-dataset-tag-filters/', update_dataset_tag_filters, name='update-dataset-tag-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
     path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
@@ -128,7 +128,6 @@ urlpatterns = [
          DatasetRelationDeleteView.as_view(), name='dataset-relation-delete'),
     path('datasets/<int:pk>/plans/', DatasetPlanView.as_view(), name='dataset-plans'),
     path('datasets/<int:pk>/plans/add/', DatasetCreatePlanView.as_view(), name='dataset-plans-create'),
-    path('datasets/<int:pk>/plans/include/', DatasetIncludePlanView.as_view(), name='dataset-plans-include'),
     path('datasets/plans/<int:pk>/delete/', DatasetDeletePlanView.as_view(), name='dataset-plans-delete'),
     path('datasets/plans/<int:pk>/detail/delete/', DatasetDeletePlanDetailView.as_view(),
          name='dataset-plans-delete-detail'),

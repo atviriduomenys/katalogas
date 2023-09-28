@@ -71,24 +71,26 @@ def main():
                 task = Task.objects.filter(content_type=ContentType.objects.get_for_model(dt),
                                            object_id=dt.pk,
                                            type=Task.ERROR_FREQUENCY).first()
-                if dt.frequency.hours < diff:
-                    if not task:
-                        print(f'Task for {dt.pk} does not exist, creating...')
-                        create_task_for_dataset(
-                            dt.pk,
-                            f'Klaida duomenų rinkinio id: {dt.pk} atnaujinimo intervale',
-                            f'Duomenų rinkinys neatnaujintas pagal numatytą atnaujinimo dažnumą.\n'
-                            f'Numatytas atnaujinimo dažnumas kas {dt.frequency.hours} valandas,'
-                            f' paskutinį kartą atnaujintas prieš {diff} valandas.',
-                            Task.ERROR_FREQUENCY
-                        )
-                        tasks_created += 1
-                    frequency_mismatch += 1
-                elif dt.frequency.hours > diff:
-                    if task:
-                        close_task(task)
-                        tasks_closed += 1
-                frequency_entries += 1
+                hours = dt.frequency.hours
+                if hours is not None:
+                    if hours < diff:
+                        if not task:
+                            print(f'Task for {dt.pk} does not exist, creating...')
+                            create_task_for_dataset(
+                                dt.pk,
+                                f'Klaida duomenų rinkinio id: {dt.pk} atnaujinimo intervale',
+                                f'Duomenų rinkinys neatnaujintas pagal numatytą atnaujinimo dažnumą.\n'
+                                f'Numatytas atnaujinimo dažnumas kas {dt.frequency.hours} valandas,'
+                                f' paskutinį kartą atnaujintas prieš {diff} valandas.',
+                                Task.ERROR_FREQUENCY
+                            )
+                            tasks_created += 1
+                        frequency_mismatch += 1
+                    elif dt.frequency.hours > diff:
+                        if task:
+                            close_task(task)
+                            tasks_closed += 1
+                    frequency_entries += 1
             pbar2.update(1)
 
     print(f'Total external resources found: {total_distributions}.\n'

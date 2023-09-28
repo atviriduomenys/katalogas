@@ -121,3 +121,139 @@
         </div>
     </div>
 {% endblock %}
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+
+            var query = $('#search-q-val').val();
+            if (query != null && query !== "") {
+                $('#search-input').val("{{ q }}");
+            }
+
+            $('.cats-more, .cats-more-inner').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "+" ? "-" : "+";
+                })
+            });
+
+            $('.facets-more').click(function () {
+                $('.' + this.id).toggleClass('is-hidden');
+                $(this).text(function (i, text) {
+                    return text === "{% translate "Išskleisti" %}" ? "{% translate "Suskleisti" %}" : "{% translate "Išskleisti" %}";
+                })
+            });
+
+            $('.show-mobile-facets').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            $('.modal-close').click(function () {
+                $('#facet-modal').toggleClass("is-hidden");
+                $('#facet-modal').toggleClass("is-active");
+            });
+
+            var lang = "lt-LT";
+            var currentUrl = new URL(window.location);
+            var searchParams = new URLSearchParams(currentUrl.search);
+            var selectedDate = null;
+            var datasetTitles = "datasetSuggestions";
+
+            let orgFilter = $('#organization-filter-input');
+            orgFilter.on('input', function(){
+                if (orgFilter.val().length !== 0) {
+                    $('.organization_filter_items_body').html('').load(
+                        "{% url 'update-request-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
+            });
+
+            let tagsFilter = $('#tags-filter-input');
+            tagsFilter.on('input', function(){
+                if (tagsFilter.val().length !== 0) {
+                    $('.tag_filter_items_body').html('').load(
+                        "{% url 'update-request-tag-filters' %}?q=" + tagsFilter.val()
+                    );
+                }
+            });
+
+            function autocomplete(inp, arr) {
+                var currentFocus;
+
+                inp.addEventListener("input", function (e) {
+                    var a, b, i, val = this.value;
+                    closeAllLists();
+                    if (!val || val.length < 3) {
+                        return false;
+                    }
+                    currentFocus = -1;
+                    a = document.createElement("DIV");
+                    a.setAttribute("id", this.id + "autocomplete-list");
+                    a.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(a);
+                    for (i = 0; i < arr.length; i++) {
+                        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                            b = document.createElement("DIV");
+                            b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                            b.innerHTML += arr[i].substr(val.length);
+                            b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                            b.addEventListener("click", function (e) {
+                                inp.value = '"' + this.getElementsByTagName("input")[0].value + '"';
+                                closeAllLists();
+                                $('#request-filter').submit();
+                            });
+                            a.appendChild(b);
+                        }
+                    }
+                });
+
+                inp.addEventListener("keydown", function (e) {
+                    var x = document.getElementById(this.id + "autocomplete-list");
+                    if (x) x = x.getElementsByTagName("div");
+                    if (e.keyCode == 40) {
+                        currentFocus++;
+                        addActive(x);
+                    } else if (e.keyCode == 38) {
+                        currentFocus--;
+                        addActive(x);
+                    } else if (e.keyCode == 13) {
+                        // e.preventDefault();
+                        if (currentFocus > -1) {
+                            if (x) x[currentFocus].click();
+                        }
+                    }
+                });
+
+                function addActive(x) {
+                    if (!x) return false;
+                    removeActive(x);
+                    if (currentFocus >= x.length) currentFocus = 0;
+                    if (currentFocus < 0) currentFocus = (x.length - 1);
+                    x[currentFocus].classList.add("autocomplete-active");
+                }
+
+                function removeActive(x) {
+                    for (var i = 0; i < x.length; i++) {
+                        x[i].classList.remove("autocomplete-active");
+                    }
+                }
+
+                function closeAllLists(elmnt) {
+                    var x = document.getElementsByClassName("autocomplete-items");
+                    for (var i = 0; i < x.length; i++) {
+                        if (elmnt != x[i] && elmnt != inp) {
+                            x[i].parentNode.removeChild(x[i]);
+                        }
+                    }
+                }
+
+                document.addEventListener("click", function (e) {
+                    closeAllLists(e.target);
+                });
+            }
+
+            autocomplete(document.getElementById("search-input"), datasetTitles)
+        });
+    </script>
+{% endblock %}

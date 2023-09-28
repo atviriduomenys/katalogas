@@ -328,7 +328,30 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
     return selected_value
 
 
-def get_filter_url(request: WSGIRequest, key: str, value: str) -> str:
+def get_filter_url(request: WSGIRequest, key: str, value: str, selected: bool = False) -> str:
+    query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    if 'q' in query_dict:
+        query_dict.pop('q')
+    if selected:
+        val = '%s_exact:%s' % (key, value)
+        if val in query_dict.get('selected_facets', []):
+            query_dict['selected_facets'].remove(val)
+    else:
+        if "selected_facets" in query_dict:
+            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+        else:
+            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    return "?" + urlencode(query_dict, True)
+
+
+def get_date_filter_url(
+    request: WSGIRequest,
+    start: datetime.date,
+    end: datetime.date,
+    selected: bool = False
+) -> str:
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')

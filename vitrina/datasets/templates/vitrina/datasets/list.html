@@ -319,59 +319,30 @@
 
             let orgFilter = $('#organization-filter-input');
             orgFilter.on('input', function(){
-                let orgFilterValues = orgFilter.nextAll();
-                orgFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(orgFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                    if (orgFilter.val().length === 0) {
-                        orgFilterValues.each(function() {
-                           $(this).removeClass('is-hidden');
-                        });
-                    }
-                });
+                if (orgFilter.val().length !== 0) {
+                    $('.organization_filter_items_body').html('').load(
+                        "{% url 'update-dataset-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
             });
 
             let catFilter = $('#category-filter-input');
             catFilter.on('input', function(){
-                let catFilterValues = catFilter.nextAll();
-                catFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(catFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                    if (catFilter.val().length === 0) {
-                        catFilterValues.each(function() {
-                           $(this).removeClass('is-hidden');
-                        });
-                    }
-                });
+                if (catFilter.val().length !== 0) {
+                    console.log('test')
+                    $('.category_filter_items_body').html('').load(
+                        "{% url 'update-dataset-cat-filters' %}?q=" + catFilter.val()
+                    );
+                }   console.log('test2')
             });
 
             let tagsFilter = $('#tags-filter-input');
             tagsFilter.on('input', function(){
-                let tagsFilterValues = tagsFilter.nextAll();
-                tagsFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(tagsFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                    if (tagsFilter.val().length === 0) {
-                        tagsFilterValues.each(function() {
-                           $(this).removeClass('is-hidden');
-                        });
-                    }
-                });
+                if (tagsFilter.val().length !== 0) {
+                    $('.tag_filter_items_body').html('').load(
+                        "{% url 'update-dataset-tag-filters' %}?q=" + tagsFilter.val()
+                    );
+                }
             });
 
             function autocomplete(inp, arr) {

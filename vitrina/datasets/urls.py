@@ -44,9 +44,13 @@ from vitrina.datasets.views import DatasetIncludePlanView
 from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
+from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters
 
 urlpatterns = [
     # @GetMapping("/datasets")`
+    path('update-dataset-org-filters/', update_dataset_org_filters, name='update-dataset-org-filters'),
+    path('update-dataset-cat-filters/', update_dataset_category_filters, name='update-dataset-cat-filters'),
+    path('update-dataset-tag-filters/', update_dataset_tag_filters, name='update-dataset-tag-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),

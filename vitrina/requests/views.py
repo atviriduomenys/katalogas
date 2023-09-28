@@ -13,6 +13,11 @@ from reversion.models import Version
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action
 from reversion import set_comment
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from reversion.views import RevisionMixin
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject
 
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.forms import RequestForm, RequestPlanForm
@@ -24,6 +29,39 @@ from vitrina.requests.models import Request, RequestStructure, RequestObject
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
+from django.contrib import messages
+from vitrina.helpers import get_filter_url
+
+
+def update_request_org_filters(request):
+    items = []
+    orgs = []
+    if request.GET.get('q') and len(request.GET.get('q')) > 2:
+        orgs = Organization.objects.distinct().filter(title__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
+    else:
+        orgs = Organization.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+    for org in orgs:
+        items.append({
+            'title': org.title,
+            'url': get_filter_url(request, 'organization', org.id).strip('q={}'.format(request.GET['q'])),
+            'count': org.dataset_count
+            })
+    return render(request, 'vitrina/datasets/organization_filter_items.html', {'items': items})
+
+def update_request_tag_filters(request):
+    items = []
+    tags = []
+    if request.GET.get('q') and len(request.GET.get('q')) > 2:
+        tags = Request.tags.tag_model.objects.distinct().filter(name__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
+    else:
+        tags = Request.tags.tag_model.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+    for tag in tags:
+        items.append({
+            'title': tag.name,
+            'url': get_filter_url(request, 'tags', tag.id).strip('q={}'.format(request.GET['q'])),
+            'count': tag.dataset_count
+            })
+    return render(request, 'vitrina/datasets/tag_filter_items.html', {'items': items})
 
 
 class RequestListView(ListView):

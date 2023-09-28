@@ -18,6 +18,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q
 from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -69,7 +70,54 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_filter_url
 import pytz
+
+def update_dataset_org_filters(request):
+    items = []
+    orgs = []
+    if request.GET.get('q') and len(request.GET.get('q')) > 2:
+        orgs = Organization.objects.distinct().filter(title__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
+    else:
+        orgs = Organization.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+    for org in orgs:
+        items.append({
+            'title': org.title,
+            'url': get_filter_url(request, 'organization', org.id).strip('q={}'.format(request.GET['q'])),
+            'count': org.dataset_count
+            })
+    return render(request, 'vitrina/datasets/organization_filter_items.html', {'items': items})
+
+
+def update_dataset_category_filters(request):
+    items = []
+    cats = []
+    if request.GET.get('q') and len(request.GET.get('q')) > 2:
+        cats = Organization.objects.distinct().filter(title__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
+    else:
+        cats = Organization.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+    for cat in cats:
+        items.append({
+            'title': cat.title,
+            'url': get_filter_url(request, 'category', cat.id).strip('q={}'.format(request.GET['q'])),
+            'count': cat.dataset_count
+            })
+    return render(request, 'vitrina/datasets/category_filter_items.html', {'items': items})
+
+def update_dataset_tag_filters(request):
+    items = []
+    tags = []
+    if request.GET.get('q') and len(request.GET.get('q')) > 2:
+        tags = Dataset.tags.tag_model.objects.distinct().filter(name__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
+    else:
+        tags = Dataset.tags.tag_model.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+    for tag in tags:
+        items.append({
+            'title': tag.name,
+            'url': get_filter_url(request, 'tags', tag.id).strip('q={}'.format(request.GET['q'])),
+            'count': tag.dataset_count
+            })
+    return render(request, 'vitrina/datasets/tag_filter_items.html', {'items': items})
 
 
 class DatasetListView(PlanMixin, FacetedSearchView):

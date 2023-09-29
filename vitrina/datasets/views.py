@@ -270,6 +270,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 self.organization,
             )
             context['organization_id'] = self.organization.pk
+            if not form.selected_facets:
+                form.selected_facets.append('organization_exact:{0}'.format(self.organization.id))
         else:
             url = reverse('dataset-list')
 

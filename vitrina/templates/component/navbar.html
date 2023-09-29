@@ -57,7 +57,7 @@
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
                                     {% translate "Planas" %}
                                 </a>
-                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
+                                <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>
                                 <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">

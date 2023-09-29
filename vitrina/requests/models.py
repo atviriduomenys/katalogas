@@ -32,20 +32,23 @@ class Request(models.Model):
     REJECTED = "REJECTED"
     OPENED = "OPENED"
     ANSWERED = "ANSWERED"
+    PLANNED = "PLANNED"
     APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
-        (OPENED, _("Atvertas")),
+        (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
-        (APPROVED, _("Patvirtintas"))
+        (PLANNED, _("Suplanuotas")),
+        (APPROVED, _("Įvertintas"))
     }
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
         REJECTED: _("Atmestas"),
-        OPENED: _("Atvertas"),
+        OPENED: _("Įvykdytas"),
         ANSWERED: _("Atsakytas"),
-        APPROVED: _("Patvirtintas")
+        PLANNED: _("Suplanuotas"),
+        APPROVED: _("Įvertintas")
     }
 
     EDITED = "EDITED"

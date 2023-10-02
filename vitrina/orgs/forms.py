@@ -94,8 +94,8 @@ class OrganizationUpdateForm(ModelForm):
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:
-            if image.width != 256 or image.height != 256:
-                raise ValidationError(_("Nuotraukos dydis turi būti 256x256."))
+            if image.width < 256 or image.height < 256:
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
 
 

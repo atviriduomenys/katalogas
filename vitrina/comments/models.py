@@ -28,13 +28,13 @@ class Comment(models.Model):
     )
 
     INVENTORED = "INVENTORED"
-    STRUCTURED = "STRUCTURED"
+    PLANNED = "PLANNED"
     OPENED = "OPENED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     STATUSES = (
         (INVENTORED, _("Inventorintas")),
-        (STRUCTURED, _("Įkelta duomenų struktūra")),
+        (PLANNED, _("Planuojamas atverti")),
         (OPENED, _("Atvertas")),
         (APPROVED, _("Patvirtintas")),
         (REJECTED, _("Atmestas"))

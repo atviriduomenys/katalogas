@@ -138,16 +138,9 @@ class Request(models.Model):
         return None
 
     def dataset_statuses(self):
-        statuses = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
-        for dataset_id in dataset_ids:
-            dataset = Dataset.objects.filter(id=dataset_id).first()
-            if dataset and dataset.status not in statuses:
-                statuses.append(dataset.status)
-        return statuses
+        return list(Dataset.objects.filter(
+            request_objects__request=self
+        ).values_list('status', flat=True))
 
     def dataset_organizations(self):
         orgs = []

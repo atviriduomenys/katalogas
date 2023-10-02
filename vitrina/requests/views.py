@@ -104,7 +104,7 @@ class RequestListView(FacetedSearchView):
                     'dataset_status',
                     _("Duomenų rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(

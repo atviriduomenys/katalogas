@@ -67,7 +67,7 @@ class Dataset(TranslatableModel):
     )
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
-        INVENTORED: _("Inventorinti"),
+        INVENTORED: _("Tik inventorinti"),
         PLANNED: _("Planuojama atverti"),
         UNASSIGNED: _("Nepriskirta")
     }

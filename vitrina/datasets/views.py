@@ -318,6 +318,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 self.organization,
             )
             context['organization_id'] = self.organization.pk
+            if not form.selected_facets:
+                form.selected_facets.append('organization_exact:{0}'.format(self.organization.id))
         else:
             url = reverse('dataset-list')
 
@@ -560,17 +562,43 @@ class DatasetUpdateView(
 
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
-            if not self.object.status:
-                self.object.status = Dataset.INVENTORED
+
+            latest_status_comment = Comment.objects.filter(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                type=Comment.STATUS,
+                status__isnull=False
+            ).order_by('-created').first()
+
+            if latest_status_comment:
+                if latest_status_comment.status == Comment.INVENTORED:
+                    self.object.status = Dataset.INVENTORED
+                elif latest_status_comment.status == Comment.PLANNED:
+                    self.object.status = Dataset.PLANNED
+                elif latest_status_comment.status == Comment.OPENED:
+                    self.object.status = Dataset.HAS_DATA
+            else:
+                if self.object.datasetdistribution_set.exists():
+                    self.object.status = Dataset.HAS_DATA
+                    comment_status = Comment.OPENED
+                elif self.object.plandataset_set.exists():
+                    self.object.status = Dataset.PLANNED
+                    comment_status = Comment.PLANNED
+                else:
+                    self.object.status = Dataset.INVENTORED
+                    comment_status = Comment.INVENTORED
+
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
                     user=self.request.user,
                     type=Comment.STATUS,
-                    status=Comment.INVENTORED,
+                    status=comment_status,
                 )
+
         elif not self.object.is_public and self.object.published:
             self.object.published = None
+            self.object.status = Dataset.UNASSIGNED
 
         types = form.cleaned_data.get('type')
         self.object.type.set(types)
@@ -1376,7 +1404,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
         most_recent_comments = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=datasets.values_list('pk', flat=True),
+            object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list('pk', flat=True),
             status__isnull=False).values('object_id') \
             .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change') \
             .order_by('latest_status_change')
@@ -1420,12 +1448,10 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
                 else:
                     if status['filter_value'] == 'HAS_DATA':
                         comm_val = 'OPENED'
-                    elif status['filter_value'] == 'HAS_STRUCTURE':
-                        comm_val = 'STRUCTURED'
                     elif status['filter_value'] == 'INVENTORED':
                         comm_val = 'INVENTORED'
                     else:
-                        comm_val = None
+                        comm_val = status['filter_value']
 
                     count += dataset_status.filter(
                         status=comm_val,
@@ -2402,6 +2428,21 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 rel_content_type=ContentType.objects.get_for_model(plan),
                 rel_object_id=plan.pk
             )
+
+            if (
+                self.dataset.is_public and
+                self.dataset.status != Dataset.HAS_DATA
+            ):
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.dataset),
+                    object_id=self.dataset.pk,
+                    user=self.request.user,
+                    type=Comment.STATUS,
+                    status=Comment.PLANNED
+                )
+                self.dataset.status = Dataset.PLANNED
+                self.dataset.save(update_fields=['status'])
+
             return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
         else:
             context = self.get_context_data(**kwargs)

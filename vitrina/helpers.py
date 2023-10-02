@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
-
+from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
@@ -375,6 +375,11 @@ def get_date_filter_url(
         val = '%s_exact:%s' % (key, value)
         if val in query_dict.get('selected_facets', []):
             query_dict['selected_facets'].remove(val)
+        if is_org_dataset_list(request) and key == 'organization':
+            if 'selected_facets' in query_dict:
+                query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+            else:
+                query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
     else:
         if "selected_facets" in query_dict:
             query_dict["selected_facets"].append('%s_exact:%s' % (key, value))

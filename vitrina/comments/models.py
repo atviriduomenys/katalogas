@@ -32,13 +32,11 @@ class Comment(models.Model):
     PLANNED = "PLANNED"
     OPENED = "OPENED"
     APPROVED = "APPROVED"
-    PLANNED = "PLANNED"
     REJECTED = "REJECTED"
     STATUSES = (
         (INVENTORED, _("Inventorintas")),
         (PLANNED, _("Planuojamas atverti")),
         (OPENED, _("Atvertas")),
-        (PLANNED, _("Suplanuotas")),
         (APPROVED, _("Įvertintas")),
         (REJECTED, _("Atmestas"))
     )
@@ -104,13 +102,11 @@ class Comment(models.Model):
             )
         elif self.type == self.STATUS:
             if isinstance(self.content_object, Request) and self.status == self.OPENED:
-                body_text = _(
-                    f"Statusas pakeistas į {Request.OPENED}."
-                )
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}.")
+            elif isinstance(self.content_object, Request) and self.status == self.PLANNED:
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.PLANNED)}.")
             else:
-                body_text = _(
-                    f"Statusas pakeistas į {self.get_status_display()}."
-                )
+                body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
         elif self.type == self.PLAN:

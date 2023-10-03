@@ -41,6 +41,7 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
 
+
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
     facet_fields = [
@@ -104,7 +105,7 @@ class RequestListView(FacetedSearchView):
                     'dataset_status',
                     _("Duomenų rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(
@@ -176,6 +177,7 @@ class RequestPublicationStatsView(RequestListView):
         context['filter'] = 'publication'
         context['sort'] = sorting
         return context
+
 
 class RequestYearStatsView(RequestListView):
     template_name = 'vitrina/requests/publications.html'
@@ -333,8 +335,7 @@ class RequestCreateView(
                         f"{ContentType.objects.get_for_model(self.object)}.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            status=Task.CREATED,
-            user=self.request.user
+            status=Task.CREATED
         )
         return HttpResponseRedirect(self.get_success_url())
 
@@ -556,6 +557,15 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 rel_content_type=ContentType.objects.get_for_model(plan),
                 rel_object_id=plan.pk
             )
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.PLANNED
+            )
+            self.request_obj.status = Request.PLANNED
+            self.request_obj.save()
             return redirect(reverse('request-plans', args=[self.request_obj.pk]))
         else:
             context = self.get_context_data(**kwargs)

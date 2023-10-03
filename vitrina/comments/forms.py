@@ -7,8 +7,8 @@ from vitrina.comments.models import Comment
 
 REQUEST_STATUSES = (
     (None, _("---------")),
-    (Comment.OPENED, _("Atvertas")),
-    (Comment.APPROVED, _("Patvirtintas")),
+    (Comment.OPENED, _("Įvykdytas")),
+    (Comment.APPROVED, _("Įvertintas")),
     (Comment.REJECTED, _("Atmestas"))
 )
 

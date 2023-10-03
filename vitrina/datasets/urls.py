@@ -14,6 +14,7 @@ from vitrina.datasets.views import DatasetsOrganizationsView
 from vitrina.datasets.views import DatasetsCategoriesView
 from vitrina.datasets.views import DatasetsLevelView
 from vitrina.datasets.views import PublicationStatsView
+from vitrina.datasets.views import DatasetsGroupView
 from vitrina.datasets.views import CategoryStatsView
 from vitrina.datasets.views import JurisdictionStatsView
 from vitrina.datasets.views import CreateMemberView
@@ -60,6 +61,7 @@ urlpatterns = [
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
     path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tags'),
+    path('datasets/stats/group/', DatasetsGroupView.as_view(), name='dataset-stats-groups'),
     path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-formats'),
     path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
     path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-published'),

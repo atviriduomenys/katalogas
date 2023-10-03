@@ -5,6 +5,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
+from vitrina.requests.models import Request
 
 
 class Comment(models.Model):
@@ -28,15 +29,15 @@ class Comment(models.Model):
     )
 
     INVENTORED = "INVENTORED"
-    STRUCTURED = "STRUCTURED"
+    PLANNED = "PLANNED"
     OPENED = "OPENED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     STATUSES = (
         (INVENTORED, _("Inventorintas")),
-        (STRUCTURED, _("Įkelta duomenų struktūra")),
+        (PLANNED, _("Planuojamas atverti")),
         (OPENED, _("Atvertas")),
-        (APPROVED, _("Patvirtintas")),
+        (APPROVED, _("Įvertintas")),
         (REJECTED, _("Atmestas"))
     )
 
@@ -100,9 +101,12 @@ class Comment(models.Model):
                 f"{self.rel_content_object.get_title()} projektą."
             )
         elif self.type == self.STATUS:
-            body_text = _(
-                f"Statusas pakeistas į {self.get_status_display()}."
-            )
+            if isinstance(self.content_object, Request) and self.status == self.OPENED:
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}.")
+            elif isinstance(self.content_object, Request) and self.status == self.PLANNED:
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.PLANNED)}.")
+            else:
+                body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
         elif self.type == self.PLAN:

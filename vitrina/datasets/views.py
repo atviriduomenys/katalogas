@@ -196,6 +196,14 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 ),
                 Filter(
                     *filter_args,
+                    'groups',
+                    _("Grupė"),
+                    DatasetGroup,
+                    multiple=True,
+                    is_int=False,
+                ),
+                Filter(
+                    *filter_args,
                     'tags',
                     _("Žymė"),
                     Dataset,
@@ -1569,6 +1577,20 @@ class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio atnaujinimą rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike')
+
+
+class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
+    title = _("Grupė")
+    current_title = _("Duomenų rinkinių grupės")
+    filter = 'groups'
+    filter_model = DatasetGroup
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio grupes rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike')
 
 
 class JurisdictionStatsView(DatasetListView):

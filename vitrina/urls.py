@@ -17,8 +17,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include
 from django.urls import path
-from allauth.account import views as accviews
-from allauth.socialaccount import views as socaccviews
 from django.views.i18n import JavaScriptCatalog
 
 
@@ -44,6 +42,7 @@ urlpatterns = [
     path('', include('vitrina.classifiers.urls')),
     path('', include('vitrina.cms.urls')),
     path('', include('vitrina.translate.urls')),
+    path('', include('vitrina.statistics.urls')),
     path('admin/', admin.site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path("select2/", include("django_select2.urls")),
@@ -51,6 +50,11 @@ urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('accounts/', include('vitrina.viisp.urls')),
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
-    path('', include('cms.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
 
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += [
+    path('', include('cms.urls')),
+]

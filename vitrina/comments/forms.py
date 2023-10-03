@@ -7,8 +7,8 @@ from vitrina.comments.models import Comment
 
 REQUEST_STATUSES = (
     (None, _("---------")),
-    (Comment.OPENED, _("Atvertas")),
-    (Comment.APPROVED, _("Patvirtintas")),
+    (Comment.OPENED, _("Įvykdytas")),
+    (Comment.APPROVED, _("Įvertintas")),
     (Comment.REJECTED, _("Atmestas"))
 )
 
@@ -29,6 +29,7 @@ class CommentForm(forms.ModelForm):
     def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['body'].label = False
+        self.fields['body'].widget.attrs.update({'title': _("Komentaras")})
         self.obj = obj
 
 

@@ -2,14 +2,19 @@ import uuid
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Exists, OuterRef
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, UpdateView, DeleteView, DetailView
+from reversion import set_comment
 
 from vitrina import settings
+from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.plans.models import Plan
+from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
 from django.utils.translation import gettext_lazy as _
@@ -25,15 +30,20 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     context_object_name = 'datasetdistribution'
     form_class = DatasetResourceForm
 
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        return has_perm(self.request.user, Action.CREATE, DatasetDistribution)
+        return has_perm(self.request.user, Action.CREATE, DatasetDistribution, self.dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-            return redirect(dataset)
+            return redirect(self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,8 +55,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
 
     def form_valid(self, form):
         resource = form.save(commit=False)
-        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-        resource.dataset = dataset
+        resource.dataset = self.dataset
         if resource.download_url:
             resource.type = 'URL'
         resource.save()
@@ -54,7 +63,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         name = form.cleaned_data.get('name')
         if not name:
             name = Metadata.objects.filter(
-                dataset=dataset,
+                dataset=self.dataset,
                 content_type=ContentType.objects.get_for_model(DatasetDistribution),
                 name__iregex=r"resource[0-9]+"
             ).order_by('name').values_list('name', flat=True).last()
@@ -70,7 +79,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
                 name = f"resource{n}"
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
-            dataset=dataset,
+            dataset=self.dataset,
             content_type=ContentType.objects.get_for_model(resource),
             object_id=resource.pk,
             name=name,
@@ -79,11 +88,36 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
             version=1,
         )
 
+        if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
+            dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
+            for plan in dataset_plans:
+                if (
+                        plan.planrequest_set.filter(
+                            request__status=Request.OPENED
+                        ).count() == plan.planrequest_set.count() and
+                        plan.plandataset_set.annotate(
+                            has_distributions=Exists(DatasetDistribution.objects.filter(
+                                dataset_id=OuterRef('dataset_id'),
+                            ))
+                        ).count() == plan.plandataset_set.count()
+                ):
+                    plan.is_closed = True
+                    plan.save()
+
+        if self.dataset.status != Dataset.HAS_DATA and self.dataset.is_public:
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(self.dataset),
+                                   object_id=self.dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.OPENED,
+                                   user=self.request.user)
+            self.dataset.status = Dataset.HAS_DATA
+            self.dataset.save()
+
         return redirect(resource.get_absolute_url())
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['dataset'] = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
+        kwargs['dataset'] = self.dataset
         return kwargs
 
 

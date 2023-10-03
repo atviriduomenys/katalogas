@@ -1,13 +1,14 @@
 {% load i18n %}
 {% load hitcount_tags %}
 {% load i18n parler_tags %}
+{% load util_tags %}
 
 <section class="hero">
   <div class="hero-body">
     <div class="container">
-        <p class="title has-text-info-dark">
+        <h3 class="title has-text-info-dark">
           {% translate "Prašymai atverti duomenis" %}
-        </p>
+        </h3>
         <div class="columns is-multiline p-t-lg">
             {% for request in requests %}
             <div class="column">
@@ -19,13 +20,16 @@
                             {{ request.title }}
                           </a>
                         </p>
+                        {% define request.organizations.first as organization %}
+                        {% if organization %}
                         <p>
-                          <a href="{{ request.organizations.0.get_absolute_url }}" class="has-text-grey">
-                            {{ request.organizations.0.title }}
+                          <a href="{{ organization.get_absolute_url }}" class="has-text-dark">
+                            {{ organization.title }}
                           </a>
                         </p>
+                        {% endif %}
                         <p>
-                          <a href="{% url "request-list" %}?selected_facets=formats_exact:{{ format }}" class="tag is-link is-light mr-3">
+                          <a href="{% url "request-list" %}?selected_facets=formats_exact:{{ format }}" class="tag is-info is-light mr-3">
                               {{ request.get_status_display }}
                           </a>
 

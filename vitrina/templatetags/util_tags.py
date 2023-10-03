@@ -24,6 +24,11 @@ def is_dict(value):
     return isinstance(value, dict)
 
 
+@register.filter
+def get_list(dictionary, key):
+    return dictionary.getlist(key)
+
+
 @register.filter(name='range')
 def range_(value: int) -> Iterable[int]:
     return range(value)

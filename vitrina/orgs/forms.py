@@ -4,7 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
+    DateField, DateInput, Textarea
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -14,11 +15,89 @@ from crispy_forms.layout import Layout, Field, Submit
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.services import is_duplicate_key
+from vitrina.fields import FilerImageField
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.viisp.xml_utils import read_adoc_file, parse_adoc_xml_signature_data
 from vitrina.users.models import User
+
+
+class OrganizationUpdateForm(ModelForm):
+    company_code = CharField(label=_('Registracijos numeris'), required=True)
+    title = CharField(label=_('Pavadinimas'), required=True)
+    name = CharField(label=_('Kodinis pavadinimas'), required=True)
+    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
+                                    label=_('Jurisdikcija'),
+                                    required=True)
+    image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
+    email = CharField(label=_('Elektroninis paštas'), required=True)
+    phone = CharField(label=_('Telefono numeris'), required=True)
+    address = CharField(label=_('Adresas'), required=True)
+    description = CharField(label=_('Aprašymas'), widget=Textarea, required=False)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'company_code',
+            'title',
+            'name',
+            'kind',
+            'jurisdiction',
+            'image',
+            'website',
+            'email',
+            'phone',
+            'address',
+            'provider',
+            'description',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        org_instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if org_instance else _("Sukurti")
+        parent = self.instance.get_parent()
+        if parent:
+            self.fields['jurisdiction'].initial = parent
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "organization-form"
+        self.helper.layout = Layout(
+            Field('company_code', placeholder=_("Registracijos numeris")),
+            Field('title', placeholder=_("Pavadinimas")),
+            Field('name', placeholder=_('Kodinis pavadinimas')),
+            Field('kind', placeholder=_("Tipas")),
+            Field('jurisdiction', placeholder=_("Jurisdikcija")),
+            Field('image', placeholder=_("Logotipas")),
+            Field('website', placeholder=_("Tinklalapis")),
+            Field('email', placeholder=_("Elektroninis paštas")),
+            Field('phone', placeholder=_("Telefono numeris")),
+            Field('address', placeholder=_("Adresas")),
+            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('description', placeholder=_("Aprašymas")),
+            Submit('submit', button, css_class='button is-primary')
+        )
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            if not name.islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any((not c.isalnum() and c != '_') for c in name):
+                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.width < 256 or image.height < 256:
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
+        return image
+
 
 class RepresentativeUpdateForm(ModelForm):
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
@@ -124,6 +203,7 @@ class RepresentativeCreateForm(ModelForm):
             ))
         return super().clean()
 
+
 class PartnerRegisterForm(ModelForm):
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_first_name = CharField(label=_("Koordinatoriaus vardas"))
@@ -160,13 +240,13 @@ class PartnerRegisterForm(ModelForm):
         self.helper.layout = Layout(
             Field('coordinator_first_name', value=initial.get('coordinator_first_name'), readonly=True),
             Field('coordinator_last_name', value=initial.get('coordinator_last_name'), readonly=True),
-            Field('coordinator_phone_number', value=initial.get('coordinator_phone_number'), readonly=True),
+            Field('coordinator_phone_number', value=initial.get('coordinator_phone_number') or ''),
             Field('coordinator_email', value=initial.get('coordinator_email'), readonly=True),
             Field('password'),
             Field('confirm_password'),
-            Field('company_code', value=initial.get('company_code'), readonly=True),
-            Field('company_name', value=initial.get('company_name'), readonly=True),
-            Field('company_slug',  value=initial.get('company_slug'), readonly=initial.get('company_slug_read_only')),
+            Field('company_code', value=initial.get('company_code') or ''),
+            Field('company_name', value=initial.get('company_name') or ''),
+            Field('company_slug',  value=initial.get('company_slug') or ''),
             Field('adoc_file'),
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )
@@ -181,10 +261,10 @@ class PartnerRegisterForm(ModelForm):
         sa_company_codes = parse_adoc_xml_signature_data(file_contents)
         company_code = self.cleaned_data.get('company_code')
         company_slug = self.cleaned_data.get('company_slug')
-       # if company_code not in sa_company_codes:
-       #     self.add_error('adoc_file', _(
-       #     "Failas nepasirašytas arba blogai pasirašytas."
-       # ))
+        if company_code not in sa_company_codes:
+            self.add_error('adoc_file', _(
+            "Failas nepasirašytas arba blogai pasirašytas."
+        ))
         if (
             Organization.objects.
             filter(
@@ -210,23 +290,14 @@ class ProviderWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     dependent_fields = {
-        'organization_id': 'organization_id',
-        'user_id': 'user_id'
+        'organizations': 'organizations',
     }
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         ids = []
-        if 'organization_id' in dependent_fields:
-            organization_id = dependent_fields.pop('organization_id')
-            ids.append(organization_id)
-        if 'user_id' in dependent_fields:
-            user_id = dependent_fields.pop('user_id')
-            try:
-                user = User.objects.get(pk=user_id)
-            except ObjectDoesNotExist:
-                user = None
-            if user and user.organization:
-                ids.append(user.organization.pk)
+        if 'organizations__in' in dependent_fields:
+            organizations = dependent_fields.pop('organizations__in')
+            ids.extend(organizations)
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
         provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
@@ -236,22 +307,27 @@ class ProviderWidget(ModelSelect2Widget):
 
 
 class OrganizationPlanForm(ModelForm):
-    organization_id = IntegerField(widget=HiddenInput)
-    user_id = IntegerField(widget=HiddenInput)
+    organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
+    user_id = IntegerField(widget=HiddenInput(), required=False)
     provider = ModelChoiceField(
         label=_("Paslaugų teikėjas"),
         required=False,
         queryset=Organization.objects.all(),
         widget=ProviderWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
     )
+    deadline = DateField(
+        label=_("Įgyvendinimo terminas"),
+        required=False,
+        widget=DateInput(attrs={'type': 'date'})
+    )
 
     class Meta:
         model = Plan
         fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
-                  'procurement', 'price', 'project', 'organization_id', 'user_id')
+                  'procurement', 'price', 'project', 'organizations', 'user_id')
 
-    def __init__(self, organization, user, *args, **kwargs):
-        self.organization = organization
+    def __init__(self, organizations, user, *args, **kwargs):
+        self.organizations = organizations
         self.user = user
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
@@ -259,7 +335,7 @@ class OrganizationPlanForm(ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
+            Field('organizations', css_class="hidden"),
             Field('user_id'),
             Field('title'),
             Field('description'),
@@ -272,14 +348,18 @@ class OrganizationPlanForm(ModelForm):
             Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
         )
 
-        self.initial['organization_id'] = self.organization.pk
+        self.initial['organizations'] = self.organizations
         self.initial['user_id'] = self.user.pk
 
         if not instance:
-            if self.user.organization and self.user.organization.provider:
+            if len(self.organizations) == 1:
+                self.initial['provider'] = self.organizations[0]
+            elif (
+                    self.user.organization and
+                    self.user.organization.provider and
+                    self.user.organization in self.organizations
+            ):
                 self.initial['provider'] = self.user.organization
-            else:
-                self.initial['provider'] = self.organization
 
     def clean(self):
         provider = self.cleaned_data.get('provider')

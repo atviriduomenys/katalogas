@@ -1,9 +1,2 @@
 {{ object.en_title }}
 {{ object.lt_title }}
-{{ object.status }}
-{{ object.organization.title }}
-{{ object.category.title }}
-{{ object.frequency.title }}
-{{ object.published }}
-{{ object.tags }}
-{{ object.formats }}

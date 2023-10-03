@@ -1,12 +1,12 @@
 import secrets
 
-import numpy as np
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -21,10 +21,10 @@ from reversion.views import RevisionMixin
 
 from vitrina import settings
 from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeUpdateForm, OrganizationPlanForm, OrganizationMergeForm
-from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, \
-    PartnerRegisterForm
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
+from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.plans.models import Plan
@@ -46,23 +46,35 @@ class OrganizationListView(ListView):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
         orgs = Organization.public.all()
+        orgs = orgs.exclude(Q(title__isnull=True) | Q(title=""))
 
         if query:
             orgs = orgs.filter(title__icontains=query)
         if jurisdiction:
             orgs = orgs.filter(jurisdiction=jurisdiction)
-        return orgs.order_by("-created")
+        return orgs.order_by("title")
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationListView, self).get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
         query = self.request.GET.get("q", "")
-        context['jurisdictions'] = [{
-            'title': jurisdiction,
-            'query': "?%s%sjurisdiction=%s" % ("q=%s" % query if query else "", "&" if query else "", jurisdiction),
-            'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
-        } for jurisdiction in Organization.public.values_list('jurisdiction', flat="True")
-            .distinct().order_by('jurisdiction').exclude(jurisdiction__isnull=True)]
+        context['q'] = query
+        context['jurisdictions'] = [
+            {
+                'title': jurisdiction,
+                'query': "?%s%sjurisdiction=%s" % ("q=%s" % query if query else "", "&" if query else "", jurisdiction),
+                'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
+            } for jurisdiction in (
+                Organization.public.values_list(
+                    'jurisdiction', flat="True"
+                ).distinct().order_by(
+                    'jurisdiction'
+                ).exclude(
+                    jurisdiction__isnull=True
+                )
+            ) if filtered_queryset.filter(jurisdiction=jurisdiction)
+        ]
+        context['jurisdictions'] = sorted(context['jurisdictions'], key=lambda x: x['count'], reverse=True)
         context['selected_jurisdiction'] = self.request.GET.get('jurisdiction')
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
@@ -74,34 +86,20 @@ class OrganizationManagementsView(OrganizationListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
-        stats = {}
-        orgs = Organization.public.all()
-        root_orgs = []
-        sorting = self.request.GET.get('sort', None)
-        for org in orgs:
-            root = org.get_root()
-            if root not in root_orgs:
-                root_orgs.append(root)
-        for root in root_orgs:
-            children_count = len(Organization.get_children(root))
-            if children_count is not None:
-                stats[root.title] = children_count
-        keys = list(stats.keys())
-        values = list(stats.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        if sorting is None or sorting == 'sort-desc':
-            sorted_value_index = np.flip(np.argsort(values))
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        jurisdictions = context.get('jurisdictions')
+        if sorting == 'sort-desc':
+            jurisdictions = sorted(jurisdictions, key=lambda x: x['count'], reverse=True)
         elif sorting == 'sort-asc':
-            sorted_value_index = np.argsort(values)
-        stats = {keys[i]: values[i] for i in sorted_value_index}
-        context['jurisdiction_data'] = stats
+            jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
+        max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
+
+        context['jurisdiction_data'] = jurisdictions
         context['max_count'] = max_count
         context['filter'] = 'jurisdiction'
         context['sort'] = sorting
         return context
+
 
 class OrganizationDetailView(PlanMixin, DetailView):
     model = Organization
@@ -115,6 +113,12 @@ class OrganizationDetailView(PlanMixin, DetailView):
         context_data['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,
+            Representative,
+            organization
+        )
+        context_data['can_update_organization'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
             Representative,
             organization
         )
@@ -172,7 +176,57 @@ class OrganizationMembersView(
             self.object,
         )
         context_data['organization_id'] = self.object.pk
+        context_data['organization'] = self.object
         return context_data
+
+
+class OrganizationUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Organization
+    form_class = OrganizationUpdateForm
+    template_name = 'base_form.html'
+    view_url_name = 'organization:edit'
+    context_object_name = 'organization'
+
+    def has_permission(self):
+        org = self.get_object()
+        return has_perm(self.request.user, Action.UPDATE, org)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            org = get_object_or_404(Organization, id=self.kwargs['pk'])
+            return redirect(org)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Organizacijos redagavimas')
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        organization = self.get_object()
+        parent = organization.get_parent()
+        if parent:
+            kwargs['initial'] = {'jurisdiction': parent}
+        return kwargs
+
+    def get(self, request, *args, **kwargs):
+        return super(OrganizationUpdateView, self).get(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.slug = slugify(self.object.title)
+        self.object.save()
+        if not self.object.get_parent() == form.cleaned_data['jurisdiction']:
+            form.cleaned_data['jurisdiction'].fix_tree(fix_paths=True)
+            self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class RepresentativeCreateView(
@@ -235,6 +289,9 @@ class RepresentativeCreateView(
         if user:
             self.object.user = user
             self.object.save()
+            if not user.organization:
+                user.organization = self.organization
+                user.save()
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -324,6 +381,10 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
                 api_key.save()
         else:
             self.object.apikey_set.all().delete()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.organization
+            self.object.user.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -354,6 +415,14 @@ class RepresentativeRegisterView(RegisterView):
             if representative:
                 representative.user = user
                 representative.save()
+
+                if isinstance(representative.content_object, Organization):
+                    user.organization = representative.content_object
+                    user.save()
+                elif isinstance(representative.content_object, Dataset):
+                    user.organization = representative.content_object.organization
+                    user.save()
+
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
@@ -361,10 +430,6 @@ class RepresentativeRegisterView(RegisterView):
 
 class PartnerRegisterInfoView(TemplateView):
     template_name = 'vitrina/orgs/partners/register.html'
-
-
-class PartnerRegisterNoRightsView(TemplateView):
-    template_name = 'vitrina/orgs/partners/no_rights.html'
 
 
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
@@ -378,8 +443,6 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             extra_data = user_social_account.extra_data
             company_code = extra_data.get('company_code')
             company_name = extra_data.get('company_name')
-            if not company_code and not company_name:
-                return redirect('partner-no-rights')
         else:
             return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
@@ -392,13 +455,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         company_name = extra_data.get('company_name')
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
-        if not org:
-            if  len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+        if not org and company_name:
+            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:
                 company_name_slug = company_name[0]
-        else:
+        elif org:
              company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
@@ -420,6 +483,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         if org:
             self.org = org
         else:
+            Organization.fix_tree(fix_paths=True)
             self.org = Organization.add_root(
                 title=form.cleaned_data.get('company_name'),
                 company_code=company_code,
@@ -431,21 +495,23 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         user.save()
 
         rep = Representative.objects.create(
-            email = form.cleaned_data.get('coordinator_email'),
-            first_name = form.cleaned_data.get('coordinator_first_name'),
-            last_name = form.cleaned_data.get('coordinator_last_name'),
-            phone = form.cleaned_data.get('coordinator_phone_number'),
-            object_id = self.org.id,
-            role = Representative.COORDINATOR,
-            user = self.request.user,
-            content_type = ContentType.objects.get_for_model(self.org)
+            email=form.cleaned_data.get('coordinator_email'),
+            first_name=form.cleaned_data.get('coordinator_first_name'),
+            last_name=form.cleaned_data.get('coordinator_last_name'),
+            phone=form.cleaned_data.get('coordinator_phone_number'),
+            object_id=self.org.id,
+            role=Representative.COORDINATOR,
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(self.org)
         )
         rep.save()
         task = Task.objects.create(
-            title = "Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
-            organization = self.org,
-            user = self.request.user,
-            role=Task.SUPERVISOR
+            title="Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
+            description=f"Portale užsiregistravo naujas duomenų teikėjas: {self.org.company_code}.",
+            organization=self.org,
+            user=self.request.user,
+            status=Task.CREATED,
+            type=Task.REQUEST
         )
         task.save()
         return redirect(self.org)
@@ -471,9 +537,13 @@ class OrganizationPlanView(PlanMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['organization'] = self.organization
         context['organization_id'] = self.organization.pk
-        context['plans'] = self.organization.receiver_plans.all()
+        if status == 'closed':
+            context['plans'] = self.organization.receiver_plans.filter(is_closed=True)
+        else:
+            context['plans'] = self.organization.receiver_plans.filter(is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
@@ -492,6 +562,7 @@ class OrganizationPlanView(PlanMixin, TemplateView):
             Action.HISTORY_VIEW,
             self.organization,
         )
+        context['selected_tab'] = status
         return context
 
     def get_plan_object(self):
@@ -514,25 +585,26 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['current_title'] = _("Naujas terminas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-plans', args=[self.organization.pk]): _("Planas"),
         }
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
-        kwargs['organization'] = self.organization
+        kwargs['organizations'] = [self.organization]
         return kwargs
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.receiver = self.organization
         self.object.save()
-        set_comment(_(f'Pridėtas planas "{self.object}".'))
+        set_comment(_(f'Pridėtas terminas "{self.object}".'))
         return redirect(reverse('organization-plans', args=[self.organization.pk]))
 
 

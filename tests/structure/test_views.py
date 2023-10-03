@@ -882,7 +882,7 @@ def test_getall(app: DjangoTestApp):
                 ]
             }, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
 
@@ -966,7 +966,7 @@ def test_getall_with_query(app: DjangoTestApp):
                 ]
             }, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
 
@@ -1041,7 +1041,7 @@ def test_getone(app: DjangoTestApp):
                 'prop_2': 1
             }, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
 
@@ -1126,7 +1126,7 @@ def test_changes(app: DjangoTestApp):
                 ]
             }, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
 

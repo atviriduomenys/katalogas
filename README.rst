@@ -57,6 +57,7 @@ By default pgloader creates a schema with the same name as in source database. S
 Then we can run::
 
     poetry install
+    poetry run python manage.py migrate sites
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput
     poetry run python manage.py createinitialrevisions
@@ -119,4 +120,10 @@ To set up a visp social account provider:
   Sites: Choose the site that matches SITE_ID in settings and points to current domain.
   The host machine should be connected to vpn or whitelisted to be able to access test env of viisp provider.
   All other fields should be left unchanged.
+
+ Create a viisp_token_key object in admin panel as a superuser::
+ The contents of viisp_token_key object needs be a token generated with fernet:
+ 
+    from cryptography.fernet import Fernet
+    key = Fernet.generate_key
 

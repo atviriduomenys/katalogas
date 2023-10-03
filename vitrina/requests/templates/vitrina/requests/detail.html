@@ -27,32 +27,27 @@
         <div class="column is-three-quarters">
             <div class="content">
                 <div class="request-title">
-                    {% if not request_object.is_existing %}
-                        <p class="is-size-4">{% translate "Naujų duomenų atvėrimo poreikis" %}: </p>
-                    {% else %}
-                        <p class="is-size-4">{% translate "Esamo duomenų rinkinio papildymo poreikis" %}: </p>
-                    {% endif %}
                     {% get_hit_count for request_object as total_hits %}
                     <p class="is-pulled-right">{% translate "Poreikio peržiūros" %}:
                         <b id="total_hits">{{ total_hits }}</b>
                     </p>
-                    <h1 class="is-size-4">{{ request_object.title | escape }}</h1>
+{#                    <h1 class="is-size-4">{{ request_object.title | escape }}</h1>#}
                 </div>
             </div>
 
-            {% if can_update_request %}
             <div class="buttons is-right">
-                {% if request_object.is_created %}
+                {% if request_object.is_not_closed and can_manage_plans %}
                     <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                       href="{% url 'request-plans-include' request_object.pk %}">
+                       href="{% url 'request-plans-create' request_object.pk %}">
                         {% translate "Įtraukti į planą" %}
                     </a>
                 {% endif %}
+                {% if can_update_request %}
                 <a href="{%url 'request-update' pk=request_object.pk %}" class="button is-primary">
                     {% translate "Keisti" %}
                 </a>
+                {% endif %}
             </div>
-            {% endif %}
 
             <div class="content">{{ request_object.description|linebreaks|urlizetrunc:72 }}</div>
             {% include "vitrina/requests/requestCoretable.html" %}

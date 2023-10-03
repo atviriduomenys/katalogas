@@ -1,5 +1,9 @@
+import io
+
 import pytest
 from datetime import datetime
+
+from PIL import Image
 from freezegun import freeze_time
 import pytz
 from django.contrib.contenttypes.models import ContentType
@@ -8,6 +12,7 @@ from django.urls import reverse
 
 from django_webtest import DjangoTestApp
 from itsdangerous import URLSafeSerializer
+from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
@@ -90,7 +95,7 @@ def organizations():
 @pytest.mark.django_db
 def test_search_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db
@@ -108,25 +113,25 @@ def test_search_with_query_that_matches_one(app: DjangoTestApp, organizations):
 @pytest.mark.django_db
 def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
     resp = app.get("%s?q=%s" % (reverse('organization-list'), "organization"))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
 
 
 @pytest.mark.django_db
 def test_filter_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[1], organizations[2], organizations[0]]
+    assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
+        {
+            'title': 'Jurisdiction2',
+            'query': "?jurisdiction=Jurisdiction2",
+            'count': 2
+        },
         {
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 2
-        }
     ]
 
 
@@ -140,11 +145,6 @@ def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
             'title': 'Jurisdiction1',
             'query': "?jurisdiction=Jurisdiction1",
             'count': 1
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
         }
     ]
 
@@ -155,11 +155,6 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
     assert list(resp.context['object_list']) == [organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
         {
             'title': 'Jurisdiction2',
             'query': "?jurisdiction=Jurisdiction2",
@@ -173,18 +168,7 @@ def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
     assert resp.context['selected_jurisdiction'] == "doesnotexist"
-    assert resp.context['jurisdictions'] == [
-        {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
-            'count': 0
-        },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
-            'count': 0
-        }
-    ]
+    assert resp.context['jurisdictions'] == []
 
 
 @pytest.mark.django_db
@@ -198,11 +182,6 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
             'query': "?q=1&jurisdiction=Jurisdiction1",
             'count': 1
         },
-        {
-            'title': 'Jurisdiction2',
-            'query': "?q=1&jurisdiction=Jurisdiction2",
-            'count': 0
-        }
     ]
 
 
@@ -283,6 +262,9 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
+    assert Representative.objects.filter(
+        email="manager@gmail.com"
+    ).first().user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -327,6 +309,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     assert resp.url == reverse('home')
     assert User.objects.filter(email='new@gmail.com').count() == 1
     assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
+    assert new_representative.user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -365,6 +348,7 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
+    assert representative_data['representative_manager'].user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db
@@ -403,7 +387,7 @@ def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
     form['title'] = "Test plan"
     form['description'] = "Plan for testing"
-    form['provider'] = organization.pk
+    form['provider'].force_value(organization.pk)
     form['provider_title'] = "Provider"
     resp = form.submit()
 
@@ -421,6 +405,8 @@ def test_organization_plan_create(app: DjangoTestApp):
         object_id=organization.pk,
         role=Representative.MANAGER
     )
+    rep.user.organization = organization
+    rep.user.save()
     app.set_user(rep.user)
 
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
@@ -501,3 +487,83 @@ def test_organization_merge(app: DjangoTestApp):
     )) == [representative]
 
 
+@pytest.mark.django_db
+def test_organization_open_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get(reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 2
+
+
+@pytest.mark.django_db
+def test_organization_closed_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    PlanFactory(is_closed=True, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+    PlanFactory(is_closed=False, receiver=organization)
+
+    resp = app.get("%s?status=closed" % reverse('organization-plans', args=[organization.pk]))
+    assert len(resp.context['plans']) == 1
+
+
+@pytest.mark.django_db
+def test_change_form_no_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert settings.LOGIN_URL in response.location
+
+
+@pytest.mark.django_db
+def test_change_form_wrong_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    assert response.status_code == 302
+    assert str(org.id) in response.location
+
+
+def generate_photo_file(height, length) -> bytes:
+    file = io.BytesIO()
+    image = Image.new('RGBA', size=(height, length), color=(155, 0, 0))
+    image.save(file, 'png')
+    file.name = 'img.png'
+    return file.getvalue()
+
+
+@pytest.mark.django_db
+def test_change_form_correct_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    jurisdiction = OrganizationFactory(role='test')
+
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+
+    form['title'] = 'Edited title'
+    form['description'] = 'edited org description'
+    form['jurisdiction'] = jurisdiction.id
+    form['image'] = Upload('img.png', generate_photo_file(300, 300), 'image')
+
+    resp = form.submit()
+    org.refresh_from_db()
+
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-detail', kwargs={'pk': org.id})
+    assert org.title == 'Edited title'
+    assert org.description == 'edited org description'
+
+
+@pytest.mark.django_db
+def test_click_edit_button(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
+    response.click(linkid='change_organization')
+    assert response.status_code == 200

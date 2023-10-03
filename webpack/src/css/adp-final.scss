@@ -1,6 +1,7 @@
 @charset "utf-8";
 
 $link: #007db2;
+$primary: rgba(98, 185, 212, 0.9);
 
 @import "~bulma/bulma.sass";
 @import "custom/icons";
@@ -75,4 +76,8 @@ $link: #007db2;
 
 .no-margin-bottom {
   margin-bottom: 0px !important;
+}
+
+.stays-right {
+  margin-left: auto;
 }

@@ -10,7 +10,7 @@
         {% if plan_url %}
             <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
                 <a href="{{ plan_url }}">
-                    {% translate "Planai" %}
+                    {% translate "Planas" %}
                 </a>
             </li>
         {% endif %}
@@ -24,6 +24,11 @@
         <li class="{%if request.resolver_match.url_name == 'request-datasets' %} is-active {% endif %}">
             <a href="{% url 'request-datasets' request.resolver_match.kwargs.pk %}" id="request-tab">
                 {% translate "Duomenų rinkiniai" %}
+            </a>
+        </li>
+        <li class="{%if request.resolver_match.url_name == 'request-organizations' %} is-active {% endif %}">
+            <a href="{% url 'request-organizations' request.resolver_match.kwargs.pk %}" id="request-tab">
+                {% translate "Organizacijos" %}
             </a>
         </li>
     </ul>

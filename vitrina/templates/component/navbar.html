@@ -1,12 +1,12 @@
 {% load static %}
 {% load i18n parler_tags %}
-{% load menu_tags %}
+{% load navigation_tags %}
 
-<nav class="navbar is-info" role="navigation" aria-label="main navigation">
+<nav class="navbar is-link" role="navigation" aria-label="main navigation">
 <div class="container">
         <div class="navbar-brand">
             <a class="navbar-item" href="/">
-                <img src="{% static 'img/logo.png' %}" alt="logo" height="36">
+                <img src="{% static 'img/logo.png' %}" alt="herbas" height="36">
                 &nbsp;&nbsp;
                 <b><span class="navbar-title is-uppercase">data.gov.lt</span></b>
             </a>
@@ -26,7 +26,7 @@
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
             <div class="navbar-end">
-                {% show_menu 0 100 100 100 "menu.html" %}
+                {% show_menu %}
                 {% for m in menu %}
                     {% if m.children %}
                         <div class="navbar-item has-dropdown is-hoverable">
@@ -51,16 +51,17 @@
                                     {% translate "Profilis" %}
                                 </a>
                                 {% if user.organization %}
-                                <a href="{% url 'user-task-list' user.pk %}" class="navbar-item">
+                                <a href="{% url 'user-task-list' pk=user.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
                                 </a>
                                  <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
-                                    {% translate "Planai" %}
+                                    {% translate "Planas" %}
                                 </a>
-                                {% endif %}
-                                {% if user.organization %}
-                                <a href="{% url 'organization-datasets' user.organization.pk %}" class="navbar-item">
+                                <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
+                                </a>
+                                <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
+                                    {% translate "Mano poreikiai" %}
                                 </a>
                                 {% endif %}
                                 {% if user.can_see_manager_dataset_list_url %}
@@ -89,7 +90,9 @@
                             <input name="next" type="hidden" value="{{ redirect_to }}">
                             <div class="select">
                                 <select name="language"
-                                        onchange="languageChange.submit()">
+                                        onchange="languageChange.submit()"
+                                        aria-label="{% translate 'Kalbos pasirinkimas' %}"
+                                >
                                     {% get_current_language as LANGUAGE_CODE %}
                                     {% get_available_languages as LANGUAGES %}
                                     {% get_language_info_list for LANGUAGES as languages %}

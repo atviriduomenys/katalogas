@@ -32,20 +32,23 @@ class Request(models.Model):
     REJECTED = "REJECTED"
     OPENED = "OPENED"
     ANSWERED = "ANSWERED"
+    PLANNED = "PLANNED"
     APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
-        (OPENED, _("Atvertas")),
+        (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
-        (APPROVED, _("Patvirtintas"))
+        (PLANNED, _("Suplanuotas")),
+        (APPROVED, _("Įvertintas"))
     }
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
         REJECTED: _("Atmestas"),
-        OPENED: _("Atvertas"),
+        OPENED: _("Įvykdytas"),
         ANSWERED: _("Atsakytas"),
-        APPROVED: _("Patvirtintas")
+        PLANNED: _("Suplanuotas"),
+        APPROVED: _("Įvertintas")
     }
 
     EDITED = "EDITED"
@@ -103,10 +106,17 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        if self.organizations and self.organizations.first():
-            parents.extend(self.organizations.first().get_acl_parents())
+        for org in self.organizations.all():
+            parents.extend(org.get_acl_parents())
         return parents
-    
+
+    def get_plan_title(self):
+        if self.requestobject_set.filter(
+            external_object_id__isnull=False,
+            external_content_type__isnull=False,
+        ).exists():
+            return _("Klaidų duomenyse pataisymas")
+        return _("Duomenų rinkinio papildymas")
 
     def get_likes(self):
         from vitrina.likes.models import Like
@@ -120,8 +130,8 @@ class Request(models.Model):
             count()
         )
 
-    def is_created(self):
-        return self.status == self.CREATED
+    def is_not_closed(self):
+        return self.status != self.REJECTED and self.status != self.OPENED
     
     def jurisdiction(self) -> int | None:
         if self.dataset:
@@ -129,6 +139,77 @@ class Request(models.Model):
             if root_org.get_children_count() > 1:
                 return root_org.pk
         return None
+
+    def dataset_statuses(self):
+        return list(Dataset.objects.filter(
+            request_objects__request=self
+        ).values_list('status', flat=True))
+
+    def dataset_organizations(self):
+        orgs = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset and dataset.organization not in orgs:
+                orgs.append(dataset.organization.pk)
+        return orgs
+
+    def dataset_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset and dataset.category not in cats:
+                cats.append(dataset.category)
+        return cats
+
+    def dataset_parent_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for category in dataset.parent_category():
+                    if category not in cats:
+                        cats.append(category)
+        return cats
+
+    def dataset_group_list(self):
+        groups = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for group in dataset.get_group_list():
+                    if group not in groups:
+                        groups.append(group)
+        return groups
+
+    def dataset_get_tag_list(self):
+        tags = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for tag in dataset.get_tag_list():
+                    if tag not in tags:
+                        tags.append(tag)
+        return tags
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -174,3 +255,9 @@ class RequestObject(models.Model):
 
     external_object_id = models.CharField(max_length=255, blank=True, null=True)
     external_content_type = models.CharField(max_length=255, blank=True, null=True)
+
+
+class RequestAssignment(models.Model):
+    organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
+    request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
+    status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)

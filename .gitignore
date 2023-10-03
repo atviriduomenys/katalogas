@@ -24,4 +24,5 @@
 /docker/requirements.txt
 /docker/scripts/
 /docker/static/
+/docker/locale/
 /vitrina/static/js/

@@ -4,6 +4,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.db.models import Sum
 from django.urls import reverse
 
 from filer.fields.file import FilerFileField
@@ -14,7 +15,7 @@ from random import randrange
 
 from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
@@ -56,22 +57,19 @@ class Dataset(TranslatableModel):
 
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
-    METADATA = "METADATA"
-    PRIORITIZED = "PRIORITIZED"
-    FINANCING = "FINANCING"
-    HAS_STRUCTURE = "HAS_STRUCTURE"
+    PLANNED = "PLANNED"
     UNASSIGNED = "UNASSIGNED"
-    STATUSES = {
+    STATUSES = (
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (HAS_STRUCTURE, _("Struktūruotas")),
-    }
+        (PLANNED, _("Planuojamas atverti")),
+        (UNASSIGNED, _("Nepriskirta"))
+    )
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
-        INVENTORED: _("Tik inventorintas"),
-        HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys"),
-        UNASSIGNED:_("Nepriskirta")
+        INVENTORED: _("Tik inventorinti"),
+        PLANNED: _("Planuojama atverti"),
+        UNASSIGNED: _("Nepriskirta")
     }
 
     CREATED = "CREATED"
@@ -124,7 +122,7 @@ class Dataset(TranslatableModel):
 
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
 
-    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
@@ -201,6 +199,9 @@ class Dataset(TranslatableModel):
     # --------------------------->8-------------------------------------
 
     metadata = GenericRelation('vitrina_structure.Metadata')
+    comments = GenericRelation('vitrina_comments.Comment')
+    representatives = GenericRelation('vitrina_orgs.Representative')
+    request_objects = GenericRelation('vitrina_requests.RequestObject')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -222,8 +223,16 @@ class Dataset(TranslatableModel):
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
+    def get_tag_object_list(self):
+        return list(self.tags.all().values('name', 'pk'))
+
     def get_tag_list(self):
-        return list(self.tags.all().values_list('name', flat=True))
+        return list(self.tags.all().values_list('pk', flat=True))
+
+    def get_tag_title(self, tag_id):
+        if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
+            return tag.name
+        return ''
 
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
@@ -245,26 +254,23 @@ class Dataset(TranslatableModel):
         return randrange(5)
 
     @property
-    def filter_status(self):
-        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
-            return self.HAS_STRUCTURE
-        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
-            return self.HAS_DATA
-        if self.status == self.INVENTORED or self.status == self.METADATA:
-            return self.status
-        return None
-
-    @property
     def formats(self):
         return [
-            str(obj.get_format()).upper()
+            obj.get_format()
+            for obj in self.datasetdistribution_set.all()
+            if obj.get_format()
+        ]
+
+    def filter_formats(self):
+        return [
+            obj.get_format().pk
             for obj in self.datasetdistribution_set.all()
             if obj.get_format()
         ]
 
     @property
     def distinct_formats(self):
-        return sorted(set(self.formats))
+        return sorted(set(self.formats), key=lambda x: x.title)
 
     def get_acl_parents(self):
         parents = [self]
@@ -274,6 +280,12 @@ class Dataset(TranslatableModel):
 
     def get_members_url(self):
         return reverse('dataset-members', kwargs={'pk': self.pk})
+
+    def get_managers(self):
+        ct = ContentType.objects.get_for_model(Dataset)
+        return list(Representative.objects.filter(
+            content_type=ct, object_id=self.id
+        ).values_list('user_id', flat=True))
 
     @property
     def language_array(self):
@@ -317,6 +329,23 @@ class Dataset(TranslatableModel):
             return metadata.average_level
         return None
 
+    def published_created_sort(self):
+        return self.published or self.created
+
+    def get_icon(self):
+        root_category_ids = []
+        for cat in self.category.all():
+            root_category_ids.append(cat.get_root().pk)
+
+        if root_category_ids:
+            category = Category.objects.filter(
+                pk__in=root_category_ids,
+                icon__isnull=False,
+            ).order_by('title').first()
+            if category:
+                return category.icon
+        return None
+
     @property
     def name(self):
         if metadata := self.metadata.first():
@@ -338,6 +367,11 @@ class Dataset(TranslatableModel):
             order = 1
         return order
 
+    def get_plan_title(self):
+        if self.datasetdistribution_set.exists():
+            return _("Duomenų rinkinio papildymas")
+        return _("Duomenų atvėrimas")
+
     def get_likes(self):
         from vitrina.likes.models import Like
         content_type = ContentType.objects.get_for_model(self)
@@ -349,6 +383,22 @@ class Dataset(TranslatableModel):
             ).
             count()
         )
+
+    def get_download_count(self):
+        from vitrina.statistics.models import ModelDownloadStats
+        model_names = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            dataset__pk=self.pk
+        ).values_list('name', flat=True)
+        return (
+            ModelDownloadStats.objects.
+            filter(
+                model__in=model_names
+            ).
+            aggregate(
+                Sum('model_requests')
+            )
+        )["model_requests__sum"] or 0
 
 
 # TODO: To be merged into Dataset:
@@ -551,6 +601,12 @@ class DatasetResourceMigrate(models.Model):
         managed = False
         db_table = 'dataset_resource_migrate'
 
+class DatasetStructureLink(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    dataset_id = models.IntegerField(blank=False, null=False)
+    class Meta:
+        managed = True
+        db_table = 'dataset_structure_link'
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):

@@ -25,7 +25,7 @@ from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
-
+from vitrina.statistics.models import ModelDownloadStats
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -589,7 +589,25 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
             data=request.data
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        instance = ModelDownloadStats(**serializer.validated_data)
+        existing = ModelDownloadStats.objects.filter(
+            model=instance.model,
+            model_format=instance.model_format,
+            created=instance.created
+        ).first()
+        if existing:
+            if instance.model_requests == 0:
+                existing.delete()
+            if existing.created.hour == instance.created.hour:
+                existing.model_requests += instance.model_requests
+                existing.model_objects += instance.model_objects
+            else:
+                existing.model_requests = instance.model_requests
+                existing.model_objects = instance.model_objects
+            existing.save()
+        else:
+            if not instance.model_requests == 0:
+                instance.save()
         serializer = ModelDownloadStatsSerializer(instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)

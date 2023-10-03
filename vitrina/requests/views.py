@@ -1,6 +1,8 @@
+from typing import List
 
 from django.views.generic import CreateView, UpdateView, DetailView
 from collections import OrderedDict
+
 
 import numpy as np
 import pandas as pd
@@ -8,14 +10,18 @@ from datetime import date
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.db.models import Case, When
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
 from reversion.models import Version
 from haystack.generic_views import FacetedSearchView
+
+from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.models import Representative
 from vitrina.helpers import get_selected_value
 from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
@@ -24,15 +30,16 @@ from vitrina.requests.services import update_facet_data
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.classifiers.models import Category
-from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 
 from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestPlanForm, RequestSearchForm
+from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
 
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
-
+from django.contrib import messages
 
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
@@ -97,7 +104,7 @@ class RequestListView(FacetedSearchView):
                     'dataset_status',
                     _("Duomenų rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(
@@ -113,22 +120,6 @@ class RequestListView(FacetedSearchView):
                     'jurisdiction',
                     _("Valdymo sritis"),
                     Organization,
-                    multiple=True,
-                    is_int=False,
-                ),
-                Filter(
-                    *filter_args,
-                    'category',
-                    _("Kategorija"),
-                    Category,
-                    multiple=True,
-                    is_int=False,
-                    parent='parent_category',
-                ),
-                Filter(
-                    *filter_args,
-                    'tags',
-                    _("Žymė"),
                     multiple=True,
                     is_int=False,
                 ),
@@ -295,6 +286,11 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 self.request.user,
                 Action.UPDATE,
                 request
+            ),
+            'can_manage_plans': has_perm(
+                self.request.user,
+                Action.PLAN,
+                request
             )
         }
         context_data.update(extra_context_data)
@@ -315,16 +311,103 @@ class RequestCreateView(
         return has_perm(self.request.user, Action.CREATE, Request)
 
     def form_valid(self, form):
+        orgs = form.cleaned_data.get('organizations')
         self.object = form.save(commit=False)
         self.object.user = self.request.user
         self.object.status = Request.CREATED
         self.object.save()
         set_comment(Request.CREATED)
+        for org in orgs:
+            self.object.organizations.add(org)
+            requestA = RequestAssignment.objects.create(
+                request = self.object,   
+                organization=org,
+                status=self.object.status 
+            )
+            requestA.save()
+        self.object.save()
+        Task.objects.create(
+            title=f"Užregistruotas naujas poreikis: {ContentType.objects.get_for_model(self.object)},"
+                  f" id: {self.object.pk}",
+            description=f"Portale registruotas naujas poreikis duomenų atvėrimui: "
+                        f"{ContentType.objects.get_for_model(self.object)}.",
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            status=Task.CREATED
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
+        return context_data
+
+
+class RequestOrgEditView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Request
+    form_class = RequestEditOrgForm
+    template_name = 'base_form.html'
+    context_object_name = 'request_object'
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        orgs = form.cleaned_data.get('organizations')
+        mode = self.kwargs.get('mode')
+        ra_objects = RequestAssignment.objects.filter(request=self.object).all()
+        for ra in ra_objects:
+            ra.delete()
+        for org in orgs:
+            self.object.organizations.add(org)
+            RequestAssignment.objects.create(
+                organization=org,
+                request=self.object,
+                status=self.object.status
+            )
+            if mode == 'plural':
+                org = Organization.objects.filter(id=org.id).first()
+                org_root = org.get_root()
+                c_orgs = org_root.get_children()
+                for c_org in c_orgs:
+                    self.object.organizations.add(c_org)
+                    RequestAssignment.objects.create(
+                        organization=c_org,
+                        request=self.object,
+                        status=self.object.status
+                    )
+        self.object.save()
+        set_comment(Request.EDITED)
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.object.id}))
+
+    def has_permission(self):
+        request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
+        can_edit_specific_org = False
+        is_my_request = self.request.user == request.user
+        is_supervisor = Representative.objects.filter(user=self.request.user, role=Representative.SUPERVISOR).first()
+        if self.request.user.organization:
+            if self.request.user.organization in request.organizations.all():
+                can_edit_specific_org = True
+
+        representatives = self.request.user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__isnull=False,
+                user=self.request.user,
+                object_id__in=[r.id for r in request.organizations.all()]
+        )
+        can_edit_specific_org = len(representatives) > 0
+        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
+
+    def handle_no_permission(self):
+        messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.kwargs.get('pk')}))
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['current_title'] = _('Poreikio organizacijų redagavimas')
         return context_data
 
 
@@ -376,13 +459,18 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'opened')
         context['request_obj'] = self.request_obj
-        context['plans'] = self.request_obj.planrequest_set.all()
+        if status == 'closed':
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=True)
+        else:
+            context['plans'] = self.request_obj.planrequest_set.filter(plan__is_closed=False)
         context['can_manage_plans'] = has_perm(
             self.request.user,
             Action.PLAN,
             self.request_obj
         )
+        context['selected_tab'] = status
         return context
 
     def get_plan_object(self):
@@ -395,88 +483,92 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
         return self.request_obj
 
 
-class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    model = Plan
-    form_class = PlanForm
-    template_name = 'vitrina/plans/form.html'
+class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView):
+    template_name = 'vitrina/plans/plan_form.html'
 
     request_obj: Request
+    organizations: List[Organization]
 
     def dispatch(self, request, *args, **kwargs):
         self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
+        if self.request.user.is_authenticated:
+            if self.request.user.is_staff or self.request.user.is_superuser:
+                self.organizations = self.request_obj.organizations.all()
+            else:
+                self.organizations = self.request_obj.organizations.filter(
+                    representatives__user=self.request.user
+                )
+        else:
+            self.organizations = []
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.request_obj)
+        return has_perm(
+            self.request.user,
+            Action.PLAN,
+            self.request_obj
+        ) and self.request_obj.is_not_closed()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Naujas planas")
+        context['obj'] = self.request_obj
+        context['create_form'] = PlanForm(self.request_obj, self.organizations, self.request.user)
+        context['include_form'] = RequestPlanForm(self.request_obj)
+        context['current_title'] = _("Įtraukti į planą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
             reverse('request-detail', args=[self.request_obj.pk]): self.request_obj.title,
+            reverse('request-plans', args=[self.request_obj.pk]): _("Planas"),
         }
         return context
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['obj'] = self.request_obj
-        kwargs['user'] = self.request.user
-        kwargs['organization'] = self.request_obj.organization
-        return kwargs
+    def post(self, request, *args, **kwargs):
+        form_type = request.POST.get('form_type')
+        if form_type == 'create_form':
+            form = PlanForm(self.request_obj, self.organizations, request.user, request.POST)
+        else:
+            form = RequestPlanForm(self.request_obj, request.POST)
 
-    def form_valid(self, form):
-        self.object = form.save()
-        PlanRequest.objects.create(
-            plan=self.object,
-            request=self.request_obj
-        )
-        self.request_obj.status = Request.APPROVED
-        self.request_obj.save()
+        if form.is_valid():
+            if form_type == 'create_form':
+                plan = form.save()
+                PlanRequest.objects.create(
+                    plan=plan,
+                    request=self.request_obj
+                )
+                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
 
-        set_comment(_(f'Pridėtas planas "{self.object}". Į planą įtrauktas poreikis "{self.request_obj}".'))
-        return redirect(reverse('request-plans', args=[self.request_obj.pk]))
+            else:
+                plan_request = form.save(commit=False)
+                plan_request.request = self.request_obj
+                plan_request.save()
+                plan = plan_request.plan
+                plan.save()
+                set_comment(_(f'Į terminą "{plan}" įtrauktas poreikis "{self.request_obj}".'))
 
-
-class RequestIncludePlanView(PermissionRequiredMixin, RevisionMixin, CreateView):
-    form_class = RequestPlanForm
-    template_name = 'base_form.html'
-
-    request_obj: Dataset
-
-    def dispatch(self, request, *args, **kwargs):
-        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.request_obj)
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['request'] = self.request_obj
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Poreikio įtraukimas į planą")
-        context['parent_links'] = {
-            reverse('home'): _('Pradžia'),
-            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
-            reverse('request-detail', args=[self.request_obj.pk]): self.request_obj.title,
-        }
-        return context
-
-    def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.request = self.request_obj
-        self.object.save()
-        self.request_obj.status = Request.APPROVED
-        self.request_obj.save()
-
-        self.object.plan.save()
-        set_comment(_(f'Į planą "{self.object.plan}" įtrauktas poreikis "{self.request_obj}".'))
-        return redirect(reverse('request-plans', args=[self.request_obj.pk]))
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.PLAN,
+                rel_content_type=ContentType.objects.get_for_model(plan),
+                rel_object_id=plan.pk
+            )
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.PLANNED
+            )
+            self.request_obj.status = Request.PLANNED
+            self.request_obj.save()
+            return redirect(reverse('request-plans', args=[self.request_obj.pk]))
+        else:
+            context = self.get_context_data(**kwargs)
+            context[form_type] = form
+            return render(request=request, template_name=self.template_name, context=context)
 
 
 class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
@@ -485,7 +577,11 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         request = self.get_object().request
-        return has_perm(self.request.user, Action.PLAN, request)
+        return has_perm(
+            self.request.user,
+            Action.PLAN,
+            request
+        )
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -494,13 +590,13 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas poreikis "{request_obj}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse('request-plans', args=[request_obj.pk]))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         request = self.get_object().request
-        context['current_title'] = _("Plano pašalinimas")
+        context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
@@ -556,7 +652,7 @@ class RequestDeletePlanDetailView(RequestDeletePlanView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš plano "{plan}" pašalintas poreikis "{request_obj}".'))
+        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 
@@ -608,6 +704,50 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['request_obj'] = self.request_obj
         # context['datasets'] = datasets
+        return context
+
+    def get_plan_object(self):
+        return self.request_obj
+
+    def get_detail_object(self):
+        return self.request_obj
+
+    def get_history_object(self):
+        return self.request_obj
+
+
+class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
+    template_name = 'vitrina/requests/organizations.html'
+    detail_url_name = 'request-detail'
+    history_url_name = 'request-plans-history'
+    plan_url_name = 'request-plans'
+    context_object_name = 'organizations'
+    paginate_by = 20
+
+    request_obj: Request
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            orgs = self.request.user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__isnull=False,
+            )
+            org_ids = [org.id for org in orgs]
+            if self.request.user.organization:
+                org_ids.append(self.request.user.organization.id)
+            if org_ids:
+                user_org_priority = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(org_ids)])
+                return RequestAssignment.objects.filter(request=self.request_obj).order_by(user_org_priority).all()
+        return RequestAssignment.objects.filter(request=self.request_obj).all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['request_obj'] = self.request_obj
+        context['organizations'] = self.get_queryset()
         return context
 
     def get_plan_object(self):

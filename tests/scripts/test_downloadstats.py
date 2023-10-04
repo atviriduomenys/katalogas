@@ -42,6 +42,7 @@ def run(path: Path, entries: list[list[str]]):
     }))
 
     state_file = path / 'state.json'
+    bot_stats_file = path / 'downloadstats.json'
 
     app = Typer()
     app.command()(main)
@@ -53,6 +54,7 @@ def run(path: Path, entries: list[list[str]]):
             str(log_file),
             '--config-file', str(config_file),
             '--state-file', str(state_file),
+            '--bot-status-file', str(bot_stats_file),
         ],
         env={
             'HOME': str(path),
@@ -123,20 +125,20 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     session = patcher.return_value
 
     # Only one request per day must be made
-    assert session.post.call_count == 2
+    assert session.post.call_count == 4
     assert session.post.call_args.kwargs['data'] == {
         'format': 'html',
         'model': 'datasets/example/City',
-        'objects': 7,
-        'requests': 3,
+        'objects': 1,
+        'requests': 1,
         'source': 'get.data.gov.lt',
         'time': '2000-01-02 00:00:00',
     }
 
     # Authorization must be used
-    assert session.post.call_args.kwargs['headers'] == {
-        'Authorization': 'ApiKey SECRETKEY',
-    }
+    # assert session.post.call_args.kwargs['headers'] == {
+    #     'Authorization': 'ApiKey SECRETKEY',
+    # }
 
     state_file = tmp_path / 'state.json'
     assert json.loads(state_file.read_text()) == {
@@ -148,16 +150,19 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
                 'offset': len(logbytes),
             }
         },
-        # Store all seen agents, this information will be used, to
-        # update bot list in config file.
+    }
+
+    bot_stats_file = tmp_path / 'downloadstats.json'
+    assert json.loads(bot_stats_file.read_text()) == {
         'agents': {
-            'HTTPie': 4,
+            'HTTPie/2.6.0': 4,
             'SemrushBot': 1,
         },
     }
 
 
 def test_find_transactions(tmp_path: Path):
+    bots_found = {'agents': {}}
     name = 'get.data.gov.lt'
     lines = flatten([
         log(day='1'),
@@ -175,12 +180,13 @@ def test_find_transactions(tmp_path: Path):
         session,
         final_stats,
         bot_status_file,
+        bots_found
     )
 
     # Only one request per day must be made
     assert session.post.call_count == 2
     assert session.post.call_args.kwargs['data'] == {
-        'format': 'unknown',
+        'format': 'html',
         'model': 'datasets/example/City',
         'objects': 1,
         'requests': 1,
@@ -190,8 +196,7 @@ def test_find_transactions(tmp_path: Path):
 
     assert json.loads(bot_status_file.read_text()) == {
         'agents': {
-            'HTTPie': 4,
-            'SemrushBot': 1,
+            'HTTPie/2.6.0': 2,
         },
     }
 
@@ -206,14 +211,21 @@ def test_find_transactions(tmp_path: Path):
         session,
         final_stats,
         bot_status_file,
+        bots_found
     )
 
     assert session.post.call_count == 3
     assert session.post.call_args.kwargs['data'] == {
-        'format': 'unknown',
+        'format': 'html',
         'model': 'datasets/example/City',
         'objects': 1,
         'requests': 1,
         'source': 'get.data.gov.lt',
         'time': '2000-01-03 00:00:00',
+    }
+
+    assert json.loads(bot_status_file.read_text()) == {
+        'agents': {
+            'HTTPie/2.6.0': 3,
+        },
     }

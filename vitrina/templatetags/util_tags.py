@@ -4,7 +4,7 @@ from typing import Iterable
 
 from django import template
 from django.contrib.contenttypes.models import ContentType
-
+from extra_settings.models import Setting
 register = template.Library()
 assignment_tag = getattr(register, 'assignment_tag', register.simple_tag)
 
@@ -47,3 +47,15 @@ def get_content_type(obj):
 @register.filter()
 def is_past_due(value):
     return date.today() > value
+
+
+@assignment_tag
+def get_google_analytics_id():
+    google_analytics_id = Setting.objects.filter(name="GOOGLE_ANALYTICS_ID").first()
+    if google_analytics_id:
+        if google_analytics_id.value != '':
+            return google_analytics_id.value
+        else:
+            return None
+    else:
+        return None

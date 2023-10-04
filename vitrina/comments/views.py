@@ -62,6 +62,7 @@ class CommentView(
                     object_id=object_id,
                     content_type=content_type,
                 )
+                new_request.save()
                 set_comment(Request.CREATED)
 
                 comment.type = Comment.REQUEST

@@ -548,7 +548,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     form['title'] = 'Edited title'
     form['description'] = 'edited org description'
     form['jurisdiction'] = jurisdiction.id
-    form['image'] = Upload('img.png', generate_photo_file(256, 256), 'image')
+    form['image'] = Upload('img.png', generate_photo_file(300, 300), 'image')
 
     resp = form.submit()
     org.refresh_from_db()

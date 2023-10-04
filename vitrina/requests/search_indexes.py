@@ -3,14 +3,12 @@ from haystack.indexes import SearchIndex, Indexable
 from vitrina.requests.models import Request
 
 
-
-
 class RequestIndex(SearchIndex, Indexable):
     text = CharField(document=True, use_template=True)
     title = CharField(model_attr='title')
     status = CharField(model_attr='status', faceted=True, null=True)
     dataset_status = MultiValueField(model_attr='dataset_statuses',  faceted=True, default="UNASSIGNED")
-    organization = MultiValueField(model_attr='dataset_organizations', faceted=True, default=-1)
+    organization = MultiValueField(model_attr='organizations__pk', faceted=True, default=-1)
     jurisdiction = CharField(model_attr='jurisdiction', faceted=True)
     category = MultiValueField(model_attr='dataset_categories', faceted=True)
     parent_category = MultiValueField(model_attr='dataset_parent_categories', faceted=True, null=True)

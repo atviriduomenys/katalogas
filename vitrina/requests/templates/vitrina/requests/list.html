@@ -231,40 +231,20 @@
 
             let orgFilter = $('#organization-filter-input');
             orgFilter.on('input', function(){
-                let orgFilterValues = orgFilter.nextAll();
-                orgFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(orgFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                    if (orgFilter.val().length === 0) {
-                        orgFilterValues.each(function() {
-                           $(this).removeClass('is-hidden');
-                        });
-                    }
-                });
+                if (orgFilter.val().length !== 0) {
+                    $('.organization_filter_items_body').html('').load(
+                        "{% url 'update-request-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
             });
 
-            let tagsFilter = $('#tags-filter-input');
-            tagsFilter.on('input', function(){
-                let tagsFilterValues = tagsFilter.nextAll();
-                tagsFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(tagsFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                    if (tagsFilter.val().length === 0) {
-                        tagsFilterValues.each(function() {
-                           $(this).removeClass('is-hidden');
-                        });
-                    }
-                });
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                if (manFilter.val().length !== 0) {
+                    $('.jurisdiction_filter_items_body').html('').load(
+                        "{% url 'update-request-jurisdiction-filters' %}?q=" + manFilter.val()
+                    );
+                }
             });
 
             function autocomplete(inp, arr) {

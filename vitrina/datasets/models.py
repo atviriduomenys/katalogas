@@ -57,21 +57,18 @@ class Dataset(TranslatableModel):
 
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
-    METADATA = "METADATA"
-    PRIORITIZED = "PRIORITIZED"
-    FINANCING = "FINANCING"
-    HAS_STRUCTURE = "HAS_STRUCTURE"
+    PLANNED = "PLANNED"
     UNASSIGNED = "UNASSIGNED"
-    STATUSES = {
+    STATUSES = (
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (HAS_STRUCTURE, _("Struktūruotas")),
-    }
+        (PLANNED, _("Planuojamas atverti")),
+        (UNASSIGNED, _("Nepriskirta"))
+    )
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
-        INVENTORED: _("Tik inventorintas"),
-        HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys"),
+        INVENTORED: _("Tik inventorinti"),
+        PLANNED: _("Planuojama atverti"),
         UNASSIGNED: _("Nepriskirta")
     }
 
@@ -125,7 +122,7 @@ class Dataset(TranslatableModel):
 
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
 
-    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
@@ -204,6 +201,7 @@ class Dataset(TranslatableModel):
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
     representatives = GenericRelation('vitrina_orgs.Representative')
+    request_objects = GenericRelation('vitrina_requests.RequestObject')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -321,16 +319,6 @@ class Dataset(TranslatableModel):
 
     def level(self):
         return randrange(5)
-
-    @property
-    def filter_status(self):
-        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
-            return self.HAS_STRUCTURE
-        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
-            return self.HAS_DATA
-        if self.status == self.INVENTORED or self.status == self.METADATA:
-            return self.status
-        return self.UNASSIGNED
 
     @property
     def formats(self):

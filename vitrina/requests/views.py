@@ -27,6 +27,7 @@ from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
 from reversion import set_comment
 from vitrina.requests.services import update_facet_data
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.classifiers.models import Category
@@ -40,6 +41,8 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
+from vitrina.helpers import get_filter_url
+
 
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
@@ -104,7 +107,7 @@ class RequestListView(FacetedSearchView):
                     'dataset_status',
                     _("Duomenų rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(
@@ -176,6 +179,7 @@ class RequestPublicationStatsView(RequestListView):
         context['filter'] = 'publication'
         context['sort'] = sorting
         return context
+
 
 class RequestYearStatsView(RequestListView):
     template_name = 'vitrina/requests/publications.html'
@@ -333,8 +337,7 @@ class RequestCreateView(
                         f"{ContentType.objects.get_for_model(self.object)}.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            status=Task.CREATED,
-            user=self.request.user
+            status=Task.CREATED
         )
         return HttpResponseRedirect(self.get_success_url())
 
@@ -556,6 +559,15 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 rel_content_type=ContentType.objects.get_for_model(plan),
                 rel_object_id=plan.pk
             )
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.request_obj),
+                object_id=self.request_obj.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=Comment.PLANNED
+            )
+            self.request_obj.status = Request.PLANNED
+            self.request_obj.save()
             return redirect(reverse('request-plans', args=[self.request_obj.pk]))
         else:
             context = self.get_context_data(**kwargs)
@@ -750,3 +762,63 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
 
     def get_history_object(self):
         return self.request_obj
+
+class update_request_org_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/organization_filter_items.html'
+    form_class = RequestSearchForm
+    facet_fields = RequestListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'organization',
+                _("Organizacija"),
+                Organization,
+                multiple=True,
+                is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+class update_request_jurisdiction_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
+    form_class = RequestSearchForm
+    facet_fields = RequestListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'jurisdiction',
+                _("Valdymo sritis"),
+                Organization,
+                multiple=True,
+                is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context

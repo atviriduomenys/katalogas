@@ -28,7 +28,7 @@ import requests
 from pprintpp import pprint as pp
 
 
-QUERY = '''
+QUERY = '''\
 query($endCursor: String) {
   repository(owner: "atviriduomenys", name: "%s") {
     issues(first: 100, after: $endCursor) {

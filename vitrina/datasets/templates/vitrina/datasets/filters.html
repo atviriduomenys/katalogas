@@ -13,7 +13,7 @@
 
 {% if user.organization %}
 <nav class="category-panel">
-    <a href="{% url 'organization-datasets' user.organization.pk %}" id="org-dataset-url">
+    <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" id="org-dataset-url">
         <p class="category-panel-heading">
             {% translate "Mano organizacijos rinkiniai" %}
         </p>
@@ -43,9 +43,12 @@
 
 {% for filter in filters %}
 <nav class="category-panel mb-5" id="filter_id">
-
   {% if filter.stats and active_filter != filter.name %}
-  <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
+    {% if 'selected_facets' in request.GET %}
+        <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
+    {% else %}
+        <a href="{{ filter.get_stats_url }}selected_facets=organization_exact:{{ organization_id }}" id="dataset-{{ filter.name }}-stats">
+    {% endif %}
   {% endif %}
     <p class="{{ filter.name }}-panel-heading">
         <span class="icon-text">
@@ -65,9 +68,18 @@
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            placeholder="{% translate 'Paieška' %}..."
-            title="{% translate 'Paieška' %}"
+            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
         >
+        {% if filter.name == 'organization' %}
+          {% include "vitrina/datasets/organization_filter_items.html" %}
+        {% elif filter.name == 'category' %}
+          {% include "vitrina/datasets/category_filter_items.html" %}
+        {% elif filter.name == 'tags' %}
+          {% include "vitrina/datasets/tag_filter_items.html" %}
+        {% elif filter.name == 'jurisdiction' %}
+          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% endif %}
     {% endif %}
   {% endif %}
 

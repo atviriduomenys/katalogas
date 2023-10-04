@@ -30,7 +30,6 @@ bots = {
 }
 
 transactions = {}
-bots_found = {'agents': {}}
 
 def main(
     name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
@@ -44,10 +43,12 @@ def main(
     state_file: str = Option('/.local/share/vitrina/state.json'),
     bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
 ):
-    config_file = os.path.expanduser('~') + config_file
-    state_file = os.path.expanduser('~') + state_file
-    bot_status_file = os.path.expanduser('~') + bot_status_file
+    # config_file = os.path.expanduser('~') + config_file
+    # state_file = os.path.expanduser('~') + state_file
+    # bot_status_file = os.path.expanduser('~') + bot_status_file
     current_state = {'files': {}}
+
+    bots_found = {'agents': {}}
 
     limit = 1000
     total_lines_read = 0
@@ -116,7 +117,7 @@ def main(
             total_lines_read += 1
             lines_read += 1
             if lines_read == limit:
-                find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file)
+                find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file, bots_found)
                 lines_read = 0
             state_entry = {
                 logfile: {
@@ -125,7 +126,7 @@ def main(
                 }
             }
             pbar.update(1)
-        find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file)
+        find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file, bots_found)
 
     current_state.get('files', {}).update(state_entry)
 
@@ -146,12 +147,13 @@ def parse_user_agent(agent):
         return user_agents.parse(agent).browser.family
 
 
-def find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file):
+def find_transactions(name, d, endpoint_url, session, final_stats, bot_status_file, bots_found):
     for i in d:
         if 'txn' in i:
             entry = json.loads(i)
             txn = entry['txn']
             timestamp = entry['time']
+            dt = None
             try:
                 dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
             except:
@@ -159,60 +161,61 @@ def find_transactions(name, d, endpoint_url, session, final_stats, bot_status_fi
             requests = 1
             if txn not in transactions:
                 transactions[txn] = {'time': dt}
-            if 'model' in entry:
-                model = entry.get('model')
-                transactions[txn]['model'] = model
-            if 'objects' in entry:
-                objects = entry.get('objects')
-                transactions[txn]['objects'] = objects
-            if 'format' in entry:
-                frmt = entry.get('format')
-                transactions[txn]['format'] = frmt
             else:
-                frmt = 'unknown'
+                transactions[txn]['time'] = dt
+            if 'model' in entry:
+                transactions[txn]['model'] = entry.get('model')
+            if 'format' in entry:
+                transactions[txn]['format'] = entry.get('format')
             if 'type' in entry:
                 transactions[txn]['type'] = entry.get('type')
                 transactions[txn]['requests'] = requests
             if 'agent' in entry:
                 transactions[txn]['agent'] = entry.get('agent')
-            if txn in transactions:
-                if (transactions[txn].get('objects') is not None
-                        and transactions[txn].get('model') is not None
-                        and transactions[txn].get('time') is not None):
-                    model = transactions[txn].get('model')
-                    dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                    date = dt.date()
-                    hour = dt.hour
-                    agent = entry.get('agent', '')
-                    obj = [
-                        {
-                            'date': date,
-                            'hour': hour,
-                            'format': frmt,
-                            'reqs': requests,
-                            'count': objects,
-                            'agent': agent,
-                        }
-                    ]
-                    if len(model) > 0:
-                        if model not in final_stats:
-                            final_stats[model] = obj
-                    if agent in bots:
-                        bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
-                    else:
-                        format_string = '%Y-%m-%d %H:%M:%S'
-                        date_string = dt.strftime(format_string)
-                        data = {
-                            "source": name,
-                            "model": model,
-                            "format": frmt,
-                            "time": date_string,
-                            "requests": requests,
-                            "objects": objects
-                        }
-                        transactions.pop(txn)
-                        session.post(endpoint_url, data=data)
-                        # print(f"Status Code: {r.status_code}, Response: {r.json()}")
+            if entry.get('type') == 'response':
+                objects = entry.get('objects', 0)
+                transactions[txn]['objects'] = objects
+                model = transactions[txn].get('model')
+                dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+                date = dt.date()
+                hour = dt.hour
+                agent = transactions[txn].get('agent')
+                frmt = transactions[txn].get('format')
+                obj = [
+                    {
+                        'date': date,
+                        'hour': hour,
+                        'format': frmt,
+                        'reqs': requests,
+                        'count': objects,
+                        'agent': agent,
+                    }
+                ]
+                if model is not None and len(model) > 0:
+                    if model not in final_stats:
+                        final_stats[model] = obj
+                bot_in_list = False
+                for bt in bots:
+                    if bt in agent:
+                        bot_in_list = True
+                        bots_found['agents'][bt] = bots_found.get('agents').get(bt, 0) + 1
+                        break
+                if not bot_in_list:
+                    if agent:
+                        bots_found['agents'][agent] = bots_found.get('agents').get(agent, 0) + 1
+                    format_string = '%Y-%m-%d %H:%M:%S'
+                    date_string = dt.strftime(format_string)
+                    data = {
+                        "source": name,
+                        "model": model,
+                        "format": frmt,
+                        "time": date_string,
+                        "requests": requests,
+                        "objects": objects
+                    }
+                    transactions.pop(txn)
+                    session.post(endpoint_url, data=data)
+                    # print(f"Status Code: {r.status_code}, Response: {r.json()}")
 
             with open(bot_status_file, "w+") as bot_file:
                 bot_file.write(json.dumps(bots_found, indent=4))

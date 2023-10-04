@@ -125,7 +125,9 @@ class Base(models.Model):
 @reversion.register()
 class Model(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    dataset = models.ForeignKey('vitrina_datasets.Dataset',
+                                models.CASCADE,
+                                verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
         'vitrina_resources.DatasetDistribution',
         models.SET_NULL,
@@ -168,6 +170,12 @@ class Model(models.Model):
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
+        return ''
+
+    @property
+    def description(self):
+        if metadata := self.metadata.first():
+            return metadata.description
         return ''
 
     def update_level(self):
@@ -305,6 +313,12 @@ class Property(models.Model):
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
+        return ''
+
+    @builtins.property
+    def description(self):
+        if metadata := self.metadata.first():
+            return metadata.description
         return ''
 
     def get_acl_parents(self):

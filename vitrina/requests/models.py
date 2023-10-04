@@ -69,7 +69,7 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True, related_name='dataset_request')
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)

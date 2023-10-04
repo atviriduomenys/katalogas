@@ -43,6 +43,7 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
 from vitrina.helpers import get_filter_url
 
+
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
     facet_fields = [
@@ -178,6 +179,7 @@ class RequestPublicationStatsView(RequestListView):
         context['filter'] = 'publication'
         context['sort'] = sorting
         return context
+
 
 class RequestYearStatsView(RequestListView):
     template_name = 'vitrina/requests/publications.html'

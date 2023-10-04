@@ -238,11 +238,11 @@
                 }
             });
 
-            let tagsFilter = $('#tags-filter-input');
-            tagsFilter.on('input', function(){
-                if (tagsFilter.val().length !== 0) {
-                    $('.tag_filter_items_body').html('').load(
-                        "{% url 'update-request-tag-filters' %}?q=" + tagsFilter.val()
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                if (manFilter.val().length !== 0) {
+                    $('.jurisdiction_filter_items_body').html('').load(
+                        "{% url 'update-request-jurisdiction-filters' %}?q=" + manFilter.val()
                     );
                 }
             });

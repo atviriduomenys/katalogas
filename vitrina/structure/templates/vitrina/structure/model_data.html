@@ -348,7 +348,6 @@
                 sort.push(col);
             }
             sort = `sort(${sort.join(',')})`;
-            console.log(query);
             query = query ? `${query}&${sort}` : `?${sort}`;
 
             let url = `${location.origin}${location.pathname}${query}`;

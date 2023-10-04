@@ -43,13 +43,15 @@ from vitrina.datasets.views import DatasetCreatePlanView
 from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
-from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters
+from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters, \
+     update_dataset_jurisdiction_filters
 
 urlpatterns = [
     # @GetMapping("/datasets")`
-    path('update-dataset-org-filters/', update_dataset_org_filters, name='update-dataset-org-filters'),
-    path('update-dataset-cat-filters/', update_dataset_category_filters, name='update-dataset-cat-filters'),
-    path('update-dataset-tag-filters/', update_dataset_tag_filters, name='update-dataset-tag-filters'),
+    path('update-dataset-org-filters/', update_dataset_org_filters.as_view(), name='update-dataset-org-filters'),
+    path('update-dataset-cat-filters/', update_dataset_category_filters.as_view(), name='update-dataset-cat-filters'),
+    path('update-dataset-tag-filters/', update_dataset_tag_filters.as_view(), name='update-dataset-tag-filters'),
+    path('update-dataset-jurisdiction-filters/', update_dataset_jurisdiction_filters.as_view(), name='update-dataset-jurisdiction-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
     # @GetMapping("/dataset/{slug}")

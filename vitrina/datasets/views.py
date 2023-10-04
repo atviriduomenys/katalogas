@@ -78,54 +78,9 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
+from haystack.query import SearchQuerySet
 from vitrina.helpers import get_filter_url
 import pytz
-
-def update_dataset_org_filters(request):
-    items = []
-    orgs = []
-    if request.GET.get('q') and len(request.GET.get('q')) > 2:
-        orgs = Organization.objects.distinct().filter(title__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
-    else:
-        orgs = Organization.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
-    for org in orgs:
-        items.append({
-            'title': org.title,
-            'url': get_filter_url(request, 'organization', org.id).strip('q={}'.format(request.GET['q'])),
-            'count': org.dataset_count
-            })
-    return render(request, 'vitrina/datasets/organization_filter_items.html', {'items': items})
-
-
-def update_dataset_category_filters(request):
-    items = []
-    cats = []
-    if request.GET.get('q') and len(request.GET.get('q')) > 2:
-        cats = Organization.objects.distinct().filter(title__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
-    else:
-        cats = Organization.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
-    for cat in cats:
-        items.append({
-            'title': cat.title,
-            'url': get_filter_url(request, 'category', cat.id).strip('q={}'.format(request.GET['q'])),
-            'count': cat.dataset_count
-            })
-    return render(request, 'vitrina/datasets/category_filter_items.html', {'items': items})
-
-def update_dataset_tag_filters(request):
-    items = []
-    tags = []
-    if request.GET.get('q') and len(request.GET.get('q')) > 2:
-        tags = Dataset.tags.tag_model.objects.distinct().filter(name__icontains=request.GET['q']).annotate(dataset_count=Count(Case(When(dataset__status__in=["HAS_STRUCTURE", "HAS_DATA"], then=1), output_field=IntegerField()))).order_by('-dataset_count')
-    else:
-        tags = Dataset.tags.tag_model.objects.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
-    for tag in tags:
-        items.append({
-            'title': tag.name,
-            'url': get_filter_url(request, 'tags', tag.id).strip('q={}'.format(request.GET['q'])),
-            'count': tag.dataset_count
-            })
-    return render(request, 'vitrina/datasets/tag_filter_items.html', {'items': items})
 
 
 class DatasetListView(PlanMixin, FacetedSearchView):
@@ -208,7 +163,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     'status',
                     _("Rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(
@@ -2530,3 +2485,129 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         ).order_by('-revision__date_created')
+
+class update_dataset_org_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/organization_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'organization',
+                _("Organizacija"),
+                Organization,
+                multiple=True,
+                is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+        
+    
+
+class update_dataset_category_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/category_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'category',
+                _("Kategorija"),
+                Category,
+                multiple=True,
+                is_int=False,
+                
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    print(item.title)
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+class update_dataset_tag_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/tag_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'tags',
+                _("Žymė"),
+                Dataset,
+                multiple=True,
+                is_int=False,
+                display_method="get_tag_title"
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+class update_dataset_jurisdiction_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                    *filter_args,
+                    'jurisdiction',
+                    _("Valdymo sritis"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    print(item.title)
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context

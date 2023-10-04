@@ -1,7 +1,7 @@
 <div class ="tag_filter_items_body">
   {% load util_tags %}
-  {% if items %}
-  {% for item in items %}
+  {% if filter_items %}
+  {% for item in filter_items %}
     {% if item.hidden %}
     <div class="columns is-gapless is-hidden  m-0 mt-1">
     {% else %}
@@ -48,53 +48,5 @@
       </div>
     </div>
   {% endfor %}
-  {% else %}
-  {% for item in filter.items %}
-  {% if item.hidden %}
-  <div class="columns is-gapless is-hidden  m-0 mt-1">
-  {% else %}
-  <div class="columns is-gapless  m-0 mt-1">
-  {% endif %}
-
-    <div class="column is-1">
-        <a href="{{ item.url }}" class="has-text-dark">
-          {% if item.selected %}
-          <span class="icon">
-            <i class="far fa-check-square"></i>
-          </span>
-          {% else %}
-          <span class="icon">
-            <i class="far fa-square"></i>
-          </span>
-          {% endif %}
-        </a>
-    </div>
-
-    <div class="column is-9">
-
-      {% if item.selected %}
-      <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
-      {% else %}
-      <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
-      {% endif %}
-
-        {% if filter.name == 'level' %}
-          <span class="icon-text">
-            {% for star in item.value|range %}
-            <i class="fas fa-star"></i>
-            {% endfor %}
-          </span>
-
-        {% else %}
-          {{ item.title }}
-        {% endif %}
-      </a>
-    </div>
-
-    <div class="column is-2 has-text-right">
-      <span class="is-size-6">({{ item.count }})</span>
-    </div>
-  </div>
-{% endfor %}
   {% endif %}
 </div>

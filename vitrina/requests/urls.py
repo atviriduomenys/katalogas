@@ -9,13 +9,13 @@ from vitrina.requests.views import RequestCreatePlanView
 from vitrina.requests.views import RequestDeletePlanView
 from vitrina.requests.views import RequestPlansHistoryView
 from vitrina.requests.views import RequestDeletePlanDetailView
-from vitrina.requests.views import update_request_org_filters, update_request_tag_filters
+from vitrina.requests.views import update_request_org_filters, update_request_jurisdiction_filters
 
 
 urlpatterns = [
     # @GetMapping("/requests/submitted")
-    path('update-request-org-filters/', update_request_org_filters, name='update-request-org-filters'),
-    path('update-request-tag-filters/', update_request_tag_filters, name='update-request-tag-filters'),
+    path('update-request-org-filters/', update_request_org_filters.as_view(), name='update-request-org-filters'),
+    path('update-request-jurisdiction-filters/', update_request_jurisdiction_filters.as_view(), name='update-request-jurisdiction-filters'),
     path('requests/submitted/', RequestListView.as_view(), name='request-list'),
     # @GetMapping("/requests/{slug}")
     path('requests/<int:pk>/', RequestDetailView.as_view(), name='request-detail'),

@@ -41,13 +41,18 @@
         </p>
     {% endif %}
   {% if active_filter != filter.name %}
-    {% if filter.name == 'organization' or filter.name == 'tags' %}
+    {% if filter.name == 'organization' or filter.name == 'jurisdiction' %}
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            placeholder="{% translate 'Paieška' %}..."
-            title="{% translate 'Paieška' %}"
+            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
         >
+        {% if filter.name == 'organization' %}
+          {% include "vitrina/datasets/organization_filter_items.html" %}
+        {% elif filter.name == 'jurisdiction' %}
+          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% endif %}        
     {% endif %}
   {% endif %}
 

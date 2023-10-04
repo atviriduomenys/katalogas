@@ -68,9 +68,18 @@
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            placeholder="{% translate 'Paieška' %}..."
-            title="{% translate 'Paieška' %}"
+            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
         >
+        {% if filter.name == 'organization' %}
+          {% include "vitrina/datasets/organization_filter_items.html" %}
+        {% elif filter.name == 'category' %}
+          {% include "vitrina/datasets/category_filter_items.html" %}
+        {% elif filter.name == 'tags' %}
+          {% include "vitrina/datasets/tag_filter_items.html" %}
+        {% elif filter.name == 'jurisdiction' %}
+          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% endif %}
     {% endif %}
   {% endif %}
 

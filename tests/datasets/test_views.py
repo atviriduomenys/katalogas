@@ -374,7 +374,7 @@ def test_search_with_query_that_matches_category_and_parent_category(app: Django
 
 @pytest.mark.haystack
 def test_search_with_query_that_matches_tag_of_one_dataset(app: DjangoTestApp, search_datasets):
-    resp = app.get("%s?q=%s" % (reverse('test_tag_1'), "resource_test_title"))
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "test_tag_1"))
     assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
         search_datasets[0].pk,
     ])
@@ -382,7 +382,7 @@ def test_search_with_query_that_matches_tag_of_one_dataset(app: DjangoTestApp, s
 
 @pytest.mark.haystack
 def test_search_with_query_that_matches_tag_of_two_datasets(app: DjangoTestApp, search_datasets):
-    resp = app.get("%s?q=%s" % (reverse('test_tag_2'), "resource_test_title"))
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "test_tag_2"))
     assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
         search_datasets[0].pk,
         search_datasets[1].pk,

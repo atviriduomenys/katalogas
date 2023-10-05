@@ -251,10 +251,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'q': form.cleaned_data.get('q', ''),
         }
-        print('form: ', form)
-        print('form cleaned data: ', form.cleaned_data.get('q', ''))
         search_query_dict = dict(self.request.GET.copy())
-        print('search query dict', search_query_dict)
         if 'query' in search_query_dict:
             search_query_dict.pop('query')
         context['search_query'] = search_query_dict

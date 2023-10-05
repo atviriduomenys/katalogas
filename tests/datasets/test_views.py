@@ -83,28 +83,45 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
 
 @pytest.fixture
 def search_datasets():
-    dataset1 = DatasetFactory(slug='ds1', published=timezone.localize(datetime(2022, 6, 1)))
+    cat_parent1 = CategoryFactory(title='parent1')
+    cat_parent2 = CategoryFactory(title='parent2')
+    cat_child = cat_parent1.add_child(
+        instance=CategoryFactory.build(title='child1'),
+    )
+    dataset1 = DatasetFactory(slug='ds1', published=timezone.localize(datetime(2022, 6, 1)),
+                              tags=('test_tag_1', 'test_tag_2'))
+    dataset1.category.add(cat_parent1)
     dataset1.set_current_language('en')
     dataset1.title = 'Dataset 1'
+    dataset1.description = 'Description 1'
     dataset1.save()
     dataset1.set_current_language('lt')
     dataset1.title = "Duomenų rinkinys vienas"
+    dataset1.description = 'test_lt_desc 1'
     dataset1.save()
 
-    dataset2 = DatasetFactory(slug='ds2', published=timezone.localize(datetime(2022, 8, 1)))
+    dataset2 = DatasetFactory(slug='ds2', published=timezone.localize(datetime(2022, 8, 1)),
+                              tags=('test_tag_2', 'test_tag_3'))
+    dataset2.category.add(cat_parent2)
     dataset2.set_current_language('en')
     dataset2.title = 'Dataset 2'
+    dataset2.description = 'Description 2'
     dataset2.save()
     dataset2.set_current_language('lt')
     dataset2.title = "Duomenų rinkinys du\"<'>\\"
+    dataset2.description = 'test_lt_desc 2'
     dataset2.save()
 
-    dataset3 = DatasetFactory(slug='ds3', published=timezone.localize(datetime(2022, 7, 1)))
+    dataset3 = DatasetFactory(slug='ds3', published=timezone.localize(datetime(2022, 7, 1)),
+                              tags=('test_tag_4', 'test_tag_5'))
+    dataset3.category.add(cat_child)
     dataset3.set_current_language('en')
     dataset3.title = 'Dataset 3'
+    dataset3.description = 'Description 3'
     dataset3.save()
     dataset3.set_current_language('lt')
     dataset3.title = "Duomenų rinkinys trys"
+    dataset3.description = 'test_lt_desc 3'
     dataset3.save()
     return [dataset1, dataset2, dataset3]
 
@@ -313,6 +330,62 @@ def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestAp
         search_datasets[1].pk,
         search_datasets[2].pk,
         search_datasets[0].pk
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_all_description(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "test_lt_desc"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[0].pk,
+        search_datasets[1].pk,
+        search_datasets[2].pk,
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_all_with_english_description(app: DjangoTestApp, search_datasets):
+    for dataset in search_datasets:
+        dataset.set_current_language('en')
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "Description"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[0].pk,
+        search_datasets[1].pk,
+        search_datasets[2].pk,
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_child_category(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "child1"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[2].pk,
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_category_and_parent_category(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "parent1"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[0].pk,
+        search_datasets[2].pk,
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_tag_of_one_dataset(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "test_tag_1"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[0].pk,
+    ])
+
+
+@pytest.mark.haystack
+def test_search_with_query_that_matches_tag_of_two_datasets(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "test_tag_2"))
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([
+        search_datasets[0].pk,
+        search_datasets[1].pk,
     ])
 
 

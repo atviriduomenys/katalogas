@@ -3,8 +3,9 @@ import itertools
 import json
 import secrets
 import uuid
+import pytz
+
 from datetime import datetime, date
-from collections import OrderedDict
 from typing import List
 from urllib.parse import urlencode
 
@@ -50,7 +51,7 @@ from vitrina.api.models import ApiKey
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
-from vitrina.requests.models import Request, RequestObject
+from vitrina.requests.models import RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -67,11 +68,8 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
     get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
-from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value
-from vitrina.helpers import Filter
-from vitrina.helpers import DateFilter
+from vitrina.helpers import get_selected_value, Filter, DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
@@ -80,7 +78,6 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 from haystack.query import SearchQuerySet
 from vitrina.helpers import get_filter_url
-import pytz
 
 
 class DatasetListView(PlanMixin, FacetedSearchView):
@@ -254,7 +251,6 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'q': form.cleaned_data.get('q', ''),
         }
-
         search_query_dict = dict(self.request.GET.copy())
         if 'query' in search_query_dict:
             search_query_dict.pop('query')

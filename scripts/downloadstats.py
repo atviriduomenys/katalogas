@@ -29,8 +29,6 @@ bots = {
     'Adsbot'
 }
 
-transactions = {}
-
 
 def main(
         name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
@@ -44,7 +42,7 @@ def main(
         state_file: str = Option('/.local/share/vitrina/state.json'),
         bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
 ):
-
+    transactions = {}
     current_state = {'files': {}}
 
     bots_found = {'agents': {}}
@@ -117,7 +115,7 @@ def main(
             total_lines_read += 1
             lines_read += 1
             if lines_read == limit:
-                find_transactions(name, d, final_stats, bot_status_file, bots_found, temp)
+                find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
                 lines_read = 0
             state_entry = {
                 logfile: {
@@ -126,7 +124,7 @@ def main(
                 }
             }
             pbar.update(1)
-        find_transactions(name, d, final_stats, bot_status_file, bots_found, temp)
+        find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
 
     post_data(temp, name, session, endpoint_url)
 
@@ -149,7 +147,7 @@ def parse_user_agent(agent):
         return user_agents.parse(agent).browser.family
 
 
-def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp):
+def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions):
     for i in d:
         if 'txn' in i:
             entry = json.loads(i)
@@ -178,7 +176,10 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp):
                 objects = entry.get('objects', 0)
                 transactions[txn]['objects'] = objects
                 model = transactions[txn].get('model')
-                dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+                if 'time' in entry:
+                    dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                else:
+                    dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
                 date = dt.date()
                 hour = dt.hour
                 agent = transactions[txn].get('agent')
@@ -224,7 +225,11 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp):
                             if any(d['date'] == date for d in temp[model]):
                                 hour_found = False
                                 for index, dictionary in enumerate(temp[model]):
-                                    if dictionary.get('hour') == hour and dictionary.get('source') == name:
+                                    if (
+                                            dictionary.get('hour') == hour
+                                            and dictionary.get('source') == name
+                                            and dictionary.get('format') == frmt
+                                    ):
                                         hour_found = True
                                         obj_count = temp[model][index]['objects']
                                         requests = temp[model][index]['requests']

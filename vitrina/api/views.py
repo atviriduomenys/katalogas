@@ -591,6 +591,7 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         serializer.is_valid(raise_exception=True)
         instance = ModelDownloadStats(**serializer.validated_data)
         existing = ModelDownloadStats.objects.filter(
+            source=instance.source,
             model=instance.model,
             model_format=instance.model_format,
             created=instance.created

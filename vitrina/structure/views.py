@@ -28,8 +28,7 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
 from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm
 from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param
-from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_num_summary, \
-    get_sorted_data_by_prop_type
+from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -343,21 +342,38 @@ class PropertyStructureView(
         )
         context['can_manage_structure'] = self.can_manage_structure
 
-        data = get_num_summary()
-        data = data.get('_data')
-        type = None
-        if (
-            self.property.metadata.first() and
-            self.property.metadata.first().type
-        ):
-            type = self.property.metadata.first().type
-        sorted_data = get_sorted_data_by_prop_type(data, 'datetime')
-        x_values = [item['bin'] for item in sorted_data]
-        y_values = [item['count'] for item in sorted_data]
-        context['x_values'] = x_values
-        context['y_values'] = y_values
-        context['data'] = data
+        metadata = self.property.metadata.first()
+        if metadata and metadata.type:
+            type = metadata.type
+            if (type == 'string' and self.property.enums.exists()) or type in [
+                'boolean',
+                'integer',
+                'number',
+                'datetime',
+                'date',
+                'time',
+                'money',
+                'ref'
+            ]:
+                data = get_data_from_spinta(self.model, f":summary/{self.property}")
+                data = data.get('_data', [])
+                context['data'] = data
 
+                if (
+                    type in ['boolean', 'ref'] or
+                    (type in ['string', 'integer'] and self.property.enums.exists())
+                ):
+                    max_count = max([item['count'] for item in data])
+                    context['max_count'] = max_count
+                    context['graph_type'] = 'horizontal'
+                else:
+                    x_values = [item['bin'] for item in data]
+                    y_values = [item['count'] for item in data]
+                    context['x_values'] = x_values
+                    context['y_values'] = y_values
+                    context['x_title'] = self.property.title or self.property.name
+                    context['y_title'] = _("Kiekis")
+                    context['graph_type'] = 'vertical'
         return context
 
     def get_structure_url(self):

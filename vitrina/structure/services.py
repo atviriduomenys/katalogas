@@ -1092,5 +1092,3 @@ def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:
         else:
             ref = ref_model
     return ref
-
-

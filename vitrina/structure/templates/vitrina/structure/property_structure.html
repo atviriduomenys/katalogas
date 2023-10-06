@@ -107,47 +107,65 @@
         </div>
         {% endif %}
 
+        {% if data %}
+            {% if graph_type == 'vertical' %}
+                <canvas id="chart" class="mb-5"></canvas>
+            {% elif graph_type == 'horizontal' %}
+                <div class="tab-content mb-6">
+                    {% for item in data %}
+                        <div class="is-flex">
+                            <strong class="has-text-black">{{ item.bin }}</strong>
+                            <div class="stays-right">{{ item.count }}</div>
+                        </div>
+                        <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+
         {% if prop.metadata.first.type == 'string' or prop.metadata.first.type == 'integer' %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
             {% if prop.enums.first %}
                 {% for enum_item in prop.enums.first.enumitem_set.all %}
-                <div class="mb-3">
-                    <div class="is-inline">
-                        {% if enum_item.metadata.first.prepare %}
-                        <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
-                        {% endif %}
-
-                        {% if enum_item.metadata.first.title %}
-                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
-                        {% endif %}
-
-                        {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
-                            {% if prop.name and model.name and can_manage_structure %}
-                            <div class="buttons is-pulled-right mr-1 no-margin-bottom">
-                                <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
-                                    {% translate "Keisti" %}
-                                </a>
-                                <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
-                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
-                                   class="button is-link is-small"
-                                   id="delete_enum">{% translate "Trinti" %}
-                                </a>
-                            </div>
+                    <div class="columns no-margin-bottom">
+                        <div class="column is-three-quarters">
+                            {% if enum_item.metadata.first.prepare %}
+                            <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
                             {% endif %}
-                        {% endif %}
 
+                            {% if enum_item.metadata.first.title %}
+                            <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
+                            {% endif %}
+
+                             <div class="ml-4">
+                                {% if enum_item.metadata.first.source %}
+                                <span>source: </span>
+                                <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
+                                {% endif %}
+                            </div>
+                            {% if enum_item.metadata.first.description %}
+                                <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
+                            {% endif %}
+                        </div>
+
+                        <div class="column is-one-quarter">
+                            {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
+                                {% if prop.name and model.name and can_manage_structure %}
+                                <div class="buttons is-right">
+                                    <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
+                                        {% translate "Keisti" %}
+                                    </a>
+                                    <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
+                                       onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                       class="button is-link is-small"
+                                       id="delete_enum">{% translate "Trinti" %}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        {% if enum_item.metadata.first.source %}
-                        <span>source: </span>
-                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
-                        {% endif %}
-                    </div>
-                    {% if enum_item.metadata.first.description %}
-                        <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
-                    {% endif %}
-                </div>
                 {% endfor %}
             {% else %}
                 <p>
@@ -173,4 +191,52 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart");
+            if (ctx) {
+                ctx = ctx.getContext("2d");
+                var xValues = {{ x_values|safe }};
+                var yValues = {{ y_values|safe }};
+                var xTitle = "{{x_title}}";
+                var yTitle = "{{y_title}}";
+
+                const char = new Chart(ctx, {
+                  type: "bar",
+                  data: {
+                    labels: xValues,
+                    datasets: [{
+                      data: yValues
+                    }]
+                  },
+                  options: {
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: yTitle
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: xTitle
+                            },
+                        }
+                    }
+                  }
+                });
+            }
+        });
+    </script>
 {% endblock %}

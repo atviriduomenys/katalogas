@@ -20,6 +20,7 @@ from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
@@ -28,7 +29,8 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
 from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm
 from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param
-from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
+from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_srid, \
+    transform_coordinates
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -271,6 +273,9 @@ class ModelStructureView(
         return None
 
 
+WGS84 = 4326
+
+
 class PropertyStructureView(
     HistoryMixin,
     StructureMixin,
@@ -345,23 +350,39 @@ class PropertyStructureView(
         metadata = self.property.metadata.first()
         if metadata and metadata.type:
             type = metadata.type
-            if (type == 'string' and self.property.enums.exists()) or type in [
-                'boolean',
-                'integer',
-                'number',
-                'datetime',
-                'date',
-                'time',
-                'money',
-                'ref',
-                'geometry'
-            ]:
+            if (
+                (type == 'string' and self.property.enums.exists()) or
+                (type == 'geometry' and get_srid(metadata.type_args)) or
+                type in [
+                    'boolean',
+                    'integer',
+                    'number',
+                    'datetime',
+                    'date',
+                    'time',
+                    'money',
+                    'ref',
+                ]
+            ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])
                 context['data'] = data
 
                 if type == 'geometry':
+                    transformed_data = []
                     context['graph_type'] = 'map'
+                    srid = get_srid(metadata.type_args)
+                    for item in data:
+                        centroid = loads(item.get('centroid'))
+                        x = centroid.x
+                        y = centroid.y
+                        if srid != WGS84:
+                            x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
+                        item['centroid'] = [x, y]
+                        transformed_data.append(item)
+                    context['data'] = transformed_data
+                    context['source_srid'] = srid
+                    context['target_srid'] = WGS84
                 elif (
                     type in ['boolean', 'ref'] or
                     (type in ['string', 'integer'] and self.property.enums.exists())
@@ -2209,11 +2230,28 @@ class GetUpdatedSummaryView(View):
     def get(self, request, *args, **kwargs):
         model = request.GET.get('model')
         prop = request.GET.get('property')
+        source_srid = request.GET.get('source_srid')
+        target_srid = request.GET.get('target_srid')
         min_lng = request.GET.get('min_lng')
         min_lat = request.GET.get('min_lat')
         max_lng = request.GET.get('max_lng')
         max_lat = request.GET.get('max_lat')
-        query = f"bbox({min_lng}, {min_lat}, {max_lng}, {max_lat})"
+
+        if source_srid != target_srid:
+            min_lat, min_lng = transform_coordinates(min_lat, min_lng, target_srid, source_srid)
+            max_lat, max_lng = transform_coordinates(max_lat, max_lng, target_srid, source_srid)
+
+        query = f"bbox({min_lat}, {min_lng}, {max_lat}, {max_lng})"
         data = get_data_from_spinta(model, f":summary/{prop}", query)
         data = data.get('_data', [])
-        return JsonResponse({'data': data})
+
+        transformed_data = []
+        for item in data:
+            centroid = loads(item.get('centroid'))
+            x = centroid.x
+            y = centroid.y
+            if source_srid != target_srid:
+                x, y = transform_coordinates(centroid.x, centroid.y, source_srid, target_srid)
+            item['centroid'] = [x, y]
+            transformed_data.append(item)
+        return JsonResponse({'data': transformed_data})

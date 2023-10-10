@@ -225,6 +225,8 @@
     {{ data|json_script:"clusters" }}
     {{ prop.name|json_script:"property" }}
     {{ model.full_name|json_script:"model" }}
+    {{ source_srid|json_script:"sourceSrid" }}
+    {{ target_srid|json_script:"targetSrid" }}
     <script type="text/javascript">
         $(function () {
             let ctx = document.getElementById("chart");
@@ -272,20 +274,19 @@
                 let clusters = JSON.parse(document.getElementById('clusters').textContent);
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+                let layerGroup = L.layerGroup().addTo(map);
                 let bounds = [];
                 clusters.forEach(item => {
                     let cluster = item.cluster;
-                    let wkt = new window.Wkt.Wkt();
-                    wkt.read(item.centroid);
-                    let centroidX = wkt.components[0].x;
-                    let centroidY = wkt.components[0].y;
+                    let centroidX = item.centroid[0];
+                    let centroidY = item.centroid[1];
                     bounds.push([centroidX, centroidY]);
 
                     if("_id" in item){
-                        var marker = L.marker([centroidX, centroidY]).addTo(map);
+                        var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
                     }
                     else {
-                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(map);
+                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
                         var text = L.tooltip({
                             permanent: true,
                             direction: 'center',
@@ -293,22 +294,24 @@
                         })
                         .setContent(cluster.toString())
                         .setLatLng(marker.getLatLng());
-                        text.addTo(map);
+                        text.addTo(layerGroup);
                     }
                 });
                 map.fitBounds(bounds);
 
+                var sourceSrid = JSON.parse(document.getElementById('sourceSrid').textContent);
+                var targetSrid = JSON.parse(document.getElementById('targetSrid').textContent);
                 map.on("zoomend", function () {
-                    update_map(map);
+                    update_map(map, layerGroup, sourceSrid, targetSrid);
                 });
                 map.on("dragend", function () {
-                    update_map(map);
+                    update_map(map, layerGroup, sourceSrid, targetSrid);
                 });
 
             }
         });
 
-        function update_map(map) {
+        function update_map(map, layerGroup, sourceSrid, targetSrid) {
             let map_bounds = map.getBounds();
             let minLng = map_bounds.getSouthEast().lng;
             let minLat = map_bounds.getSouthEast().lat;
@@ -323,13 +326,35 @@
                  data: {
                     model: model,
                     property: property,
+                    source_srid: sourceSrid,
+                    target_srid: targetSrid,
                     min_lng: minLng,
                     min_lat: minLat,
                     max_lng: maxLng,
                     max_lat: maxLat,
                  }
              }).then(response => {
-                 console.log(response);
+                layerGroup.clearLayers();
+                response.data.forEach(item => {
+                    let cluster = item.cluster;
+                    let centroidX = item.centroid[0];
+                    let centroidY = item.centroid[1];
+
+                    if("_id" in item){
+                        var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
+                    }
+                    else {
+                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
+                        var text = L.tooltip({
+                            permanent: true,
+                            direction: 'center',
+                            className: 'text'
+                        })
+                        .setContent(cluster.toString())
+                        .setLatLng(marker.getLatLng());
+                        text.addTo(layerGroup);
+                    }
+                });
              });
         }
     </script>

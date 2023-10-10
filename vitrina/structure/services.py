@@ -8,6 +8,7 @@ from typing import Union, Tuple, List, Dict
 import requests
 from django.db.models import Q
 from lark import ParseError
+from pyproj import Transformer
 
 import vitrina.datasets.structure as struct
 
@@ -1092,3 +1093,24 @@ def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:
         else:
             ref = ref_model
     return ref
+
+
+def get_srid(type_args):
+    srid = None
+    if type_args:
+        type_args = type_args.split(',')
+        type_args = [arg.strip() for arg in type_args]
+        if len(type_args) == 1 and type_args[0].isdigit():
+            srid = int(type_args[0])
+        elif len(type_args) == 2 and type_args[1].isdigit():
+            srid = int(type_args[1])
+    return srid
+
+
+def transform_coordinates(point_x, point_y, source_srid, target_srid):
+    transformer = Transformer.from_crs(
+        f"EPSG:{source_srid}",
+        f"EPSG:{target_srid}"
+    )
+    return transformer.transform(point_x, point_y)
+

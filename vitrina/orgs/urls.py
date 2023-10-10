@@ -13,7 +13,8 @@ from vitrina.orgs.views import ConfirmOrganizationMergeView
 urlpatterns = [
     # @RequestMapping("/organizations")
     path('organizations/', OrganizationListView.as_view(), name='organization-list'),
-    path('organizations/stats/jurisdiction/', OrganizationManagementsView.as_view(), name='organization-stats-jurisdiction'),
+    path('organizations/stats/jurisdiction/', OrganizationManagementsView.as_view(),
+         name='organization-stats-jurisdiction'),
     path('orgs/<int:pk>/', OrganizationDetailView.as_view(), name='organization-detail'),
     path('orgs/<int:pk>/update/', OrganizationUpdateView.as_view(), name='organization-change'),
     path('orgs/<int:pk>/members/', OrganizationMembersView.as_view(), name='organization-members'),

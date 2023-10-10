@@ -5,6 +5,8 @@ from django.db import models
 from vitrina.users.models import User
 from vitrina.datasets.models import Dataset
 
+from django.utils.translation import gettext_lazy as _
+
 
 # TODO: https://github.com/jazzband/django-newsletter
 class EmailTemplate(models.Model):
@@ -87,11 +89,31 @@ class UserSubscription(models.Model):
 
 
 class Subscription(models.Model):
+    ORGANIZATION = "ORGANIZATION"
+    DATASET = "DATASET"
+    REQUEST = "REQUEST"
+    SUB_TYPE_CHOICES = {
+        (ORGANIZATION, _("Organizacijos prenumerata")),
+        (DATASET, _("Duomenų rinkinio prenumerata")),
+        (REQUEST, _("Poreikio prenumerata"))
+    }
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+    sub_type = models.CharField(max_length=255, choices=SUB_TYPE_CHOICES, blank=True, null=True,
+                                verbose_name=_('Prenumeratos tipas'))
+    email_subscribed = models.BooleanField(default=False,
+                                           verbose_name=_('Prenumeratos laiško užsisakymas'))
+    dataset_update_sub = models.BooleanField(default=False,
+                                             verbose_name=_('Susijusių duomenų rinkinių prenumerata'))
+    request_update_sub = models.BooleanField(default=False,
+                                             verbose_name=_('Susijusių poreikių prenumerata'))
+    dataset_comments_sub = models.BooleanField(default=False,
+                                               verbose_name=_('Duomenų rinkinių komentarų prenumerata'))
+    request_comments_sub = models.BooleanField(default=False,
+                                               verbose_name=_('Poreikių komentarų prenumerata'))
 
     class Meta:
         db_table = 'subscription'

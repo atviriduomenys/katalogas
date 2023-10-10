@@ -2504,6 +2504,7 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             object_id__in=list(dataset_plan_ids)
         ).order_by('-revision__date_created')
 
+
 class update_dataset_org_filters(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'
     form_class = DatasetSearchForm

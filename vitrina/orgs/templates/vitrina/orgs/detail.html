@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-
+{% load subscription_tags %}
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
 {% block current_title %}{{ organization.title }}{% endblock %}
 
@@ -97,6 +97,10 @@
 	                    	</a>
 	                	</p>
 	                {% endif %}
+					<div class="content" id="organization_subscription">
+						{% translate "Užsiprenumeruokite naujienas, susijusias su organizacija" as description %}
+						{% subscription obj=organization user=request.user description=description %}
+					</div>
 	            </div>
 	        </div>
 	    </div>

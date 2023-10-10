@@ -165,6 +165,7 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
 
 def test_find_transactions(tmp_path: Path):
     bots_found = {'agents': {}}
+    transactions = {}
     temp = {}
     name = 'get.data.gov.lt'
     lines = flatten([
@@ -182,7 +183,8 @@ def test_find_transactions(tmp_path: Path):
         final_stats,
         bot_status_file,
         bots_found,
-        temp
+        temp,
+        transactions
     )
     post_data(temp, name, session, endpoint_url)
 
@@ -213,7 +215,8 @@ def test_find_transactions(tmp_path: Path):
         final_stats,
         bot_status_file,
         bots_found,
-        temp
+        temp,
+        transactions
     )
     post_data(temp, name, session, endpoint_url)
 

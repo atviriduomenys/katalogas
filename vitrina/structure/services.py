@@ -727,7 +727,7 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
                 meta.errors.append(_(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.'))
 
 
-def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
+def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = ''):
     if uuid:
         url = f"https://get.data.gov.lt/{model}/{uuid}/?{query}"
     else:

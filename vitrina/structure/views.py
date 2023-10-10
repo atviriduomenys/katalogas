@@ -6,7 +6,7 @@ from typing import List, Union
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Func, F, Value, TextField, Max
-from django.http import Http404, StreamingHttpResponse
+from django.http import Http404, StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -353,13 +353,16 @@ class PropertyStructureView(
                 'date',
                 'time',
                 'money',
-                'ref'
+                'ref',
+                'geometry'
             ]:
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])
                 context['data'] = data
 
-                if (
+                if type == 'geometry':
+                    context['graph_type'] = 'map'
+                elif (
                     type in ['boolean', 'ref'] or
                     (type in ['string', 'integer'] and self.property.enums.exists())
                 ):
@@ -2200,3 +2203,17 @@ class PropertyHistoryView(
 
     def get_history_objects(self):
         return Version.objects.get_for_object(self.property).order_by('-revision__date_created')
+
+
+class GetUpdatedSummaryView(View):
+    def get(self, request, *args, **kwargs):
+        model = request.GET.get('model')
+        prop = request.GET.get('property')
+        min_lng = request.GET.get('min_lng')
+        min_lat = request.GET.get('min_lat')
+        max_lng = request.GET.get('max_lng')
+        max_lat = request.GET.get('max_lat')
+        query = f"bbox({min_lng}, {min_lat}, {max_lng}, {max_lat})"
+        data = get_data_from_spinta(model, f":summary/{prop}", query)
+        data = data.get('_data', [])
+        return JsonResponse({'data': data})

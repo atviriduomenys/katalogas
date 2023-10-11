@@ -154,3 +154,4 @@ Email template indentifiers:
  21. request-approved
  22. auth-portal-user-password-changed
  23. auth-org-coordinator-password-changed
+ 24. error-in-data

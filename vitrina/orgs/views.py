@@ -18,11 +18,10 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
-
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
@@ -33,9 +32,7 @@ from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
-
 from vitrina.views import PlanMixin, HistoryView
-from vitrina.messages.models import EmailTemplate
 
 
 class OrganizationListView(ListView):
@@ -310,28 +307,14 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            email_template = EmailTemplate.objects.filter(identifier=self.email_identifier)
-            if not email_template:
-                import datetime
-                email_content = self.base_template_content.format(self.organization, url)
-                email_subject = email_title = 'Kvietimas prisijungti prie atvirų duomenų portalo'
-                created_template = EmailTemplate.objects.create(
-                    created=datetime.datetime.now(),
-                    version=0,
-                    identifier=self.email_identifier,
-                    template=email_content,
-                    subject=_(email_subject),
-                    title=_(email_title)
-                )
-                created_template.save()
-            else:
-                email_template = email_template.first()
-                email_content = str(email_template.template)
-                email_content = email_content.format(self.organization, url)
-                email_subject = str(email_template.subject)
+            email_data = prepare_email_by_identifier(
+                self.email_identifier,  self.base_template_content,
+                'Kvietimas prisijungti prie atvirų duomenų portalo',
+                 [self.organization, url]
+             )
             send_mail(
-                subject=_(email_subject),
-                message=_(email_content),
+                subject=_(email_data['email_subject']),
+                message=_(email_data['email_content']),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.object.email],
             )

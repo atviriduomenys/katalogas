@@ -24,6 +24,7 @@ from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
+from vitrina.messages.models import EmailTemplate
 
 
 class CommentView(
@@ -159,7 +160,7 @@ class ExternalCommentView(
     def post(self, request, dataset_id, external_content_type, external_object_id):
         form_class = get_comment_form_class()
         form = form_class(external_object_id, request.POST)
-
+        template_identifier = 'error-in-data'
         if form.is_valid():
             comment = form.save(commit=False)
             comment.user = request.user

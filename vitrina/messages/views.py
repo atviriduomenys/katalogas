@@ -35,7 +35,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
         if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
             Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).delete()
             messages.success(request, _("Sėkmingai atsisakėte prenumeratos."))
-        return redirect(obj.get_absolute_url())
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 class SubscribeFormView(

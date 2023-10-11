@@ -96,7 +96,7 @@ class SubscriptionForm(ModelForm):
             raise ValidationError(_("Norėdami prenumeruoti duomenų rinkinius, turite tą daryti per organizacijos"
                                     " ar duomenų rinkinio prenumeratos formą"))
 
-        if not (dataset_comments_sub and request_comments_sub and dataset_update_sub and request_update_sub):
+        if not dataset_comments_sub and not request_comments_sub and not dataset_update_sub and not request_update_sub:
             raise ValidationError(_("Būtina pasirinkti bent vieną prenumeratos tipą"))
 
         return self.cleaned_data

@@ -35,6 +35,7 @@ from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
 
 from vitrina.views import PlanMixin, HistoryView
+from vitrina.messages.models import EmailTemplate
 
 
 class OrganizationListView(ListView):
@@ -237,6 +238,15 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
+    base_template_content = """
+         Buvote įtraukti į {0} organizacijos
+         narių sąrašo, tačiau nesate registruotas Lietuvos
+         atvirų duomenų portale. Prašome sekite šia nuoroda,
+         kad užsiregistruotumėte ir patvirtintumėte savo narystę
+        'organizacijoje:\n'
+        '{1}   
+    """
+    email_identifier = "auth-org-representative-without-credentials"
 
     organization: Organization
 
@@ -300,18 +310,28 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
+            email_template = EmailTemplate.objects.filter(identifier=self.email_identifier)
+            if not email_template:
+                import datetime
+                email_content = self.base_template_content.format(self.organization, url)
+                email_subject = email_title = 'Kvietimas prisijungti prie atvirų duomenų portalo'
+                created_template = EmailTemplate.objects.create(
+                    created=datetime.datetime.now(),
+                    version=0,
+                    identifier=self.email_identifier,
+                    template=email_content,
+                    subject=_(email_subject),
+                    title=_(email_title)
+                )
+                created_template.save()
+            else:
+                email_template = email_template.first()
+                email_content = str(email_template.template)
+                email_content = email_content.format(self.organization, url)
+                email_subject = str(email_template.subject)
             send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.organization}“ organizacijos '
-                    'narių sąrašo, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
-                    'organizacijoje:\n'
-                    '\n'
-                    f'{url}\n'
-                    '\n'
-                ),
+                subject=_(email_subject),
+                message=_(email_content),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.object.email],
             )

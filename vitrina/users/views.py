@@ -19,6 +19,7 @@ from vitrina import settings
 from datetime import datetime
 from pandas import period_range
 
+
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     form_class = LoginForm
@@ -75,6 +76,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         company_code = soc_acc.extra_data.get('company_code')
         return redirect('partner-register')
+
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

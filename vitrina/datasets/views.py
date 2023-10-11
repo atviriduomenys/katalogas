@@ -69,7 +69,7 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
@@ -766,6 +766,15 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
+    base_email_template = """
+        Buvote įtraukti į {0} duomenų rinkinio
+        narių sąrašą, tačiau nesate registruotas Lietuvos
+        atvirų duomenų portale. Prašome sekite šia nuoroda,
+        kad užsiregistruotumėte ir patvirtintumėte savo
+        narystę:\n
+        {1}
+    """
+
     def has_permission(self):
         return has_perm(
             self.request.user,
@@ -826,16 +835,13 @@ class CreateMemberView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
+            email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
+                                                     self.base_email_template,
+                                                     'Kvietimas prisijungti prie atvirų duomenų portalo',
+                                                     [self.dataset, url])
             send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.dataset}“ duomenų rinkinio '
-                    'narių sąrašą, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo '
-                    'narystę:\n\n'
-                    f'{url}\n\n'
-                ),
+                subject=_(email_data['email_subject']),
+                message=_(email_data['email_content']),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[self.object.email],
             )

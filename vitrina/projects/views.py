@@ -75,6 +75,7 @@ class ProjectCreateView(
     form_class = ProjectForm
     template_name = 'base_form.html'
 
+
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Project)
 

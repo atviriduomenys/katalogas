@@ -75,8 +75,10 @@ class SubscribeFormView(
         self.object.content_type = self.ct
         self.object.object_id = self.obj.id
         self.object.user = self.user
+
         try:
             self.object.save()
+            messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
         except IntegrityError:
             existing_subscription = Subscription.objects.filter(
                 content_type=self.ct,
@@ -87,4 +89,5 @@ class SubscribeFormView(
             if existing_subscription:
                 existing_subscription.delete()
                 self.object.save()
+                messages.success(self.request, _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."))
         return HttpResponseRedirect(self.obj.get_absolute_url())

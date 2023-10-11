@@ -111,6 +111,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
         datasets = get_datasets_for_user(self.request.user, datasets)
+        datasets = datasets.models(Dataset)
         sorting = self.request.GET.get('sort', None)
 
         if self.request.GET.get('q') and not sorting:

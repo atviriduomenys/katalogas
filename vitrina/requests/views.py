@@ -407,7 +407,7 @@ class RequestOrgEditView(
                 object_id__in=[r.id for r in request.organizations.all()]
         )
         can_edit_specific_org = len(representatives) > 0
-        return True
+        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
 
     def handle_no_permission(self):
         messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
@@ -423,7 +423,29 @@ class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
     template_name = 'confirm_delete.html'
 
     def has_permission(self):
-        return True
+        self.object = self.get_object()
+        request = get_object_or_404(Request, pk=self.object.request.pk)
+        can_edit_specific_org = False
+        is_my_request = self.request.user == request.user
+        is_supervisor = Representative.objects.filter(user=self.request.user, role=Representative.SUPERVISOR).first()
+        if self.request.user.organization:
+            if self.request.user.organization in request.organizations.all():
+                can_edit_specific_org = True
+
+        representatives = self.request.user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__isnull=False,
+                user=self.request.user,
+                object_id__in=[r.id for r in request.organizations.all()]
+        )
+        can_edit_specific_org = len(representatives) > 0
+        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
+
+    def handle_no_permission(self):
+        self.object = self.get_object()
+        request_id = self.object.request.pk
+        messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': request_id}))
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

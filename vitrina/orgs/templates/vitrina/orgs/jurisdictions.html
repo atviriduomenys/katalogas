@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n %}
+{% load humanize %}
 
 {% block pageTitle %} | {% translate "Organizacijos" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Organizacijos" %}{% endblock %}
@@ -80,50 +81,102 @@
         </div>
 
         <div class="column is-three-quarters">
-            <div class="is-flex mb-3">
-                <div class="stays-right">
-                    <form action="/organizations/stats/{{ filter }}" method="GET">
-                        <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
-                        <div class="select">
-                            <select name="sort" id="sorting-parameter" onchange="this.form.submit()">
-                                <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
-                                <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="is-flex mb-3">
-                <span>{% translate "Valdymo sritis" %}</span>
-                <div class="stays-right">
-                    {% translate "Organizacijų sk." %}
-                </div>
-            </div>
+            <div class="tabs">
+                <ul>
+                    <li class="format-tab" id="time_tab_id">
+                        <a href="#time" onclick="selectTab('time')">{% translate "Laiko juosta" %}</a>
+                    </li>
+                    <li class="format-tab" id="bar_tab_id">
+                        <a href="#bar" onclick="selectTab('bar')">{% translate "Stulpelinė diagrama" %}</a>
+                    </li>
+                </ul>
+           </div>
 
-            {% for jurisdiction in jurisdiction_data %}
-                    <div class="is-flex">
-                        <a href="{% url 'organization-list' %}{{ jurisdiction.query }}">
-                            <strong style="color: black;">{{ jurisdiction.title }}</strong>
-                        </a>
-                        <div class="stays-right">
-                            <a href="{% url 'organization-list' %}{{ jurisdiction.query }}">
-                                {{ jurisdiction.count }}
-                            </a>
+           {% if parameter_select_template_name %}
+                {% include parameter_select_template_name %}
+           {% endif %}
+
+            <div class="mb-5">
+               <div>
+                   <div class="tab-content mt-5" style="display: none;" id="bar_id">
+                        <div class="is-flex">
+                            <span>{{ title }}</span>
+                            <div class="stays-right">
+                                {{ yAxis_title }}
+                            </div>
                         </div>
-                    </div>
-                    <progress class="progress is-info"
-                        value="{{ jurisdiction.count }}"
-                        max="{{ max_count }}">
-                    </progress>
-                {% endfor %}
+
+                        {% for item in bar_chart_data %}
+                            <div class="is-flex">
+                                {% if item.full_url %}
+                                    <a href="{{ item.full_url }}" id="{{ item.filter_value }}">
+                                {% else %}
+                                    <a href="{{ list_url }}{{ item.url }}" id="{{ item.filter_value }}">
+                                {% endif %}
+                                    <strong style="color: black;">{{ item.title }}</strong>
+                                </a>
+                                <div class="stays-right">
+                                    <a href="">{{ item.count|intcomma:False }}</a>
+                                </div>
+                            </div>
+                            <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
+                        {% endfor %}
+                   </div>
+                   <div class="tab-content" style="display: none;" id="time_id">
+                        {% if time_chart_data %}
+                            {% include "vitrina/statistics/stats_graph.html" %}
+                        {% endif %}
+                   </div>
+               </div>
+           </div>
         </div>
     </div>
-    {#</section>#}
     <br/>
 {% endblock %}
 {% block scripts %}
     <script type="text/javascript">
         $(function () {
+            selectTab();
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{time_chart_data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+
             $('.facets-more').click(function () {
                 $('.' + this.id).toggleClass('is-hidden');
                 $(this).text(function (i, text) {
@@ -155,6 +208,41 @@
                 }
             }
             location.href = `${location.origin}${location.pathname}${query}`;
+        }
+
+        function selectTab(format=null) {
+             if (format == null) {
+                format = "time";
+                if (location.hash && (
+                    location.hash == "#bar" ||
+                    location.hash == "#time"
+                )) {
+                    format = location.hash.replace("#", "");
+                }
+            }
+
+            $(`.tab-content:not(#${format}_id)`).each(function() {
+                this.style.display = 'none';
+            });
+            $(`li.format-tab:not(#${format}_tab_id)`).each(function() {
+                $(this).removeClass('is-active');
+            });
+
+            let content = $(`.tab-content#${format}_id`);
+            let tab = $(`li.format-tab#${format}_tab_id`);
+            content.css('display', 'block');
+            tab.addClass('is-active');
+
+            if (format == 'bar') {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'none';
+                });
+            }
+            else {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'block';
+                });
+            }
         }
     </script>
 {% endblock %}

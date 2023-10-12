@@ -81,7 +81,9 @@ class OrganizationListView(ListView):
 
 
 class OrganizationManagementsView(OrganizationListView):
+    title = _("Valdymo sritis")
     template_name = 'vitrina/orgs/jurisdictions.html'
+    parameter_select_template_name = 'vitrina/orgs/stats_parameter_select.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
@@ -94,7 +96,10 @@ class OrganizationManagementsView(OrganizationListView):
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
         max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
 
-        context['jurisdiction_data'] = jurisdictions
+        context['title'] = self.title
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['time_chart_data'] = jurisdictions
+        context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
         context['filter'] = 'jurisdiction'
         context['sort'] = sorting

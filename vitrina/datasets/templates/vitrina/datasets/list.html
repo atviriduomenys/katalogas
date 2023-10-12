@@ -211,7 +211,6 @@
                                             </a>
                                         </strong>
                                     </div>
-
                                     <div class="tags mt-2 mb-1">
                                       <span class="tag is-white has-text-dark">
                                           {% if i.object.published %}
@@ -362,97 +361,37 @@
 
             let manFilter = $('#jurisdiction-filter-input');
             manFilter.on('input', function(){
-                let manFilterValues = manFilter.nextAll();
                 if (manFilter.val().length !== 0) {
-                    manFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(manFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                });
-                } else {
-                    manFilterValues.each(function() {
-                    $(this).addClass('is-hidden');
-                });
-                    manFilterValues = manFilterValues.slice(0, 10)
-                    manFilterValues.each(function() {
-                        $(this).removeClass('is-hidden');
-                    });
+                    $('.jurisdiction_filter_items_body').html('').load(
+                        "{% url 'update-dataset-jurisdiction-filters' %}?q=" + manFilter.val()
+                    );
                 }
             });
 
             let orgFilter = $('#organization-filter-input');
             orgFilter.on('input', function(){
-                let orgFilterValues = orgFilter.nextAll();
                 if (orgFilter.val().length !== 0) {
-                    orgFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(orgFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                });
-                } else {
-                    orgFilterValues.each(function() {
-                    $(this).addClass('is-hidden');
-                });
-                    orgFilterValues = orgFilterValues.slice(0, 10)
-                    orgFilterValues.each(function() {
-                        $(this).removeClass('is-hidden');
-                    });
+                    $('.organization_filter_items_body').html('').load(
+                        "{% url 'update-dataset-org-filters' %}?q=" + orgFilter.val()
+                    );
                 }
             });
 
             let catFilter = $('#category-filter-input');
             catFilter.on('input', function(){
-                let catFilterValues = catFilter.nextAll();
                 if (catFilter.val().length !== 0) {
-                    catFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(catFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                });
-                } else {
-                    catFilterValues.each(function() {
-                    $(this).addClass('is-hidden');
-                });
-                    catFilterValues = catFilterValues.slice(0, 10)
-                    catFilterValues.each(function() {
-                        $(this).removeClass('is-hidden');
-                    });
+                    $('.category_filter_items_body').html('').load(
+                        "{% url 'update-dataset-cat-filters' %}?q=" + catFilter.val()
+                    );
                 }
             });
 
             let tagsFilter = $('#tags-filter-input');
             tagsFilter.on('input', function(){
-                let tagsFilterValues = tagsFilter.nextAll();
                 if (tagsFilter.val().length !== 0) {
-                    tagsFilterValues.each(function() {
-                    let childElementStrings = $(this).children().filter('.is-9').text().trim().toLowerCase().split(' ');
-                    let containsWord = childElementStrings.filter(item => item.startsWith(tagsFilter.val().toLowerCase()));
-                    if (containsWord.length === 0) {
-                        $(this).addClass('is-hidden');
-                    } else {
-                        $(this).removeClass('is-hidden');
-                    }
-                });
-                } else {
-                    tagsFilterValues.each(function() {
-                    $(this).addClass('is-hidden');
-                });
-                    tagsFilterValues = tagsFilterValues.slice(0, 10)
-                    tagsFilterValues.each(function() {
-                        $(this).removeClass('is-hidden');
-                    });
+                    $('.tag_filter_items_body').html('').load(
+                        "{% url 'update-dataset-tag-filters' %}?q=" + tagsFilter.val()
+                    );
                 }
             });
 

@@ -4,6 +4,10 @@
 {% load sass_tags %}
 {% load i18n %}
 {% get_current_language as LANGUAGE_CODE %}
+{% load extra_settings %}
+{% load util_tags %}
+{% get_google_analytics_id as GOOGLE_ANALYTICS_ID %}
+
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
@@ -28,7 +32,16 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     <script src="{% url 'javascript-catalog' %}"></script>
+    {% if GOOGLE_ANALYTICS_ID != None %}
+        <script async src="https://www.googletagmanager.com/gtag/js?id={% get_setting 'GOOGLE_ANALYTICS_ID' default='' %}"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
+          gtag('config', '{% get_setting 'GOOGLE_ANALYTICS_ID' default='django-extra-settings' %}');
+        </script>
+    {% endif %}
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}

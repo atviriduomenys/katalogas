@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.redirects',
     'django.contrib.humanize',
+    'extra_settings',
     'rest_framework',
     'drf_yasg',
     'vitrina.users',
@@ -285,7 +286,7 @@ THUMBNAIL_PROCESSORS = (
 )
 THUMBNAIL_ALIASES = {
     '': {
-        'list': {'size': (480, 320), 'crop': True},
+        'list': {'size': (480, 320)},
     },
 }
 

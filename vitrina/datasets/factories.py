@@ -8,7 +8,7 @@ from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, Frequ
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, DatasetResource
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description

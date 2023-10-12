@@ -3,8 +3,9 @@ import itertools
 import json
 import secrets
 import uuid
+import pytz
+
 from datetime import datetime, date
-from collections import OrderedDict
 from typing import List
 from urllib.parse import urlencode
 
@@ -19,7 +20,8 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q
-from django.db.models.functions import ExtractYear, ExtractMonth, ExtractWeek, ExtractQuarter, ExtractDay
+from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -49,7 +51,7 @@ from vitrina.api.models import ApiKey
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
-from vitrina.requests.models import Request, RequestObject
+from vitrina.requests.models import RequestObject
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -61,22 +63,21 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, DatasetSearchForm, AddProjectForm, \
     DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
-from vitrina.datasets.services import update_facet_data, get_projects, get_count_by_frequency, get_frequency_and_format, \
-    get_requests, get_datasets_for_user, has_remove_from_request_perm
+from vitrina.datasets.services import update_facet_data, get_projects, get_frequency_and_format, \
+    get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
+    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
-from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value
-from vitrina.helpers import Filter
-from vitrina.helpers import DateFilter
+from vitrina.helpers import get_selected_value, Filter, DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-import pytz
+from haystack.query import SearchQuerySet
+from vitrina.helpers import get_filter_url
 
 
 class DatasetListView(PlanMixin, FacetedSearchView):
@@ -110,6 +111,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
         datasets = get_datasets_for_user(self.request.user, datasets)
+        datasets = datasets.models(Dataset)
         sorting = self.request.GET.get('sort', None)
 
         if self.request.GET.get('q') and not sorting:
@@ -159,7 +161,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     'status',
                     _("Rinkinio būsena"),
                     choices=Dataset.FILTER_STATUSES,
-                    multiple=False,
+                    multiple=True,
                     is_int=False,
                 ),
                 Filter(
@@ -193,6 +195,14 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     multiple=True,
                     is_int=False,
                     parent='parent_category',
+                ),
+                Filter(
+                    *filter_args,
+                    'groups',
+                    _("Grupė"),
+                    DatasetGroup,
+                    multiple=True,
+                    is_int=False,
                 ),
                 Filter(
                     *filter_args,
@@ -242,7 +252,6 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'q': form.cleaned_data.get('q', ''),
         }
-
         search_query_dict = dict(self.request.GET.copy())
         if 'query' in search_query_dict:
             search_query_dict.pop('query')
@@ -269,6 +278,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 self.organization,
             )
             context['organization_id'] = self.organization.pk
+            if not form.selected_facets:
+                form.selected_facets.append('organization_exact:{0}'.format(self.organization.id))
         else:
             url = reverse('dataset-list')
 
@@ -511,17 +522,43 @@ class DatasetUpdateView(
 
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
-            if not self.object.status:
-                self.object.status = Dataset.INVENTORED
+
+            latest_status_comment = Comment.objects.filter(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                type=Comment.STATUS,
+                status__isnull=False
+            ).order_by('-created').first()
+
+            if latest_status_comment:
+                if latest_status_comment.status == Comment.INVENTORED:
+                    self.object.status = Dataset.INVENTORED
+                elif latest_status_comment.status == Comment.PLANNED:
+                    self.object.status = Dataset.PLANNED
+                elif latest_status_comment.status == Comment.OPENED:
+                    self.object.status = Dataset.HAS_DATA
+            else:
+                if self.object.datasetdistribution_set.exists():
+                    self.object.status = Dataset.HAS_DATA
+                    comment_status = Comment.OPENED
+                elif self.object.plandataset_set.exists():
+                    self.object.status = Dataset.PLANNED
+                    comment_status = Comment.PLANNED
+                else:
+                    self.object.status = Dataset.INVENTORED
+                    comment_status = Comment.INVENTORED
+
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
                     user=self.request.user,
                     type=Comment.STATUS,
-                    status=Comment.INVENTORED,
+                    status=comment_status,
                 )
+
         elif not self.object.is_public and self.object.published:
             self.object.published = None
+            self.object.status = Dataset.UNASSIGNED
 
         types = form.cleaned_data.get('type')
         self.object.type.set(types)
@@ -1087,7 +1124,6 @@ class AddRequestView(
             object_id=self.dataset.pk,
             organization=Organization.objects.get(pk=self.dataset.organization_id),
             status=Task.CREATED,
-            user=self.request.user,
             type=Task.REQUEST
         )
         set_comment(Dataset.REQUEST_SET)
@@ -1134,6 +1170,11 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def get_success_url(self):
         return reverse('dataset-requests', kwargs={'pk': self.dataset.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['request_title'] = self.request_object
+        return context
 
 
 class AddProjectView(
@@ -1239,49 +1280,45 @@ class DatasetStatsMixin(StatsMixin):
     default_indicator = 'dataset-count'
     list_url = reverse_lazy('dataset-list')
 
-    def get_data_for_indicator(self, indicator, filter_queryset):
-        data = filter_queryset
-        if DATASET_INDICATOR_FIELDS.get(indicator):
+    def get_data_for_indicator(self, indicator, values, filter_queryset):
+        if field := DATASET_INDICATOR_FIELDS.get(indicator):
             data = DatasetStats.objects.filter(
                 dataset_id__in=filter_queryset.values_list('pk', flat=True)
-            )
-        elif MODEL_INDICATOR_FIELDS.get(indicator):
+            ).values(*values)
+            if indicator == 'level-average':
+                data = data.annotate(count=Avg(field))
+            else:
+                data = data.annotate(count=Sum(field))
+        elif field := MODEL_INDICATOR_FIELDS.get(indicator):
             model_names = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
                 dataset__pk__in=filter_queryset.values_list('pk', flat=True)
             ).values_list('name', flat=True)
             data = ModelDownloadStats.objects.filter(
                 model__in=model_names
-            )
+            ).values(*values).annotate(count=Sum(field))
+        else:
+            data = filter_queryset.values(*values).annotate(count=Count('pk'))
         return data
 
-    def get_count(self, label, indicator, frequency, filter_queryset, count):
-        data = self.get_data_for_indicator(indicator, filter_queryset)
-        if indicator == 'dataset-count':
-            count += get_count_by_frequency(
-                frequency,
-                label,
-                data,
-                'created'
-            )
-        elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-            count = get_count_by_frequency(
-                frequency,
-                label,
-                data,
-                'created',
-                field,
-                'dataset_id',
-                True
-            ) or count
-        elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-            count += get_count_by_frequency(
-                frequency,
-                label,
-                data,
-                'created',
-                field
-            )
+    def get_count(self, label, indicator, frequency, data, count):
+        if data:
+            if indicator == 'object-count' or indicator == 'level-average':
+                count = data[0].get('count') or 0
+            else:
+                count += data[0].get('count') or 0
+        return count
+
+    def get_item_count(self, data, indicator):
+        count = super().get_item_count(data, indicator)
+        if indicator == 'object-count':
+            count = sum([x['y'] for x in data])
+        elif indicator == 'level-average':
+            data = [x['y'] for x in data if x['y']]
+            if data:
+                count = int(sum(data) / len(data))
+            else:
+                count = 0
         return count
 
     def get_title_for_indicator(self, indicator):
@@ -1293,6 +1330,12 @@ class DatasetStatsMixin(StatsMixin):
             reverse('dataset-list'): _('Duomenų rinkiniai'),
         }
 
+    def get_time_axis_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _("Duomenų rinkinio įkėlimo data")
+        else:
+            return _("Laikas")
+
 
 class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     title = _("Būsena")
@@ -1301,7 +1344,10 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     filter_choices = Dataset.FILTER_STATUSES
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio būseną rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike')
 
     def update_context_data(self, context):
         facet_fields = context.get('facets').get('fields')
@@ -1318,7 +1364,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
         most_recent_comments = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=datasets.values_list('pk', flat=True),
+            object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list('pk', flat=True),
             status__isnull=False).values('object_id') \
             .annotate(latest_status_change=Max('created')).values('object_id', 'latest_status_change') \
             .order_by('latest_status_change')
@@ -1327,117 +1373,49 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             content_type=ContentType.objects.get_for_model(Dataset),
             object_id__in=most_recent_comments.values('object_id'),
             created__in=most_recent_comments.values('latest_status_change')
-        ).annotate(
-            year=ExtractYear('created'),
-            quarter=ExtractQuarter('created'),
-            month=ExtractMonth('created'),
-            week=ExtractWeek('created'),
-            day=ExtractDay('created')
         ).values(
             'object_id',
             'status',
             'created',
-            'year',
-            'quarter',
-            'month',
-            'week',
-            'day'
+            'created__year',
+            'created__quarter',
+            'created__month',
+            'created__week',
+            'created__day'
         )
 
         frequency, ff = get_frequency_and_format(duration)
         labels = self.get_time_labels(start_date, frequency)
+        date_field = self.get_date_field()
+        values = get_values_for_frequency(frequency, date_field)
 
         for status in statuses:
             count = 0
             data = []
-            statistics = []
             status_dataset_ids = datasets.filter(status=status['filter_value']).values_list('pk', flat=True)
-            status_datasets = Dataset.public.filter(pk__in=status_dataset_ids)
+            status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
 
-            if DATASET_INDICATOR_FIELDS.get(indicator):
-                statistics = DatasetStats.objects.filter(
-                    dataset_id__in=status_dataset_ids
-                )
-            elif MODEL_INDICATOR_FIELDS.get(indicator):
-                model_names = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Model),
-                    dataset__pk__in=status_dataset_ids
-                ).values_list('name', flat=True)
-                statistics = ModelDownloadStats.objects.filter(
-                    model__in=model_names
-                )
+            count_data = self.get_data_for_indicator(indicator, values, status_datasets)
 
             for label in labels:
-
-                if frequency == 'Y':
-                    query = {
-                        "year": label.year
-                    }
-                elif frequency == 'Q':
-                    query = {
-                        "year": label.year,
-                        "quarter": label.quarter
-                    }
-                elif frequency == 'M':
-                    query = {
-                        "year": label.year,
-                        "month": label.month
-                    }
-                elif frequency == 'W':
-                    query = {
-                        "year": label.year,
-                        "month": label.month,
-                        "week": label.week
-                    }
-                else:
-                    query = {
-                        "year": label.year,
-                        "month": label.month,
-                        "day": label.day
-                    }
-
+                label_query = get_query_for_frequency(frequency, date_field, label)
                 if (
                     status['filter_value'] == Dataset.UNASSIGNED or
                     indicator != 'dataset-count'
                 ):
-                    if indicator == 'dataset-count':
-                        count += get_count_by_frequency(
-                            frequency,
-                            label,
-                            status_datasets,
-                            'created'
-                        )
-                    elif field := DATASET_INDICATOR_FIELDS.get(indicator):
-                        count = get_count_by_frequency(
-                            frequency,
-                            label,
-                            statistics,
-                            'created',
-                            field,
-                            'dataset_id',
-                            True
-                        ) or count
-                    elif field := MODEL_INDICATOR_FIELDS.get(indicator):
-                        count += get_count_by_frequency(
-                            frequency,
-                            label,
-                            statistics,
-                            'created',
-                            field
-                        )
+                    label_count_data = count_data.filter(**label_query)
+                    count = self.get_count(label, indicator, frequency, label_count_data, count)
                 else:
                     if status['filter_value'] == 'HAS_DATA':
                         comm_val = 'OPENED'
-                    elif status['filter_value'] == 'HAS_STRUCTURE':
-                        comm_val = 'STRUCTURED'
                     elif status['filter_value'] == 'INVENTORED':
                         comm_val = 'INVENTORED'
                     else:
-                        comm_val = None
+                        comm_val = status['filter_value']
 
                     count += dataset_status.filter(
                         status=comm_val,
-                        **query
+                        **label_query
                     ).count()
 
                 if frequency == 'W':
@@ -1453,10 +1431,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             }
             time_chart_data.append(dt)
 
-            if data:
-                status['count'] = data[-1]['y']
-            else:
-                status['count'] = 0
+            status['count'] = self.get_item_count(data, indicator)
             bar_chart_data.append(status)
 
         if sorting == 'sort-desc':
@@ -1482,7 +1457,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
-        context['xAxis_title'] = _('Laikas')
+        context['xAxis_title'] = self.get_time_axis_title(indicator)
         context['yAxis_title'] = self.get_title_for_indicator(indicator)
         context['time_chart_data'] = json.dumps(time_chart_data)
 
@@ -1499,7 +1474,11 @@ class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
     filter_model = Organization
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio valdymo sritį rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike')
 
 
 class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
@@ -1511,7 +1490,11 @@ class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
         return "★" * item['filter_value']
 
     def get_graph_title(self, indicator):
-        return _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio brandos lygį rinkinio įkėlimo datai')
+        else:
+            return _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
 
 
 class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
@@ -1521,7 +1504,11 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
     filter_model = Organization
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio organizaciją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
 
 
 class OrganizationStatsView(DatasetListView):
@@ -1560,7 +1547,10 @@ class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
         return item['display_value']
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio žymes rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike')
 
 
 class DatasetsFormatView(DatasetStatsMixin, DatasetListView):
@@ -1570,7 +1560,10 @@ class DatasetsFormatView(DatasetStatsMixin, DatasetListView):
     filter_model = Format
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio formatą rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike')
 
 
 class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
@@ -1580,7 +1573,25 @@ class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
     filter_model = Frequency
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio atnaujinimą rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike')
+
+
+class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
+    title = _("Grupė")
+    current_title = _("Duomenų rinkinių grupės")
+    filter = 'groups'
+    filter_model = DatasetGroup
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio grupes rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike')
 
 
 class JurisdictionStatsView(DatasetListView):
@@ -1644,36 +1655,8 @@ class JurisdictionStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    single_dict['count'] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    single_dict['count'] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    single_dict['count'] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    single_dict['count'] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    single_dict['count'] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    single_dict['count'] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    single_dict['count'] = level_avg
+                                total = get_total_by_indicator_from_stats(st, indicator, total)
+                            single_dict['count'] = total
                             if max_count < single_dict.get('count'):
                                 max_count = single_dict.get('count')
                         else:
@@ -1701,7 +1684,10 @@ class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
     filter_model = Category
 
     def get_graph_title(self, indicator):
-        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
 
     def update_item_data(self, item):
         obj = get_object_or_404(Category, pk=item['filter_value'])
@@ -1829,19 +1815,27 @@ class CategoryStatsView(DatasetListView):
         return context
 
 
-class PublicationStatsView(DatasetListView):
+class PublicationStatsView(DatasetStatsMixin, DatasetListView):
+    title = _("Įkėlimo data")
+    current_title = _("Duomenų rinkinių kiekis metuose")
     facet_fields = DatasetListView.facet_fields
     template_name = 'vitrina/datasets/published_dates.html'
+    filter = 'published'
+    filter_model = Category
     paginate_by = 0
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = Dataset.objects.all().first().created
+        max_count = 0
+        stats_for_period = {}
         year_stats = {}
         chart_data = []
 
@@ -1859,11 +1853,10 @@ class PublicationStatsView(DatasetListView):
             published = dataset.published
             if published is not None:
                 year_published = published.year
-                year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                # quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                # quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
-                # month = str(year_published) + "-" + str('%02d' % published.month)
-                # monthly_stats[month] = monthly_stats.get(month, 0) + 1
+                year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
+                period = str(pd.to_datetime(published).to_period(frequency))
+                stats_for_period[period] = stats_for_period.get(period, 0) + 1
+
         if indicator != 'dataset-count':
             for yr in year_stats.keys():
                 start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
@@ -1893,118 +1886,60 @@ class PublicationStatsView(DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                year_stats[yr] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                year_stats[yr] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                year_stats[yr] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                year_stats[yr] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                year_stats[yr] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                year_stats[yr] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                year_stats[yr] = level_avg
+                            total = get_total_by_indicator_from_stats(st, indicator, total)
+                        year_stats[yr] = total
                     else:
                         year_stats[yr] = 0
-        for key, value in year_stats.items():
-            if max_count < value:
-                max_count = value
-        keys = list(year_stats.keys())
-        values = list(year_stats.values())
-        sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
-        elif sorting == 'sort-year-asc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
-        elif sorting == 'sort-desc':
-            year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-asc':
-            year_stats = {keys[i]: values[i] for i in sorted_value_index}
+        if year_stats:
+            keys = list(year_stats.keys())
+            values = list(year_stats.values())
+            sorted_value_index = np.argsort(values)
+            year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+            max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
 
-        sort = 0
-        for index, y in enumerate(year_stats.keys()):
-            sort += 1
-            dataset_ids = Dataset.objects.filter(created__year=y).values_list('pk', flat=True)
-            total = 0
-            temp = []
-            for label in labels:
-                if indicator == 'dataset-count':
-                    total += Dataset.objects.filter(pk__in=dataset_ids, created__year=label.year).count()
-                else:
-                    stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
-                    per_datasets = 0
-                    if len(stat) > 0:
-                        for st in stat:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    per_datasets += st.request_count
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    per_datasets += st.project_count
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    per_datasets += st.distribution_count
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    per_datasets += st.object_count
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    per_datasets += st.field_count
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    per_datasets += st.model_count
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                per_datasets = level_avg
+        data = []
+        total = 0
+        for label in labels:
+            dataset_count = stats_for_period.get(str(label), 0)
+            if indicator == 'dataset-count':
+                total += dataset_count
+            else:
+                dataset_ids = Dataset.objects.filter(created__year=label.year).values_list('pk', flat=True)
+                stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
+                per_datasets = 0
+                if len(stat) > 0:
+                    for st in stat:
+                        per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
+                total += per_datasets
 
-                    total = per_datasets
-                if frequency == 'W':
-                    temp.append({'x': _date(label.start_time, ff), 'y': total})
-                else:
-                    temp.append({'x': _date(label, ff), 'y': total})
-            dt = {
-                'label': y,
-                'data': temp,
-                'borderWidth': 1,
-                'fill': True,
-                'sort': sort
-            }
-            chart_data.append(dt)
+            if frequency == 'W':
+                data.append({'x': _date(label.start_time, ff), 'y': total})
+            else:
+                data.append({'x': _date(label, ff), 'y': total})
 
-        chart_data = sorted(chart_data, key=lambda x: x['sort'])
+        dt = {
+            'label': 'Duomenų rinkinių kiekis',
+            'data': data,
+            'borderWidth': 1,
+            'fill': True,
+        }
+        chart_data.append(dt)
 
+        context['title'] = self.title
+        context['current_title'] = self.current_title
         context['data'] = json.dumps(chart_data)
-        context['graph_title'] = _(f'{Y_TITLES[indicator]} pagal rinkinio įkėlimo datą laike')
-        context['yAxis_title'] = Y_TITLES[indicator]
-        context['xAxis_title'] = _('Laikas')
         context['year_stats'] = year_stats
         context['max_count'] = max_count
-        context['duration'] = duration
-        context['active_filter'] = 'publication'
+
+        context['graph_title'] = self.get_graph_title(indicator)
+        context['yAxis_title'] = self.get_title_for_indicator(indicator)
+        context['xAxis_title'] = _('Laikas')
+
+        context['active_filter'] = self.filter
         context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
         context['has_time_graph'] = True
         return context
 
@@ -2072,36 +2007,8 @@ class YearStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                if indicator == 'request-count':
-                                    if st.request_count is not None:
-                                        total += st.request_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'project-count':
-                                    if st.project_count is not None:
-                                        total += st.project_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'distribution-count':
-                                    if st.distribution_count is not None:
-                                        total += st.distribution_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'object-count':
-                                    if st.object_count is not None:
-                                        total += st.object_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'field-count':
-                                    if st.field_count is not None:
-                                        total += st.field_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'model-count':
-                                    if st.model_count is not None:
-                                        total += st.model_count
-                                    quarter_stats[k] = total
-                                elif indicator == 'level-average':
-                                    lev = []
-                                    if st.maturity_level is not None:
-                                        lev.append(st.maturity_level)
-                                    level_avg = int(sum(lev) / len(lev))
-                                    quarter_stats[k] = level_avg
+                                total += get_total_by_indicator_from_stats(st, indicator, total)
+                            quarter_stats[k] = total
                         else:
                             quarter_stats[k] = 0
         for key, value in quarter_stats.items():
@@ -2110,14 +2017,7 @@ class YearStatsView(DatasetListView):
         keys = list(quarter_stats.keys())
         values = list(quarter_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=False))
-        elif sorting == 'sort-year-asc':
-            quarter_stats = OrderedDict(sorted(quarter_stats.items(), reverse=True))
-        elif sorting == 'sort-asc':
-            quarter_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-desc':
-            quarter_stats = {keys[i]: values[i] for i in sorted_value_index}
+        quarter_stats = sort_publication_stats_reversed(sorting, values, keys, quarter_stats, sorted_value_index)
         context['selected_year'] = selected_year
         context['year_stats'] = quarter_stats
         context['max_count'] = max_count
@@ -2140,8 +2040,6 @@ class QuarterStatsView(DatasetListView):
         datasets = self.get_queryset()
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        # year_stats = {}
-        # quarter_stats = {}
         monthly_stats = {}
         selected_quarter = str(self.kwargs['quarter'])
 
@@ -2183,36 +2081,8 @@ class QuarterStatsView(DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            if indicator == 'request-count':
-                                if st.request_count is not None:
-                                    total += st.request_count
-                                monthly_stats[k] = total
-                            elif indicator == 'project-count':
-                                if st.project_count is not None:
-                                    total += st.project_count
-                                monthly_stats[k] = total
-                            elif indicator == 'distribution-count':
-                                if st.distribution_count is not None:
-                                    total += st.distribution_count
-                                monthly_stats[k] = total
-                            elif indicator == 'object-count':
-                                if st.object_count is not None:
-                                    total += st.object_count
-                                monthly_stats[k] = total
-                            elif indicator == 'field-count':
-                                if st.field_count is not None:
-                                    total += st.field_count
-                                monthly_stats[k] = total
-                            elif indicator == 'model-count':
-                                if st.model_count is not None:
-                                    total += st.model_count
-                                monthly_stats[k] = total
-                            elif indicator == 'level-average':
-                                lev = []
-                                if st.maturity_level is not None:
-                                    lev.append(st.maturity_level)
-                                level_avg = int(sum(lev) / len(lev))
-                                monthly_stats[k] = level_avg
+                            total += get_total_by_indicator_from_stats(st, indicator, total)
+                        monthly_stats[k] = total
                     else:
                         monthly_stats[k] = 0
         for m, mv in monthly_stats.items():
@@ -2221,16 +2091,8 @@ class QuarterStatsView(DatasetListView):
         keys = list(monthly_stats.keys())
         values = list(monthly_stats.values())
         sorted_value_index = np.argsort(values)
-        if sorting == 'sort-year-desc':
-            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=False))
-        elif sorting == 'sort-year-asc':
-            monthly_stats = OrderedDict(sorted(monthly_stats.items(), reverse=True))
-        elif sorting == 'sort-asc':
-            monthly_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-desc':
-            monthly_stats = {keys[i]: values[i] for i in sorted_value_index}
+        monthly_stats = sort_publication_stats_reversed(sorting, values, keys, monthly_stats, sorted_value_index)
         context['selected_quarter'] = self.kwargs['quarter']
-        # context['year_stats'] = quarter_stats
         context['year_stats'] = monthly_stats
         context['max_count'] = max_count
         context['current_object'] = str('quarter/' + selected_quarter)
@@ -2540,6 +2402,21 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 rel_content_type=ContentType.objects.get_for_model(plan),
                 rel_object_id=plan.pk
             )
+
+            if (
+                self.dataset.is_public and
+                self.dataset.status != Dataset.HAS_DATA
+            ):
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.dataset),
+                    object_id=self.dataset.pk,
+                    user=self.request.user,
+                    type=Comment.STATUS,
+                    status=Comment.PLANNED
+                )
+                self.dataset.status = Dataset.PLANNED
+                self.dataset.save(update_fields=['status'])
+
             return redirect(reverse('dataset-plans', args=[self.dataset.pk]))
         else:
             context = self.get_context_data(**kwargs)
@@ -2615,6 +2492,11 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         return context
 
     def get_history_objects(self):
@@ -2622,3 +2504,129 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         ).order_by('-revision__date_created')
+
+class update_dataset_org_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/organization_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'organization',
+                _("Organizacija"),
+                Organization,
+                multiple=True,
+                is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+        
+    
+
+class update_dataset_category_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/category_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'category',
+                _("Kategorija"),
+                Category,
+                multiple=True,
+                is_int=False,
+                
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    print(item.title)
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+class update_dataset_tag_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/tag_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'tags',
+                _("Žymė"),
+                Dataset,
+                multiple=True,
+                is_int=False,
+                display_method="get_tag_title"
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+class update_dataset_jurisdiction_filters(FacetedSearchView):
+    template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                    *filter_args,
+                    'jurisdiction',
+                    _("Valdymo sritis"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    print(item.title)
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context

@@ -1,5 +1,7 @@
+from collections import OrderedDict
 from typing import List, Any, Dict, Type
 
+import numpy as np
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
@@ -107,68 +109,6 @@ def has_remove_from_request_perm(dataset, request, user):
     return False
 
 
-def get_count_by_frequency(
-    frequency,
-    label,
-    queryset,
-    field,
-    aggregate_field=None,
-    group_field=None,
-    only_latest=False,
-):
-    if frequency == 'Y':
-        query = {
-            f"{field}__year": label.year
-        }
-    elif frequency == 'Q':
-        queryset = queryset.annotate(
-            quarter=ExtractQuarter('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            "quarter": label.quarter
-        }
-    elif frequency == 'M':
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month
-        }
-    elif frequency == 'W':
-        queryset = queryset.annotate(
-            week=ExtractWeek('created')
-        )
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            "week": label.week
-        }
-    else:
-        query = {
-            f"{field}__year": label.year,
-            f"{field}__month": label.month,
-            f"{field}__day": label.day
-        }
-
-    if aggregate_field:
-        if only_latest and group_field:
-            queryset_ids = queryset.order_by(
-                group_field, f"-{field}"
-            ).distinct(
-                group_field
-            ).values_list('pk', flat=True)
-            queryset = queryset.filter(pk__in=queryset_ids)
-
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-        else:
-            return queryset.filter(**query).aggregate(
-                Sum(aggregate_field)
-            )[f"{aggregate_field}__sum"] or 0
-    else:
-        return queryset.filter(**query).count()
-
-
 def get_frequency_and_format(duration):
     if duration == 'duration-yearly':
         frequency = 'Y'
@@ -182,10 +122,132 @@ def get_frequency_and_format(duration):
     elif duration == 'duration-weekly':
         frequency = 'W'
         ff = 'Y W'
-    else:
+    elif duration == 'duration-daily':
         frequency = 'D'
         ff = 'Y m d'
+    else:
+        frequency = 'Y'
+        ff = 'Y'
     return frequency, ff
+
+
+def get_values_for_frequency(frequency, field):
+    if frequency == 'Y':
+        values = [f"{field}__year"]
+    elif frequency == 'Q':
+        values = [f"{field}__year", f"{field}__quarter"]
+    elif frequency == 'M':
+        values = [f"{field}__year", f"{field}__month"]
+    elif frequency == 'W':
+        values = [f"{field}__year", f"{field}__month", f"{field}__week"]
+    else:
+        values = [f"{field}__year", f"{field}__month", f"{field}__day"]
+    return values
+
+
+def get_query_for_frequency(frequency, field, label):
+    if frequency == 'Y':
+        query = {
+            f"{field}__year": label.year
+        }
+    elif frequency == 'Q':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__quarter": label.quarter
+        }
+    elif frequency == 'M':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month
+        }
+    elif frequency == 'W':
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__week": label.week
+        }
+    else:
+        query = {
+            f"{field}__year": label.year,
+            f"{field}__month": label.month,
+            f"{field}__day": label.day
+        }
+    return query
+
+
+def sort_publication_stats(sorting, values, keys, stats, sorted_value_index):
+    if sorting == 'sort-year-desc':
+        stats = OrderedDict(sorted(stats.items(), reverse=True))
+    elif sorting == 'sort-year-asc':
+        stats = OrderedDict(sorted(stats.items(), reverse=False))
+    elif sorting == 'sort-desc':
+        stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+    elif sorting == 'sort-asc':
+        stats = {keys[i]: values[i] for i in sorted_value_index}
+    return stats
+
+
+def sort_publication_stats_reversed(sorting, values, keys, stats, sorted_value_index):
+    if sorting == 'sort-year-desc':
+        stats = OrderedDict(sorted(stats.items(), reverse=False))
+    elif sorting == 'sort-year-asc':
+        stats = OrderedDict(sorted(stats.items(), reverse=True))
+    elif sorting == 'sort-asc':
+        stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
+    elif sorting == 'sort-desc':
+        stats = {keys[i]: values[i] for i in sorted_value_index}
+    return stats
+
+
+def get_total_by_indicator_from_stats(st, indicator, total):
+    if indicator == 'request-count':
+        if st.request_count is not None:
+            total += st.request_count
+        return total
+    elif indicator == 'project-count':
+        if st.project_count is not None:
+            total += st.project_count
+        return total
+    elif indicator == 'distribution-count':
+        if st.distribution_count is not None:
+            total += st.distribution_count
+        return total
+    elif indicator == 'object-count':
+        if st.object_count is not None:
+            total += st.object_count
+        return total
+    elif indicator == 'field-count':
+        if st.field_count is not None:
+            total += st.field_count
+        return total
+    elif indicator == 'model-count':
+        if st.model_count is not None:
+            total += st.model_count
+        return total
+    elif indicator == 'level-average':
+        lev = []
+        if st.maturity_level is not None:
+            lev.append(st.maturity_level)
+        level_avg = 0
+        if lev:
+            level_avg = int(sum(lev) / len(lev))
+        return level_avg
+
+
+def get_public_dataset_id_list():
+    public_datasets = Dataset.objects.filter(is_public=True)
+    public_dataset_id_list = [dataset.id for dataset in public_datasets]
+    return public_dataset_id_list
+
+
+def filter_datasets_for_user(user, datasets):
+    coordinator_orgs = [rep.object_id for rep in
+                        user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))]
+    public_dataset_id_list = get_public_dataset_id_list()
+    coordinated_datasets = Dataset.objects.filter(organization_id__in=coordinator_orgs)
+    dataset_id_list = public_dataset_id_list + [dataset.id for dataset in coordinated_datasets]
+    datasets = datasets.filter(django_id__in=dataset_id_list)
+    return datasets
 
 
 def get_datasets_for_user(user, datasets):

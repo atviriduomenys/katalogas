@@ -151,6 +151,14 @@ class DatasetSearchForm(FacetedSearchForm):
         sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
+        if self.cleaned_data.get('q'):
+             keyword = self.cleaned_data.get('q')
+             if len(keyword) < 5:
+                q = self.searchqueryset.autocomplete(text__startswith = self.cleaned_data['q'])
+             else:
+                q = self.searchqueryset.autocomplete(text__contains = self.cleaned_data['q'])
+             if len(q) != 0: 
+                 sqs = q
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):
@@ -510,16 +518,11 @@ class PlanForm(OrganizationPlanForm):
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )
 
-        organization_ids = [org.pk for org in self.organizations]
-        if self.user.organization:
-            if self.user.organization.provider:
-                self.initial['receiver'] = self.user.organization
-                organization_ids.append(self.user.organization.pk)
-                self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
-            else:
-                self.initial['receiver'] = self.user.organization
-                self.fields['receiver'].widget = HiddenInput()
+        if len(self.organizations) == 1:
+            self.initial['receiver'] = self.organizations[0]
+            self.fields['receiver'].widget = HiddenInput()
         else:
+            organization_ids = [org.pk for org in self.organizations]
             self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
 
         self.initial['title'] = self.obj.get_plan_title()

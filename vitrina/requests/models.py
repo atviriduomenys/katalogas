@@ -32,20 +32,23 @@ class Request(models.Model):
     REJECTED = "REJECTED"
     OPENED = "OPENED"
     ANSWERED = "ANSWERED"
+    PLANNED = "PLANNED"
     APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
-        (OPENED, _("Atvertas")),
+        (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
-        (APPROVED, _("Patvirtintas"))
+        (PLANNED, _("Suplanuotas")),
+        (APPROVED, _("Įvertintas"))
     }
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
         REJECTED: _("Atmestas"),
-        OPENED: _("Atvertas"),
+        OPENED: _("Įvykdytas"),
         ANSWERED: _("Atsakytas"),
-        APPROVED: _("Patvirtintas")
+        PLANNED: _("Suplanuotas"),
+        APPROVED: _("Įvertintas")
     }
 
     EDITED = "EDITED"
@@ -69,7 +72,7 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True, related_name='dataset_request')
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -103,8 +106,8 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        if self.organizations and self.organizations.first():
-            parents.extend(self.organizations.first().get_acl_parents())
+        for org in self.organizations.all():
+            parents.extend(org.get_acl_parents())
         return parents
 
     def get_plan_title(self):
@@ -138,16 +141,9 @@ class Request(models.Model):
         return None
 
     def dataset_statuses(self):
-        statuses = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
-        for dataset_id in dataset_ids:
-            dataset = Dataset.objects.filter(id=dataset_id).first()
-            if dataset and dataset.status not in statuses:
-                statuses.append(dataset.status)
-        return statuses
+        return list(Dataset.objects.filter(
+            request_objects__request=self
+        ).values_list('status', flat=True))
 
     def dataset_organizations(self):
         orgs = []

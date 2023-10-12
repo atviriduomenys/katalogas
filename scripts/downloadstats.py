@@ -3,6 +3,8 @@ import os
 import json
 import urllib.parse
 
+from tqdm import tqdm
+
 from pathlib import Path
 from datetime import datetime
 
@@ -29,30 +31,38 @@ bots = {
 
 
 def main(
-    name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
-    logfile: str = Argument(..., help=(
-        "log file to read stats from, i.e. accesslog.json"
-    )),
-    target: str = Option("http://localhost:8000", help=(
-        "target server url"
-    )),
-    config_file: str = Option('/.config/vitrina/downloadstats.json'),
-    state_file: str = Option('/.local/share/vitrina/state.json'),
-    bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
+        name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
+        logfile: str = Argument(..., help=(
+                "log file to read stats from, i.e. accesslog.json"
+        )),
+        target: str = Option("http://localhost:8000", help=(
+                "target server url"
+        )),
+        config_file: str = Option('/.config/vitrina/downloadstats.json'),
+        state_file: str = Option('/.local/share/vitrina/state.json'),
+        bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
 ):
-    config_file = os.path.expanduser('~') + config_file
-    state_file = os.path.expanduser('~') + state_file
-    bot_status_file = os.path.expanduser('~') + bot_status_file
-    current_state = {}
+    transactions = {}
+    current_state = {'files': {}}
 
     bots_found = {'agents': {}}
+
+    limit = 1000
+    total_lines_read = 0
+    lines_read = 0
     final_stats = {}
     file_size = os.path.getsize(logfile)
     existing_size = 0
     existing_offset = 0
+    temp = {}
 
     if not os.path.exists(os.path.dirname(state_file)):
         os.makedirs(os.path.dirname(state_file))
+    if not os.path.exists(state_file):
+        file = Path(state_file)
+        file.touch(exist_ok=True)
+        with open(state_file, "w") as outfile:
+            outfile.write(json.dumps(current_state, indent=4))
     else:
         with open(state_file, 'r') as f:
             current_state = json.load(f)
@@ -87,9 +97,14 @@ def main(
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
 
-    transactions = {}
+    total_lines_in_file = 0
+    d = deque([], maxlen=limit)
 
-    d = deque([], maxlen=1000)
+    with open(logfile) as ff:
+        total_lines_in_file = sum(bl.count('\n') for bl in blocks(ff))
+
+    pbar = tqdm("Parsing download stats", total=total_lines_in_file)
+
     with open(logfile) as f:
         bytesread = 0
         if existing_offset > 0:
@@ -97,75 +112,21 @@ def main(
         for line in f:
             bytesread += len(str.encode(line))
             d.append(line)
-        for i in d:
-            if 'txn' in i:
-                entry = json.loads(i)
-                txn = entry['txn']
-                timestamp = entry['time']
-                dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                requests = 1
-                if txn not in transactions:
-                    transactions[txn] = {'time': dt}
-                if 'model' in entry:
-                    model = entry.get('model')
-                    transactions[txn]['model'] = model
-                if 'objects' in entry:
-                    objects = entry.get('objects')
-                    transactions[txn]['objects'] = objects
-                if 'format' in entry:
-                    frmt = entry.get('format')
-                    transactions[txn]['format'] = frmt
-                if 'type' in entry:
-                    transactions[txn]['type'] = entry.get('type')
-                    transactions[txn]['requests'] = requests
-                if 'agent' in entry:
-                    transactions[txn]['agent'] = entry.get('agent')
-                if txn in transactions:
-                    if transactions[txn].get('objects') is not None and transactions[txn].get('model') is not None:
-                        model = transactions[txn].get('model')
-                        dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                        date = dt.date()
-                        hour = dt.hour
-                        agent = entry.get('agent', '')
-                        obj = [
-                            {
-                                'date': date,
-                                'hour': hour,
-                                'format': frmt,
-                                'reqs': requests,
-                                'count': objects,
-                                'agent': agent,
-                            }
-                        ]
-                        if len(model) > 0:
-                            if model not in final_stats:
-                                final_stats[model] = obj
-                        if agent in bots:
-                            bots_found['agents'] = bots_found.get('agents').get(agent, 0) + 1
-                        else:
-                            format_string = '%Y-%m-%d %H:%M:%S'
-                            date_string = dt.strftime(format_string)
-                            data = {
-                                "source": name,
-                                "model": model,
-                                "format": frmt,
-                                "time": date_string,
-                                "requests": requests,
-                                "objects": objects
-                            }
-                            transactions.pop(txn)
-                            r = session.post(endpoint_url, data=data)
-                            print(f"Status Code: {r.status_code}, Response: {r.json()}")
-
-                with open(bot_status_file, "w+") as bot_file:
-                    bot_file.write(json.dumps(bots_found, indent=4))
-
+            total_lines_read += 1
+            lines_read += 1
+            if lines_read == limit:
+                find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+                lines_read = 0
             state_entry = {
                 logfile: {
                     'size': file_size,
                     'offset': bytesread
                 }
             }
+            pbar.update(1)
+        find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+
+    post_data(temp, name, session, endpoint_url)
 
     current_state.get('files', {}).update(state_entry)
 
@@ -175,6 +136,7 @@ def main(
     with open(bot_status_file, "w+") as bot_file:
         bot_file.write(json.dumps(bots_found, indent=4))
 
+    print(f'Total lines read: {total_lines_read}')
     print(f'Total model entries found: {len(final_stats.keys())}')
     print(f'Total transaction entries in file: {len(transactions)}')
     print(f'Peak Memory Usage = {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}')
@@ -183,6 +145,133 @@ def main(
 def parse_user_agent(agent):
     if isinstance(agent, str):
         return user_agents.parse(agent).browser.family
+
+
+def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions):
+    for i in d:
+        if 'txn' in i:
+            entry = json.loads(i)
+            txn = entry['txn']
+            timestamp = entry['time']
+            dt = None
+            try:
+                dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+            except:
+                print('Wrong timestamp format')
+            requests = 1
+            if txn not in transactions:
+                transactions[txn] = {'time': dt}
+            else:
+                transactions[txn]['time'] = dt
+            if 'model' in entry:
+                transactions[txn]['model'] = entry.get('model')
+            if 'format' in entry:
+                transactions[txn]['format'] = entry.get('format')
+            if 'type' in entry:
+                transactions[txn]['type'] = entry.get('type')
+                transactions[txn]['requests'] = requests
+            if 'agent' in entry:
+                transactions[txn]['agent'] = entry.get('agent')
+            if entry.get('type') == 'response':
+                objects = entry.get('objects', 0)
+                transactions[txn]['objects'] = objects
+                model = transactions[txn].get('model')
+                if 'time' in entry:
+                    dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                else:
+                    dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+                date = dt.date()
+                hour = dt.hour
+                agent = transactions[txn].get('agent')
+                frmt = transactions[txn].get('format')
+                obj = [
+                    {
+                        'date': date,
+                        'hour': hour,
+                        'format': frmt,
+                        'reqs': requests,
+                        'count': objects,
+                        'agent': agent,
+                    }
+                ]
+                if model is not None and len(model) > 0:
+                    if model not in final_stats:
+                        final_stats[model] = obj
+                bot_in_list = False
+                if agent:
+                    for bt in bots:
+                        if bt in agent:
+                            bot_in_list = True
+                            bots_found['agents'][bt] = bots_found.get('agents').get(bt, 0) + 1
+                            break
+                if not bot_in_list:
+                    if agent:
+                        bots_found['agents'][agent] = bots_found.get('agents').get(agent, 0) + 1
+                    data = [{
+                        "source": name,
+                        "model": model,
+                        "time": dt,
+                        "date": date,
+                        "hour": hour,
+                        "format": frmt,
+                        "requests": requests,
+                        "objects": objects
+                    }]
+                    transactions.pop(txn)
+                    if model:
+                        if model not in temp:
+                            temp[model] = data
+                        else:
+                            if any(d['date'] == date for d in temp[model]):
+                                hour_found = False
+                                for index, dictionary in enumerate(temp[model]):
+                                    if (
+                                            dictionary.get('hour') == hour
+                                            and dictionary.get('source') == name
+                                            and dictionary.get('format') == frmt
+                                    ):
+                                        hour_found = True
+                                        obj_count = temp[model][index]['objects']
+                                        requests = temp[model][index]['requests']
+                                        temp[model][index] = {'source': name, 'model': model, 'time': dt, 'date': date,
+                                                              'hour': hour, 'format': frmt, 'requests': requests + 1,
+                                                              'objects': obj_count + objects}
+                                if not hour_found:
+                                    temp[model].append(
+                                        {'source': name, 'model': model, 'time': dt, 'date': date, 'hour': hour,
+                                         'format': frmt, 'requests': requests, 'objects': objects})
+                            else:
+                                temp[model].append(
+                                    {'source': name, 'model': model, 'time': dt, 'date': date, 'hour': hour,
+                                     'format': frmt, 'requests': requests, 'objects': objects})
+
+            with open(bot_status_file, "w+") as bot_file:
+                bot_file.write(json.dumps(bots_found, indent=4))
+
+
+def post_data(data, name, session, endpoint):
+    pbar = tqdm("Posting download stats", total=sum([len(stats) for stats in data.values()]))
+    for model, stats in data.items():
+        for st in stats:
+            info = {
+                "source": name,
+                "model": model,
+                "time": st.get('time'),
+                "format": st.get('format'),
+                "requests": st.get('requests'),
+                "objects": st.get('objects')
+            }
+            session.post(endpoint, data=info)
+            pbar.update(1)
+        data[model] = []
+
+
+def blocks(files, size=65536):
+    while True:
+        b = files.read(size)
+        if not b:
+            break
+        yield b
 
 
 if __name__ == '__main__':

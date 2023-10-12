@@ -57,21 +57,18 @@ class Dataset(TranslatableModel):
 
     HAS_DATA = "HAS_DATA"
     INVENTORED = "INVENTORED"
-    METADATA = "METADATA"
-    PRIORITIZED = "PRIORITIZED"
-    FINANCING = "FINANCING"
-    HAS_STRUCTURE = "HAS_STRUCTURE"
+    PLANNED = "PLANNED"
     UNASSIGNED = "UNASSIGNED"
-    STATUSES = {
+    STATUSES = (
         (HAS_DATA, _("Atvertas")),
         (INVENTORED, _("Inventorintas")),
-        (HAS_STRUCTURE, _("Struktūruotas")),
-    }
+        (PLANNED, _("Planuojamas atverti")),
+        (UNASSIGNED, _("Nepriskirta"))
+    )
     FILTER_STATUSES = {
         HAS_DATA: _("Atverti duomenys"),
-        INVENTORED: _("Tik inventorintas"),
-        HAS_STRUCTURE: _("Įkelta duomenų struktūra"),
-        METADATA: _("Tik metaduomenys"),
+        INVENTORED: _("Tik inventorinti"),
+        PLANNED: _("Planuojama atverti"),
         UNASSIGNED: _("Nepriskirta")
     }
 
@@ -125,7 +122,7 @@ class Dataset(TranslatableModel):
 
     licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
 
-    status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
+    status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
     is_public = models.BooleanField(default=True, verbose_name=_('Duomenų rinkinys viešinamas'))
 
@@ -203,6 +200,8 @@ class Dataset(TranslatableModel):
 
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
+    representatives = GenericRelation('vitrina_orgs.Representative')
+    request_objects = GenericRelation('vitrina_requests.RequestObject')
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
@@ -221,6 +220,12 @@ class Dataset(TranslatableModel):
     def en_title(self):
         return self.safe_translation_getter('title', language_code='en')
 
+    def lt_description(self):
+        return self.safe_translation_getter('description', language_code='lt')
+
+    def en_description(self):
+        return self.safe_translation_getter('description', language_code='en')
+
     def get_absolute_url(self):
         return reverse('dataset-detail', kwargs={'pk': self.pk})
 
@@ -235,12 +240,48 @@ class Dataset(TranslatableModel):
             return tag.name
         return ''
 
+    def get_resource_titles(self):
+        return list(self.datasetdistribution_set.all().values_list('title', flat=True))
+
+    def get_model_title_list(self):
+        return list(model.title for model in self.model_set.all())
+
+    def get_property_title_list(self):
+        return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
+
+    def get_request_title_list(self):
+        return list(self.dataset_request.all().values_list('title', flat=True))
+
+    def get_project_title_list(self):
+        return list(self.project_set.all().values_list('title', flat=True))
+
+    def get_resource_description(self):
+        return list(self.datasetdistribution_set.all().values_list('description', flat=True))
+
+    def get_model_title_description(self):
+        return list(model.description for model in self.model_set.all())
+
+    def get_property_title_description(self):
+        return list(item.description for item in Property.objects.filter(model__in=self.model_set.all()))
+
+    def get_request_title_description(self):
+        return list(self.dataset_request.all().values_list('description', flat=True))
+
+    def get_project_title_description(self):
+        return list(self.project_set.all().values_list('description', flat=True))
+
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
         return DatasetGroup.objects.filter(pk__in=ids)
 
     def get_group_list(self):
         return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct())
+
+    def get_parent_organization_title(self):
+        if self.organization.is_root():
+            return self.organization.title
+        else:
+            return self.organization.get_root().title
 
     def parent_category(self):
         parents = []
@@ -251,18 +292,33 @@ class Dataset(TranslatableModel):
                 parents.append(category.pk)
         return parents
 
+    def parent_category_titles(self):
+        parents = []
+        for category in self.category.all():
+            if not category.is_root():
+                parents.append(category.get_root().title)
+            else:
+                parents.append(category.title)
+        return parents
+
+    def get_category_object_list_lt(self):
+        categories = []
+        for category in self.category.all():
+            categories = [{'title': cat.title, 'pk': cat.pk} for cat in category.get_ancestors()
+                          if cat.dataset_set.exists()]
+            categories.append({'title': category.title, 'pk': category.pk})
+        return categories
+
+    def get_category_object_list_en(self):
+        categories = []
+        for category in self.category.all():
+            categories = [{'title_en': cat.title_en, 'pk': cat.pk} for cat in category.get_ancestors()
+                          if cat.dataset_set.exists()]
+            categories.append({'title_en': category.title_en, 'pk': category.pk})
+        return categories
+
     def level(self):
         return randrange(5)
-
-    @property
-    def filter_status(self):
-        if self.datasetstructure_set.exists() and self.status == self.HAS_STRUCTURE:
-            return self.HAS_STRUCTURE
-        if self.datasetdistribution_set.exists() and self.status == self.HAS_DATA:
-            return self.HAS_DATA
-        if self.status == self.INVENTORED or self.status == self.METADATA:
-            return self.status
-        return None
 
     @property
     def formats(self):
@@ -612,12 +668,15 @@ class DatasetResourceMigrate(models.Model):
         managed = False
         db_table = 'dataset_resource_migrate'
 
+
 class DatasetStructureLink(models.Model):
     name = models.CharField(max_length=255, blank=True)
     dataset_id = models.IntegerField(blank=False, null=False)
+
     class Meta:
         managed = True
         db_table = 'dataset_structure_link'
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
 class DatasetStructure(models.Model):

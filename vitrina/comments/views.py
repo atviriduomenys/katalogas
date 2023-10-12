@@ -98,16 +98,18 @@ class CommentView(
                         ):
                             plan.is_closed = True
                             plan.save()
-                if obj.status == 'REJECTED':
-                    email_data = prepare_email_by_identifier('application-use-case-rejected', email_content,
-                                                             'Gautas naujas pasiūlymas',
-                                                             [obj.title, obj.description])
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[obj.user.email],
-                    )
+                if obj is not None:
+                    if obj.status == 'REJECTED':
+                        email_data = prepare_email_by_identifier('application-use-case-rejected', email_content,
+                                                                 'Gautas naujas pasiūlymas',
+                                                                 [obj.title, obj.description])
+                        if obj.user.email is not None:
+                            send_mail(
+                                subject=_(email_data['email_subject']),
+                                message=_(email_data['email_content']),
+                                from_email=settings.DEFAULT_FROM_EMAIL,
+                                recipient_list=[obj.user.email],
+                            )
             else:
                 comment.type = Comment.USER
             comment.save()

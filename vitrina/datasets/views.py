@@ -379,6 +379,12 @@ class DatasetDetailView(
         context_data.update(extra_context_data)
         return context_data
 
+class OpenDataPortalDatasetDetailView(View):
+    def get(self, request):
+        dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
+        return HttpResponseRedirect(reverse('dataset-detail', kwargs={
+            'pk': dataset.pk,
+        }))
 
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):

@@ -379,12 +379,14 @@ class DatasetDetailView(
         context_data.update(extra_context_data)
         return context_data
 
+
 class OpenDataPortalDatasetDetailView(View):
     def get(self, request):
         dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
         return HttpResponseRedirect(reverse('dataset-detail', kwargs={
             'pk': dataset.pk,
         }))
+
 
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):
@@ -525,7 +527,7 @@ class DatasetUpdateView(
         self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
-
+        base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
 
@@ -611,7 +613,16 @@ class DatasetUpdateView(
                 if model_meta := model.metadata.first():
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
-
+        if self.object.organization:
+            email_data = prepare_email_by_identifier('dataset-updated', base_email_template, 'Duomenų rinkinys atnaujintas',
+                                                     [self.object])
+            if self.object.organization.email:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.organization.email],
+                )
         return HttpResponseRedirect(self.get_success_url())
 
 

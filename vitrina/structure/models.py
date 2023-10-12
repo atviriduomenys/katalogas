@@ -167,6 +167,12 @@ class Model(models.Model):
         return ''
 
     @property
+    def full_name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ''
+
+    @property
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title

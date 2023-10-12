@@ -58,12 +58,12 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "123"
     form['confirm_password'] = "123"
     resp = form.submit()
     org = Organization.objects.filter(company_code='1234-5678').first()
-    assert resp.url == '/orgs/{}/'.format(org.id)
+    assert resp.url == '/partner/register-complete/'
 
 @pytest.mark.haystack
 def test_form_submit_with_bad_password(app: DjangoTestApp):
@@ -82,7 +82,7 @@ def test_form_submit_with_bad_password(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "1234"
     form['confirm_password'] = "1234"
     resp = form.submit()
@@ -105,7 +105,7 @@ def test_form_submit_with_not_matching_password(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "123"
     form['confirm_password'] = "1234"
     resp = form.submit()
@@ -128,7 +128,7 @@ def test_form_submit_with_not_matching_password(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "123"
     form['confirm_password'] = "1234"
     resp = form.submit()
@@ -154,7 +154,7 @@ def test_form_submit_with_already_existing_slug(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "123"
     form['confirm_password'] = "123"
     resp = form.submit()
@@ -180,7 +180,7 @@ def test_form_submit_with_nonsense_slug(app: DjangoTestApp):
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['adoc_file'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.adoc', upload_file)
     form['password'] = "123"
     form['confirm_password'] = "123"
     form['company_slug'] = 'tč'

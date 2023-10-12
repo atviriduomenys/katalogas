@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from django.views.generic import DetailView
+from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
@@ -24,7 +24,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action
 from vitrina.plans.models import Plan
 from vitrina.users.models import User
@@ -33,6 +33,85 @@ from vitrina.tasks.models import Task
 from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
 from vitrina.views import PlanMixin, HistoryView
+from allauth.socialaccount.models import SocialAccount
+
+
+class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
+    representative_request: RepresentativeRequest
+    template_name = 'confirm_approve.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        return context
+
+    def post(self, request, *args, **kwargs):
+        company_code = self.representative_request.org_code
+        org = Organization.objects.filter(company_code=company_code).first()
+        if not org:
+            org = Organization.add_root(
+                title=self.representative_request.org_name,
+                company_code=company_code,
+                slug=slugify(self.representative_request.org_slug)
+            )
+    
+        user = User.objects.get(email=self.representative_request.user.email)
+
+        rep = Representative.objects.create(
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            phone=user.phone,
+            object_id=org.id,
+            role=Representative.COORDINATOR,
+            user=user,
+            content_type=ContentType.objects.get_for_model(org)
+        )
+        rep.save()
+        task = Task.objects.create(
+            title="Naujo duomenų teikėjo: {} registracija".format(org.company_code),
+            description=f"Portale užsiregistravo naujas duomenų teikėjas: {org.company_code}.",
+            organization=org,
+            user=user,
+            status=Task.CREATED,
+            type=Task.REQUEST
+        )
+        task.save()
+        self.representative_request.delete()
+        return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
+class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
+    representative_request: RepresentativeRequest
+    template_name = 'confirm_deny.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.representative_request.delete()
+        return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
 
 class OrganizationListView(ListView):
@@ -442,11 +521,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     def get(self, request, *args, **kwargs):
         user = self.request.user
         user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
-        if user_social_account:
-            extra_data = user_social_account.extra_data
-            company_code = extra_data.get('company_code')
-            company_name = extra_data.get('company_name')
-        else:
+        if not user_social_account:
             return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
 
@@ -481,51 +556,18 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        company_code = form.cleaned_data.get('company_code')
-        org = Organization.objects.filter(company_code=company_code).first()
-        if org:
-            self.org = org
-        else:
-            Organization.fix_tree(fix_paths=True)
-            self.org = Organization.add_root(
-                title=form.cleaned_data.get('company_name'),
-                company_code=company_code,
-                slug=slugify(form.cleaned_data.get('company_slug'))
-            )
-    
-        user = User.objects.get(email=form.cleaned_data.get('coordinator_email'))
-        user.phone = form.cleaned_data.get('coordinator_phone_number')
-        user.save()
-
-        rep = Representative.objects.create(
-            email=form.cleaned_data.get('coordinator_email'),
-            first_name=form.cleaned_data.get('coordinator_first_name'),
-            last_name=form.cleaned_data.get('coordinator_last_name'),
-            phone=form.cleaned_data.get('coordinator_phone_number'),
-            object_id=self.org.id,
-            role=Representative.COORDINATOR,
-            user=self.request.user,
-            content_type=ContentType.objects.get_for_model(self.org)
+        representative_request = RepresentativeRequest(
+            user = self.request.user,
+            document = form.cleaned_data.get('request_form'),
+            org_code = form.cleaned_data.get('company_code'),
+            org_name = form.cleaned_data.get('company_name'),
+            org_slug = form.cleaned_data.get('company_slug')
         )
-        rep.save()
-        task = Task.objects.create(
-            title="Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
-            description=f"Portale užsiregistravo naujas duomenų teikėjas: {self.org.company_code}.",
-            organization=self.org,
-            user=self.request.user,
-            status=Task.CREATED,
-            type=Task.REQUEST
-        )
-        task.save()
-        return redirect(self.org)
+        representative_request.save()
+        return redirect(reverse('partner-register-complete'))
 
-
-def get_path(
-    value: int,
-    steplen: int = MP_Node.steplen,
-    alphabet: str = MP_Node.alphabet,
-) -> str:
-    return MP_Node._int2str(value).rjust(steplen, alphabet[0])
+class PartnerRegisterCompleteView(TemplateView):
+    template_name = 'vitrina/orgs/partners/register_complete.html'
 
 
 class OrganizationPlanView(PlanMixin, TemplateView):

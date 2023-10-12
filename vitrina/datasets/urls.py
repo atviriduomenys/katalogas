@@ -45,7 +45,7 @@ from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
 from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters, \
-     update_dataset_jurisdiction_filters
+     update_dataset_jurisdiction_filters, OpenDataPortalDatasetDetailView
 
 urlpatterns = [
     # @GetMapping("/datasets")`
@@ -122,6 +122,7 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
+    path('dataset/atviru-duomenu-katalogo-api/', OpenDataPortalDatasetDetailView.as_view(), name='open-data-portal-dataset'),
     path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
     path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),

@@ -45,6 +45,9 @@ class VIISPLoginView(TemplateView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class VIISPCompleteLoginView(View):
+    def get(self, request, token=None):
+        return redirect('home')
+
     def post(self, request, token=None):
         encoded_key = ViispKey.objects.first().key_content
         key = b64decode(encoded_key).decode('ascii')
@@ -61,13 +64,16 @@ class VIISPCompleteLoginView(View):
             else:
                 user_data['email'] = email
 
+        if not user_data.get('email'):
+            return redirect('change-email')
+
         user = User.objects.filter(email=user_data.get('email')).first()
         if user:
             return perform_login(
                 request,
                 user,
                 email_verification=False,
-                redirect_url='partner-register',
+                redirect_url='complete-login',
                 signal_kwargs={"sociallogin": login},
             )
         return complete_social_login(request, login)

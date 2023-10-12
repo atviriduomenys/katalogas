@@ -307,34 +307,40 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         if request.status == "REJECTED":
             email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
                                                      'Poreikis atmestas', [request.comment])
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[request.user.email],
-            )
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[request.user.email],
+                    )
         elif request.status == "APPROVED":
             email_data = prepare_email_by_identifier('request-approved',
                                                      'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
                                                      'Poreikis patvirtintas',
                                                      [])
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[request.user.email],
-            )
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[request.user.email],
+                    )
         elif request.status == "CREATED":
             email_data = prepare_email_by_identifier('request-registered',
                                                      self.request_add_email_base_template,
                                                      'Užregistruotas naujas poreikis',
                                                      [request.title])
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[request.user.email],
-            )
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[request.user.email],
+                    )
 
         return context_data
 

@@ -103,13 +103,14 @@ class CommentView(
                         email_data = prepare_email_by_identifier('application-use-case-rejected', email_content,
                                                                  'Gautas naujas pasiūlymas',
                                                                  [obj.title, obj.description])
-                        if obj.user.email is not None:
-                            send_mail(
-                                subject=_(email_data['email_subject']),
-                                message=_(email_data['email_content']),
-                                from_email=settings.DEFAULT_FROM_EMAIL,
-                                recipient_list=[obj.user.email],
-                            )
+                        if obj.user is not None:
+                            if obj.user.email is not None:
+                                send_mail(
+                                    subject=_(email_data['email_subject']),
+                                    message=_(email_data['email_content']),
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    recipient_list=[obj.user.email],
+                                )
             else:
                 comment.type = Comment.USER
             comment.save()

@@ -44,6 +44,7 @@ from vitrina.datasets.views import DatasetCreatePlanView
 from vitrina.datasets.views import DatasetDeletePlanView
 from vitrina.datasets.views import DatasetPlansHistoryView
 from vitrina.datasets.views import DatasetDeletePlanDetailView
+from vitrina.datasets.views import DatasetRepresentativeApiKeyView
 from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters, \
      update_dataset_jurisdiction_filters
 
@@ -136,6 +137,8 @@ urlpatterns = [
     path('datasets/plans/<int:pk>/detail/delete/', DatasetDeletePlanDetailView.as_view(),
          name='dataset-plans-delete-detail'),
     path('datasets/<int:pk>/plans/history/', DatasetPlansHistoryView.as_view(), name='dataset-plans-history'),
+    path('datasets/<int:pk>/members/<int:rep_id>/api/<key>', DatasetRepresentativeApiKeyView.as_view(),
+         name='dataset-representative-api-key'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

@@ -26,7 +26,7 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -247,7 +247,7 @@ class RepresentativeCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['object_id'] = self.kwargs.get('object_id')
+        kwargs['object_id'] = self.organization.pk
         return kwargs
 
     def get_success_url(self):
@@ -319,11 +319,19 @@ class RepresentativeCreateView(
         self.object.save()
 
         if self.object.has_api_access:
+            api_key = secrets.token_urlsafe()
             ApiKey.objects.create(
-                api_key=secrets.token_urlsafe(),
+                api_key=hash_api_key(api_key),
                 enabled=True,
                 representative=self.object
             )
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            api_key = serializer.dumps({"api_key": api_key})
+            return HttpResponseRedirect(reverse('representative-api-key', args=[
+                self.organization.pk,
+                self.object.pk,
+                api_key
+            ]))
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -369,16 +377,34 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.object: Representative = form.save()
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
+                api_key = secrets.token_urlsafe()
                 ApiKey.objects.create(
-                    api_key=secrets.token_urlsafe(),
+                    api_key=hash_api_key(api_key),
                     enabled=True,
                     representative=self.object
                 )
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
             elif form.cleaned_data.get('regenerate_api_key'):
-                api_key = self.object.apikey_set.first()
-                api_key.api_key = secrets.token_urlsafe()
-                api_key.enabled = True
-                api_key.save()
+                api_key = secrets.token_urlsafe()
+                api_key_obj = self.object.apikey_set.first()
+                api_key_obj.api_key = hash_api_key(api_key)
+                api_key_obj.enabled = True
+                api_key_obj.save()
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
         else:
             self.object.apikey_set.all().delete()
 
@@ -783,3 +809,38 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
 
         self.organization.delete()
         return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))
+
+
+class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/api_key.html'
+
+    organization: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('rep_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        api_key = kwargs.get('key')
+        data = serializer.loads(api_key)
+        context['api_key'] = data.get('api_key')
+        context['url'] = reverse('organization-members', args=[self.organization.pk])
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Tvarkytojai"),
+        }
+        return context

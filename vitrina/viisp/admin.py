@@ -11,3 +11,4 @@ class ViispTokenKeyAdmin(admin.ModelAdmin):
 
 admin.site.register(ViispKey, ViispKeyAdmin)
 admin.site.register(ViispTokenKey, ViispTokenKeyAdmin)
+

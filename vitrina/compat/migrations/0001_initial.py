@@ -136,6 +136,20 @@ def create_redirects(apps, schema_editor):
     )
     redirect.save()
 
+    redirect = Redirect.objects.create(
+        site_id=SITE_ID,
+        old_path='/datasets?q=&organization_id=50/',
+        new_path='/datasets/?selected_facets=organization_exact:50/',
+    )
+    redirect.save()
+
+    redirect = Redirect.objects.create(
+        site_id=SITE_ID,
+        old_path='/datasets?q=&organization_id=269/',
+        new_path='/datasets/?selected_facets=organization_exact:269/',
+    )
+    redirect.save()
+
 
 class Migration(migrations.Migration):
 

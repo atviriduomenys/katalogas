@@ -22,6 +22,7 @@ from django.views.i18n import JavaScriptCatalog
 
 from vitrina import settings
 from vitrina.views import home
+from vitrina.orgs.admin import site
 
 urlpatterns = [
     path('', home, name="home"),
@@ -44,6 +45,7 @@ urlpatterns = [
     path('', include('vitrina.translate.urls')),
     path('', include('vitrina.statistics.urls')),
     path('admin/', admin.site.urls),
+    path('coordinator-admin/', site.urls),
     path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
     path("select2/", include("django_select2.urls")),
     path('hitcount/', include('hitcount.urls', namespace='hitcount')),

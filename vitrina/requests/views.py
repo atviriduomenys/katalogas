@@ -1,23 +1,20 @@
-from typing import List
-
-from django.views.generic import CreateView, UpdateView, DetailView
-from collections import OrderedDict
-
-
 import numpy as np
 import pandas as pd
+
+from typing import List
+from collections import OrderedDict
 from datetime import date
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db.models import Case, When
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
 from reversion.models import Version
 from haystack.generic_views import FacetedSearchView
 
 from vitrina.comments.models import Comment
+from vitrina.messages.models import Subscription
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action
@@ -27,10 +24,9 @@ from vitrina.helpers import Filter
 from vitrina.helpers import DateFilter
 from reversion import set_comment
 from vitrina.requests.services import update_facet_data
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from django.db.models import Case, When
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
-from vitrina.classifiers.models import Category
 from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 
 from vitrina.plans.models import Plan, PlanRequest
@@ -41,7 +37,6 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
-from vitrina.helpers import get_filter_url
 
 
 class RequestListView(FacetedSearchView):
@@ -324,7 +319,7 @@ class RequestCreateView(
         for org in orgs:
             self.object.organizations.add(org)
             requestA = RequestAssignment.objects.create(
-                request = self.object,   
+                request=self.object,
                 organization=org,
                 status=self.object.status 
             )
@@ -338,6 +333,15 @@ class RequestCreateView(
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             status=Task.CREATED
+        )
+        Subscription.objects.create(
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(Request),
+            object_id=self.object.pk,
+            sub_type=Subscription.REQUEST,
+            email_subscribed=True,
+            request_update_sub=True,
+            request_comments_sub=True,
         )
         return HttpResponseRedirect(self.get_success_url())
 

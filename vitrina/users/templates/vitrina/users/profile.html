@@ -115,16 +115,16 @@
                                 <div class="columns">
                                     <div class="column is-4">
                                         <a href="{{ sub.content_object.get_absolute_url }}">
-                                            <strong class="dataset-list-title">{{ sub.content_object.title }}</strong>
+                                            <strong class="dataset-list-title">{{ sub.content_object }}</strong>
                                         </a>
                                     </div>
                                     <div class="column is-4">
                                         {% for field in sub.fields %}
                                             <p>{{ field.0 }}:
                                                 {% if field.1 %}
-                                                    <i class="fas fa-check-circle"></i>
+                                                    <i class="fas fa-check-circle" style="color: green"></i>
                                                 {% else %}
-                                                    <i class="fas fa-minus-circle"></i>
+                                                    <i class="fas fa-minus-circle" style="color: gray"></i>
                                                 {% endif %}
                                             </p>
                                         {% endfor %}
@@ -133,7 +133,8 @@
                                         <form action="{% url 'unsubscribe' sub.content_type.id sub.object_id sub.user.pk %}"
                                               method="post" class="rating-form" id="unsubscribe-form">
                                             {% csrf_token %}
-                                            <input type="submit" class="button is-primary" value='{% translate "Atsisakyti" %}'>
+                                            <input type="submit" class="button is-primary"
+                                                   value='{% translate "Atsisakyti prenumeratos" %}'>
                                         </form>
                                     </div>
                                 </div>

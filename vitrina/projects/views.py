@@ -13,6 +13,7 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.datasets.models import Dataset
+from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
@@ -92,6 +93,15 @@ class ProjectCreateView(
             status=Task.CREATED,
             user=self.request.user,
             type=Task.REQUEST
+        )
+        Subscription.objects.create(
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(Project),
+            object_id=self.object.pk,
+            sub_type=Subscription.PROJECT,
+            email_subscribed=True,
+            project_update_sub=True,
+            project_comments_sub=True,
         )
         return HttpResponseRedirect(self.get_success_url())
 

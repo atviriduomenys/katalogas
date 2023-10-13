@@ -19,6 +19,8 @@ class SubscriptionForm(ModelForm):
             'request_update_sub',
             'dataset_comments_sub',
             'request_comments_sub',
+            'project_update_sub',
+            'project_comments_sub'
         )
 
     def __init__(self, *args, **kwargs):
@@ -31,6 +33,7 @@ class SubscriptionForm(ModelForm):
 
         self.fields['dataset_update_sub'].widget.attrs['class'] = 'toggleable'
         self.fields['request_update_sub'].widget.attrs['class'] = 'toggleable'
+        self.fields['project_update_sub'].widget.attrs['class'] = 'toggleable'
         self.initial_sub = None
 
         permanent_fields = [
@@ -66,6 +69,15 @@ class SubscriptionForm(ModelForm):
                 Field('request_update_sub'),
                 Field('request_comments_sub'),
             ])
+
+        if self.ct.model.upper() == Subscription.PROJECT:
+            self.fields['sub_type'].initial = choices_dict[Subscription.PROJECT]
+            self.initial_sub = Subscription.PROJECT
+            dynamic_fields.extend([
+                Field('project_update_sub'),
+                Field('project_comments_sub'),
+            ])
+
         dynamic_fields.extend([Submit('submit', _("Prenumeruoti"), css_class='button is-primary')])
         self.helper.layout = Layout(*permanent_fields, *dynamic_fields)
 
@@ -76,9 +88,11 @@ class SubscriptionForm(ModelForm):
     def clean(self):
         dataset_update_sub = self.cleaned_data.get('dataset_update_sub')
         request_update_sub = self.cleaned_data.get('request_update_sub')
+        project_update_sub = self.cleaned_data.get('project_update_sub')
 
         dataset_comments_sub = self.cleaned_data.get('dataset_comments_sub')
         request_comments_sub = self.cleaned_data.get('request_comments_sub')
+        project_comments_sub = self.cleaned_data.get('project_comments_sub')
 
         if dataset_comments_sub and not dataset_update_sub:
             raise ValidationError(_("Jei norima prenumeruoti duomenų rinkinių komentarus,"
@@ -88,15 +102,23 @@ class SubscriptionForm(ModelForm):
             raise ValidationError(_("Jei norima prenumeruoti poreikių komentarus,"
                                     " būtina prenumeruoti ir poreikius"))
 
-        if self.ct.model.upper() == Subscription.DATASET and (request_update_sub or request_comments_sub):
-            raise ValidationError(_("Norėdami prenumeruoti poreikius, turite tą daryti per organizacijos"
-                                    " ar poreikio prenumeratos formą"))
+        if project_comments_sub and not project_update_sub:
+            raise ValidationError(_("Jei norima prenumeruoti projektų komentarus,"
+                                    " būtina prenumeruoti ir projektus"))
 
-        if self.ct.model.upper() == Subscription.REQUEST and (dataset_update_sub or dataset_comments_sub):
-            raise ValidationError(_("Norėdami prenumeruoti duomenų rinkinius, turite tą daryti per organizacijos"
-                                    " ar duomenų rinkinio prenumeratos formą"))
+        if self.ct.model.upper() == Subscription.DATASET and (request_update_sub or project_update_sub):
+            raise ValidationError(_("Ši forma skirta tik duomenų rinkinių prenumeratai, kitas prenumeratas galite gauti"
+                                    "kitose atitinkamose formose"))
 
-        if not dataset_comments_sub and not request_comments_sub and not dataset_update_sub and not request_update_sub:
+        if self.ct.model.upper() == Subscription.REQUEST and project_update_sub:
+            raise ValidationError(_("Jei norite prenumeruoti projektus,"
+                                    " tą galite padaryti iš atitinkamo projekto puslapio"))
+
+        if self.ct.model.upper() == Subscription.PROJECT and (dataset_update_sub or request_update_sub):
+            raise ValidationError(_("Ši forma skirta tik projektų prenumeratai, kitas prenumeratas galite gauti"
+                                    "kitose atitinkamose formose"))
+
+        if not dataset_update_sub and not request_update_sub and not project_update_sub:
             raise ValidationError(_("Būtina pasirinkti bent vieną prenumeratos tipą"))
 
         return self.cleaned_data

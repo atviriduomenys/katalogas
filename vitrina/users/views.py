@@ -122,7 +122,9 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
 
-        subscriptions = Subscription.objects.filter(user=user).prefetch_related('content_object')
+        subscriptions = Subscription.objects.filter(user=user)\
+            .exclude(sub_type=Subscription.COMMENT)\
+            .prefetch_related('content_object')
         for sub in subscriptions:
             sub.fields = [(_("Laiškai"), sub.email_subscribed)]
             if sub.sub_type == Subscription.ORGANIZATION:
@@ -138,7 +140,13 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             if sub.sub_type == Subscription.REQUEST:
                 sub.fields.extend([
                     (_("Prašymai"), sub.request_update_sub),
-                    (_("Prašymų komentarai"), sub.request_comments_sub)])
+                    (_("Prašymų komentarai"), sub.request_comments_sub),
+                    (_("Duomenų rinkiniai"), sub.dataset_update_sub),
+                    (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub)])
+            if sub.sub_type == Subscription.PROJECT:
+                sub.fields.extend([
+                    (_("Projektai"), sub.project_update_sub),
+                    (_("Projektų komentarai"), sub.project_comments_sub)])
 
         extra_context_data = {
             'can_edit_profile': has_perm(self.request.user, Action.UPDATE, user),

@@ -92,11 +92,16 @@ class Subscription(models.Model):
     ORGANIZATION = "ORGANIZATION"
     DATASET = "DATASET"
     REQUEST = "REQUEST"
+    PROJECT = "PROJECT"
+    COMMENT = "COMMENT"
     SUB_TYPE_CHOICES = {
         (ORGANIZATION, _("Organizacijos prenumerata")),
         (DATASET, _("Duomenų rinkinio prenumerata")),
-        (REQUEST, _("Poreikio prenumerata"))
+        (REQUEST, _("Poreikio prenumerata")),
+        (PROJECT, _("Projekto prenumerata")),
+        (COMMENT, _("Komentaro prenumerata"))
     }
+
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -108,12 +113,18 @@ class Subscription(models.Model):
                                            verbose_name=_('Prenumeratos laiško užsisakymas'))
     dataset_update_sub = models.BooleanField(default=False,
                                              verbose_name=_('Susijusių duomenų rinkinių prenumerata'))
-    request_update_sub = models.BooleanField(default=False,
-                                             verbose_name=_('Susijusių poreikių prenumerata'))
     dataset_comments_sub = models.BooleanField(default=False,
                                                verbose_name=_('Duomenų rinkinių komentarų prenumerata'))
+    request_update_sub = models.BooleanField(default=False,
+                                             verbose_name=_('Susijusių poreikių prenumerata'))
     request_comments_sub = models.BooleanField(default=False,
                                                verbose_name=_('Poreikių komentarų prenumerata'))
+    project_update_sub = models.BooleanField(default=False,
+                                             verbose_name=_('Susijusių projektų prenumerata'))
+    project_comments_sub = models.BooleanField(default=False,
+                                               verbose_name=_('Projektų komentarų prenumerata'))
+    comment_replies_sub = models.BooleanField(default=False,
+                                              verbose_name=_('Komentaro atsako prenumerata'))
 
     class Meta:
         db_table = 'subscription'

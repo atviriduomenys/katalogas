@@ -448,7 +448,7 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
             created=datetime.datetime.now(),
             version=0,
             identifier=email_identifier,
-            template=email_content,
+            template=base_template_content,
             subject=_(email_title_subject),
             title=_(email_title)
         )

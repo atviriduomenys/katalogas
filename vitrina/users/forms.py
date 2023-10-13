@@ -95,6 +95,7 @@ class RegisterForm(UserCreationForm):
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
 
+
 class PasswordSetForm(ModelForm):
     password = CharField(label=_("Slaptažodis"), strip=False,
                     widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])

@@ -44,6 +44,7 @@ class RegisterView(CreateView):
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
+
 class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     template_name = 'base_form.html'
     model = User

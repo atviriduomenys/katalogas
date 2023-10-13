@@ -13,6 +13,8 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 from vitrina.helpers import buttons, submit
+from vitrina.helpers import prepare_email_by_identifier
+from django.core.mail import send_mail
 
 
 class LoginForm(Form):
@@ -142,6 +144,28 @@ class PasswordResetForm(BasePasswordResetForm):
         if email and not User.objects.filter(email=email).exists():
             raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja"))
         return cleaned_data
+
+    def send_mail(self, subject_template_name, email_template_name,
+                  context, from_email, to_email, html_email_template_name=None):
+        base_email_template = """
+            {% load i18n %}{% autoescape off %}
+            {% translate "Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą:" %}
+            {% block reset_link %}
+                {0}/
+            {% endblock %}
+            {% translate 'Lietuvos Atvirų Duomenų Portalas' %}
+            {% endautoescape %}
+        """
+        url = "{0}://{1}/reset/{2}/{3}".format(context['protocol'], context['domain'], context['uid'], context['token'])
+        email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
+                                                 'Slaptazodzio atstatymas',
+                                                 [url])
+        send_mail(
+            subject=_(email_data['email_subject']),
+            message=_(email_data['email_content']),
+            from_email=from_email,
+            recipient_list=[to_email],
+        )
 
 
 class PasswordResetConfirmForm(SetPasswordForm):

@@ -203,3 +203,15 @@ class OrganizationMapping(models.Model):
 
     class Meta:
         db_table = 'organization_mapping'
+
+
+class RepresentativeRequest(models.Model):
+    user = models.ForeignKey('vitrina_users.User', models.DO_NOTHING, blank=True, null=True)
+    document = models.FileField()
+    org_code = models.CharField(max_length=255, blank=True, null=True)
+    org_name = models.CharField(max_length=255, blank=True, null=True)
+    org_slug = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'representative_request'

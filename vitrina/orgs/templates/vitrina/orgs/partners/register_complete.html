@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Informacija duomenų teikėjo registravimui" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Forma pateikta. Vyriausiasis koordinatorius ją peržiūrės." %}</p>
+  <br>
+  <p>
+    <a id="partner-register" href="{% url 'home' %}" class="button is-small is-primary">{% translate "Į pradžią" %}</a>
+  </p>
+{% endblock %}

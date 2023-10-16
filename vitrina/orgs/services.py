@@ -3,10 +3,12 @@ import operator
 from enum import Enum
 from typing import Type
 
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.db.models import Q
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
@@ -154,3 +156,9 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
         ).
         count()
     )
+
+
+def hash_api_key(api_key: str) -> str:
+    hasher = PBKDF2PasswordHasher()
+    salt = settings.HASHER_SALT
+    return hasher.encode(api_key, salt)

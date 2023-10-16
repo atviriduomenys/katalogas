@@ -72,7 +72,7 @@ from vitrina.classifiers.models import Category, Frequency
 from vitrina.helpers import get_selected_value, Filter, DateFilter
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
@@ -379,6 +379,12 @@ class DatasetDetailView(
         context_data.update(extra_context_data)
         return context_data
 
+class OpenDataPortalDatasetDetailView(View):
+    def get(self, request):
+        dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
+        return HttpResponseRedirect(reverse('dataset-detail', kwargs={
+            'pk': dataset.pk,
+        }))
 
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):
@@ -842,15 +848,23 @@ class CreateMemberView(
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
+        self.dataset.save()
 
         if self.object.has_api_access:
+            api_key = secrets.token_urlsafe()
             ApiKey.objects.create(
-                api_key=secrets.token_urlsafe(),
+                api_key=hash_api_key(api_key),
                 enabled=True,
                 representative=self.object
             )
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            api_key = serializer.dumps({"api_key": api_key})
+            return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                self.dataset.pk,
+                self.object.pk,
+                api_key
+            ]))
 
-        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -945,16 +959,33 @@ class UpdateMemberView(
         self.object: Representative = form.save()
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
+                api_key = secrets.token_urlsafe()
                 ApiKey.objects.create(
-                    api_key=secrets.token_urlsafe(),
+                    api_key=hash_api_key(api_key),
                     enabled=True,
                     representative=self.object
                 )
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                    self.dataset.pk,
+                    self.object.pk,
+                    api_key
+                ]))
             elif form.cleaned_data.get('regenerate_api_key'):
-                api_key = self.object.apikey_set.first()
-                api_key.api_key = secrets.token_urlsafe()
-                api_key.enabled = True
-                api_key.save()
+                api_key = secrets.token_urlsafe()
+                api_key_obj = self.object.apikey_set.first()
+                api_key_obj.api_key = hash_api_key(api_key)
+                api_key_obj.enabled = True
+                api_key_obj.save()
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                    self.dataset.pk,
+                    self.object.pk,
+                    api_key
+                ]))
         else:
             self.object.apikey_set.all().delete()
 
@@ -2630,3 +2661,38 @@ class update_dataset_jurisdiction_filters(FacetedSearchView):
             }
             context.update(extra_context)
             return context
+
+
+class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/api_key.html'
+
+    dataset: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('rep_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        api_key = kwargs.get('key')
+        data = serializer.loads(api_key)
+        context['api_key'] = data.get('api_key')
+        context['url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-members', args=[self.dataset.pk]): _("Tvarkytojai"),
+        }
+        return context

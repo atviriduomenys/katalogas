@@ -6,7 +6,7 @@ from haystack.forms import FacetedSearchForm, SearchForm
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, \
-    Textarea, ModelChoiceField, RadioSelect, DateField, HiddenInput
+    Textarea, ModelChoiceField, RadioSelect, DateField, HiddenInput, BooleanField
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2MultipleWidget
 from vitrina.requests.search_indexes import RequestIndex
@@ -99,6 +99,7 @@ class RequestEditOrgForm(ModelForm):
         queryset=Organization.objects.filter(),
         to_field_name="pk"
     )
+    plural = BooleanField(label=_("Pridėti organizaciją ir visas pavaldžias jai organizacijas"), required=False)
 
     class Meta:
         model = Request
@@ -110,8 +111,10 @@ class RequestEditOrgForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "request-add-org-form"
+        self.initial['organizations'] = []
         self.helper.layout = Layout(
             Field('organizations', placeholder=_('Organizacijos')),
+            Field('plural'),
             Submit('submit', button, css_class='button is-primary')
         )
 

@@ -1,8 +1,7 @@
-import secrets
-
 from factory.django import DjangoModelFactory
 
 from vitrina.api.models import ApiKey
+from vitrina.orgs.services import hash_api_key
 
 
 class APIKeyFactory(DjangoModelFactory):
@@ -10,5 +9,5 @@ class APIKeyFactory(DjangoModelFactory):
         model = ApiKey
         django_get_or_create = ('api_key', 'enabled')
 
-    api_key = secrets.token_urlsafe()
+    api_key = hash_api_key("test")
     enabled = True

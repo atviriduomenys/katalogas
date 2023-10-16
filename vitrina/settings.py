@@ -333,6 +333,8 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
+HASHER_SALT = "2LxpaW5qOe80xZjTPyzpgi"
+
 _search_url = env.search_url()
 _search_url['ENGINE'] = 'vitrina.datasets.search_backends.ElasticSearchEngine'
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')

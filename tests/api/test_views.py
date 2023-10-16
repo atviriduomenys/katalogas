@@ -40,7 +40,7 @@ def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
         enabled=False
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
@@ -59,7 +59,7 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
@@ -101,7 +101,7 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.json == [{
@@ -135,7 +135,7 @@ def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
         enabled=False
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
@@ -154,7 +154,7 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
@@ -196,7 +196,7 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.json == [{
@@ -225,7 +225,7 @@ def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
         enabled=False
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
@@ -244,7 +244,7 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
@@ -286,7 +286,7 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {api_key.api_key}'
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.json == [{
@@ -317,7 +317,7 @@ def test_get_all_datasets(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-dataset"))
     assert res.json == [{
@@ -359,7 +359,7 @@ def test_get_dataset_from_different_organization(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-single-dataset", kwargs={
         'datasetId': dataset.pk
@@ -380,7 +380,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-single-dataset", kwargs={
         'datasetId': dataset.pk
@@ -414,7 +414,7 @@ def test_get_dataset_with_wrong_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-single-dataset-internal", kwargs={
         'internalId': "wrong"
@@ -435,7 +435,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-single-dataset-internal", kwargs={
         'internalId': dataset.internal_id
@@ -477,7 +477,7 @@ def test_create_dataset_with_errors(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.post(reverse("api-dataset"), expect_errors=True)
     assert res.status_code == 400
@@ -499,7 +499,7 @@ def test_create_dataset(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.post(reverse("api-dataset"), {
         'title': 'Test dataset',
@@ -566,7 +566,7 @@ def test_update_dataset_from_different_organization(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.patch(reverse("api-single-dataset", kwargs={'datasetId': dataset.pk}), {
         'title': "Updated title",
@@ -588,7 +588,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.patch(reverse("api-single-dataset", kwargs={'datasetId': dataset.pk}), {
         'title': "Updated title",
@@ -630,7 +630,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.patch(reverse("api-single-dataset-internal", kwargs={'internalId': dataset.internal_id}), {
         'title': "Updated title",
@@ -679,7 +679,7 @@ def test_delete_dataset_from_different_organization(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.delete(reverse('api-single-dataset', kwargs={
         'datasetId': dataset.pk
@@ -700,7 +700,7 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-dataset', kwargs={
         'datasetId': dataset.pk
@@ -728,7 +728,7 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-dataset-internal', kwargs={
         'internalId': dataset.internal_id
@@ -764,7 +764,7 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse('api-distribution', kwargs={
         'datasetId': distribution.dataset.pk
@@ -797,7 +797,7 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse('api-distribution-internal', kwargs={
         'internalId': dataset.internal_id
@@ -839,7 +839,7 @@ def test_create_dataset_distribution_without_file_and_url(app: DjangoTestApp):
         ('title', "Test distribution")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -864,7 +864,7 @@ def test_create_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         ('url', "https://test.com/")
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -889,7 +889,7 @@ def test_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         ('url', "https://test.com/")
     ], files=[('file', 'file.csv', b'')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -916,7 +916,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         ('periodStart', "2022-10-12")
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -956,7 +956,7 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         ('url', "http://test.com/")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -997,7 +997,7 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         ('overwrite', True)
     ], files=[('file', distribution.filename_without_path(), b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution', kwargs={
@@ -1037,7 +1037,7 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         ('url', "http://test.com/")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-distribution-internal', kwargs={
@@ -1082,7 +1082,7 @@ def test_put_create_dataset_distribution_without_file_and_url(app: DjangoTestApp
         ('title', "Test distribution")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution', kwargs={
@@ -1107,7 +1107,7 @@ def test_put_create_dataset_distribution_with_both_file_and_url(app: DjangoTestA
         ('url', "https://test.com/")
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution', kwargs={
@@ -1132,7 +1132,7 @@ def test_put_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         ('url', "https://test.com/")
     ], files=[('file', 'file.csv', b'')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution', kwargs={
@@ -1159,7 +1159,7 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         ('periodStart', "2022-10-12")
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution', kwargs={
@@ -1199,7 +1199,7 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         ('url', "http://test.com/")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution', kwargs={
@@ -1239,7 +1239,7 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         ('url', "http://test.com/")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.put(reverse('api-distribution-internal', kwargs={
@@ -1283,7 +1283,7 @@ def test_update_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.patch(reverse('api-single-distribution', kwargs={
         'datasetId': another_dataset.pk,
@@ -1303,7 +1303,7 @@ def test_update_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.patch(reverse('api-single-distribution-internal', kwargs={
         'internalId': another_dataset.internal_id,
@@ -1326,7 +1326,7 @@ def test_update_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         ('url', 'http://example.com/')
     ], files=[('file', 'file.csv', b'Test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.patch(reverse('api-single-distribution', kwargs={
@@ -1351,7 +1351,7 @@ def test_update_dataset_distribution_with_empty_file(app: DjangoTestApp):
         ('title', "Test distribution"),
     ], files=[('file', 'file.csv', b'')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.patch(reverse('api-single-distribution', kwargs={
@@ -1379,7 +1379,7 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         ('municipality', 'Location'),
     ], files=[('file', 'updated_file.csv', b'test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.patch(reverse('api-single-distribution', kwargs={
@@ -1419,7 +1419,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         ('url', "http://example.com/")
     ], files=[])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.patch(reverse('api-single-distribution', kwargs={
@@ -1459,7 +1459,7 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         ('municipality', 'Location'),
     ], files=[('file', 'updated_file.csv', b'test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.patch(reverse('api-single-distribution-internal', kwargs={
@@ -1503,7 +1503,7 @@ def test_delete_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.delete(reverse('api-single-distribution', kwargs={
         'datasetId': another_dataset.pk,
@@ -1523,7 +1523,7 @@ def test_delete_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.delete(reverse('api-single-distribution-internal', kwargs={
         'internalId': another_dataset.internal_id,
@@ -1543,7 +1543,7 @@ def test_delete_dataset_distribution_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-distribution', kwargs={
         'datasetId': dataset.pk,
@@ -1563,7 +1563,7 @@ def test_delete_dataset_distribution_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-distribution-internal', kwargs={
         'internalId': dataset.internal_id,
@@ -1592,7 +1592,7 @@ def test_get_dataset_structures_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse('api-structure', kwargs={
         'datasetId': structure.dataset.pk
@@ -1618,7 +1618,7 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse('api-structure-internal', kwargs={
         'internalId': dataset.internal_id
@@ -1651,7 +1651,7 @@ def test_create_dataset_structure_with_errors(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.post(reverse('api-structure', kwargs={
         'datasetId': dataset.pk
@@ -1674,7 +1674,7 @@ def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
         ('title', "Test structure")
     ], files=[('file', 'file.csv', b'test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-structure', kwargs={
@@ -1706,7 +1706,7 @@ def test_create_dataset_structure_with_internal_id(app: DjangoTestApp):
         ('title', "Test structure")
     ], files=[('file', 'file.csv', b'test')])
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}",
+        'HTTP_AUTHORIZATION': 'ApiKey test',
         'CONTENT_TYPE': content_type
     })
     res = app.post(reverse('api-structure-internal', kwargs={
@@ -1746,7 +1746,7 @@ def test_delete_dataset_structure_with_wrong_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.delete(reverse('api-single-structure', kwargs={
         'datasetId': another_dataset.pk,
@@ -1766,7 +1766,7 @@ def test_delete_dataset_structure_with_wrong_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.delete(reverse('api-single-structure-internal', kwargs={
         'internalId': another_dataset.internal_id,
@@ -1786,7 +1786,7 @@ def test_delete_dataset_structure_with_dataset_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-structure', kwargs={
         'datasetId': dataset.pk,
@@ -1806,7 +1806,7 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
     )
     api_key = APIKeyFactory(representative=representative)
     app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f"ApiKey {api_key.api_key}"
+        'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     app.delete(reverse('api-single-structure-internal', kwargs={
         'internalId': dataset.internal_id,

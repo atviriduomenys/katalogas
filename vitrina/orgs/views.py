@@ -1,12 +1,15 @@
+import json
 import secrets
+from datetime import datetime
 
+import pandas as pd
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,10 +25,16 @@ from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from django.template.defaultfilters import date as _date
+from vitrina import settings
+from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
+from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -61,7 +70,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
                 company_code=company_code,
                 slug=slugify(self.representative_request.org_slug)
             )
-    
+
         user = User.objects.get(email=self.representative_request.user.email)
 
         rep = Representative.objects.create(
@@ -158,23 +167,92 @@ class OrganizationListView(ListView):
 
 
 class OrganizationManagementsView(OrganizationListView):
+    title = _("Valdymo sritis")
     template_name = 'vitrina/orgs/jurisdictions.html'
+    parameter_select_template_name = 'vitrina/orgs/stats_parameter_select.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         jurisdictions = context.get('jurisdictions')
+
+        orgs = self.get_queryset()
+
+        indicator = self.request.GET.get('indicator', None) or 'organization-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        start_date = Organization.objects.all().first().created
+
+        time_chart_data = []
+
+        frequency, ff = get_frequency_and_format(duration)
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        values = get_values_for_frequency(frequency, 'created')
+
+        for jur in jurisdictions:
+            count = 0
+            data = []
+
+            jurisdiction_orgs = orgs.filter(jurisdiction=jur.get('title')).order_by()
+
+            if indicator == 'organization-count':
+                items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+            elif indicator == 'coordinator-count':
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.COORDINATOR,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+            else:
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.MANAGER,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+
+            for label in labels:
+                label_query = get_query_for_frequency(frequency, 'created', label)
+                label_count_data = items.filter(**label_query)
+
+                if label_count_data:
+                    count += label_count_data[0].get('count') or 0
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                else:
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            dt = {
+                'label': jur.get('title'),
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            time_chart_data.append(dt)
+
         if sorting == 'sort-desc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'], reverse=True)
         elif sorting == 'sort-asc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
         max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
 
-        context['jurisdiction_data'] = jurisdictions
+        context['title'] = self.title
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['time_chart_data'] = json.dumps(time_chart_data)
+        context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
+
         context['filter'] = 'jurisdiction'
+        context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
+        context['has_time_graph'] = True
         return context
 
 
@@ -333,7 +411,7 @@ class RepresentativeCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['object_id'] = self.kwargs.get('object_id')
+        kwargs['object_id'] = self.organization.pk
         return kwargs
 
     def get_success_url(self):
@@ -401,11 +479,19 @@ class RepresentativeCreateView(
         self.object.save()
 
         if self.object.has_api_access:
+            api_key = secrets.token_urlsafe()
             ApiKey.objects.create(
-                api_key=secrets.token_urlsafe(),
+                api_key=hash_api_key(api_key),
                 enabled=True,
                 representative=self.object
             )
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            api_key = serializer.dumps({"api_key": api_key})
+            return HttpResponseRedirect(reverse('representative-api-key', args=[
+                self.organization.pk,
+                self.object.pk,
+                api_key
+            ]))
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -451,16 +537,34 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.object: Representative = form.save()
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
+                api_key = secrets.token_urlsafe()
                 ApiKey.objects.create(
-                    api_key=secrets.token_urlsafe(),
+                    api_key=hash_api_key(api_key),
                     enabled=True,
                     representative=self.object
                 )
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
             elif form.cleaned_data.get('regenerate_api_key'):
-                api_key = self.object.apikey_set.first()
-                api_key.api_key = secrets.token_urlsafe()
-                api_key.enabled = True
-                api_key.save()
+                api_key = secrets.token_urlsafe()
+                api_key_obj = self.object.apikey_set.first()
+                api_key_obj.api_key = hash_api_key(api_key)
+                api_key_obj.enabled = True
+                api_key_obj.save()
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
         else:
             self.object.apikey_set.all().delete()
 
@@ -534,13 +638,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
         if not org and company_name:
-            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != ['']:
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:
                 company_name_slug = company_name[0]
         elif org:
-             company_name_slug = org.slug
+            company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
             'coordinator_first_name': user.first_name,
@@ -548,7 +652,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
             'coordinator_email': user.email,
             'company_code': company_code,
-            'company_name':company_name,
+            'company_name': company_name,
             'company_slug': company_name_slug,
             'company_slug_read_only': True if org else False
         }
@@ -787,8 +891,8 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             object_id=self.merge_organization.pk
         ).values_list('email', flat=True)
         for obj in Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(self.organization),
-            object_id=self.organization.pk,
+                content_type=ContentType.objects.get_for_model(self.organization),
+                object_id=self.organization.pk,
         ).exclude(email__in=rep_emails):
             obj.object_id = self.merge_organization.pk
             obj.save()
@@ -828,3 +932,38 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
 
         self.organization.delete()
         return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))
+
+
+class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/api_key.html'
+
+    organization: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('rep_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        api_key = kwargs.get('key')
+        data = serializer.loads(api_key)
+        context['api_key'] = data.get('api_key')
+        context['url'] = reverse('organization-members', args=[self.organization.pk])
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Tvarkytojai"),
+        }
+        return context

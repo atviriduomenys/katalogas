@@ -10,6 +10,7 @@ from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, 
 from vitrina.orgs.views import OrganizationPlansHistoryView
 from vitrina.orgs.views import OrganizationMergeView
 from vitrina.orgs.views import ConfirmOrganizationMergeView
+from vitrina.orgs.views import RepresentativeApiKeyView
 
 urlpatterns = [
     # @RequestMapping("/organizations")
@@ -37,6 +38,8 @@ urlpatterns = [
     path('orgs/<int:pk>/merge/', OrganizationMergeView.as_view(), name='merge-organizations'),
     path('orgs/<int:organization_id>/<int:merge_organization_id>/merge/confirm/',
          ConfirmOrganizationMergeView.as_view(), name='confirm-organization-merge'),
+    path('orgs/<int:pk>/members/<int:rep_id>/api/<key>', RepresentativeApiKeyView.as_view(),
+         name='representative-api-key'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")
     # @GetMapping("/group")

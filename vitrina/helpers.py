@@ -73,6 +73,11 @@ class Filter:
         query = self.request.GET.urlencode()
         return f'{path}?{query}'
 
+    def get_stats_url_request(self):
+        path = reverse(f'request-stats-{self.name}')
+        query = self.request.GET.urlencode()
+        return f'{path}?{query}'
+
     def items(self):
         fields = self.fields
 

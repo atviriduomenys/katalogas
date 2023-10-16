@@ -617,12 +617,17 @@ class DatasetUpdateView(
             email_data = prepare_email_by_identifier('dataset-updated', base_email_template, 'Duomenų rinkinys atnaujintas',
                                                      [self.object])
             if self.object.organization.email:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[self.object.organization.email],
-                )
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[self.object.organization.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [self.object.organization.email], e)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -856,12 +861,17 @@ class CreateMemberView(
                                                      self.base_email_template,
                                                      'Kvietimas prisijungti prie atvirų duomenų portalo',
                                                      [self.dataset, url])
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                import logging
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))

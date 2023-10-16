@@ -102,12 +102,17 @@ class ProjectCreateView(
                                                  'Užregistruotas naujas panaudos atvejis', [])
         if self.object.user is not None:
             if self.object.user.email is not None:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[self.object.user.email],
-                )
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[self.object.user.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [self.object.user.email], e)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

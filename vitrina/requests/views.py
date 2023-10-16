@@ -596,12 +596,17 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      'Poreikis atmestas', [request.comment])
             if request.user is not None:
                 if request.user.email is not None:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[request.user.email],
-                    )
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
         elif request.status == "APPROVED":
             email_data = prepare_email_by_identifier('request-approved',
                                                      'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
@@ -609,12 +614,17 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      [])
             if request.user is not None:
                 if request.user.email is not None:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[request.user.email],
-                    )
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
         elif request.status == "CREATED":
             email_data = prepare_email_by_identifier('request-registered',
                                                      self.request_add_email_base_template,
@@ -622,12 +632,17 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      [request.title])
             if request.user is not None:
                 if request.user.email is not None:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[request.user.email],
-                    )
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
 
         return context_data
 

@@ -27,12 +27,8 @@ def change_existing_keys_in_template(apps, schema_editor):
      "request-rejected": """Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {0}""",
      "dataset-updated": "Sveiki, duomenų rinkinys {0} buvo atnaujintas",
      "auth-password-reset-token": """
-        {% translate "Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą:" %}
-        {% block reset_link %}
-            {0}/
-        {% endblock %}
-        {% translate 'Lietuvos Atvirų Duomenų Portalas' %}
-        {% endautoescape %}     
+        Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą: <br><br> {0}<br><br>
+        Lietuvos Atvirų Duomenų Portalas    
      """,
      }
     email_templates = apps.get_model('vitrina_messages', "EmailTemplate")

@@ -152,12 +152,17 @@ class PasswordResetForm(BasePasswordResetForm):
         email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
                                                  'Slaptazodzio atstatymas',
                                                  [url])
-        send_mail(
-            subject=_(email_data['email_subject']),
-            message=_(email_data['email_content']),
-            from_email=from_email,
-            recipient_list=[to_email],
-        )
+        try:
+            send_mail(
+                subject=_(email_data['email_subject']),
+                message=_(email_data['email_content']),
+                from_email=from_email,
+                recipient_list=[to_email],
+            )
+        except Exception as e:
+            import logging
+            logging.warning("Email was not send ", _(email_data['email_subject']),
+                            _(email_data['email_content']), [to_email], e)
 
 
 class PasswordResetConfirmForm(SetPasswordForm):

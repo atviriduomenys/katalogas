@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 from datetime import datetime
 
@@ -469,12 +470,17 @@ class RepresentativeCreateView(
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
                  [self.organization, url]
              )
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
+
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 

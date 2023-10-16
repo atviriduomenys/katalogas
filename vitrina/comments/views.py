@@ -105,12 +105,17 @@ class CommentView(
                                                                  [obj.title, obj.description])
                         if obj.user is not None:
                             if obj.user.email is not None:
-                                send_mail(
-                                    subject=_(email_data['email_subject']),
-                                    message=_(email_data['email_content']),
-                                    from_email=settings.DEFAULT_FROM_EMAIL,
-                                    recipient_list=[obj.user.email],
-                                )
+                                try:
+                                    send_mail(
+                                        subject=_(email_data['email_subject']),
+                                        message=_(email_data['email_content']),
+                                        from_email=settings.DEFAULT_FROM_EMAIL,
+                                        recipient_list=[obj.user.email],
+                                    )
+                                except Exception as e:
+                                    import logging
+                                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                                    _(email_data['email_content']), [obj.user.email], e)
             else:
                 comment.type = Comment.USER
             comment.save()
@@ -226,12 +231,17 @@ class ExternalCommentView(
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
                 email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
                                                          [url, external_object_id, dataset.name, external_content_type])
-                send_mail(
-                    subject=email_data['email_subject'],
-                    message=email_data['email_content'],
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[emails],
-                )
+                try:
+                    send_mail(
+                        subject=email_data['email_subject'],
+                        message=email_data['email_content'],
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[emails],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [emails], e)
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk

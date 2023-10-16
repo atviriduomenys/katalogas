@@ -27,12 +27,17 @@ class SubscribeView(LoginRequiredMixin, View):
                                                       'Naujienlaiškio prenumeratos registracija', [])
         if user is not None:
             if user.email is not None:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                )
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [user.email], e)
         return redirect(obj.get_absolute_url())
 
 
@@ -48,10 +53,15 @@ class UnsubscribeView(LoginRequiredMixin, View):
                                                           'Naujienlaiškio atšaukimas', [])
             if user is not None:
                 if user.email is not None:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[user.email],
-                    )
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [user.email], e)
         return redirect(obj.get_absolute_url())

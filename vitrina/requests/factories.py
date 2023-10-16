@@ -4,7 +4,7 @@ from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.requests.models import Request, RequestStructure, RequestObject
+from vitrina.requests.models import Request, RequestStructure, RequestObject, RequestAssignment
 
 
 class RequestFactory(DjangoModelFactory):
@@ -53,4 +53,11 @@ class RequestObjectFactory(DjangoModelFactory):
     class Meta:
         model = RequestObject
 
+    request = factory.SubFactory(RequestFactory)
+
+
+class RequestAssignmentFactory(DjangoModelFactory):
+    class Meta:
+        model = RequestAssignment
+    organization = factory.SubFactory(OrganizationFactory)
     request = factory.SubFactory(RequestFactory)

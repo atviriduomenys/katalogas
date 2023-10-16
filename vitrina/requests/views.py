@@ -371,7 +371,7 @@ class RequestOrgEditView(
             RequestAssignment.objects.create(
                 organization=org,
                 request=self.object,
-                status=self.object.status
+                status=Request.CREATED
             )
             if plural:
                 org = Organization.objects.filter(id=org.id).first()
@@ -385,7 +385,7 @@ class RequestOrgEditView(
                     RequestAssignment.objects.create(
                         organization=c_org,
                         request=self.object,
-                        status=self.object.status
+                        status=Request.CREATED
                     )
         self.object.save()
         set_comment(Request.EDITED)

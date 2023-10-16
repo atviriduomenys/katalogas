@@ -3,14 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Frequency
 from vitrina.comments.models import Comment
+from vitrina.requests.models import Request
 
-
-REQUEST_STATUSES = (
-    (None, _("---------")),
-    (Comment.OPENED, _("Įvykdytas")),
-    (Comment.APPROVED, _("Įvertintas")),
-    (Comment.REJECTED, _("Atmestas"))
-)
 
 PROJECT_STATUSES = (
     (None, _("---------")),
@@ -53,7 +47,7 @@ class DatasetCommentForm(RegisterRequestForm):
 
 
 class RequestCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=REQUEST_STATUSES, required=False, label=_("Būsena"))
+    status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))
 
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'status', 'body',)

@@ -38,6 +38,7 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(blank=True, choices=[('REJECTED', 'Atmestas'), ('APPROVED', 'Patvirtintas'), ('CREATED', 'Pateiktas'), ('OPENED', 'Atvertas'), ('ANSWERED', 'Atsakytas')], max_length=255, null=True)),
                 ('organization', models.ForeignKey(blank=True, db_column='organization', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_orgs.organization')),
                 ('request', models.ForeignKey(blank=True, db_column='request', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_requests.request')),
+                ('created', models.DateTimeField(blank=True, null=True, auto_now_add=True))
             ],
         ),
         migrations.RunPython(create_assignment_for_requests_with_org),

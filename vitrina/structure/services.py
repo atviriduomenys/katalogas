@@ -9,8 +9,6 @@ import requests
 from django.db.models import Q
 from lark import ParseError
 from pyproj import Transformer
-from shapely import Point
-from shapely.ops import transform
 
 import vitrina.datasets.structure as struct
 

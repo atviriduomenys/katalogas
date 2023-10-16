@@ -24,6 +24,7 @@ from vitrina.structure.views import ParamDeleteView
 from vitrina.structure.views import DatasetStructureHistoryView
 from vitrina.structure.views import ModelHistoryView
 from vitrina.structure.views import PropertyHistoryView
+from vitrina.structure.views import GetUpdatedSummaryView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -59,4 +60,5 @@ urlpatterns = [
          EnumUpdateView.as_view(), name='enum-update'),
     path('datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/',
          EnumDeleteView.as_view(), name='enum-delete'),
+    path('get_updated_summary/', GetUpdatedSummaryView.as_view(), name='get_updated_summary'),
 ]

@@ -16,7 +16,7 @@ from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiDescription
-from vitrina.api.permissions import APIKeyPermission
+from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
     DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
@@ -579,6 +579,8 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
 
 
 class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    permission_classes = (HasStatsPostPermission,)
+
     @swagger_auto_schema(
         operation_summary="Add model statistics",
         request_body=ModelDownloadStatsSerializer,
@@ -591,6 +593,7 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         serializer.is_valid(raise_exception=True)
         instance = ModelDownloadStats(**serializer.validated_data)
         existing = ModelDownloadStats.objects.filter(
+            source=instance.source,
             model=instance.model,
             model_format=instance.model_format,
             created=instance.created
@@ -598,9 +601,6 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         if existing:
             if instance.model_requests == 0:
                 existing.delete()
-            if existing.created.hour == instance.created.hour:
-                existing.model_requests += instance.model_requests
-                existing.model_objects += instance.model_objects
             else:
                 existing.model_requests = instance.model_requests
                 existing.model_objects = instance.model_objects

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
 {% load comment_tags %}
 {% load markdown_tags %}
 
@@ -26,6 +27,26 @@
             </span>
         </a></li>
     </ul>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css" />
+
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw==" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster.js"></script>
+
+    <style>
+      .leaflet-tooltip-pane .text {
+          color: white;
+          font-weight: bold;
+          background: transparent;
+          border:0;
+          box-shadow: none;
+          font-size:1.5em;
+      }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -107,47 +128,67 @@
         </div>
         {% endif %}
 
+        {% if data %}
+            {% if graph_type == 'vertical' %}
+                <canvas id="chart" class="mb-5"></canvas>
+            {% elif graph_type == 'horizontal' %}
+                <div class="tab-content mb-6">
+                    {% for item in data %}
+                        <div class="is-flex">
+                            <strong class="has-text-black">{{ item.bin }}</strong>
+                            <div class="stays-right">{{ item.count }}</div>
+                        </div>
+                        <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div id="map" style="height: 400px;"></div>
+            {% endif %}
+        {% endif %}
+
         {% if prop.metadata.first.type == 'string' or prop.metadata.first.type == 'integer' %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
             {% if prop.enums.first %}
                 {% for enum_item in prop.enums.first.enumitem_set.all %}
-                <div class="mb-3">
-                    <div class="is-inline">
-                        {% if enum_item.metadata.first.prepare %}
-                        <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
-                        {% endif %}
-
-                        {% if enum_item.metadata.first.title %}
-                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
-                        {% endif %}
-
-                        {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
-                            {% if prop.name and model.name and can_manage_structure %}
-                            <div class="buttons is-pulled-right mr-1 no-margin-bottom">
-                                <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
-                                    {% translate "Keisti" %}
-                                </a>
-                                <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
-                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
-                                   class="button is-link is-small"
-                                   id="delete_enum">{% translate "Trinti" %}
-                                </a>
-                            </div>
+                    <div class="columns no-margin-bottom">
+                        <div class="column is-three-quarters">
+                            {% if enum_item.metadata.first.prepare %}
+                            <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
                             {% endif %}
-                        {% endif %}
 
+                            {% if enum_item.metadata.first.title %}
+                            <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
+                            {% endif %}
+
+                             <div class="ml-4">
+                                {% if enum_item.metadata.first.source %}
+                                <span>source: </span>
+                                <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
+                                {% endif %}
+                            </div>
+                            {% if enum_item.metadata.first.description %}
+                                <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
+                            {% endif %}
+                        </div>
+
+                        <div class="column is-one-quarter">
+                            {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
+                                {% if prop.name and model.name and can_manage_structure %}
+                                <div class="buttons is-right">
+                                    <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
+                                        {% translate "Keisti" %}
+                                    </a>
+                                    <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
+                                       onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                       class="button is-link is-small"
+                                       id="delete_enum">{% translate "Trinti" %}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        {% if enum_item.metadata.first.source %}
-                        <span>source: </span>
-                        <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
-                        {% endif %}
-                    </div>
-                    {% if enum_item.metadata.first.description %}
-                        <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
-                    {% endif %}
-                </div>
                 {% endfor %}
             {% else %}
                 <p>
@@ -173,4 +214,148 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ x_values|json_script:"xValues" }}
+    {{ y_values|json_script:"yValues" }}
+    {{ x_title|json_script:"xTitle" }}
+    {{ y_title|json_script:"yTitle" }}
+    {{ data|json_script:"clusters" }}
+    {{ prop.name|json_script:"property" }}
+    {{ model.full_name|json_script:"model" }}
+    {{ source_srid|json_script:"sourceSrid" }}
+    {{ target_srid|json_script:"targetSrid" }}
+    <script type="text/javascript">
+        $(function () {
+            let ctx = document.getElementById("chart");
+            if (ctx != null) {
+                ctx = ctx.getContext("2d");
+                var xValues = JSON.parse(document.getElementById('xValues').textContent);
+                var yValues = JSON.parse(document.getElementById('yValues').textContent).map((y) => parseInt(y));
+                var xTitle = JSON.parse(document.getElementById('xTitle').textContent);
+                var yTitle = JSON.parse(document.getElementById('yTitle').textContent);
+
+                const char = new Chart(ctx, {
+                  type: "bar",
+                  data: {
+                    labels: xValues,
+                    datasets: [{
+                      data: yValues
+                    }]
+                  },
+                  options: {
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: yTitle
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: xTitle
+                            },
+                        }
+                    }
+                  }
+                });
+            }
+            else if (document.getElementById("map") != null){
+                let map = L.map('map');
+                let clusters = JSON.parse(document.getElementById('clusters').textContent);
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+                let layerGroup = L.layerGroup().addTo(map);
+                let bounds = [];
+                clusters.forEach(item => {
+                    let cluster = item.cluster;
+                    let centroidX = item.centroid[0];
+                    let centroidY = item.centroid[1];
+                    bounds.push([centroidX, centroidY]);
+
+                    if("_id" in item){
+                        var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
+                    }
+                    else {
+                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
+                        var text = L.tooltip({
+                            permanent: true,
+                            direction: 'center',
+                            className: 'text'
+                        })
+                        .setContent(cluster.toString())
+                        .setLatLng(marker.getLatLng());
+                        text.addTo(layerGroup);
+                    }
+                });
+                map.fitBounds(bounds);
+
+                var sourceSrid = JSON.parse(document.getElementById('sourceSrid').textContent);
+                var targetSrid = JSON.parse(document.getElementById('targetSrid').textContent);
+                map.on("zoomend", function () {
+                    update_map(map, layerGroup, sourceSrid, targetSrid);
+                });
+                map.on("dragend", function () {
+                    update_map(map, layerGroup, sourceSrid, targetSrid);
+                });
+
+            }
+        });
+
+        function update_map(map, layerGroup, sourceSrid, targetSrid) {
+            let map_bounds = map.getBounds();
+            let minLng = map_bounds.getSouthEast().lng;
+            let minLat = map_bounds.getSouthEast().lat;
+            let maxLng = map_bounds.getNorthWest().lng;
+            let maxLat = map_bounds.getNorthWest().lat;
+
+            var model = JSON.parse(document.getElementById('model').textContent);
+            var property = JSON.parse(document.getElementById('property').textContent);
+
+             $.ajax({
+                 url: `/get_updated_summary/`,
+                 data: {
+                    model: model,
+                    property: property,
+                    source_srid: sourceSrid,
+                    target_srid: targetSrid,
+                    min_lng: minLng,
+                    min_lat: minLat,
+                    max_lng: maxLng,
+                    max_lat: maxLat,
+                 }
+             }).then(response => {
+                layerGroup.clearLayers();
+                response.data.forEach(item => {
+                    let cluster = item.cluster;
+                    let centroidX = item.centroid[0];
+                    let centroidY = item.centroid[1];
+
+                    if("_id" in item){
+                        var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
+                    }
+                    else {
+                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
+                        var text = L.tooltip({
+                            permanent: true,
+                            direction: 'center',
+                            className: 'text'
+                        })
+                        .setContent(cluster.toString())
+                        .setLatLng(marker.getLatLng());
+                        text.addTo(layerGroup);
+                    }
+                });
+             });
+        }
+    </script>
 {% endblock %}

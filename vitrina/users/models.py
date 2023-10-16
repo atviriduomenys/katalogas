@@ -41,6 +41,10 @@ class User(AbstractUser):
     @property
     def is_manager(self):
         return bool(self.representative_set.filter(role=Representative.MANAGER))
+
+    @property
+    def is_supervisor(self):
+        return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
                 
     @property
     def can_see_manager_dataset_list_url(self):

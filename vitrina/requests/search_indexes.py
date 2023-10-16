@@ -9,7 +9,7 @@ class RequestIndex(SearchIndex, Indexable):
     status = CharField(model_attr='status', faceted=True, null=True)
     dataset_status = MultiValueField(model_attr='dataset_statuses',  faceted=True, default="UNASSIGNED")
     organization = MultiValueField(model_attr='organizations__pk', faceted=True, default=-1)
-    jurisdiction = CharField(model_attr='jurisdiction', faceted=True)
+    jurisdiction = MultiValueField(model_attr='jurisdiction', faceted=True)
     category = MultiValueField(model_attr='dataset_categories', faceted=True)
     parent_category = MultiValueField(model_attr='dataset_parent_categories', faceted=True, null=True)
     groups = MultiValueField(model_attr='dataset_group_list', faceted=True)

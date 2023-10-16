@@ -19,6 +19,9 @@ from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
+from vitrina.helpers import prepare_email_by_identifier
+from django.core.mail import send_mail
+from vitrina import settings
 
 
 class ProjectListView(ListView):
@@ -76,6 +79,7 @@ class ProjectCreateView(
     form_class = ProjectForm
     template_name = 'base_form.html'
 
+
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Project)
 
@@ -94,6 +98,22 @@ class ProjectCreateView(
             user=self.request.user,
             type=Task.REQUEST
         )
+        email_data = prepare_email_by_identifier('use-case-registered',
+                                                 'Sveiki, portale užregistruotas naujas panaudos atvejis.',
+                                                 'Užregistruotas naujas panaudos atvejis', [])
+        if self.object.user is not None:
+            if self.object.user.email is not None:
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[self.object.user.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [self.object.user.email], e)
         Subscription.objects.create(
             user=self.request.user,
             content_type=ContentType.objects.get_for_model(Project),

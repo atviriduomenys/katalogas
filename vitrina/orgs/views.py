@@ -1,40 +1,127 @@
+import json
+import logging
 import secrets
+from datetime import datetime
 
+import pandas as pd
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from django.views.generic import DetailView
+from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
-
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from django.template.defaultfilters import date as _date
+from vitrina import settings
+from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
-from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
-
 from vitrina.views import PlanMixin, HistoryView
+from allauth.socialaccount.models import SocialAccount
+
+
+class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
+    representative_request: RepresentativeRequest
+    template_name = 'confirm_approve.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        return context
+
+    def post(self, request, *args, **kwargs):
+        company_code = self.representative_request.org_code
+        org = Organization.objects.filter(company_code=company_code).first()
+        if not org:
+            org = Organization.add_root(
+                title=self.representative_request.org_name,
+                company_code=company_code,
+                slug=slugify(self.representative_request.org_slug)
+            )
+
+        user = User.objects.get(email=self.representative_request.user.email)
+
+        rep = Representative.objects.create(
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            phone=user.phone,
+            object_id=org.id,
+            role=Representative.COORDINATOR,
+            user=user,
+            content_type=ContentType.objects.get_for_model(org)
+        )
+        rep.save()
+        task = Task.objects.create(
+            title="Naujo duomenų teikėjo: {} registracija".format(org.company_code),
+            description=f"Portale užsiregistravo naujas duomenų teikėjas: {org.company_code}.",
+            organization=org,
+            user=user,
+            status=Task.CREATED,
+            type=Task.REQUEST
+        )
+        task.save()
+        self.representative_request.delete()
+        return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
+class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
+    representative_request: RepresentativeRequest
+    template_name = 'confirm_deny.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.representative_request.delete()
+        return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
 
 class OrganizationListView(ListView):
@@ -81,23 +168,92 @@ class OrganizationListView(ListView):
 
 
 class OrganizationManagementsView(OrganizationListView):
+    title = _("Valdymo sritis")
     template_name = 'vitrina/orgs/jurisdictions.html'
+    parameter_select_template_name = 'vitrina/orgs/stats_parameter_select.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         jurisdictions = context.get('jurisdictions')
+
+        orgs = self.get_queryset()
+
+        indicator = self.request.GET.get('indicator', None) or 'organization-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        start_date = Organization.objects.all().first().created
+
+        time_chart_data = []
+
+        frequency, ff = get_frequency_and_format(duration)
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        values = get_values_for_frequency(frequency, 'created')
+
+        for jur in jurisdictions:
+            count = 0
+            data = []
+
+            jurisdiction_orgs = orgs.filter(jurisdiction=jur.get('title')).order_by()
+
+            if indicator == 'organization-count':
+                items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+            elif indicator == 'coordinator-count':
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.COORDINATOR,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+            else:
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.MANAGER,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+
+            for label in labels:
+                label_query = get_query_for_frequency(frequency, 'created', label)
+                label_count_data = items.filter(**label_query)
+
+                if label_count_data:
+                    count += label_count_data[0].get('count') or 0
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                else:
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            dt = {
+                'label': jur.get('title'),
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            time_chart_data.append(dt)
+
         if sorting == 'sort-desc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'], reverse=True)
         elif sorting == 'sort-asc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
         max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
 
-        context['jurisdiction_data'] = jurisdictions
+        context['title'] = self.title
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['time_chart_data'] = json.dumps(time_chart_data)
+        context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
+
         context['filter'] = 'jurisdiction'
+        context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
+        context['has_time_graph'] = True
         return context
 
 
@@ -237,6 +393,15 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
+    base_template_content = """
+         Buvote įtraukti į {0} organizacijos
+         narių sąrašo, tačiau nesate registruotas Lietuvos
+         atvirų duomenų portale. Prašome sekite šia nuoroda,
+         kad užsiregistruotumėte ir patvirtintumėte savo narystę
+        'organizacijoje:\n'
+        '{1}   
+    """
+    email_identifier = "auth-org-representative-without-credentials"
 
     organization: Organization
 
@@ -247,7 +412,7 @@ class RepresentativeCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['object_id'] = self.kwargs.get('object_id')
+        kwargs['object_id'] = self.organization.pk
         return kwargs
 
     def get_success_url(self):
@@ -300,30 +465,39 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.organization}“ organizacijos '
-                    'narių sąrašo, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
-                    'organizacijoje:\n'
-                    '\n'
-                    f'{url}\n'
-                    '\n'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            email_data = prepare_email_by_identifier(
+                self.email_identifier,  self.base_template_content,
+                'Kvietimas prisijungti prie atvirų duomenų portalo',
+                 [self.organization, url]
+             )
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
+
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
         if self.object.has_api_access:
+            api_key = secrets.token_urlsafe()
             ApiKey.objects.create(
-                api_key=secrets.token_urlsafe(),
+                api_key=hash_api_key(api_key),
                 enabled=True,
                 representative=self.object
             )
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            api_key = serializer.dumps({"api_key": api_key})
+            return HttpResponseRedirect(reverse('representative-api-key', args=[
+                self.organization.pk,
+                self.object.pk,
+                api_key
+            ]))
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -369,16 +543,34 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.object: Representative = form.save()
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
+                api_key = secrets.token_urlsafe()
                 ApiKey.objects.create(
-                    api_key=secrets.token_urlsafe(),
+                    api_key=hash_api_key(api_key),
                     enabled=True,
                     representative=self.object
                 )
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
             elif form.cleaned_data.get('regenerate_api_key'):
-                api_key = self.object.apikey_set.first()
-                api_key.api_key = secrets.token_urlsafe()
-                api_key.enabled = True
-                api_key.save()
+                api_key = secrets.token_urlsafe()
+                api_key_obj = self.object.apikey_set.first()
+                api_key_obj.api_key = hash_api_key(api_key)
+                api_key_obj.enabled = True
+                api_key_obj.save()
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('representative-api-key', args=[
+                    self.organization.pk,
+                    self.object.pk,
+                    api_key
+                ]))
         else:
             self.object.apikey_set.all().delete()
 
@@ -439,11 +631,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     def get(self, request, *args, **kwargs):
         user = self.request.user
         user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
-        if user_social_account:
-            extra_data = user_social_account.extra_data
-            company_code = extra_data.get('company_code')
-            company_name = extra_data.get('company_name')
-        else:
+        if not user_social_account:
             return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
 
@@ -456,13 +644,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
         if not org and company_name:
-            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != ['']:
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:
                 company_name_slug = company_name[0]
         elif org:
-             company_name_slug = org.slug
+            company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
             'coordinator_first_name': user.first_name,
@@ -470,7 +658,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
             'coordinator_email': user.email,
             'company_code': company_code,
-            'company_name':company_name,
+            'company_name': company_name,
             'company_slug': company_name_slug,
             'company_slug_read_only': True if org else False
         }
@@ -478,51 +666,18 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        company_code = form.cleaned_data.get('company_code')
-        org = Organization.objects.filter(company_code=company_code).first()
-        if org:
-            self.org = org
-        else:
-            Organization.fix_tree(fix_paths=True)
-            self.org = Organization.add_root(
-                title=form.cleaned_data.get('company_name'),
-                company_code=company_code,
-                slug=slugify(form.cleaned_data.get('company_slug'))
-            )
-    
-        user = User.objects.get(email=form.cleaned_data.get('coordinator_email'))
-        user.phone = form.cleaned_data.get('coordinator_phone_number')
-        user.save()
-
-        rep = Representative.objects.create(
-            email=form.cleaned_data.get('coordinator_email'),
-            first_name=form.cleaned_data.get('coordinator_first_name'),
-            last_name=form.cleaned_data.get('coordinator_last_name'),
-            phone=form.cleaned_data.get('coordinator_phone_number'),
-            object_id=self.org.id,
-            role=Representative.COORDINATOR,
-            user=self.request.user,
-            content_type=ContentType.objects.get_for_model(self.org)
+        representative_request = RepresentativeRequest(
+            user = self.request.user,
+            document = form.cleaned_data.get('request_form'),
+            org_code = form.cleaned_data.get('company_code'),
+            org_name = form.cleaned_data.get('company_name'),
+            org_slug = form.cleaned_data.get('company_slug')
         )
-        rep.save()
-        task = Task.objects.create(
-            title="Naujo duomenų teikėjo: {} registracija".format(self.org.company_code),
-            description=f"Portale užsiregistravo naujas duomenų teikėjas: {self.org.company_code}.",
-            organization=self.org,
-            user=self.request.user,
-            status=Task.CREATED,
-            type=Task.REQUEST
-        )
-        task.save()
-        return redirect(self.org)
+        representative_request.save()
+        return redirect(reverse('partner-register-complete'))
 
-
-def get_path(
-    value: int,
-    steplen: int = MP_Node.steplen,
-    alphabet: str = MP_Node.alphabet,
-) -> str:
-    return MP_Node._int2str(value).rjust(steplen, alphabet[0])
+class PartnerRegisterCompleteView(TemplateView):
+    template_name = 'vitrina/orgs/partners/register_complete.html'
 
 
 class OrganizationPlanView(PlanMixin, TemplateView):
@@ -742,8 +897,8 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             object_id=self.merge_organization.pk
         ).values_list('email', flat=True)
         for obj in Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(self.organization),
-            object_id=self.organization.pk,
+                content_type=ContentType.objects.get_for_model(self.organization),
+                object_id=self.organization.pk,
         ).exclude(email__in=rep_emails):
             obj.object_id = self.merge_organization.pk
             obj.save()
@@ -783,3 +938,38 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
 
         self.organization.delete()
         return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))
+
+
+class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/api_key.html'
+
+    organization: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('rep_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.organization,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        api_key = kwargs.get('key')
+        data = serializer.loads(api_key)
+        context['api_key'] = data.get('api_key')
+        context['url'] = reverse('organization-members', args=[self.organization.pk])
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Tvarkytojai"),
+        }
+        return context

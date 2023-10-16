@@ -74,6 +74,11 @@
                                     {% translate "Administravimas" %}
                                 </a>
                                 {% endif %}
+                                {% if user.is_superuser or user.is_supervisor %}
+                                <a href="/coordinator-admin/vitrina_orgs/representativerequest/" class="navbar-item" target="_blank">
+                                    {% translate "Teikėjų prašymai" %}
+                                </a>
+                                {% endif %}
                                 <a href="{% url 'logout' %}" class="navbar-item">{% translate "Atsijungti" %}</a>
                             </div>
                         </div>

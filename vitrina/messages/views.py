@@ -11,10 +11,15 @@ from django.views.generic import CreateView
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
+from django.core.mail import send_mail
+from vitrina import settings
+from django.utils.translation import gettext_lazy as _
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from django.utils.translation import gettext_lazy as _
 
 
 class SubscribeView(LoginRequiredMixin, View):
+
     def post(self, request, content_type_id, obj_id, user_id):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=obj_id)
@@ -24,6 +29,22 @@ class SubscribeView(LoginRequiredMixin, View):
             object_id=obj.pk,
             user=user
         )
+        email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed',
+                                                      'Sveiki, Jūs sėkmingai užsiprenumeravote naujienlaiškį',
+                                                      'Naujienlaiškio prenumeratos registracija', [])
+        if user is not None:
+            if user.email is not None:
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [user.email], e)
         return redirect(obj.get_absolute_url())
 
 
@@ -91,3 +112,20 @@ class SubscribeFormView(
                 self.object.save()
                 messages.success(self.request, _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."))
         return HttpResponseRedirect(self.obj.get_absolute_url())
+            email_data = prepare_email_by_identifier_for_sub('newsletter-unsubscribed',
+                                                          'Sveiki, Jūs sėkmingai atšaukėte naujienlaiškį',
+                                                          'Naujienlaiškio atšaukimas', [])
+            if user is not None:
+                if user.email is not None:
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [user.email], e)
+        return redirect(obj.get_absolute_url())

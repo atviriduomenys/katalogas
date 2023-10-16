@@ -1,15 +1,17 @@
 import uuid
 import json
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
+from django.utils import timezone
 
 from typer.testing import CliRunner
 from typer import Typer
 
-from scripts.downloadstats import main
+from scripts.downloadstats import main, post_data
 from scripts.downloadstats import find_transactions
 
 
@@ -125,14 +127,14 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     session = patcher.return_value
 
     # Only one request per day must be made
-    assert session.post.call_count == 4
+    assert session.post.call_count == 2
     assert session.post.call_args.kwargs['data'] == {
         'format': 'html',
         'model': 'datasets/example/City',
-        'objects': 1,
-        'requests': 1,
+        'objects': 7,
+        'requests': 3,
         'source': 'get.data.gov.lt',
-        'time': '2000-01-02 00:00:00',
+        'time': datetime(2000, 1, 2, tzinfo=timezone.utc),
     }
 
     # Authorization must be used
@@ -163,6 +165,8 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
 
 def test_find_transactions(tmp_path: Path):
     bots_found = {'agents': {}}
+    transactions = {}
+    temp = {}
     name = 'get.data.gov.lt'
     lines = flatten([
         log(day='1'),
@@ -176,12 +180,13 @@ def test_find_transactions(tmp_path: Path):
     find_transactions(
         name,
         lines,
-        endpoint_url,
-        session,
         final_stats,
         bot_status_file,
-        bots_found
+        bots_found,
+        temp,
+        transactions
     )
+    post_data(temp, name, session, endpoint_url)
 
     # Only one request per day must be made
     assert session.post.call_count == 2
@@ -191,7 +196,7 @@ def test_find_transactions(tmp_path: Path):
         'objects': 1,
         'requests': 1,
         'source': 'get.data.gov.lt',
-        'time': '2000-01-02 00:00:00',
+        'time': datetime(2000, 1, 2, tzinfo=timezone.utc)
     }
 
     assert json.loads(bot_status_file.read_text()) == {
@@ -207,12 +212,13 @@ def test_find_transactions(tmp_path: Path):
     find_transactions(
         name,
         lines,
-        endpoint_url,
-        session,
         final_stats,
         bot_status_file,
-        bots_found
+        bots_found,
+        temp,
+        transactions
     )
+    post_data(temp, name, session, endpoint_url)
 
     assert session.post.call_count == 3
     assert session.post.call_args.kwargs['data'] == {
@@ -221,7 +227,7 @@ def test_find_transactions(tmp_path: Path):
         'objects': 1,
         'requests': 1,
         'source': 'get.data.gov.lt',
-        'time': '2000-01-03 00:00:00',
+        'time': datetime(2000, 1, 3, tzinfo=timezone.utc)
     }
 
     assert json.loads(bot_status_file.read_text()) == {

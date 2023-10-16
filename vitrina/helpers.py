@@ -22,6 +22,7 @@ from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+from vitrina.messages.models import EmailTemplate
 
 
 class Filter:
@@ -69,6 +70,11 @@ class Filter:
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
+        query = self.request.GET.urlencode()
+        return f'{path}?{query}'
+
+    def get_stats_url_request(self):
+        path = reverse(f'request-stats-{self.name}')
         query = self.request.GET.urlencode()
         return f'{path}?{query}'
 
@@ -436,3 +442,26 @@ def get_current_domain(request: WSGIRequest) -> str:
     if not localhost:
         return request.build_absolute_uri("%s://%s" % (protocol, domain))
     return request.build_absolute_uri(domain)
+
+
+def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
+    email_template = EmailTemplate.objects.filter(identifier=email_identifier)
+    if not email_template:
+        email_subject = email_title = email_title_subject
+        email_content = base_template_content.format(*email_template_keys)
+        created_template = EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=base_template_content,
+            subject=_(email_title_subject),
+            title=_(email_title)
+        )
+        created_template.save()
+    else:
+        email_template = email_template.first()
+        email_content = str(email_template.template)
+        email_content = email_content.format(*email_template_keys)
+        email_subject = str(email_template.subject)
+
+    return {'email_content': email_content, 'email_subject': email_subject}

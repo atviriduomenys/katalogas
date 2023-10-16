@@ -69,10 +69,10 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
@@ -111,6 +111,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
     def get_queryset(self):
         datasets = super().get_queryset()
         datasets = get_datasets_for_user(self.request.user, datasets)
+        datasets = datasets.models(Dataset)
         sorting = self.request.GET.get('sort', None)
 
         if self.request.GET.get('q') and not sorting:
@@ -379,6 +380,14 @@ class DatasetDetailView(
         return context_data
 
 
+class OpenDataPortalDatasetDetailView(View):
+    def get(self, request):
+        dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
+        return HttpResponseRedirect(reverse('dataset-detail', kwargs={
+            'pk': dataset.pk,
+        }))
+
+
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(
@@ -518,7 +527,7 @@ class DatasetUpdateView(
         self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
-
+        base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
 
@@ -604,7 +613,21 @@ class DatasetUpdateView(
                 if model_meta := model.metadata.first():
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
-
+        if self.object.organization:
+            email_data = prepare_email_by_identifier('dataset-updated', base_email_template, 'Duomenų rinkinys atnaujintas',
+                                                     [self.object])
+            if self.object.organization.email:
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[self.object.organization.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [self.object.organization.email], e)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -765,6 +788,15 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
+    base_email_template = """
+        Buvote įtraukti į {0} duomenų rinkinio
+        narių sąrašą, tačiau nesate registruotas Lietuvos
+        atvirų duomenų portale. Prašome sekite šia nuoroda,
+        kad užsiregistruotumėte ir patvirtintumėte savo
+        narystę:\n
+        {1}
+    """
+
     def has_permission(self):
         return has_perm(
             self.request.user,
@@ -825,31 +857,41 @@ class CreateMemberView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.dataset}“ duomenų rinkinio '
-                    'narių sąrašą, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo '
-                    'narystę:\n\n'
-                    f'{url}\n\n'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
+                                                     self.base_email_template,
+                                                     'Kvietimas prisijungti prie atvirų duomenų portalo',
+                                                     [self.dataset, url])
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                import logging
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
+        self.dataset.save()
 
         if self.object.has_api_access:
+            api_key = secrets.token_urlsafe()
             ApiKey.objects.create(
-                api_key=secrets.token_urlsafe(),
+                api_key=hash_api_key(api_key),
                 enabled=True,
                 representative=self.object
             )
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            api_key = serializer.dumps({"api_key": api_key})
+            return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                self.dataset.pk,
+                self.object.pk,
+                api_key
+            ]))
 
-        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -944,16 +986,33 @@ class UpdateMemberView(
         self.object: Representative = form.save()
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
+                api_key = secrets.token_urlsafe()
                 ApiKey.objects.create(
-                    api_key=secrets.token_urlsafe(),
+                    api_key=hash_api_key(api_key),
                     enabled=True,
                     representative=self.object
                 )
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                    self.dataset.pk,
+                    self.object.pk,
+                    api_key
+                ]))
             elif form.cleaned_data.get('regenerate_api_key'):
-                api_key = self.object.apikey_set.first()
-                api_key.api_key = secrets.token_urlsafe()
-                api_key.enabled = True
-                api_key.save()
+                api_key = secrets.token_urlsafe()
+                api_key_obj = self.object.apikey_set.first()
+                api_key_obj.api_key = hash_api_key(api_key)
+                api_key_obj.enabled = True
+                api_key_obj.save()
+
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                api_key = serializer.dumps({"api_key": api_key})
+                return HttpResponseRedirect(reverse('dataset-representative-api-key', args=[
+                    self.dataset.pk,
+                    self.object.pk,
+                    api_key
+                ]))
         else:
             self.object.apikey_set.all().delete()
 
@@ -2630,3 +2689,38 @@ class update_dataset_jurisdiction_filters(FacetedSearchView):
             }
             context.update(extra_context)
             return context
+
+
+class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/api_key.html'
+
+    dataset: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('rep_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        api_key = kwargs.get('key')
+        data = serializer.loads(api_key)
+        context['api_key'] = data.get('api_key')
+        context['url'] = reverse('dataset-members', args=[self.dataset.pk])
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            reverse('dataset-members', args=[self.dataset.pk]): _("Tvarkytojai"),
+        }
+        return context

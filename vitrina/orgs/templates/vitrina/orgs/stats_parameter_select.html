@@ -64,9 +64,9 @@
                     <div><span style="float:right">{% translate "Rodiklis" %}</span></div>
                     <div class="select">
                       <select name="indicator" id="stats-parameter" onchange="submitForm('indicator_select_id')">
-                        <option value="distribution-count" {% if active_indicator == 'distribution-count' %}selected{% endif %}>Duomenų šaltinių (distribucijų) skaičius</option>
-                        <option value="organization-count" {% if active_indicator == 'organization-count' %}selected{% endif %}>Organizacijų skaičius</option>
-                        <option value="project-count" {% if active_indicator == 'project-count' %}selected{% endif %}>Projektų skaičius</option>
+                        <option value="organization-count" {% if active_indicator == 'organization-count' %}selected{% endif %}>Organizacijų skaičius (pavaldžių)</option>
+                        <option value="coordinator-count" {% if active_indicator == 'coordinator-count' %}selected{% endif %}>Koordinatorių skaičius</option>
+                        <option value="representative-count" {% if active_indicator == 'representative-count' %}selected{% endif %}>Tvarkytojų skaičius</option>
                       </select>
                     </div>
                 </form>

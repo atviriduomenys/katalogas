@@ -160,15 +160,6 @@ Y_TITLES = {
     'project-count': _('Projektų skaičius')
 }
 
-REQUEST_INDICATOR_FIELDS = {
-    'object-count': 'object_count',
-    'field-count': 'field_count',
-    'model-count': 'model_count',
-    'distribution-count': 'distribution_count',
-    'request-count': 'request_count',
-    'project-count': 'project_count'
-}
-
 
 class RequestStatsMixin(StatsMixin):
     model = Request
@@ -178,12 +169,13 @@ class RequestStatsMixin(StatsMixin):
     list_url = reverse_lazy('request-list')
 
     def get_data_for_indicator(self, indicator, values, filter_queryset):
-        # if field := REQUEST_INDICATOR_FIELDS.get(indicator):
-        #     data = Request.objects.filter(
-        #         dataset_id__in=filter_queryset.values_list('pk', flat=True)
-        #     ).values(*values)
-        # else:
-        data = filter_queryset.values(*values).annotate(count=Count('pk'))
+        if indicator == 'request-count':
+            data = filter_queryset.values(*values).annotate(count=Count('pk'))
+        elif indicator == 'request-count-open':
+            data = filter_queryset.filter(status=Request.CREATED).values(*values).annotate(count=Count('pk'))
+        else:
+            data = (PlanRequest.objects.filter(request_id__in=filter_queryset, plan__deadline__lt=datetime.now())
+                    .values(*values).annotate(count=Count('request')))
         return data
 
     def get_count(self, label, indicator, frequency, data, count):
@@ -198,12 +190,6 @@ class RequestStatsMixin(StatsMixin):
         count = super().get_item_count(data, indicator)
         if indicator == 'object-count':
             count = sum([x['y'] for x in data])
-        # elif indicator == 'level-average':
-        #     data = [x['y'] for x in data if x['y']]
-        #     if data:
-        #         count = int(sum(data) / len(data))
-        #     else:
-        #         count = 0
         return count
 
     def get_title_for_indicator(self, indicator):
@@ -260,7 +246,12 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
             for label in labels:
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 if (
-                        indicator != 'request-count'
+                    indicator == 'request-count'
+                ):
+                    label_count_data = count_data.filter(**label_query)
+                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                elif (
+                    indicator == 'request-count-open'
                 ):
                     label_count_data = count_data.filter(**label_query)
                     count = self.get_count(label, indicator, frequency, label_count_data, count)
@@ -394,7 +385,6 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                 year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
                 period = str(pd.to_datetime(created).to_period(frequency))
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
-
         if indicator != 'request-count':
             for yr in year_stats.keys():
                 start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
@@ -404,30 +394,14 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                 request_ids = []
                 for fd in filtered_requests:
                     request_ids.append(fd.pk)
-                # if indicator == 'download-request-count' or indicator == 'download-object-count':
-                #     models = Model.objects.filter(dataset_id__in=dataset_ids).values_list('metadata__name', flat=True)
-                #     total = 0
-                #     if len(models) > 0:
-                #         for m in models:
-                #             model_stats = ModelDownloadStats.objects.filter(model=m)
-                #             if len(model_stats) > 0:
-                #                 for m_st in model_stats:
-                #                     if indicator == 'download-request-count':
-                #                         if m_st is not None:
-                #                             total += m_st.model_requests
-                #                     elif indicator == 'download-object-count':
-                #                         if m_st is not None:
-                #                             total += m_st.model_objects
-                #     year_stats[yr] = total
-                # else:
-                stats = 0
-                if len(stats) > 0:
-                    total = 0
-                    for st in stats:
-                        total = get_total_by_indicator_from_stats(st, indicator, total)
+                if indicator == 'request-count-open':
+                    total = Request.objects.filter(pk__in=request_ids, status=Request.CREATED).count()
                     year_stats[yr] = total
                 else:
-                    year_stats[yr] = 0
+                    total = (
+                        PlanRequest.objects.filter(request_id__in=request_ids, plan__deadline__lt=datetime.now())
+                    ).count()
+                    year_stats[yr] = total
         if year_stats:
             keys = list(year_stats.keys())
             values = list(year_stats.values())
@@ -446,14 +420,14 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                     'count': request_count
                 }
                 bar_chart_data.append(item)
-            else:
-                request_ids = Request.objects.filter(created__year=label.year).values_list('pk', flat=True)
-                # stat = DatasetStats.objects.filter(dataset_id__in=request_ids)
-                per_requests = 0
-                # if len(stat) > 0:
-                #     for st in stat:
-                #         per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
-                total += per_requests
+            elif indicator == 'request-count-open' or indicator == 'request-count-late':
+                count = year_stats.get(str(label), 0)
+                total += count
+                item = {
+                    'display_value': label.year,
+                    'count': count
+                }
+                bar_chart_data.append(item)
 
             if frequency == 'W':
                 data.append({'x': _date(label.start_time, ff), 'y': total})

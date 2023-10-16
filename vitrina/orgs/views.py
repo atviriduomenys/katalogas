@@ -1,12 +1,15 @@
+import json
 import secrets
+from datetime import datetime
 
+import pandas as pd
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.db.models import Q
+from django.db.models import Q, Sum, Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -18,10 +21,12 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from django.template.defaultfilters import date as _date
 
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
@@ -60,7 +65,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
                 company_code=company_code,
                 slug=slugify(self.representative_request.org_slug)
             )
-    
+
         user = User.objects.get(email=self.representative_request.user.email)
 
         rep = Representative.objects.create(
@@ -157,23 +162,92 @@ class OrganizationListView(ListView):
 
 
 class OrganizationManagementsView(OrganizationListView):
+    title = _("Valdymo sritis")
     template_name = 'vitrina/orgs/jurisdictions.html'
+    parameter_select_template_name = 'vitrina/orgs/stats_parameter_select.html'
     paginate_by = 0
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
         jurisdictions = context.get('jurisdictions')
+
+        orgs = self.get_queryset()
+
+        indicator = self.request.GET.get('indicator', None) or 'organization-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        start_date = Organization.objects.all().first().created
+
+        time_chart_data = []
+
+        frequency, ff = get_frequency_and_format(duration)
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        values = get_values_for_frequency(frequency, 'created')
+
+        for jur in jurisdictions:
+            count = 0
+            data = []
+
+            jurisdiction_orgs = orgs.filter(jurisdiction=jur.get('title')).order_by()
+
+            if indicator == 'organization-count':
+                items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+            elif indicator == 'coordinator-count':
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.COORDINATOR,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+            else:
+                items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
+                                                       role=Representative.MANAGER,
+                                                       object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
+                         .values(*values).annotate(count=Count('pk')))
+
+            for label in labels:
+                label_query = get_query_for_frequency(frequency, 'created', label)
+                label_count_data = items.filter(**label_query)
+
+                if label_count_data:
+                    count += label_count_data[0].get('count') or 0
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                else:
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            dt = {
+                'label': jur.get('title'),
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            time_chart_data.append(dt)
+
         if sorting == 'sort-desc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'], reverse=True)
         elif sorting == 'sort-asc':
             jurisdictions = sorted(jurisdictions, key=lambda x: x['count'])
         max_count = max([x['count'] for x in jurisdictions]) if jurisdictions else 0
 
-        context['jurisdiction_data'] = jurisdictions
+        context['title'] = self.title
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['time_chart_data'] = json.dumps(time_chart_data)
+        context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
+
         context['filter'] = 'jurisdiction'
+        context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
+        context['has_time_graph'] = True
         return context
 
 
@@ -554,13 +628,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         org = Organization.objects.filter(company_code=company_code).first()
         company_name_slug = ""
         if not org and company_name:
-            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != [''] :
+            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != ['']:
                 for item in company_name.split(' '):
                     company_name_slug += item[0]
             else:
                 company_name_slug = company_name[0]
         elif org:
-             company_name_slug = org.slug
+            company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
             'coordinator_first_name': user.first_name,
@@ -568,7 +642,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
             'coordinator_email': user.email,
             'company_code': company_code,
-            'company_name':company_name,
+            'company_name': company_name,
             'company_slug': company_name_slug,
             'company_slug_read_only': True if org else False
         }
@@ -807,8 +881,8 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             object_id=self.merge_organization.pk
         ).values_list('email', flat=True)
         for obj in Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(self.organization),
-            object_id=self.organization.pk,
+                content_type=ContentType.objects.get_for_model(self.organization),
+                object_id=self.organization.pk,
         ).exclude(email__in=rep_emails):
             obj.object_id = self.merge_organization.pk
             obj.save()

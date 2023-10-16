@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 from datetime import datetime
 
@@ -21,8 +22,11 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from vitrina import settings
+from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier
 from django.template.defaultfilters import date as _date
-
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
@@ -36,6 +40,8 @@ from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
+from allauth.socialaccount.models import SocialAccount
+from treebeard.mp_tree import MP_Node
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
 
@@ -387,6 +393,15 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
+    base_template_content = """
+         Buvote įtraukti į {0} organizacijos
+         narių sąrašo, tačiau nesate registruotas Lietuvos
+         atvirų duomenų portale. Prašome sekite šia nuoroda,
+         kad užsiregistruotumėte ir patvirtintumėte savo narystę
+        'organizacijoje:\n'
+        '{1}   
+    """
+    email_identifier = "auth-org-representative-without-credentials"
 
     organization: Organization
 
@@ -450,21 +465,22 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.organization}“ organizacijos '
-                    'narių sąrašo, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
-                    'organizacijoje:\n'
-                    '\n'
-                    f'{url}\n'
-                    '\n'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            email_data = prepare_email_by_identifier(
+                self.email_identifier,  self.base_template_content,
+                'Kvietimas prisijungti prie atvirų duomenų portalo',
+                 [self.organization, url]
+             )
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
+
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 

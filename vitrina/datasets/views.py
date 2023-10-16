@@ -69,7 +69,7 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -379,12 +379,14 @@ class DatasetDetailView(
         context_data.update(extra_context_data)
         return context_data
 
+
 class OpenDataPortalDatasetDetailView(View):
     def get(self, request):
         dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
         return HttpResponseRedirect(reverse('dataset-detail', kwargs={
             'pk': dataset.pk,
         }))
+
 
 class DatasetDistributionPreviewView(View):
     def get(self, request, dataset_id, distribution_id):
@@ -525,7 +527,7 @@ class DatasetUpdateView(
         self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
-
+        base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
 
@@ -611,7 +613,21 @@ class DatasetUpdateView(
                 if model_meta := model.metadata.first():
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
-
+        if self.object.organization:
+            email_data = prepare_email_by_identifier('dataset-updated', base_email_template, 'Duomenų rinkinys atnaujintas',
+                                                     [self.object])
+            if self.object.organization.email:
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[self.object.organization.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [self.object.organization.email], e)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -772,6 +788,15 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
+    base_email_template = """
+        Buvote įtraukti į {0} duomenų rinkinio
+        narių sąrašą, tačiau nesate registruotas Lietuvos
+        atvirų duomenų portale. Prašome sekite šia nuoroda,
+        kad užsiregistruotumėte ir patvirtintumėte savo
+        narystę:\n
+        {1}
+    """
+
     def has_permission(self):
         return has_perm(
             self.request.user,
@@ -832,19 +857,21 @@ class CreateMemberView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.dataset}“ duomenų rinkinio '
-                    'narių sąrašą, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo '
-                    'narystę:\n\n'
-                    f'{url}\n\n'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
+                                                     self.base_email_template,
+                                                     'Kvietimas prisijungti prie atvirų duomenų portalo',
+                                                     [self.dataset, url])
+            try:
+                send_mail(
+                    subject=_(email_data['email_subject']),
+                    message=_(email_data['email_content']),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[self.object.email],
+                )
+            except Exception as e:
+                import logging
+                logging.warning("Email was not send ", _(email_data['email_subject']),
+                                _(email_data['email_content']), [self.object.email], e)
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))

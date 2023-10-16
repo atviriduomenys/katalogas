@@ -5,9 +5,14 @@ from django.views import View
 
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
+from django.core.mail import send_mail
+from vitrina import settings
+from django.utils.translation import gettext_lazy as _
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 
 
 class SubscribeView(LoginRequiredMixin, View):
+
     def post(self, request, content_type_id, obj_id, user_id):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=obj_id)
@@ -17,6 +22,22 @@ class SubscribeView(LoginRequiredMixin, View):
             object_id=obj.pk,
             user=user
         )
+        email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed',
+                                                      'Sveiki, Jūs sėkmingai užsiprenumeravote naujienlaiškį',
+                                                      'Naujienlaiškio prenumeratos registracija', [])
+        if user is not None:
+            if user.email is not None:
+                try:
+                    send_mail(
+                        subject=_(email_data['email_subject']),
+                        message=_(email_data['email_content']),
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [user.email], e)
         return redirect(obj.get_absolute_url())
 
 
@@ -27,4 +48,20 @@ class UnsubscribeView(LoginRequiredMixin, View):
         user = get_object_or_404(User, pk=user_id)
         if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
             Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).delete()
+            email_data = prepare_email_by_identifier_for_sub('newsletter-unsubscribed',
+                                                          'Sveiki, Jūs sėkmingai atšaukėte naujienlaiškį',
+                                                          'Naujienlaiškio atšaukimas', [])
+            if user is not None:
+                if user.email is not None:
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [user.email], e)
         return redirect(obj.get_absolute_url())

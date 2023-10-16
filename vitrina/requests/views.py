@@ -45,6 +45,9 @@ from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
+from vitrina.helpers import get_filter_url, prepare_email_by_identifier
+from django.core.mail import send_mail
+from vitrina import settings
 
 
 class RequestListView(FacetedSearchView):
@@ -559,6 +562,10 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     detail_url_name = 'request-detail'
     history_url_name = 'request-history'
     plan_url_name = 'request-plans'
+    request_rejected_base_template = """
+        Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {0}    
+    """
+    request_add_email_base_template = 'Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {0}'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -584,6 +591,59 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             )
         }
         context_data.update(extra_context_data)
+        if request.status == "REJECTED":
+            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
+                                                     'Poreikis atmestas', [request.comment])
+            if request.user is not None:
+                if request.user.email is not None:
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
+        elif request.status == "APPROVED":
+            email_data = prepare_email_by_identifier('request-approved',
+                                                     'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
+                                                     'Poreikis patvirtintas',
+                                                     [])
+            if request.user is not None:
+                if request.user.email is not None:
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
+        elif request.status == "CREATED":
+            email_data = prepare_email_by_identifier('request-registered',
+                                                     self.request_add_email_base_template,
+                                                     'Užregistruotas naujas poreikis',
+                                                     [request.title])
+            if request.user is not None:
+                if request.user.email is not None:
+                    try:
+                        send_mail(
+                            subject=_(email_data['email_subject']),
+                            message=_(email_data['email_content']),
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[request.user.email],
+                        )
+                    except Exception as e:
+                        import logging
+                        logging.warning("Email was not send ", _(email_data['email_subject']),
+                                        _(email_data['email_content']), [request.user.email], e)
+
         return context_data
 
 

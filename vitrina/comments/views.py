@@ -17,7 +17,7 @@ from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject
@@ -32,6 +32,12 @@ class CommentView(
     View
 ):
     def post(self, request, content_type_id, object_id):
+        email_content = """
+            Sveiki, <br>
+            portale užregistruotas naujas pasiūlymas/pastaba: <br>
+            Pasiūlymo/pastabos teikėjo vardas: {0} <br>
+            Pasiūlymas/pastaba: {1}        
+        """
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
         form_class = get_comment_form_class(obj, request.user)
@@ -92,6 +98,24 @@ class CommentView(
                         ):
                             plan.is_closed = True
                             plan.save()
+                if obj is not None:
+                    if obj.status == 'REJECTED':
+                        email_data = prepare_email_by_identifier('application-use-case-rejected', email_content,
+                                                                 'Gautas naujas pasiūlymas',
+                                                                 [obj.title, obj.description])
+                        if obj.user is not None:
+                            if obj.user.email is not None:
+                                try:
+                                    send_mail(
+                                        subject=_(email_data['email_subject']),
+                                        message=_(email_data['email_content']),
+                                        from_email=settings.DEFAULT_FROM_EMAIL,
+                                        recipient_list=[obj.user.email],
+                                    )
+                                except Exception as e:
+                                    import logging
+                                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                                    _(email_data['email_content']), [obj.user.email], e)
             else:
                 comment.type = Comment.USER
             comment.save()
@@ -159,7 +183,12 @@ class ExternalCommentView(
     def post(self, request, dataset_id, external_content_type, external_object_id):
         form_class = get_comment_form_class()
         form = form_class(external_object_id, request.POST)
-
+        base_email_content = """
+            Gautas pranešimas, kad duomenyse yra klaida:
+            {0}
+            Klaida užregistruota objektui: {1},
+            {2}/{3}'
+        """
         if form.is_valid():
             comment = form.save(commit=False)
             comment.user = request.user
@@ -200,18 +229,19 @@ class ExternalCommentView(
 
                 url = f"{get_current_domain(self.request)}/datasets/" \
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
-
-                send_mail(
-                    subject=title,
-                    message=_(
-                        f'Gautas pranešimas, kad duomenyse yra klaida:\n'
-                        f'{url}\n'
-                        f'Klaida užregistruota objektui: {external_object_id},'
-                        f' {dataset.name}/{external_content_type}'
-                    ),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[emails],
-                )
+                email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
+                                                         [url, external_object_id, dataset.name, external_content_type])
+                try:
+                    send_mail(
+                        subject=email_data['email_subject'],
+                        message=email_data['email_content'],
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[emails],
+                    )
+                except Exception as e:
+                    import logging
+                    logging.warning("Email was not send ", _(email_data['email_subject']),
+                                    _(email_data['email_content']), [emails], e)
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk

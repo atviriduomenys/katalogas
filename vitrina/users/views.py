@@ -19,6 +19,7 @@ from vitrina import settings
 from datetime import datetime
 from pandas import period_range
 
+
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     form_class = LoginForm
@@ -42,6 +43,7 @@ class RegisterView(CreateView):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
 
 class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     template_name = 'base_form.html'
@@ -75,6 +77,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         company_code = soc_acc.extra_data.get('company_code')
         return redirect('partner-register')
+
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

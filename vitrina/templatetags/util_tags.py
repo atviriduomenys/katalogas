@@ -2,6 +2,7 @@ import numbers
 from datetime import date
 from typing import Iterable
 
+import requests
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from extra_settings.models import Setting
@@ -65,6 +66,14 @@ def get_google_analytics_id():
             return None
     else:
         return None
+
+
+@assignment_tag
+def logged_in_user(_user, _logged_in_user):
+    if _logged_in_user != '':
+        return _logged_in_user
+    else:
+        return _user
 
 
 @assignment_tag

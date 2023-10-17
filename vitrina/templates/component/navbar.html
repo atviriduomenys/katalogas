@@ -1,6 +1,8 @@
 {% load static %}
 {% load i18n parler_tags %}
 {% load navigation_tags %}
+{% load util_tags %}
+{% logged_in_user user logged_in_user as LOGGED_IN_USER %}
 
 <nav class="navbar is-link" role="navigation" aria-label="main navigation">
 <div class="container">
@@ -43,38 +45,38 @@
                     {% endif %}
                 {% endfor %}
                 <div class="navbar-item">
-                    {% if user.is_authenticated %}
+                    {% if LOGGED_IN_USER.is_authenticated %}
                         <div class="navbar-item has-dropdown is-hoverable">
-                            <a class="navbar-link"><strong>{{ user }}</strong></a>
+                            <a class="navbar-link"><strong>{{ LOGGED_IN_USER }}</strong></a>
                             <div class="navbar-dropdown">
-                                <a href="{% url 'user-profile' pk=user.pk %}" class="navbar-item">
+                                <a href="{% url 'user-profile' pk=LOGGED_IN_USER.pk %}" class="navbar-item">
                                     {% translate "Profilis" %}
                                 </a>
-                                {% if user.organization %}
-                                <a href="{% url 'user-task-list' pk=user.pk %}" class="navbar-item">
+                                {% if LOGGED_IN_USER.organization %}
+                                <a href="{% url 'user-task-list' pk=LOGGED_IN_USER.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
                                 </a>
-                                 <a href="{% url 'organization-plans' user.organization.pk %}" class="navbar-item">
+                                 <a href="{% url 'organization-plans' LOGGED_IN_USER.organization.pk %}" class="navbar-item">
                                     {% translate "Planas" %}
                                 </a>
-                                <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
+                                <a href="{% url 'organization-datasets' LOGGED_IN_USER.organization.pk %}?selected_facets=organization_exact:{{ LOGGED_IN_USER.organization.pk }}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>
-                                <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ user.organization.pk }}" class="navbar-item">
+                                <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ LOGGED_IN_USER.organization.pk }}" class="navbar-item">
                                     {% translate "Mano poreikiai" %}
                                 </a>
                                 {% endif %}
-                                {% if user.can_see_manager_dataset_list_url %}
+                                {% if LOGGED_IN_USER.can_see_manager_dataset_list_url %}
                                 <a href="{% url 'manager-dataset-list' %}" class="navbar-item">
                                     {% translate "Mano tvarkomi rinkiniai" %}
                                 </a>
                                 {% endif %}
-                                {% if user.is_staff or user.is_superuser %}
+                                {% if LOGGED_IN_USER.is_staff or LOGGED_IN_USER.is_superuser %}
                                 <a href="{% url 'admin:index' %}" class="navbar-item" target="_blank">
                                     {% translate "Administravimas" %}
                                 </a>
                                 {% endif %}
-                                {% if user.is_superuser or user.is_supervisor %}
+                                {% if LOGGED_IN_USER.is_superuser or LOGGED_IN_USER.is_supervisor %}
                                 <a href="/coordinator-admin/vitrina_orgs/representativerequest/" class="navbar-item" target="_blank">
                                     {% translate "Teikėjų prašymai" %}
                                 </a>

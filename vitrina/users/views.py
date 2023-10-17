@@ -120,6 +120,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
+        context_data['logged_in_user'] = self.request.user
         extra_context_data = {
             'can_edit_profile': has_perm(self.request.user, Action.UPDATE, user),
         }

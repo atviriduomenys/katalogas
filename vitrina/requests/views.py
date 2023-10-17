@@ -1,58 +1,55 @@
-import numpy as np
 import json
-from typing import List
-
-import pytz
-from django.views.generic import CreateView, UpdateView, DetailView
-from collections import OrderedDict
-
+import numpy as np
 import pandas as pd
-
-from typing import List
+import pytz
 from collections import OrderedDict
 from datetime import date, datetime
-from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.mail import send_mail
+from django.db.models import Case, Count, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.urls import reverse, reverse_lazy
-from django.db.models import Case, When
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
-from reversion.models import Version
-from haystack.generic_views import FacetedSearchView
-
-from vitrina.comments.models import Comment
-from vitrina.messages.models import Subscription
-from vitrina.datasets.services import get_query_for_frequency, get_frequency_and_format, get_values_for_frequency, \
-    sort_publication_stats, get_total_by_indicator_from_stats
-from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.datasets.forms import PlanForm
-from vitrina.orgs.services import has_perm, Action
-from vitrina.orgs.models import Representative
-from vitrina.helpers import get_selected_value
-from vitrina.helpers import Filter
-from vitrina.helpers import DateFilter
-from reversion import set_comment
-from vitrina.requests.services import update_facet_data
-from django.db.models import Case, When
-from reversion.views import RevisionMixin
-from vitrina.datasets.models import Dataset, DatasetGroup
-from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 from django.template.defaultfilters import date as _date
-
-from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
-
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from haystack.generic_views import FacetedSearchView
+from reversion import set_comment
+from reversion.models import Version
+from reversion.views import RevisionMixin
+from typing import List
 
+import vitrina.settings as settings
+from vitrina.comments.models import Comment
+from vitrina.datasets.forms import PlanForm
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.datasets.services import (get_frequency_and_format,
+                                       get_query_for_frequency,
+                                       get_values_for_frequency,
+                                       sort_publication_stats)
+from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.models import Subscription
+from vitrina.orgs.models import Representative
+from vitrina.orgs.services import Action, has_perm
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.forms import (RequestEditOrgForm,
+                                    RequestForm,
+                                    RequestPlanForm,
+                                    RequestSearchForm)
+from vitrina.requests.models import (Organization,
+                                     Request,
+                                     RequestAssignment,
+                                     RequestObject,
+                                     RequestStructure)
+from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
-from vitrina.views import HistoryView, HistoryMixin, PlanMixin
-from django.contrib import messages
-from vitrina.helpers import get_filter_url, prepare_email_by_identifier
-from django.core.mail import send_mail
-from vitrina import settings
+from vitrina.views import HistoryMixin, HistoryView, PlanMixin
+
+ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
 
 class RequestListView(FacetedSearchView):
@@ -601,17 +598,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      'Poreikis atmestas', [request.comment])
             if request.user is not None:
                 if request.user.email is not None:
-                    try:
-                        send_mail(
-                            subject=_(email_data['email_subject']),
-                            message=_(email_data['email_content']),
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            recipient_list=[request.user.email],
-                        )
-                    except Exception as e:
-                        import logging
-                        logging.warning("Email was not send ", _(email_data['email_subject']),
-                                        _(email_data['email_content']), [request.user.email], e)
+                    send_email_with_logging(email_data, [request.user.email])
         elif request.status == "APPROVED":
             email_data = prepare_email_by_identifier('request-approved',
                                                      'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
@@ -619,17 +606,8 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      [])
             if request.user is not None:
                 if request.user.email is not None:
-                    try:
-                        send_mail(
-                            subject=_(email_data['email_subject']),
-                            message=_(email_data['email_content']),
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            recipient_list=[request.user.email],
-                        )
-                    except Exception as e:
-                        import logging
-                        logging.warning("Email was not send ", _(email_data['email_subject']),
-                                        _(email_data['email_content']), [request.user.email], e)
+                    send_email_with_logging(email_data, [request.user.email])
+
         elif request.status == "CREATED":
             email_data = prepare_email_by_identifier('request-registered',
                                                      self.request_add_email_base_template,
@@ -637,17 +615,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      [request.title])
             if request.user is not None:
                 if request.user.email is not None:
-                    try:
-                        send_mail(
-                            subject=_(email_data['email_subject']),
-                            message=_(email_data['email_content']),
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            recipient_list=[request.user.email],
-                        )
-                    except Exception as e:
-                        import logging
-                        logging.warning("Email was not send ", _(email_data['email_subject']),
-                                        _(email_data['email_content']), [request.user.email], e)
+                    send_email_with_logging(email_data, [request.user.email])
 
         return context_data
 
@@ -699,6 +667,33 @@ class RequestCreateView(
             request_update_sub=True,
             request_comments_sub=True,
         )
+        if self.object.organization:
+            org_id = self.object.organization.id
+            sub_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
+            subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+                                               content_type=sub_ct,
+                                               object_id=org_id,
+                                               request_update_sub=True)
+            email_data = prepare_email_by_identifier_for_sub('request-created-sub',
+                                                             'Sveiki, jūsų prenumeruojamai organizacijai {0},'
+                                                             ' sukurtas naujas poreikis {1}.',
+                                                             'Sukurtas naujas poreikis', [self.object.organization,
+                                                                                          self.object])
+            sub_email_list = []
+            for sub in subs:
+                Task.objects.create(
+                    title=f"Poreikis organizacijai: {self.object.organization}",
+                    description=f"Sukurtas naujas poreikis organizacijai: {self.object.organization}.",
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    organization=self.object.organization,
+                    status=Task.CREATED,
+                    type=Task.REQUEST,
+                    user=sub.user
+                )
+                if sub.user.email and sub.email_subscribed:
+                    sub_email_list.append(sub.user.email)
+            send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -779,6 +774,7 @@ class RequestOrgEditView(
         context_data['current_title'] = _('Poreikio organizacijų redagavimas')
         return context_data
 
+
 class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = RequestAssignment
     template_name = 'confirm_delete.html'
@@ -825,6 +821,7 @@ class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         }
         return context
 
+
 class RequestUpdateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -837,8 +834,35 @@ class RequestUpdateView(
     context_object_name = 'request_object'
 
     def form_valid(self, form):
-        super().form_valid(form)
+        self.object = form.save()
         set_comment(Request.EDITED)
+        if self.object.organization:
+            org_id = self.object.organization.id
+            sub_org_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
+            sub_request_ct = get_object_or_404(ContentType, pk=self.object.id)
+            subs = Subscription.objects.filter(sub_type__in=[Subscription.REQUEST, Subscription.ORGANIZATION],
+                                               content_type__in=[sub_org_ct, sub_request_ct],
+                                               object_id__in=[org_id, self.object.id],
+                                               request_update_sub=True)
+            email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
+                                                             'Sveiki, pranešame jums apie tai, kad,'
+                                                             ' poreikis {1} buvo atnaujintas.',
+                                                             'Atnaujintas poreikis', [self.object])
+            sub_email_list = []
+            for sub in subs:
+                Task.objects.create(
+                    title=f"Redaguotas poreikis: {self.object}.",
+                    description=f"Poreikis {self.object} buvo redaguotas.",
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    organization=self.object.organization,
+                    status=Task.CREATED,
+                    type=Task.REQUEST,
+                    user=sub.user
+                )
+                if sub.user.email and sub.email_subscribed:
+                    sub_email_list.append(sub.user.email)
+            send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):

@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
-from vitrina.helpers import buttons, submit
+from vitrina.helpers import buttons, submit, send_email_with_logging
 from vitrina.helpers import prepare_email_by_identifier
 from django.core.mail import send_mail
 
@@ -152,17 +152,7 @@ class PasswordResetForm(BasePasswordResetForm):
         email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
                                                  'Slaptazodzio atstatymas',
                                                  [url])
-        try:
-            send_mail(
-                subject=_(email_data['email_subject']),
-                message=_(email_data['email_content']),
-                from_email=from_email,
-                recipient_list=[to_email],
-            )
-        except Exception as e:
-            import logging
-            logging.warning("Email was not send ", _(email_data['email_subject']),
-                            _(email_data['email_content']), [to_email], e)
+        send_email_with_logging(email_data, [to_email])
 
 
 class PasswordResetConfirmForm(SetPasswordForm):

@@ -1,6 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 
+import vitrina.settings as settings
 from vitrina.comments.models import Comment
+from vitrina.helpers import send_email_with_logging
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task
 
@@ -45,12 +51,13 @@ def create_subscription(user, comment):
     )
 
 
-def create_subscriptions_and_tasks(comment_type, content_type, object_id, user, obj=None, comment_object=None):
+def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, user, obj=None, comment_object=None):
     object_subs = Subscription.objects.exclude(user=user).filter(
         sub_type=content_type.model.upper(),
         content_type=content_type,
         object_id=object_id,
     )
+    email_list = []
     for sub in object_subs:
         if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
@@ -61,3 +68,15 @@ def create_subscriptions_and_tasks(comment_type, content_type, object_id, user, 
                 obj=obj,
                 comment_object=comment_object
             )
+        if sub.user.email:
+            email_list.append(sub.user.email)
+    send_mail_to_object_subscribers(email_list, content_type, object_id)
+
+
+def send_mail_to_object_subscribers(email_list, content_type, object_id):
+    sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
+    email_data = prepare_email_by_identifier_for_sub('comment-created-sub',
+                                                     'Sveiki, jūsų prenumeruojam objektui {0},'
+                                                     ' parašytas naujas komentaras.',
+                                                     'Parašytas naujas komentaras', [sub_object])
+    send_email_with_logging(email_data, email_list)

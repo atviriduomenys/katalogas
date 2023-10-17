@@ -1,27 +1,28 @@
+from django.core.mail import send_mail
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.views.generic.edit import DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
-from vitrina.helpers import prepare_email_by_identifier
-from django.core.mail import send_mail
-from vitrina import settings
+from vitrina.helpers import prepare_email_by_identifier, send_email_with_logging
 
 
 class ProjectListView(ListView):
@@ -79,7 +80,6 @@ class ProjectCreateView(
     form_class = ProjectForm
     template_name = 'base_form.html'
 
-
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Project)
 
@@ -103,17 +103,8 @@ class ProjectCreateView(
                                                  'Užregistruotas naujas panaudos atvejis', [])
         if self.object.user is not None:
             if self.object.user.email is not None:
-                try:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[self.object.user.email],
-                    )
-                except Exception as e:
-                    import logging
-                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                    _(email_data['email_content']), [self.object.user.email], e)
+                send_email_with_logging(email_data, email_data)
+
         Subscription.objects.create(
             user=self.request.user,
             content_type=ContentType.objects.get_for_model(Project),
@@ -150,6 +141,31 @@ class ProjectUpdateView(
         self.object = form.save(commit=True)
         self.object.save()
         set_comment(Project.EDITED)
+        sub_ct = get_object_or_404(ContentType, pk=self.object.id)
+        subs = Subscription.objects.filter(sub_type=Subscription.PROJECT,
+                                           content_type=sub_ct,
+                                           object_id=self.object.id,
+                                           project_update_sub=True)
+        if self.object.user is not None:
+            subs = subs.exclude(user=self.object.user)
+        email_data = prepare_email_by_identifier_for_sub('project-updated-sub',
+                                                         'Sveiki, pranešame jums apie tai, kad,'
+                                                         ' panaudos atvėjis {1} buvo atnaujintas.',
+                                                         'Atnaujintas panaudos atvėjis', [self.object])
+        sub_email_list = []
+        for sub in subs:
+            Task.objects.create(
+                title=f"Užregistruotas panaudos atvejis: {self.object}.",
+                description=f"Užregistruotas naujas panaudos atvejis {self.object}.",
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                status=Task.CREATED,
+                type=Task.PROJECT,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                sub_email_list.append(sub.user.email)
+        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

@@ -25,7 +25,7 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -470,17 +470,7 @@ class RepresentativeCreateView(
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
                  [self.organization, url]
              )
-            try:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[self.object.email],
-                )
-            except Exception as e:
-                logging.warning("Email was not send ", _(email_data['email_subject']),
-                                _(email_data['email_content']), [self.object.email], e)
-
+            send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 

@@ -8,17 +8,18 @@ from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
-from reversion import set_comment
-from reversion.views import RevisionMixin
 from django.utils.translation import gettext_lazy as _
 
-from vitrina import settings
+from reversion import set_comment
+from reversion.views import RevisionMixin
+
+import vitrina.settings as settings
 from vitrina.comments.forms import CommentForm
-from vitrina.comments.helpers import create_task, create_subscription, create_subscriptions_and_tasks
+from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject
@@ -105,23 +106,13 @@ class CommentView(
                                                                  [obj.title, obj.description])
                         if obj.user is not None:
                             if obj.user.email is not None:
-                                try:
-                                    send_mail(
-                                        subject=_(email_data['email_subject']),
-                                        message=_(email_data['email_content']),
-                                        from_email=settings.DEFAULT_FROM_EMAIL,
-                                        recipient_list=[obj.user.email],
-                                    )
-                                except Exception as e:
-                                    import logging
-                                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                                    _(email_data['email_content']), [obj.user.email], e)
+                                send_email_with_logging(email_data, [obj.user.email])
             else:
                 comment.type = Comment.USER
             comment.save()
             create_task("New", content_type, obj.pk, request.user, obj=obj)
             create_subscription(request.user, comment)
-            create_subscriptions_and_tasks("New", content_type, obj.pk, request.user, obj=obj)
+            send_mail_and_create_tasks_for_subs("New", content_type, obj.pk, request.user, obj=obj)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -148,8 +139,8 @@ class ReplyView(LoginRequiredMixin, View):
             create_task("Reply", content_type, object_id, request.user, obj=obj,
                         comment_object=comment, comment_ct=comment_ct)
             create_subscription(request.user, comment)
-            create_subscriptions_and_tasks("Reply", content_type, object_id,
-                                           request.user, obj=obj, comment_object=comment)
+            send_mail_and_create_tasks_for_subs("Reply", content_type, object_id,
+                                                request.user, obj=obj, comment_object=comment)
             comment_task = Task.objects.filter(
                 comment_object=parent_comment
             ).first()
@@ -218,17 +209,7 @@ class ExternalCommentView(
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
                 email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
                                                          [url, external_object_id, dataset.name, external_content_type])
-                try:
-                    send_mail(
-                        subject=email_data['email_subject'],
-                        message=email_data['email_content'],
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[emails],
-                    )
-                except Exception as e:
-                    import logging
-                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                    _(email_data['email_content']), [emails], e)
+                send_email_with_logging(email_data, [emails])
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
@@ -237,7 +218,7 @@ class ExternalCommentView(
             create_task("New", external_content_type, external_object_id, request.user)
             comment.save()
             create_subscription(request.user, comment)
-            create_subscriptions_and_tasks("Comment", external_content_type, external_object_id, request.user)
+            send_mail_and_create_tasks_for_subs("Comment", external_content_type, external_object_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={
@@ -263,7 +244,7 @@ class ExternalReplyView(LoginRequiredMixin, View):
             )
             create_task("Reply", external_content_type, parent_id, request.user)
             create_subscription(request.user, comment)
-            create_subscriptions_and_tasks("Comment", external_content_type, external_object_id, request.user)
+            send_mail_and_create_tasks_for_subs("Comment", external_content_type, external_object_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={

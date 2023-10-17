@@ -5,6 +5,7 @@ import pytz
 from collections import OrderedDict
 from datetime import date, datetime
 from django.contrib import messages
+from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import send_mail
@@ -667,33 +668,34 @@ class RequestCreateView(
             request_update_sub=True,
             request_comments_sub=True,
         )
-        if self.object.organization:
-            org_id = self.object.organization.id
-            sub_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
-            subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
-                                               content_type=sub_ct,
-                                               object_id=org_id,
-                                               request_update_sub=True)
-            email_data = prepare_email_by_identifier_for_sub('request-created-sub',
-                                                             'Sveiki, jūsų prenumeruojamai organizacijai {0},'
-                                                             ' sukurtas naujas poreikis {1}.',
-                                                             'Sukurtas naujas poreikis', [self.object.organization,
-                                                                                          self.object])
-            sub_email_list = []
-            for sub in subs:
-                Task.objects.create(
-                    title=f"Poreikis organizacijai: {self.object.organization}",
-                    description=f"Sukurtas naujas poreikis organizacijai: {self.object.organization}.",
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    organization=self.object.organization,
-                    status=Task.CREATED,
-                    type=Task.REQUEST,
-                    user=sub.user
-                )
-                if sub.user.email and sub.email_subscribed:
-                    sub_email_list.append(sub.user.email)
-            send_email_with_logging(email_data, sub_email_list)
+        if self.object.organizations.exists():
+            org_id_list = self.object.organizations.values_list('id', flat=True)
+            for org_id in org_id_list:
+                organization = get_object_or_404(Organization, pk=org_id)
+                subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+                                                   content_type=get_content_type_for_model(Organization),
+                                                   object_id=org_id,
+                                                   request_update_sub=True)
+                email_data = prepare_email_by_identifier_for_sub('request-created-sub',
+                                                                 'Sveiki, jūsų prenumeruojamai organizacijai {0},'
+                                                                 ' sukurtas naujas poreikis {1}.',
+                                                                 'Sukurtas naujas poreikis', [organization,
+                                                                                              self.object])
+                sub_email_list = []
+                for sub in subs:
+                    Task.objects.create(
+                        title=f"Poreikis organizacijai: {organization}",
+                        description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
+                        content_type=get_content_type_for_model(Request),
+                        object_id=self.object.pk,
+                        organization=organization if organization else None,
+                        status=Task.CREATED,
+                        type=Task.REQUEST,
+                        user=sub.user
+                    )
+                    if sub.user.email and sub.email_subscribed:
+                        sub_email_list.append(sub.user.email)
+                send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -836,33 +838,44 @@ class RequestUpdateView(
     def form_valid(self, form):
         self.object = form.save()
         set_comment(Request.EDITED)
-        if self.object.organization:
-            org_id = self.object.organization.id
-            sub_org_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
-            sub_request_ct = get_object_or_404(ContentType, pk=self.object.id)
-            subs = Subscription.objects.filter(sub_type__in=[Subscription.REQUEST, Subscription.ORGANIZATION],
-                                               content_type__in=[sub_org_ct, sub_request_ct],
-                                               object_id__in=[org_id, self.object.id],
-                                               request_update_sub=True)
-            email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
-                                                             'Sveiki, pranešame jums apie tai, kad,'
-                                                             ' poreikis {1} buvo atnaujintas.',
-                                                             'Atnaujintas poreikis', [self.object])
-            sub_email_list = []
-            for sub in subs:
-                Task.objects.create(
-                    title=f"Redaguotas poreikis: {self.object}.",
-                    description=f"Poreikis {self.object} buvo redaguotas.",
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    organization=self.object.organization,
-                    status=Task.CREATED,
-                    type=Task.REQUEST,
-                    user=sub.user
-                )
-                if sub.user.email and sub.email_subscribed:
-                    sub_email_list.append(sub.user.email)
-            send_email_with_logging(email_data, sub_email_list)
+
+        org_subs = Subscription.objects.none()
+        if self.object.organizations.exists():
+            sub_org_ct = get_content_type_for_model(Organization)
+            org_id_list = self.object.organizations.values_list('id', flat=True)
+            org_subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+                                                   content_type=sub_org_ct,
+                                                   object_id__in=org_id_list,
+                                                   request_update_sub=True)
+
+        sub_request_ct = get_content_type_for_model(Request)
+        subs = Subscription.objects.filter(sub_type=Subscription.REQUEST,
+                                           content_type=sub_request_ct,
+                                           object_id=self.object.id,
+                                           request_update_sub=True)
+
+        if org_subs:
+            subs = org_subs | subs
+
+        email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
+                                                         'Sveiki, pranešame jums apie tai, kad,'
+                                                         ' poreikis {0} buvo atnaujintas.',
+                                                         'Atnaujintas poreikis', [self.object])
+        sub_email_list = []
+        for sub in subs:
+            Task.objects.create(
+                title=f"Redaguotas poreikis: {self.object}.",
+                description=f"Poreikis {self.object} buvo redaguotas.",
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                organization=sub.content_object if isinstance(sub.content_object, Organization) else None,
+                status=Task.CREATED,
+                type=Task.REQUEST,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                sub_email_list.append(sub.user.email)
+        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):

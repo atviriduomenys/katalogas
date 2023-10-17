@@ -14,6 +14,7 @@ import numpy as np
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -484,7 +485,7 @@ class DatasetCreateView(
         )
         if self.object.organization:
             org_id = self.object.organization.id
-            sub_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
+            sub_ct = get_content_type_for_model(Organization)
             subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
                                                content_type=sub_ct,
                                                object_id=org_id,
@@ -638,6 +639,7 @@ class DatasetUpdateView(
                 if model_meta := model.metadata.first():
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
+
         if self.object.organization:
             email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
                                                      'Duomenų rinkinys atnaujintas',
@@ -645,33 +647,54 @@ class DatasetUpdateView(
             if self.object.organization.email:
                 send_email_with_logging(email_data, [self.object.organization.email])
 
-            org_id = self.object.organization.id
-            sub_org_ct = get_object_or_404(ContentType, pk=self.object.organization.id)
-            sub_dataset_ct = get_object_or_404(ContentType, pk=self.object.id)
-            email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub',
-                                                                 'Sveiki, pranešame jums apie tai, kad,'
-                                                                 ' duomenų rinkinys {1} buvo atnaujintas.',
-                                                                 'Atnaujintas duomenų rinkinys', [self.object])
-            subs = Subscription.objects.filter(sub_type__in=[Subscription.DATASET,
-                                                             Subscription.ORGANIZATION],
-                                               content_type_in=[sub_dataset_ct, sub_org_ct],
-                                               object_id__in=[self.object.id, org_id],
-                                               dataset_update_sub=True)
+        org_subs = Subscription.objects.none()
+        if self.object.organization:
+            org_subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+                                                   content_type=get_content_type_for_model(Organization),
+                                                   object_id=self.object.organization.pk,
+                                                   dataset_update_sub=True)
 
-            sub_email_list = []
-            for sub in subs:
-                Task.objects.create(
-                    title=f"{self.object.organization} organizacijos duomenų rinkinys",
-                    description=f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys.",
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    organization=self.object.organization,
-                    status=Task.CREATED,
-                    type=Task.DATASET,
-                    user=sub.user
-                )
-                if sub.user.email and sub.email_subscribed:
-                    sub_email_list.append(sub.user.email)
+        subs = Subscription.objects.filter(sub_type=Subscription.DATASET,
+                                           content_type=get_content_type_for_model(Dataset),
+                                           object_id=self.object.id,
+                                           dataset_update_sub=True)
+
+        if org_subs:
+            subs = org_subs | subs
+
+        sub_email_list = []
+        email_data_sub = None
+        for sub in subs:
+            if sub.sub_type == Subscription.ORGANIZATION:
+                title = f"{self.object.organization} organizacijos duomenų rinkinys"
+                description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
+                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-organization',
+                                                                     'Sveiki, pranešame jums apie tai, kad,'
+                                                                     ' jūsų prenumeruojamos organizacijos {0}'
+                                                                     ' duomenų rinkinys: {1}, buvo atnaujintas.',
+                                                                     'Atnaujintas duomenų rinkinys',
+                                                                     [self.object.organization, self.object])
+            else:
+                title = f"Duomenų rinkinys: {self.object}"
+                description = f"Atnaujintas duomenų rinkinys: {self.object}"
+                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-dataset',
+                                                                     'Sveiki, pranešame jums apie tai, kad,'
+                                                                     ' jūsų prenumeruojamas duomenų rinkinys'
+                                                                     ' {0} buvo atnaujintas.',
+                                                                     'Atnaujintas duomenų rinkinys', [self.object])
+            Task.objects.create(
+                title=title,
+                description=description,
+                content_type=get_content_type_for_model(Dataset),
+                object_id=self.object.pk,
+                organization=self.object.organization,
+                status=Task.CREATED,
+                type=Task.DATASET,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                sub_email_list.append(sub.user.email)
+        if email_data_sub:
             send_email_with_logging(email_data_sub, sub_email_list)
 
         return HttpResponseRedirect(self.get_success_url())

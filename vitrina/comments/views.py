@@ -214,11 +214,8 @@ class ExternalCommentView(
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
-
             create_task("New", external_content_type, external_object_id, request.user)
             comment.save()
-            create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs("Comment", external_content_type, external_object_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={
@@ -233,7 +230,7 @@ class ExternalReplyView(LoginRequiredMixin, View):
         form = CommentForm(None, request.POST)
 
         if form.is_valid():
-            comment = Comment.objects.create(
+            Comment.objects.create(
                 type=Comment.USER,
                 user=request.user,
                 external_object_id=external_object_id,
@@ -243,8 +240,6 @@ class ExternalReplyView(LoginRequiredMixin, View):
                 is_public=form.cleaned_data.get('is_public')
             )
             create_task("Reply", external_content_type, parent_id, request.user)
-            create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs("Comment", external_content_type, external_object_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={

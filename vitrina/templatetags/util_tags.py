@@ -76,6 +76,7 @@ def logged_in_user(_user, _logged_in_user):
         return _user
 
 
+@assignment_tag
 def convert_coordinates(
     geometry_obj: str,
     source_srid: int,

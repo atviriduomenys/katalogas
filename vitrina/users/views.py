@@ -121,6 +121,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
+        context_data['logged_in_user'] = self.request.user
 
         subscriptions = Subscription.objects.filter(user=user)\
             .exclude(sub_type=Subscription.COMMENT)\

@@ -6,6 +6,12 @@ import requests
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from extra_settings.models import Setting
+from pyproj import Transformer
+from shapely.ops import transform
+from shapely.wkt import loads
+
+from vitrina.structure.services import get_srid
+
 register = template.Library()
 assignment_tag = getattr(register, 'assignment_tag', register.simple_tag)
 
@@ -68,3 +74,25 @@ def logged_in_user(_user, _logged_in_user):
         return _logged_in_user
     else:
         return _user
+
+
+def convert_coordinates(
+    geometry_obj: str,
+    source_srid: int,
+    target_srid: int = 4326,
+):
+    if source_srid != target_srid:
+        project = Transformer.from_crs(
+            f"EPSG:{source_srid}",
+            f"EPSG:{target_srid}",
+        ).transform
+        geometry_obj = loads(geometry_obj)
+        geometry_obj = transform(project, geometry_obj)
+        return geometry_obj.wkt
+    return geometry_obj
+
+
+@assignment_tag
+def get_geometry_srid(type_args):
+    srid = get_srid(type_args)
+    return srid

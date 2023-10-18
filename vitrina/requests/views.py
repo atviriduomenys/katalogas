@@ -361,10 +361,11 @@ class RequestOrgEditView(
     def form_valid(self, form):
         super().form_valid(form)
         orgs = form.cleaned_data.get('organizations')
-        mode = self.kwargs.get('mode')
+        plural = form.cleaned_data.get('plural')
         ra_objects = RequestAssignment.objects.filter(request=self.object).all()
         for ra in ra_objects:
-            ra.delete()
+            if ra.organization in orgs:
+                ra.delete()
         for org in orgs:
             self.object.organizations.add(org)
             RequestAssignment.objects.create(
@@ -372,11 +373,14 @@ class RequestOrgEditView(
                 request=self.object,
                 status=self.object.status
             )
-            if mode == 'plural':
+            if plural:
                 org = Organization.objects.filter(id=org.id).first()
                 org_root = org.get_root()
                 c_orgs = org_root.get_children()
                 for c_org in c_orgs:
+                    ra_objects = RequestAssignment.objects.filter(request=self.object, organization=c_org).all()
+                    for ra in ra_objects:
+                        ra.delete()
                     self.object.organizations.add(c_org)
                     RequestAssignment.objects.create(
                         organization=c_org,
@@ -414,6 +418,51 @@ class RequestOrgEditView(
         context_data['current_title'] = _('Poreikio organizacijų redagavimas')
         return context_data
 
+class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+    model = RequestAssignment
+    template_name = 'confirm_delete.html'
+
+    def has_permission(self):
+        self.object = self.get_object()
+        request = get_object_or_404(Request, pk=self.object.request.pk)
+        can_edit_specific_org = False
+        is_my_request = self.request.user == request.user
+        is_supervisor = Representative.objects.filter(user=self.request.user, role=Representative.SUPERVISOR).first()
+        if self.request.user.organization:
+            if self.request.user.organization in request.organizations.all():
+                can_edit_specific_org = True
+
+        representatives = self.request.user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__isnull=False,
+                user=self.request.user,
+                object_id__in=[r.id for r in request.organizations.all()]
+        )
+        can_edit_specific_org = len(representatives) > 0
+        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
+
+    def handle_no_permission(self):
+        self.object = self.get_object()
+        request_id = self.object.request.pk
+        messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': request_id}))
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        request_id = self.object.request.pk
+        self.object.delete()
+        return redirect(reverse('request-organizations', kwargs={'pk': request_id}))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.get_object().request
+        context['current_title'] = _("Termino pašalinimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+            reverse('request-detail', args=[request.pk]): request.title,
+        }
+        return context
 
 class RequestUpdateView(
     LoginRequiredMixin,

@@ -2,7 +2,7 @@ from django.urls import path
 
 from vitrina.requests.views import RequestDatasetView, RequestOrganizationView, RequestDeleteDatasetView
 from vitrina.requests.views import RequestListView, RequestCreateView, RequestUpdateView, RequestHistoryView, \
-    RequestPublicationStatsView, RequestYearStatsView, RequestQuarterStatsView, RequestOrgEditView
+    RequestPublicationStatsView, RequestYearStatsView, RequestQuarterStatsView, RequestOrgEditView, RequestOrgDeleteView
 from vitrina.requests.views import RequestDetailView
 from vitrina.requests.views import RequestPlanView
 from vitrina.requests.views import RequestCreatePlanView
@@ -35,7 +35,8 @@ urlpatterns = [
          name='request-plans-delete-detail'),
     path('requests/<int:pk>/datasets/', RequestDatasetView.as_view(), name='request-datasets'),
     path('requests/<int:pk>/orgs/', RequestOrganizationView.as_view(), name='request-organizations'),
-    path('requests/<int:pk>/orgs/add/<str:mode>', RequestOrgEditView.as_view(), name='request-orgs-edit'),
+    path('requests/<int:pk>/orgs/add/', RequestOrgEditView.as_view(), name='request-orgs-edit'),
+    path('requests/<int:pk>/orgs/delete', RequestOrgDeleteView.as_view(), name='request-orgs-delete'),
     path('requests/<int:pk>/datasets/<int:dataset_id>/remove', RequestDeleteDatasetView.as_view(),
          name='request-dataset-remove'),
     # @PostMapping("/request")

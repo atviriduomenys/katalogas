@@ -17,11 +17,8 @@
     <div class="columns">
         <div class="column">
                 <div class="buttons is-right">
-                    <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk mode='single'  %}">
-                        {% translate "Pridėti / šalinti organizacijas" %}
-                    </a>
-                    <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk mode='plural'  %}">
-                        {% translate "Pridėti organizaciją ir visas pavaldžias jai organizacijas" %}
+                    <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk  %}">
+                        {% translate "Pridėti organizacijas" %}
                     </a>
                 </div>  
             {% if organizations %}
@@ -52,6 +49,17 @@
                                             <strong>
                                                     {{ organization.status }}
                                             </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </td>
+                        <td>
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <div>
+                                            <a class="has-text-danger" href="{% url 'request-orgs-delete' pk=organization.id %}">{% translate "Šalinti" %}</a>
                                         </div>
                                     </div>
                                 </div>

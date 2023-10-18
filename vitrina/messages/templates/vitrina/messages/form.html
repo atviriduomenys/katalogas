@@ -1,0 +1,31 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+
+{% block scripts %}
+<script>
+        $(document).ready(function() {
+            function updateFieldState(updateField, commentsField, fieldDiv) {
+                if (updateField.is(':checked')) {
+                    commentsField.prop('disabled', false);
+                    fieldDiv.show().css('margin-left', '25px');
+                } else {
+                    commentsField.prop('disabled', true).prop('checked', false);
+                    fieldDiv.hide().css('margin-left', '25px');
+                }
+            }
+
+            var fieldPairs = [
+                { update: $('#id_dataset_update_sub'), comments: $('#id_dataset_comments_sub'), div: $('#div_id_dataset_comments_sub') },
+                { update: $('#id_request_update_sub'), comments: $('#id_request_comments_sub'), div: $('#div_id_request_comments_sub') },
+                { update: $('#id_project_update_sub'), comments: $('#id_project_comments_sub'), div: $('#div_id_project_comments_sub') }
+            ];
+
+            fieldPairs.forEach(function(fieldPair) {
+                updateFieldState(fieldPair.update, fieldPair.comments, fieldPair.div);
+                fieldPair.update.change(function() {
+                    updateFieldState(fieldPair.update, fieldPair.comments, fieldPair.div);
+                });
+            });
+        });
+    </script>
+{% endblock %}

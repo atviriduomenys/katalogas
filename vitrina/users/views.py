@@ -7,9 +7,10 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
-from django.http import JsonResponse
 from django.utils.timezone import now, make_aware
 from allauth.socialaccount.models import SocialAccount
+
+from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import LoginForm, RegisterForm, PasswordSetForm, PasswordResetForm, PasswordResetConfirmForm
@@ -121,8 +122,36 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         user = context_data.get('user')
         context_data['logged_in_user'] = self.request.user
+
+        subscriptions = Subscription.objects.filter(user=user)\
+            .exclude(sub_type=Subscription.COMMENT)\
+            .prefetch_related('content_object')
+        for sub in subscriptions:
+            sub.fields = [(_("Laiškai"), sub.email_subscribed)]
+            if sub.sub_type == Subscription.ORGANIZATION:
+                sub.fields.extend([
+                    (_("Duomenų rinkiniai"), sub.dataset_update_sub),
+                    (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub),
+                    (_("Prašymai"), sub.request_update_sub),
+                    (_("Prašymų komentarai"), sub.request_comments_sub)])
+            if sub.sub_type == Subscription.DATASET:
+                sub.fields.extend([
+                    (_("Duomenų rinkiniai"), sub.dataset_update_sub),
+                    (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub)])
+            if sub.sub_type == Subscription.REQUEST:
+                sub.fields.extend([
+                    (_("Prašymai"), sub.request_update_sub),
+                    (_("Prašymų komentarai"), sub.request_comments_sub),
+                    (_("Duomenų rinkiniai"), sub.dataset_update_sub),
+                    (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub)])
+            if sub.sub_type == Subscription.PROJECT:
+                sub.fields.extend([
+                    (_("Projektai"), sub.project_update_sub),
+                    (_("Projektų komentarai"), sub.project_comments_sub)])
+
         extra_context_data = {
             'can_edit_profile': has_perm(self.request.user, Action.UPDATE, user),
+            'subscriptions': subscriptions
         }
         context_data.update(extra_context_data)
         return context_data

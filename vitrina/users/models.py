@@ -55,6 +55,7 @@ class User(AbstractUser):
                 if Dataset.objects.filter(organization=org_id):
                     return True
 
+
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)

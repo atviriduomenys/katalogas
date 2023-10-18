@@ -3,27 +3,25 @@ from datetime import datetime, timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
+
 from reversion import set_comment
 from reversion.views import RevisionMixin
-from django.utils.translation import gettext_lazy as _
 
-from vitrina import settings
 from vitrina.comments.forms import CommentForm
+from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
-from vitrina.users.models import User
 
 
 class CommentView(
@@ -105,30 +103,13 @@ class CommentView(
                                                                  [obj.title, obj.description])
                         if obj.user is not None:
                             if obj.user.email is not None:
-                                try:
-                                    send_mail(
-                                        subject=_(email_data['email_subject']),
-                                        message=_(email_data['email_content']),
-                                        from_email=settings.DEFAULT_FROM_EMAIL,
-                                        recipient_list=[obj.user.email],
-                                    )
-                                except Exception as e:
-                                    import logging
-                                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                                    _(email_data['email_content']), [obj.user.email], e)
+                                send_email_with_logging(email_data, [obj.user.email])
             else:
                 comment.type = Comment.USER
             comment.save()
-            Task.objects.create(
-                title=f"Parašytas komentaras objektui: {content_type}, id: {obj.pk}",
-                organization=obj.organization if hasattr(obj, 'organization') else None,
-                description=f"Prie {content_type} {obj.pk} parašytas naujas komentaras.",
-                content_type=content_type,
-                object_id=obj.pk,
-                status=Task.CREATED,
-                user=request.user,
-                type=Task.COMMENT
-            )
+            create_task("New", content_type, obj.pk, request.user, obj=obj)
+            create_subscription(request.user, comment)
+            send_mail_and_create_tasks_for_subs("New", content_type, obj.pk, request.user, obj=obj)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -141,7 +122,7 @@ class ReplyView(LoginRequiredMixin, View):
         form = CommentForm(obj, request.POST)
 
         if form.is_valid():
-            comm = Comment.objects.create(
+            comment = Comment.objects.create(
                 type=Comment.USER,
                 user=request.user,
                 content_type=content_type,
@@ -150,21 +131,16 @@ class ReplyView(LoginRequiredMixin, View):
                 body=form.cleaned_data.get('body'),
                 is_public=form.cleaned_data.get('is_public'),
             )
-            comm_ct = ContentType.objects.get_for_model(comm)
-            parent_comm = Comment.objects.get(pk=parent_id)
-            Task.objects.create(
-                title=f"Parašytas atsakymas komentarui: {comm_ct}, id: {parent_id}",
-                organization=obj.organization if hasattr(obj, 'organization') else None,
-                description=f"Komentarui {parent_id} parašytas naujas atsakymas.",
-                content_type=content_type,
-                object_id=object_id,
-                comment_object=comm,
-                status=Task.CREATED,
-                user=request.user,
-                type=Task.COMMENT
-            )
+            comment_ct = ContentType.objects.get_for_model(comment)
+            parent_comment = Comment.objects.get(pk=parent_id)
+            create_task("Reply", content_type, object_id, request.user, obj=obj,
+                        comment_object=comment, comment_ct=comment_ct)
+            create_subscription(request.user, comment)
+
+            send_mail_and_create_tasks_for_subs("Reply", comment_ct, parent_id,
+                                                request.user, obj=obj, comment_object=parent_comment)
             comment_task = Task.objects.filter(
-                comment_object=parent_comm
+                comment_object=parent_comment
             ).first()
             if comment_task:
                 comment_task.status = Task.COMPLETED
@@ -231,29 +207,12 @@ class ExternalCommentView(
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
                 email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
                                                          [url, external_object_id, dataset.name, external_content_type])
-                try:
-                    send_mail(
-                        subject=email_data['email_subject'],
-                        message=email_data['email_content'],
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[emails],
-                    )
-                except Exception as e:
-                    import logging
-                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                    _(email_data['email_content']), [emails], e)
+                send_email_with_logging(email_data, [emails])
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
-
-            Task.objects.create(
-                title=f"Parašytas komentaras objektui: {external_content_type}, id: {external_object_id}",
-                description=f"Parašytas naujas komentaras {external_content_type}, id: {external_object_id}.",
-                status=Task.CREATED,
-                user=request.user,
-                type=Task.COMMENT
-            )
+            create_task("New", external_content_type, external_object_id, request.user)
             comment.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -278,15 +237,7 @@ class ExternalReplyView(LoginRequiredMixin, View):
                 body=form.cleaned_data.get('body'),
                 is_public=form.cleaned_data.get('is_public')
             )
-            Task.objects.create(
-                title=f"Parašytas atsakymas komentarui: {external_content_type}, id: {parent_id}",
-                description=f"Atsakyta į komentarą {external_content_type}, id: {parent_id}.",
-                content_type=external_content_type,
-                object_id=parent_id,
-                status=Task.CREATED,
-                user=request.user,
-                type=Task.COMMENT
-            )
+            create_task("Reply", external_content_type, parent_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={

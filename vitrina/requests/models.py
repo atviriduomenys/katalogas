@@ -91,7 +91,6 @@ class Request(models.Model):
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
     organizations = models.ManyToManyField(Organization)
 
-
     objects = models.Manager()
     public = PublicRequestManager()
 

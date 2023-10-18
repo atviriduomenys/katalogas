@@ -30,14 +30,18 @@ class Task(models.Model):
         (MANAGER, _("Organizacijos tvarkytojas"))
     }
 
+    DATASET = 'dataset'
     COMMENT = 'comment'
     REQUEST = 'request'
+    PROJECT = 'project'
     ERROR = 'error'
     ERROR_FREQUENCY = 'error_frequency'
     ERROR_DISTRIBUTION = 'error_distribution'
     TYPES = (
+        (DATASET, _("Duomenų rinkinys")),
         (COMMENT, _("Komentaras")),
         (REQUEST, _("Prašymas")),
+        (PROJECT, _("Project")),
         (ERROR, _("Klaida")),
         (ERROR_FREQUENCY, _("Klaida atnaujinimo dažnume")),
         (ERROR_DISTRIBUTION, _("Klaida duomenų rinkinio duomenų šaltinyje")),

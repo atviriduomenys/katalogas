@@ -52,17 +52,17 @@
                                 <a href="{% url 'user-profile' pk=LOGGED_IN_USER.pk %}" class="navbar-item">
                                     {% translate "Profilis" %}
                                 </a>
-                                {% if LOGGED_IN_USER.organization %}
                                 <a href="{% url 'user-task-list' pk=LOGGED_IN_USER.pk %}" class="navbar-item">
                                     {% translate "Užduotys" %}
                                 </a>
+                                {% if LOGGED_IN_USER.organization %}
                                  <a href="{% url 'organization-plans' LOGGED_IN_USER.organization.pk %}" class="navbar-item">
                                     {% translate "Planas" %}
                                 </a>
                                 <a href="{% url 'organization-datasets' LOGGED_IN_USER.organization.pk %}?selected_facets=organization_exact:{{ LOGGED_IN_USER.organization.pk }}" class="navbar-item">
                                     {% translate "Mano organizacijos rinkiniai" %}
                                 </a>
-                                <a href="{% url "request-list" %}?selected_facets=organization_exact:{{ LOGGED_IN_USER.organization.pk }}" class="navbar-item">
+                                <a href="{% url 'request-list' %}?selected_facets=organization_exact:{{ LOGGED_IN_USER.organization.pk }}" class="navbar-item">
                                     {% translate "Mano poreikiai" %}
                                 </a>
                                 {% endif %}

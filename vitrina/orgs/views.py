@@ -451,6 +451,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.organization
+            self.object.user.save()
+
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -484,9 +489,6 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         else:
             self.object.apikey_set.all().delete()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.organization
-            self.object.user.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

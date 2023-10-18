@@ -156,7 +156,7 @@ class ProjectUpdateView(
         for sub in subs:
             Task.objects.create(
                 title=f"Atnaujintas panaudos atvejis: {self.object}.",
-                description=f"Atnaujintas naujas panaudos atvejis {self.object}.",
+                description=f"Šis panaudos atvėjis: {self.object}, buvo atnaujintas.",
                 content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
                 status=Task.CREATED,

@@ -588,7 +588,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 self.request.user,
                 Action.PLAN,
                 request
-            )
+            ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
         if request.status == "REJECTED":
@@ -869,7 +869,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
             self.request.user,
             Action.PLAN,
             self.request_obj
-        )
+        ) and self.request_obj.status == Request.APPROVED
         context['selected_tab'] = status
         return context
 
@@ -907,7 +907,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and self.request_obj.is_not_closed()
+        ) and self.request_obj.is_not_closed() and self.request_obj.status == Request.APPROVED
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

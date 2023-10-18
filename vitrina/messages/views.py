@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import CreateView
 
@@ -12,8 +12,6 @@ from vitrina.helpers import send_email_with_logging
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
-from django.core.mail import send_mail
-from vitrina import settings
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from django.utils.translation import gettext_lazy as _
 

@@ -8,7 +8,6 @@ from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.db.models import Case, Count, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render

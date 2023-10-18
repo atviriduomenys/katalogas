@@ -52,6 +52,8 @@ urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('accounts/', include('vitrina.viisp.urls')),
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
+    path("__reload__/", include("django_browser_reload.urls")),
+    path("__debug__/", include("debug_toolbar.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -40,11 +40,9 @@
     <tr>
         <th>{% translate "Kategorijos" %}</th>
         <td>
-            <ul class="mt-0 ml-4">
-                {% for category in dataset.category.all %}
-                    <li>{{ category.title }}</li>
-                {% endfor %}
-            </ul>
+            {% for category in dataset.category.all %}
+                <a href="#">{{ category.title }}</a><br>
+            {% endfor %}
             {% if can_update_dataset %}
             <div class="buttons">
                 <a href="{% url 'assign-category' dataset.pk %}" class="button is-primary is-small">

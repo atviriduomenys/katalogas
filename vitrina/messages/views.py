@@ -74,6 +74,12 @@ class SubscribeFormView(
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
+            email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed',
+                                                             'Sveiki, Jūs sėkmingai užsiprenumeravote naujienlaiškį',
+                                                             'Naujienlaiškio prenumeratos registracija', [])
+            if self.user is not None:
+                if self.user.email is not None:
+                    send_email_with_logging(email_data, [self.user.email])
         except IntegrityError:
             existing_subscription = Subscription.objects.filter(
                 content_type=self.ct,
@@ -85,10 +91,11 @@ class SubscribeFormView(
                 existing_subscription.delete()
                 self.object.save()
                 messages.success(self.request, _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."))
-            email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed',
-                                                             'Sveiki, Jūs sėkmingai užsiprenumeravote naujienlaiškį',
-                                                             'Naujienlaiškio prenumeratos registracija', [])
-            if self.user is not None:
-                if self.user.email is not None:
-                    send_email_with_logging(email_data, [self.user.email])
+                email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed-update',
+                                                                 'Sveiki, Jūs sėkmingai atnaujinote'
+                                                                 ' prenumeratos naujienlaiškį',
+                                                                 'Naujienlaiškio prenumeratos atnaujinimas', [])
+                if self.user is not None:
+                    if self.user.email is not None:
+                        send_email_with_logging(email_data, [self.user.email])
         return HttpResponseRedirect(self.obj.get_absolute_url())

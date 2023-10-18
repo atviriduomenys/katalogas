@@ -23,6 +23,7 @@ class RequestFactory(DjangoModelFactory):
         request = model_class(*args, **kwargs)
         fake = faker.Faker()
         request.title = fake.word()
+        request.save()
         return request
     
     @factory.post_generation

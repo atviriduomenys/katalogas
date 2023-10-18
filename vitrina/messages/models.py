@@ -105,7 +105,7 @@ class Subscription(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
     sub_type = models.CharField(max_length=255, choices=SUB_TYPE_CHOICES, blank=True, null=True,
                                 verbose_name=_('Prenumeratos tipas'))
@@ -132,3 +132,9 @@ class Subscription(models.Model):
 
     def __str__(self):
         return str(self.user)
+
+    def get_absolute_url(self):
+        if self.content_object:
+            return self.content_object.get_absolute_url()
+        else:
+            return None

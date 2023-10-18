@@ -3,17 +3,14 @@ from datetime import datetime, timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
-from django.utils.translation import gettext_lazy as _
 
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-import vitrina.settings as settings
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs
 from vitrina.comments.models import Comment
@@ -139,8 +136,9 @@ class ReplyView(LoginRequiredMixin, View):
             create_task("Reply", content_type, object_id, request.user, obj=obj,
                         comment_object=comment, comment_ct=comment_ct)
             create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs("Reply", content_type, object_id,
-                                                request.user, obj=obj, comment_object=comment)
+
+            send_mail_and_create_tasks_for_subs("Reply", comment_ct, parent_id,
+                                                request.user, obj=obj, comment_object=parent_comment)
             comment_task = Task.objects.filter(
                 comment_object=parent_comment
             ).first()

@@ -141,7 +141,7 @@ class ProjectUpdateView(
         self.object = form.save(commit=True)
         self.object.save()
         set_comment(Project.EDITED)
-        sub_ct = get_object_or_404(ContentType, pk=self.object.id)
+        sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(sub_type=Subscription.PROJECT,
                                            content_type=sub_ct,
                                            object_id=self.object.id,
@@ -155,8 +155,8 @@ class ProjectUpdateView(
         sub_email_list = []
         for sub in subs:
             Task.objects.create(
-                title=f"Užregistruotas panaudos atvejis: {self.object}.",
-                description=f"Užregistruotas naujas panaudos atvejis {self.object}.",
+                title=f"Atnaujintas panaudos atvejis: {self.object}.",
+                description=f"Atnaujintas naujas panaudos atvejis {self.object}.",
                 content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
                 status=Task.CREATED,
@@ -164,6 +164,9 @@ class ProjectUpdateView(
                 user=sub.user
             )
             if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
         send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Case, Count, When
+from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import date as _date
@@ -671,7 +671,8 @@ class RequestCreateView(
             org_id_list = self.object.organizations.values_list('id', flat=True)
             for org_id in org_id_list:
                 organization = get_object_or_404(Organization, pk=org_id)
-                subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+                subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
                                                    content_type=get_content_type_for_model(Organization),
                                                    object_id=org_id,
                                                    request_update_sub=True)
@@ -693,6 +694,9 @@ class RequestCreateView(
                         user=sub.user
                     )
                     if sub.user.email and sub.email_subscribed:
+                        if sub.user.organization:
+                            orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                            sub_email_list = [org.email for org in orgs]
                         sub_email_list.append(sub.user.email)
                 send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
@@ -842,9 +846,9 @@ class RequestUpdateView(
         if self.object.organizations.exists():
             sub_org_ct = get_content_type_for_model(Organization)
             org_id_list = self.object.organizations.values_list('id', flat=True)
-            org_subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+            org_subs = Subscription.objects.filter(Q(object_id__in=org_id_list) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
                                                    content_type=sub_org_ct,
-                                                   object_id__in=org_id_list,
                                                    request_update_sub=True)
 
         sub_request_ct = get_content_type_for_model(Request)
@@ -873,6 +877,9 @@ class RequestUpdateView(
                 user=sub.user
             )
             if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
         send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())

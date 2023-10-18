@@ -486,9 +486,9 @@ class DatasetCreateView(
         if self.object.organization:
             org_id = self.object.organization.id
             sub_ct = get_content_type_for_model(Organization)
-            subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+            subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
+                                               sub_type=Subscription.ORGANIZATION,
                                                content_type=sub_ct,
-                                               object_id=org_id,
                                                dataset_update_sub=True)
             email_data = prepare_email_by_identifier_for_sub('dataset-created-sub',
                                                              'Sveiki, jūsų prenumeruojamai organizacijai {0},'
@@ -508,6 +508,9 @@ class DatasetCreateView(
                     user=sub.user
                 )
                 if sub.user.email and sub.email_subscribed:
+                    if sub.user.organization:
+                        orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                        sub_email_list = [org.email for org in orgs]
                     sub_email_list.append(sub.user.email)
             send_email_with_logging(email_data, sub_email_list)
 
@@ -649,9 +652,9 @@ class DatasetUpdateView(
 
         org_subs = Subscription.objects.none()
         if self.object.organization:
-            org_subs = Subscription.objects.filter(sub_type=Subscription.ORGANIZATION,
+            org_subs = Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
                                                    content_type=get_content_type_for_model(Organization),
-                                                   object_id=self.object.organization.pk,
                                                    dataset_update_sub=True)
 
         subs = Subscription.objects.filter(sub_type=Subscription.DATASET,
@@ -693,6 +696,9 @@ class DatasetUpdateView(
                 user=sub.user
             )
             if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
         if email_data_sub:
             send_email_with_logging(email_data_sub, sub_email_list)

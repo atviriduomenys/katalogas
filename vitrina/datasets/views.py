@@ -984,6 +984,13 @@ class UpdateMemberView(
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.dataset.organization
+            self.object.user.save()
+
+        self.dataset.save()
+
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -1016,11 +1023,6 @@ class UpdateMemberView(
         else:
             self.object.apikey_set.all().delete()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.dataset.organization
-            self.object.user.save()
-
-        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

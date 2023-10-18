@@ -24,7 +24,7 @@ providers = ('auth.lt.identity.card',
 
 attributes = ('lt-company-code',)
 
-user_information = ('firstNamse',
+user_information = ('firstName',
                     'lastName',
                     'email',
                     'phoneNumber',

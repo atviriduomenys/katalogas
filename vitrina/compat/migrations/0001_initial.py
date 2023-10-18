@@ -5,6 +5,7 @@ import django.db.models.deletion
 from vitrina.settings import SITE_ID
 from django.contrib.redirects.models import Redirect
 from django.contrib.sites.models import Site
+from urllib.parse import urlencode
 
 
 
@@ -138,17 +139,11 @@ def create_redirects(apps, schema_editor):
 
     redirect = Redirect.objects.create(
         site_id=SITE_ID,
-        old_path='/datasets?q=&organization_id=50/',
-        new_path='/datasets/?selected_facets=organization_exact:50/',
+        old_path='/requests/2b6f55f8-cbc9-4e77-a4e8-31c21da12420/',
+        new_path='/requests/194/',
     )
     redirect.save()
 
-    redirect = Redirect.objects.create(
-        site_id=SITE_ID,
-        old_path='/datasets?q=&organization_id=269/',
-        new_path='/datasets/?selected_facets=organization_exact:269/',
-    )
-    redirect.save()
 
 
 class Migration(migrations.Migration):

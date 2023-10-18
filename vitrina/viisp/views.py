@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from vitrina.users.models import User
 from allauth.account.utils import perform_login
 from cryptography.fernet import Fernet
-
+from django.http import HttpResponse
 
 class VIISPLoginView(TemplateView):
     template_name = 'allauth/socialaccount/login.html'
@@ -40,6 +40,8 @@ class VIISPLoginView(TemplateView):
             fernet = Fernet(viisp_token_key)
             token = fernet.encrypt(self.request.user.email.encode()).decode()
         ticket_id = get_response_with_ticket_id(key, domain, token)
+        if not ticket_id:
+            return HttpResponse(status=500)
         url = VIISPOAuth2Adapter.authorize_url
         return redirect(url + "?" + "ticket={}".format(ticket_id))
 

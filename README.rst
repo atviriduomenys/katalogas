@@ -129,3 +129,29 @@ To set up a visp social account provider:
 
 To use google analytics go to http://127.0.0.1:8000/admin/extra_settings/setting/ add setting GOOGLE_ANALYTICS_ID
 and set provided google analytics id.
+
+Email template identifiers (emails that supposed to be sent from administrative side, was decided not to refactor):
+ 1. application-use-case-rejected, current keys ({0} - title, {1} - description)
+ 2. auth-password-reset
+ 3. auth-org-coordinator-credentials
+ 4. auth-coordinator-credentials
+ 5. application-use-case-registered
+ 6. learning-material-registered
+ 7. learning-material-rejected
+ 8. auth-password-reset-token, current keys ({0} - url)
+ 9. auth-org-representative-without-credentials, current keys ({0} - dataset, {1} - url)
+ 10. auth-org-representative-credentials
+ 11. financing-plan-confirmed
+ 12. newsletter-subscribed
+ 13. suggestion-registered
+ 14. request-rejected, current keys ({0} - request comment)
+ 15. auth-new-password
+ 16. auth-admin-credentials
+ 17. use-case-registered
+ 18. request-registered
+ 19. use-case-rejected
+ 20. dataset-updated, current keys ({0} - object)
+ 21. request-approved
+ 22. auth-portal-user-password-changed
+ 23. auth-org-coordinator-password-changed
+ 24. error-in-data, current keys ({0} - url, {1} - external object id, {2} - content type, {3} - external content type)

@@ -2,6 +2,7 @@ import builtins
 import functools
 import operator
 
+import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -121,8 +122,12 @@ class Base(models.Model):
         return ""
 
 
+@reversion.register()
 class Model(models.Model):
-    dataset = models.ForeignKey('vitrina_datasets.Dataset', models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    dataset = models.ForeignKey('vitrina_datasets.Dataset',
+                                models.CASCADE,
+                                verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
         'vitrina_resources.DatasetDistribution',
         models.SET_NULL,
@@ -138,10 +143,13 @@ class Model(models.Model):
         verbose_name=_("Bazė"),
         related_name='base_models'
     )
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     objects = models.Manager()
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
+    params = GenericRelation('Param')
+    requests = GenericRelation('vitrina_requests.RequestObject')
 
     class Meta:
         db_table = 'model'
@@ -159,9 +167,21 @@ class Model(models.Model):
         return ''
 
     @property
+    def full_name(self):
+        if metadata := self.metadata.first():
+            return metadata.name
+        return ''
+
+    @property
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
+        return ''
+
+    @property
+    def description(self):
+        if metadata := self.metadata.first():
+            return metadata.description
         return ''
 
     def update_level(self):
@@ -238,7 +258,9 @@ class Model(models.Model):
         return ''
 
 
+@reversion.register()
 class Property(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     model = models.ForeignKey(
         Model,
         models.CASCADE,
@@ -267,6 +289,7 @@ class Property(models.Model):
     metadata = GenericRelation('Metadata')
     property_list = GenericRelation('PropertyList')
     enums = GenericRelation('Enum')
+    requests = GenericRelation('vitrina_requests.RequestObject')
 
     class Meta:
         db_table = 'property'
@@ -296,6 +319,12 @@ class Property(models.Model):
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
+        return ''
+
+    @builtins.property
+    def description(self):
+        if metadata := self.metadata.first():
+            return metadata.description
         return ''
 
     def get_acl_parents(self):

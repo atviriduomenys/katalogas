@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
@@ -6,6 +7,7 @@ from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -31,9 +33,11 @@ def test_change_form_correct_login(app: DjangoTestApp):
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('dataset-detail', kwargs={'pk': resource.dataset_id})
+    assert resp.url == reverse('resource-detail', args=[resource.dataset.pk, resource.pk])
     assert resource.title == 'Edited title'
     assert resource.description == 'edited resource description'
+    assert resource.metadata.count() == 1
+    assert resource.metadata.first().name == 'resource1'
 
 
 @pytest.mark.django_db
@@ -80,6 +84,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1
+    assert DatasetDistribution.objects.first().metadata.count() == 1
+    assert DatasetDistribution.objects.first().metadata.first().name == 'resource1'
 
 
 @pytest.mark.django_db
@@ -128,3 +134,49 @@ def test_click_delete_button(app: DjangoTestApp):
     response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
     response.click(linkid='delete_resource')
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_detail_tab_from_resource_detail_view(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    resp = app.get(reverse('resource-detail', args=[resource.dataset.pk, resource.pk]))
+    resp = resp.click(linkid='detail_tab')
+    assert resp.request.path == resource.dataset.get_absolute_url()
+
+
+@pytest.mark.django_db
+def test_create_resource_model(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    resource = DatasetDistributionFactory()
+    form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    resp = form.submit()
+    assert resp.url == resource.get_absolute_url()
+    assert resource.model_set.count() == 1
+    assert resource.model_set.first().name == 'TestModel'
+
+
+@pytest.mark.django_db
+def test_create_resource_without_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    resource = DatasetDistributionFactory()
+    dataset = resource.dataset
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(resource),
+        object_id=resource.pk,
+        name='resource3'
+    )
+    format = FileFormat()
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['download_url'] = "www.test.com"
+    resp = form.submit()
+    new_resource = DatasetDistribution.objects.exclude(pk=resource.pk)
+    assert resp.url == new_resource.first().get_absolute_url()
+    assert new_resource.count() == 1
+    assert new_resource.first().metadata.count() == 1
+    assert new_resource.first().metadata.first().name == 'resource4'

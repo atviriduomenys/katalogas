@@ -1,20 +1,28 @@
+from django.core.mail import send_mail
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.views.generic.edit import DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
+from vitrina.helpers import prepare_email_by_identifier, send_email_with_logging
 
 
 class ProjectListView(ListView):
@@ -34,7 +42,10 @@ class ProjectListView(ListView):
     def get_queryset(self):
         qs = super().get_queryset()
         if not self.has_update_perm:
-            qs = qs.filter(status=Project.APPROVED)
+            if self.request.user.is_authenticated:
+                qs = qs.filter(Q(status=Project.APPROVED) | Q(user=self.request.user))
+            else:
+                qs = qs.filter(status=Project.APPROVED)
         return qs.order_by('-created')
 
     def get_context_data(self, **kwargs):
@@ -78,6 +89,31 @@ class ProjectCreateView(
         self.object.status = Project.CREATED
         self.object.save()
         set_comment(Project.CREATED)
+        Task.objects.create(
+            title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
+            description=f"Portale užregistruotas naujas panaudos atvejis.",
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            status=Task.CREATED,
+            user=self.request.user,
+            type=Task.REQUEST
+        )
+        email_data = prepare_email_by_identifier('use-case-registered',
+                                                 'Sveiki, portale užregistruotas naujas panaudos atvejis.',
+                                                 'Užregistruotas naujas panaudos atvejis', [])
+        if self.object.user is not None:
+            if self.object.user.email is not None:
+                send_email_with_logging(email_data, email_data)
+
+        Subscription.objects.create(
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(Project),
+            object_id=self.object.pk,
+            sub_type=Subscription.PROJECT,
+            email_subscribed=True,
+            project_update_sub=True,
+            project_comments_sub=True,
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -105,6 +141,34 @@ class ProjectUpdateView(
         self.object = form.save(commit=True)
         self.object.save()
         set_comment(Project.EDITED)
+        sub_ct = ContentType.objects.get_for_model(self.object)
+        subs = Subscription.objects.filter(sub_type=Subscription.PROJECT,
+                                           content_type=sub_ct,
+                                           object_id=self.object.id,
+                                           project_update_sub=True)
+        if self.object.user is not None:
+            subs = subs.exclude(user=self.object.user)
+        email_data = prepare_email_by_identifier_for_sub('project-updated-sub',
+                                                         'Sveiki, pranešame jums apie tai, kad,'
+                                                         ' panaudos atvėjis {0} buvo atnaujintas.',
+                                                         'Atnaujintas panaudos atvėjis', [self.object])
+        sub_email_list = []
+        for sub in subs:
+            Task.objects.create(
+                title=f"Atnaujintas panaudos atvejis: {self.object}.",
+                description=f"Šis panaudos atvėjis: {self.object}, buvo atnaujintas.",
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                status=Task.CREATED,
+                type=Task.PROJECT,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
+                sub_email_list.append(sub.user.email)
+        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

@@ -1,5 +1,8 @@
+from datetime import date
+
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Value, CharField as _CharField, Case, When, Count
+from django.core.validators import RegexValidator
+from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget
@@ -7,7 +10,7 @@ from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
 from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField, Form, ModelChoiceField, \
-    CheckboxSelectMultiple
+    CheckboxSelectMultiple, HiddenInput
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -15,14 +18,15 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.services import get_projects
+from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Licence, Category
-from vitrina.fields import FilerFileField
+from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm
+from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
 from vitrina.orgs.models import Organization
+from vitrina.plans.models import PlanDataset, Plan
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -56,6 +60,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "nuskaitoma mašininiu būdu"
         )
     )
+    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
+    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
+            RegexValidator(
+                '([a-z]+\/?)+',
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+            )
+        ])
 
     class Meta:
         model = Dataset
@@ -71,21 +82,27 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_type',
             'endpoint_description',
             'endpoint_description_type',
+            'files',
+            'name',
         )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        project_instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if project_instance else _("Sukurti")
+        instance = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
         self.helper.layout = Layout(
             Field('is_public',
                   placeholder=_('Ar duomenys vieši')),
             Field('title',
                   placeholder=_('Duomenų rinkinio pavadinimas')),
+            Field('name',
+                  placeholder=_('Duomenų rinkinio kodinis pavadinimas')),
             Field('description',
                   placeholder=_('Detalus duomenų rinkinio aprašas')),
+            Field('files'),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
             Field('licence'),
@@ -102,13 +119,17 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
-        if not project_instance:
+        if not instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
                 self.initial['licence'] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial['frequency'] = default_frequency
+        else:
+            self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
+            if instance.name:
+                self.initial['name'] = instance.name
 
     def clean_type(self):
         type = self.cleaned_data.get('type')
@@ -127,9 +148,17 @@ class DatasetSearchForm(FacetedSearchForm):
 
     def search(self):
         sqs = super().search()
-
+        sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
+        if self.cleaned_data.get('q'):
+             keyword = self.cleaned_data.get('q')
+             if len(keyword) < 5:
+                q = self.searchqueryset.autocomplete(text__startswith = self.cleaned_data['q'])
+             else:
+                q = self.searchqueryset.autocomplete(text__contains = self.cleaned_data['q'])
+             if len(q) != 0: 
+                 sqs = q
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):
@@ -150,6 +179,7 @@ class DatasetStructureImportForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
             Field('file'),
@@ -187,6 +217,7 @@ class DatasetAttributionForm(forms.ModelForm):
         self.dataset = dataset
 
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "attribution-form"
         self.helper.layout = Layout(
             Field('attribution'),
@@ -233,6 +264,7 @@ class AddProjectForm(forms.ModelForm):
         self.dataset = kwargs.pop('dataset', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-add-project-form"
         self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
         self.helper.layout = Layout(
@@ -247,6 +279,36 @@ class AddProjectForm(forms.ModelForm):
         required=True,
         help_text=_(
             "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų "
+            "rinkinys."
+        ),
+    )
+
+
+class AddRequestForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        fields = ['requests']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.dataset = kwargs.pop('dataset', None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "dataset-add-request-form"
+        self.fields['requests'].queryset = get_requests(self.user, self.dataset)
+        self.helper.layout = Layout(
+            Field('requests'),
+            Submit('submit', _("Pridėti"), css_class='button is-primary')
+        )
+
+    requests = ModelMultipleChoiceField(
+        label=_('Poreikiai'),
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text=_(
+            "Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų "
             "rinkinys."
         ),
     )
@@ -334,6 +396,7 @@ class DatasetRelationForm(forms.ModelForm):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-relation-form"
         self.helper.layout = Layout(
             Field('organization_id'),
@@ -380,3 +443,86 @@ class DatasetRelationForm(forms.ModelForm):
                     raise ValidationError(_(f'"{relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'))
 
         return part_of
+
+
+class PlanChoiceField(ModelChoiceField):
+    def label_from_instance(self, obj):
+        if obj.deadline:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+        else:
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
+
+
+class DatasetPlanForm(forms.ModelForm):
+    plan = PlanChoiceField(
+        label=_("Terminas"),
+        widget=forms.RadioSelect(),
+        queryset=Plan.objects.all()
+    )
+    form_type = CharField(widget=HiddenInput(), initial="include_form")
+
+    class Meta:
+        model = PlanDataset
+        fields = ('plan', 'form_type',)
+
+    def __init__(self, dataset, *args, **kwargs):
+        self.dataset = dataset
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "dataset-plan-form"
+        self.helper.layout = Layout(
+            Field('form_type'),
+            Field('plan'),
+            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+        )
+
+        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
+            Q(deadline__isnull=True) |
+            Q(deadline__gt=date.today())
+        )
+
+    def clean_plan(self):
+        plan = self.cleaned_data.get('plan')
+        if PlanDataset.objects.filter(
+            plan=plan,
+            dataset=self.dataset
+        ):
+            raise ValidationError(_("Duomenų rinkinys jau priskirtas šiam planui."))
+        return plan
+
+
+class PlanForm(OrganizationPlanForm):
+    form_type = CharField(widget=HiddenInput(), initial="create_form")
+
+    class Meta:
+        model = Plan
+        fields = ('title', 'description', 'deadline', 'provider', 'provider_title', 'receiver',)
+
+    def __init__(self, obj, organizations, user, *args, **kwargs):
+        self.obj = obj
+        super().__init__(organizations, user, *args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "plan-form"
+        self.helper.layout = Layout(
+            Field('form_type'),
+            Field('organizations'),
+            Field('user_id'),
+            Field('title'),
+            Field('description'),
+            Field('deadline'),
+            Field('receiver'),
+            Field('provider'),
+            Field('provider_title'),
+            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+        )
+
+        if len(self.organizations) == 1:
+            self.initial['receiver'] = self.organizations[0]
+            self.fields['receiver'].widget = HiddenInput()
+        else:
+            organization_ids = [org.pk for org in self.organizations]
+            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+
+        self.initial['title'] = self.obj.get_plan_title()

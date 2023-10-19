@@ -16,11 +16,11 @@
     <article class="media">
         <figure class="media-left">
             <p class="image is-64x64">
-                <img src="{% static 'img/placeholder/128x128.png' %}">
+                <img src="{% static 'img/placeholder/128x128.png' %}" alt="user-icon">
             </p>
         </figure>
         {% if external %}
-            <form class="media-content" action="{% url 'external-comment' content_type object_id %}" method="post" id="comment-form">
+            <form class="media-content" action="{% url 'external-comment' dataset.pk content_type object_id %}" method="post" id="comment-form">
         {% else %}
             <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
         {% endif %}
@@ -31,7 +31,7 @@
             {% endif %}
             <div class="field">
                 <p class="control">
-                    <button type="submit" hidden="true"></button>
+                    <button type="submit" hidden="true">{% translate "Teikti komentarą" %}</button>
                     <button class="button is-primary is-pulled-right comment-button" id="{{ submit_button_id }}"
                             type="button">{% translate "Teikti komentarą" %}</button>
                 </p>

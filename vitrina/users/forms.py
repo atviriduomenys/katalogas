@@ -3,15 +3,18 @@ from crispy_forms.layout import Layout, Div, Field, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm
-
-
+from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm, ModelChoiceField
 
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Organization
 from vitrina.users.models import User
-from vitrina.helpers import buttons, submit
+from vitrina.helpers import buttons, submit, send_email_with_logging
+from vitrina.helpers import prepare_email_by_identifier
+from django.core.mail import send_mail
 
 
 class LoginForm(Form):
@@ -23,6 +26,7 @@ class LoginForm(Form):
         self.user_cache = None
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "login-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -49,11 +53,15 @@ class RegisterForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("El. paštas"), required=True, error_messages={})
-    agree_to_terms = BooleanField(label="Sutinku su", required=False)
+    agree_to_terms = BooleanField(label=_("Sutinku su"), required=False)
     password1 = CharField(label=_("Slaptažodis"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
     password2 = CharField(label=_("Pakartokite slaptažodį"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+
+    error_messages = {
+        'password_mismatch': _('Slaptažodžio laukai nesutapo'),
+    }
 
     class Meta:
         model = User
@@ -62,6 +70,7 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "register-form"
         self.helper.layout = Layout(
             Field('first_name', placeholder=_("Vardas")),
@@ -88,6 +97,7 @@ class RegisterForm(UserCreationForm):
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
 
+
 class PasswordSetForm(ModelForm):
     password = CharField(label=_("Slaptažodis"), strip=False,
                     widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
@@ -104,6 +114,7 @@ class PasswordSetForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-set-form"
         self.helper.layout = Layout(
             Field('password', placeholder=_("Slaptažodis")),
@@ -120,6 +131,7 @@ class PasswordResetForm(BasePasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-form"
         self.helper.layout = Layout(
             Field('email', placeholder=_("El. paštas")),
@@ -132,6 +144,15 @@ class PasswordResetForm(BasePasswordResetForm):
         if email and not User.objects.filter(email=email).exists():
             raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja"))
         return cleaned_data
+
+    def send_mail(self, subject_template_name, email_template_name,
+                  context, from_email, to_email, html_email_template_name=None):
+        base_email_template = """Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą: {0}/"""
+        url = "{0}://{1}/reset/{2}/{3}".format(context['protocol'], context['domain'], context['uid'], context['token'])
+        email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
+                                                 'Slaptazodzio atstatymas',
+                                                 [url])
+        send_email_with_logging(email_data, [to_email])
 
 
 class PasswordResetConfirmForm(SetPasswordForm):
@@ -149,6 +170,7 @@ class PasswordResetConfirmForm(SetPasswordForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "password-reset-confirm-form"
         self.helper.layout = Layout(
             Field('new_password1', placeholder=_("Naujas slaptažodis")),
@@ -158,6 +180,12 @@ class PasswordResetConfirmForm(SetPasswordForm):
 
 
 class UserProfileEditForm(ModelForm):
+    first_name = CharField(label=_("Vardas"), required=False)
+    last_name = CharField(label=_("Pavardė"), required=False)
+    phone = CharField(label=_("Telefonas"), required=False)
+    email = EmailField(label=_("El. paštas"), required=True)
+    organization = ModelChoiceField(label=_("Organizacija"), required=False, queryset=Organization.public.all())
+
     class Meta:
         model = User
         fields = [
@@ -171,6 +199,7 @@ class UserProfileEditForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "user-profile-form"
         self.helper.layout = Layout(
                 Div(Div(Field('first_name', css_class='input', placeholder=_('Vardas')),
@@ -181,5 +210,26 @@ class UserProfileEditForm(ModelForm):
                         css_class='control'), css_class='field'),
                 Div(Div(Field('phone', css_class='input', placeholder=_('Telefonas')),
                         css_class='control'), css_class='field'),
+                Field('organization'),
                 Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
         )
+
+        user = self.instance if self.instance and self.instance.pk else None
+        if user:
+            organization_ids = []
+            if user.organization:
+                organization_ids.append(user.organization.pk)
+
+            organization_rep_ids = user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization)
+            ).values_list('object_id', flat=True)
+
+            dataset_rep_ids = user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Dataset)
+            ).values_list('object_id', flat=True)
+            dataset_rep_ids = Dataset.objects.filter(pk__in=dataset_rep_ids).values_list('organization__pk', flat=True)
+
+            organization_ids.extend(organization_rep_ids)
+            organization_ids.extend(dataset_rep_ids)
+
+            self.fields['organization'].queryset = self.fields['organization'].queryset.filter(pk__in=organization_ids)

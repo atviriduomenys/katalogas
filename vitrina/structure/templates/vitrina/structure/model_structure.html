@@ -234,7 +234,7 @@
                                         </a>
                                         <a
                                             href="{% url 'base-property-delete' dataset.pk model.pk prop.pk %}"
-                                            class="button is-danger is-small"
+                                            class="button is-link is-small"
                                             onclick="return confirm('Ar tikrai norite ištrinti?')"
                                         >
                                             {% translate "Trinti" %}
@@ -255,6 +255,10 @@
         {% if model.metadata.first.description %}
         <div><p>{{ model.metadata.first.description | markdown | safe }}</p></div>
         {% endif %}
+
+        {% if model.is_parameterized %}
+            {% include 'vitrina/structure/params.html' %}
+         {% endif %}
 
         <div class="mt-6">
             {% comments obj=model user=request.user is_structure=True %}

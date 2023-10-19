@@ -60,5 +60,3 @@ def test_get_filter_url_with_page(rf: RequestFactory):
     request = rf.get('/', {"page": "1"})
     filter_url = get_filter_url(request, 'key', 'value')
     assert filter_url == "?selected_facets=key_exact%3Avalue"
-
-

@@ -2,7 +2,9 @@ from django.urls import path
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import AddProjectView
-from vitrina.datasets.views import OrganizationStatsView
+from vitrina.datasets.views import RemoveRequestView
+from vitrina.datasets.views import AddRequestView
+from vitrina.datasets.views import DatasetRequestsView
 from vitrina.datasets.views import QuarterStatsView
 from vitrina.datasets.views import DatasetsTagsView
 from vitrina.datasets.views import YearStatsView
@@ -12,6 +14,7 @@ from vitrina.datasets.views import DatasetsOrganizationsView
 from vitrina.datasets.views import DatasetsCategoriesView
 from vitrina.datasets.views import DatasetsLevelView
 from vitrina.datasets.views import PublicationStatsView
+from vitrina.datasets.views import DatasetsGroupView
 from vitrina.datasets.views import CategoryStatsView
 from vitrina.datasets.views import JurisdictionStatsView
 from vitrina.datasets.views import CreateMemberView
@@ -32,15 +35,27 @@ from vitrina.datasets.views import DeleteMemberView
 from vitrina.datasets.views import RemoveProjectView
 from vitrina.datasets.views import UpdateMemberView
 from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetsStatsView
 from vitrina.datasets.views import DatasetRelationCreateView
 from vitrina.datasets.views import DatasetRelationDeleteView
 from vitrina.datasets.views import DatasetCategoryView
 from vitrina.datasets.views import FilterCategoryView
+from vitrina.datasets.views import DatasetPlanView
+from vitrina.datasets.views import DatasetCreatePlanView
+from vitrina.datasets.views import DatasetDeletePlanView
+from vitrina.datasets.views import DatasetPlansHistoryView
+from vitrina.datasets.views import DatasetDeletePlanDetailView
+from vitrina.datasets.views import DatasetRepresentativeApiKeyView
+from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters, \
+     update_dataset_jurisdiction_filters, OpenDataPortalDatasetDetailView
 
 urlpatterns = [
     # @GetMapping("/datasets")`
+    path('update-dataset-org-filters/', update_dataset_org_filters.as_view(), name='update-dataset-org-filters'),
+    path('update-dataset-cat-filters/', update_dataset_category_filters.as_view(), name='update-dataset-cat-filters'),
+    path('update-dataset-tag-filters/', update_dataset_tag_filters.as_view(), name='update-dataset-tag-filters'),
+    path('update-dataset-jurisdiction-filters/', update_dataset_jurisdiction_filters.as_view(), name='update-dataset-jurisdiction-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
+    path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
     # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
     path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
@@ -53,6 +68,7 @@ urlpatterns = [
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
     path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tags'),
+    path('datasets/stats/group/', DatasetsGroupView.as_view(), name='dataset-stats-groups'),
     path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-formats'),
     path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
     path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-published'),
@@ -67,6 +83,13 @@ urlpatterns = [
          name='dataset-structure-import'),
     path('datasets/<int:pk>/history/', DatasetHistoryView.as_view(), name="dataset-history"),
     path('datasets/<int:pk>/members/', DatasetMembersView.as_view(), name='dataset-members'),
+    path('datasets/<int:pk>/requests/', DatasetRequestsView.as_view(), name='dataset-requests'),
+    path('datasets/<int:pk>/requests/<int:request_id>/remove',
+         RemoveRequestView.as_view(),
+         name='dataset-request-remove'),
+    path('datasets/<int:pk>/requests/add',
+         AddRequestView.as_view(),
+         name='dataset-request-add'),
     path('datasets/<int:pk>/projects/', DatasetProjectsView.as_view(), name='dataset-projects'),
     path('datasets/<int:pk>/projects/<int:project_id>/remove',
          RemoveProjectView.as_view(),
@@ -75,12 +98,12 @@ urlpatterns = [
          AddProjectView.as_view(),
          name='dataset-project-add'),
     path(
-        'datasets/<int:dataset_id>/members/add/',
+        'datasets/<int:pk>/members/add/',
         CreateMemberView.as_view(),
         name='dataset-representative-create',
     ),
     path(
-        'datasets/<int:dataset_id>/members/<int:pk>/change/',
+        'datasets/<int:pk>/members/<int:representative_id>/change/',
         UpdateMemberView.as_view(),
         name='dataset-representative-update',
     ),
@@ -100,6 +123,7 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
+    path('dataset/atviru-duomenu-katalogo-api/', OpenDataPortalDatasetDetailView.as_view(), name='open-data-portal-dataset'),
     path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
     path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
@@ -108,6 +132,14 @@ urlpatterns = [
     path('datasets/<int:pk>/relation/add/', DatasetRelationCreateView.as_view(), name='dataset-relation-add'),
     path('datasets/<int:dataset_id>/relation/delete/<int:pk>',
          DatasetRelationDeleteView.as_view(), name='dataset-relation-delete'),
+    path('datasets/<int:pk>/plans/', DatasetPlanView.as_view(), name='dataset-plans'),
+    path('datasets/<int:pk>/plans/add/', DatasetCreatePlanView.as_view(), name='dataset-plans-create'),
+    path('datasets/plans/<int:pk>/delete/', DatasetDeletePlanView.as_view(), name='dataset-plans-delete'),
+    path('datasets/plans/<int:pk>/detail/delete/', DatasetDeletePlanDetailView.as_view(),
+         name='dataset-plans-delete-detail'),
+    path('datasets/<int:pk>/plans/history/', DatasetPlansHistoryView.as_view(), name='dataset-plans-history'),
+    path('datasets/<int:pk>/members/<int:rep_id>/api/<key>', DatasetRepresentativeApiKeyView.as_view(),
+         name='dataset-representative-api-key'),
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

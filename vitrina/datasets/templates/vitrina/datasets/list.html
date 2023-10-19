@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n parler_tags %}
+{% load hitcount_tags %}
+{% load util_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
@@ -43,6 +45,10 @@
             background-color: #007db2 !important;
             color: #ffffff;
         }
+        .divider-right {
+          border-right: 1px solid #dcdcdc;
+          height: 100%;
+        }
     </style>
 {% endblock %}
 
@@ -83,19 +89,22 @@
     <div class="card mb-5">
       <div class="card-content">
         <form id="dataset-filter" class="field has-addons is-fullwidth"
-              action="{% if request.resolver_match.url_name == 'dataset-list' %}
-                          {% url 'dataset-list' %}
-                       {% else %}
-                           {% url 'organization-datasets' request.resolver_match.kwargs.pk %}
-                       {% endif %}"
-              method="get">
+        action="{{ search_url }}"
+        method="get">
             <div class="control is-expanded">
                 <input class="input" id="search-input" type="text" name="q"
                        placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
-                       value="{{ q | escape }}"/>
+                       value="{{ q | escape }}" title="{% translate 'Paieška' %}"/>
+                {% for k, values in search_query.items %}
+                    {% for v in values %}
+                        {% if k != 'q' %}
+                            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             </div>
             <p class="control">
-                <button class="button is-primary" type="submit">
+                <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
                     <span class="icon is-large">
                         <i class="fa fa-search"></i>
                     </span>
@@ -104,10 +113,6 @@
         </form>
 
         <div class="buttons is-right">
-
-          <div class="show-mobile m-b-md">
-            <button class="button is-primary show-mobile-facets">{% translate "Filtro rezultatai" %}</button>
-          </div>
 
           {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
           <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
@@ -118,22 +123,21 @@
           <div class="dropdown is-hoverable is-block is-right">
             <div class="dropdown-trigger">
               <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
-                {% if sort == 'sort-by-date-oldest' %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-up-alt"></i>
+                  {% if sort %}
+                      {% for sort_option in sort_options %}
+                        {% if sort == sort_option.key %}
+                            <span class="icon is-small">
+                              <i class="{{ sort_option.icon }}"></i>
+                            </span>
+                            <span>{{ sort_option.title }}</span>
+                        {% endif %}
+                      {% endfor %}
+                  {% else %}
+                    <span class="icon is-slikuotamall">
+                      <i class="{{ sort_options.0.icon }}"></i>
                     </span>
-                    <span>{% translate "Seniausi" %}</span>
-                {% elif sort == 'sort-by-pavadinimas' %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-down-alt"></i>
-                    </span>
-                    <span>{% translate "Pagal pavadinimą" %}</span>
-                {% else %}
-                    <span class="icon is-small">
-                      <i class="fas fa-sort-amount-down-alt"></i>
-                    </span>
-                    <span>{% translate "Naujausi" %}</span>
-                {% endif %}
+                    <span>{{ sort_options.0.title }}</span>
+                  {% endif %}
                 <span class="icon is-small">
                   <i class="fas fa-angle-down" aria-hidden="true"></i>
                 </span>
@@ -141,24 +145,14 @@
             </div>
             <div class="dropdown-menu" id="dropdown-menu4" role="menu">
               <div class="dropdown-content">
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-date-newest">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-down-alt"></i>
-                  </span>
-                  <span>{% translate "Naujausi" %}</span>
-                </a>
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-date-oldest">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-up-alt"></i>
-                  </span>
-                  <span>{% translate "Seniausi" %}</span>
-                </a>
-                <a class="dropdown-item" href="{% url 'dataset-list' %}?sort=sort-by-title">
-                  <span class="icon is-small">
-                    <i class="fas fa-sort-amount-down-alt"></i>
-                  </span>
-                  <span>{% translate "Pagal pavadinimą" %}</span>
-                </a>
+                  {% for sort_option in sort_options %}
+                    <a class="dropdown-item" href="{{ sort_option.url }}" role="menuitem">
+                      <span class="icon is-small">
+                        <i class="{{ sort_option.icon }}"></i>
+                      </span>
+                      <span>{{ sort_option.title }}</span>
+                    </a>
+                  {% endfor %}
               </div>
             </div>
           </div>
@@ -181,73 +175,121 @@
             <div class="buttons">
               <div class="control">
                 <div class="tags">
-                  <span class="tag is-white is-medium has-text-grey">{% translate "Rasta duomenų rinkinių" %}:</span>
+                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų rinkinių" %}:</span>
                   <span class="tag is-medium">{{ paginator.count }}</span>
                 </div>
               </div>
             </div>
 
-
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
-                <article class="media adp-media">
-                    <div class="media-content">
-                        <div class="content">
-                            <div>
-                                <strong>
-                                    <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage i.object LANGUAGE_CODE %}
-                                            {{ i.object.title }}
-                                        {% endobjectlanguage %}
-                                    </a>
-                                </strong>
+                <article class="media adp-media is-block">
+                    <div class="columns">
+                        {% define i.object.get_icon as icon %}
+                        {% if icon %}
+                            <div class="column is-2 is-align-self-center">
+                                <div class="category-icon has-text-centered">
+                                    <span
+                                        style="font-size: 80px;"
+                                        class="category-custom-icon icon-{{ icon }}">
+                                    </span>
+                                </div>
                             </div>
 
-                            <div class="tags mt-2 mb-1">
-                              <span class="tag is-white has-text-grey">
-                                  {% translate "Publikuota" %}:
-                                  {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
-                              </span>
-                              {% if i.object.modified and i.object.modified > i.object.published %}
-                              <span class="tag is-white has-text-grey">
-                                  {% translate "Atnaujinta" %}:
-                                  {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
-                              </span>
-                              {% endif %}
+                            <div class="column is-8">
+                        {% else %}
+                            <div class="column is-10">
+                        {% endif %}
+                            <div class="media-content divider-right pr-1">
+                                <div class="content">
+                                    <div>
+                                        <strong>
+                                            <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                                {% objectlanguage i.object LANGUAGE_CODE %}
+                                                    {{ i.object.title }}
+                                                {% endobjectlanguage %}
+                                            </a>
+                                        </strong>
+                                    </div>
+                                    <div class="tags mt-2 mb-1">
+                                      <span class="tag is-white has-text-dark">
+                                          {% if i.object.published %}
+                                              {% translate "Publikuota" %}:
+                                              {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                          {% else %}
+                                              {% translate "Sukurta" %}:
+                                              {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                          {% endif %}
+                                      </span>
+                                      {% if i.object.modified and i.object.modified > i.object.published %}
+                                      <span class="tag is-white has-text-dark">
+                                          {% translate "Atnaujinta" %}:
+                                          {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                      </span>
+                                      {% endif %}
 
-                              {% if i.object.organization.title %}
-                              <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-grey dataset-list-organization">
-                                {{ i.object.organization.title }}
-                              </a>
-                              {% endif %}
+                                      {% if i.object.organization.title %}
+                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-dark dataset-list-organization">
+                                        {{ i.object.organization.title }}
+                                      </a>
+                                      {% endif %}
+                                    </div>
+                                      <span class="tag is-white has-text-dark">
+                                          {% translate "Duomenų rinkinys viešinamas" %}:
+                                          {% if i.object.is_public %}
+                                          {% translate "Taip" %}
+                                          {% else %}
+                                          {% translate "Ne" %}
+                                          {% endif %}
+                                      </span>
+
+
+
+                                    <p class="dataset-list-description my-1">
+                                        {% if i.object %}
+                                            {% objectlanguage i.object LANGUAGE_CODE %}
+                                                {{ i.object.description }}
+                                            {% endobjectlanguage %}
+                                        {% else %}
+                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                            -
+                                        {% endif %}
+                                    </p>
+
+                                    <div class="tags mt-3 mb-1">
+                                      {% for group in i.object.get_all_groups %}
+                                      <p class="tag is-info is-light" style="background-color:Gainsboro; color: black;">
+                                        {{ group }}
+                                      </p>
+                                      {% endfor %}
+
+                                      {% for t in i.object.distinct_formats %}
+                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-info is-light">
+                                          {{ t }}
+                                      </a>
+                                      {% endfor %}
+                                    </div>
+
+                                </div>
                             </div>
+                        </div>
 
-
-                            <p class="dataset-list-description my-1">
-                                {% if i.object %}
-                                    {% objectlanguage i.object LANGUAGE_CODE %}
-                                        {{ i.object.description }}
-                                    {% endobjectlanguage %}
-                                {% else %}
-                                    {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                    -
-                                {% endif %}
-                            </p>
-
-                            <div class="tags mt-3 mb-1">
-                              {% for group in i.object.get_all_groups %}
-                              <p class="tag is-link" style="background-color:Gainsboro; color: black;">
-                                {{ group }}
-                              </p>
-                              {% endfor %}
-
-                              {% for t in i.object.distinct_formats %}
-                              <a href="?selected_facets=formats_exact:{{ t }}"  class="tag is-link is-light">
-                                  {{ t }}
-                              </a>
-                              {% endfor %}
+                        <div class="column is-2 is-align-self-center">
+                            <div class="has-text-centered">
+                                {% get_hit_count for i.object as total_hits %}
+                                <div>
+                                    <i class="fa fa-eye"></i>
+                                    <span>{{ total_hits }}</span>
+                                </div>
+                                <div>
+                                    <i class="fa fa-thumbs-up"></i>
+                                    <span>{{ i.object.get_likes }}</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                    <span>{{ i.object.get_download_count }}</span>
+                                </div>
                             </div>
-
                         </div>
                     </div>
                 </article>
@@ -314,6 +356,42 @@
                     searchParams.set('date_to', date);
                     currentUrl.search = searchParams.toString();
                     window.location = currentUrl.toString();
+                }
+            });
+
+            let manFilter = $('#jurisdiction-filter-input');
+            manFilter.on('input', function(){
+                if (manFilter.val().length !== 0) {
+                    $('.jurisdiction_filter_items_body').html('').load(
+                        "{% url 'update-dataset-jurisdiction-filters' %}?q=" + manFilter.val()
+                    );
+                }
+            });
+
+            let orgFilter = $('#organization-filter-input');
+            orgFilter.on('input', function(){
+                if (orgFilter.val().length !== 0) {
+                    $('.organization_filter_items_body').html('').load(
+                        "{% url 'update-dataset-org-filters' %}?q=" + orgFilter.val()
+                    );
+                }
+            });
+
+            let catFilter = $('#category-filter-input');
+            catFilter.on('input', function(){
+                if (catFilter.val().length !== 0) {
+                    $('.category_filter_items_body').html('').load(
+                        "{% url 'update-dataset-cat-filters' %}?q=" + catFilter.val()
+                    );
+                }
+            });
+
+            let tagsFilter = $('#tags-filter-input');
+            tagsFilter.on('input', function(){
+                if (tagsFilter.val().length !== 0) {
+                    $('.tag_filter_items_body').html('').load(
+                        "{% url 'update-dataset-tag-filters' %}?q=" + tagsFilter.val()
+                    );
                 }
             });
 

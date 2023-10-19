@@ -3,16 +3,6 @@
 
 <table class="table custom-table-padding">
     <tbody>
-    <tr>
-        <th>{% translate "Pasiūlymas organizacijai" %}</th>
-        <td>
-            {% if request_object.organization %}
-            <a href="{{ request_object.organization.get_absolute_url }}">{{ request_object.organization }}</a>
-            {% else %}
-            -
-            {% endif %}
-        </td>
-    </tr>
     {% if request_object.is_existing and dataset %}
         <tr>
             <th>{% translate "Norimas keisti duomenų rinkinys" %}</th>
@@ -21,7 +11,7 @@
     {% endif %}
     <tr>
         <th>{% translate "Būsena" %}</th>
-        <td><b>{{ status }}</b></td>
+        <td id="request_status"><b>{{ status }}</b></td>
     </tr>
     <tr>
         <th>{% translate "Registravimo data" %}</th>

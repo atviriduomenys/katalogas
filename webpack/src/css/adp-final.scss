@@ -1,9 +1,12 @@
 @charset "utf-8";
 
 $link: #007db2;
+$primary: rgba(98, 185, 212, 0.9);
 
 @import "~bulma/bulma.sass";
 @import "custom/icons";
+@import "custom/tooltip";
+@import "custom/structure";
 
 
 .landing-page-image {
@@ -62,4 +65,19 @@ $link: #007db2;
   border: 1px solid #dcdcdc;
   border-radius: 6px;
   padding: 16px;
+}
+
+.custom-title {
+  color: #363636;
+  font-weight: 600;
+  font-size: 1.5rem !important;
+  margin-bottom: 1rem;
+}
+
+.no-margin-bottom {
+  margin-bottom: 0px !important;
+}
+
+.stays-right {
+  margin-left: auto;
 }

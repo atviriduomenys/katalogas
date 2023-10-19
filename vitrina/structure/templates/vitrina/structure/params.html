@@ -1,0 +1,65 @@
+{% load i18n %}
+{% load util_tags %}
+{% load markdown_tags %}
+<div>
+     <h4 class="custom-title is-size-4-mobile">{% translate "Parametrai" %}</h4>
+     <div class="mb-5">
+         {% if params %}
+            <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                <thead>
+                    <tr>
+                        <th>{% translate "Kodinis pavadinimas" %}</th>
+                        <th>{% translate "Formulė" %}</th>
+                        <th>{% translate "Šaltinis" %}</th>
+                        <th>{% translate "Pavadinimas" %}</th>
+                        <th>{% translate "Aprašymas" %}</th>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for param in params %}
+                        {% for param_item in param.paramitem_set.all %}
+                            <tr>
+                                <td>
+                                    {% if last_item.metadata.first.name and param_item.metadata.first.name and last_item.metadata.first.name != param_item.metadata.first.name %}
+                                        {{ param_item.metadata.first.name }}
+                                    {% elif not last_item %}
+                                        {{ param_item.metadata.first.name }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ param_item.metadata.first.prepare }}</td>
+                                <td>{{ param_item.metadata.first.source }}</td>
+                                <td>{{ param_item.metadata.first.title }}</td>
+                                <td><p>{{ param_item.metadata.first.description | markdown | safe }}</p></td>
+                                <td>
+                                    {% if can_update or can_manage_structure %}
+                                        <div class="buttons is-right">
+                                            <a href="{%url 'param-update' dataset.pk param_item.pk %}" class="button is-link is-small">
+                                                {% translate "Redaguoti" %}
+                                            </a>
+                                            <a href="{%url 'param-delete' dataset.pk param_item.pk %}" class="button is-link is-small"
+                                            onclick="return confirm('Ar tikrai norite pašalinti?')">
+                                                {% translate "Trinti" %}
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% define param_item as last_item %}
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+         {% else %}
+            <p>{% translate "Nėra parametrų." %}</p>
+         {% endif %}
+     </div>
+     {% if can_update or can_manage_structure %}
+        <div class="buttons is-right">
+            {% get_content_type object as content_type %}
+            <a href="{% url 'param-create' dataset.pk content_type.pk object.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                {% translate "Naujas parametras" %}
+            </a>
+        </div>
+    {% endif %}
+ </div>

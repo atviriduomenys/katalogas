@@ -3,14 +3,8 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Frequency
 from vitrina.comments.models import Comment
+from vitrina.requests.models import Request
 
-
-REQUEST_STATUSES = (
-    (None, _("---------")),
-    (Comment.OPENED, _("Atvertas")),
-    (Comment.APPROVED, _("Patvirtintas")),
-    (Comment.REJECTED, _("Atmestas"))
-)
 
 PROJECT_STATUSES = (
     (None, _("---------")),
@@ -29,11 +23,18 @@ class CommentForm(forms.ModelForm):
     def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['body'].label = False
+        self.fields['body'].widget.attrs.update({'title': _("Komentaras")})
         self.obj = obj
 
 
-class DatasetCommentForm(CommentForm):
+class RegisterRequestForm(CommentForm):
     register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
+
+    class Meta(CommentForm.Meta):
+        fields = ('is_public', 'register_request', 'body',)
+
+
+class DatasetCommentForm(RegisterRequestForm):
     increase_frequency = forms.ModelChoiceField(
         label=_("Didinti duomenų atnaujinimo periodiškumą"),
         required=False,
@@ -46,7 +47,7 @@ class DatasetCommentForm(CommentForm):
 
 
 class RequestCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=REQUEST_STATUSES, required=False, label=_("Būsena"))
+    status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))
 
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'status', 'body',)

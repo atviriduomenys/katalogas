@@ -1,66 +1,70 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block parent_title %}{% translate "Organizacija" %}{% endblock %}
-{% block current_title %}{{ organization.title }}{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}
+{% translate "Organizacijos narių sąrašas" %}
+{% endblock %}
 
 {% block content %}
 
 	{% include 'vitrina/orgs/tabs.html' %}
 
-    <div class="columns">
-        <div class="column is-three-quarters">
-            {% if has_permission %}
-                <div class="buttons is-right">
-                    <a class="button is-primary m-t-xs m-b-lg"
-                       href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
-                        {% translate "Pridėti narį" %}
-                    </a>
-                </div>
-            {% endif %}
-            {% if members %}
-                <table class="table is-fullwidth">
-                    <tbody>
-                    <tr>
-                        <th>{% translate "Vardas" %}</th>
-                        <th>{% translate "El. paštas" %}</th>
-                        <th>{% translate "Telefonas" %}</th>
-                        <th>{% translate "Rolė" %}</th>
-                        {% if has_permission %}
-                            <th></th>
-                            <th></th>
-                        {% endif %}
-                    </tr>
-                    {% for m in members %}
-                        <tr>
-                            {% if m.user %}
-                            <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
-                            <td><a href="mailto:{{ m.user.email }}">{{ m.user.email }}</a></td>
-                            <td>{{ m.user.phone|default:"-" }}</td>
-                            {% else %}
-                            <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
-                            <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
-                            <td>-</td>
-                            {% endif %}
-                            <td>{{ m.get_role_display|default:"-" }}</td>
-                            {% if has_permission %}
-                                <td>
-                                    <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
-                                        {% translate "Redaguoti" %}
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-danger is-small">
-                                        {% translate "Pašalinti" %}
-                                    </a>
-                                </td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% include "vitrina/common/pagination.html" %}
-            {% endif %}
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
+                {% translate "Pridėti narį" %}
+            </a>
         </div>
-    </div>
+    {% endif %}
+    {% if members %}
+        <table class="table is-fullwidth">
+            <tbody>
+            <tr>
+                <th>{% translate "Vardas" %}</th>
+                <th>{% translate "El. paštas" %}</th>
+                <th>{% translate "Telefonas" %}</th>
+                <th>{% translate "Rolė" %}</th>
+                {% if has_permission %}
+                    <td></td>
+                    <td></td>
+                {% endif %}
+            </tr>
+            {% for m in members %}
+                <tr>
+                    {% if m.user %}
+                    <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
+                    <td><a href="mailto:{{ m.user.email }}">{{ m.user.email }}</a></td>
+                    <td>{{ m.user.phone|default:"-" }}</td>
+                    {% else %}
+                    <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
+                    <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
+                    <td>-</td>
+                    {% endif %}
+                    <td>{{ m.get_role_display|default:"-" }}</td>
+                    {% if has_permission %}
+                        <td>
+                            <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
+                                {% translate "Redaguoti" %}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-link is-small">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% endif %}
 {% endblock %}

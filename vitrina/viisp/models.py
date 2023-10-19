@@ -9,3 +9,12 @@ class ViispKey(models.Model):
     class Meta:
         db_table = 'viispkey'
         managed = True
+
+class ViispTokenKey(models.Model):
+    key_content = models.TextField(
+        verbose_name=_("key_content"),
+        help_text=_('Pgp key content'),
+    )
+    class Meta:
+        db_table = 'viisptokenkey'
+        managed = True

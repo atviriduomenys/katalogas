@@ -1,5 +1,6 @@
 import factory
 import faker
+from django.utils import timezone
 from factory.django import DjangoModelFactory, FileField
 
 from vitrina import settings
@@ -7,7 +8,7 @@ from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, Frequ
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, DatasetResource
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -43,6 +44,10 @@ class DatasetFactory(DjangoModelFactory):
     status = Dataset.HAS_DATA
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
+    published = factory.Faker(
+        "date_time",
+        tzinfo=timezone.get_current_timezone(),
+    )
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

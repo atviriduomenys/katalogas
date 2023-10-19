@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai ir pasiūlymai' %}</span></a></li>
+        <li><a href="{% url 'request-detail' request_obj.pk %}"><span>{{ request_obj.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/requests/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            {% if datasets %}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    {% for dataset in datasets %}
+                        <tr>
+                        <td>
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <div>
+                                            <strong>
+                                                <a href="{{ dataset.get_absolute_url }}" class="dataset-list-title">
+                                                    {{ dataset.title }}
+                                                </a>
+                                            </strong>
+                                        </div>
+                                        <p class="dataset-list-description">
+                                            {{ dataset.description }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </article>
+                        </td>
+                        <td>
+                            <div class="buttons is-right">
+                                <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
+                                   href="{% url 'request-dataset-remove' pk=request_obj.pk dataset_id=dataset.pk %}">
+                                    {% translate "Pašalinti" %}
+                                </a>
+                            </div>
+                        </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% include "vitrina/common/pagination.html" %}
+            {% else %}
+                <p>{% translate "Duomenų rinkinių nėra." %}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

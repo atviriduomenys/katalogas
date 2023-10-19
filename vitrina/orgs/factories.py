@@ -1,6 +1,7 @@
 import factory
 from django.utils import timezone
 from factory.django import DjangoModelFactory
+from faker import Faker
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.factories import UserFactory
@@ -9,10 +10,17 @@ from vitrina.users.factories import UserFactory
 class OrganizationFactory(DjangoModelFactory):
     class Meta:
         model = Organization
-        django_get_or_create = ('title',)
+        django_get_or_create = ('title', 'kind', 'name', 'company_code',
+                                'email', 'phone', 'address')
 
     title = factory.Faker('company')
     kind = factory.Faker('word')
+    name = factory.Sequence(lambda n: f'{Faker().last_name()}_{n:04d}'.lower())
+    company_code = factory.Faker('bothify', text='?????????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+    email = factory.Faker('email')
+    phone = Faker().phone_number()
+    address = Faker().address()
+    is_public = True
     version = 1
 
     @classmethod

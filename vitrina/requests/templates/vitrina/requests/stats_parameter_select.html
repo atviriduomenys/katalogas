@@ -1,0 +1,87 @@
+{% load i18n parler_tags %}
+{% load util_tags %}
+
+<div class="is-flex">
+    <div class="stays-right">
+        <div class="columns">
+            {% if has_time_graph %}
+            <div class="column">
+                <form id='duration_select_id' action="{{ request.path }}" method="GET">
+                    {% for key, list in request.GET.items %}
+                        {% if key != 'duration' %}
+                            {% for val in request.GET|get_list:key %}
+                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div><span style="float:right">{% translate "Laikotarpis" %}</span></div>
+                    <div class="select">
+                        <select name="duration" id="duration-parameter" onchange="submitForm('duration_select_id')">
+                            <option value="duration-yearly" {% if duration == 'duration-yearly' %}selected{% endif %}>{% translate "Kas metus" %}</option>
+                            <option value="duration-quarterly" {% if duration == 'duration-quarterly' %}selected{% endif %}>{% translate "Kas ketvirtį" %}</option>
+                            <option value="duration-monthly" {% if duration == 'duration-monthly' %}selected{% endif %}>{% translate "Kas mėnesį" %}</option>
+                            <option value="duration-weekly" {% if duration == 'duration-weekly' %}selected{% endif %}>{% translate "Kas savaitę" %}</option>
+                            <option value="duration-daily" {% if duration == 'duration-daily' %}selected{% endif %}>{% translate "Kas dieną" %}</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            <div class="column">
+                <form id='sort_select_id' action="{{ request.path }}" method="GET">
+                    {% for key, list in request.GET.items %}
+                        {% if key != 'sort' %}
+                            {% for val in request.GET|get_list:key %}
+                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
+                    <div class="select">
+                        <select name="sort" id="sorting-parameter" onchange="submitForm('sort_select_id')">
+                            {% if active_filter == 'publication' %}
+                                <option value="sort-year-desc" {% if sort == 'sort-year-desc' %}selected{% endif %}>{% translate "Naujausi" %}</option>
+                                <option value="sort-year-asc" {% if sort == 'sort-year-asc' %}selected{% endif %}>{% translate "Seniausi" %}</option>
+                            {% endif %}
+                            <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
+                            <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="column">
+                <form id='indicator_select_id' action="{{ request.path }}" method="GET">
+                    {% for key, list in request.GET.items %}
+                        {% if key != 'indicator' %}
+                            {% for val in request.GET|get_list:key %}
+                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div><span style="float:right">{% translate "Rodiklis" %}</span></div>
+                    <div class="select">
+                      <select name="indicator" id="stats-parameter" onchange="submitForm('indicator_select_id')">
+                        <option value="request-count" {% if active_indicator == 'request-count' %}selected{% endif %}>Poreikių skaičius</option>
+                        <option value="request-count-open" {% if active_indicator == 'request-count-open' %}selected{% endif %}>Poreikių skaičius (neatsakytų)</option>
+                        <option value="request-count-late" {% if active_indicator == 'request-count-late' %}selected{% endif %}>Poreikių skaičius (vėluojančių)</option>
+                      </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitForm(formId) {
+        form = $(`form#${formId}`);
+        chartType = location.hash;
+        if (form.first() && chartType) {
+            form[0].action = form[0].action + chartType;
+        }
+        form.trigger('submit');
+    }
+</script>

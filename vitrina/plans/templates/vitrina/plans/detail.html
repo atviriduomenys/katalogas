@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load markdown_tags %}
+{% load util_tags %}
+
+{% block current_title %}{{ plan.title }}{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/orgs/tabs.html' %}
+
+    <div class="columns no-margin-bottom">
+         <div class="column is-full">
+             <div class="buttons is-right">
+                 {% if can_close %}
+                    {% if plan.is_closed %}
+                        <a href="{%url 'plan-open' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Atidaryti" %}
+                         </a>
+                    {% else %}
+                         <a href="{%url 'plan-close' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Uždaryti" %}
+                         </a>
+                    {% endif %}
+                 {% endif %}
+                 {% if can_manage %}
+                     <a href="{%url 'plan-change' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Keisti" %}
+                     </a>
+                     <a href="{%url 'plan-delete' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Trinti" %}
+                     </a>
+                 {% endif %}
+             </div>
+
+            <div class="content">
+                {% if plan.description %}
+                <div class="columns">
+                    <div class="column is-three-quarters">
+                        <p class="no-margin-bottom">{{ plan.description | markdown | safe }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="columns">
+                    <div class="column is-three-quarters">
+                        <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
+                            <tbody>
+                                <tr>
+                                    <th>{% translate "Duomenų atvėrimo paslaugų teikėjas" %}</th>
+                                    <td>
+                                        {% if plan.provider %}
+                                            <a href="{{ plan.provider.get_absolute_url }}">{{ plan.provider }}</a>
+                                        {% else %}
+                                            {{ plan.provider_title|default:"" }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Sukurta" %}</th>
+                                    <td>{{ plan.created|default:""|date:"SHORT_DATE_FORMAT" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Terminas" %}</th>
+                                    <td>
+                                        {% if plan.deadline %}
+                                            {% if plan.deadline|is_past_due %}
+                                                <span class="tag is-danger is-light">
+                                            {% else %}
+                                                <span class="tag is-success is-light">
+                                            {% endif %}
+                                                {{ plan.deadline|date:"SHORT_DATE_FORMAT"}}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Viešasis pirkimas" %}</th>
+                                    <td>{{ plan.procurement|default:"" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% translate "Duomenų atvėrimo kaina" %}</th>
+                                    <td>{{ plan.price|default:"" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+             {% if plan.project %}
+                 <div class="mb-5">
+                     <h4 class="custom-title is-size-4-mobile">{% translate "Projektas" %}</h4>
+                     <div class="columns">
+                        <div class="column is-three-quarters">
+                            <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
+                                <tbody>
+                                    <tr>
+                                        <th>{% translate "Pavadinimas" %}</th>
+                                        <td>{{ plan.project.title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>{% translate "Aprašymas" %}</th>
+                                        <td>{{ plan.project.description | markdown | safe }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                 </div>
+             {% endif %}
+
+             <div>
+                 <h4 class="custom-title is-size-4-mobile">{% translate "Priskirti poreikiai" %}</h4>
+                 <div class="mb-5">
+                     {% if plan_requests %}
+                         <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding">
+                            <thead>
+                                <tr>
+                                    <th>{% translate "Pavadinimas" %}</th>
+                                    <th>{% translate "Priskirta" %}</th>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pr in plan_requests %}
+                                    <tr>
+                                        <td><a href="{{ pr.request.get_absolute_url }}">{{ pr.request.title }}</a></td>
+                                        <td>{{ pr.created|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                        <td>
+                                            {% if can_manage %}
+                                                <a href="{% url 'request-plans-delete-detail' pr.pk %}"
+                                                   class="button is-link is-small is-pulled-right"
+                                                   id="delete_request_plan">{% translate "Pašalinti" %}</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                     {% else %}
+                        <p>{% translate "Priskirtų poreikių nėra." %}</p>
+                     {% endif %}
+                 </div>
+             </div>
+
+              <div>
+                 <h4 class="custom-title is-size-4-mobile">{% translate "Priskirti duomenų rinkiniai" %}</h4>
+                 <div class="mb-5">
+                     {% if plan_datasets %}
+                         <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding">
+                            <thead>
+                                <tr>
+                                    <th>{% translate "Pavadinimas" %}</th>
+                                    <th>{% translate "Priskirta" %}</th>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pd in plan_datasets %}
+                                    <tr>
+                                        <td><a href="{{ pd.dataset.get_absolute_url }}">{{ pd.dataset.title }}</a></td>
+                                        <td>{{ pd.created|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                        <td>
+                                            {% if can_manage %}
+                                                <a href="{% url 'dataset-plans-delete-detail' pd.pk %}"
+                                                   class="button is-link is-small is-pulled-right"
+                                                   id="delete_dataset_plan">{% translate "Pašalinti" %}</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                     {% else %}
+                        <p>{% translate "Priskirtų duomenų rinkinių nėra." %}</p>
+                     {% endif %}
+                 </div>
+             </div>
+        </div>
+	</div>
+{% endblock %}

@@ -31,6 +31,7 @@ class EnumForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.prop = prop
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "enum-form"
         self.helper.layout = Layout(
             Field('value'),
@@ -264,16 +265,18 @@ class ModelCreateForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={'rows': 6})
     )
+    is_parameterized = forms.BooleanField(label=_("Parametrizuotas"), required=False)
 
     class Meta:
         model = Metadata
         fields = ('name', 'source', 'prepare', 'uri', 'level', 'title',
-                  'description', 'base', 'base_ref', 'base_level', 'comment')
+                  'description', 'base', 'base_ref', 'base_level', 'comment', 'is_parameterized',)
 
     def __init__(self, dataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "model-form"
         self.helper.layout = Layout(
             Field('name'),
@@ -283,6 +286,7 @@ class ModelCreateForm(forms.ModelForm):
             Field('level'),
             Field('title'),
             Field('description'),
+            Field('is_parameterized'),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
             Field('base'),
             Field('base_ref'),
@@ -372,7 +376,7 @@ class ModelUpdateForm(ModelCreateForm):
 
     class Meta:
         model = Metadata
-        fields = ('model_id', 'name', 'ref', 'source', 'prepare', 'uri',
+        fields = ('model_id', 'name', 'ref', 'source', 'prepare', 'uri', 'is_parameterized',
                   'level', 'title', 'description', 'base', 'base_ref', 'base_level', 'comment')
 
     def __init__(self, dataset, *args, **kwargs):
@@ -389,6 +393,7 @@ class ModelUpdateForm(ModelCreateForm):
             Field('level'),
             Field('title'),
             Field('description'),
+            Field('is_parameterized'),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
             Field('base'),
             Field('base_ref'),
@@ -404,6 +409,7 @@ class ModelUpdateForm(ModelCreateForm):
             self.initial['name'] = instance.name.split('/')[-1]
             self.initial['level'] = instance.level_given if instance.level_given is not None else 'None'
             self.initial['ref'] = model.property_list.order_by('order').values_list('property', flat=True)
+            self.initial['is_parameterized'] = model.is_parameterized
             self.initial['base_level'] = 'None'
             if model.base:
                 self.initial['base'] = model.base.model
@@ -548,6 +554,7 @@ class PropertyForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.model = model
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "property-form"
         self.helper.layout = Layout(
             Field('dataset_id'),
@@ -660,3 +667,57 @@ class PropertyForm(forms.ModelForm):
         if access == '':
             return None
         return access
+
+
+class ParamForm(forms.ModelForm):
+    name = forms.CharField(label=_("Kodinis pavadinimas"))
+    prepare = forms.CharField(label=_("Formulė"))
+
+    class Meta:
+        model = Metadata
+        fields = ('name', 'source', 'prepare', 'title', 'description')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "param-form"
+        self.helper.layout = Layout(
+            Field('name'),
+            Field('source'),
+            Field('prepare'),
+            Field('title'),
+            Field('description', rows="2"),
+            Submit('submit', _("Redaguoti") if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            if not name[0].islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any((not c.isalnum() and c != '_') for c in name):
+                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+        return name
+
+    def clean_prepare(self):
+        prepare = self.cleaned_data.get('prepare')
+        if prepare:
+            try:
+                spyna.parse(prepare)
+            except ParseError as e:
+                raise ValidationError(e)
+        return prepare
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if description:
+            md = markdown.Markdown()
+            try:
+                md.convert(description)
+            except:
+                raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
+        return description

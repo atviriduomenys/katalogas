@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% load i18n parler_tags %}
-
+{{form.meida}}
 {% block current_title %}{{ current_title }}{% endblock %}
+{% block object_title %}{{ object_title }}{% endblock %}
 
 {% if parent_links %}
     {% block parent_links %}
@@ -17,6 +18,9 @@
 {% endif %}
 
 {% block content %}
+    {% if tabs %}
+        {% include tabs %}
+    {% endif %}
     <div class="columns is-centered">
         <div class="column is-half">
             {% if language_tabs %}
@@ -33,4 +37,13 @@
         </div>
     </div>
     <br/>
+{% endblock %}
+
+{% block head %}
+<style>
+    .select2-container {
+        min-height: 80px;
+    }
+
+</style>
 {% endblock %}

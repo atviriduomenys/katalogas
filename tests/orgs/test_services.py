@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+import factory
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
@@ -192,7 +193,8 @@ def test_request_edit_permission_author():
 @pytest.mark.django_db
 def test_request_edit_permission_supervisor():
     parent_organization = OrganizationFactory()
-    child_organization = parent_organization.add_child(instance=OrganizationFactory.build())
+    child_organization = parent_organization.add_child(instance=OrganizationFactory.build(id=1))
+    child_organization.save()
     ct = ContentType.objects.get_for_model(Organization)
     parrent_representative = RepresentativeFactory(
         content_type=ct,
@@ -202,7 +204,10 @@ def test_request_edit_permission_supervisor():
         content_type=ct,
         object_id=child_organization.pk,
     )
-    request = RequestFactory(user=child_representative.user, organization=child_organization)
+    request = RequestFactory(user=child_representative.user)
+    request.save()
+    request.organizations.add(child_organization.id)
+    request.save()
     res = has_perm(parrent_representative.user, Action.UPDATE, request)
     assert res is True
 

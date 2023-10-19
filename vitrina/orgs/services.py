@@ -3,15 +3,18 @@ import operator
 from enum import Enum
 from typing import Type
 
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.db.models import Q
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request
 from vitrina.resources.models import DatasetDistribution
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
@@ -23,6 +26,7 @@ class Action(Enum):
     HISTORY_VIEW = 'history_view'
     COMMENT = "comment_with_status"
     STRUCTURE = 'structure'
+    PLAN = 'plan'
 
 
 class Role(Enum):
@@ -35,6 +39,8 @@ class Role(Enum):
 
 acl = {
     (Organization, Action.UPDATE): [Role.COORDINATOR],
+    (Organization, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
+    (Organization, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Representative, Action.CREATE): [Role.COORDINATOR],
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
@@ -44,6 +50,8 @@ acl = {
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.VIEW): [Role.COORDINATOR],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
@@ -52,11 +60,14 @@ acl = {
     (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
+    (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
+    (Task, Action.UPDATE): [Role.ALL],
+
 }
 
 
@@ -145,3 +156,9 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
         ).
         count()
     )
+
+
+def hash_api_key(api_key: str) -> str:
+    hasher = PBKDF2PasswordHasher()
+    salt = settings.HASHER_SALT
+    return hasher.encode(api_key, salt)

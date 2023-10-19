@@ -8,6 +8,7 @@ from typing import Union, Tuple, List, Dict
 import requests
 from django.db.models import Q
 from lark import ParseError
+from pyproj import Transformer
 
 import vitrina.datasets.structure as struct
 
@@ -23,6 +24,7 @@ from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import spyna
 from vitrina.structure.models import Metadata, Model, Property, Prefix, Enum, EnumItem, PropertyList, Param, \
     ParamItem, Base
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
@@ -67,7 +69,14 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 object_id=structure.pk,
                 type=Comment.STRUCTURE_ERROR
             )
-
+            Task.objects.create(
+                title=f"Rasta klaida duomenyse: {ct}, id: {structure.pk}",
+                description=f"Duomenyse {ct}, id: {structure.pk} aptikta klaida.",
+                content_type=ct,
+                object_id=structure.pk,
+                status=Task.CREATED,
+                user=sys_user
+            )
 
 def _load_datasets(
     state: struct.State,
@@ -367,6 +376,14 @@ def _create_errors(
             object_id=obj.pk,
             type=Comment.STRUCTURE_ERROR,
             body=error,
+        )
+        Task.objects.create(
+            title=f"Rasta klaida duomenyse: {ct}, id: {obj.pk}",
+            description=f"Duomenyse {ct}, id: {obj.pk} aptikta klaida.",
+            content_type=ct,
+            object_id=obj.pk,
+            status=Task.CREATED,
+            user=sys_user
         )
 
 
@@ -711,7 +728,7 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
                 meta.errors.append(_(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.'))
 
 
-def get_data_from_spinta(model: Model, uuid: str = None, query: str = ''):
+def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = ''):
     if uuid:
         url = f"https://get.data.gov.lt/{model}/{uuid}/?{query}"
     else:
@@ -1077,4 +1094,23 @@ def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:
             ref = ref_model
     return ref
 
+
+def get_srid(type_args):
+    srid = None
+    if type_args:
+        type_args = type_args.split(',')
+        type_args = [arg.strip() for arg in type_args]
+        if len(type_args) == 1 and type_args[0].isdigit():
+            srid = int(type_args[0])
+        elif len(type_args) == 2 and type_args[1].isdigit():
+            srid = int(type_args[1])
+    return srid
+
+
+def transform_coordinates(point_x, point_y, source_srid, target_srid):
+    transformer = Transformer.from_crs(
+        f"EPSG:{source_srid}",
+        f"EPSG:{target_srid}"
+    )
+    return transformer.transform(point_x, point_y)
 

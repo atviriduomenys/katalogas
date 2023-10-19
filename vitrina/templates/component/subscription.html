@@ -1,12 +1,41 @@
 {% load i18n %}
+<p class="has-text-dark">{% translate "Prenumeruoja:" %} <strong id="number-of-subscribers">{{ subscription_count }}</strong></p>
 {% if user.is_authenticated %}
     {% if description %}
         <p>{{ description }}</p>
     {% endif %}
-    <form action="{% if subscribed %}{% url 'unsubscribe' content_type_id obj_id user.pk %}{% else %}{% url 'subscribe' content_type_id obj_id user.pk %}{% endif %}"
-          method="post" class="rating-form" id="subscribe-form">
+    {% if subscribed %}
+    <form action="{% url 'unsubscribe' content_type_id obj_id user.pk %}"
+          method="post" class="rating-form" id="unsubscribe-form">
         {% csrf_token %}
         <input type="submit" class="button is-primary" value="{{ button_text }}">
     </form>
+    {% else %}
+    <a href="{%url 'subscribe-form' content_type_id obj_id user.pk %}"
+       class="button is-primary is-normal m-t-md is-size-6-mobile"
+       id="subscribe-form">
+        {{ button_text }}
+    </a>
+    {% endif %}
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Success</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endif %}
-<p>{% translate "Prenumeruoja:" %} <strong id="number-of-subscribers">{{ subscription_count }}</strong></p>
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('#successModal').modal('show');
+        });
+    </script>
+{% endblock %}

@@ -44,7 +44,7 @@
               </p>
               <p class="control">
                 <span class="select">
-                  <select id="select_format_id">
+                  <select id="select_format_id" aria-label="{% translate 'Atsisiuntimo formatas' %}">
                       {% for format, name in formats.items %}
                         <option value="{{ format }}">{{ name }}</option>
                       {% endfor %}
@@ -62,7 +62,9 @@
                             <button
                                 id="remove_tag_{{ tag }}_id"
                                 class="delete is-small"
-                                onclick="removeFilter('{{ tag }}', {{ forloop.counter0 }})">
+                                onclick="removeFilter('{{ tag }}', {{ forloop.counter0 }})"
+                                title="{% translate 'Pašalinti filtrą' %}"
+                                aria-label="{% translate 'Pašalinti filtrą' %}">
                             </button>
                         </span>
                     {% endfor %}
@@ -74,21 +76,21 @@
                             <ul>
                                 {% if '_id' in selected_cols %}
                                     <li>
-                                        <input type="checkbox" checked/>
+                                        <input type="checkbox" checked title="_id"/>
                                         <span>_id</span>
                                     </li>
                                 {% else %}
                                     <li>
-                                        <input type="checkbox"/>
+                                        <input type="checkbox" title="_id"/>
                                         <span>_id</span>
                                     </li>
                                 {% endif %}
 
                                 {% for col in properties.keys %}
                                     {% if col in selected_cols %}
-                                    <li> <input type="checkbox" checked/> <span>{{ col }}</span></li>
+                                    <li> <input type="checkbox" checked title="{{ col }}"/> <span>{{ col }}</span></li>
                                     {% else %}
-                                    <li><input type="checkbox"/> <span>{{ col }}</span></li>
+                                    <li><input type="checkbox" title="{{ col }}"/> <span>{{ col }}</span></li>
                                     {% endif %}
                                 {% endfor %}
                             </ul>
@@ -153,15 +155,25 @@
                                                         <option value="endswith">endswith</option>
                                                     </select>
                                                 </div>
-                                                <input class="input is-small is-short" id="{{ col }}_compare_value_id" type="text"/>
+                                                <input class="input is-small is-short" id="{{ col }}_compare_value_id" type="text" title="{% translate 'Palyginimo reikšmė' %}"/>
                                             </div>
                                             <div class="mb-3 is-inine-block">
                                                 <div class="buttons is-right">
                                                     <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
-                                                    <button id="{{ col }}_order_asc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}', false)">
+                                                    <button id="{{ col }}_order_asc_id"
+                                                            class="button is-primary is-small"
+                                                            onclick="orderBy('{{ col }}', false)"
+                                                            title="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
+                                                            aria-label="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
+                                                    >
                                                         <span class="icon has-text-white"><i class="fas fa-arrow-up"></i></span>
                                                     </button>
-                                                    <button id="{{ col }}_order_desc_id" class="button is-primary is-small" onclick="orderBy('{{ col }}')">
+                                                    <button id="{{ col }}_order_desc_id"
+                                                            class="button is-primary is-small"
+                                                            onclick="orderBy('{{ col }}')"
+                                                            title="{% translate 'Rūšiuoti didėjimo tvarka' %}"
+                                                            aria-label="{% translate 'Rūšiuoti didėjimo tvarka' %}"
+                                                    >
                                                         <span class="icon has-text-white"><i class="fas fa-arrow-down"></i></span>
                                                     </button>
                                                 </div>
@@ -336,7 +348,6 @@
                 sort.push(col);
             }
             sort = `sort(${sort.join(',')})`;
-            console.log(query);
             query = query ? `${query}&${sort}` : `?${sort}`;
 
             let url = `${location.origin}${location.pathname}${query}`;

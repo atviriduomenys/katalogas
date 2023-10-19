@@ -1958,7 +1958,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
+        start_date = Dataset.objects.order_by('created').first().created
         max_count = 0
         stats_for_period = {}
         year_stats = {}

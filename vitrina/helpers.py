@@ -14,14 +14,18 @@ from operator import itemgetter
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
+from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+
+from vitrina import settings
 from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+from vitrina.messages.models import EmailTemplate
 
 
 class Filter:
@@ -441,3 +445,40 @@ def get_current_domain(request: WSGIRequest) -> str:
     if not localhost:
         return request.build_absolute_uri("%s://%s" % (protocol, domain))
     return request.build_absolute_uri(domain)
+
+
+def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
+    email_template = EmailTemplate.objects.filter(identifier=email_identifier)
+    if not email_template:
+        email_subject = email_title = email_title_subject
+        email_content = base_template_content.format(*email_template_keys)
+        created_template = EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=base_template_content,
+            subject=_(email_title_subject),
+            title=_(email_title)
+        )
+        created_template.save()
+    else:
+        email_template = email_template.first()
+        email_content = str(email_template.template)
+        email_content = email_content.format(*email_template_keys)
+        email_subject = str(email_template.subject)
+
+    return {'email_content': email_content, 'email_subject': email_subject}
+
+
+def send_email_with_logging(email_data, email_list):
+    try:
+        send_mail(
+            subject=_(email_data['email_subject']),
+            message=_(email_data['email_content']),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=email_list,
+        )
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", _(email_data['email_subject']),
+                        _(email_data['email_content']), email_list, e)

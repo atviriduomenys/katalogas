@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 from datetime import datetime
 
@@ -21,8 +22,11 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from vitrina import settings
+from vitrina.api.models import ApiKey
+from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from django.template.defaultfilters import date as _date
-
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
@@ -36,6 +40,8 @@ from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
+from allauth.socialaccount.models import SocialAccount
+from treebeard.mp_tree import MP_Node
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
 
@@ -399,6 +405,15 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
+    base_template_content = """
+         Buvote įtraukti į {0} organizacijos
+         narių sąrašo, tačiau nesate registruotas Lietuvos
+         atvirų duomenų portale. Prašome sekite šia nuoroda,
+         kad užsiregistruotumėte ir patvirtintumėte savo narystę
+        'organizacijoje:\n'
+        '{1}   
+    """
+    email_identifier = "auth-org-representative-without-credentials"
 
     organization: Organization
 
@@ -462,21 +477,12 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            send_mail(
-                subject=_('Kvietimas prisijungti prie atvirų duomenų portalo'),
-                message=_(
-                    f'Buvote įtraukti į „{self.organization}“ organizacijos '
-                    'narių sąrašo, tačiau nesate registruotas Lietuvos '
-                    'atvirų duomenų portale. Prašome sekite šia nuoroda, '
-                    'kad užsiregistruotumėte ir patvirtintumėte savo narystę '
-                    'organizacijoje:\n'
-                    '\n'
-                    f'{url}\n'
-                    '\n'
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[self.object.email],
-            )
+            email_data = prepare_email_by_identifier(
+                self.email_identifier,  self.base_template_content,
+                'Kvietimas prisijungti prie atvirų duomenų portalo',
+                 [self.organization, url]
+             )
+            send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
@@ -537,6 +543,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.organization
+            self.object.user.save()
+
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -570,9 +581,6 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         else:
             self.object.apikey_set.all().delete()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.organization
-            self.object.user.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

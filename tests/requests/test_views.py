@@ -135,13 +135,14 @@ def test_add_request_to_plan_with_representative(app: DjangoTestApp):
         object_id=organization.pk,
     )
     app.set_user(representative.user)
-    request = RequestFactory(user=representative.user)
+    request = RequestFactory(user=representative.user, status=Request.APPROVED)
     request.organizations.add(organization)
     plan = PlanFactory(
         deadline=(date.today() + timedelta(days=1))
     )
 
-    form = app.get(reverse('request-plans-create', args=[request.pk])).forms['request-plan-form']
+    resp = app.get(reverse('request-plans-create', args=[request.pk]))
+    form = resp.forms['request-plan-form']
     form['plan'] = plan.pk
     resp = form.submit()
 
@@ -165,7 +166,7 @@ def test_add_request_to_plan_title(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
-    request = RequestFactory()
+    request = RequestFactory(status=Request.APPROVED)
     request.organizations.add(organization)
 
     form = app.get(reverse('request-plans-create', args=[request.pk])).forms['plan-form']
@@ -186,6 +187,8 @@ def test_add_request_to_plan_title_error(app: DjangoTestApp):
         external_content_type="datasets/Model"
     )
     request_object.request.organizations.add(organization)
+    request_object.request.status = Request.APPROVED
+    request_object.request.save()
 
     form = app.get(reverse('request-plans-create', args=[request_object.request.pk])).forms['plan-form']
     form.submit()

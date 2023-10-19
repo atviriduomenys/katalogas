@@ -19,9 +19,11 @@ from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
-from vitrina.requests.models import Request, RequestObject
+from vitrina.requests.models import Request, RequestObject, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
+from django.utils.translation import gettext_lazy as _
+
 
 
 class CommentView(
@@ -74,36 +76,80 @@ class CommentView(
                 comment.rel_object_id = new_request.pk
 
             elif status := form.cleaned_data.get('status'):
+                user_org = request.user.organization
                 comment.type = Comment.STATUS
-                obj.status = status
-                obj.comment = comment.body
-                obj.save()
-                set_comment(type(obj).STATUS_CHANGED)
-
-                if isinstance(obj, Request) and status == Request.OPENED:
-                    request_plans = Plan.objects.filter(planrequest__request=obj)
-
-                    for plan in request_plans:
-                        if (
-                            plan.planrequest_set.filter(
-                                request__status=Request.OPENED
-                            ).count() == plan.planrequest_set.count() and
-                            plan.plandataset_set.annotate(
-                                has_distributions=Exists(DatasetDistribution.objects.filter(
-                                    dataset_id=OuterRef('dataset_id'),
-                                ))
-                            ).count() == plan.plandataset_set.count()
-                        ):
-                            plan.is_closed = True
-                            plan.save()
-                if obj is not None:
-                    if obj.status == 'REJECTED':
-                        email_data = prepare_email_by_identifier('application-use-case-rejected', email_content,
-                                                                 'Gautas naujas pasiūlymas',
-                                                                 [obj.title, obj.description])
-                        if obj.user is not None:
-                            if obj.user.email is not None:
-                                send_email_with_logging(email_data, [obj.user.email])
+                if isinstance(obj, Request):
+                    user_org = request.user.organization
+                    request_assignment = RequestAssignment.objects.filter(
+                        organization=user_org,
+                        request=obj
+                    ).first()
+                    obj.status = status
+                    obj.comment = comment.body
+                    obj.save()
+                    set_comment(type(obj).STATUS_CHANGED)
+                    if not request_assignment:
+                        if user_org and status==Request.APPROVED:
+                            request_assignment = RequestAssignment(
+                                request=obj,
+                                organization=user_org,
+                                status=Request.APPROVED
+                            )
+                            request_assignment.save()
+                            messages.info(request, _("Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"))
+                        else:
+                            messages.error(request, _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"))
+                            return redirect(obj.get_absolute_url())
+                    if status == Request.OPENED:
+                        obj.status = status
+                        obj.comment = comment.body
+                        obj.save()
+                        set_comment(type(obj).STATUS_CHANGED)
+                        request_plans = Plan.objects.filter(planrequest__request=obj)
+                        for plan in request_plans:
+                            if (
+                                plan.planrequest_set.filter(
+                                    request__status=Request.OPENED
+                                ).count() == plan.planrequest_set.count() and
+                                plan.plandataset_set.annotate(
+                                    has_distributions=Exists(DatasetDistribution.objects.filter(
+                                        dataset_id=OuterRef('dataset_id'),
+                                    ))
+                                ).count() == plan.plandataset_set.count()
+                            ):
+                                plan.is_closed = True
+                                plan.save()
+                    if status == Request.APPROVED:
+                        obj.status = status
+                        obj.comment = comment.body
+                        obj.save()
+                        set_comment(type(obj).STATUS_CHANGED)
+                    if status == Request.REJECTED:
+                        approved_assignments_exists = RequestAssignment.objects.filter(
+                            status=Request.APPROVED,
+                            request=obj
+                        )
+                        opened_assignments_exists = RequestAssignment.objects.filter(
+                            status=Request.OPENED,
+                            request=obj
+                        )
+                        if not approved_assignments_exists and not opened_assignments_exists:
+                            obj.status = status
+                            obj.comment = comment.body
+                            obj.save()
+                            set_comment(type(obj).STATUS_CHANGED)
+                    ra_comment = form.save(commit=False)
+                    request_assignment.status = status
+                    request_assignment.comment = ra_comment.body
+                    ra_comment.content_type = ContentType.objects.get_for_model(RequestAssignment)
+                    ra_comment.object_id = request_assignment.pk
+                    request_assignment.save()
+                    ra_comment.save()
+                else:
+                    obj.status = status
+                    obj.comment = comment.body
+                    obj.save()
+                    set_comment(type(obj).STATUS_CHANGED)
             else:
                 comment.type = Comment.USER
             comment.save()

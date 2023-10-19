@@ -157,6 +157,8 @@ Y_TITLES = {
     'distribution-count': _('Duomenų šaltinių (distribucijų) skaičius'),
     'dataset-count': _('Duomenų rinkinių skaičius'),
     'request-count': _('Poreikių skaičius'),
+    'request-count-open': _('Poreikių skaičius (neatsakytų)'),
+    'request-count-late': _('Poreikių skaičius (vėluojančių)'),
     'project-count': _('Projektų skaičius')
 }
 
@@ -361,7 +363,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         indicator = self.request.GET.get('indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Request.objects.all().first().created
+        start_date = Request.objects.order_by('created').first().created
         max_count = 0
         stats_for_period = {}
         year_stats = {}

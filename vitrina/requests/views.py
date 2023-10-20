@@ -1,8 +1,9 @@
-from typing import List
+from typing import Any, List
+from django import http
 
 from django.views.generic import CreateView, UpdateView, DetailView
 from collections import OrderedDict
-
+from django.views import View
 
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ from django.db.models import Case, When
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
 from reversion.models import Version
 from haystack.generic_views import FacetedSearchView
+from django.views.generic.base import RedirectView, View
 
 from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
@@ -30,6 +32,7 @@ from vitrina.requests.services import update_facet_data
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
+from urllib.parse import urlencode
 from vitrina.classifiers.models import Category
 from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 
@@ -41,8 +44,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
-from vitrina.helpers import get_filter_url
-
+from django.http.response import HttpResponsePermanentRedirect
 
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
@@ -264,6 +266,13 @@ class RequestQuarterStatsView(RequestListView):
         context['filter'] = 'publication'
         context['sort'] = sorting
         return context
+
+class RequestRedirectView(View):
+    def get(self, request, **kwargs):
+        uuid = kwargs.get('uuid')
+        request = get_object_or_404(Request, uuid=uuid)
+        return HttpResponsePermanentRedirect(reverse('request-detail', kwargs={'pk': request.pk}))
+
 
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):

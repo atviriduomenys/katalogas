@@ -8,7 +8,7 @@ from vitrina.requests.views import RequestPlanView
 from vitrina.requests.views import RequestCreatePlanView
 from vitrina.requests.views import RequestDeletePlanView
 from vitrina.requests.views import RequestPlansHistoryView
-from vitrina.requests.views import RequestDeletePlanDetailView
+from vitrina.requests.views import RequestDeletePlanDetailView, RequestRedirectView
 from vitrina.requests.views import update_request_org_filters, update_request_jurisdiction_filters
 
 
@@ -19,6 +19,7 @@ urlpatterns = [
     path('requests/submitted/', RequestListView.as_view(), name='request-list'),
     # @GetMapping("/requests/{slug}")
     path('requests/<int:pk>/', RequestDetailView.as_view(), name='request-detail'),
+    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-detail'),
     path('requests/stats/publication/', RequestPublicationStatsView.as_view(), name='request-stats-published'),
     path('requests/stats/publication/year/<int:year>/', RequestYearStatsView.as_view(), name='request-stats-publication-year'),
     path('requests/stats/publication/quarter/<str:quarter>/', RequestQuarterStatsView.as_view(), name='request-stats-publication-quarter'),

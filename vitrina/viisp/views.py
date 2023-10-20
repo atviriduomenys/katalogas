@@ -39,9 +39,9 @@ class VIISPLoginView(TemplateView):
             viisp_token_key = ViispTokenKey.objects.first().key_content.encode()
             fernet = Fernet(viisp_token_key)
             token = fernet.encrypt(self.request.user.email.encode()).decode()
-        ticket_id = get_response_with_ticket_id(key, domain, token)
+        ticket_id, error_data = get_response_with_ticket_id(key, domain, token)
         if not ticket_id:
-            return HttpResponse(status=500)
+            return render(request, 'allauth/socialaccount/api_error.html', error_data)
         url = VIISPOAuth2Adapter.authorize_url
         return redirect(url + "?" + "ticket={}".format(ticket_id))
 

@@ -137,13 +137,6 @@ def create_redirects(apps, schema_editor):
     )
     redirect.save()
 
-    redirect = Redirect.objects.create(
-        site_id=SITE_ID,
-        old_path='/requests/2b6f55f8-cbc9-4e77-a4e8-31c21da12420/',
-        new_path='/requests/194/',
-    )
-    redirect.save()
-
 
 
 class Migration(migrations.Migration):

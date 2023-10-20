@@ -13,6 +13,7 @@ from vitrina.settings import VIISP_PROXY_AUTH
 import zipfile
 import io
 import requests
+import logging
 
 
 providers = ('auth.lt.identity.card',
@@ -90,18 +91,22 @@ def _generate_xml(base_element_name):
 
 
 def get_response_with_ticket_id(key, domain, token=None):
+    logger = logging.getLogger(__name__)
     signed_xml = create_signed_authentication_request_xml(key, domain, token)
     soap_request = envelope.format(signed_xml)
-    print(soap_request)
+    logger.info(soap_request)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
     try:
         resp.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(e.request)
-        print(e.response)
-        print(e.response.text)
-        return None
-    return _parse_ticket_id(resp.text)
+        error_data = {}
+        error_data['error_response'] = e.response
+        error_data['error_response_text'] = e.response.text
+        logger.info(e.request)
+        logger.info(e.response)
+        logger.info(e.response.text)
+        return None, error_data
+    return _parse_ticket_id(resp.text), None
 
 
 def get_response_with_user_data(ticket_id, key):

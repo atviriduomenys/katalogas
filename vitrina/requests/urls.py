@@ -44,7 +44,7 @@ urlpatterns = [
     path('requests/<int:pk>/orgs/delete', RequestOrgDeleteView.as_view(), name='request-orgs-delete'),
     path('requests/<int:pk>/datasets/<int:dataset_id>/remove', RequestDeleteDatasetView.as_view(),
          name='request-dataset-remove'),
-    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-detail'),
+    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-redirect-detail'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")

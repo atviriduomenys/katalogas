@@ -124,7 +124,6 @@ urlpatterns = [
         name='dataset-stats-jurisdiction'
     ),
     path('dataset/atviru-duomenu-katalogo-api/', OpenDataPortalDatasetDetailView.as_view(), name='open-data-portal-dataset'),
-    path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='request-detail'),
     path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
     path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
@@ -141,6 +140,7 @@ urlpatterns = [
     path('datasets/<int:pk>/plans/history/', DatasetPlansHistoryView.as_view(), name='dataset-plans-history'),
     path('datasets/<int:pk>/members/<int:rep_id>/api/<key>', DatasetRepresentativeApiKeyView.as_view(),
          name='dataset-representative-api-key'),
+    path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='dataset-redirect-detail')
     # @GetMapping("/harvest/object/{id}")
     # @GetMapping("/harvested/{id}")
     # @GetMapping("/dataset/{slug}/follow")

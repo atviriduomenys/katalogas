@@ -35,6 +35,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from vitrina.datasets.helpers import is_manager_dataset_list
+from django.http.response import HttpResponsePermanentRedirect
 
 from haystack.generic_views import FacetedSearchView
 from parler.utils.context import switch_language
@@ -106,6 +107,13 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def get(self, request, **kwargs):
+        legacy_org_redirect = self.request.GET.get('organization_id')
+        if legacy_org_redirect:
+            new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
 
     def get_queryset(self):
         datasets = super().get_queryset()
@@ -330,6 +338,13 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             return reverse('organization-plans', args=[self.organization.pk])
         else:
             return None
+
+class DatasetRedirectView(View):
+
+    def get(self, request, **kwargs):
+        slug = kwargs.get('slug')
+        dataset = get_object_or_404(Dataset, slug=slug)
+        return HttpResponsePermanentRedirect(reverse('dataset-detail', kwargs={'pk': dataset.pk}))
 
 
 class DatasetDetailView(

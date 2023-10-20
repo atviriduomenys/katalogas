@@ -109,7 +109,11 @@ class DatasetListView(PlanMixin, FacetedSearchView):
 
     def get_queryset(self):
         datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request.user, datasets)
+        is_org_dataset = False
+        if is_org_dataset_list(self.request) and self.request.user.is_authenticated:
+            if self.request.user.organization_id == self.request.resolver_match.kwargs['pk']:
+                is_org_dataset = True
+        datasets = get_datasets_for_user(self.request.user, datasets, is_org_dataset)
         datasets = datasets.models(Dataset)
         sorting = self.request.GET.get('sort', None)
 
@@ -348,6 +352,9 @@ class DatasetDetailView(
         if dataset.is_public:
             return True
         else:
+            # if self.request.user.organization_id == dataset.organization_id:
+            #     return True
+            # else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):

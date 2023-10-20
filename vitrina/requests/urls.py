@@ -19,7 +19,6 @@ urlpatterns = [
     path('requests/submitted/', RequestListView.as_view(), name='request-list'),
     # @GetMapping("/requests/{slug}")
     path('requests/<int:pk>/', RequestDetailView.as_view(), name='request-detail'),
-    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-detail'),
     path('requests/stats/publication/', RequestPublicationStatsView.as_view(), name='request-stats-published'),
     path('requests/stats/publication/year/<int:year>/', RequestYearStatsView.as_view(), name='request-stats-publication-year'),
     path('requests/stats/publication/quarter/<str:quarter>/', RequestQuarterStatsView.as_view(), name='request-stats-publication-quarter'),
@@ -40,6 +39,7 @@ urlpatterns = [
     path('requests/<int:pk>/orgs/delete', RequestOrgDeleteView.as_view(), name='request-orgs-delete'),
     path('requests/<int:pk>/datasets/<int:dataset_id>/remove', RequestDeleteDatasetView.as_view(),
          name='request-dataset-remove'),
+    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-detail'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")

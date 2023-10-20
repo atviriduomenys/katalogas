@@ -5,7 +5,6 @@ import django.db.models.deletion
 from vitrina.settings import SITE_ID
 from django.contrib.redirects.models import Redirect
 from django.contrib.sites.models import Site
-from urllib.parse import urlencode
 
 
 

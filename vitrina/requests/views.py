@@ -32,7 +32,6 @@ from vitrina.requests.services import update_facet_data
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
 from reversion.views import RevisionMixin
 from vitrina.datasets.models import Dataset, DatasetGroup
-from urllib.parse import urlencode
 from vitrina.classifiers.models import Category
 from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
 

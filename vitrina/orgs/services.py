@@ -141,7 +141,8 @@ def has_perm(
                         if is_supervisor(user, node):
                             return True
                     elif role == Role.MANAGER:
-                        is_manager(user, node)
+                        if is_manager(user, node):
+                            return True
                     else:
                         ct = ContentType.objects.get_for_model(node)
                         where.append(Q(

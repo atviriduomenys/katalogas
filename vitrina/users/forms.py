@@ -12,7 +12,9 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
-from vitrina.helpers import buttons, submit
+from vitrina.helpers import buttons, submit, send_email_with_logging
+from vitrina.helpers import prepare_email_by_identifier
+from django.core.mail import send_mail
 
 
 class LoginForm(Form):
@@ -95,6 +97,7 @@ class RegisterForm(UserCreationForm):
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
 
+
 class PasswordSetForm(ModelForm):
     password = CharField(label=_("Slaptažodis"), strip=False,
                     widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
@@ -141,6 +144,15 @@ class PasswordResetForm(BasePasswordResetForm):
         if email and not User.objects.filter(email=email).exists():
             raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja"))
         return cleaned_data
+
+    def send_mail(self, subject_template_name, email_template_name,
+                  context, from_email, to_email, html_email_template_name=None):
+        base_email_template = """Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą: {0}/"""
+        url = "{0}://{1}/reset/{2}/{3}".format(context['protocol'], context['domain'], context['uid'], context['token'])
+        email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
+                                                 'Slaptazodzio atstatymas',
+                                                 [url])
+        send_email_with_logging(email_data, [to_email])
 
 
 class PasswordResetConfirmForm(SetPasswordForm):

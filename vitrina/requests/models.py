@@ -91,7 +91,6 @@ class Request(models.Model):
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
     organizations = models.ManyToManyField(Organization)
 
-
     objects = models.Manager()
     public = PublicRequestManager()
 
@@ -134,11 +133,12 @@ class Request(models.Model):
         return self.status != self.REJECTED and self.status != self.OPENED
     
     def jurisdiction(self) -> int | None:
-        if self.dataset:
-            root_org = self.dataset.organization.get_root()
+        jurisdictions = []
+        for org in self.organizations.all():
+            root_org = org.get_root()
             if root_org.get_children_count() > 1:
-                return root_org.pk
-        return None
+                jurisdictions.append(root_org.pk)
+        return jurisdictions
 
     def dataset_statuses(self):
         return list(Dataset.objects.filter(
@@ -261,3 +261,13 @@ class RequestAssignment(models.Model):
     organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
     request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+
+    @property
+    def display_date(self):
+        from vitrina.comments.models import Comment
+        latest_status_comment = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(RequestAssignment),
+            object_id=self.pk
+        ).order_by('-created').first()
+        return latest_status_comment.created if latest_status_comment else  self.created

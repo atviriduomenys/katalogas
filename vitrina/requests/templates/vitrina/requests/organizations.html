@@ -58,6 +58,17 @@
                             <article class="media">
                                 <div class="media-content">
                                     <div class="content">
+                                        <strong>
+                                            {{ organization.display_date }}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </article>
+                        </td>
+                        <td>
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
                                         <div>
                                             <a class="has-text-danger" href="{% url 'request-orgs-delete' pk=organization.id %}">{% translate "Šalinti" %}</a>
                                         </div>

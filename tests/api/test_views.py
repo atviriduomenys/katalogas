@@ -19,6 +19,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.statistics.models import ModelDownloadStats
+from vitrina.users.factories import UserFactory
 
 
 @pytest.mark.django_db
@@ -1817,6 +1818,20 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_create_model_statistics(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    user = UserFactory(
+        is_staff=True
+    )
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        user=user
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
     res = app.post(reverse('api-download-stats-internal'), {
         'source': 'get.data.gov.lt',
         'model': 'naujas_modelis',

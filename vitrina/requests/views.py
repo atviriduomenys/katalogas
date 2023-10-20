@@ -5,11 +5,17 @@ from django.views.generic import CreateView, UpdateView, DetailView
 from collections import OrderedDict
 from django.views import View
 
+import json
 import numpy as np
 import pandas as pd
-from datetime import date
-from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+import pytz
+from collections import OrderedDict
+from datetime import date, datetime
+from django.contrib import messages
+from django.contrib.admin.options import get_content_type_for_model
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -38,23 +44,59 @@ from vitrina.requests.models import Request, Organization, RequestStructure, Req
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
 
+from django.template.defaultfilters import date as _date
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from haystack.generic_views import FacetedSearchView
+from reversion import set_comment
+from reversion.models import Version
+from reversion.views import RevisionMixin
+from typing import List
 
+import vitrina.settings as settings
+from vitrina.comments.models import Comment
+from vitrina.datasets.forms import PlanForm
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.datasets.services import (get_frequency_and_format,
+                                       get_query_for_frequency,
+                                       get_values_for_frequency,
+                                       sort_publication_stats)
+from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.models import Subscription
+from vitrina.orgs.models import Representative
+from vitrina.orgs.services import Action, has_perm
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.forms import (RequestEditOrgForm,
+                                    RequestForm,
+                                    RequestPlanForm,
+                                    RequestSearchForm)
+from vitrina.requests.models import (Organization,
+                                     Request,
+                                     RequestAssignment,
+                                     RequestObject,
+                                     RequestStructure)
+from vitrina.requests.services import update_facet_data
+from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
 from django.http.response import HttpResponsePermanentRedirect
 
+ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
+
+
 class RequestListView(FacetedSearchView):
     template_name = 'vitrina/requests/list.html'
     facet_fields = [
-        'status', 
-        'dataset_status', 
-        'organization', 
-        'jurisdiction', 
-        'category', 
-        'parent_category', 
-        'groups', 'tags', 
+        'status',
+        'dataset_status',
+        'organization',
+        'jurisdiction',
+        'category',
+        'parent_category',
+        'groups', 'tags',
         'created'
     ]
     max_num_facets = 20
@@ -68,7 +110,7 @@ class RequestListView(FacetedSearchView):
             'gap_by': 'month',
         },
     ]
-    
+
     def get_queryset(self):
         requests = super().get_queryset()
         sorting = self.request.GET.get('sort', None)
@@ -140,45 +182,330 @@ class RequestListView(FacetedSearchView):
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'q': form.cleaned_data.get('q', ''),
-        }     
+        }
         context.update(extra_context)
         context['sort'] = sorting
         return context
 
 
-class RequestPublicationStatsView(RequestListView):
-    template_name = 'vitrina/requests/publications.html'
-    paginate_by = 0
+Y_TITLES = {
+    'download-request-count': _('Atsisiuntimų (užklausų) skaičius'),
+    'download-object-count': _('Atsisiuntimų (objektų) skaičius'),
+    'object-count': _('Objektų skaičius'),
+    'field-count': _('Savybių (duomenų laukų) skaičius'),
+    'model-count': _('Esybių (modelių) skaičius'),
+    'distribution-count': _('Duomenų šaltinių (distribucijų) skaičius'),
+    'dataset-count': _('Duomenų rinkinių skaičius'),
+    'request-count': _('Poreikių skaičius'),
+    'request-count-open': _('Poreikių skaičius (neatsakytų)'),
+    'request-count-late': _('Poreikių skaičius (vėluojančių)'),
+    'project-count': _('Projektų skaičius')
+}
+
+
+class RequestStatsMixin(StatsMixin):
+    model = Request
+    filters_template_name = 'vitrina/requests/filters.html'
+    parameter_select_template_name = 'vitrina/requests/stats_parameter_select.html'
+    default_indicator = 'request-count'
+    list_url = reverse_lazy('request-list')
+
+    def get_data_for_indicator(self, indicator, values, filter_queryset):
+        if indicator == 'request-count':
+            data = filter_queryset.values(*values).annotate(count=Count('pk'))
+        elif indicator == 'request-count-open':
+            data = filter_queryset.filter(status=Request.CREATED).values(*values).annotate(count=Count('pk'))
+        else:
+            data = (PlanRequest.objects.filter(request_id__in=filter_queryset, plan__deadline__lt=datetime.now())
+                    .values(*values).annotate(count=Count('request')))
+        return data
+
+    def get_count(self, label, indicator, frequency, data, count):
+        if data:
+            if indicator == 'object-count' or indicator == 'level-average':
+                count = data[0].get('count') or 0
+            else:
+                count += data[0].get('count') or 0
+        return count
+
+    def get_item_count(self, data, indicator):
+        count = super().get_item_count(data, indicator)
+        if indicator == 'object-count':
+            count = sum([x['y'] for x in data])
+        return count
+
+    def get_title_for_indicator(self, indicator):
+        return Y_TITLES.get(indicator) or indicator
+
+    def get_parent_links(self):
+        return {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+        }
+
+    def get_time_axis_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _("Poreikio pateikimo data")
+        else:
+            return _("Laikas")
+
+
+class RequestStatusStatsView(RequestStatsMixin, RequestListView):
+    title = _("Būsena")
+    current_title = _("Poreikio būsena")
+    filter = 'status'
+    filter_choices = Request.FILTER_STATUSES
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal poreikio būseną laike')
+
+    def update_context_data(self, context):
+        facet_fields = context.get('facets').get('fields')
+        statuses = self.get_filter_data(facet_fields)
+        requests = context['object_list']
+
+        indicator = self.request.GET.get('indicator', None) or 'request-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        start_date = self.get_start_date()
+
+        time_chart_data = []
+        bar_chart_data = []
+
+        frequency, ff = get_frequency_and_format(duration)
+        labels = self.get_time_labels(start_date, frequency)
+        date_field = self.get_date_field()
+        values = get_values_for_frequency(frequency, date_field)
+
+        for status in statuses:
+            count = 0
+            data = []
+            status_request_ids = requests.filter(status=status['filter_value']).values_list('pk', flat=True)
+            status_requests = Request.objects.filter(pk__in=status_request_ids)
+
+            count_data = self.get_data_for_indicator(indicator, values, status_requests)
+
+            for label in labels:
+                label_query = get_query_for_frequency(frequency, date_field, label)
+                if (
+                    indicator == 'request-count'
+                ):
+                    label_count_data = count_data.filter(**label_query)
+                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                elif (
+                    indicator == 'request-count-open'
+                ):
+                    label_count_data = count_data.filter(**label_query)
+                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                else:
+                    label_count_data = count_data.filter(**label_query)
+                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+
+                if frequency == 'W':
+                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                else:
+                    data.append({'x': _date(label, ff), 'y': count})
+
+            dt = {
+                'label': str(status['display_value']),
+                'data': data,
+                'borderWidth': 1,
+                'fill': True,
+            }
+            time_chart_data.append(dt)
+
+            status['count'] = self.get_item_count(data, indicator)
+            bar_chart_data.append(status)
+
+        if sorting == 'sort-desc':
+            time_chart_data = sorted(time_chart_data, key=lambda x: x['data'][-1]['y'], reverse=True)
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'], reverse=True)
+        else:
+            time_chart_data = sorted(time_chart_data, key=lambda x: x['data'][-1]['y'])
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'])
+
+        max_count = max([x['count'] for x in bar_chart_data]) if bar_chart_data else 0
+
+        context['title'] = self.title
+        context['current_title'] = self.current_title
+        context['tabs_template_name'] = self.tabs_template_name
+        context['filters_template_name'] = self.filters_template_name
+        context['parameter_select_template_name'] = self.parameter_select_template_name
+        context['list_url'] = self.list_url
+        context['has_time_graph'] = self.has_time_graph
+
+        context['active_filter'] = self.filter
+        context['active_indicator'] = indicator
+        context['sort'] = sorting
+        context['duration'] = duration
+
+        context['graph_title'] = self.get_graph_title(indicator)
+        context['xAxis_title'] = self.get_time_axis_title(indicator)
+        context['yAxis_title'] = self.get_title_for_indicator(indicator)
+        context['time_chart_data'] = json.dumps(time_chart_data)
+
+        context['bar_chart_data'] = bar_chart_data
+        context['max_count'] = max_count
+
+        return context
+
+
+class RequestDatasetStatusStatsView(RequestStatsMixin, RequestListView):
+    title = _("Duomenų rinkinių būsena")
+    current_title = _("Duomenų rinkinių būsenos")
+    filter = 'dataset_status'
+    filter_choices = Dataset.FILTER_STATUSES
+    # filter_model = Dataset
+
+    def get_display_value(self, item):
+        st = super().get_display_value(item)
+        return str(st)
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal duomenų rinkinio būseną laike')
+
+
+class RequestOrganizationStatsView(RequestStatsMixin, RequestListView):
+    title = _("Organizacija")
+    current_title = _("Poreikių organizacijos")
+    filter = 'organization'
+    filter_model = Organization
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal organizaciją laike')
+
+
+class RequestJurisdictionStatsView(RequestStatsMixin, RequestListView):
+    title = _("Valdymo sritis")
+    current_title = _("Poreikių valdymo sritys")
+    filter = 'jurisdiction'
+    filter_model = Organization
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio valdymo sritį rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike')
+
+
+class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
+    title = _("Pateikimo data")
+    current_title = _("Poreikių kiekis metuose")
+    filter = 'created'
+
+    def get_graph_title(self, indicator):
+        return _(f'{self.get_title_for_indicator(indicator)} pagal pateikimo datą')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        max_count = 0
         requests = self.get_queryset()
-        sorting = self.request.GET.get('sort', None)
+        indicator = self.request.GET.get('indicator', None) or 'request-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+        start_date = Request.objects.order_by('created').first().created
+        max_count = 0
+        stats_for_period = {}
         year_stats = {}
-        for req in requests:
-            created = req.created
+        chart_data = []
+        bar_chart_data = []
+
+        frequency, ff = get_frequency_and_format(duration)
+
+        labels = []
+        if start_date:
+            labels = pd.period_range(
+                start=start_date,
+                end=datetime.now(),
+                freq=frequency
+            ).tolist()
+
+        for request in requests:
+            created = request.created
             if created is not None:
-                year_created = created.year
-                year_stats[year_created] = year_stats.get(year_created, 0) + 1
-        for key, value in year_stats.items():
-            if max_count < value:
-                max_count = value
-        keys = list(year_stats.keys())
-        values = list(year_stats.values())
-        sorted_value_index = np.argsort(values)
-        if sorting is None or sorting == 'sort-year-desc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=True))
-        elif sorting == 'sort-year-asc':
-            year_stats = OrderedDict(sorted(year_stats.items(), reverse=False))
-        elif sorting == 'sort-desc':
-            year_stats = {keys[i]: values[i] for i in np.flip(sorted_value_index)}
-        elif sorting == 'sort-asc':
-            year_stats = {keys[i]: values[i] for i in sorted_value_index}
+                year_published = created.year
+                year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
+                period = str(pd.to_datetime(created).to_period(frequency))
+                stats_for_period[period] = stats_for_period.get(period, 0) + 1
+        if indicator != 'request-count':
+            for yr in year_stats.keys():
+                start_date = datetime.strptime(str(yr) + "-1-1", '%Y-%m-%d')
+                end_date = datetime.strptime(str(yr) + "-12-31", '%Y-%m-%d')
+                tz = pytz.timezone('Europe/Vilnius')
+                filtered_requests = requests.filter(created__range=[tz.localize(start_date), tz.localize(end_date)])
+                request_ids = []
+                for fd in filtered_requests:
+                    request_ids.append(fd.pk)
+                if indicator == 'request-count-open':
+                    total = Request.objects.filter(pk__in=request_ids, status=Request.CREATED).count()
+                    year_stats[yr] = total
+                else:
+                    total = (
+                        PlanRequest.objects.filter(request_id__in=request_ids, plan__deadline__lt=datetime.now())
+                    ).count()
+                    year_stats[yr] = total
+        if year_stats:
+            keys = list(year_stats.keys())
+            values = list(year_stats.values())
+            sorted_value_index = np.argsort(values)
+            year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+            max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
+
+        data = []
+        total = 0
+        for label in labels:
+            request_count = stats_for_period.get(str(label), 0)
+            if indicator == 'request-count':
+                total += request_count
+                item = {
+                    'display_value': label.year,
+                    'count': request_count
+                }
+                bar_chart_data.append(item)
+            elif indicator == 'request-count-open' or indicator == 'request-count-late':
+                count = year_stats.get(str(label), 0)
+                total += count
+                item = {
+                    'display_value': label.year,
+                    'count': count
+                }
+                bar_chart_data.append(item)
+
+            if frequency == 'W':
+                data.append({'x': _date(label.start_time, ff), 'y': total})
+            else:
+                data.append({'x': _date(label, ff), 'y': total})
+
+        dt = {
+            'label': 'Poreikių kiekis',
+            'data': data,
+            'borderWidth': 1,
+            'fill': True,
+        }
+        chart_data.append(dt)
+
+        if sorting == 'sort-desc':
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'], reverse=True)
+        else:
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x['count'])
+
+        context['title'] = self.title
+        context['current_title'] = self.current_title
+        context['time_chart_data'] = json.dumps(chart_data)
+        context['bar_chart_data'] = bar_chart_data
         context['year_stats'] = year_stats
         context['max_count'] = max_count
-        context['filter'] = 'publication'
+
+        context['graph_title'] = self.get_graph_title(indicator)
+        context['yAxis_title'] = self.get_title_for_indicator(indicator)
+        context['xAxis_title'] = _('Laikas')
+
+        context['active_filter'] = self.filter
+        context['active_indicator'] = indicator
         context['sort'] = sorting
+        context['duration'] = duration
+
+        context['has_time_graph'] = True
         return context
 
 
@@ -281,6 +608,10 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     detail_url_name = 'request-detail'
     history_url_name = 'request-history'
     plan_url_name = 'request-plans'
+    request_rejected_base_template = """
+        Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {0}    
+    """
+    request_add_email_base_template = 'Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {0}'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -303,9 +634,33 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 self.request.user,
                 Action.PLAN,
                 request
-            )
+            ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
+        if request.status == "REJECTED":
+            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
+                                                     'Poreikis atmestas', [request.comment])
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_email_with_logging(email_data, [request.user.email])
+        elif request.status == "APPROVED":
+            email_data = prepare_email_by_identifier('request-approved',
+                                                     'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
+                                                     'Poreikis patvirtintas',
+                                                     [])
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_email_with_logging(email_data, [request.user.email])
+
+        elif request.status == "CREATED":
+            email_data = prepare_email_by_identifier('request-registered',
+                                                     self.request_add_email_base_template,
+                                                     'Užregistruotas naujas poreikis',
+                                                     [request.title])
+            if request.user is not None:
+                if request.user.email is not None:
+                    send_email_with_logging(email_data, [request.user.email])
+
         return context_data
 
 
@@ -332,9 +687,9 @@ class RequestCreateView(
         for org in orgs:
             self.object.organizations.add(org)
             requestA = RequestAssignment.objects.create(
-                request = self.object,   
+                request=self.object,
                 organization=org,
-                status=self.object.status 
+                status=self.object.status
             )
             requestA.save()
         self.object.save()
@@ -347,6 +702,47 @@ class RequestCreateView(
             object_id=self.object.pk,
             status=Task.CREATED
         )
+        Subscription.objects.create(
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(Request),
+            object_id=self.object.pk,
+            sub_type=Subscription.REQUEST,
+            email_subscribed=True,
+            request_update_sub=True,
+            request_comments_sub=True,
+        )
+        if self.object.organizations.exists():
+            org_id_list = self.object.organizations.values_list('id', flat=True)
+            for org_id in org_id_list:
+                organization = get_object_or_404(Organization, pk=org_id)
+                subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
+                                                   content_type=get_content_type_for_model(Organization),
+                                                   object_id=org_id,
+                                                   request_update_sub=True)
+                email_data = prepare_email_by_identifier_for_sub('request-created-sub',
+                                                                 'Sveiki, jūsų prenumeruojamai organizacijai {0},'
+                                                                 ' sukurtas naujas poreikis {1}.',
+                                                                 'Sukurtas naujas poreikis', [organization,
+                                                                                              self.object])
+                sub_email_list = []
+                for sub in subs:
+                    Task.objects.create(
+                        title=f"Poreikis organizacijai: {organization}",
+                        description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
+                        content_type=get_content_type_for_model(Request),
+                        object_id=self.object.pk,
+                        organization=organization if organization else None,
+                        status=Task.CREATED,
+                        type=Task.REQUEST,
+                        user=sub.user
+                    )
+                    if sub.user.email and sub.email_subscribed:
+                        if sub.user.organization:
+                            orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                            sub_email_list = [org.email for org in orgs]
+                        sub_email_list.append(sub.user.email)
+                send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -379,7 +775,7 @@ class RequestOrgEditView(
             RequestAssignment.objects.create(
                 organization=org,
                 request=self.object,
-                status=self.object.status
+                status=Request.CREATED
             )
             if plural:
                 org = Organization.objects.filter(id=org.id).first()
@@ -393,7 +789,7 @@ class RequestOrgEditView(
                     RequestAssignment.objects.create(
                         organization=c_org,
                         request=self.object,
-                        status=self.object.status
+                        status=Request.CREATED
                     )
         self.object.save()
         set_comment(Request.EDITED)
@@ -409,22 +805,24 @@ class RequestOrgEditView(
                 can_edit_specific_org = True
 
         representatives = self.request.user.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__isnull=False,
-                user=self.request.user,
-                object_id__in=[r.id for r in request.organizations.all()]
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id__isnull=False,
+            user=self.request.user,
+            object_id__in=[r.id for r in request.organizations.all()]
         )
         can_edit_specific_org = len(representatives) > 0
-        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
+        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE,
+                                                                                      request)
 
     def handle_no_permission(self):
-        messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
+        messages.error(self.request, 'Šio poreikio organizacijų keisti negalite.')
         return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.kwargs.get('pk')}))
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio organizacijų redagavimas')
         return context_data
+
 
 class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = RequestAssignment
@@ -472,6 +870,7 @@ class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         }
         return context
 
+
 class RequestUpdateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -484,8 +883,49 @@ class RequestUpdateView(
     context_object_name = 'request_object'
 
     def form_valid(self, form):
-        super().form_valid(form)
+        self.object = form.save()
         set_comment(Request.EDITED)
+
+        org_subs = Subscription.objects.none()
+        if self.object.organizations.exists():
+            sub_org_ct = get_content_type_for_model(Organization)
+            org_id_list = self.object.organizations.values_list('id', flat=True)
+            org_subs = Subscription.objects.filter(Q(object_id__in=org_id_list) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
+                                                   content_type=sub_org_ct,
+                                                   request_update_sub=True)
+
+        sub_request_ct = get_content_type_for_model(Request)
+        subs = Subscription.objects.filter(sub_type=Subscription.REQUEST,
+                                           content_type=sub_request_ct,
+                                           object_id=self.object.id,
+                                           request_update_sub=True)
+
+        if org_subs:
+            subs = org_subs | subs
+
+        email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
+                                                         'Sveiki, pranešame jums apie tai, kad,'
+                                                         ' poreikis {0} buvo atnaujintas.',
+                                                         'Atnaujintas poreikis', [self.object])
+        sub_email_list = []
+        for sub in subs:
+            Task.objects.create(
+                title=f"Redaguotas poreikis: {self.object}.",
+                description=f"Poreikis {self.object} buvo redaguotas.",
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                organization=sub.content_object if isinstance(sub.content_object, Organization) else None,
+                status=Task.CREATED,
+                type=Task.REQUEST,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
+                sub_email_list.append(sub.user.email)
+        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):
@@ -530,7 +970,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
             self.request.user,
             Action.PLAN,
             self.request_obj
-        )
+        ) and self.request_obj.status == Request.APPROVED
         context['selected_tab'] = status
         return context
 
@@ -568,7 +1008,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             self.request.user,
             Action.PLAN,
             self.request_obj
-        ) and self.request_obj.is_not_closed()
+        ) and self.request_obj.is_not_closed() and self.request_obj.status == Request.APPROVED
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -820,6 +1260,7 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
     def get_history_object(self):
         return self.request_obj
 
+
 class update_request_org_filters(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'
     form_class = RequestSearchForm
@@ -849,6 +1290,7 @@ class update_request_org_filters(FacetedSearchView):
             }
             context.update(extra_context)
             return context
+
 
 class update_request_jurisdiction_filters(FacetedSearchView):
     template_name = 'vitrina/datasets/jurisdiction_filter_items.html'

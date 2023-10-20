@@ -10,12 +10,13 @@ from reversion.models import Version
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
+from vitrina.requests.models import RequestAssignment
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.requests.factories import RequestFactory
+from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
 from vitrina.users.factories import UserFactory
-
+from vitrina.orgs.factories import OrganizationFactory
 
 @pytest.mark.django_db
 def test_comment_without_user(app: DjangoTestApp):
@@ -108,21 +109,21 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_comment_with_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    request = RequestFactory()
-    ct = ContentType.objects.get_for_model(request)
+    request = RequestFactory(status=Request.CREATED)
+    org = OrganizationFactory()
+    user.organization = org
+    ra = RequestAssignmentFactory(
+        organization=org,
+        request=request,
+        status=Request.CREATED
+    )
     app.set_user(user)
     form = app.get(request.get_absolute_url()).forms['comment-form']
     form['is_public'] = True
-    form['status'] = Comment.APPROVED
+    form['status'] = Request.APPROVED
     form['body'] = "Test comment"
     resp = form.submit().follow()
-    created_comment = Comment.objects.filter(content_type=ct, object_id=request.pk)
-    assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
-    assert created_comment.first().type == Comment.STATUS
-    assert created_comment.first().status == Comment.APPROVED
-    assert Version.objects.get_for_object(request).count() == 1
-    assert Version.objects.get_for_object(request).first().revision.comment == Request.STATUS_CHANGED
+    assert resp.html.find(id='request_status').text == 'Įvertintas' or resp.html.find(id='request_status').text == 'Approved'
 
 
 @pytest.mark.django_db

@@ -16,7 +16,7 @@ from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiDescription
-from vitrina.api.permissions import APIKeyPermission
+from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
     DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
     PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
@@ -579,6 +579,8 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
 
 
 class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    permission_classes = (HasStatsPostPermission,)
+
     @swagger_auto_schema(
         operation_summary="Add model statistics",
         request_body=ModelDownloadStatsSerializer,

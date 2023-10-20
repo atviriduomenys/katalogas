@@ -53,6 +53,8 @@ from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
 from typing import List
+from urllib.parse import urlencode
+
 
 import vitrina.settings as settings
 from vitrina.comments.models import Comment
@@ -110,6 +112,13 @@ class RequestListView(FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def get(self, request, **kwargs):
+        legacy_org_redirect = self.request.GET.get('organization_id')
+        if legacy_org_redirect:
+            new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
 
     def get_queryset(self):
         requests = super().get_queryset()

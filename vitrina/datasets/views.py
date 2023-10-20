@@ -335,6 +335,15 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         else:
             return None
 
+class DatasetRedirectView(View):
+
+    def get(self, request, **kwargs):
+        slug = kwargs.get('slug')
+        input(kwargs)
+        input(slug)
+        dataset = get_object_or_404(Dataset, slug=slug)
+        return HttpResponsePermanentRedirect(reverse('dataset-detail', kwargs={'pk': dataset.pk}))
+
 
 class DatasetDetailView(
     LanguageChoiceMixin,

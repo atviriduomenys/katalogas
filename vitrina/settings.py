@@ -44,6 +44,7 @@ SECRET_KEY = env('SECRET_KEY', default=(
 
 VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
 VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
+VIISP_PID = env('VIISP_PID')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=True)
@@ -387,7 +388,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'WARNING',
     },
 }
 CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']

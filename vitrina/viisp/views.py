@@ -70,7 +70,7 @@ class VIISPCompleteLoginView(View):
             return redirect('change-email')
 
         user = User.objects.filter(email=user_data.get('email')).first()
-        if user:
+        if user and token:
             return perform_login(
                 request,
                 user,
@@ -78,10 +78,15 @@ class VIISPCompleteLoginView(View):
                 redirect_url='complete-login',
                 signal_kwargs={"sociallogin": login},
             )
+        elif user:
+            return redirect('login-first')
         return complete_social_login(request, login)
 
 class ChangeEmailView(TemplateView):
     template_name = 'vitrina/viisp/change_email.html'
+
+class LoginFirstView(TemplateView):
+    template_name = 'vitrina/viisp/login_first.html'
 
 
 oauth2_login = OAuth2LoginView.adapter_view(VIISPOAuth2Adapter)

@@ -79,6 +79,11 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         company_code = soc_acc.extra_data.get('company_code')
         return redirect('partner-register')
 
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['form_info'] = _(
+            "Tam, kad pabaigti autentifikaciją per viisp ir sukurti naują vartotoją portale, sugalvokite slaptažodį.")
+        return context_data
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

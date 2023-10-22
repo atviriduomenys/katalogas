@@ -646,30 +646,6 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
-        if request.status == "REJECTED":
-            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
-                                                     'Poreikis atmestas', [request.comment])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-        elif request.status == "APPROVED":
-            email_data = prepare_email_by_identifier('request-approved',
-                                                     'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
-                                                     'Poreikis patvirtintas',
-                                                     [])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
-        elif request.status == "CREATED":
-            email_data = prepare_email_by_identifier('request-registered',
-                                                     self.request_add_email_base_template,
-                                                     'Užregistruotas naujas poreikis',
-                                                     [request.title])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
         return context_data
 
 

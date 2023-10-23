@@ -5,9 +5,13 @@ from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.db.models import Sum
+from django.dispatch import receiver
 from django.urls import reverse
 
+from django.apps import apps
+
 from filer.fields.file import FilerFileField
+from parler.signals import post_translation_save
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
@@ -27,7 +31,7 @@ class DatasetGroup(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
     )
-    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
     class Meta:
         ordering = ['created']
@@ -120,7 +124,8 @@ class Dataset(TranslatableModel):
 
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True,
+                                verbose_name=_('Licenzija'))
 
     status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
@@ -131,7 +136,8 @@ class Dataset(TranslatableModel):
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
+    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True,
+                                  verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
@@ -187,7 +193,8 @@ class Dataset(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
-    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True, null=True)
+    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True,
+                                          null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
     financed = models.BooleanField(blank=True, null=True)
@@ -536,6 +543,8 @@ class HarvestingResult(models.Model):
     class Meta:
         managed = False
         db_table = 'harvesting_result'
+
+
 # --------------------------->8-------------------------------------
 
 
@@ -635,7 +644,8 @@ class DatasetEvent(models.Model):
     user = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
+    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True,
+                               null=True)  # Field renamed because of name conflict.
 
     class Meta:
         managed = False
@@ -778,6 +788,8 @@ class HarvestedVisit(models.Model):
     class Meta:
         managed = False
         db_table = 'harvested_visit'
+
+
 # --------------------------->8-------------------------------------
 
 
@@ -910,3 +922,28 @@ class DatasetStructureMapping(models.Model):
 
     class Meta:
         db_table = 'dataset_structure_mapping'
+
+
+@receiver(post_translation_save, sender=Dataset)
+def translation_handler(sender, instance, **kwargs):
+    lt_translation = instance.master.translations.filter(language_code='lt').first()
+    en_title = 'English title'
+    en_desc = 'English desc'
+    if lt_translation:
+        # todo post lt_title ir lt_desc į servisą ir gautas reikšmes prisiskirti kintamiesiems ir tiek
+        lt_title = lt_translation.title
+        lt_description = lt_translation.description
+        en_translation = instance.master.translations.filter(language_code='en').first()
+        DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
+        if not en_translation:
+            DatasetTranslation.objects.create(
+                master_id=instance.master.pk,
+                language_code='en',
+                title=en_title,
+                description=en_desc
+            )
+        else:
+            if lt_title and not en_translation.title:
+                DatasetTranslation.objects.filter(pk=en_translation.pk).update(title=en_title)
+            if lt_description and not en_translation.description:
+                DatasetTranslation.objects.filter(pk=en_translation.pk).update(description=en_desc)

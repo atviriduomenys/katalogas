@@ -59,6 +59,8 @@ class SentMail(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     recipient = models.CharField(max_length=255, blank=True, null=True)
+    email_subject = models.CharField(max_length=255, blank=True, null=True)
+    email_body = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = True

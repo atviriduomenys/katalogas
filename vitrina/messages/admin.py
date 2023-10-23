@@ -10,11 +10,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     @admin.display()
     def content_object(self, obj):
-        return format_html(
-            '<a href="{}" target="_blank">{}</a>',
-            obj.content_object.get_absolute_url(),
-            Truncator(obj.content_object).chars(42),
-        )
+        if obj.content_object is not None:
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                obj.content_object.get_absolute_url(),
+                Truncator(obj.content_object).chars(42),
+            )
+        else:
+            return obj.content_type
 
 
 class EmailTemplateAdmin(admin.ModelAdmin):

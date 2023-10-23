@@ -25,7 +25,7 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -182,7 +182,9 @@ class OrganizationManagementsView(OrganizationListView):
         indicator = self.request.GET.get('indicator', None) or 'organization-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Organization.objects.all().first().created
+        start_date = Organization.objects.order_by('created').first().created
+        chart_title = ''
+        yAxis_title = ''
 
         time_chart_data = []
 
@@ -205,16 +207,22 @@ class OrganizationManagementsView(OrganizationListView):
 
             if indicator == 'organization-count':
                 items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+                chart_title = _('Organizacijų skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Organizacijų skaičius')
             elif indicator == 'coordinator-count':
                 items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
                                                        role=Representative.COORDINATOR,
                                                        object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
                          .values(*values).annotate(count=Count('pk')))
+                chart_title = _('Koordinatorių skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Koordinatorių skaičius')
             else:
                 items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
                                                        role=Representative.MANAGER,
                                                        object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
                          .values(*values).annotate(count=Count('pk')))
+                chart_title = _('Tvarkytojų skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Tvarkytojų skaičius')
 
             for label in labels:
                 label_query = get_query_for_frequency(frequency, 'created', label)
@@ -247,6 +255,10 @@ class OrganizationManagementsView(OrganizationListView):
         context['time_chart_data'] = json.dumps(time_chart_data)
         context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
+
+        context['graph_title'] = chart_title
+        context['yAxis_title'] = yAxis_title
+        context['xAxis_title'] = _('Laikas')
 
         context['filter'] = 'jurisdiction'
         context['active_indicator'] = indicator
@@ -470,17 +482,7 @@ class RepresentativeCreateView(
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
                  [self.organization, url]
              )
-            try:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[self.object.email],
-                )
-            except Exception as e:
-                logging.warning("Email was not send ", _(email_data['email_subject']),
-                                _(email_data['email_content']), [self.object.email], e)
-
+            send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
@@ -541,6 +543,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.organization
+            self.object.user.save()
+
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -574,9 +581,6 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         else:
             self.object.apikey_set.all().delete()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.organization
-            self.object.user.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

@@ -250,11 +250,14 @@ def filter_datasets_for_user(user, datasets):
     return datasets
 
 
-def get_datasets_for_user(user, datasets):
+def get_datasets_for_user(user, datasets, is_org_dataset=False):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
             if user.representative_set:
-                return datasets.filter(SQ(is_public='true') | SQ(managers__contains=user.id))
+                if is_org_dataset:
+                    return datasets.filter(SQ(is_public='true') | SQ(is_public='false') | SQ(managers__contains=user.id))
+                else:
+                    return datasets.filter(SQ(is_public='true') | SQ(managers__contains=user.id))
             else:
                 return datasets.filter(is_public='true')
         else:

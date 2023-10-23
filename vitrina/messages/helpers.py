@@ -1,11 +1,11 @@
-from vitrina.messages.models import EmailTemplate
-from django.utils.translation import gettext_lazy as _
 import datetime
+from django.utils.translation import gettext_lazy as _
+from vitrina.messages.models import EmailTemplate
 
 
 # Same method as prepare_email_by_identifier to avoid circular import
 def prepare_email_by_identifier_for_sub(email_identifier, base_template_content,
-                                email_title_subject, email_template_keys):
+                                        email_title_subject, email_template_keys):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
     if not email_template:
         email_subject = email_title = email_title_subject

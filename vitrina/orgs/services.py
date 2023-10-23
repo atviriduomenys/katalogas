@@ -51,7 +51,7 @@ acl = {
     (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.VIEW): [Role.COORDINATOR],
+    (Dataset, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
@@ -85,6 +85,14 @@ def is_supervisor(user: User, node: Model) -> bool:
     if isinstance(node, Organization):
         for rep in user.representative_set.all():
             if rep.is_supervisor(node):
+                return True
+    return False
+
+
+def is_manager(user: User, node: Model) -> bool:
+    if isinstance(node, Organization):
+        for rep in user.representative_set.all():
+            if rep.role == 'manager':
                 return True
     return False
 
@@ -131,6 +139,9 @@ def has_perm(
                             return True
                     elif role == Role.SUPERVISOR:
                         if is_supervisor(user, node):
+                            return True
+                    elif role == Role.MANAGER:
+                        if is_manager(user, node):
                             return True
                     else:
                         ct = ContentType.objects.get_for_model(node)

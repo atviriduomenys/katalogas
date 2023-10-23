@@ -44,6 +44,7 @@ SECRET_KEY = env('SECRET_KEY', default=(
 
 VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
 VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
+VIISP_PID = env('VIISP_PID')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=True)
@@ -325,8 +326,15 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'Test Domain <noreply@example.com>'
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Test Domain <noreply@example.com>')
+email = env.email('EMAIL_URL', default='consolemail://')
+EMAIL_BACKEND = email['EMAIL_BACKEND']
+EMAIL_HOST = email['EMAIL_HOST']
+EMAIL_PORT = email['EMAIL_PORT']
+EMAIL_HOST_USER = email['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = email['EMAIL_HOST_PASSWORD']
+EMAIL_FILE_PATH = email['EMAIL_FILE_PATH']
+EMAIL_USE_TLS = email.get('EMAIL_USE_TLS')
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -381,6 +389,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
         },
     },

@@ -9,7 +9,7 @@ from vitrina.requests.views import RequestPlanView
 from vitrina.requests.views import RequestCreatePlanView
 from vitrina.requests.views import RequestDeletePlanView
 from vitrina.requests.views import RequestPlansHistoryView
-from vitrina.requests.views import RequestDeletePlanDetailView
+from vitrina.requests.views import RequestDeletePlanDetailView, RequestRedirectView
 from vitrina.requests.views import update_request_org_filters, update_request_jurisdiction_filters
 
 
@@ -44,6 +44,7 @@ urlpatterns = [
     path('requests/<int:pk>/orgs/delete', RequestOrgDeleteView.as_view(), name='request-orgs-delete'),
     path('requests/<int:pk>/datasets/<int:dataset_id>/remove', RequestDeleteDatasetView.as_view(),
          name='request-dataset-remove'),
+    path('requests/<slug:uuid>/', RequestRedirectView.as_view(), name='request-redirect-detail'),
     # @PostMapping("/request")
     # @PostMapping("/requests/new")
     # @PostMapping("/request/{id}/comment")

@@ -1,25 +1,22 @@
 from datetime import date
+from functools import reduce
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit
-from haystack.forms import FacetedSearchForm, SearchForm
+from crispy_forms.layout import Layout, Field, Submit
 from django.core.exceptions import ValidationError
-from django.db.models import Q
-from django.forms import ModelForm, CharField, ModelMultipleChoiceField, MultipleChoiceField, CheckboxSelectMultiple, \
-    Textarea, ModelChoiceField, RadioSelect, DateField, HiddenInput, BooleanField
+from django.db.models import Count, Q
+from django.forms import (BooleanField, CharField, DateField, HiddenInput,
+                          ModelChoiceField, ModelForm,
+                          ModelMultipleChoiceField, RadioSelect, Textarea)
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2MultipleWidget
-from vitrina.requests.search_indexes import RequestIndex
-
-from vitrina.plans.models import PlanRequest, Plan
-from vitrina.requests.models import Request
-from vitrina.orgs.models import Organization
-
 from django.utils.translation import gettext_lazy as _
-from functools import reduce
-from vitrina.orgs.search_indexes import OrganizationIndex
-from django.db.models import Count
+from haystack.forms import FacetedSearchForm, SearchForm
 
+from vitrina.orgs.models import Organization
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.models import Request
+
+from django_select2.forms import ModelSelect2MultipleWidget
 
 
 class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
@@ -30,7 +27,9 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
     def build_attrs(self, base_attrs, extra_attrs=None):
         base_attrs = super().build_attrs(base_attrs, extra_attrs)
         base_attrs.update(
-            {"data-minimum-input-length": 0, "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius, kad matytumet daugiau rezultatų", "style": "min-width: 650px;"}
+            {"data-minimum-input-length": 0,
+             "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius,"
+                                 " kad matytumet daugiau rezultatų", "style": "min-width: 650px;"}
         )
         return base_attrs
 
@@ -53,6 +52,7 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
             return queryset.filter(select).distinct().order_by('title')[:10]
         else:
             return queryset.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+
 
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
@@ -91,7 +91,6 @@ class RequestForm(ModelForm):
             )
 
 
-
 class RequestEditOrgForm(ModelForm):
     organizations = ModelMultipleChoiceField(
         label="Organizacija",
@@ -105,7 +104,7 @@ class RequestEditOrgForm(ModelForm):
         model = Request
         fields = ['organizations']
 
-    def __init__(self, *args, initial={}, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         button = _("Pridėti")
         self.helper = FormHelper()
@@ -129,13 +128,13 @@ class RequestSearchForm(FacetedSearchForm):
         if not self.is_valid():
             return self.no_query_found()
         if self.cleaned_data.get('q'):
-             keyword = self.cleaned_data.get('q')
-             if len(keyword) < 5:
+            keyword = self.cleaned_data.get('q')
+            if len(keyword) < 5:
                 q = self.searchqueryset.autocomplete(text__startswith=self.cleaned_data['q'])
-             else:
+            else:
                 q = self.searchqueryset.autocomplete(text__contains=self.cleaned_data['q'])
-             if len(q) != 0:
-                 sqs = q
+            if len(q) != 0:
+                sqs = q
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(created__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):

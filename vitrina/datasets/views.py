@@ -14,14 +14,13 @@ import numpy as np
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max, Q
-from django.db.models.functions import ExtractYear, ExtractMonth
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -36,6 +35,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from vitrina.datasets.helpers import is_manager_dataset_list
+from django.http.response import HttpResponsePermanentRedirect
 
 from haystack.generic_views import FacetedSearchView
 from parler.utils.context import switch_language
@@ -48,6 +48,8 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.api.models import ApiKey
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
@@ -69,15 +71,13 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
-from haystack.query import SearchQuerySet
-from vitrina.helpers import get_filter_url
 
 
 class DatasetListView(PlanMixin, FacetedSearchView):
@@ -108,9 +108,20 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         },
     ]
 
+    def get(self, request, **kwargs):
+        legacy_org_redirect = self.request.GET.get('organization_id')
+        if legacy_org_redirect:
+            new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
+
     def get_queryset(self):
         datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request.user, datasets)
+        is_org_dataset = False
+        if is_org_dataset_list(self.request) and self.request.user.is_authenticated:
+            if self.request.user.organization_id == self.request.resolver_match.kwargs['pk']:
+                is_org_dataset = True
+        datasets = get_datasets_for_user(self.request.user, datasets, is_org_dataset)
         datasets = datasets.models(Dataset)
         sorting = self.request.GET.get('sort', None)
 
@@ -328,6 +339,13 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         else:
             return None
 
+class DatasetRedirectView(View):
+
+    def get(self, request, **kwargs):
+        slug = kwargs.get('slug')
+        dataset = get_object_or_404(Dataset, slug=slug)
+        return HttpResponsePermanentRedirect(reverse('dataset-detail', kwargs={'pk': dataset.pk}))
+
 
 class DatasetDetailView(
     LanguageChoiceMixin,
@@ -349,6 +367,9 @@ class DatasetDetailView(
         if dataset.is_public:
             return True
         else:
+            # if self.request.user.organization_id == dataset.organization_id:
+            #     return True
+            # else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
@@ -484,6 +505,36 @@ class DatasetCreateView(
             prepare_ast={},
             version=1,
         )
+        if self.object.organization:
+            org_id = self.object.organization.id
+            sub_ct = get_content_type_for_model(Organization)
+            subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
+                                               sub_type=Subscription.ORGANIZATION,
+                                               content_type=sub_ct,
+                                               dataset_update_sub=True)
+            email_data = prepare_email_by_identifier_for_sub('dataset-created-sub',
+                                                             'Sveiki, jūsų prenumeruojamai organizacijai {0},'
+                                                             ' sukurtas naujas duomenų rinkinys {1}.',
+                                                             'Sukurtas duomenų rinkinys', [self.object.organization,
+                                                                                           self.object])
+            sub_email_list = []
+            for sub in subs:
+                Task.objects.create(
+                    title=f"Duomenų rinkinys organizacijai: {self.object.organization}",
+                    description=f"Sukurtas naujas duomenų rinkinys organizacijai: {self.object.organization}.",
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    organization=self.object.organization,
+                    status=Task.CREATED,
+                    type=Task.DATASET,
+                    user=sub.user
+                )
+                if sub.user.email and sub.email_subscribed:
+                    if sub.user.organization:
+                        orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                        sub_email_list = [org.email for org in orgs]
+                    sub_email_list.append(sub.user.email)
+            send_email_with_logging(email_data, sub_email_list)
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -613,21 +664,67 @@ class DatasetUpdateView(
                 if model_meta := model.metadata.first():
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
+
         if self.object.organization:
-            email_data = prepare_email_by_identifier('dataset-updated', base_email_template, 'Duomenų rinkinys atnaujintas',
+            email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
+                                                     'Duomenų rinkinys atnaujintas',
                                                      [self.object])
             if self.object.organization.email:
-                try:
-                    send_mail(
-                        subject=_(email_data['email_subject']),
-                        message=_(email_data['email_content']),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[self.object.organization.email],
-                    )
-                except Exception as e:
-                    import logging
-                    logging.warning("Email was not send ", _(email_data['email_subject']),
-                                    _(email_data['email_content']), [self.object.organization.email], e)
+                send_email_with_logging(email_data, [self.object.organization.email])
+
+        org_subs = Subscription.objects.none()
+        if self.object.organization:
+            org_subs = Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
+                                                   sub_type=Subscription.ORGANIZATION,
+                                                   content_type=get_content_type_for_model(Organization),
+                                                   dataset_update_sub=True)
+
+        subs = Subscription.objects.filter(sub_type=Subscription.DATASET,
+                                           content_type=get_content_type_for_model(Dataset),
+                                           object_id=self.object.id,
+                                           dataset_update_sub=True)
+
+        if org_subs:
+            subs = org_subs | subs
+
+        sub_email_list = []
+        email_data_sub = None
+        for sub in subs:
+            if sub.sub_type == Subscription.ORGANIZATION:
+                title = f"{self.object.organization} organizacijos duomenų rinkinys"
+                description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
+                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-organization',
+                                                                     'Sveiki, pranešame jums apie tai, kad,'
+                                                                     ' jūsų prenumeruojamos organizacijos {0}'
+                                                                     ' duomenų rinkinys: {1}, buvo atnaujintas.',
+                                                                     'Atnaujintas duomenų rinkinys',
+                                                                     [self.object.organization, self.object])
+            else:
+                title = f"Duomenų rinkinys: {self.object}"
+                description = f"Atnaujintas duomenų rinkinys: {self.object}"
+                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-dataset',
+                                                                     'Sveiki, pranešame jums apie tai, kad,'
+                                                                     ' jūsų prenumeruojamas duomenų rinkinys'
+                                                                     ' {0} buvo atnaujintas.',
+                                                                     'Atnaujintas duomenų rinkinys', [self.object])
+            Task.objects.create(
+                title=title,
+                description=description,
+                content_type=get_content_type_for_model(Dataset),
+                object_id=self.object.pk,
+                organization=self.object.organization,
+                status=Task.CREATED,
+                type=Task.DATASET,
+                user=sub.user
+            )
+            if sub.user.email and sub.email_subscribed:
+                if sub.user.organization:
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
+                    sub_email_list = [org.email for org in orgs]
+                sub_email_list.append(sub.user.email)
+        if email_data_sub:
+            send_email_with_logging(email_data_sub, sub_email_list)
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -861,17 +958,7 @@ class CreateMemberView(
                                                      self.base_email_template,
                                                      'Kvietimas prisijungti prie atvirų duomenų portalo',
                                                      [self.dataset, url])
-            try:
-                send_mail(
-                    subject=_(email_data['email_subject']),
-                    message=_(email_data['email_content']),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[self.object.email],
-                )
-            except Exception as e:
-                import logging
-                logging.warning("Email was not send ", _(email_data['email_subject']),
-                                _(email_data['email_content']), [self.object.email], e)
+            send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))
@@ -984,6 +1071,13 @@ class UpdateMemberView(
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+
+        if not self.object.user.organization:
+            self.object.user.organization = self.dataset.organization
+            self.object.user.save()
+
+        self.dataset.save()
+
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -1016,11 +1110,6 @@ class UpdateMemberView(
         else:
             self.object.apikey_set.all().delete()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.dataset.organization
-            self.object.user.save()
-
-        self.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -1891,7 +1980,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Dataset.objects.all().first().created
+        start_date = Dataset.objects.order_by('created').first().created
         max_count = 0
         stats_for_period = {}
         year_stats = {}
@@ -2562,6 +2651,7 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         ).order_by('-revision__date_created')
+
 
 class update_dataset_org_filters(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'

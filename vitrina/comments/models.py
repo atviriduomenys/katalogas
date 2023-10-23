@@ -79,6 +79,17 @@ class Comment(models.Model):
         ordering = ('-created',)
         get_latest_by = 'created'
 
+    def __str__(self):
+        return self.get_type_display()
+
+    def get_absolute_url(self):
+        if self.content_object:
+            return self.content_object.get_absolute_url()
+        elif self.rel_content_object:
+            return self.rel_content_object.get_absolute_url()
+        else:
+            return None
+
     def descendants(self, include_self=False, permission=False):
         descendants = []
         children = Comment.objects.filter(parent_id=self.pk).order_by('created')

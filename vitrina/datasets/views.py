@@ -33,7 +33,6 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
 from vitrina.datasets.helpers import is_manager_dataset_list
 
 from haystack.generic_views import FacetedSearchView

@@ -32,6 +32,11 @@ class LoginView(BaseLoginView):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Prisijungimas')
+        return context
+
 
 class RegisterView(CreateView):
     template_name = 'vitrina/users/register.html'
@@ -44,6 +49,11 @@ class RegisterView(CreateView):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Registracija')
+        return context
 
 
 class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -79,6 +89,11 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         company_code = soc_acc.extra_data.get('company_code')
         return redirect('partner-register')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Slaptažodžio nustatymas')
+        return context
+
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm
@@ -91,6 +106,11 @@ class PasswordResetView(BasePasswordResetView):
         messages.info(self.request, _(
             "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Slaptažodžio atkūrimas')
+        return context
 
 
 class PasswordResetConfirmView(BasePasswordResetConfirmView):

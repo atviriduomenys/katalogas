@@ -33,6 +33,9 @@
                     {% endfor %}
                 </div>
             {% endif %}
+            {% if form_info %}
+                {{ form_info }}
+            {% endif %}
             {% include "component/form.html" %}
         </div>
     </div>

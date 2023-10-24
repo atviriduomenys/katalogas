@@ -182,7 +182,9 @@ class OrganizationManagementsView(OrganizationListView):
         indicator = self.request.GET.get('indicator', None) or 'organization-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Organization.objects.all().first().created
+        start_date = Organization.objects.order_by('created').first().created
+        chart_title = ''
+        yAxis_title = ''
 
         time_chart_data = []
 
@@ -205,16 +207,22 @@ class OrganizationManagementsView(OrganizationListView):
 
             if indicator == 'organization-count':
                 items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+                chart_title = _('Organizacijų skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Organizacijų skaičius')
             elif indicator == 'coordinator-count':
                 items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
                                                        role=Representative.COORDINATOR,
                                                        object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
                          .values(*values).annotate(count=Count('pk')))
+                chart_title = _('Koordinatorių skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Koordinatorių skaičius')
             else:
                 items = (Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization),
                                                        role=Representative.MANAGER,
                                                        object_id__in=jurisdiction_orgs.values_list('pk', flat=True))
                          .values(*values).annotate(count=Count('pk')))
+                chart_title = _('Tvarkytojų skaičius pagal valdymo sritį laike')
+                yAxis_title = _('Tvarkytojų skaičius')
 
             for label in labels:
                 label_query = get_query_for_frequency(frequency, 'created', label)
@@ -247,6 +255,10 @@ class OrganizationManagementsView(OrganizationListView):
         context['time_chart_data'] = json.dumps(time_chart_data)
         context['bar_chart_data'] = jurisdictions
         context['max_count'] = max_count
+
+        context['graph_title'] = chart_title
+        context['yAxis_title'] = yAxis_title
+        context['xAxis_title'] = _('Laikas')
 
         context['filter'] = 'jurisdiction'
         context['active_indicator'] = indicator

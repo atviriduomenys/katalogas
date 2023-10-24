@@ -90,10 +90,11 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return redirect('partner-register')
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['current_title'] = _('Slaptažodžio nustatymas')
-        return context
-
+        context_data = super().get_context_data(**kwargs)
+        context_data['current_title'] = _('Slaptažodžio nustatymas')
+        context_data['form_info'] = _(
+            "Tam, kad pabaigti autentifikaciją per viisp ir sukurti naują vartotoją portale, sugalvokite slaptažodį.")
+        return context_data
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm

@@ -1,3 +1,10 @@
+from typing import Any, List
+from django import http
+
+from django.views.generic import CreateView, UpdateView, DetailView
+from collections import OrderedDict
+from django.views import View
+
 import json
 import numpy as np
 import pandas as pd
@@ -11,6 +18,32 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.db.models import Case, When
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
+from reversion.models import Version
+from haystack.generic_views import FacetedSearchView
+from django.views.generic.base import RedirectView, View
+
+from vitrina.comments.models import Comment
+from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.datasets.forms import PlanForm
+from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.models import Representative
+from vitrina.helpers import get_selected_value
+from vitrina.helpers import Filter
+from vitrina.helpers import DateFilter
+from reversion import set_comment
+from vitrina.requests.services import update_facet_data
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from reversion.views import RevisionMixin
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
+
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
+
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +53,8 @@ from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
 from typing import List
+from urllib.parse import urlencode
+
 
 import vitrina.settings as settings
 from vitrina.comments.models import Comment
@@ -47,7 +82,9 @@ from vitrina.requests.models import (Organization,
 from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
-from vitrina.views import HistoryMixin, HistoryView, PlanMixin
+from vitrina.views import HistoryView, HistoryMixin, PlanMixin
+from django.contrib import messages
+from django.http.response import HttpResponsePermanentRedirect
 
 ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
@@ -75,6 +112,13 @@ class RequestListView(FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def get(self, request, **kwargs):
+        legacy_org_redirect = self.request.GET.get('organization_id')
+        if legacy_org_redirect:
+            new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
 
     def get_queryset(self):
         requests = super().get_queryset()
@@ -162,6 +206,8 @@ Y_TITLES = {
     'distribution-count': _('Duomenų šaltinių (distribucijų) skaičius'),
     'dataset-count': _('Duomenų rinkinių skaičius'),
     'request-count': _('Poreikių skaičius'),
+    'request-count-open': _('Poreikių skaičius (neatsakytų)'),
+    'request-count-late': _('Poreikių skaičius (vėluojančių)'),
     'project-count': _('Projektų skaičius')
 }
 
@@ -366,7 +412,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         indicator = self.request.GET.get('indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Request.objects.all().first().created
+        start_date = Request.objects.order_by('created').first().created
         max_count = 0
         stats_for_period = {}
         year_stats = {}
@@ -556,6 +602,13 @@ class RequestQuarterStatsView(RequestListView):
         context['sort'] = sorting
         return context
 
+class RequestRedirectView(View):
+    def get(self, request, **kwargs):
+        uuid = kwargs.get('uuid')
+        request = get_object_or_404(Request, uuid=uuid)
+        return HttpResponsePermanentRedirect(reverse('request-detail', kwargs={'pk': request.pk}))
+
+
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     model = Request
@@ -593,30 +646,6 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
-        if request.status == "REJECTED":
-            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
-                                                     'Poreikis atmestas', [request.comment])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-        elif request.status == "APPROVED":
-            email_data = prepare_email_by_identifier('request-approved',
-                                                     'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
-                                                     'Poreikis patvirtintas',
-                                                     [])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
-        elif request.status == "CREATED":
-            email_data = prepare_email_by_identifier('request-registered',
-                                                     self.request_add_email_base_template,
-                                                     'Užregistruotas naujas poreikis',
-                                                     [request.title])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
         return context_data
 
 

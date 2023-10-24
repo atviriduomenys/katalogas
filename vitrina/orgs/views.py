@@ -565,8 +565,11 @@ class RepresentativeCreateView(
             email_data = prepare_email_by_identifier(
                 self.email_identifier,  self.base_template_content,
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
-                [self.organization, url]
-            )
+                {
+                     'organization': self.organization,
+                      'url': url
+                }
+             )
             send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()

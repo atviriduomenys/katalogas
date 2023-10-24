@@ -251,7 +251,13 @@ class ExternalCommentView(
                 url = f"{get_current_domain(self.request)}/datasets/" \
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
                 email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
-                                                         [url, external_object_id, dataset.name, external_content_type])
+                                                         {
+                                                             'url': url,
+                                                             'external_object_id': external_object_id,
+                                                             'dataset_name': dataset.name,
+                                                             'external_content_type': external_content_type
+                                                          }
+                                                         )
                 send_email_with_logging(email_data, [emails])
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)

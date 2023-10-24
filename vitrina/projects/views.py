@@ -152,8 +152,8 @@ class ProjectUpdateView(
             subs = subs.exclude(user=self.object.user)
         email_data = prepare_email_by_identifier_for_sub('project-updated-sub',
                                                          'Sveiki, pranešame jums apie tai, kad,'
-                                                         ' panaudos atvėjis {0} buvo atnaujintas.',
-                                                         'Atnaujintas panaudos atvėjis', [self.object])
+                                                         ' panaudos atvėjis {object} buvo atnaujintas.',
+                                                         'Atnaujintas panaudos atvėjis', {'object': self.object})
         sub_email_list = []
         for sub in subs:
             Task.objects.create(

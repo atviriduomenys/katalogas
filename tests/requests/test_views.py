@@ -11,7 +11,8 @@ from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
-from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory
+from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory, \
+    RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
@@ -196,3 +197,16 @@ def test_add_request_to_plan_title_error(app: DjangoTestApp):
     plan = Plan.objects.filter(planrequest__request=request_object.request)
     assert plan.count() == 1
     assert plan.first().title == "Klaidų duomenyse pataisymas"
+
+@pytest.mark.django_db
+def test_request_orgs_view(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    request = RequestFactory()
+    ra = RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    resp = app.get(reverse('request-organizations', args=[request.pk]))
+    assert resp.html.find(id='display_date')
+

@@ -918,7 +918,7 @@ class RequestUpdateView(
         email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
                                                          'Sveiki, pranešame jums apie tai, kad,'
                                                          ' poreikis {object} buvo atnaujintas.',
-                                                         'Atnaujintas poreikis', {'object': self.object})
+                                                         'Atnaujintas poreikis', {'object': self.object.title})
         sub_email_list = []
         for sub in subs:
             Task.objects.create(

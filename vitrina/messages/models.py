@@ -20,6 +20,7 @@ class EmailTemplate(models.Model):
     variables = models.TextField(blank=True, null=True)
     subject = models.TextField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
+    email_keys = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -61,6 +62,9 @@ class SentMail(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     recipient = models.CharField(max_length=255, blank=True, null=True)
+    email_subject = models.CharField(max_length=255, blank=True, null=True)
+    email_content = models.CharField(max_length=255, blank=True, null=True)
+    email_sent = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = True

@@ -20,6 +20,10 @@ class SubscriptionAdmin(admin.ModelAdmin):
             return obj.content_type
 
 
+class NotValidKeyException(Exception):
+    pass
+
+
 class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ('title', 'subject', 'created')
 
@@ -28,7 +32,17 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         return super(EmailTemplateAdmin, self).add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
+        import re
         self.exclude = ('created', 'deleted', 'deleted_on', 'modified_on')
+        email_template = EmailTemplate.objects.filter(id=object_id).first()
+        if request.method == "POST":
+            list_keys = request.POST['template'][
+                        request.POST['template'].find("{") + 1:request.POST['template'].rfind("}")].split()
+            template_keys_from_form = [word for word in list_keys if word.startswith("{") or word.endswith("}")]
+            template_keys_from_form = [re.sub('[^a-zA-Z0-9 \n\.]', '', key.strip(".")) for key in template_keys_from_form]
+            for key in template_keys_from_form:
+                if key not in email_template.email_keys:
+                    raise NotValidKeyException("Not valid key template. Check email template.")
         return super(EmailTemplateAdmin, self).change_view(request, object_id)
 
 

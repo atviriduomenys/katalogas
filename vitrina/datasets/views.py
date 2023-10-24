@@ -513,10 +513,12 @@ class DatasetCreateView(
                                                content_type=sub_ct,
                                                dataset_update_sub=True)
             email_data = prepare_email_by_identifier_for_sub('dataset-created-sub',
-                                                             'Sveiki, jūsų prenumeruojamai organizacijai {0},'
-                                                             ' sukurtas naujas duomenų rinkinys {1}.',
-                                                             'Sukurtas duomenų rinkinys', [self.object.organization,
-                                                                                           self.object])
+                                                            'Sveiki, jūsų prenumeruojamai organizacijai {organization},'
+                                                            'sukurtas naujas duomenų rinkinys {object}.',
+                                                            'Sukurtas duomenų rinkinys', {
+                                                                 'organization': self.object.organization,
+                                                                 'object': self.object
+                                                             })
             sub_email_list = []
             for sub in subs:
                 Task.objects.create(
@@ -578,7 +580,7 @@ class DatasetUpdateView(
         self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
-        base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"
+        base_email_template = "Sveiki, duomenų rinkinys {object} buvo atnaujintas"
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
 
@@ -668,7 +670,7 @@ class DatasetUpdateView(
         if self.object.organization:
             email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
                                                      'Duomenų rinkinys atnaujintas',
-                                                     [self.object])
+                                                     {'dataset-updated': self.object})
             if self.object.organization.email:
                 send_email_with_logging(email_data, [self.object.organization.email])
 
@@ -695,18 +697,21 @@ class DatasetUpdateView(
                 description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
                 email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-organization',
                                                                      'Sveiki, pranešame jums apie tai, kad,'
-                                                                     ' jūsų prenumeruojamos organizacijos {0}'
-                                                                     ' duomenų rinkinys: {1}, buvo atnaujintas.',
+                                                                     'jūsų prenumeruojamos organizacijos {organization}'
+                                                                     'duomenų rinkinys: {object}, buvo atnaujintas.',
                                                                      'Atnaujintas duomenų rinkinys',
-                                                                     [self.object.organization, self.object])
+                                                                     {'organization': self.object.organization,
+                                                                      'object': self.object})
             else:
                 title = f"Duomenų rinkinys: {self.object}"
                 description = f"Atnaujintas duomenų rinkinys: {self.object}"
                 email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-dataset',
                                                                      'Sveiki, pranešame jums apie tai, kad,'
                                                                      ' jūsų prenumeruojamas duomenų rinkinys'
-                                                                     ' {0} buvo atnaujintas.',
-                                                                     'Atnaujintas duomenų rinkinys', [self.object])
+                                                                     ' {organization} buvo atnaujintas.',
+                                                                     'Atnaujintas duomenų rinkinys',
+                                                                     {'organization': self.object}
+                                                                     )
             Task.objects.create(
                 title=title,
                 description=description,
@@ -957,7 +962,7 @@ class CreateMemberView(
             email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
                                                      self.base_email_template,
                                                      'Kvietimas prisijungti prie atvirų duomenų portalo',
-                                                     [self.dataset, url])
+                                                     {'dataset': self.dataset, 'url': url})
             send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"

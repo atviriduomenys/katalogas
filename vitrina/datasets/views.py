@@ -516,8 +516,8 @@ class DatasetCreateView(
                                                             'Sveiki, jūsų prenumeruojamai organizacijai {organization},'
                                                             'sukurtas naujas duomenų rinkinys {object}.',
                                                             'Sukurtas duomenų rinkinys', {
-                                                                 'organization': self.object.organization,
-                                                                 'object': self.object
+                                                                 'organization': self.object.organization.title,
+                                                                 'object': self.object.title
                                                              })
             sub_email_list = []
             for sub in subs:
@@ -700,8 +700,8 @@ class DatasetUpdateView(
                                                                      'jūsų prenumeruojamos organizacijos {organization}'
                                                                      'duomenų rinkinys: {object}, buvo atnaujintas.',
                                                                      'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object.organization,
-                                                                      'object': self.object})
+                                                                     {'organization': self.object.organization.title,
+                                                                      'object': self.object.title})
             else:
                 title = f"Duomenų rinkinys: {self.object}"
                 description = f"Atnaujintas duomenų rinkinys: {self.object}"
@@ -710,7 +710,7 @@ class DatasetUpdateView(
                                                                      ' jūsų prenumeruojamas duomenų rinkinys'
                                                                      ' {organization} buvo atnaujintas.',
                                                                      'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object}
+                                                                     {'organization': self.object.title}
                                                                      )
             Task.objects.create(
                 title=title,

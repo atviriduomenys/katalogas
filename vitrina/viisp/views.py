@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from vitrina.users.models import User
 from allauth.account.utils import perform_login
 from cryptography.fernet import Fernet
-
+from django.http import HttpResponse
 
 class VIISPLoginView(TemplateView):
     template_name = 'allauth/socialaccount/login.html'
@@ -39,7 +39,9 @@ class VIISPLoginView(TemplateView):
             viisp_token_key = ViispTokenKey.objects.first().key_content.encode()
             fernet = Fernet(viisp_token_key)
             token = fernet.encrypt(self.request.user.email.encode()).decode()
-        ticket_id = get_response_with_ticket_id(key, domain, token)
+        ticket_id, error_data = get_response_with_ticket_id(key, domain, token)
+        if not ticket_id:
+            return render(request, 'allauth/socialaccount/api_error.html', error_data)
         url = VIISPOAuth2Adapter.authorize_url
         return redirect(url + "?" + "ticket={}".format(ticket_id))
 
@@ -68,7 +70,7 @@ class VIISPCompleteLoginView(View):
             return redirect('change-email')
 
         user = User.objects.filter(email=user_data.get('email')).first()
-        if user:
+        if user and token:
             return perform_login(
                 request,
                 user,
@@ -76,10 +78,15 @@ class VIISPCompleteLoginView(View):
                 redirect_url='complete-login',
                 signal_kwargs={"sociallogin": login},
             )
+        elif user:
+            return redirect('login-first')
         return complete_social_login(request, login)
 
 class ChangeEmailView(TemplateView):
     template_name = 'vitrina/viisp/change_email.html'
+
+class LoginFirstView(TemplateView):
+    template_name = 'vitrina/viisp/login_first.html'
 
 
 oauth2_login = OAuth2LoginView.adapter_view(VIISPOAuth2Adapter)

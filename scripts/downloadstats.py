@@ -38,9 +38,9 @@ def main(
         target: str = Option("http://localhost:8000", help=(
                 "target server url"
         )),
-        config_file: str = Option('/.config/vitrina/downloadstats.json'),
-        state_file: str = Option('/.local/share/vitrina/state.json'),
-        bot_status_file: str = Option('/.local/share/vitrina/downloadstats.json'),
+        config_file: str = Option('~/.config/vitrina/downloadstats.json'),
+        state_file: str = Option('~/.local/share/vitrina/state.json'),
+        bot_status_file: str = Option('~/.local/share/vitrina/downloadstats.json'),
 ):
     transactions = {}
     current_state = {'files': {}}
@@ -182,12 +182,14 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                     dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
                 date = dt.date()
                 hour = dt.hour
+                minute = dt.minute
                 agent = transactions[txn].get('agent')
                 frmt = transactions[txn].get('format')
                 obj = [
                     {
                         'date': date,
                         'hour': hour,
+                        'minute': minute,
                         'format': frmt,
                         'reqs': requests,
                         'count': objects,
@@ -213,6 +215,7 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                         "time": dt,
                         "date": date,
                         "hour": hour,
+                        'minute': minute,
                         "format": frmt,
                         "requests": requests,
                         "objects": objects
@@ -227,6 +230,11 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                                 for index, dictionary in enumerate(temp[model]):
                                     if (
                                             dictionary.get('hour') == hour
+                                            and dictionary.get('source') == name
+                                            and dictionary.get('format') == frmt
+                                    ) or (
+                                            dictionary.get('hour') == hour + 1
+                                            and dictionary.get('minute') == 1
                                             and dictionary.get('source') == name
                                             and dictionary.get('format') == frmt
                                     ):

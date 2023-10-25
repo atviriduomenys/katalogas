@@ -9,9 +9,11 @@ from xml.dom import minidom
 from bs4 import BeautifulSoup
 from stringcase import snakecase
 from requests import post
-from vitrina.settings import VIISP_PROXY_AUTH
+from vitrina.settings import VIISP_PROXY_AUTH, VIISP_PID
 import zipfile
 import io
+import requests
+
 
 providers = ('auth.lt.identity.card',
              'auth.lt.bank',
@@ -30,7 +32,7 @@ user_information = ('firstName',
 
 callback_url = '/accounts/viisp/complete-login'
 callback_url_token = '/accounts/viisp/complete-login/{}'
-PID = 'VIISP-AUTH-SERVICE-01'
+PID = VIISP_PID
 CUSTOM_DATA_PARTNER_REGISTRATION = "adp-partner-registration-req"
 
 envelope = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:aut=\"http://www.epaslaugos.lt/services/authentication\" xmlns:xd=\"http://www.w3.org/2000/09/xmldsig#\">\n" \
@@ -91,8 +93,14 @@ def get_response_with_ticket_id(key, domain, token=None):
     signed_xml = create_signed_authentication_request_xml(key, domain, token)
     soap_request = envelope.format(signed_xml)
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
-    resp.raise_for_status()
-    return _parse_ticket_id(resp.text)
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        error_data = {}
+        error_data['error_response'] = e.response
+        error_data['error_response_text'] = e.response.text
+        return None, error_data
+    return _parse_ticket_id(resp.text), None
 
 
 def get_response_with_user_data(ticket_id, key):

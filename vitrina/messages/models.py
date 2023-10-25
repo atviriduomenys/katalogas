@@ -61,9 +61,9 @@ class SentMail(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    recipient = models.CharField(max_length=255, blank=True, null=True)
+    recipient = models.CharField(max_length=500, blank=True, null=True)
     email_subject = models.CharField(max_length=255, blank=True, null=True)
-    email_content = models.CharField(max_length=255, blank=True, null=True)
+    email_content = models.CharField(max_length=500, blank=True, null=True)
     email_sent = models.BooleanField(blank=True, null=True)
 
     class Meta:

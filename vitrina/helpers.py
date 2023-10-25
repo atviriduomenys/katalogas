@@ -455,12 +455,13 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
     list_keys = base_template_content[base_template_content.find("{") + 1:base_template_content.rfind("}")].replace(
         '{', '').replace('}', '').split()
     email_template_to_save = base_template_content
-    for key in list_keys:
-        if key in email_template_keys.keys():
-            if email_template_keys[key] is not None:
-                base_template_content = base_template_content.replace("{" + key + "}", email_template_keys[key])
-        else:
-            base_template_content = base_template_content.replace("{" + key + "}", '')
+    if email_template_keys:
+        for key in list_keys:
+            if key in email_template_keys.keys():
+                if email_template_keys[key] is not None:
+                    base_template_content = base_template_content.replace("{" + key + "}", email_template_keys[key])
+            else:
+                base_template_content = base_template_content.replace("{" + key + "}", '')
     if not email_template:
         email_subject = email_title = email_title_subject
         email_content = base_template_content
@@ -476,13 +477,14 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
     else:
         email_template = email_template.first()
         email_content = str(email_template.template)
-        for key in list_keys:
-            if key in email_template_keys.keys():
-                if email_template_keys[key] is not None:
-                    email_content = email_content.replace("{" + key + "}", email_template_keys[key])
-            else:
-                email_content = email_content.replace("{" + key + "}", '')
-        email_subject = str(email_template.subject)
+        if email_template_keys:
+            for key in list_keys:
+                if key in email_template_keys.keys():
+                    if email_template_keys[key] is not None:
+                        email_content = email_content.replace("{" + key + "}", email_template_keys[key])
+                else:
+                    email_content = email_content.replace("{" + key + "}", '')
+            email_subject = str(email_template.subject)
 
     return {'email_content': email_content, 'email_subject': email_subject}
 

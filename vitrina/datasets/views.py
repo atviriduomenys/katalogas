@@ -891,12 +891,9 @@ class CreateMemberView(
     history_url_name = 'dataset-history'
 
     base_email_template = """
-        Buvote įtraukti į {0} duomenų rinkinio
-        narių sąrašą, tačiau nesate registruotas Lietuvos
-        atvirų duomenų portale. Prašome sekite šia nuoroda,
-        kad užsiregistruotumėte ir patvirtintumėte savo
-        narystę:\n
-        {1}
+        Buvote įtraukti į {organization} duomenų rinkinio
+        narių sąrašą. Jei norite uzsiregistruoti sekite šia nuoroda:
+        {url}
     """
 
     def has_permission(self):
@@ -959,6 +956,7 @@ class CreateMemberView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
+
             email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
                                                      self.base_email_template,
                                                      'Kvietimas prisijungti prie atvirų duomenų portalo',

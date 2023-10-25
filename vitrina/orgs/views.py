@@ -406,12 +406,9 @@ class RepresentativeCreateView(
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
     base_template_content = """
-         Buvote įtraukti į {0} organizacijos
-         narių sąrašo, tačiau nesate registruotas Lietuvos
-         atvirų duomenų portale. Prašome sekite šia nuoroda,
-         kad užsiregistruotumėte ir patvirtintumėte savo narystę
-        'organizacijoje:\n'
-        '{1}   
+        Buvote įtraukti į {organization} duomenų rinkinio
+        narių sąrašą. Jei norite uzsiregistruoti sekite šia nuoroda:
+        {url}
     """
     email_identifier = "auth-org-representative-without-credentials"
 
@@ -481,7 +478,7 @@ class RepresentativeCreateView(
                 self.email_identifier,  self.base_template_content,
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
                  {
-                     'organization': self.organization,
+                     'organization': self.organization.title,
                       'url': url
                  }
              )

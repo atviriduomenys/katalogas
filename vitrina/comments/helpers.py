@@ -75,8 +75,12 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
 
 def send_mail_to_object_subscribers(email_list, content_type, object_id):
     sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
+    if not isinstance(sub_object, Comment):
+        obj = sub_object.title
+    else:
+        obj = sub_object.body
     email_data = prepare_email_by_identifier_for_sub('comment-created-sub',
                                                      'Sveiki, jūsų prenumeruojam objektui {sub_object},'
                                                      ' parašytas naujas komentaras.',
-                                                     'Parašytas naujas komentaras', {'sub_object': sub_object})
+                                                     'Parašytas naujas komentaras', {'sub_object': obj})
     send_email_with_logging(email_data, email_list)

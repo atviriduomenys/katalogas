@@ -87,16 +87,19 @@
         <div class="media-content">
             <div class="columns no-margin-bottom">
                 <div class="column is-11 is-offset-1">
-                        <form action="{% if external %}{% url 'external-reply' content_type object_id comment.id %}
-                                      {% else %}{% url 'reply' content_type.pk object.pk comment.id %}{% endif %}"
-                              method="post" id="reply-form">
+                {% if external %}
+                    <form action="{% url 'external-reply' content_type object_id comment.id %}" method="post" id="reply-form">
+                {% else %}
+                    <form action="{% url 'reply' content_type.pk object.pk comment.id %}" method="post" id="reply-form">
+                {% endif %}
                         {% csrf_token %}
                         {{ reply_form|crispy }}
                         {% if external %}
                             <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
                         {% endif %}
-                        <button type="submit"
-                                class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">{% translate "Atsakyti" %}</button>
+                        <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
+                            {% translate "Atsakyti" %}
+                        </button>
                     </form>
                 </div>
             </div>

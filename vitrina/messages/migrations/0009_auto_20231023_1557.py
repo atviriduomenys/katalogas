@@ -4,26 +4,6 @@ from django.db import migrations, models
 import datetime
 
 
-def change_existing_keys_in_template(apps, schema_editor):
-    template_data = {
-     "request-registered": """Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {0}.""",
-     }
-    email_templates = apps.get_model('vitrina_messages', "EmailTemplate")
-    for template in template_data:
-        if template in template_data.keys():
-            created_template = email_templates.objects.create(
-                created=datetime.datetime.now(),
-                version=0,
-                identifier=template,
-                template=template_data[template],
-                subject=template_data[template],
-                title=template_data[template]
-            )
-            created_template.save()
-        else:
-            email_templates.objects.filter(identifier=template).update(template=template_data[template])
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -46,5 +26,4 @@ class Migration(migrations.Migration):
                                                         ('PROJECT', 'Projekto prenumerata')], max_length=255, null=True,
                                                         verbose_name='Prenumeratos tipas'),
         ),
-        migrations.RunPython(change_existing_keys_in_template)
     ]

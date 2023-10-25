@@ -617,9 +617,9 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     history_url_name = 'request-history'
     plan_url_name = 'request-plans'
     request_rejected_base_template = """
-        Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {0}  
+        Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {comment}  
     """
-    request_add_email_base_template = "Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {request_path} {more}"
+    request_add_email_base_template = "Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {request_path}"
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -651,7 +651,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             if request.user is not None:
                 if request.user.email is not None:
                     send_email_with_logging(email_data, [request.user.email])
-        elif request.status == "APPROVED":
+        elif request.status == "APPROVED" and self.request.method == "POST":
             email_data = prepare_email_by_identifier('request-approved',
                                                      'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
                                                      'Poreikis patvirtintas',
@@ -660,7 +660,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                 if request.user.email is not None:
                     send_email_with_logging(email_data, [request.user.email])
 
-        elif request.status == "CREATED":
+        elif request.status == "CREATED" and self.request.method == "POST":
             email_data = prepare_email_by_identifier('request-registered',
                                                      self.request_add_email_base_template,
                                                      'Užregistruotas naujas poreikis',
@@ -730,8 +730,10 @@ class RequestCreateView(
                 email_data = prepare_email_by_identifier_for_sub('request-created-sub',
                                                                  'Sveiki, jūsų prenumeruojamai organizacijai {organization},'
                                                                  ' sukurtas naujas poreikis {object}.',
-                                                                 'Sukurtas naujas poreikis', {'organization': organization,
-                                                                                              'object': self.object})
+                                                                 'Sukurtas naujas poreikis', {
+                                                                                    'organization': organization.title,
+                                                                                    'object': self.object.title
+                                                                 })
                 sub_email_list = []
                 for sub in subs:
                     Task.objects.create(

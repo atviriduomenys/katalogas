@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 
 {% load cms_tags sekizai_tags %}
 {% load menu_tags %}
@@ -6,6 +7,19 @@
 {% load sass_tags %}
 
 {% block current_title %}{% page_attribute "page_title" %}{% endblock %}
+
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
 
 {% block content %}
     <div class="columns">

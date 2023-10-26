@@ -215,7 +215,7 @@
                                                 {% if val != None %}
                                                     <td id="{{ col }}_col_id">
                                                         {% if prop.ref_model.name %}
-                                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                            <a href="{% url 'object-data' prop.ref_model.dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
                                                         {% else %}
                                                             {{ val|slice:":8" }}
                                                         {% endif %}

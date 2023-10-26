@@ -262,9 +262,6 @@ class RequestAssignment(models.Model):
     request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    class Meta:
-        db_table = 'request_assignment'
-        unique_together = ['organization', 'request']
 
     @property
     def display_date(self):

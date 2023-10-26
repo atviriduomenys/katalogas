@@ -3,6 +3,19 @@
 
 {% block current_title %}{% translate "Naujienos" %}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
 {% if post_list %}
     {% for i in post_list %}

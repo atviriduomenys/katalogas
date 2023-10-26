@@ -1,49 +1,18 @@
-from typing import Any, List
-from django import http
-
-from django.views.generic import CreateView, UpdateView, DetailView
-from collections import OrderedDict
-from django.views import View
-
 import json
 import numpy as np
 import pandas as pd
 import pytz
 from collections import OrderedDict
 from datetime import date, datetime
-from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.db.models import Case, When
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
-from reversion.models import Version
-from haystack.generic_views import FacetedSearchView
-from django.views.generic.base import RedirectView, View
+from django.views.generic.base import View
 
-from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.datasets.forms import PlanForm
-from vitrina.orgs.services import has_perm, Action
-from vitrina.orgs.models import Representative
-from vitrina.helpers import get_selected_value
-from vitrina.helpers import Filter
-from vitrina.helpers import DateFilter
-from reversion import set_comment
-from vitrina.requests.services import update_facet_data
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
-from reversion.views import RevisionMixin
-from vitrina.datasets.models import Dataset, DatasetGroup
-from vitrina.classifiers.models import Category
-from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
-
-from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm
-
+from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -64,7 +33,7 @@ from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
                                        sort_publication_stats)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
@@ -355,6 +324,31 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
 
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
+
+        context['duration_options'] = [
+            {'value': 'duration-yearly', 'label': _("Kas metus")},
+            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
+            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
+            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
+            {'value': 'duration-daily', 'label': _("Kas dieną")},
+        ]
+
+        if context['active_filter'] == 'publication':
+            context['sort_options'] = [
+                {'value': 'sort-year-desc', 'label': _("Naujausi")},
+                {'value': 'sort-year-asc', 'label': _("Seniausi")},
+            ]
+        else:
+            context['sort_options'] = [
+                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
+                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
+            ]
+
+        context['indicator_options'] = [
+            {'value': 'request-count', 'label': _("Poreikių skaičius")},
+            {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
+            {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
+        ]
 
         return context
 

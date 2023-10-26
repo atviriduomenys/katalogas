@@ -92,7 +92,7 @@
         action="{{ search_url }}"
         method="get">
             <div class="control is-expanded">
-                <label style="display: None;" for="search-input">{% translate 'Paieška' %}</label>
+                <label class="visually-hidden" for="search-input">{% translate 'Duomenų rinkinio paieška' %}</label>
                 <input class="input" id="search-input" type="text" name="q"
                        placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
                        value="{{ q | escape }}" title="{% translate 'Paieška' %}"/>

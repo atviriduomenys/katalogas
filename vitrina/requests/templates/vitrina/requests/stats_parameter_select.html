@@ -3,85 +3,61 @@
 
 <div class="is-flex">
     <div class="stays-right">
-        <div class="columns">
+        <form id='parameter_form' action="{{ request.path }}" method="GET">
+            <div class="columns">
             {% if has_time_graph %}
             <div class="column">
-                <form id='duration_select_id' action="{{ request.path }}" method="GET">
-                    {% for key, list in request.GET.items %}
-                        {% if key != 'duration' %}
-                            {% for val in request.GET|get_list:key %}
-                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-
-                    <div><span style="float:right">{% translate "Laikotarpis" %}</span></div>
-                    <div class="select">
-                        <select name="duration" id="duration-parameter" onchange="submitForm('duration_select_id')">
-                            <option value="duration-yearly" {% if duration == 'duration-yearly' %}selected{% endif %}>{% translate "Kas metus" %}</option>
-                            <option value="duration-quarterly" {% if duration == 'duration-quarterly' %}selected{% endif %}>{% translate "Kas ketvirtį" %}</option>
-                            <option value="duration-monthly" {% if duration == 'duration-monthly' %}selected{% endif %}>{% translate "Kas mėnesį" %}</option>
-                            <option value="duration-weekly" {% if duration == 'duration-weekly' %}selected{% endif %}>{% translate "Kas savaitę" %}</option>
-                            <option value="duration-daily" {% if duration == 'duration-daily' %}selected{% endif %}>{% translate "Kas dieną" %}</option>
-                        </select>
-                    </div>
-                </form>
+                <div><label style="float:right" for="duration-parameter">{% translate "Laikotarpis" %}</label></div>
+                <div class="select">
+                    <select name="duration" id="duration-parameter">
+                        {% for option in duration_options %}
+                            <option value="{{ option.value }}" {% if duration == option.value %}selected{% endif %}>
+                                {{ option.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             {% endif %}
             <div class="column">
-                <form id='sort_select_id' action="{{ request.path }}" method="GET">
-                    {% for key, list in request.GET.items %}
-                        {% if key != 'sort' %}
-                            {% for val in request.GET|get_list:key %}
-                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-
-                    <div><span style="float:right">{% translate "Rūšiuoti" %}</span></div>
-                    <div class="select">
-                        <select name="sort" id="sorting-parameter" onchange="submitForm('sort_select_id')">
-                            {% if active_filter == 'publication' %}
-                                <option value="sort-year-desc" {% if sort == 'sort-year-desc' %}selected{% endif %}>{% translate "Naujausi" %}</option>
-                                <option value="sort-year-asc" {% if sort == 'sort-year-asc' %}selected{% endif %}>{% translate "Seniausi" %}</option>
-                            {% endif %}
-                            <option value="sort-asc" {% if sort == 'sort-asc' %}selected{% endif %}>{% translate "Mažiausias rodiklis" %}</option>
-                            <option value="sort-desc" {% if sort == 'sort-desc' %}selected{% endif %}>{% translate "Didžiausias rodiklis" %}</option>
-                        </select>
-                    </div>
-                </form>
+                <div><label style="float:right" for="sorting-parameter">{% translate "Rūšiuoti" %}</label></div>
+                <div class="select">
+                    <select name="sort" id="sorting-parameter">
+                        {% for option in sort_options %}
+                            <option value="{{ option.value }}" {% if sort == option.value %}selected{% endif %}>
+                                {{ option.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             <div class="column">
-                <form id='indicator_select_id' action="{{ request.path }}" method="GET">
-                    {% for key, list in request.GET.items %}
-                        {% if key != 'indicator' %}
-                            {% for val in request.GET|get_list:key %}
-                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-
-                    <div><span style="float:right">{% translate "Rodiklis" %}</span></div>
-                    <div class="select">
-                      <select name="indicator" id="stats-parameter" onchange="submitForm('indicator_select_id')">
-                        <option value="request-count" {% if active_indicator == 'request-count' %}selected{% endif %}>Poreikių skaičius</option>
-                        <option value="request-count-open" {% if active_indicator == 'request-count-open' %}selected{% endif %}>Poreikių skaičius (neatsakytų)</option>
-                        <option value="request-count-late" {% if active_indicator == 'request-count-late' %}selected{% endif %}>Poreikių skaičius (vėluojančių)</option>
-                      </select>
-                    </div>
-                </form>
+                <div><label style="float:right" for="stats-parameter">{% translate "Rodiklis" %}</label></div>
+                <div class="select">
+                    <select name="indicator" id="stats-parameter">
+                        {% for option in indicator_options %}
+                            <option value="{{ option.value }}" {% if active_indicator == option.value %}selected{% endif %}>
+                                {{ option.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-        </div>
+            <div class="column">
+                <div style="white-space: pre-line;">
+                    <button class="button small is-primary" type="submit" onclick="submitForm('parameter_form')">
+                        {% translate "Atnaujinti" %}
+                    </button>
+                </div>
+            </div>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
     function submitForm(formId) {
-        form = $(`form#${formId}`);
-        chartType = location.hash;
-        if (form.first() && chartType) {
-            form[0].action = form[0].action + chartType;
-        }
-        form.trigger('submit');
+        var form = document.getElementById(formId);
+        form.submit();
     }
 </script>

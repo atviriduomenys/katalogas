@@ -262,6 +262,9 @@ class RequestAssignment(models.Model):
     request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    class Meta:
+        db_table = 'request_assignment'
+        unique_together = ['organization', 'request']
 
     @property
     def display_date(self):
@@ -270,4 +273,4 @@ class RequestAssignment(models.Model):
             content_type=ContentType.objects.get_for_model(RequestAssignment),
             object_id=self.pk
         ).order_by('-created').first()
-        return latest_status_comment.created if latest_status_comment else  self.created
+        return latest_status_comment.created if latest_status_comment else self.created

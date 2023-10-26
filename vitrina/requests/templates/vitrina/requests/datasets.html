@@ -16,6 +16,16 @@
 
     <div class="columns">
         <div class="column">
+            {% if user.organization %}
+                <div class="buttons is-right">
+                    <a id="add-dataset" class="button is-primary" href="{% url 'dataset-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
+                        {% translate "Naujas rinkinys" %}
+                    </a>
+                    <a id="add-dataset" class="button is-primary" href="{% url 'request-datasets-edit' pk=request_obj.pk %}">
+                        {% translate "Priskirti rinkinį" %}
+                    </a>
+                </div>
+            {% endif %}
             {% if datasets %}
                 <table class="table is-fullwidth">
                     <tbody>

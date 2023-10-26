@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Informacija duomenų teikėjo registravimui" %}{% endblock %}
+
+{% block content %}
+<input
+    class="input"
+    id="request-dataset-input"
+    placeholder="{% translate 'Rezultatai ribojami, įveskite paieškos raktažodį' %}..."
+    title="{% translate 'Rezultatai ribojami, įveskite paieškos raktažodį' %}"
+>
+<div id="dataset-list">
+    {% include "vitrina/requests/request_dataset_add_items.html" %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        let manFilter = $('#request-dataset-input');
+        manFilter.on('input', function(){
+            $('#dataset-list').html('').load(
+                "{% url 'request-datasets-edit-update' pk=user.organization.pk %}?q=" + manFilter.val()
+            );
+        });
+    </script>
+{% endblock %}

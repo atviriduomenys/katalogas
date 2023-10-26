@@ -53,7 +53,7 @@ from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
-from vitrina.requests.models import RequestObject
+from vitrina.requests.models import RequestObject, RequestAssignment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -1264,6 +1264,11 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
+            RequestAssignment.objects.create(
+                organization=self.dataset.organization,
+                request=request,
+                status=request.status
+            )
         Task.objects.create(
             title=f"Poreikis duomenų rinkiniui: {self.dataset}",
             description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",

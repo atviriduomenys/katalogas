@@ -8,6 +8,20 @@
 {% block parent_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 {% block current_title %}{{ request_object.title }}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+    <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai' %}</span></a></li>
+</ul>
+{% endblock %}
+
 {% block content %}
     {% include 'vitrina/requests/tabs.html' %}
 

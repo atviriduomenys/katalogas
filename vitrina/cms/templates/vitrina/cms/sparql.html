@@ -6,6 +6,19 @@
 
 {% block current_title %}{% translate "SPARQL paieška" %}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
     <div class="content">
         <p>{% translate "SPARQL Punktas" %}</p>

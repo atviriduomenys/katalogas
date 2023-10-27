@@ -31,7 +31,7 @@ def home(request):
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),
-            'project': Project.public.count(),
+            'project': Project.objects.filter(status='APPROVED').count(),
             'coordinators': coordinator_count,
             'managers': manager_count,
             'users': user_count

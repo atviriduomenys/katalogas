@@ -33,7 +33,8 @@ from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
                                        sort_publication_stats)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging
+from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
+    get_stats_filter_options_based_on_model
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
@@ -227,6 +228,17 @@ class RequestStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
+    def update_context_data(self, context):
+        super().update_context_data(context)
+
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
+
+        return context
+
 
 class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     title = _("Būsena")
@@ -242,7 +254,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         statuses = self.get_filter_data(facet_fields)
         requests = context['object_list']
 
-        indicator = self.request.GET.get('indicator', None) or 'request-count'
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = self.get_start_date()
@@ -313,9 +325,6 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['has_time_graph'] = self.has_time_graph
 
         context['active_filter'] = self.filter
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
         context['xAxis_title'] = self.get_time_axis_title(indicator)
@@ -325,30 +334,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
-        context['duration_options'] = [
-            {'value': 'duration-yearly', 'label': _("Kas metus")},
-            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
-            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
-            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
-            {'value': 'duration-daily', 'label': _("Kas dieną")},
-        ]
-
-        if context['active_filter'] == 'publication':
-            context['sort_options'] = [
-                {'value': 'sort-year-desc', 'label': _("Naujausi")},
-                {'value': 'sort-year-asc', 'label': _("Seniausi")},
-            ]
-        else:
-            context['sort_options'] = [
-                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
-                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
-            ]
-
-        context['indicator_options'] = [
-            {'value': 'request-count', 'label': _("Poreikių skaičius")},
-            {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
-            {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
-        ]
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
 
         return context
 
@@ -509,6 +495,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
         return context
 
 
@@ -596,12 +583,12 @@ class RequestQuarterStatsView(RequestListView):
         context['sort'] = sorting
         return context
 
+
 class RequestRedirectView(View):
     def get(self, request, **kwargs):
         uuid = kwargs.get('uuid')
         request = get_object_or_404(Request, uuid=uuid)
         return HttpResponsePermanentRedirect(reverse('request-detail', kwargs={'pk': request.pk}))
-
 
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):

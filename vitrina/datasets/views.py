@@ -70,7 +70,8 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, \
+    send_email_with_logging, get_stats_filter_options_based_on_model
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -1482,6 +1483,16 @@ class DatasetStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
+    def update_context_data(self, context):
+        super().update_context_data(context)
+
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+
+        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
+        return context
+
 
 class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     title = _("Būsena")
@@ -1610,6 +1621,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
+        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
         return context
 
 
@@ -1655,31 +1667,6 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio organizaciją rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
-
-
-class OrganizationStatsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/organizations.html'
-    paginate_by = 0
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        max_count = 0
-        indicator = self.request.GET.get('indicator', None)
-        orgs = {}
-        keys = list(orgs.keys())
-        values = list(orgs.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        sorted_value_index = np.flip(np.argsort(values))
-        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
-        context['organization_data'] = sorted_orgs
-        context['max_count'] = max_count
-        context['active_filter'] = 'organizations'
-        context['active_indicator'] = indicator
-        context['yAxis_title'] = Y_TITLES[indicator]
-        return context
 
 
 class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
@@ -1738,6 +1725,53 @@ class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio grupes rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike')
+
+
+class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
+    title = _("Kategorija")
+    current_title = _("Duomenų rinkinių kategorijos")
+    filter = 'category'
+    filter_model = Category
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
+
+    def update_item_data(self, item):
+        obj = get_object_or_404(Category, pk=item['filter_value'])
+        children = obj.get_children()
+        if len(children) > 0:
+            item.update({
+                'full_url': reverse('dataset-stats-category-children', args=[obj.pk])
+            })
+        return item
+
+
+class OrganizationStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/organizations.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        indicator = self.request.GET.get('indicator', None)
+        orgs = {}
+        keys = list(orgs.keys())
+        values = list(orgs.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
+        context['organization_data'] = sorted_orgs
+        context['max_count'] = max_count
+        context['active_filter'] = 'organizations'
+        context['active_indicator'] = indicator
+        context['yAxis_title'] = Y_TITLES[indicator]
+        return context
 
 
 class JurisdictionStatsView(DatasetListView):
@@ -1821,28 +1855,6 @@ class JurisdictionStatsView(DatasetListView):
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
-
-
-class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
-    title = _("Kategorija")
-    current_title = _("Duomenų rinkinių kategorijos")
-    filter = 'category'
-    filter_model = Category
-
-    def get_graph_title(self, indicator):
-        if indicator == 'level-average' or indicator == 'object-count':
-            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai')
-        else:
-            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
-
-    def update_item_data(self, item):
-        obj = get_object_or_404(Category, pk=item['filter_value'])
-        children = obj.get_children()
-        if len(children) > 0:
-            item.update({
-                'full_url': reverse('dataset-stats-category-children', args=[obj.pk])
-            })
-        return item
 
 
 class CategoryStatsView(DatasetListView):

@@ -92,3 +92,17 @@ $primary: rgba(98, 185, 212, 0.9);
     clip: rect(0, 0, 0, 0);
     border: 0;
 }
+
+.row {
+    display: flex;
+    border-bottom: 0.5px solid lightgray;
+}
+
+.cell {
+    flex: 1;
+    padding: 10px;
+}
+
+.is-middle {
+    align-self: center;
+}

@@ -1,0 +1,60 @@
+{% load i18n parler_tags %}
+{% load util_tags %}
+
+<div class="is-flex">
+    <div class="stays-right">
+        <div class="columns">
+            {% for option_type, option_data in options.items %}
+            <div class="column">
+                <form id='{{ option_type }}_select_id' action="{{ request.path }}" method="GET">
+                    {% for key, list in request.GET.items %}
+                        {% if key != option_type %}
+                            {% for val in request.GET|get_list:key %}
+                                <input type="hidden" name="{{ key }}" value="{{ val }}"/>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                    <div><span style="float:right">{{option_data.label}}</span></div>
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" type="button" aria-haspopup="true" aria-controls="{{ option_type }}-menu">
+                                <span>
+                                    {% for option in option_data.fields %}
+                                        {% if option.value == option_data.selected %}
+                                            {{ option.label }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" style="color: #007db2;" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="{{ option_type }}-menu">
+                            <div class="dropdown-content">
+                                {% for option in option_data.fields %}
+                                    <a href="#" class="dropdown-item"
+                                       onclick="updateURL('{{ option_type }}', '{{ option.value }}', '{{ option.label }}'); return false;"
+                                       style="{% if option.value == option_data.selected %}font-weight: bold;{% endif %}"
+                                    >
+                                        {{ option.label }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateURL(param, value, label) {
+        var url = new URL(window.location.href);
+        url.searchParams.set(param, value);
+        window.location.href = url.toString();
+        document.querySelector(`button[aria-controls=${param}-menu] span`).textContent = label;
+    }
+</script>

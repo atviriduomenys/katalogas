@@ -5,7 +5,11 @@
 {% block current_title %}{% translate "Organizacijos" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
         <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai ir pasiūlymai' %}</span></a></li>
         <li><a href="{% url 'request-detail' request_obj.pk %}"><span>{{ request_obj.title }}</span></a></li>
     </ul>

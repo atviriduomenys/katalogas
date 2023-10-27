@@ -733,6 +733,10 @@ class RequestCreateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+        }
         return context_data
 
 
@@ -920,6 +924,11 @@ class RequestUpdateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio redagavimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai'),
+            reverse('request-detail', args=[self.object.pk]): self.object.title,
+        }
         return context_data
 
 

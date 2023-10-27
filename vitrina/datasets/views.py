@@ -566,6 +566,11 @@ class DatasetUpdateView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Duomenų rinkinio redagavimas')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         switch_language(self.object, get_language())
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
         return context
@@ -798,6 +803,11 @@ class DatasetStructureImportView(
         return {
             **super().get_context_data(**kwargs),
             'current_title': _("Struktūros importas"),
+            'parent_links': {
+                reverse('home'): _('Pradžia'),
+                reverse('request-list'): _('Poreikiai'),
+                reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
+            },
             'parent_title': self.dataset.title,
             'parent_url': self.dataset.get_absolute_url(),
         }
@@ -1283,6 +1293,11 @@ class AddRequestView(
         context = super().get_context_data(**kwargs)
         context['parent_title'] = self.dataset
         context['parent_url'] = self.dataset.get_absolute_url()
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         context['current_title'] = _('Poreikių pridėjimas')
         return context
 
@@ -1363,6 +1378,11 @@ class AddProjectView(
         context = super().get_context_data(**kwargs)
         context['parent_title'] = self.dataset
         context['parent_url'] = self.dataset.get_absolute_url()
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+        }
         context['current_title'] = _('Projektų pridėjimas')
         return context
 

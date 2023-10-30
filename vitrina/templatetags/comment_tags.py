@@ -37,9 +37,9 @@ def comments(obj, user, is_structure=False):
             )
     comment_form_class = get_comment_form_class(obj, user)
     comments_array = []
-    for i, comment in enumerate(obj_comments):
+    for comment in obj_comments:
         children = comment.descendants(permission=perm)
-        reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id), prefix=str(i))
+        reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id))
         comments_array.append((comment, children, reply_form))
     return {
         'comments': comments_array,

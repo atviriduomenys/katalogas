@@ -339,8 +339,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         else:
             return None
 
-class DatasetRedirectView(View):
 
+class DatasetRedirectView(View):
     def get(self, request, **kwargs):
         slug = kwargs.get('slug')
         dataset = get_object_or_404(Dataset, slug=slug)
@@ -367,9 +367,6 @@ class DatasetDetailView(
         if dataset.is_public:
             return True
         else:
-            # if self.request.user.organization_id == dataset.organization_id:
-            #     return True
-            # else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
@@ -2740,13 +2737,13 @@ class update_dataset_category_filters(FacetedSearchView):
             items = []
             for item in filter[0].items():
                 if q.lower() in item.title.lower():
-                    print(item.title)
                     items.append(item)
             extra_context = {
                 'filter_items': items
             }
             context.update(extra_context)
             return context
+
 
 class update_dataset_tag_filters(FacetedSearchView):
     template_name = 'vitrina/datasets/tag_filter_items.html'
@@ -2802,7 +2799,6 @@ class update_dataset_jurisdiction_filters(FacetedSearchView):
             items = []
             for item in filter[0].items():
                 if q.lower() in item.title.lower():
-                    print(item.title)
                     items.append(item)
             extra_context = {
                 'filter_items': items

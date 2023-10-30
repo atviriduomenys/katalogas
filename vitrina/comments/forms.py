@@ -21,9 +21,11 @@ class CommentForm(forms.ModelForm):
         fields = ('is_public', 'body',)
 
     def __init__(self, obj, *args, **kwargs):
+        kwargs.setdefault('auto_id', 'id_%s_' + str(obj.pk))
         super().__init__(*args, **kwargs)
-        self.fields['body'].label = False
+        self.fields['body'].label = _("Komentaro tekstas objektui: ") + " " + str(obj)
         self.fields['body'].widget.attrs.update({'title': _("Komentaras")})
+        self.fields['is_public'].widget.attrs.update({'id': 'id_is_public_' + str(obj.pk)})
         self.obj = obj
 
 

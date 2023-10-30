@@ -94,7 +94,15 @@
                             {% if parent_links %}
                                 <ul class="p-t-sm">
                                     {% for link, title in parent_links.items %}
-                                        <li><a href="{{ link }}"><span>{{ title }}</span></a></li>
+                                        <li>
+                                            <a href="{{ link }}">
+                                            {% if title == "Pradžia" %}
+                                                <span class="icon">
+                                                    <i class="fas fa-home"></i>
+                                                </span>
+                                            {% endif %}
+                                            <span>{{ title }}</span></a>
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             {% elif parent_url and parent_title %}

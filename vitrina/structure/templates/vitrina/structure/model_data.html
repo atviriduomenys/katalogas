@@ -11,7 +11,11 @@
 {% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
     </ul>

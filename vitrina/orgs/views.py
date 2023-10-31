@@ -25,7 +25,8 @@ from reversion.views import RevisionMixin
 from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
+    get_stats_filter_options_based_on_model
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -99,6 +100,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
 
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
 
 class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
@@ -266,6 +268,7 @@ class OrganizationManagementsView(OrganizationListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
+        context['options'] = get_stats_filter_options_based_on_model(Organization, duration, sorting, indicator)
         return context
 
 

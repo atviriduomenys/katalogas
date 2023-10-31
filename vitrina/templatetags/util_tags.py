@@ -2,7 +2,6 @@ import numbers
 from datetime import date
 from typing import Iterable
 
-import requests
 from django import template
 from django.contrib.contenttypes.models import ContentType
 from extra_settings.models import Setting

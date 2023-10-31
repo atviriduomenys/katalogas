@@ -11,7 +11,9 @@
     {% endif %}
         <article class="media {% if comment.is_error %} error-comment {% endif %}">
             <figure class="media-left">
-                <img class="comment-profile-icon image is-64x64" src="{% static 'img/user_profile_picture.png' %}" alt="user-icon">
+                <img class="comment-profile-icon image is-64x64"
+                     src="{% static 'img/user_profile_picture.png' %}"
+                     alt="user-icon">
             </figure>
             <div class="media-content">
                 <div class="content">
@@ -19,7 +21,10 @@
                         <div class="column">
                             {% if comment.parent %}
                                 <p class="is-italic">
-                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }} {{ comment.parent.body_text|truncatechars:20 }}
+                                    {% translate "Atsakymas į" %}
+                                    {{ comment.parent.user }}
+                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
+                                    {{ comment.parent.body_text|truncatechars:20 }}
                                 </p>
                             {% endif %}
                             <p>
@@ -48,7 +53,10 @@
                         <div class="column {% if user.is_authenticated %}is-10{% endif %}">
                             {% if comment.parent %}
                                 <p class="is-italic">
-                                    {% translate "Atsakymas į" %} {{ comment.parent.user }} {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }} {{ comment.parent.body_text|truncatechars:20 }}
+                                    {% translate "Atsakymas į" %}
+                                    {{ comment.parent.user }}
+                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
+                                    {{ comment.parent.body_text|truncatechars:20 }}
                                 </p>
                             {% endif %}
                             <p>
@@ -79,18 +87,19 @@
         <div class="media-content">
             <div class="columns no-margin-bottom">
                 <div class="column is-11 is-offset-1">
-                    {% if external %}
-                        <form action="{% url 'external-reply' content_type object_id comment.id %}" method="post" id="reply-form">
-                    {% else %}
-                        <form action="{% url 'reply' content_type.pk object.pk comment.id %}" method="post" id="reply-form">
-                    {% endif %}
+                {% if external %}
+                    <form action="{% url 'external-reply' content_type object_id comment.id %}" method="post" id="reply-form">
+                {% else %}
+                    <form action="{% url 'reply' content_type.pk object.pk comment.id %}" method="post" id="reply-form">
+                {% endif %}
                         {% csrf_token %}
                         {{ reply_form|crispy }}
                         {% if external %}
                             <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
                         {% endif %}
-                        <button type="submit"
-                                class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">{% translate "Atsakyti" %}</button>
+                        <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
+                            {% translate "Atsakyti" %}
+                        </button>
                     </form>
                 </div>
             </div>

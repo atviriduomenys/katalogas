@@ -90,13 +90,13 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">{% translate "Peržiūrėti" %}</p>
+            <h1 class="modal-card-title">{% translate "Peržiūrėti" %}</h1>
             <button class="modal-button-close delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body" id="preview-content">
-            <table class="table is-striped is-fullwidth" id="info-table">
-                <tbody id="info-table-body"></tbody>
-            </table>
+            <div style="display: flex; flex-direction: column;" class="table is-striped is-fullwidth" id="info-table">
+                <div style="display: flex;" id="info-table-body"></div>
+            </div>
         </section>
     </div>
 </div>

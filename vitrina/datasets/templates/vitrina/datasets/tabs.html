@@ -4,7 +4,7 @@
     <ul>
         {% if detail_url %}
         <li class="{% if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
-            <a href="{{ detail_url }}" id="detail_tab">
+            <a href="{{ detail_url }}" id="detail_tab" aria-label="Informacija">
                 {% translate "Informacija" %}
             </a>
         </li>

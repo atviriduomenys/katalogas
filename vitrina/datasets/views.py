@@ -109,6 +109,9 @@ class DatasetListView(PlanMixin, FacetedSearchView):
     ]
 
     def get(self, request, **kwargs):
+        if not request.session.get('text_search_param', None):
+            if self.request.GET.get("q") and (request.session.get('text_search_param') != self.request.GET.get("q")):
+                request.session['text_search_param'] = self.request.GET.get("q")
         legacy_org_redirect = self.request.GET.get('organization_id')
         if legacy_org_redirect:
             new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
@@ -155,6 +158,12 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 datasets = datasets.order_by('en_title_s', '-type_order')
         elif sorting == 'sort-by-relevance':
             datasets = datasets.order_by('-type_order')
+        text_search_param = self.request.session.get('text_search_param', None)
+        if text_search_param and self.request.GET.get('q', None) is None:
+            if len(text_search_param) < 5:
+                datasets = datasets.autocomplete(text__startswith=text_search_param)
+            else:
+                datasets = datasets.autocomplete(text__contains=text_search_param)
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -263,6 +272,8 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'selected_groups': get_selected_value(form, 'groups', True, False),
             'q': form.cleaned_data.get('q', ''),
         }
+        if self.request.session.get('text_search_param', None) and self.request.GET.get('q', None) is None:
+            extra_context['q'] = self.request.session['text_search_param']
         search_query_dict = dict(self.request.GET.copy())
         if 'query' in search_query_dict:
             search_query_dict.pop('query')
@@ -338,6 +349,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             return reverse('organization-plans', args=[self.organization.pk])
         else:
             return None
+
 
 class DatasetRedirectView(View):
 

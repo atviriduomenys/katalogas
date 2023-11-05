@@ -85,6 +85,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'files',
             'name',
         )
+        labels = {
+            'tags': _("Žymės")
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

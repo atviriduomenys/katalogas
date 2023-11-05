@@ -39,14 +39,14 @@ def comments(obj, user, is_structure=False):
     comments_array = []
     for comment in obj_comments:
         children = comment.descendants(permission=perm)
-        comments_array.append((comment, children))
+        reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id))
+        comments_array.append((comment, children, reply_form))
     return {
         'comments': comments_array,
         'user': user,
         'content_type': content_type,
         'object': obj,
-        'comment_form': comment_form_class(obj),
-        'reply_form': CommentForm(obj),
+        'comment_form': comment_form_class(obj, auto_id='id_new_comment_%s_' + str(obj.pk)),
         'submit_button_id': "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button"
     }
 
@@ -69,7 +69,8 @@ def external_comments(content_type, object_id, user, dataset):
     comments_array = []
     for comment in obj_comments:
         children = comment.descendants(permission=perm)
-        comments_array.append((comment, children))
+        reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id))
+        comments_array.append((comment, children, reply_form))
     comment_form_class = get_comment_form_class()
     return {
         'comments': comments_array,
@@ -77,7 +78,6 @@ def external_comments(content_type, object_id, user, dataset):
         'content_type': content_type,
         'object_id': object_id,
         'comment_form': comment_form_class(None),
-        'reply_form': CommentForm(None),
         'submit_button_id': "id_submit_button",
         'external': True,
         'dataset': dataset,

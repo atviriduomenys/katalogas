@@ -106,7 +106,7 @@ def test_request_comment_with_status(app: DjangoTestApp):
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert list(resp.context['comments']) == [(comment, [])]
+    assert comment in list(resp.context['comments'])[0]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.APPROVED
 
@@ -127,7 +127,7 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert list(resp.context['comments']) == [(comment, [])]
+    assert comment in list(resp.context['comments'])[0]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.REJECTED
 

@@ -3,6 +3,19 @@
 
 {% block current_title %}{% translate "Naujienos" %}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
 {% if post_list %}
     {% for i in post_list %}
@@ -28,7 +41,7 @@
                         </div>
                         <div>
                             <p class="dataset-list-description">{{ i.abstract }}</p>
-                            <p><a href="{{ i.get_absolute_url }}">{% translate "Skaityti daugiau" %}...</a></p>
+                            <p><a href="{{ i.get_absolute_url }}#read-more">{% translate "Skaityti daugiau" %}...</a></p>
                         </div>
                     </div>
                 </div>

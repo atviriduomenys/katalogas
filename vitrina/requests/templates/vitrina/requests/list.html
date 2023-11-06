@@ -20,17 +20,18 @@
 {% endblock %}
 
 {% block content %}
-
     <div class="card mb-5">
         <div class="card-content">
             <form id="request-filter" class="field has-addons is-fullwidth"
                   action="{% url 'request-list' %}"
                   method="get">
                 <div class="control is-expanded">
+                    <label class="visually-hidden" for="request-search-input">{% translate 'Poreikio paieška' %}</label>
                     <input class="input" type="text" name="q"
                            placeholder="{% translate 'Ieškoti poreikio duomenų rinkiniui' %}"
                            value="{{ q | escape }}"
                            title="{% translate 'Ieškoti' %}"
+                           id="request-search-input"
                     />
                 </div>
                 <p class="control">
@@ -49,8 +50,9 @@
             <div class="card">
                 <div class="card-content">
                     <p>{% translate "Nerandate norimo duomenų rinkinio, o gal esamam duomenų rinkinui turite pastabų? Tuomet peržiūrėkite jau registruotus poreikius duomenų rinkiniams. Jeigu sąraše nerasite atitinkančio poreikio - registruokite naują." %}</p>
-                    <a href="{% url 'request-create' %}"
-                    class="button is-primary mt-3 m-b-lg">{% translate "Teikti poreikį" %}</a>
+                    <a href="{% url 'request-create' %}" class="button is-primary mt-3 m-b-lg">
+                        {% translate "Teikti poreikį" %}
+                    </a>
                     <div class="content mt-3">
                         {% include "vitrina/requests/filters.html" %}
                     </div>
@@ -62,8 +64,6 @@
             <div class="content">
                 <p>{% translate "Šioje portalo skiltyje yra publikuojami atvirų duomenų naudotojų pateikti poreikiai dėl atvirų duomenų rinkinių. Tai yra svarbu, nes atveriant duomenis yra siekiama duomenų atvėrimą vykdyti maksimaliai, atsižvelgiant į atvirų duomenų naudotojų poreikį (angl. demand driven approach) ir įvertinant jų teigiamą poveikį visuomeninio intereso tenkinimui, viešumui ir verslo plėtrai." %}</p>
             </div>
-
-
             <div class="buttons">
               <div class="control">
                 <div class="tags">

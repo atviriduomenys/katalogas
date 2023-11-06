@@ -11,7 +11,11 @@
 {% endblock %}
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
     </ul>
@@ -52,10 +56,9 @@
                 </span>
               </p>
             </div>
-
             <div>
-                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Filtras" %}:</h4>
-                <div class="mb-5 tags">
+                <h2 class="title is-4-mobile">{% translate "Filtras" %}:</h2>
+                <div class="tags are-medium">
                     {% for tag in tags %}
                         <span class="tag" id="remove_tag_{{ forloop.counter0 }}_id">
                             {{ tag }}
@@ -68,37 +71,50 @@
                             </button>
                         </span>
                     {% endfor %}
-                    <div id="select_cols_id" class="dropdown-check-list" tabindex="100">
-                        <span class="tag anchor no-margin-bottom no-margin-right">
-                            {{ select|truncatechars:30 }}
-                        </span>
-                        <div class="items">
-                            <ul>
-                                {% if '_id' in selected_cols %}
-                                    <li>
-                                        <input type="checkbox" checked title="_id"/>
-                                        <span>_id</span>
-                                    </li>
-                                {% else %}
-                                    <li>
-                                        <input type="checkbox" title="_id"/>
-                                        <span>_id</span>
-                                    </li>
-                                {% endif %}
-
-                                {% for col in properties.keys %}
-                                    {% if col in selected_cols %}
-                                    <li> <input type="checkbox" checked title="{{ col }}"/> <span>{{ col }}</span></li>
+                    <div id="select_cols_id" class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+                                <span>{{ select|truncatechars:30 }}</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <div class="dropdown-content">
+                                <ul>
+                                    {% if '_id' in selected_cols %}
+                                        <li>
+                                            <input id="_id" type="checkbox" checked title="_id"/>
+                                            <label for="_id">_id</label>
+                                        </li>
                                     {% else %}
-                                    <li><input type="checkbox" title="{{ col }}"/> <span>{{ col }}</span></li>
+                                        <li>
+                                            <input id="_id" type="checkbox" title="_id"/>
+                                            <label for="_id">_id</label>
+                                        </li>
                                     {% endif %}
-                                {% endfor %}
-                            </ul>
 
-                            <div class="buttons">
-                                <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
-                                    {% translate "Rodyti" %}
-                                </a>
+                                    {% for col in properties.keys %}
+                                        {% if col in selected_cols %}
+                                        <li>
+                                            <input id="{{ col }}" type="checkbox" checked title="{{ col }}"/>
+                                            <label for="{{ col }}">{{ col }}</label>
+                                        </li>
+                                        {% else %}
+                                        <li>
+                                            <input id="{{ col }}" type="checkbox" title="{{ col }}"/>
+                                            <label for="{{ col }}">{{ col }}</label>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+
+                                <div class="buttons">
+                                    <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
+                                        {% translate "Rodyti" %}
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -141,21 +157,27 @@
 
                                     <div id="{{ col }}_filter_id" style="display: none">
                                         <div class="table-menu">
-                                            <div class="mb-3 is-inline-block">
-                                                <div class="select is-small is-short">
-                                                    <select id="{{ col }}_compare_select_id">
-                                                        <option value="=">=</option>
-                                                        <option value=">">></option>
-                                                        <option value="<"><</option>
-                                                        <option value=">=">>=</option>
-                                                        <option value="<="><=</option>
-                                                        <option value="!=">!=</option>
-                                                        <option value="contains">contains</option>
-                                                        <option value="startswith">startswith</option>
-                                                        <option value="endswith">endswith</option>
-                                                    </select>
+                                            <div class="field has-addons">
+                                              <div class="control">
+                                                <label for="{{ col }}_compare_select_id" class="label is-small">{% translate 'Rūšiavimo veiksmas' %}</label>
+                                                <div class="select is-small">
+                                                  <select id="{{ col }}_compare_select_id">
+                                                    <option value="=">=</option>
+                                                    <option value=">">></option>
+                                                    <option value="<"><</option>
+                                                    <option value=">=">>=</option>
+                                                    <option value="<="><=</option>
+                                                    <option value="!=">!=</option>
+                                                    <option value="contains">contains</option>
+                                                    <option value="startswith">startswith</option>
+                                                    <option value="endswith">endswith</option>
+                                                  </select>
                                                 </div>
-                                                <input class="input is-small is-short" id="{{ col }}_compare_value_id" type="text" title="{% translate 'Palyginimo reikšmė' %}"/>
+                                              </div>
+                                              <div class="control">
+                                                <label for="{{ col }}_compare_value_id" class="label is-small">{% translate 'Rūšiavimo reikšmė' %}</label>
+                                                <input class="input is-small" id="{{ col }}_compare_value_id" type="text" title="{% translate 'Palyginimo reikšmė' %}"/>
+                                              </div>
                                             </div>
                                             <div class="mb-3 is-inine-block">
                                                 <div class="buttons is-right">
@@ -215,7 +237,7 @@
                                                 {% if val != None %}
                                                     <td id="{{ col }}_col_id">
                                                         {% if prop.ref_model.name %}
-                                                            <a href="{% url 'object-data' dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                            <a href="{% url 'object-data' prop.ref_model.dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
                                                         {% else %}
                                                             {{ val|slice:":8" }}
                                                         {% endif %}

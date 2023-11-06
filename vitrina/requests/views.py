@@ -1,31 +1,16 @@
-from typing import Any, List
-from django import http
-
-from django.views.generic import CreateView, UpdateView, DetailView
-from collections import OrderedDict
-from django.views import View
-
 import json
 import numpy as np
 import pandas as pd
 import pytz
 from collections import OrderedDict
 from datetime import date, datetime
-from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.db.models import Case, When
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, DeleteView
-from reversion.models import Version
-from haystack.generic_views import FacetedSearchView
-from django.views.generic.base import RedirectView, View
+from django.views.generic.base import View
 
-from vitrina.comments.models import Comment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.datasets.forms import PlanForm
 from vitrina.orgs.services import has_perm, Action
@@ -44,6 +29,7 @@ from vitrina.requests.models import Request, Organization, RequestStructure, Req
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm, \
     RequestDatasetsEditForm
+from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -63,9 +49,15 @@ from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
+<<<<<<< HEAD
                                        sort_publication_stats,
                                        get_requests)
 from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
+=======
+                                       sort_publication_stats)
+from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
+    get_stats_filter_options_based_on_model
+>>>>>>> devel
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
@@ -259,6 +251,17 @@ class RequestStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
+    def update_context_data(self, context):
+        super().update_context_data(context)
+
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
+
+        return context
+
 
 class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     title = _("Būsena")
@@ -274,7 +277,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         statuses = self.get_filter_data(facet_fields)
         requests = context['object_list']
 
-        indicator = self.request.GET.get('indicator', None) or 'request-count'
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = self.get_start_date()
@@ -345,9 +348,6 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['has_time_graph'] = self.has_time_graph
 
         context['active_filter'] = self.filter
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
         context['xAxis_title'] = self.get_time_axis_title(indicator)
@@ -356,6 +356,8 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
 
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
+
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
 
         return context
 
@@ -516,6 +518,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
         return context
 
 
@@ -603,12 +606,12 @@ class RequestQuarterStatsView(RequestListView):
         context['sort'] = sorting
         return context
 
+
 class RequestRedirectView(View):
     def get(self, request, **kwargs):
         uuid = kwargs.get('uuid')
         request = get_object_or_404(Request, uuid=uuid)
         return HttpResponsePermanentRedirect(reverse('request-detail', kwargs={'pk': request.pk}))
-
 
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
@@ -734,6 +737,10 @@ class RequestCreateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+        }
         return context_data
 
 
@@ -921,6 +928,11 @@ class RequestUpdateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio redagavimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai'),
+            reverse('request-detail', args=[self.object.pk]): self.object.title,
+        }
         return context_data
 
 

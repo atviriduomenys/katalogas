@@ -13,10 +13,15 @@
 
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
     </ul>
 {% endblock %}
+
 {% block current_title %}{{ dataset.title }}{% endblock %}
 
 {% block head %}
@@ -151,7 +156,7 @@
         {% if resources %}
             <div class="columns no-margin-bottom" id="resources">
                 <div class="column is-full">
-                    <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
+                    <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h2>
                     {% include 'vitrina/datasets/datatable.html' %}
                 </div>
             </div>
@@ -172,7 +177,8 @@
             <div class="columns">
                 <div class="column is-full">
                     <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation }}</h4>
-                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                           id="resource-table">
                         <thead>
                             <tr>
                                 <th>{% translate "Duomenų rinkinys" %}</th>
@@ -207,7 +213,8 @@
             <div class="columns">
                 <div class="column is-full">
                     <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation.inversive_title }}</h4>
-                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                           id="resource-table">
                         <thead>
                             <tr>
                                 <th>{% translate "Duomenų rinkinys" %}</th>
@@ -239,9 +246,10 @@
 
     <div class="columns mt-6">
         <div class="column is-full">
-            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h4>
+            <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h2>
             {% if attributions %}
-                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                       id="resource-table">
                     <thead>
                     <tr>
                         <th>{% translate "Priskyrimo rūšis" %}</th>
@@ -276,14 +284,15 @@
             {% endif %}
             {% if can_update_dataset %}
                 <div class="buttons is-right">
-                    <a href="{%url 'attribution-add' dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_attribution">
+                    <a href="{%url 'attribution-add' dataset.id %}"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile is-flex"
+                       id="add_attribution">
                         {% translate "Priskirti organizaciją" %}
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
-
     <div class="columns no-margin-bottom">
         <div class="column is-three-quarters">
             {% comments obj=dataset user=request.user %}

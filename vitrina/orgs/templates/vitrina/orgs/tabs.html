@@ -2,7 +2,7 @@
 <div class="tabs">
     <ul>
         <li class="{%if request.resolver_match.url_name == 'organization-detail' %} is-active {% endif %}">
-            <a href="{% url 'organization-detail' organization_id %}">
+            <a href="{% url 'organization-detail' organization_id %}#info">
                 {% translate "Informacija" %}
             </a>
         </li>

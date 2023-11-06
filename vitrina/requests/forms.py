@@ -62,7 +62,7 @@ class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
-        label="Organizacija",
+        label=_("Organizacija"),
         widget=ProviderWidget,
         queryset=Organization.objects.filter(),
         to_field_name="pk",

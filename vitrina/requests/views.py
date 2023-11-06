@@ -12,6 +12,23 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 
 from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.datasets.forms import PlanForm
+from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.models import Representative
+from vitrina.helpers import get_selected_value
+from vitrina.helpers import Filter
+from vitrina.helpers import DateFilter
+from reversion import set_comment
+from vitrina.requests.services import update_facet_data
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from reversion.views import RevisionMixin
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
+
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm, \
+    RequestDatasetsEditForm
 from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
@@ -32,7 +49,8 @@ from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
-                                       sort_publication_stats)
+                                       sort_publication_stats,
+                                       get_requests)
 from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
     get_stats_filter_options_based_on_model
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
@@ -1190,6 +1208,68 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
 
     def get_history_object(self):
         return self.request_obj
+
+class RequestDatasetsEditView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Request
+    form_class = RequestDatasetsEditForm
+    template_name = 'vitrina/requests/request_dataset_add.html'
+    context_object_name = 'request_object'
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        datasets = form.cleaned_data.get('datasets')
+        for dataset in datasets:
+            RequestObject.objects.create(request=self.object, object_id=dataset.pk,
+                content_type=ContentType.objects.get_for_model(Dataset)
+            )
+            ra_object_exists = RequestAssignment.objects.filter(
+                organization=dataset.organization,
+                request=self.object,                
+            )
+            if not ra_object_exists:
+                RequestAssignment.objects.create(
+                    organization=dataset.organization,
+                    request=self.object,
+                    status=self.object.CREATED
+                )
+        return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.object.id}))
+
+    def has_permission(self):
+        return self.request.user and self.request.user.organization
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Šio poreikio duomenų rinkinių keisti negalite.')
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.kwargs.get('pk')}))
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        form = context_data.get('form')
+        form.fields.get('datasets').queryset = Dataset.objects.filter(
+            organization=self.request.user.organization
+        )[:20]
+        context_data['current_title'] = _('Poreikio duomenų rinkinių redagavimas')
+        return context_data
+
+class RequestDatasetsEditUpdateView(
+    RequestDatasetsEditView
+):
+    template_name = 'vitrina/requests/request_dataset_add_items.html'
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        term = self.request.GET.get('q')
+        if term:
+            form = context_data.get('form')
+            form.fields.get('datasets').queryset = Dataset.objects.filter(
+                organization=self.request.user.organization,
+                translations__title__istartswith=term
+            ).order_by('translations__title')[:20]
+        return context_data
 
 
 class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):

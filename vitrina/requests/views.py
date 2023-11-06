@@ -49,15 +49,10 @@ from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
-<<<<<<< HEAD
                                        sort_publication_stats,
                                        get_requests)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
-=======
-                                       sort_publication_stats)
 from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
     get_stats_filter_options_based_on_model
->>>>>>> devel
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative

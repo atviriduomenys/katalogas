@@ -22,7 +22,7 @@
         let manFilter = $('#request-dataset-input');
         manFilter.on('input', function(){
             $('#dataset-list').html('').load(
-                "{% url 'request-datasets-edit-update' pk=user.organization.pk %}?q=" + manFilter.val()
+                "{% url 'request-datasets-edit-update' pk=request_object.pk %}?q=" + manFilter.val()
             );
         });
     </script>

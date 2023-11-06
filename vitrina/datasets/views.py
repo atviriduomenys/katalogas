@@ -1264,11 +1264,16 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
-            RequestAssignment.objects.create(
+            ra_object_exists = RequestAssignment.objects.filter(
                 organization=self.dataset.organization,
-                request=request,
-                status=request.status
+                request=request,                
             )
+            if not ra_object_exists:
+                RequestAssignment.objects.create(
+                    organization=self.dataset.organization,
+                    request=request,
+                    status=request.status
+                )
         Task.objects.create(
             title=f"Poreikis duomenų rinkiniui: {self.dataset}",
             description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",

@@ -1220,15 +1220,20 @@ class RequestDatasetsEditView(
             RequestObject.objects.create(request=self.object, object_id=dataset.pk,
                 content_type=ContentType.objects.get_for_model(Dataset)
             )
-            RequestAssignment.objects.create(
+            ra_object_exists = RequestAssignment.objects.filter(
                 organization=dataset.organization,
-                request=self.object,
-                status=self.object.CREATED
+                request=self.object,                
             )
+            if not ra_object_exists:
+                RequestAssignment.objects.create(
+                    organization=dataset.organization,
+                    request=self.object,
+                    status=self.object.CREATED
+                )
         return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.object.id}))
 
     def has_permission(self):
-        return self.request.user.organization
+        return self.request.user and self.request.user.organization
 
     def handle_no_permission(self):
         messages.error(self.request, 'Šio poreikio duomenų rinkinių keisti negalite.')
@@ -1255,8 +1260,8 @@ class RequestDatasetsEditUpdateView(
             form = context_data.get('form')
             form.fields.get('datasets').queryset = Dataset.objects.filter(
                 organization=self.request.user.organization,
-                translations__title__startswith=term
-            )[:20]
+                translations__title__istartswith=term
+            ).order_by('translations__title')[:20]
         return context_data
 
 

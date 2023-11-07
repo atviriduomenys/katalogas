@@ -71,6 +71,10 @@ class SubscribeFormView(
         self.object.object_id = self.obj.id
         self.object.user = self.user
 
+        sub_type = self.ct.model.upper()
+        if sub_type in dict(Subscription.SUB_TYPE_CHOICES):
+            self.object.sub_type = sub_type
+
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))

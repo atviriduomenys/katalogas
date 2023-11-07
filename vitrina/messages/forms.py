@@ -1,19 +1,16 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm, CharField, TextInput
+from django.forms import ModelForm
 from vitrina.messages.models import Subscription
 
 from django.utils.translation import gettext_lazy as _
 
 
 class SubscriptionForm(ModelForm):
-    sub_type = CharField(widget=TextInput(attrs={'readonly': 'readonly'}))
-
     class Meta:
         model = Subscription
         fields = (
-            'sub_type',
             'email_subscribed',
             'dataset_update_sub',
             'request_update_sub',
@@ -34,19 +31,14 @@ class SubscriptionForm(ModelForm):
         self.fields['dataset_update_sub'].widget.attrs['class'] = 'toggleable'
         self.fields['request_update_sub'].widget.attrs['class'] = 'toggleable'
         self.fields['project_update_sub'].widget.attrs['class'] = 'toggleable'
-        self.initial_sub = None
 
         permanent_fields = [
-            Field('sub_type'),
             Field('email_subscribed'),
         ]
 
         dynamic_fields = []
-        choices_dict = dict(Subscription.SUB_TYPE_CHOICES)
 
         if self.ct.model.upper() == Subscription.ORGANIZATION:
-            self.fields['sub_type'].initial = choices_dict[Subscription.ORGANIZATION]
-            self.initial_sub = Subscription.ORGANIZATION
             dynamic_fields.extend([
                 Field('dataset_update_sub'),
                 Field('dataset_comments_sub'),
@@ -55,24 +47,18 @@ class SubscriptionForm(ModelForm):
             ])
 
         if self.ct.model.upper() == Subscription.DATASET:
-            self.fields['sub_type'].initial = choices_dict[Subscription.DATASET]
-            self.initial_sub = Subscription.DATASET
             dynamic_fields.extend([
                 Field('dataset_update_sub'),
                 Field('dataset_comments_sub'),
             ])
 
         if self.ct.model.upper() == Subscription.REQUEST:
-            self.fields['sub_type'].initial = choices_dict[Subscription.REQUEST]
-            self.initial_sub = Subscription.REQUEST
             dynamic_fields.extend([
                 Field('request_update_sub'),
                 Field('request_comments_sub'),
             ])
 
         if self.ct.model.upper() == Subscription.PROJECT:
-            self.fields['sub_type'].initial = choices_dict[Subscription.PROJECT]
-            self.initial_sub = Subscription.PROJECT
             dynamic_fields.extend([
                 Field('project_update_sub'),
                 Field('project_comments_sub'),
@@ -80,10 +66,6 @@ class SubscriptionForm(ModelForm):
 
         dynamic_fields.extend([Submit('submit', _("Prenumeruoti"), css_class='button is-primary')])
         self.helper.layout = Layout(*permanent_fields, *dynamic_fields)
-
-    def clean_sub_type(self):
-        self.cleaned_data['sub_type'] = self.initial_sub
-        return self.cleaned_data['sub_type']
 
     def clean(self):
         dataset_update_sub = self.cleaned_data.get('dataset_update_sub')

@@ -94,7 +94,15 @@
                             {% if parent_links %}
                                 <ul class="p-t-sm">
                                     {% for link, title in parent_links.items %}
-                                        <li><a href="{{ link }}"><span>{{ title }}</span></a></li>
+                                        <li>
+                                            <a href="{{ link }}">
+                                            {% if title == "Pradžia" %}
+                                                <span class="icon">
+                                                    <i class="fas fa-home"></i>
+                                                </span>
+                                            {% endif %}
+                                            <span>{{ title }}</span></a>
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             {% elif parent_url and parent_title %}
@@ -103,8 +111,12 @@
                                 </ul>
                             {% endif %}
                         {% endblock %}
-                        <h1 class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</h1>
-                        <h2>{% block object_title %}{% endblock %}</h2>
+                            <h1 class="breadcrumbs-current is-size-5-mobile">
+                                {% block current_title %}{% endblock %}
+                            </h1>
+                        {% if object_title %}
+                            <h2>{% block object_title %}{% endblock %}</h2>
+                        {% endif %}
                     </div>
                 </nav>
             {% endblock %}

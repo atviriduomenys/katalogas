@@ -12,8 +12,7 @@ from reversion.models import Version
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request
-from vitrina.projects.models import Project
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization
 from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
@@ -32,7 +31,7 @@ def home(request):
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),
-            'project': Project.public.count(),
+            'project': Project.objects.filter(status='APPROVED').count(),
             'coordinators': coordinator_count,
             'managers': manager_count,
             'users': user_count

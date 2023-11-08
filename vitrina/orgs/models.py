@@ -208,9 +208,7 @@ class OrganizationMapping(models.Model):
 class RepresentativeRequest(models.Model):
     user = models.ForeignKey('vitrina_users.User', models.DO_NOTHING, blank=True, null=True)
     document = models.FileField()
-    org_code = models.CharField(max_length=255, blank=True, null=True)
-    org_name = models.CharField(max_length=255, blank=True, null=True)
-    org_slug = models.CharField(max_length=255, blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True

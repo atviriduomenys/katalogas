@@ -35,8 +35,7 @@ class VIISPProvider(OAuth2Provider):
 
     def extract_extra_data(self, data):
         return dict(
-            company_code=data.get('lt_company_code'),
-            company_name=data.get("company_name"),
+            personal_code=data.get('personal_code'),
             coordinator_phone_number=data.get("phone_number"),
             coordinator_email=data.get("email"),
             password_not_set=True   
@@ -48,17 +47,24 @@ class VIISPProvider(OAuth2Provider):
         from vitrina.users.models import User
         adapter = get_adapter(request)
         uid = self.extract_uid(response)
+        print(response)
         extra_data = self.extract_extra_data(response)
+
         common_fields = self.extract_common_fields(response)
-        socialaccount = SocialAccount(extra_data=extra_data, uid=uid, provider=self.id)
         email_addresses = self.extract_email_addresses(response)
         self.cleanup_email_addresses(common_fields.get("email"), email_addresses)
-        sociallogin = SocialLogin(
-            account=socialaccount, email_addresses=email_addresses
-        )
+        socialaccount = SocialAccount(extra_data=extra_data, uid=uid, provider=self.id)
         
         user = User.objects.filter(email=extra_data.get('coordinator_email')).first()
         if user:
+            existing_social_account = SocialAccount.objects.filter(user=user).first()
+            if existing_social_account:
+                socialaccount = existing_social_account
+            
+        sociallogin = SocialLogin(
+            account=socialaccount, email_addresses=email_addresses
+        )
+        if user and not existing_social_account:
             sociallogin.connect(request, user)
             social_account_added.send(
                 sender=SocialLogin, request=request, sociallogin=sociallogin

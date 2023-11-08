@@ -675,10 +675,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         representative_request = RepresentativeRequest(
             user = self.request.user,
-            document = form.cleaned_data.get('request_form'),
-            org_code = form.cleaned_data.get('company_code'),
-            org_name = form.cleaned_data.get('company_name'),
-            org_slug = form.cleaned_data.get('company_slug')
+            organization = form.cleaned_data.get('organization')
         )
         representative_request.save()
         return redirect(reverse('partner-register-complete'))

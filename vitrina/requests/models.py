@@ -270,4 +270,4 @@ class RequestAssignment(models.Model):
             content_type=ContentType.objects.get_for_model(RequestAssignment),
             object_id=self.pk
         ).order_by('-created').first()
-        return latest_status_comment.created if latest_status_comment else  self.created
+        return latest_status_comment.created if latest_status_comment else self.created

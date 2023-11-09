@@ -238,6 +238,58 @@ def test_structure_with_base_model(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
+    manifest_base = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/apskritis,,,,,,,,,,,,,\n'
+        ',,,,Apskritis,,,adm_kodas,,,4,,,,\n'
+        ',,,,,adm_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,adm_nuo,date,D,,,4,open,,,\n'
+    )
+
+    base_structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_base)
+        )
+    )
+
+    manifest_with_base = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/savivaldybe,,,,,,,,,,,,,\n'
+        ',,,/datasets/gov/rc/ar/apskritis/Apskritis,,,,,,,,,,,\n'
+        ',,,,Savivaldybe,,,sav_kodas,,,4,,,,\n'
+        ',,,,,sav_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,tipo_santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,sav_nuo,date,D,,,4,open,,,\n'
+    )
+
+    structure_with_base = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_with_base)
+        )
+    )
+
+    base_structure.dataset.current_structure = base_structure
+    base_structure.dataset.save()
+    create_structure_objects(base_structure)
+
+    structure_with_base.dataset.current_structure = structure_with_base
+    structure_with_base.dataset.save()
+    create_structure_objects(structure_with_base)
+
+    models = Model.objects.all()
+    assert models.count() == 2
+    assert Base.objects.count() == 1
+    assert models.filter(base__isnull=False).count() == 1
+    assert models.filter(base__isnull=False)[0].base.metadata.first().name == 'datasets/gov/rc/ar/apskritis/Apskritis'
+
+
+@pytest.mark.django_db
 def test_structure_with_property_ref(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
@@ -269,6 +321,60 @@ def test_structure_with_property_ref(app: DjangoTestApp):
     assert list(props.filter(ref_model__isnull=False).first().property_list.values_list(
         'property__metadata__name', flat=True
     )) == ['id']
+
+
+@pytest.mark.django_db
+def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
+    ref_manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/apskritis,,,,,,,,,,,,,\n'
+        '1,,,,Apskritis,,,adm_kodas,,,4,,,,\n'
+        ',,,,,adm_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,adm_nuo,date,D,,,4,open,,,\n'
+    )
+
+    ref_object_structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=ref_manifest)
+        )
+    )
+
+    ref_object_structure.dataset.current_structure = ref_object_structure
+    ref_object_structure.dataset.save()
+    create_structure_objects(ref_object_structure)
+
+    manifest_with_ref = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/savivaldybe,,,,,,,,,,,,,\n'
+        '2,,,,Savivaldybe,,,sav_kodas,,,4,,,,\n'
+        ',,,,,sav_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,tipo_santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,apskritis,ref,/datasets/gov/rc/ar/apskritis/Apskritis,,,4,open,,,\n'
+        ',,,,,sav_nuo,date,D,,,4,open,,,\n'
+    )
+
+    structure_with_ref = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_with_ref)
+        )
+    )
+
+    structure_with_ref.dataset.current_structure = structure_with_ref
+    structure_with_ref.dataset.save()
+    create_structure_objects(structure_with_ref)
+
+    county = Model.objects.filter(metadata__uuid='1').first()
+    municipality = Model.objects.filter(metadata__uuid='2').first()
+
+    props = Property.objects.filter(model=municipality)
+    assert props.count() == 6
+    assert props.filter(ref_model__isnull=False).count() == 1
+    assert props.filter(ref_model__isnull=False).first().ref_model == county
 
 
 @pytest.mark.django_db

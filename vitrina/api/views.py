@@ -1,3 +1,6 @@
+from django.http import HttpRequest
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils import timezone
 from drf_yasg import openapi
@@ -26,6 +29,7 @@ from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
+from vitrina.api.helpers import get_datasets_for_rdf
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -611,3 +615,9 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         serializer = ModelDownloadStatsSerializer(instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+
+
+def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
+    return render(request, 'vitrina/api/edp/dcat_ap_rdf.html', {
+        'datasets': get_datasets_for_rdf(Dataset.public.all()),
+    }, content_type='application/rdf+xml')

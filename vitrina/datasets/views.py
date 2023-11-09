@@ -33,7 +33,6 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
 from vitrina.datasets.helpers import is_manager_dataset_list
 from django.http.response import HttpResponsePermanentRedirect
 
@@ -53,7 +52,7 @@ from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
-from vitrina.requests.models import RequestObject
+from vitrina.requests.models import RequestObject, RequestAssignment
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
@@ -71,7 +70,8 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, \
+    send_email_with_logging, get_stats_filter_options_based_on_model
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -120,12 +120,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
 
     def get_queryset(self):
         datasets = super().get_queryset()
-        is_org_dataset = False
-        if is_org_dataset_list(self.request) and self.request.user.is_authenticated:
-            if self.request.user.organization_id == self.request.resolver_match.kwargs['pk']:
-                is_org_dataset = True
-        datasets = get_datasets_for_user(self.request.user, datasets, is_org_dataset)
-        datasets = datasets.models(Dataset)
+        datasets = get_datasets_for_user(self.request, datasets)
         sorting = self.request.GET.get('sort', None)
 
         if self.request.GET.get('q') and not sorting:
@@ -361,7 +356,6 @@ class DatasetListView(PlanMixin, FacetedSearchView):
 
 
 class DatasetRedirectView(View):
-
     def get(self, request, **kwargs):
         slug = kwargs.get('slug')
         dataset = get_object_or_404(Dataset, slug=slug)
@@ -388,9 +382,6 @@ class DatasetDetailView(
         if dataset.is_public:
             return True
         else:
-            # if self.request.user.organization_id == dataset.organization_id:
-            #     return True
-            # else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
@@ -1295,6 +1286,16 @@ class AddRequestView(
         for request in form.cleaned_data['requests']:
             RequestObject.objects.create(request=request, object_id=self.object.pk,
                                          content_type=ContentType.objects.get_for_model(self.object))
+            ra_object_exists = RequestAssignment.objects.filter(
+                organization=self.dataset.organization,
+                request=request,                
+            )
+            if not ra_object_exists:
+                RequestAssignment.objects.create(
+                    organization=self.dataset.organization,
+                    request=request,
+                    status=request.status
+                )
         Task.objects.create(
             title=f"Poreikis duomenų rinkiniui: {self.dataset}",
             description=f"Sukurtas naujas poreikis duomenų rinkiniui: {self.dataset}.",
@@ -1524,6 +1525,16 @@ class DatasetStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
+    def update_context_data(self, context):
+        super().update_context_data(context)
+
+        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+
+        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
+        return context
+
 
 class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     title = _("Būsena")
@@ -1652,6 +1663,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
+        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
         return context
 
 
@@ -1697,31 +1709,6 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio organizaciją rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
-
-
-class OrganizationStatsView(DatasetListView):
-    facet_fields = DatasetListView.facet_fields
-    template_name = 'vitrina/datasets/organizations.html'
-    paginate_by = 0
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        max_count = 0
-        indicator = self.request.GET.get('indicator', None)
-        orgs = {}
-        keys = list(orgs.keys())
-        values = list(orgs.values())
-        for v in values:
-            if max_count < v:
-                max_count = v
-        sorted_value_index = np.flip(np.argsort(values))
-        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
-        context['organization_data'] = sorted_orgs
-        context['max_count'] = max_count
-        context['active_filter'] = 'organizations'
-        context['active_indicator'] = indicator
-        context['yAxis_title'] = Y_TITLES[indicator]
-        return context
 
 
 class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
@@ -1780,6 +1767,53 @@ class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio grupes rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike')
+
+
+class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
+    title = _("Kategorija")
+    current_title = _("Duomenų rinkinių kategorijos")
+    filter = 'category'
+    filter_model = Category
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
+
+    def update_item_data(self, item):
+        obj = get_object_or_404(Category, pk=item['filter_value'])
+        children = obj.get_children()
+        if len(children) > 0:
+            item.update({
+                'full_url': reverse('dataset-stats-category-children', args=[obj.pk])
+            })
+        return item
+
+
+class OrganizationStatsView(DatasetListView):
+    facet_fields = DatasetListView.facet_fields
+    template_name = 'vitrina/datasets/organizations.html'
+    paginate_by = 0
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        max_count = 0
+        indicator = self.request.GET.get('indicator', None)
+        orgs = {}
+        keys = list(orgs.keys())
+        values = list(orgs.values())
+        for v in values:
+            if max_count < v:
+                max_count = v
+        sorted_value_index = np.flip(np.argsort(values))
+        sorted_orgs = {keys[i]: values[i] for i in sorted_value_index}
+        context['organization_data'] = sorted_orgs
+        context['max_count'] = max_count
+        context['active_filter'] = 'organizations'
+        context['active_indicator'] = indicator
+        context['yAxis_title'] = Y_TITLES[indicator]
+        return context
 
 
 class JurisdictionStatsView(DatasetListView):
@@ -1863,28 +1897,6 @@ class JurisdictionStatsView(DatasetListView):
         context['active_indicator'] = indicator
         context['sort'] = sorting
         return context
-
-
-class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
-    title = _("Kategorija")
-    current_title = _("Duomenų rinkinių kategorijos")
-    filter = 'category'
-    filter_model = Category
-
-    def get_graph_title(self, indicator):
-        if indicator == 'level-average' or indicator == 'object-count':
-            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai')
-        else:
-            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike')
-
-    def update_item_data(self, item):
-        obj = get_object_or_404(Category, pk=item['filter_value'])
-        children = obj.get_children()
-        if len(children) > 0:
-            item.update({
-                'full_url': reverse('dataset-stats-category-children', args=[obj.pk])
-            })
-        return item
 
 
 class CategoryStatsView(DatasetListView):
@@ -2694,10 +2706,15 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         ).order_by('-revision__date_created')
 
 
-class update_dataset_org_filters(FacetedSearchView):
+class UpdateDatasetOrgFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2716,6 +2733,7 @@ class update_dataset_org_filters(FacetedSearchView):
             ),
             items = []
             for item in filter[0].items():
+                print(item.count)
                 if q.lower() in item.title.lower():
                     items.append(item)
             extra_context = {
@@ -2724,12 +2742,16 @@ class update_dataset_org_filters(FacetedSearchView):
             context.update(extra_context)
             return context
         
-    
 
-class update_dataset_category_filters(FacetedSearchView):
+class UpdateDatasetCategoryFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/category_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2745,12 +2767,10 @@ class update_dataset_category_filters(FacetedSearchView):
                 Category,
                 multiple=True,
                 is_int=False,
-                
             ),
             items = []
             for item in filter[0].items():
                 if q.lower() in item.title.lower():
-                    print(item.title)
                     items.append(item)
             extra_context = {
                 'filter_items': items
@@ -2758,10 +2778,16 @@ class update_dataset_category_filters(FacetedSearchView):
             context.update(extra_context)
             return context
 
-class update_dataset_tag_filters(FacetedSearchView):
+
+class UpdateDatasetTagFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/tag_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2789,10 +2815,16 @@ class update_dataset_tag_filters(FacetedSearchView):
             context.update(extra_context)
             return context
 
-class update_dataset_jurisdiction_filters(FacetedSearchView):
+
+class UpdateDatasetJurisdictionFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2812,7 +2844,6 @@ class update_dataset_jurisdiction_filters(FacetedSearchView):
             items = []
             for item in filter[0].items():
                 if q.lower() in item.title.lower():
-                    print(item.title)
                     items.append(item)
             extra_context = {
                 'filter_items': items

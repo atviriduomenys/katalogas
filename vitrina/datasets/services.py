@@ -6,12 +6,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
-from django.db.models import Q, Sum
-from django.db.models.functions import ExtractQuarter, ExtractWeek
+from django.db.models import Q
 from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
+from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -250,7 +250,17 @@ def filter_datasets_for_user(user, datasets):
     return datasets
 
 
-def get_datasets_for_user(user, datasets, is_org_dataset=False):
+def get_datasets_for_user(request, datasets):
+    is_org_dataset = False
+    if is_org_dataset_list(request) and request.user.is_authenticated:
+        if request.user.organization_id == request.resolver_match.kwargs['pk']:
+            is_org_dataset = True
+    datasets = filter_out_non_public_datasets_for_user(request.user, datasets, is_org_dataset)
+    datasets = datasets.models(Dataset)
+    return datasets
+
+
+def filter_out_non_public_datasets_for_user(user, datasets, is_org_dataset):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
             if user.representative_set:

@@ -19,59 +19,48 @@
 
 {% block content %}
     {% include 'vitrina/projects/tabs.html' %}
-    <table class="table is-fullwidth">
-        <tbody>
-            {% for dataset in page_obj %}
-                <tr>
-                {% get_current_language as LANGUAGE_CODE %}
-                <td>
-                <article class="media">
-                    <div class="media-content">
-                        <div class="content">
-                            <div>
-                                <strong>
-                                    <a href="{{ dataset.get_absolute_url }}"class="dataset-list-title">
-                                        {% objectlanguage dataset LANGUAGE_CODE %}
-                                            {{ dataset.title }}
-                                        {% endobjectlanguage %}
-                                    </a>
-                                </strong>
-                            </div>
-                            {% if dataset.organization %}
-                                <p>
-                                    <small class="dataset-list-organization">{{ dataset.organization.title }}</small>
-                                </p>
-                            {% endif %}
-                            <p class="dataset-list-description">
-                                {% objectlanguage dataset LANGUAGE_CODE %}
-                                    {{ dataset.description }}
-                                {% endobjectlanguage %}
-                            </p>
-                            <div class="tags">
-                                {% for t in dataset.distinct_formats %}
-                                <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-info is-light">
-                                    {{ t }}
+        {% for dataset in page_obj %}
+            {% get_current_language as LANGUAGE_CODE %}
+            <article class="media">
+                <div class="media-content">
+                    <div class="content">
+                        <div>
+                            <strong>
+                                <a href="{{ dataset.get_absolute_url }}"class="dataset-list-title">
+                                    {% objectlanguage dataset LANGUAGE_CODE %}
+                                        {{ dataset.title }}
+                                    {% endobjectlanguage %}
                                 </a>
-                                {% endfor %}
-                            </div>
+                            </strong>
+                        </div>
+                        {% if dataset.organization %}
+                            <p>
+                                <small class="dataset-list-organization">{{ dataset.organization.title }}</small>
+                            </p>
+                        {% endif %}
+                        <p class="dataset-list-description">
+                            {% objectlanguage dataset LANGUAGE_CODE %}
+                                {{ dataset.description }}
+                            {% endobjectlanguage %}
+                        </p>
+                        <div class="tags">
+                            {% for t in dataset.distinct_formats %}
+                            <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-info is-light">
+                                {{ t }}
+                            </a>
+                            {% endfor %}
                         </div>
                     </div>
-                </article>
-                </td>
-                {% if can_update_project %}
-                    <td>
-                        <div class="buttons is-right">
-                            <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
-                               href="{% url 'project-dataset-remove' pk=project.pk dataset_id=dataset.pk %}">
-                                {% translate "Pašalinti" %}
-                            </a>
-                        </div>
-                    </td>
-                {% endif %}
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <br/>
+                </div>
+            </article>
+            {% if can_update_project %}
+                <div class="buttons is-right">
+                    <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
+                       href="{% url 'project-dataset-remove' pk=project.pk dataset_id=dataset.pk %}">
+                        {% translate "Pašalinti" %}
+                    </a>
+                </div>
+            {% endif %}
+        {% endfor %}
     {% include "vitrina/common/pagination.html" %}
 {% endblock %}

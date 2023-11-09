@@ -11,8 +11,6 @@
 </nav>
 {% endif %}
 
-
-
 {# include "vitrina/datasets/partials/filter.html" with #}
 {# name='status' #}
 {# title=status_filter #}
@@ -40,8 +38,14 @@
           </span>
         </p>
     {% endif %}
+  {% if filter.stats and active_filter != filter.name %}
+      </a>
+  {% endif %}
   {% if active_filter != filter.name %}
     {% if filter.name == 'organization' or filter.name == 'jurisdiction' %}
+        <label class="visually-hidden" for="{{ filter.name }}-filter-input">
+            {% translate 'Filtro paieška' %}
+        </label>
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
@@ -58,39 +62,36 @@
 
   {% for item in filter.items %}
   <div class="columns is-gapless  m-0 mt-1">
-
       <div class="column is-10">
-          {% if item.selected %}
-          <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
-          {% else %}
-          <a href="{{ item.url }}" class="category-panel-block has-text-dark" id="{{ item.name }}_id">
-          {% endif %}
-              <div class="columns">
-              <div class="column is-1">
-                  {% if item.selected %}
-                  <span class="icon">
-                    <i class="far fa-check-square"></i>
-                  </span>
-                  {% else %}
-                  <span class="icon">
-                    <i class="far fa-square"></i>
-                  </span>
-                  {% endif %}
-              </div>
-              <div class="column is-11">
-                  {% if filter.name == 'level' %}
-                  <span class="icon-text">
-                    {% for star in item.value|range %}
-                    <i class="fas fa-star"></i>
-                    {% endfor %}
-                  </span>
+        <a href="{{ item.url }}"
+           class="category-panel-block {% if item.selected %}has-text-weight-bold{% endif %} has-text-dark"
+           id="{{ item.name }}_id">
+          <div class="columns">
+          <div class="column is-1">
+              {% if item.selected %}
+              <span class="icon">
+                <i class="far fa-check-square"></i>
+              </span>
+              {% else %}
+              <span class="icon">
+                <i class="far fa-square"></i>
+              </span>
+              {% endif %}
+          </div>
+          <div class="column is-11">
+              {% if filter.name == 'level' %}
+              <span class="icon-text">
+                {% for star in item.value|range %}
+                <i class="fas fa-star"></i>
+                {% endfor %}
+              </span>
 
-                {% else %}
-                  {{ item.title }}
-                {% endif %}
-              </div>
-              </div>
-          </a>
+            {% else %}
+              {{ item.title }}
+            {% endif %}
+          </div>
+          </div>
+        </a>
       </div>
 
     <div class="column is-2 has-text-right">

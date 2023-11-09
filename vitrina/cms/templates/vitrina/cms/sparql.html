@@ -27,8 +27,9 @@
     </div>
     <form class="control" action="#" method="post">
         <div class="field control is-expanded">
+                <label for="textarea_query_box" class="has-text-weight-bold">{% translate "SPARQL paieškos laukas" %}</label>
                 <textarea style="font-family: monospace;" class="textarea is-info is-fullwidth" name="query"
-                          rows="10">{% if query %}{{ query }}{% else %}{{ 'PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n\nSELECT ?key ?value\nWHERE {?subject ?key ?value}\nLIMIT 100' }}{% endif %}</textarea>
+                          rows="10" id="textarea_query_box">{% if query %}{{ query }}{% else %}{{ 'PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/terms/>\nPREFIX foaf: <http://xmlns.com/foaf/0.1/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n\nSELECT ?key ?value\nWHERE {?subject ?key ?value}\nLIMIT 100' }}{% endif %}</textarea>
         </div>
         {% if error %}
             <article class="message is-danger">

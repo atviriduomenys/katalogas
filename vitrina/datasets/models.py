@@ -1,5 +1,6 @@
 import pathlib
 import tagulous
+import requests
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
@@ -23,6 +24,8 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
+
+from vitrina.settings import TRANSLATION_CLIENT_ID
 
 from django.utils.translation import gettext_lazy as _
 
@@ -933,12 +936,40 @@ class DatasetStructureMapping(models.Model):
 @receiver(post_translation_save, sender=Dataset)
 def translation_handler(sender, instance, **kwargs):
     lt_translation = instance.master.translations.filter(language_code='lt').first()
-    en_title = 'English title'
-    en_desc = 'English desc'
     if lt_translation:
-        # todo post lt_title ir lt_desc į servisą ir gautas reikšmes prisiskirti kintamiesiems ir tiek
         lt_title = lt_translation.title
         lt_description = lt_translation.description
+
+        response_title = requests.post(
+            "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+            json={
+                "appId": "",
+                "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                "text": lt_title,
+                "options": ""
+            },
+            headers={
+                "client-id": TRANSLATION_CLIENT_ID,
+                "Content-Type": "application/json; charset=utf-8"
+            },
+        )
+        en_title = response_title.json()
+
+        response_desc = requests.post(
+            "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+            json={
+                "appId": "",
+                "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                "text": lt_description,
+                "options": ""
+            },
+            headers={
+                "client-id": TRANSLATION_CLIENT_ID,
+                "Content-Type": "application/json; charset=utf-8"
+            },
+        )
+        en_desc = response_desc.json()
+
         en_translation = instance.master.translations.filter(language_code='en').first()
         DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
         if not en_translation:

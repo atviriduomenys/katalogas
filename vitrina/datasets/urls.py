@@ -1,70 +1,33 @@
 from django.urls import path
-
 from vitrina.datasets.models import Dataset
-from vitrina.datasets.views import AddProjectView
-from vitrina.datasets.views import RemoveRequestView
-from vitrina.datasets.views import AddRequestView
-from vitrina.datasets.views import DatasetRequestsView
-from vitrina.datasets.views import QuarterStatsView
-from vitrina.datasets.views import DatasetsTagsView
-from vitrina.datasets.views import YearStatsView
-from vitrina.datasets.views import DatasetsFormatView
-from vitrina.datasets.views import DatasetsFrequencyView
-from vitrina.datasets.views import DatasetsOrganizationsView
-from vitrina.datasets.views import DatasetsCategoriesView
-from vitrina.datasets.views import DatasetsLevelView
-from vitrina.datasets.views import PublicationStatsView
-from vitrina.datasets.views import DatasetsGroupView
-from vitrina.datasets.views import CategoryStatsView
-from vitrina.datasets.views import JurisdictionStatsView
-from vitrina.datasets.views import CreateMemberView
-from vitrina.datasets.views import DatasetCreateView
-from vitrina.datasets.views import DatasetDetailView
-from vitrina.datasets.views import DatasetDistributionPreviewView
-from vitrina.datasets.views import DatasetHistoryView
-from vitrina.datasets.views import DatasetListView
-from vitrina.datasets.views import DatasetManagementsView
-from vitrina.datasets.views import DatasetMembersView
-from vitrina.datasets.views import DatasetProjectsView
-from vitrina.datasets.views import DatasetStatsView
-from vitrina.datasets.views import DatasetStructureImportView
-from vitrina.datasets.views import DatasetAttributionCreateView
-from vitrina.datasets.views import DatasetAttributionDeleteView
-from vitrina.datasets.views import DatasetUpdateView
-from vitrina.datasets.views import DeleteMemberView
-from vitrina.datasets.views import RemoveProjectView
-from vitrina.datasets.views import UpdateMemberView
-from vitrina.datasets.views import autocomplete_tags
-from vitrina.datasets.views import DatasetRelationCreateView
-from vitrina.datasets.views import DatasetRelationDeleteView
-from vitrina.datasets.views import DatasetCategoryView
-from vitrina.datasets.views import FilterCategoryView
-from vitrina.datasets.views import DatasetPlanView
-from vitrina.datasets.views import DatasetCreatePlanView
-from vitrina.datasets.views import DatasetDeletePlanView
-from vitrina.datasets.views import DatasetPlansHistoryView
-from vitrina.datasets.views import DatasetDeletePlanDetailView
-from vitrina.datasets.views import DatasetRepresentativeApiKeyView
-from vitrina.datasets.views import update_dataset_org_filters, update_dataset_category_filters, update_dataset_tag_filters, \
-     update_dataset_jurisdiction_filters, OpenDataPortalDatasetDetailView, DatasetRedirectView
+from vitrina.datasets.views import (
+    AddProjectView, RemoveRequestView, AddRequestView, DatasetRequestsView, QuarterStatsView, DatasetsTagsView,
+    YearStatsView, DatasetsFormatView, DatasetsFrequencyView, DatasetsOrganizationsView, DatasetsCategoriesView,
+    DatasetsLevelView, PublicationStatsView, DatasetsGroupView, CategoryStatsView, JurisdictionStatsView,
+    CreateMemberView, DatasetCreateView, DatasetDetailView, DatasetDistributionPreviewView, DatasetHistoryView,
+    DatasetListView, DatasetManagementsView, DatasetMembersView, DatasetProjectsView, DatasetStatsView,
+    DatasetStructureImportView, DatasetAttributionCreateView, DatasetAttributionDeleteView, DatasetUpdateView,
+    DeleteMemberView, RemoveProjectView, UpdateMemberView, autocomplete_tags, DatasetRelationCreateView,
+    DatasetRelationDeleteView, DatasetCategoryView, FilterCategoryView, DatasetPlanView, DatasetCreatePlanView,
+    DatasetDeletePlanView, DatasetPlansHistoryView, DatasetDeletePlanDetailView, DatasetRepresentativeApiKeyView,
+    UpdateDatasetOrgFilters, UpdateDatasetCategoryFilters, UpdateDatasetTagFilters, UpdateDatasetJurisdictionFilters,
+    OpenDataPortalDatasetDetailView, DatasetRedirectView
+)
 
 urlpatterns = [
-    # @GetMapping("/datasets")`
-    path('update-dataset-org-filters/', update_dataset_org_filters.as_view(), name='update-dataset-org-filters'),
-    path('update-dataset-cat-filters/', update_dataset_category_filters.as_view(), name='update-dataset-cat-filters'),
-    path('update-dataset-tag-filters/', update_dataset_tag_filters.as_view(), name='update-dataset-tag-filters'),
-    path('update-dataset-jurisdiction-filters/', update_dataset_jurisdiction_filters.as_view(), name='update-dataset-jurisdiction-filters'),
+    path('update-dataset-org-filters/', UpdateDatasetOrgFilters.as_view(), name='update-dataset-org-filters'),
+    path('update-dataset-cat-filters/', UpdateDatasetCategoryFilters.as_view(), name='update-dataset-cat-filters'),
+    path('update-dataset-tag-filters/', UpdateDatasetTagFilters.as_view(), name='update-dataset-tag-filters'),
+    path('update-dataset-jurisdiction-filters/', UpdateDatasetJurisdictionFilters.as_view(),
+         name='update-dataset-jurisdiction-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
-    # @GetMapping("/dataset/{slug}")
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
     path('datasets/stats/level/', DatasetsLevelView.as_view(), name='dataset-stats-level'),
     path('datasets/stats/jurisdiction/', DatasetManagementsView.as_view(), name='dataset-stats-jurisdiction'),
     path('datasets/stats/jurisdiction/<int:pk>/', JurisdictionStatsView.as_view(),
          name='dataset-stats-jurisdiction-children'),
-    # path('datasets/stats/yearly/', DatasetsStatsView.as_view(), name='dataset-stats-yearly'),
     path('datasets/stats/organization/', DatasetsOrganizationsView.as_view(), name='dataset-stats-organization'),
-    # path('datasets/stats/organization/<int:pk>', OrganizationStatsView.as_view(), name='dataset-stats-organization-children'),
     path('datasets/stats/category/', DatasetsCategoriesView.as_view(), name='dataset-stats-category'),
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
     path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tags'),
@@ -73,7 +36,8 @@ urlpatterns = [
     path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
     path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-published'),
     path('datasets/stats/publication/year/<int:year>/', YearStatsView.as_view(), name='dataset-stats-publication-year'),
-    path('datasets/stats/publication/quarter/<str:quarter>/', QuarterStatsView.as_view(), name='dataset-stats-publication-quarter'),
+    path('datasets/stats/publication/quarter/<str:quarter>/', QuarterStatsView.as_view(),
+         name='dataset-stats-publication-quarter'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
@@ -123,7 +87,8 @@ urlpatterns = [
         DatasetManagementsView.as_view(),
         name='dataset-stats-jurisdiction'
     ),
-    path('dataset/atviru-duomenu-katalogo-api/', OpenDataPortalDatasetDetailView.as_view(), name='open-data-portal-dataset'),
+    path('dataset/atviru-duomenu-katalogo-api/', OpenDataPortalDatasetDetailView.as_view(),
+         name='open-data-portal-dataset'),
     path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
     path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
@@ -141,20 +106,4 @@ urlpatterns = [
     path('datasets/<int:pk>/members/<int:rep_id>/api/<key>', DatasetRepresentativeApiKeyView.as_view(),
          name='dataset-representative-api-key'),
     path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='dataset-redirect-detail')
-    # @GetMapping("/harvest/object/{id}")
-    # @GetMapping("/harvested/{id}")
-    # @GetMapping("/dataset/{slug}/follow")
-    # @GetMapping("/dataset/{slug}/unfollow")
-    # @PostMapping("/dataset/{id}/comment")
-    # @PostMapping("/dataset/{id}/reply")
-    # @PostMapping("/dataset/{id}/rate")
-    # @GetMapping("/dataset/{id}/download/{rid}/{filename}")
-    # @GetMapping("/dataset/{id}/structure/{filename}")
-    # @GetMapping("/dataset/{id}/structure/{strid}/{filename}")
-    # @GetMapping("/dataset/{id}/previewStructure")
-    # @GetMapping("/dataset/{id}/preview/{rid}")
-    # @RequestMapping("/search")
-    # @PostMapping("/quick")
-    # @PostMapping("/dataset")
-    # @GetMapping("/harvested")
 ]

@@ -117,12 +117,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
 
     def get_queryset(self):
         datasets = super().get_queryset()
-        is_org_dataset = False
-        if is_org_dataset_list(self.request) and self.request.user.is_authenticated:
-            if self.request.user.organization_id == self.request.resolver_match.kwargs['pk']:
-                is_org_dataset = True
-        datasets = get_datasets_for_user(self.request.user, datasets, is_org_dataset)
-        datasets = datasets.models(Dataset)
+        datasets = get_datasets_for_user(self.request, datasets)
         sorting = self.request.GET.get('sort', None)
 
         if self.request.GET.get('q') and not sorting:
@@ -2691,10 +2686,15 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         ).order_by('-revision__date_created')
 
 
-class update_dataset_org_filters(FacetedSearchView):
+class UpdateDatasetOrgFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2713,6 +2713,7 @@ class update_dataset_org_filters(FacetedSearchView):
             ),
             items = []
             for item in filter[0].items():
+                print(item.count)
                 if q.lower() in item.title.lower():
                     items.append(item)
             extra_context = {
@@ -2721,12 +2722,16 @@ class update_dataset_org_filters(FacetedSearchView):
             context.update(extra_context)
             return context
         
-    
 
-class update_dataset_category_filters(FacetedSearchView):
+class UpdateDatasetCategoryFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/category_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2742,7 +2747,6 @@ class update_dataset_category_filters(FacetedSearchView):
                 Category,
                 multiple=True,
                 is_int=False,
-                
             ),
             items = []
             for item in filter[0].items():
@@ -2755,10 +2759,15 @@ class update_dataset_category_filters(FacetedSearchView):
             return context
 
 
-class update_dataset_tag_filters(FacetedSearchView):
+class UpdateDatasetTagFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/tag_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2786,10 +2795,16 @@ class update_dataset_tag_filters(FacetedSearchView):
             context.update(extra_context)
             return context
 
-class update_dataset_jurisdiction_filters(FacetedSearchView):
+
+class UpdateDatasetJurisdictionFilters(FacetedSearchView):
     template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
     form_class = DatasetSearchForm
     facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

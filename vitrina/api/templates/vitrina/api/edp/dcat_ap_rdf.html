@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="{{ current_domain_full }}"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/">
+    {% for dataset in datasets %}
+    <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri }}">
+        {% for t in dataset.translations %}
+        <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
+        <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
+        {% endfor %}
+        {% for category in dataset.categories %}
+        <dcat:theme>
+            {% if category.uri %}
+            <skos:Concept rdf:about="{{ category.uri }}"/>
+            {% else %}
+            <skos:Concept>
+                {% for t in category.translations %}
+                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
+                {% endfor %}
+            </skos:Concept>
+            {% endif %}
+        </dcat:theme>
+        {% endfor %}
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.published|date:"SHORT_DATE_FORMAT" }}</dct:issued>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>{{ dataset.organization.title }}</foaf:name>
+                <foaf:mbox rdf:resource="mailto:{{ dataset.organization.email }}"/>
+                {% if dataset.organization.website %}
+                <foaf:homepage rdf:resource="{{ dataset.organization.website }}"/>
+                {% endif %}
+            </foaf:Organization>
+        </dct:publisher>
+        {% if dataset.frequency %}
+        <dct:accrualPeriodicity>
+            {% if dataset.frequency.uri %}
+            <dct:Frequency rdf:about="{{ dataset.frequency.uri }}"/>
+            {% else %}
+            <dct:Frequency>
+                {% for t in dataset.frequency.translations %}
+                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
+                {% endfor %}
+            </dct:Frequency>
+            {% endif %}
+        </dct:accrualPeriodicity>
+        {% endif %}
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:{{ dataset.organization.email }}"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+        {% for dist in dataset.distributions %}
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri }}">
+                {% if dist.type %}
+                <dct:type rdf:resource="{{ dist.type }}"/>
+                {% endif %}
+                {% for t in dist.translations %}
+                <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
+                <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
+                {% endfor %}
+                <dcat:accessURL rdf:resource="{{ dist.access_url }}"/>
+                <dcat:downloadURL rdf:resource="{{ dist.download_url }}"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                {% if dist.licence %}
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="{{ dataset.licence.uri }}"/>
+                </dct:license>
+                {% endif %}
+                {% if dist.media_type %}
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="{{ dist.media_type.uri }}"/>
+                </dcat:mediaType>
+                {% endif %}
+                {% if dist.format %}
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="{{ dist.format.uri }}"/>
+                </dct:format>
+                {% endif %}
+            </dcat:Distribution>
+        </dcat:distribution>
+        {% endfor %}
+    </dcat:Dataset>
+    {% endfor %}
+</rdf:RDF>

@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from vitrina.api.views import CatalogViewSet, DatasetViewSet, CategoryViewSet, LicenceViewSet, \
     DatasetDistributionViewSet, DatasetStructureViewSet, InternalDatasetViewSet, InternalDatasetDistributionViewSet, \
     InternalDatasetStructureViewSet, PartnerApiView, DatasetModelDownloadViewSet
+from vitrina.api.views import edp_dcat_ap_rdf
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
@@ -97,4 +98,5 @@ urlpatterns = [
 
     # @RequestMapping("/rdf")
     # @PostMapping("/rdf/search")
+    path('edp/dcat-ap.rdf', edp_dcat_ap_rdf, name="edp-dcat-ap-rdf"),
 ]

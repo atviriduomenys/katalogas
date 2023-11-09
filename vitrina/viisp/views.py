@@ -87,7 +87,7 @@ class VIISPCompleteLoginView(View):
         user = User.objects.filter(email=user_data.get('email')).first()
         login = provider.sociallogin_from_response(request, user_data)
         if user:
-            user_social_account = SocialAccount.objects.filter(user=user).first()
+            user_social_account = SocialAccount.objects.filter(user__email=user).first()
             if token:
                 return perform_login(
                     request,
@@ -112,7 +112,7 @@ class VIISPCompleteLoginView(View):
                             request,
                             user,
                             email_verification=False,
-                            redirect_url='password-set',
+                            redirect_url='complete-login',
                             signal_kwargs={"sociallogin": login},
                         )
             else:

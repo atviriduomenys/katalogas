@@ -27,7 +27,7 @@ from django.http import HttpResponse
 from allauth.socialaccount.models import SocialAccount
 from itsdangerous.url_safe import URLSafeSerializer
 from vitrina.helpers import send_email_with_logging
-
+import bcrypt
 
 
 
@@ -79,6 +79,10 @@ class VIISPCompleteLoginView(View):
 
         if not user_data.get('email'):
             return redirect('change-email')
+        
+        if not user_data.get('personal_code'):
+            error_data = {}
+            return render(request, 'allauth/socialaccount/api_error.html', error_data)
 
         user = User.objects.filter(email=user_data.get('email')).first()
         if user:
@@ -93,7 +97,8 @@ class VIISPCompleteLoginView(View):
                     signal_kwargs={"sociallogin": login},
                 )
             elif user_social_account:
-                if user_social_account.extra_data.get('personal_code') == user_data.get('personal_code'):
+                personal_code_bytes = user_data.get('personal_code').encode('utf-8')
+                if bcrypt.checkpw(personal_code_bytes, user_social_account.extra_data.get('personal_code').encode('utf-8')):
                     if not user_social_account.extra_data.get('password_not_set'):
                         return perform_login(
                             request,
@@ -112,8 +117,8 @@ class VIISPCompleteLoginView(View):
                         )
             else:
                 viisp_token_key = ViispTokenKey.objects.first().key_content
-                s = URLSafeSerializer("demokey")
-                token = s.dumps(user_data)
+                s = URLSafeSerializer(viisp_token_key)
+                token = s.dumps([user_data.get(key) for key in user_data])
                 sub_email_list = [user_data.get('email')]
                 url = "%s%s" % (
                     get_current_domain(self.request),
@@ -125,7 +130,7 @@ class VIISPCompleteLoginView(View):
                     [url]
                 )
                 send_email_with_logging(email_data, sub_email_list)
-                return redirect('home')
+                return redirect('confirm-email')
         return complete_social_login(request, login)
 
 
@@ -135,19 +140,35 @@ class ChangeEmailView(TemplateView):
 class LoginFirstView(TemplateView):
     template_name = 'vitrina/viisp/login_first.html'
 
+class ConfirmEmailView(TemplateView):
+    template_name = 'vitrina/viisp/confirm_email.html'
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class VIISPAccountMergeView(View):
     def get(self, request, token=None):
         if token:
+            if token == 'password-set':
+                return redirect('password-set')
             viisp_token_key = ViispTokenKey.objects.first().key_content
-            s = URLSafeSerializer('demokey')
-            merge_data = s.loads(token)
-            print(merge_data)
+            s = URLSafeSerializer(viisp_token_key)
+            merge_data = None
+            merge_data_dict = {}
+            try:
+                merge_data = s.loads(token)
+                merge_data_dict = {
+                    'personal_code': merge_data[0],
+                    'first_name': merge_data[1],
+                    'last_name': merge_data[2],
+                    'email': merge_data[3],
+                    'phone': merge_data[4],
+                    'ticket_id': merge_data[5]
+                }
+            except:
+                return redirect('home')
             provider = providers.registry.by_id(VIISPProvider.id, request)
-            login = provider.sociallogin_from_response(request, merge_data)
-            merge_data['uuid'] = 'tsdfgdsr65e'
-            user = User.objects.filter(email=merge_data.get('email')).first()
+            login = provider.sociallogin_from_response(request, merge_data_dict)
+            user = User.objects.filter(email=merge_data_dict.get('email')).first()
             return perform_login(
                 request,
                 user,

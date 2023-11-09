@@ -32,7 +32,6 @@ class ProviderWidget(ModelSelect2Widget):
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         ids = []
-        print('test')
         if 'organizations__in' in dependent_fields:
             organizations = dependent_fields.pop('organizations__in')
             ids.extend(organizations)
@@ -220,12 +219,14 @@ class PartnerRegisterForm(ModelForm):
     )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
+    request_form = FileField(label=_("Prašymo forma"), required=True)   
     class Meta:
         model = Organization
         fields = [
             'organization',
             'coordinator_phone_number',
-            'coordinator_email'
+            'coordinator_email',
+            'request_form'
         ]
 
     def __init__(self, *args, initial={}, **kwargs):

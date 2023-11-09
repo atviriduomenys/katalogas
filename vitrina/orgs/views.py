@@ -45,11 +45,17 @@ from allauth.socialaccount.models import SocialAccount
 from treebeard.mp_tree import MP_Node
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
+from vitrina.helpers import send_email_with_logging
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 
 
 class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_approve.html'
+    base_template_content = """
+        Jūsų koordinatoriaus paraiška buvo patvirtinta.   
+    """
+    email_identifier = "coordinator-request-approved"
 
     def dispatch(self, request, *args, **kwargs):
         self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
@@ -64,15 +70,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        company_code = self.representative_request.org_code
-        org = Organization.objects.filter(company_code=company_code).first()
-        if not org:
-            org = Organization.add_root(
-                title=self.representative_request.org_name,
-                company_code=company_code,
-                slug=slugify(self.representative_request.org_slug)
-            )
-
+        org = self.representative_request.organization
         user = User.objects.get(email=self.representative_request.user.email)
 
         rep = Representative.objects.create(
@@ -96,6 +94,13 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         )
         task.save()
         self.representative_request.delete()
+        email_data = prepare_email_by_identifier_for_sub(
+            self.email_identifier,  self.base_template_content,
+            'Koordinatoriaus paraiškos patvirtinimas',
+            []
+        )
+        sub_email_list = [user.email]
+        send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
 
     def get_success_url(self):
@@ -105,6 +110,10 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
 class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_deny.html'
+    base_template_content = """
+        Jūsų koordinatoriaus paraiška buvo atmesta.   
+    """
+    email_identifier = "coordinator-request-denied"
 
     def dispatch(self, request, *args, **kwargs):
         self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
@@ -120,6 +129,13 @@ class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.representative_request.delete()
+        email_data = prepare_email_by_identifier_for_sub(
+            self.email_identifier,  self.base_template_content,
+            'Koordinatoriaus paraiškos atmetimas',
+            []
+        )
+        sub_email_list = [self.representative_request.user.email]
+        send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
 
     def get_success_url(self):
@@ -639,13 +655,13 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         user = self.request.user
         user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
         if not user_social_account:
-            return redirect('viisp_login')
+           return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         user = self.request.user
         user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
-        extra_data = user_social_account.extra_data
+        extra_data = {}
         company_code = extra_data.get('company_code')
         company_name = extra_data.get('company_name')
         org = Organization.objects.filter(company_code=company_code).first()
@@ -660,14 +676,8 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             company_name_slug = org.slug
         kwargs = super().get_form_kwargs()
         initial_dict = {
-            'coordinator_first_name': user.first_name,
-            'coordinator_last_name': user.last_name,
             'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
-            'coordinator_email': user.email,
-            'company_code': company_code,
-            'company_name': company_name,
-            'company_slug': company_name_slug,
-            'company_slug_read_only': True if org else False
+            'coordinator_email': user.email
         }
         kwargs['initial'] = initial_dict
         return kwargs
@@ -675,9 +685,11 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         representative_request = RepresentativeRequest(
             user = self.request.user,
-            organization = form.cleaned_data.get('organization')
+            organization = form.cleaned_data.get('organization'),
+            document = form.cleaned_data.get('request_form')
         )
         representative_request.save()
+        
         return redirect(reverse('partner-register-complete'))
 
 class PartnerRegisterCompleteView(TemplateView):

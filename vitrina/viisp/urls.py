@@ -1,7 +1,7 @@
 from django.urls import path
 from vitrina.viisp.provider import VIISPProvider
 from vitrina.viisp.views import VIISPLoginView, VIISPCompleteLoginView, ChangeEmailView, LoginFirstView, \
-    VIISPAccountMergeView
+    VIISPAccountMergeView, ConfirmEmailView
 from vitrina.orgs.views import PartnerRegisterView
 from allauth.socialaccount.views import SignupView, ConnectionsView
 from django.contrib.auth.decorators import login_required
@@ -22,6 +22,7 @@ urlpatterns = [
     path('viisp/complete-login', VIISPCompleteLoginView.as_view(), name='viisp-complete-login'),
     path('viisp/complete-login/<token>', VIISPCompleteLoginView.as_view(), name='viisp-complete-login-token'),
     path('viisp/account-merge/<token>', VIISPAccountMergeView.as_view(), name='viisp-account-merge'),
+    path('viisp/confirm-email/', ConfirmEmailView.as_view(), name='confirm-email'),
     path('viisp/signup', SignupViewViisp.as_view(), name='socialaccount_signup'),
     path('viisp/connections', ConnectionsView.as_view(), name='socialaccount_connections'),
     path('viisp/change-email-view/', ChangeEmailView.as_view(), name='change-email'),

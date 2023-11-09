@@ -3,6 +3,7 @@ from allauth.socialaccount.providers.base import ProviderAccount
 from allauth.socialaccount.providers.oauth2.provider import OAuth2Provider
 from allauth.socialaccount.adapter import get_adapter
 from allauth.socialaccount.signals import social_account_added
+import bcrypt
 
 
 
@@ -34,9 +35,12 @@ class VIISPProvider(OAuth2Provider):
         return ret
 
     def extract_extra_data(self, data):
+        personal_code_bytes = data.get('personal_code').encode('utf-8')
+        salt = bcrypt.gensalt()
+        hash = bcrypt.hashpw(personal_code_bytes, salt) 
         return dict(
-            personal_code=data.get('personal_code'),
-            coordinator_phone_number=data.get("phone_number"),
+            personal_code=hash.decode('utf-8'),
+            coordinator_phone_number=data.get("phone"),
             coordinator_email=data.get("email"),
             password_not_set=True   
         )
@@ -47,7 +51,6 @@ class VIISPProvider(OAuth2Provider):
         from vitrina.users.models import User
         adapter = get_adapter(request)
         uid = self.extract_uid(response)
-        print(response)
         extra_data = self.extract_extra_data(response)
 
         common_fields = self.extract_common_fields(response)

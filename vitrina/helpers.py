@@ -357,8 +357,6 @@ def get_filter_url(request: WSGIRequest, key: str, value: str, selected: bool = 
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
-    if 'q' in query_dict:
-        query_dict.pop('q')
     if selected:
         val = '%s_exact:%s' % (key, value)
         if val in query_dict.get('selected_facets', []):

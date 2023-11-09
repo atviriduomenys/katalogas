@@ -155,3 +155,6 @@ Email template identifiers (emails that supposed to be sent from administrative 
  22. auth-portal-user-password-changed
  23. auth-org-coordinator-password-changed
  24. error-in-data, current keys ({0} - url, {1} - external object id, {2} - content type, {3} - external content type)
+ 25. auth-viisp-merge
+ 26. coordinator-request-approved
+ 27. coordinator-request-denied

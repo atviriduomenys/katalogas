@@ -85,9 +85,9 @@ class VIISPCompleteLoginView(View):
             return render(request, 'allauth/socialaccount/api_error.html', error_data)
 
         user = User.objects.filter(email=user_data.get('email')).first()
+        login = provider.sociallogin_from_response(request, user_data)
         if user:
             user_social_account = SocialAccount.objects.filter(user=user).first()
-            login = provider.sociallogin_from_response(request, user_data) if user_social_account else None
             if token:
                 return perform_login(
                     request,

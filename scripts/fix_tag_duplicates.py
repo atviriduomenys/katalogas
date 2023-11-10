@@ -41,6 +41,8 @@ def main():
                         dataset.tags.remove(tag)
                         dataset.tags.add(ot)
                     Dataset.tags.tag_model.objects.filter(pk=tag.pk).delete()
+        else:
+            Dataset.tags.tag_model.objects.filter(pk=tag.pk).delete()
 
 
 if __name__ == '__main__':

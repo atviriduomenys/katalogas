@@ -19,28 +19,29 @@ def main():
         slug = tag.slug
 
         if not name.isspace():
-            if len(stripped) == len(slug):
-                exists = Dataset.tags.tag_model.objects.filter(name=stripped.title()).exists()
-                tag.name = stripped.title()
-                if exists:
-                    existing = Dataset.tags.tag_model.objects.filter(name=stripped.title()).get()
-                    if len(existing.name.strip()) != len(existing.slug):
-                        items = Dataset.objects.filter(tags__name__in=existing.name)
+            if len(stripped) > 0:
+                if len(stripped) == len(slug):
+                    exists = Dataset.tags.tag_model.objects.filter(name=stripped.title()).exists()
+                    tag.name = stripped.title()
+                    if exists:
+                        existing = Dataset.tags.tag_model.objects.filter(name=stripped.title()).get()
+                        if len(existing.name.strip()) != len(existing.slug):
+                            items = Dataset.objects.filter(tags__name__in=existing.name)
+                            for dataset in items:
+                                dataset.tags.remove(existing)
+                                dataset.tags.add(tag)
+                            Dataset.tags.tag_model.objects.filter(pk=existing.pk).delete()
+                    tag.save()
+                if len(stripped) != len(slug):
+                    slug_sub = slug.split('_')[0]
+                    original_tag = Dataset.tags.tag_model.objects.filter(slug=slug_sub).exists()
+                    if original_tag:
+                        ot = Dataset.tags.tag_model.objects.filter(slug=slug_sub).get()
+                        items = Dataset.objects.filter(tags__name__in=name)
                         for dataset in items:
-                            dataset.tags.remove(existing)
-                            dataset.tags.add(tag)
-                        Dataset.tags.tag_model.objects.filter(pk=existing.pk).delete()
-                tag.save()
-            if len(stripped) != len(slug):
-                slug_sub = slug.split('_')[0]
-                original_tag = Dataset.tags.tag_model.objects.filter(slug=slug_sub).exists()
-                if original_tag:
-                    ot = Dataset.tags.tag_model.objects.filter(slug=slug_sub).get()
-                    items = Dataset.objects.filter(tags__name__in=name)
-                    for dataset in items:
-                        dataset.tags.remove(tag)
-                        dataset.tags.add(ot)
-                    Dataset.tags.tag_model.objects.filter(pk=tag.pk).delete()
+                            dataset.tags.remove(tag)
+                            dataset.tags.add(ot)
+                        Dataset.tags.tag_model.objects.filter(pk=tag.pk).delete()
 
 
 if __name__ == '__main__':

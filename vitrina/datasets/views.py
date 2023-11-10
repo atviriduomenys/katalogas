@@ -154,7 +154,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         elif sorting == 'sort-by-relevance':
             datasets = datasets.order_by('-type_order')
         if self.request.GET.get('q', None):
-            datasets = datasets.autocomplete(text__startswith=self.text_search_param)
+            if len(self.request.GET.get('q', None)) < 5:
+                datasets = datasets.autocomplete(text__startswith=self.text_search_param)
+            else:
+                datasets = datasets.autocomplete(text__contains=self.text_search_param)
             if self.request.GET.get('selected_facets', None) is not None:
                 if 'organization' in self.request.GET.get('selected_facets'):
                     datasets = datasets.filter(organization=int(self.request.GET.get('selected_facets').split(':')[1]))

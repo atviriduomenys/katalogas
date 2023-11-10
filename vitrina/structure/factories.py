@@ -4,7 +4,7 @@ import uuid
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.structure.models import Model, Metadata, Property, Prefix, Enum, EnumItem, Param, ParamItem
+from vitrina.structure.models import Model, Metadata, Property, Prefix, Enum, EnumItem, Param, ParamItem, Base
 
 
 class MetadataFactory(DjangoModelFactory):
@@ -32,6 +32,13 @@ class ModelFactory(DjangoModelFactory):
         model = Model
 
     dataset = factory.SubFactory(DatasetFactory)
+
+
+class BaseFactory(DjangoModelFactory):
+    class Meta:
+        model = Base
+
+    model = factory.SubFactory(ModelFactory)
 
 
 class PropertyFactory(DjangoModelFactory):

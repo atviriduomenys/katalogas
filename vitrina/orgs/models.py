@@ -207,7 +207,7 @@ class OrganizationMapping(models.Model):
 
 class RepresentativeRequest(models.Model):
     user = models.ForeignKey('vitrina_users.User', models.DO_NOTHING, blank=True, null=True)
-    document = models.FileField()
+    document = models.FileField(upload_to='data/files/request_assignments')
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:

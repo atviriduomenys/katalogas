@@ -27,8 +27,10 @@ from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
-from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm
-from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param
+from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm, VersionForm
+from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param, \
+    MetadataVersion
+from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_srid, \
     transform_coordinates
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
@@ -153,6 +155,7 @@ class DatasetStructureView(
         )
         context['can_manage_structure'] = self.can_manage_structure
         context['models'] = self.models
+        context['version'] = dataset.dataset_version.filter(deployed__isnull=False).order_by('-deployed').first()
         return context
 
     def get_structure_url(self):
@@ -1172,6 +1175,13 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.title = form.cleaned_data.get('title')
             metadata.description = form.cleaned_data.get('description')
             metadata.version += 1
+
+            if (
+                'value' in form.changed_data or
+                'source' in form.changed_data
+            ):
+                metadata.draft = True
+
             metadata.save()
 
         # Save history
@@ -1433,6 +1443,15 @@ class ModelUpdateView(
         else:
             self.object.prepare_ast = ""
         self.object.ref = ', '.join(model_ref.values_list('metadata__name', flat=True)) if model_ref else ''
+
+        if (
+            'name' in form.changed_data or
+            'base' in form.changed_data or
+            'ref' in form.changed_data or
+            'level' in form.changed_data
+        ):
+            self.object.draft = True
+
         self.object.save()
 
         model.property_list.all().delete()
@@ -1668,6 +1687,15 @@ class PropertyUpdateView(
             self.object.ref = form.cleaned_data.get('ref_others')
             if prop.ref_model:
                 prop.ref_model = None
+
+        if (
+            'name' in form.changed_data or
+            'type' in form.changed_data or
+            'ref' in form.changed_data or
+            'level' in form.changed_data or
+            'access' in form.changed_data
+        ):
+            self.object.draft = True
         self.object.save()
 
         self.model_obj.update_level()
@@ -2259,3 +2287,399 @@ class GetUpdatedSummaryView(View):
             item['centroid'] = [x, y]
             transformed_data.append(item)
         return JsonResponse({'data': transformed_data})
+
+
+class VersionCreateView(CreateView, PermissionRequiredMixin):
+    model = _Version
+    form_class = VersionForm
+    template_name = 'vitrina/structure/version_form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        return context
+
+    def form_valid(self, form):
+        version = form.save(commit=False)
+        version.dataset = self.dataset
+
+        latest_version = self.dataset.dataset_version.order_by('-version').first()
+        if latest_version and latest_version.version:
+            version.version = latest_version.version + 1
+        else:
+            version.version = 1
+        version.save()
+
+        metadata = form.cleaned_data.get('metadata', [])
+
+        for meta in metadata:
+            if meta := Metadata.objects.filter(pk=meta).first():
+                meta.draft = False
+                meta.metadata_version = version
+                meta.save()
+
+                MetadataVersion.objects.create(
+                    metadata=meta,
+                    version=version,
+                    name=meta.name if meta.name else None,
+                    type=meta.type if meta.type else None,
+                    required=meta.required,
+                    unique=meta.unique,
+                    type_args=meta.type_args if meta.type_args else None,
+                    ref=meta.ref if meta.ref else None,
+                    source=meta.source if meta.source else None,
+                    prepare=meta.prepare if meta.prepare else None,
+                    level_given=meta.level_given,
+                    access=meta.access,
+                    base=meta.object.base if isinstance(meta.object, Model) else None
+                )
+
+        return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
+
+
+class VersionListView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
+    TemplateView
+):
+    template_name = 'vitrina/structure/version_list.html'
+    context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-plans-history'
+    plan_url_name = 'dataset-plans'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'not_deployed')
+        context['dataset'] = self.dataset
+        if status == 'deployed':
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by('-released')
+        else:
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by('-released')
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset
+        )
+        context['selected_tab'] = status
+        return context
+
+    def get_history_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_plan_object(self):
+        return self.dataset
+
+
+class VersionDetailView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
+    TemplateView
+):
+    template_name = 'vitrina/structure/version_detail.html'
+    context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-plans-history'
+    plan_url_name = 'dataset-plans'
+
+    version: _Version
+
+    def dispatch(self, request, *args, **kwargs):
+        self.version = get_object_or_404(_Version, pk=kwargs.get('version_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        context['version'] = self.version
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset
+        )
+
+        changes = []
+        models = []
+        props = []
+        version_items = {
+            item.metadata.object: item
+            for item in self.version.metadataversion_set.all()
+        }
+
+        if dataset_meta := version_items.get(self.dataset):
+            prev_version = dataset_meta.metadata.metadataversion_set.filter(
+                version__created__lt=self.version.created
+            ).order_by('-version__created').first()
+            if prev_version:
+                changes.append({
+                    'title': self.dataset.title,
+                    'url': self.dataset.get_absolute_url(),
+                    'new': False,
+                    'changed_attrs': [{
+                        'attr': 'name',
+                        'value_before': prev_version.name,
+                        'value_after': dataset_meta.name
+                    }],
+                    'class': 'dataset_meta'
+                })
+            else:
+                changes.append({
+                    'title': self.dataset.title,
+                    'url': self.dataset.get_absolute_url(),
+                    'new': True,
+                    'changed_attrs': [{
+                        'attr': 'name',
+                        'value_after': dataset_meta.name
+                    }],
+                    'class': 'dataset_metadata'
+                })
+
+        for model in self.dataset.model_set.all():
+            if model_meta := version_items.get(model):
+                models.append(model)
+                prev_version = model_meta.metadata.metadataversion_set.filter(
+                    version__created__lt=self.version.created
+                ).order_by('-version__created').first()
+
+                changed_attrs = []
+                if prev_version:
+                    new = False
+                    if prev_version.name != model_meta.name:
+                        changed_attrs.append({
+                            'attr': 'name',
+                            'value_before': prev_version.name,
+                            'value_after': model_meta.name,
+                        })
+                    if prev_version.ref != model_meta.ref:
+                        changed_attrs.append({
+                            'attr': 'ref',
+                            'value_before': prev_version.ref,
+                            'value_after': model_meta.ref,
+                        })
+                    if prev_version.level_given != model_meta.level_given:
+                        changed_attrs.append({
+                            'attr': 'level',
+                            'value_before': prev_version.level_given,
+                            'value_after': model_meta.level_given,
+                        })
+                    if prev_version.base != model_meta.base:
+                        changed_attrs.append({
+                            'attr': 'base',
+                            'value_before': prev_version.base.model.name if prev_version.base else None,
+                            'value_after': model_meta.base.model.name if model_meta.base else None,
+                        })
+                else:
+                    new = True
+                    changed_attrs.append({
+                        'attr': 'name',
+                        'value_after': model_meta.name,
+                    })
+                    if model_meta.ref:
+                        changed_attrs.append({
+                            'attr': 'ref',
+                            'value_after': model_meta.ref,
+                        })
+                    if model_meta.level_given:
+                        changed_attrs.append({
+                            'attr': 'level',
+                            'value_after': model_meta.level_given,
+                        })
+                    if model_meta.base:
+                        changed_attrs.append({
+                            'attr': 'base',
+                            'value_after': model_meta.base.model.name,
+                        })
+                changes.append({
+                    'title': model.name,
+                    'url': model.get_absolute_url(),
+                    'new': new,
+                    'changed_attrs': changed_attrs,
+                    'class': 'model_metadata'
+                })
+
+            for prop in model.model_properties.filter(given=True):
+                changed_attrs = []
+
+                if prop_meta := version_items.get(prop):
+                    props.append(prop)
+                    prev_version = prop_meta.metadata.metadataversion_set.filter(
+                        version__created__lt=self.version.created
+                    ).order_by('-version__created').first()
+
+                    if prop.model not in models:
+                        changes.append({
+                            'title': prop.model.name,
+                            'url': prop.model.get_absolute_url(),
+                            'changed_attrs': [],
+                            'class': 'model_metadata'
+                        })
+                        models.append(prop.model)
+
+                    if prev_version:
+                        new = False
+                        if prev_version.name != prop_meta.name:
+                            changed_attrs.append({
+                                'attr': 'name',
+                                'value_before': prev_version.name,
+                                'value_after': prop_meta.name,
+                            })
+                        if prev_version.type_repr != prop_meta.type_repr:
+                            changed_attrs.append({
+                                'attr': 'type',
+                                'value_before': prev_version.type_repr,
+                                'value_after': prop_meta.type_repr,
+                            })
+                        if prev_version.ref != prop_meta.ref:
+                            changed_attrs.append({
+                                'attr': 'ref',
+                                'value_before': prev_version.ref,
+                                'value_after': prop_meta.ref,
+                            })
+                        if prev_version.level_given != prop_meta.level_given:
+                            changed_attrs.append({
+                                'attr': 'level',
+                                'value_before': prev_version.level_given,
+                                'value_after': prop_meta.level_given,
+                            })
+                        if prev_version.access != prop_meta.access:
+                            changed_attrs.append({
+                                'attr': 'access',
+                                'value_before': prev_version.access,
+                                'value_after': prop_meta.access,
+                            })
+                    else:
+                        new = True
+                        changed_attrs.append({
+                            'attr': 'name',
+                            'value_after': prop_meta.name,
+                        })
+                        if prop_meta.type:
+                            changed_attrs.append({
+                                'attr': 'type',
+                                'value_after': prop_meta.type_repr,
+                            })
+                        if prop_meta.ref:
+                            changed_attrs.append({
+                                'attr': 'ref',
+                                'value_after': prop_meta.ref,
+                            })
+                        if prop_meta.level_given:
+                            changed_attrs.append({
+                                'attr': 'level',
+                                'value_after': prop_meta.level_given,
+                            })
+                        if prop_meta.access:
+                            changed_attrs.append({
+                                'attr': 'access',
+                                'value_after': prop_meta.access,
+                            })
+                    changes.append({
+                        'title': prop.name,
+                        'url': prop.get_absolute_url(),
+                        'new': new,
+                        'changed_attrs': changed_attrs,
+                        'class': 'prop_metadata'
+                    })
+
+                if enum := prop.enums.first():
+                    for enum_item in enum.enumitem_set.all():
+                        changed_attrs = []
+
+                        if enum_meta := version_items.get(enum_item):
+                            prev_version = enum_meta.metadata.metadataversion_set.filter(
+                                version__created__lt=self.version.created
+                            ).order_by('-version__created').first()
+
+                            if enum.object.model not in models:
+                                changes.append({
+                                    'title': enum.object.model.name,
+                                    'url': enum.object.model.get_absolute_url(),
+                                    'changed_attrs': [],
+                                    'class': 'model_metadata'
+                                })
+                                models.append(enum.object.model)
+                            if enum.object not in props:
+                                changes.append({
+                                    'title': enum.object.name,
+                                    'url': enum.object.get_absolute_url(),
+                                    'changed_attrs': [],
+                                    'class': 'prop_metadata'
+                                })
+                                props.append(enum.object)
+
+                            if prev_version:
+                                new = False
+                                if prev_version.prepare != enum_meta.prepare:
+                                    changed_attrs.append({
+                                        'attr': 'prepare',
+                                        'value_before': prev_version.prepare,
+                                        'value_after': enum_meta.prepare,
+                                    })
+                                if prev_version.source != enum_meta.source:
+                                    changed_attrs.append({
+                                        'attr': 'source',
+                                        'value_before': prev_version.source,
+                                        'value_after': enum_meta.source,
+                                    })
+                            else:
+                                new = True
+                                if enum_meta.prepare:
+                                    changed_attrs.append({
+                                        'attr': 'prepare',
+                                        'value_after': enum_meta.prepare,
+                                    })
+                                if enum_meta.source:
+                                    changed_attrs.append({
+                                        'attr': 'source',
+                                        'value_after': enum_meta.source,
+                                    })
+                            changes.append({
+                                'title': enum_item,
+                                'url': prop.get_absolute_url(),
+                                'new': new,
+                                'changed_attrs': changed_attrs,
+                                'class': 'enum_metadata'
+                            })
+
+        context['changes'] = changes
+
+        return context
+
+    def get_history_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_plan_object(self):
+        return self.dataset
+
+    def get_structure_url(self):
+        return reverse('version-list', kwargs={
+            'pk': self.dataset.pk,
+        })

@@ -1,3 +1,4 @@
+import datetime
 import json
 import uuid
 
@@ -20,10 +21,11 @@ from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
-    PrefixFactory, ParamItemFactory, ParamFactory
+    PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory
 from vitrina.structure.models import Metadata, Enum, EnumItem, Param
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
+from vitrina.structure.models import Version as _Version
 
 
 @pytest.mark.django_db
@@ -1987,3 +1989,768 @@ def test_param_delete(app: DjangoTestApp):
     resp = app.get(reverse('param-delete', args=[dataset.pk, param_item.pk]))
     assert resp.url == distribution.get_absolute_url()
     assert distribution.params.first().paramitem_set.count() == 0
+
+
+@pytest.mark.django_db
+def test_new_version_with_new_structure(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date(2000, 1, 1)
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [["Galima nurodyti tik šiandienos arba ateities datą."]]
+
+
+@pytest.mark.django_db
+def test_new_version_with_new_structure(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    assert _Version.objects.count() == 1
+    assert _Version.objects.first().dataset == dataset
+    assert sorted(list(_Version.objects.first().metadataversion_set.values_list(
+        'metadata__pk', flat=True
+    ))) == sorted([
+        dataset_meta.pk,
+        model_meta.pk,
+        prop_meta.pk
+    ])
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    dataset_meta.name = "test/dataset1"
+    dataset_meta.draft = True
+    dataset_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(dataset),
+        metadata__object_id=dataset.pk
+    ).first().name == 'test/dataset'
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == dataset
+    assert new_version.metadataversion_set.first().name == 'test/dataset1'
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    model_meta.name = "test/dataset/TestModel1"
+    model_meta.draft = True
+    model_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [model_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(model),
+        metadata__object_id=model.pk
+    ).first().name == "test/dataset/TestModel"
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == model
+    assert new_version.metadataversion_set.first().name == "test/dataset/TestModel1"
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    prop_meta.name = "prop1"
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(prop),
+        metadata__object_id=prop.pk
+    ).first().name == "prop"
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == prop
+    assert new_version.metadataversion_set.first().name == 'prop1'
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    base_model = ModelFactory(dataset=dataset)
+    base_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(base_model),
+        object_id=base_model.pk,
+        dataset=dataset,
+        name="test/dataset/BaseModel"
+    )
+    base = BaseFactory(model=base_model)
+    base_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(base),
+        object_id=base.pk,
+        dataset=dataset,
+        name="test/dataset/BaseModel"
+    )
+    model.base = base
+    model.save()
+    model_meta.draft = True
+    model_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [model_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(model),
+        metadata__object_id=model.pk
+    ).first().base is None
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == model
+    assert new_version.metadataversion_set.first().base == base
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    model_meta.ref = 'id'
+    model_meta.draft = True
+    model_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [model_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(model),
+        metadata__object_id=model.pk
+    ).first().ref is None
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == model
+    assert new_version.metadataversion_set.first().ref == 'id'
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    prop_meta.type = 'integer'
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(prop),
+        metadata__object_id=prop.pk
+    ).first().type == 'string'
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == prop
+    assert new_version.metadataversion_set.first().type == 'integer'
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    prop_meta.ref = "test/dataset/TestModel"
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(prop),
+        metadata__object_id=prop.pk
+    ).first().ref is None
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == prop
+    assert new_version.metadataversion_set.first().ref == "test/dataset/TestModel"
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        level_given=3
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    model_meta.level_given = 5
+    model_meta.draft = True
+    model_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [model_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(model),
+        metadata__object_id=model.pk
+    ).first().level_given == 3
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == model
+    assert new_version.metadataversion_set.first().level_given == 5
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+        level_given=3
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    prop_meta.level_given = 5
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(prop),
+        metadata__object_id=prop.pk
+    ).first().level_given == 3
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == prop
+    assert new_version.metadataversion_set.first().level_given == 5
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__property_access(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+        access=3
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    prop_meta.access = 5
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(prop),
+        metadata__object_id=prop.pk
+    ).first().access == 3
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == prop
+    assert new_version.metadataversion_set.first().access == 5
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+        access=3
+    )
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    enum_item = EnumItemFactory(enum=enum)
+    enum_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title='Test value',
+        description='For testing',
+        prepare='1',
+        access=Metadata.OPEN,
+        source="TEST",
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    enum_meta.prepare = '2'
+    enum_meta.draft = True
+    enum_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [enum_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(enum_item),
+        metadata__object_id=enum_item.pk
+    ).first().prepare == '1'
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == enum_item
+    assert new_version.metadataversion_set.first().prepare == '2'
+
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    model = ModelFactory()
+    dataset = model.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+        access=3
+    )
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    enum_item = EnumItemFactory(enum=enum)
+    enum_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title='Test value',
+        description='For testing',
+        prepare='1',
+        access=Metadata.OPEN,
+        source="TEST",
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+
+    enum_meta.source = 'TEST1'
+    enum_meta.draft = True
+    enum_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today()
+    form['metadata'] = [enum_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+
+    assert dataset.dataset_version.count() == 2
+    old_version = dataset.dataset_version.order_by('created').first()
+    assert old_version.metadataversion_set.filter(
+        metadata__content_type=ContentType.objects.get_for_model(enum_item),
+        metadata__object_id=enum_item.pk
+    ).first().source == 'TEST'
+    new_version = dataset.dataset_version.order_by('-created').first()
+    assert new_version.metadataversion_set.count() == 1
+    assert new_version.metadataversion_set.first().metadata.object == enum_item
+    assert new_version.metadataversion_set.first().source == 'TEST1'

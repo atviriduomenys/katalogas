@@ -10,6 +10,8 @@ from django.db.models import Q, Max, Avg
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.structure.helpers import get_type_repr
+
 
 class Prefix(models.Model):
     name = models.CharField(_("Pavadinimas"), max_length=255)
@@ -79,6 +81,8 @@ class Metadata(models.Model):
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
     type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
+    metadata_version = models.ForeignKey('Version', verbose_name=_("Versija"), on_delete=models.PROTECT, null=True)
+    draft = models.BooleanField(_("Priskirta versijai"), default=True,)
 
     objects = MetadataManager()
 
@@ -103,6 +107,12 @@ class Metadata(models.Model):
                 ).first():
                     link = f"{prefix.uri}{name}"
         return link
+
+    @property
+    def type_repr(self):
+        if self.type:
+            return get_type_repr(self)
+        return ""
 
 
 class Base(models.Model):
@@ -416,4 +426,74 @@ class ParamItem(models.Model):
     def __str__(self):
         if metadata := self.metadata.first():
             return metadata.name
+        return ""
+
+
+class Version(models.Model):
+    dataset = models.ForeignKey(
+        'vitrina_datasets.Dataset',
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.PROTECT,
+        related_name='dataset_version'
+    )
+    version = models.IntegerField(_("Versija"), null=True, blank=True)
+    created = models.DateTimeField(_("Sukūrimo data"), auto_now_add=True)
+    released = models.DateField(_("Išleidimo data"), null=True, blank=True)
+    description = models.TextField(_("Aprašymas"), null=True, blank=True)
+    deployed = models.DateTimeField(_("Įkėlimo į saugyklą data"), null=True, blank=True)
+
+    class Meta:
+        db_table = 'version'
+        verbose_name = _('Versija')
+        unique_together = (('dataset', 'version'),)
+
+    def __str__(self):
+        return f"v{self.version}"
+
+
+class MetadataVersion(models.Model):
+    UNDEFINED = None
+    PRIVATE = 0
+    PROTECTED = 1
+    PUBLIC = 2
+    OPEN = 3
+    ACCESS_TYPES = (
+        (UNDEFINED, _("nepasirinkta")),
+        (PRIVATE, _("private")),
+        (PROTECTED, _("protected")),
+        (PUBLIC, _("public")),
+        (OPEN, _("open")),
+    )
+
+    version = models.ForeignKey(Version, verbose_name=_("Versija"), on_delete=models.CASCADE)
+    metadata = models.ForeignKey(Metadata, verbose_name=_("Metaduomenys"), on_delete=models.CASCADE)
+
+    # Metadata changes that are included in version
+    name = models.CharField(_("Vardas"), max_length=255, blank=True, null=True)
+    type = models.CharField(_("Tipas"), max_length=255, blank=True, null=True)
+    required = models.BooleanField(_("Privalomas"), null=True, blank=True)
+    unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
+    type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
+    ref = models.CharField(_("Ryšys"), max_length=255, blank=True, null=True)
+    source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
+    prepare = models.CharField(_("Formulė"), max_length=255, blank=True, null=True)
+    level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
+    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
+    base = models.ForeignKey(
+        'Base',
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Bazė"),
+    )
+
+    class Meta:
+        db_table = 'metadata_version'
+        verbose_name = _('Metaduomenų versija')
+        unique_together = (('metadata', 'version'),)
+
+    @property
+    def type_repr(self):
+        if self.type:
+            return get_type_repr(self)
         return ""

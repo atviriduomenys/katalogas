@@ -22,6 +22,7 @@ from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import spyna
+from vitrina.structure.helpers import get_type_repr
 from vitrina.structure.models import Metadata, Model, Property, Prefix, Enum, EnumItem, PropertyList, Param, \
     ParamItem, Base
 from vitrina.tasks.models import Task
@@ -428,6 +429,48 @@ def _create_or_update_metadata(
             content_type=ct,
             dataset=dataset
         ).first()
+
+        type_args = ", ".join(obj_meta.type_args) \
+            if hasattr(obj_meta, 'type_args') and obj_meta.type_args else None
+        access = _parse_access(obj_meta.access)
+
+        if (
+            (
+                isinstance(metadata.object, Dataset) and
+                metadata.name != obj_meta.name
+            ) or (
+                isinstance(metadata.object, Model) and
+                (
+                    metadata.name != obj_meta.name or
+                    metadata.ref != obj_meta.ref or
+                    metadata.level_given != obj_meta.level_given or
+                    (metadata.object.base and obj_meta.base and
+                     metadata.object.base.model.full_name != obj_meta.base.name) or
+                    (not metadata.object.base and obj_meta.base) or
+                    (metadata.object.base and not obj_meta.base)
+                )
+            ) or (
+                isinstance(metadata.object, Property) and
+                (
+                    metadata.name != obj_meta.name or
+                    metadata.type != obj_meta.type or
+                    metadata.required != obj_meta.required or
+                    metadata.unique != obj_meta.unique or
+                    metadata.type_args != type_args or
+                    metadata.ref != obj_meta.ref or
+                    metadata.level_given != obj_meta.level_given or
+                    metadata.access != access
+                )
+            ) or (
+                isinstance(metadata.object, EnumItem) and
+                (
+                    metadata.prepare != obj_meta.prepare or
+                    metadata.source != obj_meta.source
+                )
+            )
+        ):
+            metadata.draft = True
+
         metadata.uuid = obj_meta.id
         metadata.name = obj_meta.name if hasattr(obj_meta, 'name') else ''
         metadata.type = obj_meta.type if hasattr(obj_meta, 'type') else ''
@@ -437,7 +480,7 @@ def _create_or_update_metadata(
         metadata.prepare_ast = _parse_prepare(obj_meta.prepare, obj_meta)
         metadata.level = obj_meta.level
         metadata.level_given = obj_meta.level_given
-        metadata.access = _parse_access(obj_meta.access)
+        metadata.access = access
         metadata.uri = obj_meta.uri
         metadata.version = metadata.version + 1 if metadata.version else 1
         metadata.title = obj_meta.title
@@ -445,8 +488,7 @@ def _create_or_update_metadata(
         metadata.order = order
         metadata.required = obj_meta.required if hasattr(obj_meta, 'required') else None
         metadata.unique = obj_meta.unique if hasattr(obj_meta, 'unique') else None
-        metadata.type_args = ", ".join(obj_meta.type_args) \
-            if hasattr(obj_meta, 'type_args') and obj_meta.type_args else None
+        metadata.type_args = type_args
         metadata.save()
 
         obj = metadata.object
@@ -1032,7 +1074,7 @@ def _properties_to_tabular(model: Model):
             yield to_row(DATASET, {
                 'id': meta.uuid,
                 'property': meta.name,
-                'type': _get_type_repr(meta),
+                'type': get_type_repr(meta),
                 'level': meta.level_given,
                 'access': _get_access(meta.access),
                 'uri': meta.uri,
@@ -1045,16 +1087,6 @@ def _properties_to_tabular(model: Model):
 
             yield from _comments_to_tabular(prop)
             yield from _enums_to_tabular(prop)
-
-
-def _get_type_repr(meta: Metadata):
-    required = ' required' if meta.required else ''
-    unique = ' unique' if meta.unique else ''
-    args = ''
-    type = meta.type if meta.type != 'inherit' else ''
-    if meta.type_args:
-        args = f'({meta.type_args})'
-    return f'{type}{args}{unique}{required}'
 
 
 def _to_relative_model_name(name: str, dataset: Dataset) -> str:

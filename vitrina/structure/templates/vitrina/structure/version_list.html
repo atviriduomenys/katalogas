@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Keitimų žurnalas" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate "Struktūra" %}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            <div class="tabs is-toggle">
+                <ul>
+                    <li class="{% if selected_tab == 'not_deployed' %}is-active{% endif %}">
+                        <a href="{% url 'version-list' dataset.pk %}?status=not_deployed">
+                            <span>{% translate "Numatyti keitimai" %}</span>
+                        </a>
+                    </li>
+                    <li class="{% if selected_tab == 'deployed' %}is-active{% endif %}">
+                        <a href="{% url 'version-list' dataset.pk %}?status=deployed">
+                            <span>{% translate "Galiojantys keitimai" %}</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            {% if versions %}
+                <div class="table-container">
+                    <table class="table is-fullwidth">
+                        <tbody>
+                        <tr>
+                            <th>{% translate "Versija" %}</th>
+                            <th>{% translate "Įsigaliojimo data" %}</th>
+                            <th>{% translate "Aprašymas" %}</th>
+                        </tr>
+                        {% for version in versions %}
+                            <tr>
+                                <td><a href="{% url 'version-detail' dataset.pk version.pk %}">{{ version }}</a></td>
+                                <td>{{ version.released|date:"SHORT_DATE_FORMAT" }}</td>
+                                <td>{{ version.description }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>{% translate "Keitimų nėra." %}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

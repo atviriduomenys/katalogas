@@ -1,9 +1,12 @@
+import datetime
+
 import markdown
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Q, Count
+from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +15,7 @@ from lark import ParseError
 
 from vitrina.structure import spyna
 from vitrina.structure.helpers import is_time_unit, is_si_unit
-from vitrina.structure.models import EnumItem, Metadata, Property, Model, Prefix
+from vitrina.structure.models import EnumItem, Metadata, Property, Model, Prefix, Version
 
 
 class EnumForm(forms.ModelForm):
@@ -721,3 +724,44 @@ class ParamForm(forms.ModelForm):
             except:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
+
+
+# class MetadataChoiceField(forms.ModelMultipleChoiceField):
+#     def label_from_instance(self, obj):
+#         return obj.object.get
+
+
+class VersionForm(forms.ModelForm):
+    released = forms.DateField(
+        label=_("Įsigalioja"),
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    metadata = forms.MultipleChoiceField(
+        label=_("Įtraukiama į versiją"),
+        required=False,
+        widget=CheckboxSelectMultiple
+    )
+
+    class Meta:
+        model = Version
+        fields = ('released', 'description',)
+
+    def __init__(self, dataset, *args, **kwargs):
+        self.dataset = dataset
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "version-form"
+        self.helper.layout = Layout(
+            Field('released'),
+            Field('description',),
+            Field('metadata'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+        )
+        self.fields['metadata'].choices = self.dataset.get_metadata_objects_for_version()
+
+    def clean_released(self):
+        released = self.cleaned_data.get('released')
+        if released and released < datetime.datetime.today().date():
+            raise ValidationError(_('Galima nurodyti tik šiandienos arba ateities datą.'))
+        return released

@@ -1,13 +1,18 @@
 import pathlib
 import tagulous
+import requests
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.db.models import Sum
+from django.dispatch import receiver
 from django.urls import reverse
 
+from django.apps import apps
+
 from filer.fields.file import FilerFileField
+from parler.signals import post_translation_save
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
@@ -20,6 +25,8 @@ from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
+from vitrina.settings import TRANSLATION_CLIENT_ID
+
 from django.utils.translation import gettext_lazy as _
 
 
@@ -27,7 +34,7 @@ class DatasetGroup(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
     )
-    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
     class Meta:
         ordering = ['created']
@@ -120,7 +127,8 @@ class Dataset(TranslatableModel):
 
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True,
+                                verbose_name=_('Licenzija'))
 
     status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
@@ -131,7 +139,8 @@ class Dataset(TranslatableModel):
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
+    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True,
+                                  verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
@@ -187,7 +196,8 @@ class Dataset(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
-    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True, null=True)
+    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True,
+                                          null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
     financed = models.BooleanField(blank=True, null=True)
@@ -467,6 +477,49 @@ class Dataset(TranslatableModel):
             )
         )["model_requests__sum"] or 0
 
+    def save_translation(self, translation, *args, **kwargs):
+        if translation.language_code == 'lt':
+            if not self.has_translation(language_code='en'):
+                lt_title = self.lt_title()
+                lt_description = self.lt_description()
+
+                self.create_translation(language_code='en')
+                self.set_current_language('en')
+
+                response_title = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
+
+                response_desc = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
+
+        super(Dataset, self).save_translation(translation, *args, **kwargs)
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
@@ -536,6 +589,8 @@ class HarvestingResult(models.Model):
     class Meta:
         managed = False
         db_table = 'harvesting_result'
+
+
 # --------------------------->8-------------------------------------
 
 
@@ -635,7 +690,8 @@ class DatasetEvent(models.Model):
     user = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
+    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True,
+                               null=True)  # Field renamed because of name conflict.
 
     class Meta:
         managed = False
@@ -784,6 +840,8 @@ class HarvestedVisit(models.Model):
     class Meta:
         managed = False
         db_table = 'harvested_visit'
+
+
 # --------------------------->8-------------------------------------
 
 

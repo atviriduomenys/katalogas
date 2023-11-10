@@ -6,7 +6,6 @@ from django.db.models import Exists, OuterRef
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, UpdateView, DeleteView, DetailView
-from reversion import set_comment
 
 from vitrina import settings
 from vitrina.comments.models import Comment

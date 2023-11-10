@@ -87,8 +87,8 @@ class VIISPCompleteLoginView(View):
         user = User.objects.filter(email=user_data.get('email')).first()
         if user:
             user_social_account = SocialAccount.objects.filter(user__email=user.email).first()
-            login = provider.sociallogin_from_response(request, user_data)
             if token:
+                login = provider.sociallogin_from_response(request, user_data)
                 return perform_login(
                     request,
                     user,
@@ -97,6 +97,7 @@ class VIISPCompleteLoginView(View):
                     signal_kwargs={"sociallogin": login},
                 )
             elif user_social_account:
+                login = provider.sociallogin_from_response(request, user_data)
                 personal_code_bytes = user_data.get('personal_code').encode('utf-8')
                 if bcrypt.checkpw(personal_code_bytes, user_social_account.extra_data.get('personal_code').encode('utf-8')):
                     if not user_social_account.extra_data.get('password_not_set'):

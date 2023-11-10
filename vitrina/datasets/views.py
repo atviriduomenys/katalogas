@@ -625,6 +625,7 @@ class DatasetUpdateView(
         if 'name' in form.changed_data:
             if metadata := self.object.metadata.first():
                 metadata.name = form.cleaned_data.get('name')
+                metadata.draft = True
                 metadata.save()
             else:
                 Metadata.objects.create(

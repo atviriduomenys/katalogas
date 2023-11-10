@@ -381,6 +381,7 @@ class DatasetDetailView(
             'resources': dataset.datasetdistribution_set.all(),
             'org_logo': organization.image,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
+            'data_maturity': dataset.metadata_set.average_level()
         }
         part_of = dataset.part_of.order_by('relation')
         part_of = itertools.groupby(part_of, lambda x: x.relation)

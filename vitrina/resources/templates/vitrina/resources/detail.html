@@ -81,7 +81,12 @@
                                 <tr>
                                     <th>{% translate "Atnaujinta" %}</th>
                                     {% if resource.dataset.frequency.hours == 0 %}
-                                        <td>{% translate 'Realiu laiku' %}</td>
+                                        {% get_current_language as LANGUAGE_CODE %}
+                                        {% if LANGUAGE_CODE == "EN" %}
+                                            <td>{{dataset.frequency.title_en}}</td>
+                                        {% else %}
+                                            <td>{{dataset.frequency.title}}</td>
+                                        {% endif %}
                                     {% else %}
                                         <td>{{ resource.modified|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                     {% endif %}

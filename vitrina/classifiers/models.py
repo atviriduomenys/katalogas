@@ -66,7 +66,6 @@ class Licence(models.Model):
 
 
 class Frequency(models.Model):
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -78,6 +77,7 @@ class Frequency(models.Model):
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
     hours = models.IntegerField(verbose_name=_('Valandos'), blank=True, null=True)
+    code = models.CharField(unique=True, max_length=255, verbose_name='Kodas', null=True, blank=True)
 
     class Meta:
         db_table = 'frequency'

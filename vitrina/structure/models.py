@@ -6,7 +6,7 @@ import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Avg
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -34,6 +34,11 @@ class Prefix(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class MetadataManager(models.Manager):
+    def average_level(self):
+        return self.exclude(average_level__isnull=True).aggregate(Avg('average_level'))['average_level__avg']
 
 
 class Metadata(models.Model):
@@ -75,7 +80,7 @@ class Metadata(models.Model):
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
     type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
 
-    objects = models.Manager()
+    objects = MetadataManager()
 
     class Meta:
         db_table = 'metadata'

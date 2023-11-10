@@ -6,14 +6,20 @@
     <form id="quick-search" class="field has-addons media-content"
         action="{% url 'dataset-list' %}" method="get" autocomplete="off">
         <p class="control">
-            <button class="button is-primary is-large" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
+            <button class="button is-primary is-large" type="submit"
+                    title="{% translate 'Ieškoti' %}"
+                    aria-label="{% translate 'Ieškoti' %}">
                 <span class="icon">
                     <i class="fas fa-search"></i>
                 </span>
             </button>
         </p>
         <p class="control is-expanded">
-            <input name="q" class="input search-input is-large" type="text" value="{{ q | escape }}" placeholder="{% translate "Ieškoti duomenų..." %}" id="search-input" title="{% translate "Ieškoti duomenų..." %}">
+            <label class="visually-hidden" for="search-input">{% translate 'Duomenų paieška' %}</label>
+            <input name="q" class="input search-input is-large"
+                   type="text" value="{{ q | escape }}"
+                   placeholder="{% translate 'Ieškoti duomenų...' %}"
+                   id="search-input" title="{% translate 'Ieškoti duomenų...' %}">
         </p>
     </form>
     <div></div>

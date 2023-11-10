@@ -10,26 +10,6 @@ class Migration(migrations.Migration):
         ('vitrina_requests', '0007_auto_20230803_0507'),
     ]
 
-    def create_assignment_for_requests_with_org(apps, schema_editor):
-        Request = apps.get_model("vitrina_requests", "Request")
-        RequestAssignment = apps.get_model("vitrina_requests", "RequestAssignment")
-        requests = Request.objects.all()
-        for request in requests:
-            if len(request.organizations.all()) > 0:
-                for org in request.organizations.all():
-                    request_assignment_exists = RequestAssignment.objects.filter(
-                        organization=org,
-                        request=request
-                    ).first()
-                    if not request_assignment_exists:
-                        reqA = RequestAssignment.objects.create(
-                            organization=org,
-                            request=request,
-                            status=request.status
-                        )
-                        reqA.save()
-
-
     operations = [
         migrations.CreateModel(
             name='RequestAssignment',
@@ -37,9 +17,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('status', models.CharField(blank=True, choices=[('REJECTED', 'Atmestas'), ('APPROVED', 'Patvirtintas'), ('CREATED', 'Pateiktas'), ('OPENED', 'Atvertas'), ('ANSWERED', 'Atsakytas')], max_length=255, null=True)),
                 ('organization', models.ForeignKey(blank=True, db_column='organization', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_orgs.organization')),
-                ('request', models.ForeignKey(blank=True, db_column='request', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_requests.request')),
-                ('created', models.DateTimeField(blank=True, null=True, auto_now_add=True))
+                ('request', models.ForeignKey(blank=True, db_column='request', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_requests.request'))
             ],
-        ),
-        migrations.RunPython(create_assignment_for_requests_with_org),
+        )
     ]

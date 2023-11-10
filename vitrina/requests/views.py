@@ -4,13 +4,32 @@ import pandas as pd
 import pytz
 from collections import OrderedDict
 from datetime import date, datetime
-from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Case, Count, When, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.generic.base import View
+
+from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.datasets.forms import PlanForm
+from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.models import Representative
+from vitrina.helpers import get_selected_value
+from vitrina.helpers import Filter
+from vitrina.helpers import DateFilter
+from reversion import set_comment
+from vitrina.requests.services import update_facet_data
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
+from reversion.views import RevisionMixin
+from vitrina.datasets.models import Dataset, DatasetGroup
+from vitrina.classifiers.models import Category
+from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
+
+from vitrina.plans.models import Plan, PlanRequest
+from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm, \
+    RequestDatasetsEditForm
+from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +39,8 @@ from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
 from typing import List
+from urllib.parse import urlencode
+
 
 import vitrina.settings as settings
 from vitrina.comments.models import Comment
@@ -28,8 +49,10 @@ from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (get_frequency_and_format,
                                        get_query_for_frequency,
                                        get_values_for_frequency,
-                                       sort_publication_stats)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, prepare_email_by_identifier, send_email_with_logging
+                                       sort_publication_stats,
+                                       get_requests)
+from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
+    get_stats_filter_options_based_on_model
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
@@ -47,7 +70,9 @@ from vitrina.requests.models import (Organization,
 from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
-from vitrina.views import HistoryMixin, HistoryView, PlanMixin
+from vitrina.views import HistoryView, HistoryMixin, PlanMixin
+from django.contrib import messages
+from django.http.response import HttpResponsePermanentRedirect
 
 ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
@@ -75,6 +100,13 @@ class RequestListView(FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def get(self, request, **kwargs):
+        legacy_org_redirect = self.request.GET.get('organization_id')
+        if legacy_org_redirect:
+            new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
+            return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        return super().get(request)
 
     def get_queryset(self):
         requests = super().get_queryset()
@@ -214,6 +246,17 @@ class RequestStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
+    def update_context_data(self, context):
+        super().update_context_data(context)
+
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
+        sorting = self.request.GET.get('sort', None) or 'sort-desc'
+        duration = self.request.GET.get('duration', None) or 'duration-yearly'
+
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
+
+        return context
+
 
 class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     title = _("Būsena")
@@ -229,7 +272,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         statuses = self.get_filter_data(facet_fields)
         requests = context['object_list']
 
-        indicator = self.request.GET.get('indicator', None) or 'request-count'
+        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = self.get_start_date()
@@ -300,9 +343,6 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['has_time_graph'] = self.has_time_graph
 
         context['active_filter'] = self.filter
-        context['active_indicator'] = indicator
-        context['sort'] = sorting
-        context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
         context['xAxis_title'] = self.get_time_axis_title(indicator)
@@ -311,6 +351,8 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
 
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
+
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
 
         return context
 
@@ -471,6 +513,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
         return context
 
 
@@ -559,6 +602,13 @@ class RequestQuarterStatsView(RequestListView):
         return context
 
 
+class RequestRedirectView(View):
+    def get(self, request, **kwargs):
+        uuid = kwargs.get('uuid')
+        request = get_object_or_404(Request, uuid=uuid)
+        return HttpResponsePermanentRedirect(reverse('request-detail', kwargs={'pk': request.pk}))
+
+
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     model = Request
     template_name = 'vitrina/requests/detail.html'
@@ -595,30 +645,6 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
-        if request.status == "REJECTED":
-            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
-                                                     'Poreikis atmestas', [request.comment])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-        elif request.status == "APPROVED":
-            email_data = prepare_email_by_identifier('request-approved',
-                                                     'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
-                                                     'Poreikis patvirtintas',
-                                                     [])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
-        elif request.status == "CREATED":
-            email_data = prepare_email_by_identifier('request-registered',
-                                                     self.request_add_email_base_template,
-                                                     'Užregistruotas naujas poreikis',
-                                                     [request.title])
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
-
         return context_data
 
 
@@ -706,6 +732,10 @@ class RequestCreateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio registravimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+        }
         return context_data
 
 
@@ -893,6 +923,11 @@ class RequestUpdateView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data['current_title'] = _('Poreikio redagavimas')
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai'),
+            reverse('request-detail', args=[self.object.pk]): self.object.title,
+        }
         return context_data
 
 
@@ -1173,6 +1208,68 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
 
     def get_history_object(self):
         return self.request_obj
+
+class RequestDatasetsEditView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    UpdateView
+):
+    model = Request
+    form_class = RequestDatasetsEditForm
+    template_name = 'vitrina/requests/request_dataset_add.html'
+    context_object_name = 'request_object'
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        datasets = form.cleaned_data.get('datasets')
+        for dataset in datasets:
+            RequestObject.objects.create(request=self.object, object_id=dataset.pk,
+                content_type=ContentType.objects.get_for_model(Dataset)
+            )
+            ra_object_exists = RequestAssignment.objects.filter(
+                organization=dataset.organization,
+                request=self.object,                
+            )
+            if not ra_object_exists:
+                RequestAssignment.objects.create(
+                    organization=dataset.organization,
+                    request=self.object,
+                    status=self.object.CREATED
+                )
+        return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.object.id}))
+
+    def has_permission(self):
+        return self.request.user and self.request.user.organization
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Šio poreikio duomenų rinkinių keisti negalite.')
+        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.kwargs.get('pk')}))
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        form = context_data.get('form')
+        form.fields.get('datasets').queryset = Dataset.objects.filter(
+            organization=self.request.user.organization
+        )[:20]
+        context_data['current_title'] = _('Poreikio duomenų rinkinių redagavimas')
+        return context_data
+
+class RequestDatasetsEditUpdateView(
+    RequestDatasetsEditView
+):
+    template_name = 'vitrina/requests/request_dataset_add_items.html'
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        term = self.request.GET.get('q')
+        if term:
+            form = context_data.get('form')
+            form.fields.get('datasets').queryset = Dataset.objects.filter(
+                organization=self.request.user.organization,
+                translations__title__istartswith=term
+            ).order_by('translations__title')[:20]
+        return context_data
 
 
 class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):

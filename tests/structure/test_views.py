@@ -766,7 +766,7 @@ def test_private_comment(app: DjangoTestApp):
     create_structure_objects(structure)
 
     resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
-    assert sorted([comment.body for comment, _ in resp.context['comments']]) == [
+    assert sorted([comment.body for comment, _, _ in resp.context['comments']]) == [
         'Public comment'
     ]
 
@@ -799,7 +799,7 @@ def test_private_comment_with_access(app: DjangoTestApp):
     app.set_user(representative.user)
 
     resp = app.get(reverse('model-structure', args=[structure.dataset.pk, 'Country']))
-    assert sorted([comment.body for comment, _ in resp.context['comments']]) == [
+    assert sorted([comment.body for comment, _, _ in resp.context['comments']]) == [
         'Private comment',
         'Public comment',
     ]

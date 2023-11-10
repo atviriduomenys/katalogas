@@ -23,26 +23,22 @@
       </div>
 
       <div class="column is-9">
-
         {% if item.selected %}
         <a href="{{ item.url }}" class="category-panel-block has-text-weight-bold has-text-dark" id="{{ item.name }}_id">
         {% else %}
         <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
         {% endif %}
-
           {% if filter.name == 'level' %}
             <span class="icon-text">
               {% for star in item.value|range %}
               <i class="fas fa-star"></i>
               {% endfor %}
             </span>
-
           {% else %}
             {{ item.title }}
           {% endif %}
         </a>
       </div>
-
       <div class="column is-2 has-text-right">
         <span class="is-size-6">({{ item.count }})</span>
       </div>

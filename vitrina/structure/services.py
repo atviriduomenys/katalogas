@@ -646,7 +646,6 @@ def _link_base(
         if base_model := Model.objects.filter(
             metadata__content_type=model_ct,
             metadata__name=meta.name,
-            dataset=dataset,
         ).first():
             if base := Base.objects.filter(
                 ~Q(metadata__uuid=meta.id),
@@ -695,7 +694,6 @@ def _link_properties(
                 if ref_model := Model.objects.filter(
                     metadata__name=prop_meta.ref,
                     metadata__content_type=model_ct,
-                    dataset=dataset
                 ).first():
                     prop.ref_model = ref_model
                     prop.save()

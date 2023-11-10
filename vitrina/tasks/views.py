@@ -4,7 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import ListView, DetailView, DeleteView, UpdateView, TemplateView
+from django.views.generic import ListView, DetailView, DeleteView, TemplateView
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Action, has_perm
@@ -116,6 +117,11 @@ class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('user-task-list', kwargs={'pk': self.request.user.pk}))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Užduoties uždarymas')
+        return context
 
     def delete(self, request, *args, **kwargs):
         self.object.status = Task.COMPLETED

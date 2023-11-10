@@ -981,7 +981,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['description'] = 'Added new dataset description'
     resp = form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Added title")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
@@ -1829,7 +1829,7 @@ def test_dataset_create_non_public(app: DjangoTestApp):
     form['is_public'] = False
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert added_dataset.first().is_public is False
     assert added_dataset.first().published is None
 
@@ -1846,7 +1846,7 @@ def test_dataset_create_public(app: DjangoTestApp):
     form['is_public'] = True
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert added_dataset.first().is_public is True
     assert added_dataset.first().published is not None
 

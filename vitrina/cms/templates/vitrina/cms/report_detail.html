@@ -6,6 +6,20 @@
 
 {% block head %}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+    <li><a href="/more/reports"><span>{% translate 'Ataskaitos' %}</span></a></li>
+</ul>
+{% endblock %}
+
 {% block content %}
     <div class="columns">
         <div class="column">

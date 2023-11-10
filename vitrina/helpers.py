@@ -21,11 +21,14 @@ from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
 
 from vitrina import settings
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
 from vitrina.messages.models import EmailTemplate
+from vitrina.orgs.models import Organization
+from vitrina.requests.models import Request
 
 
 class Filter:
@@ -482,3 +485,67 @@ def send_email_with_logging(email_data, email_list):
         import logging
         logging.warning("Email was not sent", _(email_data['email_subject']),
                         _(email_data['email_content']), email_list, e)
+
+
+def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
+    duration = {
+        'selected': duration,
+        'label': _("Laikotarpis"),
+        'fields': [
+            {'value': 'duration-yearly', 'label': _("Kas metus")},
+            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
+            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
+            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
+            {'value': 'duration-daily', 'label': _("Kas dieną")}
+        ],
+    }
+    sort = {
+            'selected': sorting,
+            'label': _("Rūšiuoti"),
+            'fields': [
+                {'value': 'sort-year-desc', 'label': _("Naujausi")},
+                {'value': 'sort-year-asc', 'label': _("Seniausi")},
+            ] if indicator == 'publication' else [
+                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
+                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
+            ]
+        }
+    active_indicator = {
+        'selected': indicator,
+        'label': _("Rodiklis"),
+    }
+    if model is Request:
+        active_indicator.update({
+                'fields': [
+                    {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                    {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
+                    {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
+                ]
+            })
+    if model is Dataset and filter:
+        active_indicator.update({
+            'fields': [
+                {'value': 'download-request-count', 'label': _("Atsisiuntimų (užklausų) skaičius")},
+                {'value': 'download-object-count', 'label': _("Atsisiuntimų (objektų) skaičius")},
+                {'value': 'object-count', 'label': _("Objektų skaičius")},
+                {'value': 'field-count', 'label': _("Savybių (duomenų laukų) skaičius")},
+                {'value': 'model-count', 'label': _("Esybių (modelių) skaičius")},
+                {'value': 'distribution-count', 'label': _("Duomenų šaltinių (distribucijų) skaičius")},
+                {'value': 'dataset-count', 'label': _("Duomenų rinkinių skaičius")},
+                {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                {'value': 'project-count', 'label': _("Projektų skaičius")},
+            ] + ([{'value': 'level-average', 'label': _("Brandos lygis (vidurkis)")}] if filter != 'level' else [])
+        })
+    if model is Organization:
+        active_indicator.update({
+            'fields': [
+                {'value': 'organization-count', 'label': _("Organizacijų skaičius (pavaldžių)")},
+                {'value': 'coordinator-count', 'label': _("Koordinatorių skaičius")},
+                {'value': 'representative-count', 'label': _("Tvarkytojų skaičius")},
+            ]
+        })
+    return {
+        'duration': duration,
+        'sort': sort,
+        'active_indicator': active_indicator
+    }

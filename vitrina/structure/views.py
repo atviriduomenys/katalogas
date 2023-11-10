@@ -375,14 +375,15 @@ class PropertyStructureView(
                     transformed_data = []
                     context['graph_type'] = 'map'
                     srid = get_srid(metadata.type_args)
-                    for item in data:
-                        centroid = loads(item.get('centroid'))
-                        x = centroid.x
-                        y = centroid.y
-                        if srid != WGS84:
-                            x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
-                        item['centroid'] = [x, y]
-                        transformed_data.append(item)
+                    if len(data) > 0:
+                        for item in data:
+                            centroid = loads(item.get('centroid'))
+                            x = centroid.x
+                            y = centroid.y
+                            if srid != WGS84:
+                                x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
+                            item['centroid'] = [x, y]
+                            transformed_data.append(item)
                     context['data'] = transformed_data
                     context['source_srid'] = srid
                     context['target_srid'] = WGS84
@@ -390,7 +391,10 @@ class PropertyStructureView(
                     type in ['boolean', 'ref'] or
                     (type in ['string', 'integer'] and self.property.enums.exists())
                 ):
-                    max_count = max([item['count'] for item in data])
+                    if len(data) > 0:
+                        max_count = max([item['count'] for item in data])
+                    else:
+                        max_count = 0
                     context['max_count'] = max_count
                     context['graph_type'] = 'horizontal'
                 else:

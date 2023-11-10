@@ -48,9 +48,7 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'document',
-        'org_code',
-        'org_name',
-        'org_slug', 
+        'organization',
         'account_actions',
     )
 

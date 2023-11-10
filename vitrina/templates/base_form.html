@@ -8,7 +8,16 @@
     {% block parent_links %}
         <ul class="p-t-sm">
             {% for link, title in parent_links.items %}
-                <li><a href="{{ link }}"><span>{{ title }}</span></a></li>
+                <li>
+                    <a href="{{ link }}">
+                    {% if title == "Pradžia" %}
+                        <span class="icon">
+                            <i class="fas fa-home"></i>
+                        </span>
+                    {% endif %}
+                        <span>{{ title }}</span>
+                    </a>
+                </li>
             {% endfor %}
         </ul>
     {% endblock %}
@@ -32,6 +41,9 @@
                         </span>
                     {% endfor %}
                 </div>
+            {% endif %}
+            {% if form_info %}
+                {{ form_info }}
             {% endif %}
             {% include "component/form.html" %}
         </div>

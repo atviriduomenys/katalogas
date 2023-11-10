@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.forms import (BooleanField, CharField, DateField, HiddenInput,
                           ModelChoiceField, ModelForm,
+                          CheckboxSelectMultiple,
                           ModelMultipleChoiceField, RadioSelect, Textarea)
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -15,6 +16,8 @@ from haystack.forms import FacetedSearchForm, SearchForm
 from vitrina.orgs.models import Organization
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.models import Request
+from vitrina.datasets.models import Dataset
+from django.utils.html import format_html
 
 from django_select2.forms import ModelSelect2MultipleWidget
 
@@ -54,11 +57,12 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
             return queryset.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
 
 
+
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
-        label="Organizacija",
+        label=_("Organizacija"),
         widget=ProviderWidget,
         queryset=Organization.objects.filter(),
         to_field_name="pk",
@@ -117,6 +121,35 @@ class RequestEditOrgForm(ModelForm):
             Submit('submit', button, css_class='button is-primary')
         )
 
+
+class IconChoiceField(ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        return format_html('{} <a href="{}" target="_blank"><i class="fas fa-solid fa-chevron-right"></i></a>',
+                           obj.title, obj.get_absolute_url())
+
+class RequestDatasetsEditForm(ModelForm):
+    datasets = IconChoiceField(
+        label="Duomenų rinkinys",
+        widget=CheckboxSelectMultiple,
+        queryset=Dataset.objects.filter(),
+        to_field_name="pk"
+    )
+
+    class Meta:
+        model = Request
+        fields = ['datasets']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        button = _("Priskirti pažymėtus")
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "request-add-dataset-form"
+        self.initial['datasets'] = []
+        self.helper.layout = Layout(
+            Field('datasets', placeholder=_('Duomenų rinkinys')),
+            Submit('submit', button, css_class='button is-primary')
+        )
 
 class RequestSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)

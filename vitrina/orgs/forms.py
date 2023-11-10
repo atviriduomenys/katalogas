@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django_select2.forms import ModelSelect2Widget
+from haystack.forms import SearchForm
 
 from vitrina.api.services import is_duplicate_key
 from vitrina.fields import FilerImageField
@@ -22,6 +23,33 @@ from vitrina.plans.models import Plan
 from vitrina.viisp.xml_utils import read_adoc_file, parse_adoc_xml_signature_data
 from vitrina.users.models import User
 
+class ProviderWidget(ModelSelect2Widget):
+    model = Organization
+    search_fields = ['title__icontains']
+    dependent_fields = {
+        'organizations': 'organizations',
+    }
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        ids = []
+        if 'organizations__in' in dependent_fields:
+            organizations = dependent_fields.pop('organizations__in')
+            ids.extend(organizations)
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+
+        provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
+        ids.extend(provider_orgs)
+        queryset = queryset.filter(pk__in=ids)
+        return queryset
+
+class OrganizationWidget(ModelSelect2Widget):
+    model = Organization
+    search_fields = ['title__icontains']
+    max_results = 10
+
+    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
+        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
+        return queryset
 
 class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
@@ -183,30 +211,21 @@ class RepresentativeCreateForm(ModelForm):
 
 
 class PartnerRegisterForm(ModelForm):
+    organization = ModelChoiceField(
+        label=_("Organizacija"),
+        required=True,
+        queryset=Organization.public.all(),
+        widget=OrganizationWidget(attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0})
+    )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
-    coordinator_first_name = CharField(label=_("Koordinatoriaus vardas"))
-    coordinator_last_name = CharField(label=_("Koordinatoriaus pavardė"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
-    password = CharField(label=_("Slaptažodis"), strip=False,
-            widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
-    confirm_password = CharField(label=_("Pakartokite slaptažodį"), strip=False,
-            widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
-    company_code = CharField(label=_("Organizacijos kodas"))
-    company_name = CharField(label=_("Organizacijos pavadinimas"))
-    company_slug = CharField(label=_("Organizacijos trumpinys"), validators=[validate_slug])
-    request_form = FileField(label=_("Prašymo forma"))
+    request_form = FileField(label=_("Prašymo forma"), required=True)   
     class Meta:
         model = Organization
         fields = [
-            'coordinator_first_name',
-            'coordinator_last_name',
+            'organization',
             'coordinator_phone_number',
             'coordinator_email',
-            'password',
-            'confirm_password',
-            'company_code',
-            'company_name',
-            'company_slug',
             'request_form'
         ]
 
@@ -216,64 +235,15 @@ class PartnerRegisterForm(ModelForm):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "partner-register-form"
         self.helper.layout = Layout(
-            Field('coordinator_first_name', value=initial.get('coordinator_first_name'), readonly=True),
-            Field('coordinator_last_name', value=initial.get('coordinator_last_name'), readonly=True),
+            Field('organization'),
             Field('coordinator_phone_number', value=initial.get('coordinator_phone_number') or ''),
             Field('coordinator_email', value=initial.get('coordinator_email'), readonly=True),
-            Field('password'),
-            Field('confirm_password'),
-            Field('company_code', value=initial.get('company_code') or ''),
-            Field('company_name', value=initial.get('company_name') or ''),
-            Field('company_slug',  value=initial.get('company_slug') or ''),
             Field('request_form'),
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )
 
     def clean(self):
-        user_email = self.cleaned_data.get('coordinator_email')
-        user = User.objects.filter(email=user_email).first()
-        password = self.cleaned_data.get('password')
-        confirm_password = self.cleaned_data.get('confirm_password')
-        company_slug = self.cleaned_data.get('company_slug')
-        if (
-            Organization.objects.
-            filter(
-                slug=company_slug
-            ).
-            exists()
-        ):
-            self.add_error('company_slug', _(
-                "Organizacija šiuo trumpiniu jau egzistuoja."
-            ))
-        elif password != confirm_password:
-            self.add_error('confirm_password', _(
-            "Slaptažodžiai nesutampa"
-        )) 
-        elif not user.check_password(password):
-            self.add_error('password', _(
-            "Neteisingas slaptažodis"
-        ))
         return self.cleaned_data
-
-
-class ProviderWidget(ModelSelect2Widget):
-    model = Organization
-    search_fields = ['title__icontains']
-    dependent_fields = {
-        'organizations': 'organizations',
-    }
-
-    def filter_queryset(self, request, term, queryset=None, **dependent_fields):
-        ids = []
-        if 'organizations__in' in dependent_fields:
-            organizations = dependent_fields.pop('organizations__in')
-            ids.extend(organizations)
-        queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
-
-        provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
-        ids.extend(provider_orgs)
-        queryset = queryset.filter(pk__in=ids)
-        return queryset
 
 
 class OrganizationPlanForm(ModelForm):

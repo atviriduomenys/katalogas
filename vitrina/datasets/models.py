@@ -968,10 +968,12 @@ class DatasetStructure(models.Model):
         db_table = 'dataset_structure'
 
     def __str__(self):
-        if self.dataset.metadata.first().title:
-            return self.dataset.metadata.first().title
-        else:
-            return self.dataset.metadata.first().name
+        if metadata := self.dataset.metadata.first():
+            if metadata.title:
+                return metadata.title
+            else:
+                return metadata.name
+        return ""
 
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})

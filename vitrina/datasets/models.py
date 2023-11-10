@@ -477,6 +477,49 @@ class Dataset(TranslatableModel):
             )
         )["model_requests__sum"] or 0
 
+    def save_translation(self, translation, *args, **kwargs):
+        if translation.language_code == 'lt':
+            if not self.has_translation(language_code='en'):
+                lt_title = self.lt_title()
+                lt_description = self.lt_description()
+
+                self.create_translation(language_code='en')
+                self.set_current_language('en')
+
+                response_title = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
+
+                response_desc = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
+
+        super(Dataset, self).save_translation(translation, *args, **kwargs)
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
@@ -931,56 +974,3 @@ class DatasetStructureMapping(models.Model):
 
     class Meta:
         db_table = 'dataset_structure_mapping'
-
-
-@receiver(post_translation_save, sender=Dataset)
-def translation_handler(sender, instance, **kwargs):
-    lt_translation = instance.master.translations.filter(language_code='lt').first()
-    if lt_translation:
-        lt_title = lt_translation.title
-        lt_description = lt_translation.description
-
-        response_title = requests.post(
-            "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-            json={
-                "appId": "",
-                "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                "text": lt_title,
-                "options": ""
-            },
-            headers={
-                "client-id": TRANSLATION_CLIENT_ID,
-                "Content-Type": "application/json; charset=utf-8"
-            },
-        )
-        en_title = response_title.json()
-
-        response_desc = requests.post(
-            "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-            json={
-                "appId": "",
-                "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                "text": lt_description,
-                "options": ""
-            },
-            headers={
-                "client-id": TRANSLATION_CLIENT_ID,
-                "Content-Type": "application/json; charset=utf-8"
-            },
-        )
-        en_desc = response_desc.json()
-
-        en_translation = instance.master.translations.filter(language_code='en').first()
-        DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
-        if not en_translation:
-            DatasetTranslation.objects.create(
-                master_id=instance.master.pk,
-                language_code='en',
-                title=en_title,
-                description=en_desc
-            )
-        else:
-            if lt_title and not en_translation.title:
-                DatasetTranslation.objects.filter(pk=en_translation.pk).update(title=en_title)
-            if lt_description and not en_translation.description:
-                DatasetTranslation.objects.filter(pk=en_translation.pk).update(description=en_desc)

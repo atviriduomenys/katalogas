@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load comment_tags %}
+{% load comment_tags util_tags %}
 
 {% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
 {% block parent_links %}
@@ -42,51 +42,84 @@
             <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk %}">
                 {% translate "Naujas modelis" %}
             </a>
+            <a class="button is-primary mb-5 ml-2" href="{% url 'version-create' dataset.pk %}">
+                {% translate "Nauja versija" %}
+            </a>
         {% endif %}
 
-        {% for model in models %}
-            <div>
-                <span>
-                    <span class="pr-3 is-family-monospace" >
-                        <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
-                    </span>
-                    {% if model.base %}
-                        <span class="pr-3">
-                            base:
-                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
-                        </span>
-                    {% endif %}
-                    {% if model.metadata.first.uri %}
-                        <span class="pr-3">
-                            uri:
-                            {% if model.metadata.first.uri_link %}
-                                <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
-                            {% else %}
-                                {{ model.metadata.first.uri }}
-                            {% endif %}
-                        </span>
-                    {% endif %}
-
-                    {% if model.access_display_value %}
-                        <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
-                    {% endif %}
-
-                    {% if model.metadata.first.average_level %}
-                    <span class="is-pulled-right">
-                        <span>{{ model.metadata.first.average_level|floatformat:"1" }}</span>
-                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
-                    </span>
-                    {% endif %}
-                    <br/>
-                    <small class="ml-4">
-                        {% if model.metadata.first.title %}
-                            {{ model.metadata.first.title }}
-                        {% else %}
-                            {{ model.metadata.first.description|default:""|truncatewords:8 }}
-                        {% endif %}
-                    </small>
-                </span>
+        {% if models %}
+        <div class="mb-5">
+            <h4 class="custom-title is-size-4-mobile">{% translate "Keitimų žurnalas" %}</h4>
+            {% if version %}
+                <p>{% translate "Versija" %}: <span class="tag is-success is-light">{{ version }}</span></p>
+                <p>{% translate "Įsigaliojimo data" %}: {{ version.released|date:"SHORT_DATE_FORMAT" }}</p>
+                {% if version.description %}
+                    <p class="mt-1"><small>{{ version.description }}</small></p>
+                {% endif %}
+            {% else %}
+                <p>{% translate "Galiojančios versijos nėra." %}</p>
+            {% endif %}
+            <div class="mt-3">
+                <a href="{% url 'version-list' dataset.pk %}">{% translate "Peržiūrėti pilną keitimų sąrašą" %}</a>
             </div>
+        </div>
+
+        <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
+        {% endif %}
+        {% for model in models %}
+            {% define model.metadata.first as metadata %}
+                <did class="columns no-margin-bottom">
+                    <div class="column is-10">
+                        <span class="pr-3 is-family-monospace" >
+                            <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
+                        </span>
+                        {% if model.base %}
+                            <span class="pr-3">
+                                base:
+                                <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
+                            </span>
+                        {% endif %}
+                        {% if metadata.uri %}
+                            <span class="pr-3">
+                                uri:
+                                {% if metadata.uri_link %}
+                                    <a href="{{ model.metadata.first.uri_link }}">{{ metadata.uri }}</a>
+                                {% else %}
+                                    {{ metadata.uri }}
+                                {% endif %}
+                            </span>
+                        {% endif %}
+
+                        {% if model.access_display_value %}
+                            <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+                        {% endif %}
+                        <br/>
+                        <small class="ml-4">
+                            {% if metadata.title %}
+                                {{ metadata.title }}
+                            {% else %}
+                                {{ metadata.description|default:""|truncatewords:8 }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="column is-1">
+                        {% if metadata.average_level %}
+                            <span>
+                                <span>{{ metadata.average_level|floatformat:"1" }}</span>
+                                <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="column is-1">
+                        {% if metadata.metadata_version and metadata.draft %}
+                            <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
+                        {% elif metadata.metadata_version and not metadata.draft %}
+                            <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
+                        {% elif not metadata.metadata_version and metadata.draft %}
+                            <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                        {% endif %}
+                    </div>
+                </did>
         {% endfor %}
 
         {% if structure %}

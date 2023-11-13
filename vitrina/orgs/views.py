@@ -72,7 +72,9 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         org = self.representative_request.organization
         user = User.objects.get(email=self.representative_request.user.email)
-
+        user.organization = org
+        user.is_staff = True
+        user.save()
         rep = Representative.objects.create(
             email=user.email,
             first_name=user.first_name,

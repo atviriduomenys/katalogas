@@ -386,8 +386,14 @@
                 compareSelect == 'startswith' ||
                 compareSelect == 'endswith'
             ) {
-                compareInput = compareInput.replaceAll('"', String.raw`\"`);
-                compare = `${col}.${compareSelect}("${compareInput}")`;
+                if ( type == 'ref' ) {
+                    compareInput = compareInput.replaceAll('"', String.raw`\"`);
+                    compare = `${col}._id.${compareSelect}("${compareInput}")`;
+                }
+                else {
+                    compareInput = compareInput.replaceAll('"', String.raw`\"`);
+                    compare = `${col}.${compareSelect}("${compareInput}")`;
+                }
             }
             else {
                 if (
@@ -400,6 +406,10 @@
                 ) {
                     compareInput = compareInput.replaceAll('"', String.raw`\"`);
                     compare = `${col}${compareSelect}"${compareInput}"`;
+                }
+                else if ( type == 'ref' ) {
+                    compareInput = compareInput.replaceAll('"', String.raw`\"`);
+                    compare = `${col}._id${compareSelect}"${compareInput}"`;
                 }
                 else {
                     compare = `${col}${compareSelect}${compareInput}`;

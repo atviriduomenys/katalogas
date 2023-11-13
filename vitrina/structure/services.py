@@ -563,13 +563,18 @@ def _link_distributions(
         else:
             title = dataset_meta.name.split('/')[-1]
             url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
+            urls = [
+                f"https://get.data.gov.lt/{dataset_meta.name}",
+                f"https://get.data.gov.lt/{dataset_meta.name}/",
+                url
+            ]
             resource_meta = struct.Resource(
                 name=title,
                 source=url
             )
             distribution = DatasetDistribution.objects.filter(
                 dataset=dataset,
-                download_url=url,
+                download_url__in=urls,
             ).first()
             if not distribution:
                 format, created = Format.objects.get_or_create(extension='UAPI')
@@ -584,6 +589,8 @@ def _link_distributions(
                     title=title,
                     type='URL',
                 )
+            elif distribution.download_url:
+                resource_meta.source = distribution.download_url
 
             distribution, metadata = _create_or_update_metadata(
                 dataset,

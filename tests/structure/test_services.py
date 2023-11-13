@@ -638,6 +638,40 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
 
 
 @pytest.mark.django_db
+def test_structure_without_resource_and_existing_distribution_without_ns(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,open,dct:title,,\n'
+        '2,,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    distribution = DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/',
+        format=FileFormat(title="Saugykla", extension='UAPI'),
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    assert distribution.metadata.count() == 1
+    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'
+    assert Model.objects.get(metadata__uuid='1').distribution == distribution
+    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+
+
+@pytest.mark.django_db
 def test_structure_without_resource_and_distribution(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'

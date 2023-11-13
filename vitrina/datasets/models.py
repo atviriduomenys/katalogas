@@ -140,8 +140,7 @@ class Dataset(TranslatableModel):
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True,
-                                  verbose_name=_('Atnaujinimo dažnumas'))
+    frequency = models.ForeignKey(Frequency, models.SET_NULL, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
@@ -968,12 +967,13 @@ class DatasetStructure(models.Model):
         db_table = 'dataset_structure'
 
     def __str__(self):
-        if metadata := self.dataset.metadata.first():
-            if metadata.title:
-                return metadata.title
+        if self.dataset.metadata.first():
+            if self.dataset.metadata.first().title:
+                return self.dataset.metadata.first().title
             else:
-                return metadata.name
-        return ""
+                return self.dataset.metadata.first().name
+        else:
+            return str(_("Struktūra"))
 
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})

@@ -17,9 +17,14 @@
                 <i class="fas fa-info-circle"></i>
             </span>
         </th>
+        {% if data_maturity %}
         <td>
-            {{ openness }}
+            <span>{{ data_maturity|floatformat:"1" }}</span>
+            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
         </td>
+        {% else %}
+        <td>-</td>
+        {% endif %}
     </tr>
     {% if dataset.temporal_coverage %}
         <tr>

@@ -23,8 +23,10 @@ from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
 from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm, VersionForm
@@ -33,6 +35,7 @@ from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, 
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_srid, \
     transform_coordinates
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -354,18 +357,18 @@ class PropertyStructureView(
         if metadata and metadata.type:
             type = metadata.type
             if (
-                (type == 'string' and self.property.enums.exists()) or
-                (type == 'geometry' and get_srid(metadata.type_args)) or
-                type in [
-                    'boolean',
-                    'integer',
-                    'number',
-                    'datetime',
-                    'date',
-                    'time',
-                    'money',
-                    'ref',
-                ]
+                    (type == 'string' and self.property.enums.exists()) or
+                    (type == 'geometry' and get_srid(metadata.type_args)) or
+                    type in [
+                'boolean',
+                'integer',
+                'number',
+                'datetime',
+                'date',
+                'time',
+                'money',
+                'ref',
+            ]
             ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])
@@ -388,8 +391,8 @@ class PropertyStructureView(
                     context['source_srid'] = srid
                     context['target_srid'] = WGS84
                 elif (
-                    type in ['boolean', 'ref'] or
-                    (type in ['string', 'integer'] and self.property.enums.exists())
+                        type in ['boolean', 'ref'] or
+                        (type in ['string', 'integer'] and self.property.enums.exists())
                 ):
                     if len(data) > 0:
                         max_count = max([item['count'] for item in data])
@@ -475,9 +478,9 @@ class ModelDataView(
             self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
             self.props = self.model.get_given_props()
         else:
-            self.models = Model.objects.\
-                annotate(access=Max('model_properties__metadata__access')).\
-                filter(dataset=self.object, access__gte=Metadata.PUBLIC).\
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
@@ -1177,8 +1180,8 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.version += 1
 
             if (
-                'value' in form.changed_data or
-                'source' in form.changed_data
+                    'value' in form.changed_data or
+                    'source' in form.changed_data
             ):
                 metadata.draft = True
 
@@ -1277,10 +1280,10 @@ class ModelCreateView(
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
         if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.dataset
+                self.request.user,
+                Action.STRUCTURE,
+                Dataset,
+                self.dataset
         ):
             self.models = Model.objects.filter(dataset=self.dataset).order_by('metadata__name')
         else:
@@ -1445,10 +1448,10 @@ class ModelUpdateView(
         self.object.ref = ', '.join(model_ref.values_list('metadata__name', flat=True)) if model_ref else ''
 
         if (
-            'name' in form.changed_data or
-            'base' in form.changed_data or
-            'ref' in form.changed_data or
-            'level' in form.changed_data
+                'name' in form.changed_data or
+                'base' in form.changed_data or
+                'ref' in form.changed_data or
+                'level' in form.changed_data
         ):
             self.object.draft = True
 
@@ -1689,11 +1692,11 @@ class PropertyUpdateView(
                 prop.ref_model = None
 
         if (
-            'name' in form.changed_data or
-            'type' in form.changed_data or
-            'ref' in form.changed_data or
-            'level' in form.changed_data or
-            'access' in form.changed_data
+                'name' in form.changed_data or
+                'type' in form.changed_data or
+                'ref' in form.changed_data or
+                'level' in form.changed_data or
+                'access' in form.changed_data
         ):
             self.object.draft = True
         self.object.save()
@@ -2321,12 +2324,38 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
         version = form.save(commit=False)
         version.dataset = self.dataset
 
+        base_email_content = """
+                    Gautas pranešimas, kad sukurta nauja duomenų rinkinio struktūros versija:
+                    {0}
+                """
+
         latest_version = self.dataset.dataset_version.order_by('-version').first()
         if latest_version and latest_version.version:
             version.version = latest_version.version + 1
         else:
             version.version = 1
         version.save()
+
+        rel_projects = Project.objects.filter(datasets=version.dataset)
+        emails = []
+        title = f"Sukurta nauja duomenų rinkinio struktūros versija: {ContentType.objects.get_for_model(version)}," \
+                f" id: {version.pk}"
+        for proj in rel_projects:
+            emails.append(proj.user.email)
+            Task.objects.create(
+                title=title,
+                description=f"Sukurta nauja duomenų rinkinio struktūros versija.",
+                content_type=ContentType.objects.get_for_model(version),
+                object_id=version.pk,
+                user=proj.user,
+                status=Task.CREATED
+            )
+
+        url = f"{get_current_domain(self.request)}/datasets/" \
+              f"{version.dataset.pk}/version/{version.pk}"
+        email_data = prepare_email_by_identifier('new-dataset-structure-version', base_email_content, title,
+                                                 [url])
+        send_email_with_logging(email_data, [emails])
 
         metadata = form.cleaned_data.get('metadata', [])
 

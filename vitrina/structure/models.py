@@ -447,6 +447,12 @@ class Version(models.Model):
         verbose_name = _('Versija')
         unique_together = (('dataset', 'version'),)
 
+    def get_absolute_url(self):
+        return reverse('version-detail', kwargs={
+            'pk': self.dataset.pk,
+            'version_id': self.pk
+        })
+
     def __str__(self):
         return f"v{self.version}"
 

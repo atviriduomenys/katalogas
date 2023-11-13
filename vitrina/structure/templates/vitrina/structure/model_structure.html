@@ -110,7 +110,6 @@
                             {% if prop_metadata.unique %}
                             <span class="is-italic pr-3">unique</span>
                             {% endif %}
-
                             {% if prop.ref_model %}
                             <span class="pr-3">
                                 model:
@@ -122,6 +121,13 @@
                                         {% endfor %}
                                     </span>
                                 {% endif %}
+                            </span>
+                            {% elif prop_metadata.ref %}
+                            <span class="pr-3">
+                                ref:
+                                <span class="is-italic">
+                                    {{ prop_metadata.ref }}
+                                </span>
                             </span>
                             {% endif %}
 

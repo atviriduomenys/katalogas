@@ -441,8 +441,8 @@ def submit(title=None):
     return Submit('submit', title, css_class='button is-primary'),
 
 
-def get_current_domain(request: WSGIRequest) -> str:
-    protocol = "https" if request.is_secure() else "http"
+def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
+    protocol = "https" if request.is_secure() or ensure_secure else "http"
     domain = Site.objects.get_current().domain
     localhost = '127.0.0.1' in domain
     if not localhost:

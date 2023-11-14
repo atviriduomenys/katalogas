@@ -22,7 +22,11 @@
 {% for filter in filters %}
 <nav class="category-panel mb-5" id="filter_id">
   {% if filter.stats and active_filter != filter.name %}
-      <a href="{{ filter.get_stats_url_request }}" id="request-{{ filter.name }}-stats">
+      {% if filter.name == 'dataset_status' %}
+        <a href="/datasets/stats/status/?indicator=request-count" id="dataset-status-stats">
+      {% else %}
+        <a href="{{ filter.get_stats_url_request }}" id="request-{{ filter.name }}-stats">
+      {% endif %}
   {% endif %}
     {% if filter.name != 'category' %}
         <p class="{{ filter.name }}-panel-heading">

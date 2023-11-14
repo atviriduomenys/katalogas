@@ -773,6 +773,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
 class DatasetStructureImportView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    RevisionMixin,
     CreateView,
 ):
     model = DatasetStructure
@@ -812,6 +813,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
+        set_comment(_(f'Added Structure file "{self.object.file}".'))
         create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
 

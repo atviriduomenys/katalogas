@@ -47,8 +47,8 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     template_name = 'vitrina/orgs/approve.html'
     list_display = (
         'user',
-        'document',
         'organization',
+        'document_download',
         'account_actions',
     )
 
@@ -60,6 +60,13 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
 
     def has_module_permission(self, request):
         return True
+    
+    def document_download(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('partner-register-download', kwargs={'pk': obj.id}),
+            obj.document.name
+        )
 
     def account_actions(self, obj):
         return format_html(

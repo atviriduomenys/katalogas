@@ -1,6 +1,7 @@
 import pathlib
 import tagulous
 import requests
+import reversion
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
@@ -933,6 +934,7 @@ class DatasetStructureLink(models.Model):
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
+@reversion.register()
 class DatasetStructure(models.Model):
     UPLOAD_TO = "data/structure"
 

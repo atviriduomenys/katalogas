@@ -800,6 +800,7 @@ class OrganizationPlansHistoryView(PlanMixin, HistoryView):
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-detail', args=[self.object.pk]): self.object.title,
+            reverse('organization-plans', args=[self.object.pk]): _("Planas"),
         }
         context['can_view_members'] = has_perm(
             self.request.user,

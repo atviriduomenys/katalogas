@@ -938,6 +938,15 @@ class RequestHistoryView(PlanMixin, HistoryView):
     tabs_template_name = 'vitrina/requests/tabs.html'
     plan_url_name = 'request-plans'
 
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('request-list'): _('Poreikiai ir pasiūlymai'),
+            reverse('request-detail', args=[self.object.pk]): self.object.title,
+        }
+        return context_data
+
 
 class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
     template_name = 'vitrina/requests/plans.html'
@@ -1153,7 +1162,7 @@ class RequestDeletePlanDetailView(RequestDeletePlanView):
 class RequestPlansHistoryView(PlanMixin, HistoryView):
     model = Request
     detail_url_name = "request-detail"
-    history_url_name = "request-plans-history"
+    history_url_name = "request-history"
     plan_url_name = 'request-plans'
     tabs_template_name = 'vitrina/requests/tabs.html'
 
@@ -1169,6 +1178,7 @@ class RequestPlansHistoryView(PlanMixin, HistoryView):
             reverse('home'): _('Pradžia'),
             reverse('request-list'): _('Poreikiai ir pasiūlymai'),
             reverse('request-detail', args=[self.object.pk]): self.object.title,
+            reverse('request-plans', args=[self.object.pk]): _("Planas"),
         }
         return context
 

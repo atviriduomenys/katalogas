@@ -378,7 +378,7 @@ class DatasetDetailView(
             'can_add_resource': has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
-            'resources': dataset.datasetdistribution_set.all(),
+            'resources': dataset.datasetdistribution_set.all().order_by('-period_start'),
             'org_logo': organization.image,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
             'data_maturity': dataset.metadata_set.average_level()

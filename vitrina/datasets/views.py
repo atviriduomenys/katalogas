@@ -766,7 +766,16 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
         model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
         dataset_history_objects = Version.objects.get_for_object(self.object)
-        history_objects = property_history_objects | model_history_objects | dataset_history_objects
+
+        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list('plan_id', flat=True)
+        plan_history_objects = Version.objects.get_for_model(Plan).filter(object_id__in=list(dataset_plan_ids))
+
+        history_objects = (
+            property_history_objects |
+            model_history_objects |
+            dataset_history_objects |
+            plan_history_objects
+        )
         return history_objects.order_by('-revision__date_created')
 
 
@@ -2662,7 +2671,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-plans-history"
+    history_url_name = "dataset-history"
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -2678,6 +2687,7 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             reverse('home'): _('Pradžia'),
             reverse('dataset-list'): _('Duomenų rinkiniai'),
             reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-plans', args=[self.object.pk]): _("Planas"),
         }
         return context
 

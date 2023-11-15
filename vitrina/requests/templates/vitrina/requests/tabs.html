@@ -15,7 +15,7 @@
             </li>
         {% endif %}
         {% if can_manage_history %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+            <li class="{%if request.resolver_match.url_name == 'request-history' or  request.resolver_match.url_name == 'request-plans-history' %} is-active {% endif %}">
                 <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>

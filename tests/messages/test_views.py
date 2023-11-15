@@ -444,5 +444,5 @@ def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscript
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
     assert comment in list(resp.context['comments'])[0]
-    assert [reply] == list(resp.context['comments'])[0][1]
+    assert reply in list(resp.context['comments'])[1]
     assert len(mail.outbox) == 1

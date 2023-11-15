@@ -3,11 +3,8 @@
 {% load crispy_forms_tags %}
 
 <h2 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h2>
-{% for c in comments %}
-    {% include "component/comment.html" with comment=c.0 reply_form=c.2 %}
-    {% for child in c.1 %}
-        {% include "component/comment.html" with comment=child is_child=True %}
-    {% endfor %}
+{% for comment, reply_form, is_child in comments %}
+    {% include "component/comment.html" with comment=comment reply_form=reply_form is_child=is_child %}
 {% endfor %}
 
 {% if user.is_authenticated %}
@@ -51,7 +48,7 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        $('.reply-button').click(function () {
+        $('.show-reply-form').click(function () {
             $('#media-' + this.id).toggleClass('is-hidden');
         });
 
@@ -60,8 +57,8 @@
         });
 
         $('.comment-button').click( function () {
-            const status_field = $(this).closest('.media-content').find('[id^="id_new_comment_is_public_"]')[0];
-            const body_field = $(this).closest('.media-content').find('[id^="id_new_comment_body_"]')[0];
+            const status_field = $(this).closest('.media-content').find('[id^="id_is_public_"]')[0];
+            const body_field = $(this).closest('.media-content').find('[id^="id_body_"]')[0];
 
             if (!body_field.value && (!status_field || !status_field.value)) {
                 body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");

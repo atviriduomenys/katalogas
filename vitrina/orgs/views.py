@@ -47,6 +47,7 @@ from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
 from vitrina.helpers import send_email_with_logging
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from django.http import HttpResponse
 
 
 class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
@@ -105,8 +106,26 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
 
-    def get_success_url(self):
-        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+class RepresenentativeRequestDownloadView(PermissionRequiredMixin, View):
+    representative_request: RepresentativeRequest
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        return context
+
+    def get(self, request, *args, **kwargs):
+        file_name = self.representative_request.document.name
+        response = HttpResponse(self.representative_request.document.read(), content_type="application/octet-stream")
+        response['Content-Disposition'] = 'inline; filename={}'.format(file_name.split('/')[-1])
+        return response
 
 
 class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):

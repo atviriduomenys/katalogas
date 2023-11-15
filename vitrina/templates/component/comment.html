@@ -74,7 +74,7 @@
                         </div>
                         {% if user.is_authenticated %}
                             <div class="column">
-                                <a class="button is-primary is-pulled-right reply-button mt-1 mr-1"
+                                <a class="button is-primary is-pulled-right show-reply-form mt-1 mr-1"
                                    id="{{ comment.id }}">{% translate "Atsakyti" %}</a>
                             </div>
                         {% endif %}
@@ -94,6 +94,11 @@
                 {% endif %}
                         {% csrf_token %}
                         {{ reply_form|crispy }}
+                        {% if reply_form.body.errors %}
+                            <div class="alert alert-danger">
+                                {{ reply_form.body.errors }}
+                            </div>
+                        {% endif %}
                         {% if external %}
                             <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
                         {% endif %}

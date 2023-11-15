@@ -171,7 +171,27 @@ def test_reply_is_public(app: DjangoTestApp):
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
     assert comment in list(resp.context['comments'])[0]
-    assert [reply] == list(resp.context['comments'])[0][1]
+    assert reply in list(resp.context['comments'])[1]
+
+
+@pytest.mark.django_db
+def test_reply_for_reply(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(content_type=ct, object_id=dataset.pk)
+    reply = CommentFactory(parent=comment, content_type=ct, object_id=dataset.pk)
+
+    app.set_user(user)
+    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form['is_public'] = True
+    form['body'] = "Test reply"
+    resp = form.submit().follow()
+    comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
+    new_reply = Comment.objects.filter(content_type=comment.content_type, parent=reply).first()
+    assert comments.count() == 3
+    assert reply in list(resp.context['comments'])[1]
+    assert new_reply in list(resp.context['comments'])[2]
 
 
 @pytest.mark.django_db

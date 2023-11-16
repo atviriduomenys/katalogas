@@ -92,11 +92,9 @@ def _load_datasets(
 
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
         if metadata := Metadata.objects.filter(
-            ~Q(uuid=meta.id),
             content_type=ct,
-            name=meta.name,
-            dataset=dataset
-        ).first():
+            name=meta.name
+        ).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         else:

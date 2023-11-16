@@ -4,6 +4,7 @@ import markdown
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Q, Count
 from django.forms import CheckboxSelectMultiple
@@ -331,12 +332,23 @@ class ModelCreateForm(forms.ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
+        if self.dataset.name:
+            metadata_name = self.dataset.name + '/' + name
+        else:
+            metadata_name = name
+        metadata = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            name=metadata_name
+        )
+
         if name:
             if not name[0].isupper():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."))
             elif any(not c.isalnum() for c in name):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "jokie kiti simboliai negalimi."))
+            elif metadata:
+                raise ValidationError(_("Modelis su tokiu kodiniu pavadinimu jau egzistuoja."))
         return name
 
     def clean_uri(self):

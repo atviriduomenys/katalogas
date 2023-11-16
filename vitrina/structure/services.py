@@ -94,7 +94,7 @@ def _load_datasets(
         if metadata := Metadata.objects.filter(
             content_type=ct,
             name=meta.name
-        ).first():
+        ).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         else:

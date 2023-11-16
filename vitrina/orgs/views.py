@@ -96,7 +96,6 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
             type=Task.REQUEST
         )
         task.save()
-        self.representative_request.delete()
         email_data = prepare_email_by_identifier_for_sub(
             self.email_identifier,  self.base_template_content,
             'Koordinatoriaus paraiškos patvirtinimas',
@@ -105,6 +104,10 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         sub_email_list = [user.email]
         send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
 
 class RepresenentativeRequestDownloadView(PermissionRequiredMixin, View):
     representative_request: RepresentativeRequest

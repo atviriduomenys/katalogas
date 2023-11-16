@@ -10,9 +10,13 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from vitrina.orgs.models import Representative
+from django.contrib.contenttypes.models import ContentType
 
 
 from vitrina.orgs.models import Organization, RepresentativeRequest
+from django.utils.translation import gettext_lazy as _
+
 
 
 class RootOrganizationFilter(admin.SimpleListFilter):
@@ -69,6 +73,18 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
         )
 
     def account_actions(self, obj):
+        representative_already_exists = Representative.objects.filter(
+            user=obj.user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=obj.organization.id
+        ).first()
+
+        if representative_already_exists:
+            return format_html(
+                '<p>{}</p>'.format(
+                    _("Patvirtinta")
+                )
+        )
         return format_html(
             '<a class="button" href="{}">Confirm</a>&nbsp;'
             '<a class="button" href="{}">Deny</a>',

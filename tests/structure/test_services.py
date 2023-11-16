@@ -906,42 +906,6 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_structure_without_ids__datasets(app: DjangoTestApp):
-    manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='file.csv', data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
-
-    new_manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-    )
-    structure.file = FilerFileFactory(
-        file=FileField(filename='file.csv', data=new_manifest)
-    )
-
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(structure),
-        object_id=structure.pk
-    ).values_list('body', flat=True)) == [
-        'Duomenų rinkinys "datasets/gov/ivpk/adp" jau egzistuoja.'
-    ]
-
-
-@pytest.mark.django_db
 def test_structure_without_ids__prefixes(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'

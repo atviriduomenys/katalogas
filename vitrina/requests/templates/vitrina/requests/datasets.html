@@ -20,7 +20,7 @@
 
     <div class="columns">
         <div class="column">
-            {% if user.organization %}
+            {% if show_edit_buttons %}
                 <div class="buttons is-right">
                     <a id="add-dataset" class="button is-primary" href="{% url 'dataset-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
                         {% translate "Naujas rinkinys" %}

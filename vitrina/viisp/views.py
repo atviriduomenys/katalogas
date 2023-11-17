@@ -42,6 +42,7 @@ class VIISPLoginView(TemplateView):
         encoded_key = ViispKey.objects.first().key_content
         key = b64decode(encoded_key).decode('ascii')
         domain = get_current_domain(request, ensure_secure=True)
+        #domain = 'https://test.data.gov.lt/'
         if self.request.user.is_authenticated:
             viisp_token_key = ViispTokenKey.objects.first().key_content.encode()
             fernet = Fernet(viisp_token_key)
@@ -93,7 +94,7 @@ class VIISPCompleteLoginView(View):
                     request,
                     user,
                     email_verification=False,
-                    redirect_url='complete-login',
+                    redirect_url=reverse('partner-register'),
                     signal_kwargs={"sociallogin": login},
                 )
             elif user_social_account:
@@ -113,7 +114,7 @@ class VIISPCompleteLoginView(View):
                             request,
                             user,
                             email_verification=False,
-                            redirect_url='complete-login',
+                            redirect_url=reverse('password-set'),
                             signal_kwargs={"sociallogin": login},
                         )
             else:

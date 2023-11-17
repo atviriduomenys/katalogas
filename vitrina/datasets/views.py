@@ -66,7 +66,8 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_frequency_and_format, \
     get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
-    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency
+    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
+    manage_subscriptions_for_representative
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
@@ -948,6 +949,7 @@ class CreateMemberView(
         self.object: Representative = form.save(commit=False)
         self.object.content_type = ContentType.objects.get_for_model(Dataset)
         self.object.object_id = self.dataset.id
+
         try:
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
@@ -959,6 +961,8 @@ class CreateMemberView(
             if not user.organization:
                 user.organization = self.dataset.organization
                 user.save()
+
+            manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -1063,6 +1067,11 @@ class UpdateMemberView(
             'pk': self.kwargs.get('pk'),
         })
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object'] = self.dataset
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tabs'] = 'vitrina/datasets/tabs.html'
@@ -1090,6 +1099,8 @@ class UpdateMemberView(
             self.object.user.save()
 
         self.dataset.save()
+
+        manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
 
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
@@ -2725,7 +2736,6 @@ class UpdateDatasetOrgFilters(FacetedSearchView):
             ),
             items = []
             for item in filter[0].items():
-                print(item.count)
                 if q.lower() in item.title.lower():
                     items.append(item)
             extra_context = {

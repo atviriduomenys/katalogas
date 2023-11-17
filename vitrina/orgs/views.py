@@ -1,5 +1,4 @@
 import json
-import logging
 import secrets
 from datetime import datetime
 
@@ -9,8 +8,7 @@ from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,11 +20,7 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
-from vitrina import settings
-from vitrina.api.models import ApiKey
-from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
-    get_stats_filter_options_based_on_model
+from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_options_based_on_model
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -36,13 +30,11 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
-from vitrina.orgs.services import has_perm, Action, hash_api_key
+from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative
 from vitrina.plans.models import Plan
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
-from allauth.socialaccount.models import SocialAccount
-from treebeard.mp_tree import MP_Node
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
 from vitrina.helpers import send_email_with_logging
@@ -50,7 +42,7 @@ from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from django.http import HttpResponse
 
 
-class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
+class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_approve.html'
     base_template_content = """
@@ -109,7 +101,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
 
-class RepresenentativeRequestDownloadView(PermissionRequiredMixin, View):
+class RepresentativeRequestDownloadView(PermissionRequiredMixin, View):
     representative_request: RepresentativeRequest
 
     def dispatch(self, request, *args, **kwargs):
@@ -131,7 +123,7 @@ class RepresenentativeRequestDownloadView(PermissionRequiredMixin, View):
         return response
 
 
-class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
+class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_deny.html'
     base_template_content = """
@@ -499,6 +491,7 @@ class RepresentativeCreateView(
         self.object: Representative = form.save(commit=False)
         self.object.object_id = self.organization.pk
         self.object.content_type = ContentType.objects.get_for_model(self.organization)
+        subscribe = form.cleaned_data.get('subscribe')
         try:
             user = User.objects.get(email=self.object.email)
             if self.object.role == Representative.COORDINATOR:
@@ -512,6 +505,7 @@ class RepresentativeCreateView(
             if not user.organization:
                 user.organization = self.organization
                 user.save()
+            manage_subscriptions_for_representative(subscribe, user, self.organization)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -523,8 +517,8 @@ class RepresentativeCreateView(
             email_data = prepare_email_by_identifier(
                 self.email_identifier,  self.base_template_content,
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
-                 [self.organization, url]
-             )
+                [self.organization, url]
+            )
             send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
@@ -558,6 +552,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object'] = self.organization
+        return kwargs
+
     def has_permission(self):
         representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
         return has_perm(self.request.user, Action.UPDATE, representative)
@@ -586,11 +585,13 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
 
     def form_valid(self, form):
         self.object: Representative = form.save()
+        subscribe = form.cleaned_data.get('subscribe')
 
         if not self.object.user.organization:
             self.object.user.organization = self.organization
             self.object.user.save()
 
+        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization)
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()

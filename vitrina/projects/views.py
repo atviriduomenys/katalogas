@@ -1,4 +1,3 @@
-from django.core.mail import send_mail
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -13,7 +12,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription

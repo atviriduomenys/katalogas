@@ -6,7 +6,6 @@ from typing import Type
 from typing import Tuple
 from typing import Union
 from typing import Dict
-from typing import Callable
 from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter

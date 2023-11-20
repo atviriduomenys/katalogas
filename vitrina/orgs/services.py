@@ -195,7 +195,7 @@ def create_subscription(user, organization):
 def manage_subscriptions_for_representative(subscribe, user, organization):
     subscription = Subscription.objects.filter(user=user,
                                                object_id=organization.id,
-                                               content_type=get_content_type_for_model(Dataset))
+                                               content_type=get_content_type_for_model(Organization))
     if subscribe:
         if not subscription:
             create_subscription(user, organization)

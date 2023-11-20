@@ -16,6 +16,7 @@ from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
@@ -284,6 +285,34 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
     assert Representative.objects.filter(email="new@gmail.com").first().user is None
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["new@gmail.com"]
+
+
+@pytest.mark.django_db
+def test_representative_subscription(app: DjangoTestApp, representative_data):
+    subscriptions_before = Subscription.objects.all()
+    assert len(subscriptions_before) == 0
+
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "manager@gmail.com"
+    form['role'] = "manager"
+    form['subscribe'] = True
+    resp = form.submit()
+
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert Representative.objects.filter(email="manager@gmail.com").count() == 1
+    assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
+           representative_data['organization']
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["manager@gmail.com"]
+
+    subscription = Subscription.objects.get(user=representative_data['manager'])
+    assert subscription.sub_type == Subscription.ORGANIZATION
 
 
 @pytest.mark.django_db

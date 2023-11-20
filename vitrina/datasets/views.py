@@ -66,7 +66,8 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_frequency_and_format, \
     get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
-    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency
+    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
+    manage_subscriptions_for_representative
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
@@ -664,31 +665,24 @@ class DatasetUpdateView(
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
 
+        queries = []
         if self.object.organization:
-            email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
-                                                     'Duomenų rinkinys atnaujintas',
-                                                     [self.object])
-            if self.object.organization.email:
-                send_email_with_logging(email_data, [self.object.organization.email])
-
-        org_subs = Subscription.objects.none()
-        if self.object.organization:
-            org_subs = Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
-                                                   sub_type=Subscription.ORGANIZATION,
-                                                   content_type=get_content_type_for_model(Organization),
-                                                   dataset_update_sub=True)
-
-        subs = Subscription.objects.filter(sub_type=Subscription.DATASET,
-                                           content_type=get_content_type_for_model(Dataset),
-                                           object_id=self.object.id,
-                                           dataset_update_sub=True)
-
-        if org_subs:
-            subs = org_subs | subs
+            queries.append(Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
+                                                       sub_type=Subscription.ORGANIZATION,
+                                                       content_type=get_content_type_for_model(Organization),
+                                                       dataset_update_sub=True))
+        queries.append(Subscription.objects.filter(sub_type=Subscription.DATASET,
+                                                   content_type=get_content_type_for_model(Dataset),
+                                                   object_id=self.object.id,
+                                                   dataset_update_sub=True))
+        sub_list = [item for query in queries for item in query]
+        sorted_list = sorted(sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION)
 
         sub_email_list = []
+        if self.object.organization and self.object.organization.email:
+            sub_email_list.append(self.object.organization.email)
         email_data_sub = None
-        for sub in subs:
+        for sub in sorted_list:
             if sub.sub_type == Subscription.ORGANIZATION:
                 title = f"{self.object.organization} organizacijos duomenų rinkinys"
                 description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
@@ -720,7 +714,8 @@ class DatasetUpdateView(
                 if sub.user.organization:
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
-                sub_email_list.append(sub.user.email)
+                if sub.user.email not in sub_email_list:
+                    sub_email_list.append(sub.user.email)
         if email_data_sub:
             send_email_with_logging(email_data_sub, sub_email_list)
 
@@ -948,6 +943,7 @@ class CreateMemberView(
         self.object: Representative = form.save(commit=False)
         self.object.content_type = ContentType.objects.get_for_model(Dataset)
         self.object.object_id = self.dataset.id
+
         try:
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
@@ -959,6 +955,8 @@ class CreateMemberView(
             if not user.organization:
                 user.organization = self.dataset.organization
                 user.save()
+
+            manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -1063,6 +1061,11 @@ class UpdateMemberView(
             'pk': self.kwargs.get('pk'),
         })
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object'] = self.dataset
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tabs'] = 'vitrina/datasets/tabs.html'
@@ -1090,6 +1093,8 @@ class UpdateMemberView(
             self.object.user.save()
 
         self.dataset.save()
+
+        manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
 
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
@@ -2725,7 +2730,6 @@ class UpdateDatasetOrgFilters(FacetedSearchView):
             ),
             items = []
             for item in filter[0].items():
-                print(item.count)
                 if q.lower() in item.title.lower():
                     items.append(item)
             extra_context = {

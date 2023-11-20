@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import CreateView
 
@@ -21,6 +21,11 @@ class UnsubscribeView(LoginRequiredMixin, View):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=obj_id)
         user = get_object_or_404(User, pk=user_id)
+
+        if request.user.is_authenticated and request.user.pk != user.pk:
+            messages.error(request, _("Jūs neturit teisės panaikinti prenumeratos kitam vartotojui."))
+            return redirect(obj)
+
         if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
             Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).delete()
             messages.success(request, _("Sėkmingai atsisakėte prenumeratos."))
@@ -52,6 +57,10 @@ class SubscribeFormView(
             self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
         except ObjectDoesNotExist:
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+        if request.user.is_authenticated and request.user.pk != self.user.pk:
+            messages.error(request, _("Jūs neturit teisės sukurti prenumeratos kitam vartotojui."))
+            return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

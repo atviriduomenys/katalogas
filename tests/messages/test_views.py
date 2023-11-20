@@ -62,6 +62,43 @@ def test_request_subscribe_form_no_login(app: DjangoTestApp, subscription_data):
 
 
 @pytest.mark.django_db
+def test_dataset_subscribe_for_other_user(app: DjangoTestApp, subscription_data):
+    user = UserFactory()
+    app.set_user(user)
+
+    kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
+              'obj_id': subscription_data['dataset'].id,
+              'user_id': subscription_data['user'].id}
+    resp = app.get(reverse('subscribe-form', kwargs=kwargs))
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+
+
+@pytest.mark.django_db
+def test_dataset_unsubscribe_for_other_user(app: DjangoTestApp, subscription_data):
+    app.set_user(subscription_data['user'])
+    kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
+              'obj_id': subscription_data['dataset'].id,
+              'user_id': subscription_data['user'].id}
+    form = app.get(reverse('subscribe-form', kwargs=kwargs)).forms['subscribe-form']
+    form['email_subscribed'] = True
+    form['dataset_update_sub'] = True
+    resp = form.submit()
+
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+    assert Subscription.objects.count() == 1
+
+    assert len(mail.outbox) == 1
+
+    user = UserFactory()
+    app.set_user(user)
+
+    csrf_token = app.cookies['csrftoken']
+    resp = app.post(reverse('unsubscribe', kwargs=kwargs), {'csrfmiddlewaretoken': csrf_token})
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+    assert Subscription.objects.count() == 1
+
+
+@pytest.mark.django_db
 def test_request_subscribe_form_with_user(app: DjangoTestApp, subscription_data):
     app.set_user(subscription_data['user'])
     kwargs = {'content_type_id': get_content_type_for_model(Request).id,

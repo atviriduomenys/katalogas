@@ -23,7 +23,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
         user = get_object_or_404(User, pk=user_id)
 
         if request.user.is_authenticated and request.user.pk != user.pk:
-            messages.error(request, _("Jūs neturit teisės priskirti panaikinti prenumeratos kitam vartotojui."))
+            messages.error(request, _("Jūs neturit teisės panaikinti prenumeratos kitam vartotojui."))
             return redirect(obj)
 
         if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
@@ -59,7 +59,7 @@ class SubscribeFormView(
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(request, _("Jūs neturit teisės priskirti prenumeratą kitam vartotojui."))
+            messages.error(request, _("Jūs neturit teisės sukurti prenumeratos kitam vartotojui."))
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 

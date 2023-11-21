@@ -357,18 +357,18 @@ class PropertyStructureView(
         if metadata and metadata.type:
             type = metadata.type
             if (
-                    (type == 'string' and self.property.enums.exists()) or
-                    (type == 'geometry' and get_srid(metadata.type_args)) or
-                    type in [
-                'boolean',
-                'integer',
-                'number',
-                'datetime',
-                'date',
-                'time',
-                'money',
-                'ref',
-            ]
+                (type == 'string' and self.property.enums.exists()) or
+                (type == 'geometry' and get_srid(metadata.type_args)) or
+                type in [
+                    'boolean',
+                    'integer',
+                    'number',
+                    'datetime',
+                    'date',
+                    'time',
+                    'money',
+                    'ref',
+                ]
             ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])

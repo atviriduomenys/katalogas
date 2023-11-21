@@ -565,10 +565,11 @@ class PropertyForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={'rows': 8})
     )
+    type_args = forms.CharField(label=_("Tipo parametrai"), required=False)
 
     class Meta:
         model = Metadata
-        fields = ('dataset_id', 'name', 'type', 'ref', 'ref_others', 'source',
+        fields = ('dataset_id', 'name', 'type', 'type_args', 'ref', 'ref_others', 'source',
                   'prepare', 'uri', 'level', 'access', 'title', 'description',)
 
     def __init__(self, model, *args, **kwargs):
@@ -582,6 +583,7 @@ class PropertyForm(forms.ModelForm):
             Field('dataset_id'),
             Field('name'),
             Field('type'),
+            Field('type_args'),
             Field('ref'),
             Field('ref_others'),
             Field('source'),

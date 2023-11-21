@@ -336,10 +336,17 @@ class ModelCreateForm(forms.ModelForm):
             metadata_name = self.dataset.name + '/' + name
         else:
             metadata_name = name
-        metadata = Metadata.objects.filter(
-            content_type=ContentType.objects.get_for_model(Model),
-            name=metadata_name
-        )
+
+        if self.instance and self.instance.pk:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            ).exclude(pk=self.instance.pk)
+        else:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            )
 
         if name:
             if not name[0].isupper():

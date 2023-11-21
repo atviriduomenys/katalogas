@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
@@ -27,6 +28,7 @@ from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateFor
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
 from vitrina.orgs.models import Organization
 from vitrina.plans.models import PlanDataset, Plan
+from vitrina.structure.models import Metadata
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -143,6 +145,23 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             raise ValidationError(_('Tipai "service" ir "series" negali būti pažymėti abu kartu, '
                                     'gali būti pažymėtas tik vienas arba kitas.'))
         return type
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+
+        if self.instance and self.instance.pk and self.instance.metadata.first():
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                name=name
+            ).exclude(pk=self.instance.metadata.first().pk)
+        else:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                name=name
+            )
+        if metadata:
+            raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+        return name
 
 
 class DatasetSearchForm(FacetedSearchForm):

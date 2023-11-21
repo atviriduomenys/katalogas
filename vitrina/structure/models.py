@@ -72,7 +72,7 @@ class Metadata(models.Model):
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
     version = models.IntegerField(_("Versija"), blank=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    description = models.TextField(_("Aprašymas"), blank=True)
+    description = models.TextField(_("Aprašymas"), blank=True, null=True)
     order = models.IntegerField(_("Rikiavimo tvarka"), null=True, blank=True)
     content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"))
     object_id = models.PositiveIntegerField(_("Objekto id"))

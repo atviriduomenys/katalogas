@@ -124,8 +124,10 @@
                                         <td>
                                             <span>{{ value }}</span>
                                             {% get_geometry_srid prop.metadata.first.type_args as srid %}
-                                            {% convert_coordinates value srid as value %}
-                                            <div id="map_{{ prop.name }}" style="height: 300px;" data-geometry="{{ value }}"></div>
+                                            {% if srid %}
+                                                {% convert_coordinates value srid as value %}
+                                                <div id="map_{{ prop.name }}" style="height: 300px;" data-geometry="{{ value }}"></div>
+                                            {% endif %}
                                         </td>
                                     {% else %}
                                         {% if value != None %}

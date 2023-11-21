@@ -495,7 +495,7 @@ class DatasetCreateView(
             dataset=self.object,
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            name=form.cleaned_data.get('name'),
+            name=form.cleaned_data.get('name', ''),
             prepare_ast={},
             version=1,
         )

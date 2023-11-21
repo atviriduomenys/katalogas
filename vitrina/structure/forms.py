@@ -552,13 +552,19 @@ class PropertyForm(forms.ModelForm):
     source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
     prepare = forms.CharField(label=_("Duomenų transformacija"), required=False)
     uri = forms.CharField(label=_("Klasė"), required=False)
-    level = forms.ChoiceField(
+    level = forms.TypedChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=PROPERTY_LEVEL_CHOICES,
+        coerce=int,
     )
-    access = forms.ChoiceField(label=_("Prieigos lygis"), required=False, choices=Metadata.ACCESS_TYPES)
+    access = forms.TypedChoiceField(
+        label=_("Prieigos lygis"),
+        required=False,
+        choices=Metadata.ACCESS_TYPES,
+        coerce=int
+    )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(
         label=_("Aprašymas"),
@@ -676,7 +682,7 @@ class PropertyForm(forms.ModelForm):
 
     def clean_ref_others(self):
         type = self.cleaned_data.get('type')
-        ref = self.cleaned_data.get('ref_others')
+        ref = self.cleaned_data.get('ref_others') or None
         if ref:
             if type == 'date' or type == 'datetime':
                 if not is_time_unit(ref):

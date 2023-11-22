@@ -451,7 +451,7 @@ class DatasetCreateView(
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.object = form.save(commit=True)
+        self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 

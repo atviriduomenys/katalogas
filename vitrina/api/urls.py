@@ -6,6 +6,7 @@ from vitrina.api.views import CatalogViewSet, DatasetViewSet, CategoryViewSet, L
     DatasetDistributionViewSet, DatasetStructureViewSet, InternalDatasetViewSet, InternalDatasetDistributionViewSet, \
     InternalDatasetStructureViewSet, PartnerApiView, DatasetModelDownloadViewSet
 from vitrina.api.views import edp_dcat_ap_rdf
+from allauth.account.views import confirm_email, email_verification_sent
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
@@ -99,4 +100,7 @@ urlpatterns = [
     # @RequestMapping("/rdf")
     # @PostMapping("/rdf/search")
     path('edp/dcat-ap.rdf', edp_dcat_ap_rdf, name="edp-dcat-ap-rdf"),
+    path('register/account-confirm-email/?P<key>\w+', confirm_email, name='account_confirm_email'),
+    path('register/email-verification-sent/', email_verification_sent,
+         name='account_email_verification_sent'),
 ]

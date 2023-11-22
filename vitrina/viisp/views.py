@@ -139,8 +139,10 @@ class VIISPCompleteLoginView(View):
 class ChangeEmailView(TemplateView):
     template_name = 'vitrina/viisp/change_email.html'
 
+
 class LoginFirstView(TemplateView):
     template_name = 'vitrina/viisp/login_first.html'
+
 
 class ConfirmEmailView(TemplateView):
     template_name = 'vitrina/viisp/confirm_email.html'

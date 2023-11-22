@@ -102,11 +102,11 @@ class Comment(models.Model):
         return descendants
 
     def body_text(self):
-        if self.type == self.REQUEST:
+        if self.type == self.REQUEST and self.rel_content_object:
             body_text = _(
                 f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
                 f"{self.rel_content_object.description}")
-        elif self.type == self.PROJECT:
+        elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(
                 "Šis duomenų rinkinys įtrauktas į "
                 f"{self.rel_content_object.get_title()} projektą."
@@ -120,7 +120,7 @@ class Comment(models.Model):
                 body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
-        elif self.type == self.PLAN:
+        elif self.type == self.PLAN and self.rel_content_object:
             body_text = mark_safe(
                 f'Įtraukta į planą '
                 f'<a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'

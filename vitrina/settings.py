@@ -145,6 +145,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
     # Django CMS

@@ -57,8 +57,6 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                     _load_comments(structure.dataset, state.manifest.comments, structure)
                     _load_prefixes(structure.dataset, state.manifest.prefixes, structure)
                     _load_datasets(state, structure.dataset)
-                    _link_distributions(state, structure.dataset)
-                    _link_models(structure.dataset, state)
                     structure.dataset.update_level()
 
         for error in errors:
@@ -109,6 +107,8 @@ def _load_datasets(
             _load_params(dataset, meta.params, dataset)
             _load_comments(dataset, meta.comments, dataset)
             _load_models(meta, dataset)
+            _link_distributions(meta, dataset)
+            _link_models(dataset, meta)
             loaded_metadata.append(metadata)
 
         _create_errors(meta.errors, dataset.current_structure)
@@ -545,106 +545,132 @@ def _create_or_update_metadata(
 
 
 def _link_distributions(
-    state: struct.State,
+    dataset_meta: struct.Dataset,
     dataset: Dataset
 ):
-    for dataset_meta in state.manifest.datasets.values():
-        if dataset_meta.resources:
-            for i, resource_meta in enumerate(dataset_meta.resources.values()):
-                if resource_meta.source:
-                    distribution = DatasetDistribution.objects.filter(
+    if dataset_meta.resources:
+        for i, resource_meta in enumerate(dataset_meta.resources.values()):
+            if resource_meta.source:
+                distribution = DatasetDistribution.objects.filter(
+                    dataset=dataset,
+                    download_url=resource_meta.source,
+                ).first()
+                if not distribution:
+                    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+                        dataset.status = Dataset.HAS_DATA
+                        dataset.save()
+                        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+                        Comment.objects.create(
+                            content_type=ContentType.objects.get_for_model(dataset),
+                            object_id=dataset.pk,
+                            user=sys_user,
+                            type=Comment.STATUS,
+                            status=Comment.OPENED,
+                        )
+
+                    distribution = DatasetDistribution.objects.create(
                         dataset=dataset,
                         download_url=resource_meta.source,
-                    ).first()
-                    if not distribution:
-                        distribution = DatasetDistribution.objects.create(
-                            dataset=dataset,
-                            download_url=resource_meta.source,
-                            title=resource_meta.name,
-                            type='URL',
-                        )
-                    if md := distribution.metadata.first():
-                        if not resource_meta.id:
-                            resource_meta.id = md.uuid
-
-                    distribution, metadata = _create_or_update_metadata(
-                        dataset,
-                        resource_meta,
-                        distribution,
-                        i,
-                        use_existing_meta=True
+                        title=resource_meta.name,
+                        type='URL',
                     )
-                    _clean_errors(distribution)
-                    _load_comments(dataset, resource_meta.comments, distribution)
-                    for model_meta in resource_meta.models.values():
-                        if model := Model.objects.filter(
-                            metadata__uuid=model_meta.id,
-                            dataset=dataset
-                        ).first():
-                            model.distribution = distribution
-                            model.save()
 
-                    _create_errors(resource_meta.errors, distribution)
-        else:
-            title = dataset_meta.name.split('/')[-1]
-            url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
-            urls = [
-                f"https://get.data.gov.lt/{dataset_meta.name}",
-                f"https://get.data.gov.lt/{dataset_meta.name}/",
-                url
-            ]
-            resource_meta = struct.Resource(
-                name=title,
-                source=url
-            )
-            distribution = DatasetDistribution.objects.filter(
-                dataset=dataset,
-                download_url__in=urls,
-            ).first()
-            if not distribution:
-                format, created = Format.objects.get_or_create(extension='UAPI')
-                if created:
-                    format.title = 'Saugyklos API'
-                    format.mimetype = "application/vnd.api+json"
-                    format.save()
-                distribution = DatasetDistribution.objects.create(
-                    dataset=dataset,
-                    download_url=url,
-                    format=format,
-                    title=title,
-                    type='URL',
+                if md := distribution.metadata.first():
+                    if not resource_meta.id:
+                        resource_meta.id = md.uuid
+
+                distribution, metadata = _create_or_update_metadata(
+                    dataset,
+                    resource_meta,
+                    distribution,
+                    i,
+                    use_existing_meta=True
                 )
-            elif distribution.download_url:
-                resource_meta.source = distribution.download_url
-
-            if md := distribution.metadata.first():
-                resource_meta.id = md.uuid
-
-            distribution, metadata = _create_or_update_metadata(
-                dataset,
-                resource_meta,
-                distribution,
-                1,
-                use_existing_meta=True
-            )
-            _clean_errors(distribution)
-            _load_comments(dataset, resource_meta.comments, distribution)
-            for model_meta in dataset_meta.models.values():
-                if model := Model.objects.filter(
+                _clean_errors(distribution)
+                _load_comments(dataset, resource_meta.comments, distribution)
+                for model_meta in resource_meta.models.values():
+                    if model := Model.objects.filter(
                         metadata__uuid=model_meta.id,
                         dataset=dataset
-                ).first():
-                    model.distribution = distribution
-                    model.save()
+                    ).first():
+                        model.distribution = distribution
+                        model.save()
 
-            _create_errors(resource_meta.errors, distribution)
+                _create_errors(resource_meta.errors, distribution)
+    else:
+        title = dataset_meta.name.split('/')[-1]
+        url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
+        urls = [
+            f"https://get.data.gov.lt/{dataset_meta.name}",
+            f"https://get.data.gov.lt/{dataset_meta.name}/",
+            url
+        ]
+        resource_meta = struct.Resource(
+            name=title,
+            source=url
+        )
+        distribution = DatasetDistribution.objects.filter(
+            dataset=dataset,
+            download_url__in=urls,
+        ).first()
+        if not distribution:
+            if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+                dataset.status = Dataset.HAS_DATA
+                dataset.save()
+                sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    object_id=dataset.pk,
+                    user=sys_user,
+                    type=Comment.STATUS,
+                    status=Comment.OPENED,
+                )
+
+            format, created = Format.objects.get_or_create(extension='UAPI')
+            if created:
+                format.title = 'Saugyklos API'
+                format.mimetype = "application/vnd.api+json"
+                format.save()
+            distribution = DatasetDistribution.objects.create(
+                dataset=dataset,
+                download_url=url,
+                format=format,
+                title=title,
+                type='URL',
+            )
+        elif distribution.download_url:
+            resource_meta.source = distribution.download_url
+
+        if md := distribution.metadata.first():
+            resource_meta.id = md.uuid
+
+        distribution, metadata = _create_or_update_metadata(
+            dataset,
+            resource_meta,
+            distribution,
+            1,
+            use_existing_meta=True
+        )
+        _clean_errors(distribution)
+        _load_comments(dataset, resource_meta.comments, distribution)
+        for model_meta in dataset_meta.models.values():
+            if model := Model.objects.filter(
+                    metadata__uuid=model_meta.id,
+                    dataset=dataset
+            ).first():
+                model.distribution = distribution
+                model.save()
+
+        _create_errors(resource_meta.errors, distribution)
 
 
-def _link_models(dataset: Dataset, state: struct.State):
+def _link_models(dataset: Dataset, dataset_meta: struct.Dataset):
     model_ct = ContentType.objects.get_for_model(Model)
     prop_ct = ContentType.objects.get_for_model(Property)
 
-    for model_meta in state.manifest.models.values():
+    for model_meta in dataset_meta.models.values():
         if model := Model.objects.filter(
             metadata__content_type=model_ct,
             metadata__uuid=model_meta.id,

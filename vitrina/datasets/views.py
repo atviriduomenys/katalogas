@@ -451,7 +451,7 @@ class DatasetCreateView(
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.object = form.save(commit=True)
+        self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 
@@ -467,7 +467,6 @@ class DatasetCreateView(
             )
 
         types = form.cleaned_data.get('type')
-        self.object.type.set(types)
         if types.filter(name=Type.SERVICE):
             self.object.service = True
         else:
@@ -481,6 +480,8 @@ class DatasetCreateView(
         else:
             self.object.series = False
 
+        self.object.save()
+        self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
 

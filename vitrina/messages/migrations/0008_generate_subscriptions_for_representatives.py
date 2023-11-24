@@ -20,7 +20,7 @@ def generate_subscriptions(apps, schema_editor):
     }
 
     for representative in Representative.objects.all():
-        if representative.content_type.model in subscription_args:
+        if representative.content_type.model in subscription_args and representative.user:
             Subscription.objects.update_or_create(
                 user=representative.user,
                 content_type=representative.content_type,

@@ -81,9 +81,9 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
 
         if representative_already_exists:
             return format_html(
-                '<p>{}</p>'.format(
-                    _("Patvirtinta")
-                )
+                '<a href={}>{}</a>',
+                    reverse('partner-register-suspend', kwargs={'pk': obj.id}),
+                    _("Suspenduoti")
         )
         return format_html(
             '<a class="button" href="{}">Confirm</a>&nbsp;'

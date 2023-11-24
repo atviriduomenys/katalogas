@@ -7,7 +7,7 @@ from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, 
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
      RepresentativeRequestApproveView, RepresentativeRequestDenyView, PartnerRegisterCompleteView, \
-          RepresentativeRequestDownloadView
+          RepresentativeRequestDownloadView, RepresentativeRequestSuspendView
 from vitrina.orgs.views import OrganizationPlansHistoryView
 from vitrina.orgs.views import OrganizationMergeView
 from vitrina.orgs.views import ConfirmOrganizationMergeView
@@ -34,6 +34,7 @@ urlpatterns = [
     path('partner/register-complete/', PartnerRegisterCompleteView.as_view(), name='partner-register-complete'),
     path('partner/approve/<int:pk>/', RepresentativeRequestApproveView.as_view(), name='partner-register-approve'),
     path('partner/deny/<int:pk>/', RepresentativeRequestDenyView.as_view(), name='partner-register-deny'),
+    path('partner/suspend/<int:pk>/', RepresentativeRequestSuspendView.as_view(), name='partner-register-suspend'),
     path('partner/download/<int:pk>/', RepresentativeRequestDownloadView.as_view(), name='partner-register-download'),
     path('orgs/<int:pk>/plans/', OrganizationPlanView.as_view(), name='organization-plans'),
     path('orgs/<int:pk>/plans/add/', OrganizationPlanCreateView.as_view(), name='organization-plans-create'),

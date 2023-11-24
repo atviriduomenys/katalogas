@@ -43,7 +43,6 @@ from django.http import HttpResponse
 
 
 class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
-    representative_request: RepresentativeRequest
     template_name = 'confirm_approve.html'
     base_template_content = """
         Jūsų koordinatoriaus paraiška buvo patvirtinta.   
@@ -156,6 +155,55 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
 
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
+class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
+    representative_request: RepresentativeRequest
+    template_name = 'confirm_suspend.html'
+    base_template_content = """
+        Jūsų koordinatoriaus teisės buvo suspenduotos.   
+    """
+    email_identifier = "coordinator-request-suspended"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return self.request.user.is_supervisor or self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object'] = self.representative_request
+        context['users'] = User.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        representative_role = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=self.representative_request.organization.id,
+            user=self.representative_request.user,
+            role=Representative.COORDINATOR
+        ).first()
+        user_to_grant_coordiantor_rights = self.request.POST.get('user')
+        user_to_grant_coordiantor_rights = User.objects.filter(email=user_to_grant_coordiantor_rights).first()
+        representative_role.user = user_to_grant_coordiantor_rights
+        representative_role.save()
+        user_to_grant_coordiantor_rights.organization = self.representative_request.organization
+        user_to_grant_coordiantor_rights.save()
+        email_data = prepare_email_by_identifier_for_sub(
+            self.email_identifier,  self.base_template_content,
+            'Koordinatoriaus paraiškos atmetimas',
+            []
+        )
+        self.representative_request.user = user_to_grant_coordiantor_rights
+        self.representative_request.save()
+        sub_email_list = [self.representative_request.user.email]
+        send_email_with_logging(email_data, sub_email_list)
+        return self.get_success_url()
+
+    def get_success_url(self):
+        return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
+
 
 
 class OrganizationListView(ListView):

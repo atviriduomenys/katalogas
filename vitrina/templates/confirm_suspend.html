@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-half">
+            <form id="suspend-form" method="post">
+                {% csrf_token %}
+                <strong>
+                    <p >{% translate "Ar tikrai norite suspenduoti vartotoją" %} "{{ object.user.email }}"?</p>
+                     <br/>
+                </strong>
+                <p>{% translate "Pasirinkite vartotoją, kuriam bus perduotos koordinatoriaus teisės." %}</p>
+                <input name="user" list="user" class="select" placeholder="{% translate 'Paieška...' %}">
+                    <datalist id="user">
+                        {% for user in users %}
+                            <option value="{{ user.email }}">{{ user.first_name }} {{ user.last_name }}</option>
+                        {% endfor %}
+                    </datalist>
+                <br/>
+                <br/>
+                <a href="#" onclick="window.history.back(); return false;" class="button is-link">{% translate 'Atšaukti' %}</a>
+                <input class="button is-primary" type="submit" value="{% translate 'Suspenduoti' %}">
+            </form>
+        </div>
+    </div>
+    <br/>
+{% endblock %}

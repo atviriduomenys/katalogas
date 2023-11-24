@@ -521,6 +521,12 @@ def test_structure_with_comments(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
+        format=FileFormat(title="Saugykla", extension='UAPI'),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
@@ -570,6 +576,7 @@ def test_structure_with_resource_and_existing_distribution(app: DjangoTestApp):
     assert Metadata.objects.get(uuid='1').object == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
     assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -601,6 +608,7 @@ def test_structure_with_resource_and_without_distribution(app: DjangoTestApp):
     assert distribution.metadata.first().source == 'http://www.example.com'
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
     assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -635,6 +643,7 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -669,6 +678,7 @@ def test_structure_without_resource_and_existing_distribution_without_ns(app: Dj
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -699,6 +709,7 @@ def test_structure_without_resource_and_distribution(app: DjangoTestApp):
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db

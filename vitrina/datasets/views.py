@@ -588,24 +588,17 @@ class DatasetUpdateView(
                 status__isnull=False
             ).order_by('-created').first()
 
-            if latest_status_comment:
-                if latest_status_comment.status == Comment.INVENTORED:
-                    self.object.status = Dataset.INVENTORED
-                elif latest_status_comment.status == Comment.PLANNED:
-                    self.object.status = Dataset.PLANNED
-                elif latest_status_comment.status == Comment.OPENED:
-                    self.object.status = Dataset.HAS_DATA
+            if self.object.datasetdistribution_set.exists():
+                self.object.status = Dataset.HAS_DATA
+                comment_status = Comment.OPENED
+            elif self.object.plandataset_set.exists():
+                self.object.status = Dataset.PLANNED
+                comment_status = Comment.PLANNED
             else:
-                if self.object.datasetdistribution_set.exists():
-                    self.object.status = Dataset.HAS_DATA
-                    comment_status = Comment.OPENED
-                elif self.object.plandataset_set.exists():
-                    self.object.status = Dataset.PLANNED
-                    comment_status = Comment.PLANNED
-                else:
-                    self.object.status = Dataset.INVENTORED
-                    comment_status = Comment.INVENTORED
+                self.object.status = Dataset.INVENTORED
+                comment_status = Comment.INVENTORED
 
+            if not latest_status_comment or latest_status_comment.status != comment_status:
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,

@@ -467,7 +467,6 @@ class DatasetCreateView(
             )
 
         types = form.cleaned_data.get('type')
-        self.object.type.set(types)
         if types.filter(name=Type.SERVICE):
             self.object.service = True
         else:
@@ -481,6 +480,8 @@ class DatasetCreateView(
         else:
             self.object.series = False
 
+        self.object.save()
+        self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
 

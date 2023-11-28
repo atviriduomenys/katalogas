@@ -403,7 +403,8 @@ class OpenDataPortalDatasetDetailView(View):
         }))
 
 
-class DatasetDistributionPreviewView(View):
+class DatasetDistributionPreviewView(ListView):
+
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(
             DatasetDistribution,
@@ -412,9 +413,18 @@ class DatasetDistributionPreviewView(View):
         )
         data = []
         if distribution.is_previewable():
-            rows = open(distribution.file.path, encoding='utf-8')
-            rows = itertools.islice(rows, 100)
-            data = list(csv.reader(rows, delimiter=";"))
+            if 'xlsx' in distribution.file.path:
+                data = pd.ExcelFile(distribution.file.path)
+                data = {
+                    sheet_name: data.parse(sheet_name) for sheet_name in data.sheet_names
+                }
+                if len(data.keys()) > 1:
+                    raise "Not implemented for more than one value"
+                data = data[next(iter(data))].values.tolist()
+            else:
+                rows = open(distribution.file.path, encoding='utf-8')
+                rows = itertools.islice(rows, 100)
+                data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 

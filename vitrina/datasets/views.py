@@ -404,7 +404,6 @@ class OpenDataPortalDatasetDetailView(View):
 
 
 class DatasetDistributionPreviewView(ListView):
-    template_name = 'vitrina/datasets/dataset_review.html'
 
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(
@@ -422,12 +421,11 @@ class DatasetDistributionPreviewView(ListView):
                 if len(data.keys()) > 1:
                     raise "Not implemented for more than one value"
                 data = data[next(iter(data))].values.tolist()
-                return JsonResponse({'data': data})
-        else:
-            rows = open(distribution.file.path, encoding='utf-8')
-            rows = itertools.islice(rows, 100)
-            data = list(csv.reader(rows, delimiter=";"))
-            return JsonResponse({'data': data})
+            else:
+                rows = open(distribution.file.path, encoding='utf-8')
+                rows = itertools.islice(rows, 100)
+                data = list(csv.reader(rows, delimiter=";"))
+        return JsonResponse({'data': data})
 
 
 class DatasetCreateView(

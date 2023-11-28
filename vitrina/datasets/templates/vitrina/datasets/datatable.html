@@ -55,10 +55,12 @@
                 <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% endif %}
             {% if r.is_external_url %}
+                {% if r.get_download_url %}
                 <td>
                     <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"
                        target="_blank">{% translate "Atidaryti" %}</a>
                 </td>
+                {% endif %}
             {% else %}
                 <td>
                     <div style="display:inline-flex; gap: 2px">

@@ -779,6 +779,9 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
 
 
 class DatasetStructureImportView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     CreateView,
@@ -787,11 +790,9 @@ class DatasetStructureImportView(
     form_class = DatasetStructureImportForm
     template_name = 'base_form.html'
 
-    dataset: Dataset | None = None
-
-    def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-structure-history'
+    plan_url_name = 'dataset-plans'
 
     def has_permission(self):
         return has_perm(
@@ -807,11 +808,18 @@ class DatasetStructureImportView(
             'current_title': _("Struktūros importas"),
             'parent_links': {
                 reverse('home'): _('Pradžia'),
-                reverse('request-list'): _('Poreikiai'),
+                reverse('dataset-list'): _('Duomenų rinkiniai'),
                 reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
             },
             'parent_title': self.dataset.title,
             'parent_url': self.dataset.get_absolute_url(),
+            'tabs': 'vitrina/datasets/tabs.html',
+            'can_view_members': has_perm(
+                self.request.user,
+                Action.VIEW,
+                Representative,
+                self.dataset,
+            ),
         }
 
     def form_valid(self, form):
@@ -822,6 +830,15 @@ class DatasetStructureImportView(
         self.object.dataset.save()
         create_structure_objects(self.object)
         return HttpResponseRedirect(self.get_success_url())
+
+    def get_plan_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
 
 class DatasetMembersView(

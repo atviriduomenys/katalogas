@@ -82,6 +82,9 @@ class TaskListView(LoginRequiredMixin, ListView):
             active_filter = 'all'
         context['cats'] = cats
         context['active_filter'] = active_filter
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+        }
         return context
 
 
@@ -94,12 +97,17 @@ class TaskView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         task = self.object
         org = ''
+        object_url = None
         if task.organization_id is not None:
             org = Organization.objects.filter(pk=task.organization_id).values_list('title', flat=True).first()
-        if task.object_id is not None and task.content_type_id is not None:
+        if task.content_object:
             object_url = task.content_object.get_absolute_url
         context['org'] = org
         context['object_url'] = object_url
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('user-task-list', args=[self.request.user.pk]): _('Užduotys'),
+        }
         return context
 
 

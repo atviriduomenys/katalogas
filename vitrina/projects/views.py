@@ -65,6 +65,10 @@ class ProjectDetailView(HistoryMixin, DetailView):
             Action.UPDATE,
             self.object
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+        }
         return context
 
 
@@ -181,6 +185,15 @@ class ProjectHistoryView(HistoryView):
     history_url_name = 'project-history'
     tabs_template_name = 'vitrina/projects/tabs.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+            reverse('project-detail', args=[self.object.pk]): self.object
+        }
+        return context
+
 
 class ProjectDatasetsView(HistoryMixin, ListView):
     model = Dataset
@@ -206,6 +219,11 @@ class ProjectDatasetsView(HistoryMixin, ListView):
             Action.UPDATE,
             self.object
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+            reverse('project-detail', args=[self.object.pk]): self.object
+        }
         return context
 
 

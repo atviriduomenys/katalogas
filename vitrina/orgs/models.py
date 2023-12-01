@@ -174,12 +174,14 @@ class PublishedReport(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    data = models.TextField(blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
+    data = models.TextField(blank=True, null=True, verbose_name=_("Duomenys"))
+    title = models.TextField(blank=True, null=True, verbose_name=_('Pavadinimas'))
 
     class Meta:
         managed = True
         db_table = 'published_report'
+        verbose_name = _("Ataskaita")
+        verbose_name_plural = _("Ataskaitos")
 
 
 class Report(models.Model):

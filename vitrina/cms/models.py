@@ -92,16 +92,24 @@ class ExternalSite(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    title = models.TextField(blank=True, null=True)
-    type = models.CharField(max_length=255, blank=True, null=True, choices=TYPE_CHOICES)
-    url = models.CharField(max_length=255, blank=True, null=True)
-    image = FilerImageField(null=True, blank=True, related_name="image_site", on_delete=models.SET_NULL)
+    title = models.TextField(blank=True, null=True, verbose_name=_("Pavadinimas"))
+    type = models.CharField(max_length=255, blank=True, null=True, choices=TYPE_CHOICES, verbose_name=_("Tipas"))
+    url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Nuoroda"))
+    image = FilerImageField(
+        null=True,
+        blank=True,
+        related_name="image_site",
+        on_delete=models.SET_NULL,
+        verbose_name=_("Paveikslėlis")
+    )
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         db_table = 'external_site'
+        verbose_name = _("Portalas")
+        verbose_name_plural = _("Portalai")
 
     def __str__(self):
         return self.title
@@ -111,14 +119,16 @@ class Faq(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    answer = models.TextField(blank=True, null=True)
-    question = models.TextField(blank=True, null=True)
+    answer = models.TextField(blank=True, null=True, verbose_name=_('Atsakymas'))
+    question = models.TextField(blank=True, null=True, verbose_name=_("Klausimas"))
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'faq'
+        verbose_name = _("Dažnai užduodamas klausimas")
+        verbose_name_plural = _("Dažnai užduodami klausimai")
 
     def __str__(self):
         return self.question
@@ -159,30 +169,39 @@ class FileResource(models.Model):
 
 
 class LearningMaterial(models.Model):
+    UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     comment = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, verbose_name=_("Aprašymas"))
     learning_material_id = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
-    topic = models.CharField(max_length=255, blank=True, null=True)
+    topic = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas"))
     user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    video_url = models.CharField(max_length=255, blank=True, null=True)
-    summary = models.TextField(blank=True, null=True)
-    author_name = models.TextField(blank=True, null=True)
-    published = models.DateField(blank=True, null=True)
+    video_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda"))
+    summary = models.TextField(blank=True, null=True, verbose_name=_("Santrauka"))
+    author_name = models.TextField(blank=True, null=True, verbose_name=_("Autorius"))
+    published = models.DateField(blank=True, null=True, verbose_name=_("Publikavimo data"))
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     requested = models.IntegerField(blank=True, null=True)
-    image = FilerImageField(null=True, blank=True, related_name="image_learning_material", on_delete=models.SET_NULL)
+    image = FilerImageField(
+        null=True,
+        blank=True,
+        related_name="image_learning_material",
+        on_delete=models.SET_NULL,
+        verbose_name=_("Paveikslėlis")
+    )
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         db_table = 'learning_material'
+        verbose_name = _("Mokymosi medžiaga")
+        verbose_name_plural = _("Mokymosi medžiaga")
 
     def __str__(self):
         return self.topic

@@ -409,3 +409,5 @@ CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
 
 TRANSLATION_CLIENT_ID = env('TRANSLATION_CLIENT_ID', default='')
+CLIENTS_API_URL = env('CLIENTS_API_URL', default='https://get-test.data.gov.lt/auth/clients/')
+CLIENTS_AUTH_BEARER = env('CLIENTS_AUTH_BEARER', default='')

@@ -1,6 +1,9 @@
 from django.db import models
 
-from vitrina.orgs.models import Representative
+from django.urls import reverse
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative, Organization
+from django.utils.translation import gettext_lazy as _
 
 
 class ApiKey(models.Model):
@@ -22,9 +25,26 @@ class ApiKey(models.Model):
         blank=True,
         null=True,
     )
+    organization = models.ForeignKey(
+        Organization,
+        models.CASCADE,
+        blank=True,
+        null=True
+    )
+    client_id = models.CharField(blank=True, null=True, max_length=255)
+    client_name = models.CharField(blank=True, null=True, max_length=255)
 
     class Meta:
         db_table = 'api_key'
+
+    def get_absolute_url(self):
+        return reverse('organization-apikeys-detail', kwargs={
+            'pk': self.organization.pk,
+            'apikey_id': self.pk
+        })
+
+    def __str__(self):
+        return self.api_key
 
 
 class ApiDescription(models.Model):
@@ -47,3 +67,33 @@ class ApiDescription(models.Model):
     class Meta:
         managed = False
         db_table = 'api_description'
+
+
+class ApiScope(models.Model):
+    enabled = models.BooleanField(blank=True, null=True)
+    key = models.ForeignKey(
+        ApiKey,
+        models.CASCADE,
+        verbose_name=_('API raktas')
+    )
+    scope = models.CharField(max_length=255, verbose_name=_('Taikymo sritis'))
+    organization = models.ForeignKey(
+        Organization,
+        models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Organizacija')
+    )
+    dataset = models.ForeignKey(
+        Dataset,
+        models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Duomenų rinkinys')
+    )
+
+    class Meta:
+        db_table = 'api_scope'
+
+    def __str__(self):
+        return self.scope

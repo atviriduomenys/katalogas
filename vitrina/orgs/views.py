@@ -4,6 +4,7 @@ import secrets
 from datetime import datetime
 
 import pandas as pd
+import requests
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -18,12 +19,12 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic import DetailView, View
 from django.utils.text import slugify
+from django.views.generic.edit import FormView
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
-from vitrina import settings
-from vitrina.api.models import ApiKey
+from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
     get_stats_filter_options_based_on_model
@@ -33,11 +34,14 @@ from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, ApiKeyForm, \
+    ApiScopeForm, ApiKeyRegenerateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.plans.models import Plan
+from vitrina.settings import CLIENTS_AUTH_BEARER, CLIENTS_API_URL
+from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
@@ -97,7 +101,7 @@ class RepresenentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         )
         task.save()
         email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
+            self.email_identifier, self.base_template_content,
             'Koordinatoriaus paraiškos patvirtinimas',
             []
         )
@@ -154,7 +158,7 @@ class RepresenentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         self.representative_request.delete()
         email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
+            self.email_identifier, self.base_template_content,
             'Koordinatoriaus paraiškos atmetimas',
             []
         )
@@ -521,10 +525,10 @@ class RepresentativeCreateView(
                 reverse('representative-register', kwargs={'token': token})
             )
             email_data = prepare_email_by_identifier(
-                self.email_identifier,  self.base_template_content,
+                self.email_identifier, self.base_template_content,
                 'Kvietimas prisijungti prie atvirų duomenų portalo',
-                 [self.organization, url]
-             )
+                [self.organization, url]
+            )
             send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
@@ -679,7 +683,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         user = self.request.user
         user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
         if not user_social_account:
-           return redirect('viisp_login')
+            return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -708,13 +712,14 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         representative_request = RepresentativeRequest(
-            user = self.request.user,
-            organization = form.cleaned_data.get('organization'),
-            document = form.cleaned_data.get('request_form')
+            user=self.request.user,
+            organization=form.cleaned_data.get('organization'),
+            document=form.cleaned_data.get('request_form')
         )
         representative_request.save()
-        
+
         return redirect(reverse('partner-register-complete'))
+
 
 class PartnerRegisterCompleteView(TemplateView):
     template_name = 'vitrina/orgs/partners/register_complete.html'
@@ -801,6 +806,914 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
         self.object.save()
         set_comment(_(f'Pridėtas terminas "{self.object}".'))
         return redirect(reverse('organization-plans', args=[self.organization.pk]))
+
+
+class OrganizationApiKeysView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    TemplateView
+):
+    template_name = 'vitrina/orgs/apikeys.html'
+
+    object: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Organization, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.object,
+        )
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+
+        headers = {
+            "Authorization": CLIENTS_AUTH_BEARER}
+        response = requests.get(CLIENTS_API_URL, headers=headers)
+        keys = response.json()
+        key_client_ids = []
+        if response.status_code == 200:
+            for key in keys:
+                client_id = key.get('client_id')
+                client_name = key.get('client_name')
+                org = Organization.objects.filter(name=client_name).exists()
+                if not org:
+                    org = None
+                key_client_ids.append(client_id)
+
+                if not ApiKey.objects.filter(client_id=client_id).exists():
+                    ApiKey.objects.create(
+                        client_id=client_id,
+                        client_name=client_name,
+                        organization=org,
+                        enabled=True
+                    )
+        else:
+            context_data[
+                'api_error'] = ('Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti'
+                                + ' su raktais Saugykloje.')
+
+        keys_in_database = ApiKey.objects.all()
+        for key in keys_in_database:
+            if key.client_id in key_client_ids:
+                key.enabled = False
+                key.save()
+
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.object.pk]): self.object.title,
+            reverse('organization-apikeys', args=[self.object.pk]): _("Raktai"),
+        }
+        context_data['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object
+        )
+        context_data['can_update_organization'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            Representative,
+            self.object
+        )
+        context_data['organization_id'] = self.object.pk
+        context_data['organization'] = self.object
+        internal = ApiKey.objects.filter(organization=self.object)
+        scopes = ApiScope.objects.filter(organization=self.object).values_list('key_id', flat=True)
+        external = ApiKey.objects.filter(pk__in=scopes).exclude(pk__in=internal)
+        context_data['internal_keys'] = internal
+        context_data['external_keys'] = external
+        return context_data
+
+
+class OrganizationApiKeysDetailView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    TemplateView
+):
+    template_name = 'vitrina/orgs/apikeys_detail.html'
+    pk_url_kwarg = 'apikey_id'
+
+    object: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Organization, pk=kwargs['pk'])
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs['apikey_id'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.object,
+        )
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.object.pk]): self.object.title,
+            reverse('organization-apikeys', args=[self.object.pk]): _("Raktai"),
+        }
+
+        context_data['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object
+        )
+        context_data['can_update_organization'] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            Representative,
+            self.object
+        )
+        context_data['organization_id'] = self.object.pk
+        context_data['organization'] = self.object
+        api_key = ApiKey.objects.filter(pk=self.api_key.pk).get()
+        context_data['key'] = api_key
+
+        prefix = "spinta"
+        suffixes = ["_getone", "_getall", "_search", "_changes", "_insert", "_upsert", "_update", "_patch",
+                    "_delete", "_wipe"]
+        read = ["_getone", "_getall", "_search"]
+        write = ["_insert", "_upsert", "_update", "_patch", "_delete"]
+
+        grouped = {}
+        scopes_final = {}
+        scopes = ApiScope.objects.filter(key=api_key)
+
+        for scope in scopes:
+            if scope.scope == 'spinta_set_meta_fields':
+                grouped.setdefault('set_meta_fields', [])
+                grouped['set_meta_fields'].append(scope)
+            if any((match := ext) in scope.scope for ext in suffixes):
+                code = scope.scope.removeprefix(prefix).removesuffix(match)
+                if len(code) > 0:
+                    code = code.removeprefix('_datasets_gov_')
+                    if code.startswith('_'):
+                        code = code.removeprefix('_')
+                else:
+                    code = '(viskas)'
+                grouped.setdefault(code, [])
+                grouped[code].append(scope)
+
+        for k, v in grouped.items():
+            dt = {'read': False, 'write': False, 'wipe': False, 'title': '', 'url': None,
+                  'enabled': False}
+            if k == 'set_meta_fields':
+                dt.update({'title': 'set_meta_fields'})
+                for s in v:
+                    if s.enabled:
+                        dt.update({'enabled': True})
+                scopes_final[k] = dt
+            # if k == '(viskas)':
+            #     dt.update({'title': '(viskas)'})
+            #     for s in v:
+            #         dt.update({'enabled': s.enabled})
+            #     scopes_final[k] = dt
+            else:
+                dt.update({'title': k})
+                for s in v:
+                    if any(sc in s.scope for sc in read):
+                        dt.update({'read': True})
+                    if any(sc in s.scope for sc in write):
+                        dt.update({'write': True})
+                    if 'wipe' in s.scope:
+                        dt.update({'wipe': True})
+                    dt.update({'enabled': s.enabled})
+            if k != 'set_meta_fields' and k != '(viskas)':
+                org = Organization.objects.filter(name=k)
+                target_dataset = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    name=k)
+                if org:
+                    ct = ContentType.objects.get_for_model(org.get())
+                    dt.update({'title': org.get().title, 'url': org.get().get_absolute_url, 'obj': org.get(), 'ct': ct})
+                if target_dataset:
+                    ct = ContentType.objects.get_for_model(Dataset)
+                    dataset = Dataset.objects.get(pk=target_dataset.get().dataset_id)
+                    dt.update({'title': dataset.title, 'url': dataset.get_absolute_url, 'obj': dataset, 'ct': ct})
+            scopes_final[k] = dt
+        context_data['scopes'] = scopes_final
+        return context_data
+
+
+class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
+    model = ApiKey
+    form_class = ApiKeyForm
+    template_name = 'base_form.html'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        context['current_title'] = _("Naujas raktas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.organization = self.organization
+        api_key = secrets.token_urlsafe()
+        self.object.api_key = hash_api_key(api_key)
+        self.object.enabled = True
+        self.object.save()
+        permissions = ['spinta_set_meta_fields', 'spinta_getone', 'spinta_getall', 'spinta_search', 'spinta_changes']
+        for p in permissions:
+            ApiScope.objects.create(
+                key=self.object,
+                organization=self.organization,
+                scope=p,
+                enabled=True
+            )
+        messages.info(self.request, 'API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
+                      + api_key)
+        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+
+
+class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
+    model = ApiKey
+    form_class = ApiKeyForm
+    template_name = 'base_form.html'
+    pk_url_kwarg = 'apikey_id'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        prefix = "spinta"
+        suffixes = ["_getone", "_getall", "_search", "_changes", "_insert", "_upsert", "_update", "_patch",
+                    "_delete", "_wipe"]
+        if self.api_key.client_id:
+            headers = {
+                "Authorization": CLIENTS_AUTH_BEARER}
+            response = requests.get(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+            if response.status_code == 200:
+                if 'scopes' in response.json():
+                    scopes = response.json()['scopes']
+
+                    existing = ApiScope.objects.filter(key=self.api_key)
+                    for ex in existing:
+                        ex.delete()
+
+                    for scope in scopes:
+                        org = None
+                        if any((match := ext) in scope for ext in suffixes):
+                            code = scope.removeprefix(prefix).removesuffix(match)
+                            if code:
+                                org = Organization.objects.filter(name=code.removeprefix('_datasets_gov_')).get()
+                        if scope != 'spinta_set_meta_fields':
+                            ApiScope.objects.create(
+                                key=self.api_key,
+                                scope=scope,
+                                enabled=True,
+                                organization=org,
+                                dataset=None
+                            )
+
+        context['current_title'] = _("Rakto redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.save()
+        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+
+
+class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
+    model = ApiKey
+    form_class = ApiKeyRegenerateForm
+    template_name = 'base_form.html'
+    pk_url_kwarg = 'apikey_id'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Rakto slaptažodžio keitimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.api_key = hash_api_key(form.cleaned_data.get('new_key'))
+        self.object.save()
+        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+
+
+class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = ApiKey
+    template_name = 'confirm_delete.html'
+    pk_url_kwarg = 'apikey_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.apikey = get_object_or_404(ApiKey, pk=self.kwargs.get('apikey_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def delete(self, request, *args, **kwargs):
+        # headers = {
+        #     "Authorization": CLIENTS_AUTH_BEARER}
+        # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+        #
+        self.apikey.delete()
+        success_url = self.get_success_url()
+        return HttpResponseRedirect(success_url)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['api_key'] = self.apikey
+        context['current_title'] = _("Šalinti raktą")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.apikey.pk]): self.apikey,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def get_success_url(self):
+        return reverse('organization-apikeys', kwargs={'pk': self.kwargs.get('pk')})
+
+
+class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
+    form_class = ApiScopeForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        kwargs['api_key'] = self.api_key
+        kwargs['scope'] = None
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['api_key'] = self.api_key
+        context['current_title'] = _("Nauja taikymo sritis")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+        }
+        return context
+
+    def form_valid(self, form):
+        read = ["_getone", "_getall", "_search"]
+        write = ["_insert", "_upsert", "_update", "_patch", "_delete"]
+
+        organization = None
+        dataset = None
+
+        scope_name = form.cleaned_data.get('scope')
+        if scope_name == 'spinta_set_meta_fields' or scope_name == 'set_meta_fields':
+            organization = self.organization
+            ApiScope.objects.create(
+                key=self.api_key,
+                scope=scope_name,
+                organization=organization,
+                enabled=True
+            )
+        else:
+            target_org = Organization.objects.filter(name=scope_name)
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                name=scope_name)
+            if target_org.exists():
+                if target_org.get().pk != self.organization.pk:
+                    organization = target_org.get()
+                    # todo siųsti emailus
+                    # url = self.api_key.get_absolute_url()
+                    title = f'Prašoma prieigos prie duomenų: {self.api_key}'
+                    base_email_content = """
+                                        Gautas pranešimas, kad prašoma suteikti prieigą prie duomenų:
+                                        {0}
+                                    """
+                    url = f"{get_current_domain(self.request)}{self.api_key.get_absolute_url()}"
+                    rep_emails = Representative.objects.filter(
+                        content_type=ContentType.objects.get_for_model(organization),
+                        object_id=organization.pk).values_list('email', flat=True)
+                    email_data = prepare_email_by_identifier('apikey-request', base_email_content, title,
+                                                             [url])
+                    send_email_with_logging(email_data, [rep_emails])
+                    Task.objects.create(
+                        content_type=ContentType.objects.get_for_model(ApiKey),
+                        object_id=self.api_key.pk,
+                        organization=target_org.get(),
+                        title=f'Prašymas suteikti prieigą prie duomenų. Raktas: {self.api_key.pk}',
+                        status=Task.CREATED,
+                        type=Task.APIKEY,
+                        description=f'Kita organizacija prašo suteikti prieigą prie duomenų raktui.'
+                    )
+            else:
+                organization = self.organization
+            if metadata.exists():
+                dataset = Dataset.objects.filter(pk=metadata.get().dataset.pk).first()
+
+        if form.cleaned_data.get('read'):
+            for s in read:
+                ApiScope.objects.create(
+                    scope='spinta_' + scope_name + s,
+                    organization=organization,
+                    dataset=dataset,
+                    key=self.api_key,
+                    enabled=True
+                )
+        if form.cleaned_data.get('write'):
+            for s in write:
+                ApiScope.objects.create(
+                    scope='spinta_' + scope_name + s,
+                    organization=organization,
+                    dataset=dataset,
+                    key=self.api_key,
+                    enabled=True
+                )
+        if form.cleaned_data.get('remove'):
+            ApiScope.objects.create(
+                scope='spinta_' + scope_name + '_wipe',
+                organization=organization,
+                dataset=dataset,
+                key=self.api_key,
+                enabled=True
+            )
+
+        return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
+
+
+class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
+    form_class = ApiScopeForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        self.name = kwargs.get('scope')
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        kwargs['api_key'] = self.api_key
+        kwargs['scope'] = self.name
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        context['api_key'] = self.api_key
+        context['current_title'] = _("Taikymo srities redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+        }
+        return context
+
+    def form_valid(self, form):
+        read = ["_getone", "_getall", "_search"]
+        write = ["_insert", "_upsert", "_update", "_patch", "_delete"]
+        create_read = False
+        create_write = False
+        create_wipe = False
+
+        if self.name != 'set_meta_fields' and self.name != 'spinta_set_meta_fields':
+            scopes = ApiScope.objects.filter(key=self.api_key).exclude(scope__icontains='datasets_gov')
+            for sc in scopes:
+                if not sc.scope == 'spinta_set_meta_fields' or not sc.scope == 'set_meta_fields':
+                    if form.cleaned_data.get('read'):
+                        if not any(s in sc.scope for s in read):
+                            create_read = True
+                    else:
+                        for s in read:
+                            scopes.filter(scope__icontains=s).delete()
+                    if form.cleaned_data.get('write'):
+                        if not any(s in sc.scope for s in write):
+                            create_write = True
+                    else:
+                        for s in write:
+                            scopes.filter(scope__icontains=s).delete()
+                    if form.cleaned_data.get('remove'):
+                        if 'wipe' not in sc.scope:
+                            create_wipe = True
+                    else:
+                        scopes.filter(scope__icontains='_wipe').delete()
+            if create_read:
+                for s in read:
+                    ApiScope.objects.create(
+                        key=self.api_key,
+                        scope='spinta' + s,
+                        organization=self.organization,
+                        enabled=True
+                    )
+            if create_write:
+                for s in write:
+                    ApiScope.objects.create(
+                        key=self.api_key,
+                        scope='spinta' + s,
+                        organization=self.organization,
+                        enabled=True
+                    )
+            if create_wipe:
+                ApiScope.objects.create(
+                    key=self.api_key,
+                    scope='spinta_wipe',
+                    organization=self.organization,
+                    enabled=True
+                )
+        return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
+
+
+class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView):
+    form_class = ApiScopeForm
+    template_name = 'base_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        self.ct = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.object = get_object_or_404(self.ct.model_class(), pk=kwargs.get('obj_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        kwargs['api_key'] = self.api_key
+        kwargs['scope'] = self.object.name
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        context['api_key'] = self.api_key
+        context['current_title'] = _("Taikymo srities redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+        }
+        return context
+
+    def form_valid(self, form):
+        read = ["_getone", "_getall", "_search"]
+        write = ["_insert", "_upsert", "_update", "_patch", "_delete"]
+        create_read = False
+        create_write = False
+        create_wipe = False
+
+        scopes = ApiScope.objects.none()
+
+        organization = None
+        dataset = None
+        scope_name = self.object.name
+
+        if isinstance(self.object, Organization):
+            scopes = ApiScope.objects.filter(key=self.api_key, organization=self.object)
+            organization = self.object
+        else:
+            scopes = ApiScope.objects.filter(key=self.api_key, dataset=self.object)
+            dataset = self.object
+
+        for sc in scopes:
+            if form.cleaned_data.get('read'):
+                if not any(s in sc.scope for s in read):
+                    create_read = True
+            else:
+                for s in read:
+                    scopes.filter(scope__icontains=s).delete()
+            if form.cleaned_data.get('write'):
+                if not any(s in sc.scope for s in write):
+                    create_write = True
+            else:
+                for s in write:
+                    scopes.filter(scope__icontains=s).delete()
+            if form.cleaned_data.get('remove'):
+                if 'wipe' not in sc.scope:
+                    create_wipe = True
+            else:
+                scopes.filter(scope__icontains='_wipe').delete()
+
+        if len(scopes) == 0:
+            if form.cleaned_data.get('read'):
+                create_read = True
+            if form.cleaned_data.get('write'):
+                create_write = True
+            if form.cleaned_data.get('remove'):
+                create_wipe = True
+
+        if create_read:
+            for s in read:
+                ApiScope.objects.create(
+                    key=self.api_key,
+                    scope='spinta_datasets_gov_' + scope_name + s,
+                    organization=organization,
+                    dataset=dataset,
+                    enabled=True
+                )
+        if create_write:
+            for s in write:
+                ApiScope.objects.create(
+                    key=self.api_key,
+                    scope='spinta_datasets_gov_' + scope_name + s,
+                    organization=organization,
+                    dataset=dataset,
+                    enabled=True
+                )
+        if create_wipe:
+            ApiScope.objects.create(
+                key=self.api_key,
+                scope='spinta_datasets_gov_' + scope_name + '_wipe',
+                organization=organization,
+                dataset=dataset,
+                enabled=True
+            )
+        return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
+
+
+class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    model = ApiScope
+    template_name = 'confirm_delete.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _("Šalinti taikymo sritį")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def post(self, request, *args, **kwargs):
+        scope_name = kwargs.get('scope')
+        api_key = kwargs.get('apikey_id')
+        if scope_name == 'spinta_set_meta_fields' or scope_name == 'set_meta_fields':
+            scopes = ApiScope.objects.filter(key_id=api_key, scope__contains='set_meta_fields')
+            for scope in scopes:
+                # todo post i api ???
+                scope.delete()
+        elif scope_name == '(viskas)':
+            scopes = ApiScope.objects.filter(
+                Q(key_id=api_key) & (
+                    Q(scope='spinta_getone') |
+                    Q(scope='spinta_getall') |
+                    Q(scope='spinta_search') |
+                    Q(scope='spinta_changes')
+                    )
+                )
+            for scope in scopes:
+                # headers = {
+                #     "Authorization": CLIENTS_AUTH_BEARER}
+                # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+                scope.delete()
+        return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
+
+
+class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    model = ApiScope
+    template_name = 'confirm_delete.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
+        self.ct = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.object = get_object_or_404(self.ct.model_class(), pk=kwargs.get('obj_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['api_key'] = self.api_key
+        context['current_title'] = _("Šalinti taikymo sritį")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+            reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
+        }
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if isinstance(self.object, Organization):
+            scopes = ApiScope.objects.filter(key=self.api_key, organization=self.object)
+        else:
+            scopes = ApiScope.objects.filter(key=self.api_key, dataset=self.object)
+
+        for sc in scopes:
+            # headers = {
+            #     "Authorization": CLIENTS_AUTH_BEARER}
+            # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+            sc.delete()
+        return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
+
+    def get_success_url(self):
+        return reverse('organization-apikeys-detail', kwargs={'pk': self.organization.pk,
+                                                              'apikey_id': self.kwargs.get('apikey_id')})
+
+
+class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
+
+    def dispatch(self, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=self.kwargs.get('apikey_id'))
+        return super().dispatch(*args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get(self, request, **kwargs):
+        scope_name = kwargs.get('scope')
+        if scope_name == 'spinta_set_meta_fields' or scope_name == 'set_meta_fields':
+            scopes = ApiScope.objects.filter(key_id=self.api_key, scope__contains='set_meta_fields')
+            for scope in scopes:
+                if scope.enabled:
+                    scope.enabled = False
+                else:
+                    scope.enabled = True
+                scope.save()
+        elif scope_name == '(viskas)':
+            scopes = ApiScope.objects.filter(
+                Q(key_id=self.api_key) & (
+                        Q(scope='spinta_getone') |
+                        Q(scope='spinta_getall') |
+                        Q(scope='spinta_search') |
+                        Q(scope='spinta_changes')
+                )
+            )
+            for scope in scopes:
+                if scope.enabled:
+                    scope.enabled = False
+                else:
+                    scope.enabled = True
+                scope.save()
+
+        # todo post enabled/disabled to spinta ???
+
+        return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
+
+
+class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):
+
+    def dispatch(self, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=self.kwargs.get('apikey_id'))
+        self.ct = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.object = get_object_or_404(self.ct.model_class(), pk=kwargs.get('obj_id'))
+        return super().dispatch(*args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get(self, request, **kwargs):
+        if isinstance(self.object, Organization):
+            scopes = ApiScope.objects.filter(key=self.api_key, organization=self.object)
+        else:
+            scopes = ApiScope.objects.filter(key=self.api_key, dataset=self.object)
+
+        for sc in scopes:
+            if sc.enabled:
+                sc.enabled = False
+            else:
+                sc.enabled = True
+            sc.save()
+        # todo post enabled/disabled to spinta ???
+
+        return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 
 class OrganizationPlansHistoryView(PlanMixin, HistoryView):

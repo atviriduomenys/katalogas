@@ -30,6 +30,7 @@ class Task(models.Model):
         (MANAGER, _("Organizacijos tvarkytojas"))
     }
 
+    APIKEY = 'apikey'
     DATASET = 'dataset'
     COMMENT = 'comment'
     REQUEST = 'request'
@@ -38,6 +39,7 @@ class Task(models.Model):
     ERROR_FREQUENCY = 'error_frequency'
     ERROR_DISTRIBUTION = 'error_distribution'
     TYPES = (
+        (APIKEY, _("Raktas")),
         (DATASET, _("Duomenų rinkinys")),
         (COMMENT, _("Komentaras")),
         (REQUEST, _("Prašymas")),

@@ -25,6 +25,11 @@
                 </a>
             </li>
         {% endif %}
+        <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
+            <a href="{% url 'organization-apikeys' organization_id %}">
+                {% translate "Raktai" %}
+            </a>
+        </li>
         {% if can_manage_history and history_url %}
             <li class="{% if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
                 <a href="{{ history_url }}">

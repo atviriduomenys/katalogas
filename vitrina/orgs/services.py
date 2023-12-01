@@ -31,6 +31,7 @@ class Action(Enum):
     COMMENT = "comment_with_status"
     STRUCTURE = 'structure'
     PLAN = 'plan'
+    MANAGE_KEYS = 'manage_keys'
 
 
 class Role(Enum):
@@ -71,6 +72,7 @@ acl = {
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
     (Task, Action.UPDATE): [Role.ALL],
+    (Organization, Action.MANAGE_KEYS): [Role.COORDINATOR, Role.MANAGER],
 
 }
 

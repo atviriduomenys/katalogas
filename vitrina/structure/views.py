@@ -357,18 +357,18 @@ class PropertyStructureView(
         if metadata and metadata.type:
             type = metadata.type
             if (
-                    (type == 'string' and self.property.enums.exists()) or
-                    (type == 'geometry' and get_srid(metadata.type_args)) or
-                    type in [
-                'boolean',
-                'integer',
-                'number',
-                'datetime',
-                'date',
-                'time',
-                'money',
-                'ref',
-            ]
+                (type == 'string' and self.property.enums.exists()) or
+                (type == 'geometry' and get_srid(metadata.type_args)) or
+                type in [
+                    'boolean',
+                    'integer',
+                    'number',
+                    'datetime',
+                    'date',
+                    'time',
+                    'money',
+                    'ref',
+                ]
             ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])
@@ -1180,8 +1180,8 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.version += 1
 
             if (
-                    'value' in form.changed_data or
-                    'source' in form.changed_data
+                'value' in form.changed_data or
+                'source' in form.changed_data
             ):
                 metadata.draft = True
 
@@ -1448,10 +1448,10 @@ class ModelUpdateView(
         self.object.ref = ', '.join(model_ref.values_list('metadata__name', flat=True)) if model_ref else ''
 
         if (
-                'name' in form.changed_data or
-                'base' in form.changed_data or
-                'ref' in form.changed_data or
-                'level' in form.changed_data
+            'name' in form.changed_data or
+            'base' in form.changed_data or
+            'ref' in form.changed_data or
+            'level' in form.changed_data
         ):
             self.object.draft = True
 
@@ -1692,11 +1692,11 @@ class PropertyUpdateView(
                 prop.ref_model = None
 
         if (
-                'name' in form.changed_data or
-                'type' in form.changed_data or
-                'ref' in form.changed_data or
-                'level' in form.changed_data or
-                'access' in form.changed_data
+            'name' in form.changed_data or
+            'type' in form.changed_data or
+            'ref' in form.changed_data or
+            'level' in form.changed_data or
+            'access' in form.changed_data
         ):
             self.object.draft = True
         self.object.save()

@@ -66,7 +66,8 @@ from vitrina.datasets.forms import DatasetStructureImportForm, DatasetForm, Data
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import update_facet_data, get_projects, get_frequency_and_format, \
     get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
-    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency
+    get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
+    manage_subscriptions_for_representative
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
@@ -402,7 +403,8 @@ class OpenDataPortalDatasetDetailView(View):
         }))
 
 
-class DatasetDistributionPreviewView(View):
+class DatasetDistributionPreviewView(ListView):
+
     def get(self, request, dataset_id, distribution_id):
         distribution = get_object_or_404(
             DatasetDistribution,
@@ -411,9 +413,18 @@ class DatasetDistributionPreviewView(View):
         )
         data = []
         if distribution.is_previewable():
-            rows = open(distribution.file.path, encoding='utf-8')
-            rows = itertools.islice(rows, 100)
-            data = list(csv.reader(rows, delimiter=";"))
+            if 'xlsx' in distribution.file.path:
+                data = pd.ExcelFile(distribution.file.path)
+                data = {
+                    sheet_name: data.parse(sheet_name) for sheet_name in data.sheet_names
+                }
+                if len(data.keys()) > 1:
+                    raise "Not implemented for more than one value"
+                data = data[next(iter(data))].values.tolist()
+            else:
+                rows = open(distribution.file.path, encoding='utf-8')
+                rows = itertools.islice(rows, 100)
+                data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 
@@ -450,7 +461,7 @@ class DatasetCreateView(
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.object = form.save(commit=True)
+        self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 
@@ -466,7 +477,6 @@ class DatasetCreateView(
             )
 
         types = form.cleaned_data.get('type')
-        self.object.type.set(types)
         if types.filter(name=Type.SERVICE):
             self.object.service = True
         else:
@@ -481,6 +491,8 @@ class DatasetCreateView(
             self.object.series = False
 
         self.object.save()
+        self.object.type.set(types)
+        self.object.save()
         set_comment(Dataset.CREATED)
 
         for file in form.cleaned_data.get('files', []):
@@ -494,7 +506,7 @@ class DatasetCreateView(
             dataset=self.object,
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            name=form.cleaned_data.get('name'),
+            name=form.cleaned_data.get('name', ''),
             prepare_ast={},
             version=1,
         )
@@ -587,24 +599,17 @@ class DatasetUpdateView(
                 status__isnull=False
             ).order_by('-created').first()
 
-            if latest_status_comment:
-                if latest_status_comment.status == Comment.INVENTORED:
-                    self.object.status = Dataset.INVENTORED
-                elif latest_status_comment.status == Comment.PLANNED:
-                    self.object.status = Dataset.PLANNED
-                elif latest_status_comment.status == Comment.OPENED:
-                    self.object.status = Dataset.HAS_DATA
+            if self.object.datasetdistribution_set.exists():
+                self.object.status = Dataset.HAS_DATA
+                comment_status = Comment.OPENED
+            elif self.object.plandataset_set.exists():
+                self.object.status = Dataset.PLANNED
+                comment_status = Comment.PLANNED
             else:
-                if self.object.datasetdistribution_set.exists():
-                    self.object.status = Dataset.HAS_DATA
-                    comment_status = Comment.OPENED
-                elif self.object.plandataset_set.exists():
-                    self.object.status = Dataset.PLANNED
-                    comment_status = Comment.PLANNED
-                else:
-                    self.object.status = Dataset.INVENTORED
-                    comment_status = Comment.INVENTORED
+                self.object.status = Dataset.INVENTORED
+                comment_status = Comment.INVENTORED
 
+            if not latest_status_comment or latest_status_comment.status != comment_status:
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
@@ -664,31 +669,24 @@ class DatasetUpdateView(
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
 
+        queries = []
         if self.object.organization:
-            email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
-                                                     'Duomenų rinkinys atnaujintas',
-                                                     [self.object])
-            if self.object.organization.email:
-                send_email_with_logging(email_data, [self.object.organization.email])
-
-        org_subs = Subscription.objects.none()
-        if self.object.organization:
-            org_subs = Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
-                                                   sub_type=Subscription.ORGANIZATION,
-                                                   content_type=get_content_type_for_model(Organization),
-                                                   dataset_update_sub=True)
-
-        subs = Subscription.objects.filter(sub_type=Subscription.DATASET,
-                                           content_type=get_content_type_for_model(Dataset),
-                                           object_id=self.object.id,
-                                           dataset_update_sub=True)
-
-        if org_subs:
-            subs = org_subs | subs
+            queries.append(Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
+                                                       sub_type=Subscription.ORGANIZATION,
+                                                       content_type=get_content_type_for_model(Organization),
+                                                       dataset_update_sub=True))
+        queries.append(Subscription.objects.filter(sub_type=Subscription.DATASET,
+                                                   content_type=get_content_type_for_model(Dataset),
+                                                   object_id=self.object.id,
+                                                   dataset_update_sub=True))
+        sub_list = [item for query in queries for item in query]
+        sorted_list = sorted(sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION)
 
         sub_email_list = []
+        if self.object.organization and self.object.organization.email:
+            sub_email_list.append(self.object.organization.email)
         email_data_sub = None
-        for sub in subs:
+        for sub in sorted_list:
             if sub.sub_type == Subscription.ORGANIZATION:
                 title = f"{self.object.organization} organizacijos duomenų rinkinys"
                 description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
@@ -720,7 +718,8 @@ class DatasetUpdateView(
                 if sub.user.organization:
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
-                sub_email_list.append(sub.user.email)
+                if sub.user.email not in sub_email_list:
+                    sub_email_list.append(sub.user.email)
         if email_data_sub:
             send_email_with_logging(email_data_sub, sub_email_list)
 
@@ -780,6 +779,9 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
 
 
 class DatasetStructureImportView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     CreateView,
@@ -788,11 +790,9 @@ class DatasetStructureImportView(
     form_class = DatasetStructureImportForm
     template_name = 'base_form.html'
 
-    dataset: Dataset | None = None
-
-    def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-structure-history'
+    plan_url_name = 'dataset-plans'
 
     def has_permission(self):
         return has_perm(
@@ -808,11 +808,18 @@ class DatasetStructureImportView(
             'current_title': _("Struktūros importas"),
             'parent_links': {
                 reverse('home'): _('Pradžia'),
-                reverse('request-list'): _('Poreikiai'),
+                reverse('dataset-list'): _('Duomenų rinkiniai'),
                 reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
             },
             'parent_title': self.dataset.title,
             'parent_url': self.dataset.get_absolute_url(),
+            'tabs': 'vitrina/datasets/tabs.html',
+            'can_view_members': has_perm(
+                self.request.user,
+                Action.VIEW,
+                Representative,
+                self.dataset,
+            ),
         }
 
     def form_valid(self, form):
@@ -820,9 +827,18 @@ class DatasetStructureImportView(
         self.object.dataset = self.dataset
         self.object.save()
         self.object.dataset.current_structure = self.object
-        self.object.dataset.save()
         create_structure_objects(self.object)
+        self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
+
+    def get_plan_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_history_object(self):
+        return self.dataset
 
 
 class DatasetMembersView(
@@ -948,6 +964,7 @@ class CreateMemberView(
         self.object: Representative = form.save(commit=False)
         self.object.content_type = ContentType.objects.get_for_model(Dataset)
         self.object.object_id = self.dataset.id
+
         try:
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
@@ -959,6 +976,8 @@ class CreateMemberView(
             if not user.organization:
                 user.organization = self.dataset.organization
                 user.save()
+
+            manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -1063,6 +1082,11 @@ class UpdateMemberView(
             'pk': self.kwargs.get('pk'),
         })
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object'] = self.dataset
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tabs'] = 'vitrina/datasets/tabs.html'
@@ -1090,6 +1114,8 @@ class UpdateMemberView(
             self.object.user.save()
 
         self.dataset.save()
+
+        manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
 
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
@@ -2725,7 +2751,6 @@ class UpdateDatasetOrgFilters(FacetedSearchView):
             ),
             items = []
             for item in filter[0].items():
-                print(item.count)
                 if q.lower() in item.title.lower():
                     items.append(item)
             extra_context = {

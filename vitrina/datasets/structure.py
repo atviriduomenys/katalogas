@@ -3,6 +3,7 @@ from __future__ import annotations
 import pathlib
 from dataclasses import dataclass, field
 from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
+from django.utils.translation import gettext_lazy as _
 
 DIMS = [
     'dataset',
@@ -638,6 +639,9 @@ def _read_model(
     if model.ref:
         model.ref_props = [x.strip() for x in model.ref.split(',')]
 
+    if state.manifest.models.get(model.name):
+        model.errors.append(_(f'Modelis "{model.name}" jau egzistuoja.'))
+
     if state.dataset:
         model.dataset = state.dataset
         model.dataset.models[name] = model
@@ -699,6 +703,10 @@ def _read_property(
         prop.ref_props = ref_props
 
     prop.model = state.model
+
+    if prop.model.properties.get(name):
+        prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
+
     prop.model.properties[name] = prop
 
     return prop
@@ -748,6 +756,10 @@ def _read_prefix(
     )
 
     prefix.meta = state.last
+
+    if prefix.meta.prefixes.get(name):
+        prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
+
     prefix.meta.prefixes[name] = prefix
 
     return prefix
@@ -779,6 +791,9 @@ def _read_enum(
 
     enum.meta = last
     if enum.meta.enums.get(name):
+        if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
+            enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
+
         enum.meta.enums[name].append(enum)
     else:
         enum.meta.enums[name] = [enum]
@@ -812,6 +827,9 @@ def _read_param(
 
     param.meta = last
     if param.meta.params.get(name):
+        if param.prepare in [e.prepare for e in param.meta.params[name]]:
+            param.errors.append(_(f'Parametras "{param.prepare}" jau egzistuoja.'))
+
         param.meta.params[name].append(param)
     else:
         param.meta.params[name] = [param]

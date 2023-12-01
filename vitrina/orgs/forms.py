@@ -2,32 +2,27 @@ import secrets
 from urllib.parse import urlparse
 import re
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import validate_slug
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
     HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
 from django.urls import resolve, Resolver404
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, Submit
 from django_select2.forms import ModelSelect2Widget
-from haystack.forms import SearchForm
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.services import is_duplicate_key
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField
+from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count, hash_api_key
 from vitrina.plans.models import Plan
-from vitrina.structure.models import Metadata
-from vitrina.viisp.xml_utils import read_adoc_file, parse_adoc_xml_signature_data
-from vitrina.users.models import User
 
+from vitrina.structure.models import Metadata
 
 class ProviderWidget(ModelSelect2Widget):
     model = Organization
@@ -139,6 +134,7 @@ class RepresentativeUpdateForm(ModelForm):
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
+    subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
 
     object_model = Organization
 
@@ -147,6 +143,7 @@ class RepresentativeUpdateForm(ModelForm):
         fields = ('role', 'has_api_access', 'regenerate_api_key',)
 
     def __init__(self, *args, **kwargs):
+        self.object = kwargs.pop('object', None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
@@ -155,18 +152,29 @@ class RepresentativeUpdateForm(ModelForm):
             Field('role'),
             Field('has_api_access'),
             Field('regenerate_api_key'),
+            Field('subscribe'),
             Submit('submit', _("Redaguoti"), css_class='button is-primary'),
         )
+
+        try:
+            content_type = ContentType.objects.get_for_model(self.object_model)
+            subscription = Subscription.objects.get(user=self.instance.user,
+                                                    content_type=content_type,
+                                                    object_id=self.object.id)
+            if subscription:
+                self.fields['subscribe'].initial = True
+        except ObjectDoesNotExist:
+            self.fields['subscribe'].initial = False
 
     def clean(self):
         role = self.cleaned_data.get('role')
         if (
-                self.instance.role == Representative.COORDINATOR and
-                role != Representative.COORDINATOR and
-                get_coordinators_count(
-                    self.object_model,
-                    self.instance.object_id,
-                ) == 1
+            self.instance.role == Representative.COORDINATOR and
+            role != Representative.COORDINATOR and
+            get_coordinators_count(
+                self.object_model,
+                self.instance.object_id,
+            ) == 1
         ):
             raise ValidationError(_(
                 "Negalima panaikinti koordinatoriaus rolės naudotojui, "
@@ -179,6 +187,7 @@ class RepresentativeCreateForm(ModelForm):
     email = EmailField(label=_("El. paštas"))
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
+    subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
 
     object_model = Organization
     object_id: int
@@ -197,20 +206,31 @@ class RepresentativeCreateForm(ModelForm):
             Field('email'),
             Field('role'),
             Field('has_api_access'),
+            Field('subscribe'),
             Submit('submit', _("Sukurti"), css_class='button is-primary'),
         )
+
+        try:
+            content_type = ContentType.objects.get_for_model(self.object_model)
+            subscription = Subscription.objects.get(user=self.instance.user,
+                                                    content_type=content_type,
+                                                    object_id=self.object_id)
+            if subscription:
+                self.fields['subscribe'].initial = True
+        except ObjectDoesNotExist:
+            self.fields['subscribe'].initial = False
 
     def clean(self):
         email = self.cleaned_data.get('email')
         content_type = ContentType.objects.get_for_model(self.object_model)
         if (
-                Representative.objects.
-                        filter(
-                    content_type=content_type,
-                    object_id=self.object_id,
-                    email=email
-                ).
-                        exists()
+            Representative.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.object_id,
+                email=email
+            ).
+            exists()
         ):
             self.add_error('email', _(
                 "Narys su šiuo el. pašto adresu jau egzistuoja."
@@ -223,9 +243,7 @@ class PartnerRegisterForm(ModelForm):
         label=_("Organizacija"),
         required=True,
         queryset=Organization.public.all(),
-        widget=OrganizationWidget(
-            attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;",
-                   'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=OrganizationWidget(attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0})
     )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
@@ -353,8 +371,8 @@ class OrganizationMergeForm(Form):
             except Resolver404:
                 raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
             if (
-                    url.url_name != 'organization-detail' or
-                    not Organization.objects.filter(pk=url.kwargs.get('pk'))
+                url.url_name != 'organization-detail' or
+                not Organization.objects.filter(pk=url.kwargs.get('pk'))
             ):
                 raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
             else:

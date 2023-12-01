@@ -316,10 +316,11 @@
                     $('html').toggleClass('is-clipped');
                     $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
                         data = json_data.data;
-                        var table_obj = document.getElementById('info-table-body');
-                        $("#info-table-body").empty();
+                        let table_obj = document.getElementById('info-table-body');
                         $.each(data, function (index, item) {
-                            var newRow = table_obj.insertRow(index);
+                            for(var i = 0; i < 5; i++){
+                                let newRow = table_obj.append(data[i]);
+                            }
                             if (index === 0) {
                                 newRow.classList.add("preview-tr", "is-bold");
                             } else {
@@ -339,7 +340,6 @@
                     $('html').toggleClass('is-clipped');
                     $.getJSON('/dataset/{{ dataset.id }}/previewStructure', function (json_data) {
                         var table_obj = document.getElementById('info-table-body');
-                        $("#info-table-body").empty();
                         $.each(json_data, function (index, item) {
                             var newRow = table_obj.insertRow(index);
                             if (index === 0) {
@@ -359,6 +359,7 @@
                 $('.modal-button-close').click(function () {
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
+                    $("#info-table-body").empty();
                 });
             });
         });

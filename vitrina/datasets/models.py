@@ -510,6 +510,8 @@ class Dataset(TranslatableModel):
                             f" name: <span class='tag is-danger is-light is-medium'>{latest_version.name}</span> ->"
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
+                    latest_version.ref = None if latest_version.ref == '' else latest_version.ref
+                    metadata.ref = None if metadata.ref == '' else metadata.ref
                     if latest_version.ref != metadata.ref:
                         label_str += (
                             f" ref: <span class='tag is-danger is-light is-medium'>{latest_version.ref}</span> -> "
@@ -572,6 +574,8 @@ class Dataset(TranslatableModel):
                                 f"{latest_version.type_repr}</span> -> "
                                 f"<span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
                             )
+                        latest_version.ref = None if latest_version.ref == '' else latest_version.ref
+                        metadata.ref = None if metadata.ref == '' else metadata.ref
                         if latest_version.ref != metadata.ref:
                             label_str += (
                                 f" ref: <span class='tag is-danger is-light is-medium'>"
@@ -643,12 +647,18 @@ class Dataset(TranslatableModel):
 
                             if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
                                 label_str = f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
+
+                                latest_version.prepare = None if latest_version.prepare == '' \
+                                    else latest_version.prepare
+                                metadata.prepare = None if metadata.prepare == '' else metadata.prepare
                                 if latest_version.prepare != metadata.prepare:
                                     label_str += (
                                         f" prepare: <span class='tag is-danger is-light is-medium'>"
                                         f"{latest_version.prepare}</span> ->"
                                         f" <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
                                     )
+                                latest_version.source = None if latest_version.source == '' else latest_version.source
+                                metadata.source = None if metadata.source == '' else metadata.source
                                 if latest_version.source != metadata.source:
                                     label_str += (
                                         f" source: <span class='tag is-danger is-light is-medium'>"

@@ -336,10 +336,17 @@ class ModelCreateForm(forms.ModelForm):
             metadata_name = self.dataset.name + '/' + name
         else:
             metadata_name = name
-        metadata = Metadata.objects.filter(
-            content_type=ContentType.objects.get_for_model(Model),
-            name=metadata_name
-        )
+
+        if self.instance and self.instance.pk:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            ).exclude(pk=self.instance.pk)
+        else:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            )
 
         if name:
             if not name[0].isupper():
@@ -545,23 +552,30 @@ class PropertyForm(forms.ModelForm):
     source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
     prepare = forms.CharField(label=_("Duomenų transformacija"), required=False)
     uri = forms.CharField(label=_("Klasė"), required=False)
-    level = forms.ChoiceField(
+    level = forms.TypedChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=PROPERTY_LEVEL_CHOICES,
+        coerce=int,
     )
-    access = forms.ChoiceField(label=_("Prieigos lygis"), required=False, choices=Metadata.ACCESS_TYPES)
+    access = forms.TypedChoiceField(
+        label=_("Prieigos lygis"),
+        required=False,
+        choices=Metadata.ACCESS_TYPES,
+        coerce=int
+    )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(
         label=_("Aprašymas"),
         required=False,
         widget=forms.Textarea(attrs={'rows': 8})
     )
+    type_args = forms.CharField(label=_("Tipo parametrai"), required=False)
 
     class Meta:
         model = Metadata
-        fields = ('dataset_id', 'name', 'type', 'ref', 'ref_others', 'source',
+        fields = ('dataset_id', 'name', 'type', 'type_args', 'ref', 'ref_others', 'source',
                   'prepare', 'uri', 'level', 'access', 'title', 'description',)
 
     def __init__(self, model, *args, **kwargs):
@@ -575,6 +589,7 @@ class PropertyForm(forms.ModelForm):
             Field('dataset_id'),
             Field('name'),
             Field('type'),
+            Field('type_args'),
             Field('ref'),
             Field('ref_others'),
             Field('source'),
@@ -667,7 +682,7 @@ class PropertyForm(forms.ModelForm):
 
     def clean_ref_others(self):
         type = self.cleaned_data.get('type')
-        ref = self.cleaned_data.get('ref_others')
+        ref = self.cleaned_data.get('ref_others') or None
         if ref:
             if type == 'date' or type == 'datetime':
                 if not is_time_unit(ref):

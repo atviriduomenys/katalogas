@@ -2,6 +2,7 @@ from collections import OrderedDict
 from typing import List, Any, Dict, Type
 
 import numpy as np
+from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
@@ -10,7 +11,9 @@ from django.db.models import Q
 from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_filter_url
+from vitrina.helpers import get_filter_url, send_email_with_logging
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
@@ -274,3 +277,42 @@ def filter_out_non_public_datasets_for_user(user, datasets, is_org_dataset):
             return datasets
     else:
         return datasets.filter(is_public='true')
+
+
+def create_subscription(user, dataset):
+    return Subscription.objects.create(
+        user=user,
+        content_type=ContentType.objects.get_for_model(Dataset),
+        object_id=dataset.pk,
+        sub_type=Subscription.DATASET,
+        email_subscribed=True,
+        dataset_comments_sub=True
+    )
+
+
+def manage_subscriptions_for_representative(subscribe, user, dataset):
+    subscription = Subscription.objects.filter(user=user,
+                                               object_id=dataset.id,
+                                               content_type=get_content_type_for_model(Dataset))
+    if subscribe:
+        if not subscription:
+            create_subscription(user, dataset)
+            if user.email:
+                identifier = 'newsletter-dataset-subscription-created-representative'
+                email_text = 'Sveiki, Jum sukurta duomenų rinkinio ({}) prenumerata.'.format(dataset)
+                email_data = prepare_email_by_identifier_for_sub(identifier, email_text,
+                                                                 'Sukurta prenumerata duomenų rinkiniui', [])
+                send_email_with_logging(email_data, [user.email])
+        else:
+            subscription.update(dataset_comments_sub=True,
+                                request_comments_sub=True,
+                                project_comments_sub=True)
+            if user.email:
+                identifier = 'newsletter-dataset-subscription-updated-representative'
+                email_text = 'Sveiki, Jūsų duomenų rinkinio ({}) prenumerata atnaujinta.'.format(dataset)
+                email_data = prepare_email_by_identifier_for_sub(identifier, email_text,
+                                                                 'Atnaujinta duomenų rinkinio prenumerata', [])
+                send_email_with_logging(email_data, [user.email])
+    else:
+        if subscription:
+            subscription.delete()

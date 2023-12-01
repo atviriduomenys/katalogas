@@ -57,9 +57,6 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                     _load_comments(structure.dataset, state.manifest.comments, structure)
                     _load_prefixes(structure.dataset, state.manifest.prefixes, structure)
                     _load_datasets(state, structure.dataset)
-                    _load_models(state, structure.dataset)
-                    _link_distributions(state, structure.dataset)
-                    _link_models(structure.dataset, state)
                     structure.dataset.update_level()
 
         for error in errors:
@@ -79,6 +76,7 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 user=sys_user
             )
 
+
 def _load_datasets(
     state: struct.State,
     dataset: Dataset
@@ -90,6 +88,8 @@ def _load_datasets(
     )
     loaded_metadata = []
 
+    _clean_errors(dataset.current_structure)
+
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
         if metadata := Metadata.objects.filter(
             content_type=ct,
@@ -98,11 +98,17 @@ def _load_datasets(
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         else:
+            if md := dataset.metadata.filter(name=meta.name).first():
+                if not meta.id:
+                    meta.id = md.uuid
             dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
             _load_prefixes(dataset, meta.prefixes, dataset)
             _load_enums(dataset, meta.enums, dataset)
             _load_params(dataset, meta.params, dataset)
             _load_comments(dataset, meta.comments, dataset)
+            _load_models(meta, dataset)
+            _link_distributions(meta, dataset)
+            _link_models(dataset, meta)
             loaded_metadata.append(metadata)
 
         _create_errors(meta.errors, dataset.current_structure)
@@ -127,15 +133,20 @@ def _load_prefixes(
     loaded_prefixes = []
 
     for i, meta in enumerate(prefixes.values(), 1):
-        if prefix := existing_prefixes.filter(
-            ~Q(metadata__uuid=meta.id),
-            metadata__content_type=prefix_ct,
-            name=meta.name,
-            metadata__dataset=dataset,
-        ).first():
-            meta.errors.append(_(f'Prefiksas "{meta.name}" jau egzistuoja.'))
-            loaded_prefixes.append(prefix)
+        if meta.errors:
+            if isinstance(obj, Dataset):
+                _create_errors(meta.errors, obj.current_structure)
+            else:
+                _create_errors(meta.errors, obj)
         else:
+            if pr := existing_prefixes.filter(
+                metadata__content_type=prefix_ct,
+                name=meta.name,
+                metadata__dataset=dataset
+            ).first():
+                if not meta.id:
+                    meta.id = pr.metadata.first().uuid
+
             prefix = Prefix(
                 name=meta.name,
                 uri=meta.uri,
@@ -144,8 +155,6 @@ def _load_prefixes(
             )
             prefix, metadata = _create_or_update_metadata(dataset, meta, prefix, i)
             loaded_prefixes.append(prefix)
-
-        _create_errors(meta.errors, prefix)
 
     removed_prefixes = list(set(existing_prefixes) - set(loaded_prefixes))
     for prefix in removed_prefixes:
@@ -176,21 +185,23 @@ def _load_enums(
         loaded_enum_items = []
 
         for i, meta in enumerate(enum_items, 1):
-            if enum_item := existing_enum_items.filter(
-                ~Q(metadata__uuid=meta.id),
-                metadata__content_type=enum_ct,
-                metadata__name=meta.name,
-                metadata__prepare=meta.prepare,
-                metadata__dataset=dataset,
-            ).first():
-                meta.errors.append(_(f'Pasirinkimas "{meta.prepare}" jau egzistuoja.'))
-                loaded_enum_items.append(enum_item)
+            if meta.errors:
+                if isinstance(obj, Dataset):
+                    _create_errors(meta.errors, obj.current_structure)
+                else:
+                    _create_errors(meta.errors, obj)
             else:
+                if en := existing_enum_items.filter(
+                    metadata__content_type=enum_ct,
+                    metadata__name=meta.name,
+                    metadata__prepare=meta.prepare,
+                    metadata__dataset=dataset,
+                ).first():
+                    if not meta.id:
+                        meta.id = en.metadata.first().uuid
                 enum_item = EnumItem(enum=enum)
                 enum_item, metadata = _create_or_update_metadata(dataset, meta, enum_item, i)
                 loaded_enum_items.append(enum_item)
-
-            _create_errors(meta.errors, enum_item)
 
         loaded_enums.append(enum)
 
@@ -228,21 +239,24 @@ def _load_params(
         loaded_param_items = []
 
         for i, meta in enumerate(param_items, 1):
-            if param_item := existing_param_items.filter(
-                ~Q(metadata__uuid=meta.id),
-                metadata__content_type=param_ct,
-                metadata__name=meta.name,
-                metadata__prepare=meta.prepare,
-                metadata__dataset=dataset,
-            ).first():
-                meta.errors.append(_(f'Parametras "{meta.prepare}" jau egzistuoja.'))
-                loaded_param_items.append(param_item)
+            if meta.errors:
+                if isinstance(obj, Dataset):
+                    _create_errors(meta.errors, obj.current_structure)
+                else:
+                    _create_errors(meta.errors, obj)
             else:
+                if pr := existing_param_items.filter(
+                    metadata__content_type=param_ct,
+                    metadata__name=meta.name,
+                    metadata__prepare=meta.prepare,
+                    metadata__dataset=dataset,
+                ).first():
+                    if not meta.id:
+                        meta.id = pr.metadata.first().uuid
+
                 param_item = ParamItem(param=param)
                 param_item, metadata = _create_or_update_metadata(dataset, meta, param_item, i)
                 loaded_param_items.append(param_item)
-
-            _create_errors(meta.errors, param_item)
 
         loaded_params.append(param)
 
@@ -257,32 +271,34 @@ def _load_params(
 
 
 def _load_models(
-    state: struct.State,
+    meta_dataset: struct.Dataset,
     dataset: Dataset
 ):
     ct = ContentType.objects.get_for_model(Model)
     existing_models = Model.objects.filter(dataset=dataset)
     loaded_models = []
 
-    for i, meta in enumerate(state.manifest.models.values(), 1):
-        if model := existing_models.filter(
-            ~Q(metadata__uuid=meta.id),
-            metadata__content_type=ct,
-            metadata__name=meta.name,
-            metadata__dataset=dataset,
-        ).first():
-            meta.errors.append(_(f'Modelis "{meta.name}" jau egzistuoja.'))
-            loaded_models.append(model)
+    for i, meta in enumerate(meta_dataset.models.values(), 1):
+        if meta.errors:
+            _create_errors(meta.errors, dataset.current_structure)
         else:
+            if md := existing_models.filter(
+                metadata__content_type=ct,
+                metadata__name=meta.name,
+                metadata__dataset=dataset,
+            ).first():
+                if not meta.id:
+                    meta.id = md.metadata.first().uuid
+
             model = Model(dataset=dataset)
             model, metadata = _create_or_update_metadata(dataset, meta, model, i)
             _check_uri(dataset, meta, meta.uri)
+            _clean_errors(model)
             _load_comments(dataset, meta.comments, model)
             _load_params(dataset, meta.params, model)
             _load_properties(dataset, meta, model)
             loaded_models.append(model)
-
-        _create_errors(meta.errors, model)
+            _create_errors(meta.errors, model)
 
     removed_models = list(set(existing_models) - set(loaded_models))
     for model in removed_models:
@@ -299,23 +315,25 @@ def _load_properties(
     loaded_props = []
 
     for i, meta in enumerate(model_meta.properties.values(), 1):
-        if prop := existing_props.filter(
-            ~Q(metadata__uuid=meta.id),
-            metadata__content_type=ct,
-            metadata__name=meta.name,
-            metadata__dataset=dataset
-        ).first():
-            meta.errors.append(_(f'Savybė "{meta.name}" jau egzistuoja.'))
-            loaded_props.append(prop)
+        if meta.errors:
+            _create_errors(meta.errors, model)
         else:
+            if pr := existing_props.filter(
+                metadata__content_type=ct,
+                metadata__name=meta.name,
+                metadata__dataset=dataset
+            ).first():
+                if not meta.id:
+                    meta.id = pr.metadata.first().uuid
+
             prop = Property(model=model)
             prop, metadata = _create_or_update_metadata(dataset, meta, prop, i)
             _check_uri(dataset, meta, metadata.uri)
+            _clean_errors(prop)
             _load_comments(dataset, meta.comments, prop)
             _load_enums(dataset, meta.enums, prop)
             loaded_props.append(prop)
-
-        _create_errors(meta.errors, prop)
+            _create_errors(meta.errors, prop)
 
     removed_props = list(set(existing_props) - set(loaded_props))
     for prop in removed_props:
@@ -355,18 +373,23 @@ def _load_comments(
         comment.delete()
 
 
+def _clean_errors(
+    obj: models.Model
+):
+    ct = ContentType.objects.get_for_model(obj)
+    Comment.objects.filter(
+        content_type=ct,
+        object_id=obj.pk,
+        type=Comment.STRUCTURE_ERROR
+    ).delete()
+
+
 def _create_errors(
     errors: List[str],
     obj: models.Model
 ):
     ct = ContentType.objects.get_for_model(obj)
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
-
-    Comment.objects.filter(
-        content_type=ct,
-        object_id=obj.pk,
-        type=Comment.STRUCTURE_ERROR
-    ).delete()
 
     for error in errors:
         Comment.objects.create(
@@ -522,98 +545,132 @@ def _create_or_update_metadata(
 
 
 def _link_distributions(
-    state: struct.State,
+    dataset_meta: struct.Dataset,
     dataset: Dataset
 ):
-    for dataset_meta in state.manifest.datasets.values():
-        if dataset_meta.resources:
-            for i, resource_meta in enumerate(dataset_meta.resources.values()):
-                if resource_meta.source:
-                    distribution = DatasetDistribution.objects.filter(
-                        dataset=dataset,
-                        download_url=resource_meta.source,
-                    ).first()
-                    if not distribution:
-                        distribution = DatasetDistribution.objects.create(
-                            dataset=dataset,
-                            download_url=resource_meta.source,
-                            title=resource_meta.name,
-                            type='URL',
+    if dataset_meta.resources:
+        for i, resource_meta in enumerate(dataset_meta.resources.values()):
+            if resource_meta.source:
+                distribution = DatasetDistribution.objects.filter(
+                    dataset=dataset,
+                    download_url=resource_meta.source,
+                ).first()
+                if not distribution:
+                    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+                        dataset.status = Dataset.HAS_DATA
+                        dataset.save()
+                        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+                        Comment.objects.create(
+                            content_type=ContentType.objects.get_for_model(dataset),
+                            object_id=dataset.pk,
+                            user=sys_user,
+                            type=Comment.STATUS,
+                            status=Comment.OPENED,
                         )
 
-                    distribution, metadata = _create_or_update_metadata(
-                        dataset,
-                        resource_meta,
-                        distribution,
-                        i,
-                        use_existing_meta=True
+                    distribution = DatasetDistribution.objects.create(
+                        dataset=dataset,
+                        download_url=resource_meta.source,
+                        title=resource_meta.name,
+                        type='URL',
                     )
-                    _load_comments(dataset, resource_meta.comments, distribution)
-                    for model_meta in resource_meta.models.values():
-                        if model := Model.objects.filter(
-                            metadata__uuid=model_meta.id,
-                            dataset=dataset
-                        ).first():
-                            model.distribution = distribution
-                            model.save()
 
-                    _create_errors(resource_meta.errors, distribution)
-        else:
-            title = dataset_meta.name.split('/')[-1]
-            url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
-            urls = [
-                f"https://get.data.gov.lt/{dataset_meta.name}",
-                f"https://get.data.gov.lt/{dataset_meta.name}/",
-                url
-            ]
-            resource_meta = struct.Resource(
-                name=title,
-                source=url
-            )
-            distribution = DatasetDistribution.objects.filter(
-                dataset=dataset,
-                download_url__in=urls,
-            ).first()
-            if not distribution:
-                format, created = Format.objects.get_or_create(extension='UAPI')
-                if created:
-                    format.title = 'Saugyklos API'
-                    format.mimetype = "application/vnd.api+json"
-                    format.save()
-                distribution = DatasetDistribution.objects.create(
-                    dataset=dataset,
-                    download_url=url,
-                    format=format,
-                    title=title,
-                    type='URL',
+                if md := distribution.metadata.first():
+                    if not resource_meta.id:
+                        resource_meta.id = md.uuid
+
+                distribution, metadata = _create_or_update_metadata(
+                    dataset,
+                    resource_meta,
+                    distribution,
+                    i,
+                    use_existing_meta=True
                 )
-            elif distribution.download_url:
-                resource_meta.source = distribution.download_url
-
-            distribution, metadata = _create_or_update_metadata(
-                dataset,
-                resource_meta,
-                distribution,
-                1,
-                use_existing_meta=True
-            )
-            _load_comments(dataset, resource_meta.comments, distribution)
-            for model_meta in dataset_meta.models.values():
-                if model := Model.objects.filter(
+                _clean_errors(distribution)
+                _load_comments(dataset, resource_meta.comments, distribution)
+                for model_meta in resource_meta.models.values():
+                    if model := Model.objects.filter(
                         metadata__uuid=model_meta.id,
                         dataset=dataset
-                ).first():
-                    model.distribution = distribution
-                    model.save()
+                    ).first():
+                        model.distribution = distribution
+                        model.save()
 
-            _create_errors(resource_meta.errors, distribution)
+                _create_errors(resource_meta.errors, distribution)
+    else:
+        title = dataset_meta.name.split('/')[-1]
+        url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
+        urls = [
+            f"https://get.data.gov.lt/{dataset_meta.name}",
+            f"https://get.data.gov.lt/{dataset_meta.name}/",
+            url
+        ]
+        resource_meta = struct.Resource(
+            name=title,
+            source=url
+        )
+        distribution = DatasetDistribution.objects.filter(
+            dataset=dataset,
+            download_url__in=urls,
+        ).first()
+        if not distribution:
+            if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+                dataset.status = Dataset.HAS_DATA
+                dataset.save()
+                sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    object_id=dataset.pk,
+                    user=sys_user,
+                    type=Comment.STATUS,
+                    status=Comment.OPENED,
+                )
+
+            format, created = Format.objects.get_or_create(extension='UAPI')
+            if created:
+                format.title = 'Saugyklos API'
+                format.mimetype = "application/vnd.api+json"
+                format.save()
+            distribution = DatasetDistribution.objects.create(
+                dataset=dataset,
+                download_url=url,
+                format=format,
+                title=title,
+                type='URL',
+            )
+        elif distribution.download_url:
+            resource_meta.source = distribution.download_url
+
+        if md := distribution.metadata.first():
+            resource_meta.id = md.uuid
+
+        distribution, metadata = _create_or_update_metadata(
+            dataset,
+            resource_meta,
+            distribution,
+            1,
+            use_existing_meta=True
+        )
+        _clean_errors(distribution)
+        _load_comments(dataset, resource_meta.comments, distribution)
+        for model_meta in dataset_meta.models.values():
+            if model := Model.objects.filter(
+                    metadata__uuid=model_meta.id,
+                    dataset=dataset
+            ).first():
+                model.distribution = distribution
+                model.save()
+
+        _create_errors(resource_meta.errors, distribution)
 
 
-def _link_models(dataset: Dataset, state: struct.State):
+def _link_models(dataset: Dataset, dataset_meta: struct.Dataset):
     model_ct = ContentType.objects.get_for_model(Model)
     prop_ct = ContentType.objects.get_for_model(Property)
 
-    for model_meta in state.manifest.models.values():
+    for model_meta in dataset_meta.models.values():
         if model := Model.objects.filter(
             metadata__content_type=model_ct,
             metadata__uuid=model_meta.id,
@@ -622,13 +679,19 @@ def _link_models(dataset: Dataset, state: struct.State):
             _link_base(dataset, model_meta.base, model)
 
             if model_meta.ref and model_meta.ref_props:
+
+                PropertyList.objects.filter(
+                    content_type=model_ct,
+                    object_id=model.pk,
+                ).delete()
+
                 for j, prop in enumerate(model_meta.ref_props, 1):
                     if prop := Property.objects.filter(
                         metadata__name=prop,
                         metadata__content_type=prop_ct,
                         model=model,
                     ).first():
-                        PropertyList.objects.get_or_create(
+                        PropertyList.objects.create(
                             content_type=model_ct,
                             object_id=model.pk,
                             order=j,
@@ -648,26 +711,29 @@ def _link_base(
     model_ct = ContentType.objects.get_for_model(Model)
 
     if meta:
-        if base_model := Model.objects.filter(
-            metadata__content_type=model_ct,
-            metadata__name=meta.name,
-        ).first():
-            if base := Base.objects.filter(
-                ~Q(metadata__uuid=meta.id),
-                metadata__content_type=base_ct,
+        if meta.errors:
+            _create_errors(meta.errors, model)
+        else:
+            if base_model := Model.objects.filter(
+                metadata__content_type=model_ct,
                 metadata__name=meta.name,
-                model=base_model,
             ).first():
-                meta.errors.append(_(f'Bazė "{meta.name}" jau egzistuoja.'))
-            else:
+
+                if base := Base.objects.filter(
+                    metadata__content_type=base_ct,
+                    metadata__name=meta.name,
+                    model=base_model,
+                ).first():
+                    if not meta.id:
+                        meta.id = base.metadata.first().uuid
+
                 base = Base(model=base_model)
                 base, metadata = _create_or_update_metadata(dataset, meta, base)
                 _load_comments(dataset, meta.comments, base)
 
                 model.base = base
                 model.save()
-
-            _create_errors(meta.errors, base)
+                _create_errors(meta.errors, base)
 
     elif model.base:
         base = model.base
@@ -696,6 +762,12 @@ def _link_properties(
                 _link_denorm_props(dataset, prop_meta, model, prop)
 
             if prop_meta.type in ('ref', 'backref', 'generic') and prop_meta.ref:
+
+                PropertyList.objects.filter(
+                    content_type=ct,
+                    object_id=prop.pk,
+                ).delete()
+
                 if ref_model := Model.objects.filter(
                     metadata__name=prop_meta.ref,
                     metadata__content_type=model_ct,
@@ -709,7 +781,7 @@ def _link_properties(
                             metadata__content_type=ct,
                             model=ref_model,
                         ).first():
-                            PropertyList.objects.get_or_create(
+                            PropertyList.objects.create(
                                 content_type=ct,
                                 object_id=prop.pk,
                                 property=ref_prop,

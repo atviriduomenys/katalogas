@@ -145,6 +145,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
     # Django CMS
@@ -388,7 +389,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'
 
 LOGGING = {

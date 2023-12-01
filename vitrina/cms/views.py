@@ -1,6 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 from django.views.generic import TemplateView, DetailView
 from djangocms_blog.views import PostDetailView as BasePostDetailView
+from django.utils.translation import gettext_lazy as _
+
 
 from vitrina.cms.models import LearningMaterial, FileResource
 from vitrina.orgs.models import PublishedReport
@@ -27,6 +30,13 @@ class PostDetailView(BasePostDetailView):
 class LearningMaterialDetailView(DetailView):
     model = LearningMaterial
     template_name = 'vitrina/cms/learning_material_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+        }
+        return context
 
 
 class ReportDetailView(DetailView):

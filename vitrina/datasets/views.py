@@ -827,8 +827,8 @@ class DatasetStructureImportView(
         self.object.dataset = self.dataset
         self.object.save()
         self.object.dataset.current_structure = self.object
-        self.object.dataset.save()
         create_structure_objects(self.object)
+        self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
     def get_plan_object(self):

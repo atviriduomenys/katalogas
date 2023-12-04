@@ -198,6 +198,7 @@ def test_add_request_to_plan_title_error(app: DjangoTestApp):
     assert plan.count() == 1
     assert plan.first().title == "Klaidų duomenyse pataisymas"
 
+
 @pytest.mark.django_db
 def test_request_orgs_view(app: DjangoTestApp):
     organization = OrganizationFactory()
@@ -210,3 +211,47 @@ def test_request_orgs_view(app: DjangoTestApp):
     resp = app.get(reverse('request-organizations', args=[request.pk]))
     assert resp.html.find(id='display_date')
 
+
+@pytest.mark.django_db
+def test_request_orgs_view_delete_button_no_user(app: DjangoTestApp):
+    request = RequestFactory()
+    resp = app.get(reverse('request-organizations', args=[request.pk]))
+    delete_button = resp.html.find(id='request-orgs-delete')
+    assert delete_button is None
+
+
+@pytest.mark.django_db
+def test_request_orgs_view_click_delete_button_no_user(app: DjangoTestApp):
+    request = RequestFactory()
+    resp = app.get(reverse('request-organizations', args=[request.pk]))
+    resp = resp.click(linkid='org-dataset-url')
+    assert resp.url == reverse('request-organizations', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_request_orgs_view_click_delete_button_no_user(app: DjangoTestApp):
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    ra = RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    resp = app.get(reverse('request-orgs-delete', args=[ra.pk]))
+    assert resp.url == reverse('request-organizations', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_request_orgs_view_click_delete_button_staff_user(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    ra = RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    form = app.get(reverse('request-orgs-delete', args=[ra.pk])).forms['delete-form']
+    resp = form.submit()
+    assert resp.url == reverse('request-organizations', args=[request.pk])

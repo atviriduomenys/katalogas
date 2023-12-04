@@ -20,11 +20,13 @@
 
     <div class="columns">
         <div class="column">
+                {% if can_update_orgs %}
                 <div class="buttons is-right">
                     <a id="add-organization" class="button is-primary" href="{% url 'request-orgs-edit' pk=request_obj.pk  %}">
                         {% translate "Pridėti organizacijas" %}
                     </a>
-                </div>  
+                </div>
+                {% endif %}
             {% if organizations %}
                 <table class="table is-fullwidth">
                     <tbody>
@@ -70,6 +72,7 @@
                             </article>
                         </td>
                         <td>
+                            {% if can_update_orgs %}
                             <article class="media">
                                 <div class="media-content">
                                     <div class="content">
@@ -79,6 +82,7 @@
                                     </div>
                                 </div>
                             </article>
+                            {% endif %}
                         </td>
                         </tr>
                     {% endfor %}

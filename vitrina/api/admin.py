@@ -32,7 +32,7 @@ class ApiKeyAdmin(VersionAdmin):
     search_fields = (
         'organization',
     )
-    # inlines = [ApiScopeInline]
+    inlines = [ApiScopeInline]
 
 
 admin.site.register(ApiKey, ApiKeyAdmin)

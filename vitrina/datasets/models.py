@@ -222,7 +222,7 @@ class Dataset(TranslatableModel):
         unique_together = (('internal_id', 'organization_id'),)
 
     def __str__(self):
-        return self.safe_translation_getter('title', language_code=self.get_current_language())
+        return self.safe_translation_getter('title', language_code=self.get_current_language()) or ' '
 
     def lt_title(self):
         return self.safe_translation_getter('title', language_code='lt')

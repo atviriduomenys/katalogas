@@ -395,6 +395,28 @@ class DatasetDetailView(
         return context_data
 
 
+class DatasetDeleteView(
+    PermissionRequiredMixin, RevisionMixin, DeleteView
+):
+    model = Dataset
+    template_name = 'confirm_delete.html'
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        if dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.DELETE, dataset)
+
+    def get_success_url(self):
+        return reverse('dataset-list')
+
+    def delete(self, request, *args, **kwargs):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        dataset.delete()
+        return HttpResponseRedirect(self.get_success_url())
+
+
 class OpenDataPortalDatasetDetailView(View):
     def get(self, request):
         dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()

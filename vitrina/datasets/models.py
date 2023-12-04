@@ -196,7 +196,7 @@ class Dataset(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
-    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True,
+    current_structure = models.ForeignKey('DatasetStructure', models.SET_NULL, related_name='+', blank=True,
                                           null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
@@ -954,7 +954,7 @@ class DatasetStructure(models.Model):
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
-        models.DO_NOTHING,
+        models.SET_NULL,
         blank=True,
         null=True,
     )
@@ -1030,7 +1030,7 @@ class DatasetVisit(models.Model):
     version = models.IntegerField()
     last_visited = models.DateTimeField(blank=True, null=True)
     visit_count = models.IntegerField()
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True)
 
     class Meta:
         managed = False

@@ -53,6 +53,11 @@
                         {% translate "Redaguoti rinkinį" %}
                     </a>
                 </div>
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-delete' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="delete_dataset">
+                        {% translate "Pašalinti" %}
+                    </a>
+                </div>
             {% endif %}
 
             <div class="content">

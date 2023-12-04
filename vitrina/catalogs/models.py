@@ -25,6 +25,9 @@ class Catalog(models.Model):
         managed = True
         db_table = 'catalog'
 
+    def __str__(self):
+        return self.title
+
 
 class HarvestingJob(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

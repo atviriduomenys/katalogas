@@ -75,6 +75,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         fields = (
             'is_public',
             'tags',
+            'catalog',
             'licence',
             'frequency',
             'access_rights',
@@ -88,7 +89,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'name',
         )
         labels = {
-            'tags': _("Žymės")
+            'tags': _("Žymės"),
+            'catalog': _("Katalogas")
         }
 
     def __init__(self, *args, **kwargs):
@@ -110,6 +112,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('files'),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
+            Field('catalog'),
             Field('licence'),
             Field('frequency'),
             Field('type'),

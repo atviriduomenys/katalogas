@@ -413,7 +413,7 @@ def _parse_prepare(prepare: str, meta: struct.Metadata) -> dict:
     if prepare:
         try:
             return spyna.parse(prepare)
-        except ParseError as e:
+        except BaseException as e:
             if hasattr(meta, 'errors'):
                 meta.errors.append(_(f'Klaida skaitant formulę "{prepare}"": {e}'))
     return {}

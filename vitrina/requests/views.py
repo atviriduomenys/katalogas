@@ -12,23 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 
 from vitrina.settings import ELASTIC_FACET_SIZE
-from vitrina.datasets.forms import PlanForm
-from vitrina.orgs.services import has_perm, Action
-from vitrina.orgs.models import Representative
-from vitrina.helpers import get_selected_value
-from vitrina.helpers import Filter
-from vitrina.helpers import DateFilter
-from reversion import set_comment
-from vitrina.requests.services import update_facet_data
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Case, When, IntegerField
-from reversion.views import RevisionMixin
-from vitrina.datasets.models import Dataset, DatasetGroup
-from vitrina.classifiers.models import Category
-from vitrina.requests.models import Request, Organization, RequestStructure, RequestObject, RequestAssignment
-
-from vitrina.plans.models import Plan, PlanRequest
-from vitrina.requests.forms import RequestForm, RequestEditOrgForm, RequestPlanForm, RequestSearchForm, \
-    RequestDatasetsEditForm
+from vitrina.requests.forms import RequestDatasetsEditForm
 from django.db.models import Count, Q, Case, When
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy
@@ -67,12 +51,12 @@ from vitrina.requests.models import (Organization,
                                      RequestAssignment,
                                      RequestObject,
                                      RequestStructure)
-from vitrina.requests.services import update_facet_data
+from vitrina.requests.services import update_facet_data, can_update_request_org
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
-from django.http.response import HttpResponsePermanentRedirect
+from django.http.response import HttpResponsePermanentRedirect, Http404
 
 ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
@@ -739,6 +723,55 @@ class RequestCreateView(
         return context_data
 
 
+class RequestOrganizationView(
+    HistoryMixin,
+    PlanMixin,
+    ListView
+):
+    template_name = 'vitrina/requests/organizations.html'
+    detail_url_name = 'request-detail'
+    history_url_name = 'request-plans-history'
+    plan_url_name = 'request-plans'
+    context_object_name = 'organizations'
+    paginate_by = 20
+
+    request_obj: Request
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            orgs = self.request.user.representative_set.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__isnull=False,
+            )
+            org_ids = [org.id for org in orgs]
+            if self.request.user.organization:
+                org_ids.append(self.request.user.organization.id)
+            if org_ids:
+                user_org_priority = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(org_ids)])
+                return RequestAssignment.objects.filter(request=self.request_obj).order_by(user_org_priority).all()
+        return RequestAssignment.objects.filter(request=self.request_obj).all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['request_obj'] = self.request_obj
+        context['organizations'] = self.get_queryset()
+        context['can_update_orgs'] = can_update_request_org(self.request_obj, self.request.user)
+        return context
+
+    def get_plan_object(self):
+        return self.request_obj
+
+    def get_detail_object(self):
+        return self.request_obj
+
+    def get_history_object(self):
+        return self.request_obj
+
+
 class RequestOrgEditView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -785,22 +818,8 @@ class RequestOrgEditView(
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        can_edit_specific_org = False
-        is_my_request = self.request.user == request.user
-        is_supervisor = Representative.objects.filter(user=self.request.user, role=Representative.SUPERVISOR).first()
-        if self.request.user.organization:
-            if self.request.user.organization in request.organizations.all():
-                can_edit_specific_org = True
-
-        representatives = self.request.user.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id__isnull=False,
-            user=self.request.user,
-            object_id__in=[r.id for r in request.organizations.all()]
-        )
-        can_edit_specific_org = len(representatives) > 0
-        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE,
-                                                                                      request)
+        user = self.request.user
+        return can_update_request_org(request, user)
 
     def handle_no_permission(self):
         messages.error(self.request, 'Šio poreikio organizacijų keisti negalite.')
@@ -812,33 +831,25 @@ class RequestOrgEditView(
         return context_data
 
 
-class RequestOrgDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+class RequestOrgDeleteView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    DeleteView
+):
     model = RequestAssignment
     template_name = 'confirm_delete.html'
 
     def has_permission(self):
         self.object = self.get_object()
         request = get_object_or_404(Request, pk=self.object.request.pk)
-        can_edit_specific_org = False
-        is_my_request = self.request.user == request.user
-        is_supervisor = Representative.objects.filter(user=self.request.user, role=Representative.SUPERVISOR).first()
-        if self.request.user.organization:
-            if self.request.user.organization in request.organizations.all():
-                can_edit_specific_org = True
-
-        representatives = self.request.user.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__isnull=False,
-                user=self.request.user,
-                object_id__in=[r.id for r in request.organizations.all()]
-        )
-        can_edit_specific_org = len(representatives) > 0
-        return (is_supervisor or can_edit_specific_org or is_my_request) and has_perm(self.request.user, Action.UPDATE, request)
+        user = self.request.user
+        return can_update_request_org(request, user)
 
     def handle_no_permission(self):
         self.object = self.get_object()
         request_id = self.object.request.pk
-        messages.error(self.request,'Šio poreikio organizacijų keisti negalite.')
+        messages.error(self.request, 'Šio poreikio organizacijų keisti negalite.')
         return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': request_id}))
 
     def post(self, request, *args, **kwargs):
@@ -1137,7 +1148,6 @@ class RequestDeleteDatasetView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 
 class RequestDeletePlanDetailView(RequestDeletePlanView):
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organization = self.get_object().plan.receiver
@@ -1224,6 +1234,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
     def get_history_object(self):
         return self.request_obj
 
+
 class RequestDatasetsEditView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -1270,6 +1281,7 @@ class RequestDatasetsEditView(
         context_data['current_title'] = _('Poreikio duomenų rinkinių redagavimas')
         return context_data
 
+
 class RequestDatasetsEditUpdateView(
     RequestDatasetsEditView
 ):
@@ -1287,51 +1299,7 @@ class RequestDatasetsEditUpdateView(
         return context_data
 
 
-class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
-    template_name = 'vitrina/requests/organizations.html'
-    detail_url_name = 'request-detail'
-    history_url_name = 'request-plans-history'
-    plan_url_name = 'request-plans'
-    context_object_name = 'organizations'
-    paginate_by = 20
-
-    request_obj: Request
-
-    def dispatch(self, request, *args, **kwargs):
-        self.request_obj = get_object_or_404(Request, pk=kwargs.get('pk'))
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_queryset(self):
-        if self.request.user.is_authenticated:
-            orgs = self.request.user.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__isnull=False,
-            )
-            org_ids = [org.id for org in orgs]
-            if self.request.user.organization:
-                org_ids.append(self.request.user.organization.id)
-            if org_ids:
-                user_org_priority = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(org_ids)])
-                return RequestAssignment.objects.filter(request=self.request_obj).order_by(user_org_priority).all()
-        return RequestAssignment.objects.filter(request=self.request_obj).all()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['request_obj'] = self.request_obj
-        context['organizations'] = self.get_queryset()
-        return context
-
-    def get_plan_object(self):
-        return self.request_obj
-
-    def get_detail_object(self):
-        return self.request_obj
-
-    def get_history_object(self):
-        return self.request_obj
-
-
-class update_request_org_filters(FacetedSearchView):
+class RequestOrgFiltersUpdate(FacetedSearchView):
     template_name = 'vitrina/datasets/organization_filter_items.html'
     form_class = RequestSearchForm
     facet_fields = RequestListView.facet_fields
@@ -1362,7 +1330,7 @@ class update_request_org_filters(FacetedSearchView):
             return context
 
 
-class update_request_jurisdiction_filters(FacetedSearchView):
+class RequestJurisdictionFiltersUpdate(FacetedSearchView):
     template_name = 'vitrina/datasets/jurisdiction_filter_items.html'
     form_class = RequestSearchForm
     facet_fields = RequestListView.facet_fields

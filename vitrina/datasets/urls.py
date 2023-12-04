@@ -11,7 +11,7 @@ from vitrina.datasets.views import (
     DatasetRelationDeleteView, DatasetCategoryView, FilterCategoryView, DatasetPlanView, DatasetCreatePlanView,
     DatasetDeletePlanView, DatasetPlansHistoryView, DatasetDeletePlanDetailView, DatasetRepresentativeApiKeyView,
     UpdateDatasetOrgFilters, UpdateDatasetCategoryFilters, UpdateDatasetTagFilters, UpdateDatasetJurisdictionFilters,
-    OpenDataPortalDatasetDetailView, DatasetRedirectView
+    OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView
 )
 
 urlpatterns = [
@@ -105,5 +105,6 @@ urlpatterns = [
     path('datasets/<int:pk>/plans/history/', DatasetPlansHistoryView.as_view(), name='dataset-plans-history'),
     path('datasets/<int:pk>/members/<int:rep_id>/api/<key>', DatasetRepresentativeApiKeyView.as_view(),
          name='dataset-representative-api-key'),
-    path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='dataset-redirect-detail')
+    path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='dataset-redirect-detail'),
+    path('datasets/<int:pk>/delete/', DatasetDeleteView.as_view(), name='dataset-delete'),
 ]

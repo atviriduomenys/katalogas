@@ -164,12 +164,10 @@ def _parse_user_data(xml_string):
         if attribute == 'lt-company-code':
             value = auth_attr.find('value').text
             user_data[snakecase(attribute)] = value
-    user_information_data = soup.find_all('userInformation')
-    authentication_parameters = soup.find_all('parameter')
-    for auth_param in authentication_parameters:
-        if "VK_USER" in str(auth_param):
-            value = auth_param.text
+        if attribute == 'lt-personal-code':
+            value = auth_attr.find('value').text
             user_data['personal_code'] = value
+    user_information_data = soup.find_all('userInformation')
     for u_i_data in user_information_data:
         information = u_i_data.find('information').text
         if information in user_information_to_find:

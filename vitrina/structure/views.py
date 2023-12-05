@@ -372,7 +372,8 @@ class PropertyStructureView(
             ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
                 data = data.get('_data', [])
-                data = sorted(data, key=lambda x: x['count'], reverse=True)
+                if 'count' in data[0]:
+                    data = sorted(data, key=lambda x: x['count'], reverse=True)
                 context['data'] = data
 
                 if type == 'geometry':

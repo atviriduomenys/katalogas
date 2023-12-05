@@ -22,13 +22,13 @@ providers = ('auth.lt.identity.card',
              'auth.lt.government.employee.card',
              'auth.tsl.identity.card',)
 
-attributes = ('lt-company-code',)
+attributes = ('lt-company-code', 'lt-personal-code',)
 
 user_information = ('firstName',
                     'lastName',
                     'email',
                     'phoneNumber',
-                    'companyName')
+                    'companyName',)
 
 callback_url = '/accounts/viisp/complete-login'
 callback_url_token = '/accounts/viisp/complete-login/{}'
@@ -109,6 +109,7 @@ def get_response_with_user_data(ticket_id, key):
     resp = post(VIISP_PROXY_AUTH, data=soap_request)
     resp.raise_for_status()
     data = _parse_user_data(resp.text)
+    print(resp.text)
     data['ticket_id'] = ticket_id
     return data
 

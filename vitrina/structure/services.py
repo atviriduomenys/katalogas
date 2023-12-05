@@ -852,7 +852,7 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         url = f"https://get.data.gov.lt/{model}/?{query}"
     try:
         res = requests.get(url)
-    except requests.exceptions.RequestException:
+    except BaseException:
         return {}
 
     try:

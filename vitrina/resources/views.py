@@ -21,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.structure.models import Metadata
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
+from reversion import set_comment
 
 
 class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
@@ -216,6 +217,11 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         how_many_files = DatasetDistribution.objects.filter(dataset_id=resource.dataset_id)
         if not how_many_files:
             dataset.status = Dataset.STATUSES[1][0]
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
+                                   object_id=dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.INVENTORED,
+                                   user=self.request.user)
             dataset.save()
         return redirect(dataset)
 

@@ -484,7 +484,6 @@ class DatasetCreateView(
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 
         if self.object.is_public:
@@ -607,7 +606,6 @@ class DatasetUpdateView(
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
         base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"

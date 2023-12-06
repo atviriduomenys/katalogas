@@ -152,18 +152,19 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     def clean_name(self):
         name = self.cleaned_data.get('name')
 
-        if self.instance and self.instance.pk and self.instance.metadata.first():
-            metadata = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                name=name
-            ).exclude(pk=self.instance.metadata.first().pk)
-        else:
-            metadata = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                name=name
-            )
-        if metadata:
-            raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+        if name:
+            if self.instance and self.instance.pk and self.instance.metadata.first():
+                metadata = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    name=name
+                ).exclude(pk=self.instance.metadata.first().pk)
+            else:
+                metadata = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    name=name
+                )
+            if metadata:
+                raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
         return name
 
 

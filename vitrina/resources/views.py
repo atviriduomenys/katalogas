@@ -213,6 +213,10 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
         resource.delete()
+        how_many_files = DatasetDistribution.objects.filter(dataset_id=resource.dataset_id)
+        if not how_many_files:
+            dataset.status = Dataset.STATUSES[1][0]
+            dataset.save()
         return redirect(dataset)
 
 

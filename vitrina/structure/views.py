@@ -2324,11 +2324,6 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
         version = form.save(commit=False)
         version.dataset = self.dataset
 
-        base_email_content = """
-                    Gautas pranešimas, kad sukurta nauja duomenų rinkinio struktūros versija:
-                    {0}
-                """
-
         latest_version = self.dataset.dataset_version.order_by('-version').first()
         if latest_version and latest_version.version:
             version.version = latest_version.version + 1
@@ -2338,24 +2333,34 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
 
         rel_projects = Project.objects.filter(datasets=version.dataset)
         emails = []
-        title = f"Sukurta nauja duomenų rinkinio struktūros versija: {ContentType.objects.get_for_model(version)}," \
-                f" id: {version.pk}"
         for proj in rel_projects:
             emails.append(proj.user.email)
+            version_content_type = ContentType.objects.get_for_model(version)
             Task.objects.create(
-                title=title,
-                description=f"Sukurta nauja duomenų rinkinio struktūros versija.",
-                content_type=ContentType.objects.get_for_model(version),
+                # FIXME: Maybe task title and describtion should be generated
+                #        on display.
+                title=(
+                    "Sukurta nauja duomenų rinkinio struktūros versija: "
+                    f"{version_content_type}, "
+                    f"id: {version.pk}"
+                ),
+                description=(
+                    f"Sukurta nauja duomenų rinkinio struktūros versija."
+                ),
+                content_type=version_content_type,
                 object_id=version.pk,
                 user=proj.user,
-                status=Task.CREATED
+                status=Task.CREATED,
             )
 
-        url = f"{get_current_domain(self.request)}/datasets/" \
-              f"{version.dataset.pk}/version/{version.pk}"
-        email_data = prepare_email_by_identifier('new-dataset-structure-version', base_email_content, title,
-                                                 [url])
-        send_email_with_logging(email_data, [emails])
+        send_email(emails, 'vitrina/structure/emails/new_version', {
+            'base_url': get_current_domain(self.request),
+            'dataset': self.dataset,
+            'version': version,
+            # FIXME: ISSUE-39: Add unsubscribe from new_version emails link.
+            'unsubscribe_url': '',
+
+        })
 
         metadata = form.cleaned_data.get('metadata', [])
 

@@ -4,6 +4,7 @@ import pytest
 from django.test import RequestFactory
 
 from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.helpers import prepare_email_by_identifier
 
 
 @pytest.mark.django_db
@@ -60,3 +61,7 @@ def test_get_filter_url_with_page(rf: RequestFactory):
     request = rf.get('/', {"page": "1"})
     filter_url = get_filter_url(request, 'key', 'value')
     assert filter_url == "?selected_facets=key_exact%3Avalue"
+
+
+def test_prepare_email_by_identifier():
+    prepare_email_by_identifier('test', {}, override=False)

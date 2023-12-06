@@ -8,11 +8,10 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import CreateView
 
-from vitrina.helpers import send_email_with_logging
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.helpers import email
 from django.utils.translation import gettext_lazy as _
 
 
@@ -20,21 +19,31 @@ class UnsubscribeView(LoginRequiredMixin, View):
     def post(self, request, content_type_id, obj_id, user_id):
         content_type = get_object_or_404(ContentType, pk=content_type_id)
         obj = get_object_or_404(content_type.model_class(), pk=obj_id)
+        # FIXME: Should get user from request.user.
         user = get_object_or_404(User, pk=user_id)
 
+        # FIXME: Just use request.user
         if request.user.is_authenticated and request.user.pk != user.pk:
-            messages.error(request, _("Jūs neturit teisės panaikinti prenumeratos kitam vartotojui."))
+            messages.error(request, _(
+                "Jūs neturite teisės panaikinti prenumeratos kitam vartotojui."
+            ))
             return redirect(obj)
 
-        if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
-            Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).delete()
+        qs = (
+            Subscription.objects.
+            filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                user=user,
+            )
+        )
+        if qs.exists():
+            qs.delete()
             messages.success(request, _("Sėkmingai atsisakėte prenumeratos."))
-        email_data = prepare_email_by_identifier_for_sub('newsletter-unsubscribed',
-                                                         'Sveiki, Jūs sėkmingai atšaukėte naujienlaiškį',
-                                                         'Naujienlaiškio atšaukimas', [])
-        if user is not None:
-            if user.email is not None:
-                send_email_with_logging(email_data, [user.email])
+        email(user.email, 'vitrina/messages/emails/sub/deleted', {
+            'obj': obj,
+            'subscribe_url': '',  # TODO: get subscribe url
+        })
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
@@ -51,15 +60,16 @@ class SubscribeFormView(
     user: User
 
     def dispatch(self, request, *args, **kwargs):
-        try:
-            self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])
-            self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs['obj_id'])
-            self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
-        except ObjectDoesNotExist:
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])
+        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs['obj_id'])
+        # FIXME: take user from request.user
+        self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
 
+        # FIXME: take userFrom request user
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(request, _("Jūs neturit teisės sukurti prenumeratos kitam vartotojui."))
+            messages.error(request, _(
+                "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
+            ))
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
@@ -87,12 +97,10 @@ class SubscribeFormView(
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
-            email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed',
-                                                             'Sveiki, Jūs sėkmingai užsiprenumeravote naujienlaiškį',
-                                                             'Naujienlaiškio prenumeratos registracija', [])
-            if self.user is not None:
-                if self.user.email is not None:
-                    send_email_with_logging(email_data, [self.user.email])
+            email(self.user.email, 'vitrina/messages/emails/sub/created', {
+                'obj': self.obj,
+                'unsubscribe_url': '',  # TODO: get unsubscribe url
+            })
         except IntegrityError:
             existing_subscription = Subscription.objects.filter(
                 content_type=self.ct,
@@ -104,11 +112,4 @@ class SubscribeFormView(
                 existing_subscription.delete()
                 self.object.save()
                 messages.success(self.request, _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."))
-                email_data = prepare_email_by_identifier_for_sub('newsletter-subscribed-update',
-                                                                 'Sveiki, Jūs sėkmingai atnaujinote'
-                                                                 ' prenumeratos naujienlaiškį',
-                                                                 'Naujienlaiškio prenumeratos atnaujinimas', [])
-                if self.user is not None:
-                    if self.user.email is not None:
-                        send_email_with_logging(email_data, [self.user.email])
         return HttpResponseRedirect(self.obj.get_absolute_url())

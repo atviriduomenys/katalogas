@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import send_email_with_logging
+from vitrina.messages.helpers import email
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task
@@ -93,18 +94,19 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
         send_mail_to_object_subscribers(email_list, content_type, object_id, org=obj.organization)
 
 
-def send_mail_to_object_subscribers(email_list, content_type, object_id, org=None):
-    if org:
-        sub_object = org
-    else:
-        sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
-    sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
-    if not isinstance(sub_object, Comment):
-        obj = sub_object.title
-    else:
-        obj = sub_object.body
-    email_data = prepare_email_by_identifier_for_sub('comment-created-sub',
-                                                     'Sveiki, jūsų prenumeruojam objektui {sub_object},'
-                                                     ' parašytas naujas komentaras.',
-                                                     'Parašytas naujas komentaras', {'sub_object': obj})
-    send_email_with_logging(email_data, email_list)
+def send_mail_to_object_subscribers(
+    email_list,
+    content_type,
+    object_id,
+    org=None,
+):
+    try:
+        obj = content_type.model_class().get(pk=object_id)
+    except content_type.model_class().DoesNotExist:
+        obj = None
+    if isinstance(object, Comment):
+        obj = None  # FIXME: Get real comment object
+    email(email_list, 'vitrina/comments/emails/sub/created', {
+        'object': obj,
+        'comment': '',  # FIXME: Add comment text
+    })

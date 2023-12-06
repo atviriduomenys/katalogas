@@ -18,6 +18,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
+from django.template import engines
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -450,43 +452,37 @@ def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
     return request.build_absolute_uri(domain)
 
 
-def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
-    email_template = EmailTemplate.objects.filter(identifier=email_identifier)
-    list_keys = base_template_content[base_template_content.find("{") + 1:base_template_content.rfind("}")].replace(
-        '{', '').replace('}', '').split()
-    email_template_to_save = base_template_content
-    if email_template_keys:
-        for key in list_keys:
-            if key in email_template_keys.keys():
-                if email_template_keys[key] is not None:
-                    base_template_content = base_template_content.replace("{" + key + "}", email_template_keys[key])
-            else:
-                base_template_content = base_template_content.replace("{" + key + "}", '')
-    if not email_template:
-        email_subject = email_title = email_title_subject
-        email_content = base_template_content
-        created_template = EmailTemplate.objects.create(
-            created=datetime.datetime.now(),
-            version=0,
-            identifier=email_identifier,
-            template=email_template_to_save,
-            subject=_(email_title_subject),
-            title=_(email_title)
-        )
-        created_template.save()
-    else:
-        email_template = email_template.first()
-        email_content = str(email_template.template)
-        if email_template_keys:
-            for key in list_keys:
-                if key in email_template_keys.keys():
-                    if email_template_keys[key] is not None:
-                        email_content = email_content.replace("{" + key + "}", email_template_keys[key])
-                else:
-                    email_content = email_content.replace("{" + key + "}", '')
-            email_subject = str(email_template.subject)
+def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
+    try:
+        return EmailTemplate.objects.get(identifier=name)
+    except EmailTemplate.DoesNotExist:
+        return None
 
-    return {'email_content': email_content, 'email_subject': email_subject}
+
+def prepare_email_by_identifier(
+    name: str,  # template name
+    context: dict[str, Any] | None = None,
+    *,
+    # Allow user to override email templates via Admin.
+    override: bool = True,
+) -> dict[str, str]:
+    context = context or {}
+
+    email_template = None
+    if override:
+        email_template = _get_email_tempate_from_db(name)
+
+    if email_template:
+        engine = engines['django']
+        template = engine.from_string(email_template.template)
+        content = template.render(context)
+
+    else:
+        content = render_to_string(name, context)
+        subject, *lines = content.splitlines()
+        content = '\n'.join(lines[2:])
+
+    return {'email_content': content, 'email_subject': subject}
 
 
 def send_email_with_logging(email_data, email_list):

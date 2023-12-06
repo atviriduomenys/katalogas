@@ -47,7 +47,7 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.api.models import ApiKey
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
@@ -513,17 +513,15 @@ class DatasetCreateView(
         if self.object.organization:
             org_id = self.object.organization.id
             sub_ct = get_content_type_for_model(Organization)
-            subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
-                                               sub_type=Subscription.ORGANIZATION,
-                                               content_type=sub_ct,
-                                               dataset_update_sub=True)
-            email_data = prepare_email_by_identifier_for_sub('dataset-created-sub',
-                                                            'Sveiki, jūsų prenumeruojamai organizacijai {organization},'
-                                                            'sukurtas naujas duomenų rinkinys {object}.',
-                                                            'Sukurtas duomenų rinkinys', {
-                                                                 'organization': self.object.organization.title,
-                                                                 'object': self.object.title
-                                                             })
+            subs = Subscription.objects.filter(
+                (
+                    Q(object_id=org_id) |
+                    Q(object_id=None)
+                ),
+                sub_type=Subscription.ORGANIZATION,
+                content_type=sub_ct,
+                dataset_update_sub=True,
+            )
             sub_email_list = []
             for sub in subs:
                 Task.objects.create(
@@ -541,7 +539,10 @@ class DatasetCreateView(
                         orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                         sub_email_list = [org.email for org in orgs]
                     sub_email_list.append(sub.user.email)
-            send_email_with_logging(email_data, sub_email_list)
+
+            email(sub_email_list, 'vitrina/datasets/emails/sub/created', {
+                'dataset': self.object,
+            })
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -687,31 +688,10 @@ class DatasetUpdateView(
         sub_email_list = []
         if self.object.organization and self.object.organization.email:
             sub_email_list.append(self.object.organization.email)
-        email_data_sub = None
         for sub in sorted_list:
-            if sub.sub_type == Subscription.ORGANIZATION:
-                title = f"{self.object.organization} organizacijos duomenų rinkinys"
-                description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
-                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-organization',
-                                                                     'Sveiki, pranešame jums apie tai, kad,'
-                                                                     'jūsų prenumeruojamos organizacijos {organization}'
-                                                                     'duomenų rinkinys: {object}, buvo atnaujintas.',
-                                                                     'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object.organization.title,
-                                                                      'object': self.object.title})
-            else:
-                title = f"Duomenų rinkinys: {self.object}"
-                description = f"Atnaujintas duomenų rinkinys: {self.object}"
-                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-dataset',
-                                                                     'Sveiki, pranešame jums apie tai, kad,'
-                                                                     ' jūsų prenumeruojamas duomenų rinkinys'
-                                                                     ' {organization} buvo atnaujintas.',
-                                                                     'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object.title}
-                                                                     )
             Task.objects.create(
-                title=title,
-                description=description,
+                title=f"Duomenų rinkinys: {self.object}",
+                description=f"Atnaujintas duomenų rinkinys: {self.object}",
                 content_type=get_content_type_for_model(Dataset),
                 object_id=self.object.pk,
                 organization=self.object.organization,
@@ -725,8 +705,10 @@ class DatasetUpdateView(
                     sub_email_list = [org.email for org in orgs]
                 if sub.user.email not in sub_email_list:
                     sub_email_list.append(sub.user.email)
-        if email_data_sub:
-            send_email_with_logging(email_data_sub, sub_email_list)
+        if sub_email_list:
+            email(sub_email_list, 'vitrina/datasets/emails/sub/updated', {
+                'dataset': self.object,
+            })
 
         return HttpResponseRedirect(self.get_success_url())
 

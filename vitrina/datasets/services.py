@@ -11,8 +11,8 @@ from django.db.models import Q
 from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_filter_url, send_email_with_logging
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.helpers import get_filter_url
+from vitrina.messages.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
@@ -297,22 +297,18 @@ def manage_subscriptions_for_representative(subscribe, user, dataset):
     if subscribe:
         if not subscription:
             create_subscription(user, dataset)
-            if user.email:
-                identifier = 'newsletter-dataset-subscription-created-representative'
-                email_text = 'Sveiki, Jum sukurta duomenų rinkinio ({}) prenumerata.'.format(dataset)
-                email_data = prepare_email_by_identifier_for_sub(identifier, email_text,
-                                                                 'Sukurta prenumerata duomenų rinkiniui', [])
-                send_email_with_logging(email_data, [user.email])
+            email(user.email, 'vitrina/messages/emails/subscribed', {
+                'obj': dataset,
+            })
         else:
-            subscription.update(dataset_comments_sub=True,
-                                request_comments_sub=True,
-                                project_comments_sub=True)
-            if user.email:
-                identifier = 'newsletter-dataset-subscription-updated-representative'
-                email_text = 'Sveiki, Jūsų duomenų rinkinio ({}) prenumerata atnaujinta.'.format(dataset)
-                email_data = prepare_email_by_identifier_for_sub(identifier, email_text,
-                                                                 'Atnaujinta duomenų rinkinio prenumerata', [])
-                send_email_with_logging(email_data, [user.email])
+            subscription.update(
+                dataset_comments_sub=True,
+                request_comments_sub=True,
+                project_comments_sub=True,
+            )
+            email(user.email, 'vitrina/messages/emails/subscription_updated', {
+                'obj': dataset,
+            })
     else:
         if subscription:
             subscription.delete()

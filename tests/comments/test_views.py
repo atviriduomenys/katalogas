@@ -56,7 +56,7 @@ def test_comment_is_not_public_user_staff(app: DjangoTestApp):
     resp = form.submit().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
 
 
 @pytest.mark.django_db
@@ -71,7 +71,7 @@ def test_comment_is_public(app: DjangoTestApp):
     resp = form.submit().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.USER
 
 
@@ -92,7 +92,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -153,7 +153,7 @@ def test_reply_is_not_public(app: DjangoTestApp):
     resp = form.submit().follow()
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     assert comments.count() == 2
-    assert list(resp.context['comments']) == [(comment, [])]
+    assert comment in list(resp.context['comments'])[0]
 
 
 @pytest.mark.django_db
@@ -170,7 +170,28 @@ def test_reply_is_public(app: DjangoTestApp):
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
-    assert list(resp.context['comments']) == [(comment, [reply])]
+    assert comment in list(resp.context['comments'])[0]
+    assert reply in list(resp.context['comments'])[1]
+
+
+@pytest.mark.django_db
+def test_reply_for_reply(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(content_type=ct, object_id=dataset.pk)
+    reply = CommentFactory(parent=comment, content_type=ct, object_id=dataset.pk)
+
+    app.set_user(user)
+    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form['is_public'] = True
+    form['body'] = "Test reply"
+    resp = form.submit().follow()
+    comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
+    new_reply = Comment.objects.filter(content_type=comment.content_type, parent=reply).first()
+    assert comments.count() == 3
+    assert reply in list(resp.context['comments'])[1]
+    assert new_reply in list(resp.context['comments'])[2]
 
 
 @pytest.mark.django_db
@@ -201,7 +222,7 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=model.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -250,7 +271,7 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=prop.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -308,7 +329,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         created_comment = Comment.objects.filter(external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886')
 
         assert created_comment.count() == 1
-        assert list(resp.context['comments']) == [(created_comment.first(), [])]
+        assert created_comment.first() in list(resp.context['comments'])[0]
         assert created_comment.first().type == Comment.REQUEST
         assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
         assert created_comment.first().rel_object_id == created_request.first().pk

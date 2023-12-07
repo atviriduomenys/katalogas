@@ -2,28 +2,27 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-<h4 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h4>
-
-{% for c in comments %}
-    {% include "component/comment.html" with comment=c.0 %}
-
-    {% for child in c.1 %}
-        {% include "component/comment.html" with comment=child is_child=True %}
-    {% endfor %}
+<h2 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h2>
+{% for comment, reply_form, is_child in comments %}
+    {% include "component/comment.html" with comment=comment reply_form=reply_form is_child=is_child %}
 {% endfor %}
 
 {% if user.is_authenticated %}
     <article class="media">
         <figure class="media-left">
             <p class="image is-64x64">
-                <img src="{% static 'img/placeholder/128x128.png' %}" alt="user-icon">
+                <img class="comment-profile-icon image is-64x64"
+                     src="{% static 'img/user_profile_picture.png' %}"
+                     alt="user-icon">
             </p>
         </figure>
-        {% if external %}
-            <form class="media-content" action="{% url 'external-comment' dataset.pk content_type object_id %}" method="post" id="comment-form">
-        {% else %}
-            <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}" method="post" id="comment-form">
-        {% endif %}
+            {% if external %}
+                <form class="media-content" action="{% url 'external-comment' dataset.pk content_type object_id %}"
+                      method="post" id="comment-form">
+            {% else %}
+                <form class="media-content" action="{% url 'comment' content_type.pk object.pk %}"
+                      method="post" id="comment-form">
+            {% endif %}
             {% csrf_token %}
             {{ comment_form|crispy }}
             {% if external %}
@@ -49,38 +48,30 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-
-        $(function () {
-            $('.reply-button').click(function () {
-                $('#media-' + this.id).toggleClass('is-hidden');
-            });
-
-            $('#reply-form').submit(function () {
-                $(this).find(":submit").attr('disabled', 'disabled');
-            });
-
-            $('#comment-form').submit(function () {
-                $(this).find(":submit").attr('disabled', 'disabled');
-            });
-
-            $('#id_submit_button').click( function () {
-
-                const status_field = $(this).closest('#comment-form').find('#id_status')[0];
-                const body_field = $(this).closest('#comment-form').find('#id_body')[0];
-
-                if (!body_field.value && (!status_field || !status_field.value)) {
-                    body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
-                    body_field.reportValidity();
-                }
-                else {
-                    $('#comment-form').trigger('submit');
-                }
-            });
-
-            $('input#id_register_request').click( function () {
-                $("#div_id_increase_frequency").toggle(this.checked);
-            });
-            $("#div_id_increase_frequency").toggle(false);
+        $('.show-reply-form').click(function () {
+            $('#media-' + this.id).toggleClass('is-hidden');
         });
+
+        $('.media-content').submit(function () {
+            $(this).find(":submit").attr('disabled', 'disabled');
+        });
+
+        $('.comment-button').click( function () {
+            const status_field = $(this).closest('.media-content').find('[id^="id_is_public_"]')[0];
+            const body_field = $(this).closest('.media-content').find('[id^="id_body_"]')[0];
+
+            if (!body_field.value && (!status_field || !status_field.value)) {
+                body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
+                body_field.reportValidity();
+            }
+            else {
+                $(this).closest('.media-content').trigger('submit');
+            }
+        });
+
+        $('input#id_register_request').click( function () {
+            $("#div_id_increase_frequency").toggle(this.checked);
+        });
+        $("#div_id_increase_frequency").toggle(false);
     });
 </script>

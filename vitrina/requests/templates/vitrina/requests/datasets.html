@@ -5,7 +5,11 @@
 {% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
         <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai ir pasiūlymai' %}</span></a></li>
         <li><a href="{% url 'request-detail' request_obj.pk %}"><span>{{ request_obj.title }}</span></a></li>
     </ul>
@@ -16,6 +20,16 @@
 
     <div class="columns">
         <div class="column">
+            {% if show_edit_buttons %}
+                <div class="buttons is-right">
+                    <a id="add-dataset" class="button is-primary" href="{% url 'dataset-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
+                        {% translate "Naujas rinkinys" %}
+                    </a>
+                    <a id="add-dataset" class="button is-primary" href="{% url 'request-datasets-edit' pk=request_obj.pk %}">
+                        {% translate "Priskirti rinkinį" %}
+                    </a>
+                </div>
+            {% endif %}
             {% if datasets %}
                 <table class="table is-fullwidth">
                     <tbody>

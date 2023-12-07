@@ -45,15 +45,22 @@
             </td>
             <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% if dataset.frequency.hours == 0 %}
-                <td>{% translate 'Realiu laiku' %}</td>
+                {% get_current_language as LANGUAGE_CODE %}
+                {% if LANGUAGE_CODE == "EN" %}
+                    <td>{{dataset.frequency.title_en}}</td>
+                {% else %}
+                    <td>{{dataset.frequency.title}}</td>
+                {% endif %}
             {% else %}
                 <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% endif %}
             {% if r.is_external_url %}
+                {% if r.get_download_url %}
                 <td>
                     <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"
                        target="_blank">{% translate "Atidaryti" %}</a>
                 </td>
+                {% endif %}
             {% else %}
                 <td>
                     <div style="display:inline-flex; gap: 2px">
@@ -90,13 +97,13 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">{% translate "Peržiūrėti" %}</p>
+            <h1 class="modal-card-title">{% translate "Peržiūrėti" %}</h1>
             <button class="modal-button-close delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body" id="preview-content">
-            <table class="table is-striped is-fullwidth" id="info-table">
-                <tbody id="info-table-body"></tbody>
-            </table>
+            <div style="display: flex; flex-direction: column;" class="table is-striped is-fullwidth" id="info-table">
+                <div style="display: flex;" id="info-table-body"></div>
+            </div>
         </section>
     </div>
 </div>

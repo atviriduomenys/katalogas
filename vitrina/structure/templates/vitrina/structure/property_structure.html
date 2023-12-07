@@ -3,6 +3,7 @@
 {% load static %}
 {% load comment_tags %}
 {% load markdown_tags %}
+{% load util_tags %}
 
 {% block current_title %}
     {% if prop.title %}
@@ -55,25 +56,26 @@
     </div>
 
     <div class="column">
+        {% define prop.metadata.first as metadata %}
         <div class="mb-2">
             <span class="is-family-monospace pr-3 is-size-6-mobile is-size-5">
                 {{ prop }}
             </span>
 
-            {% if prop.metadata.first.type %}
+            {% if metadata.type %}
             <span class="is-bold pr-3">
-                {{ prop.metadata.first.type }}
-                {% if prop.metadata.first.type_args %}
-                    <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                {{ metadata.type }}
+                {% if metadata.type_args %}
+                    <span class="is-italic has-text-weight-normal">({{ metadata.type_args }})</span>
                 {% endif %}
             </span>
             {% endif %}
 
-            {% if prop.metadata.first.required %}
+            {% if metadata.required %}
             <span class="is-italic pr-3">required</span>
             {% endif %}
 
-            {% if prop.metadata.first.unique %}
+            {% if metadata.unique %}
             <span class="is-italic pr-3">unique</span>
             {% endif %}
 
@@ -91,29 +93,38 @@
             </span>
             {% endif %}
 
-            {% if prop.metadata.first.access is not None %}
-                <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
+            {% if metadata.access is not None %}
+                <span class="mr-3 tag is-info is-light">{{ metadata.get_access_display }}</span>
             {% endif %}
 
-            {% if prop.metadata.first.level %}
-            <span class>{{ prop.metadata.first.level }}</span>
+            {% if metadata.level %}
+            <span class>{{ metadata.level }}</span>
             <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
             {% endif %}
+
+            {% if metadata.metadata_version and metadata.draft %}
+                <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
+            {% elif metadata.metadata_version and not metadata.draft %}
+                <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
+            {% elif not metadata.metadata_version and metadata.draft %}
+                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+            {% endif %}
+
         </div>
         <div class="mb-2">
-            {% if prop.metadata.first.uri %}
+            {% if metadata.uri %}
                 <span>uri: </span>
-                {% if prop.metadata.first.uri_link %}
+                {% if metadata.uri_link %}
                     <span class="pr-3">
-                        <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
+                        <a href="{{ metadata.uri_link }}">{{ metadata.uri }}</a>
                     </span>
                 {% else %}
-                    <span class="has-text-weight-semibold">{{ prop.metadata.first.uri }}</span>
+                    <span class="has-text-weight-semibold">{{ metadata.uri }}</span>
                 {% endif %}
             {% endif %}
-            {% if prop.metadata.first.source %}
+            {% if metadata.source %}
                 <span>source: </span>
-                <span class="has-text-weight-semibold">{{ prop.metadata.first.source }}</span>
+                <span class="has-text-weight-semibold">{{ metadata.source }}</span>
             {% endif %}
         </div>
         {% if can_manage_structure and model.name and prop.name %}
@@ -142,34 +153,44 @@
             {% endif %}
         {% endif %}
 
-        {% if prop.metadata.first.type == 'string' or prop.metadata.first.type == 'integer' %}
+        {% if metadata.type == 'string' or metadata.type == 'integer' %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
             {% if prop.enums.first %}
                 {% for enum_item in prop.enums.first.enumitem_set.all %}
+                    {% define enum_item.metadata.first as enum_meta %}
                     <div class="columns no-margin-bottom">
-                        <div class="column is-three-quarters">
-                            {% if enum_item.metadata.first.prepare %}
-                            <span class="pr-5 has-text-weight-semibold">{{ enum_item.metadata.first.prepare }}</span>
+                        <div class="column is-9">
+                            {% if enum_meta.prepare %}
+                            <span class="pr-5 has-text-weight-semibold">{{ enum_meta.prepare }}</span>
                             {% endif %}
 
-                            {% if enum_item.metadata.first.title %}
-                            <span class="has-text-weight-semibold">{{ enum_item.metadata.first.title }}</span>
+                            {% if enum_meta.title %}
+                            <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
                             {% endif %}
 
                              <div class="ml-4">
-                                {% if enum_item.metadata.first.source %}
+                                {% if enum_meta.source %}
                                 <span>source: </span>
-                                <span class="has-text-weight-semibold">{{ enum_item.metadata.first.source }}</span>
+                                <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
                                 {% endif %}
                             </div>
-                            {% if enum_item.metadata.first.description %}
-                                <div class="ml-4"><p>{{ enum_item.metadata.first.description | markdown | safe }}</p></div>
+                            {% if enum_meta.description %}
+                                <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
                             {% endif %}
                         </div>
 
-                        <div class="column is-one-quarter">
-                            {% if enum_item.metadata.first.prepare or enum_item.metadata.first.title %}
+                        <div class="column is-1">
+                            {% if enum_meta.metadata_version and enum_meta.draft %}
+                                <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
+                            {% elif enum_meta.metadata_version and not enum_meta.draft %}
+                                <span class="tag is-success is-light">{{ enum_meta.metadata_version }}</span>
+                            {% elif not enum_meta.metadata_version and enum_meta.draft %}
+                                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                            {% endif %}
+                        </div>
+                        <div class="column is-2">
+                            {% if enum_meta.prepare or enum_meta.title %}
                                 {% if prop.name and model.name and can_manage_structure %}
                                 <div class="buttons is-right">
                                     <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
@@ -201,8 +222,8 @@
         </div>
         {% endif %}
 
-        {% if prop.metadata.first.description %}
-        <div><p>{{ prop.metadata.first.description | markdown | safe }}</p></div>
+        {% if metadata.description %}
+        <div><p>{{ metadata.description | markdown | safe }}</p></div>
         {% endif %}
 
         <div class="mt-6">

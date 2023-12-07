@@ -62,6 +62,43 @@ def test_request_subscribe_form_no_login(app: DjangoTestApp, subscription_data):
 
 
 @pytest.mark.django_db
+def test_dataset_subscribe_for_other_user(app: DjangoTestApp, subscription_data):
+    user = UserFactory()
+    app.set_user(user)
+
+    kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
+              'obj_id': subscription_data['dataset'].id,
+              'user_id': subscription_data['user'].id}
+    resp = app.get(reverse('subscribe-form', kwargs=kwargs))
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+
+
+@pytest.mark.django_db
+def test_dataset_unsubscribe_for_other_user(app: DjangoTestApp, subscription_data):
+    app.set_user(subscription_data['user'])
+    kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
+              'obj_id': subscription_data['dataset'].id,
+              'user_id': subscription_data['user'].id}
+    form = app.get(reverse('subscribe-form', kwargs=kwargs)).forms['subscribe-form']
+    form['email_subscribed'] = True
+    form['dataset_update_sub'] = True
+    resp = form.submit()
+
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+    assert Subscription.objects.count() == 1
+
+    assert len(mail.outbox) == 1
+
+    user = UserFactory()
+    app.set_user(user)
+
+    csrf_token = app.cookies['csrftoken']
+    resp = app.post(reverse('unsubscribe', kwargs=kwargs), {'csrfmiddlewaretoken': csrf_token})
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+    assert Subscription.objects.count() == 1
+
+
+@pytest.mark.django_db
 def test_request_subscribe_form_with_user(app: DjangoTestApp, subscription_data):
     app.set_user(subscription_data['user'])
     kwargs = {'content_type_id': get_content_type_for_model(Request).id,
@@ -271,7 +308,7 @@ def test_dataset_update_subscription_email(app: DjangoTestApp, subscription_data
     dataset.refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
-    assert len(mail.outbox) == 3
+    assert len(mail.outbox) == 2
 
 
 @pytest.mark.django_db
@@ -443,5 +480,50 @@ def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscript
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
-    assert list(resp.context['comments']) == [(comment, [reply])]
+    assert comment in list(resp.context['comments'])[0]
+    assert reply in list(resp.context['comments'])[1]
     assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
+    app.set_user(subscription_data['user'])
+    kwargs = {'content_type_id': get_content_type_for_model(Organization).id,
+              'obj_id': subscription_data['dataset'].organization.id,
+              'user_id': subscription_data['user'].id}
+    form = app.get(reverse('subscribe-form', kwargs=kwargs)).forms['subscribe-form']
+    form['email_subscribed'] = True
+    form['dataset_update_sub'] = True
+    form['dataset_comments_sub'] = True
+    resp = form.submit()
+
+    assert resp.url == reverse('organization-detail', kwargs={'pk': subscription_data['dataset'].organization.id})
+    assert Subscription.objects.count() == 1
+    assert len(mail.outbox) == 1
+
+    kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
+              'obj_id': subscription_data['dataset'].id,
+              'user_id': subscription_data['user'].id}
+    form = app.get(reverse('subscribe-form', kwargs=kwargs)).forms['subscribe-form']
+    form['email_subscribed'] = True
+    form['dataset_update_sub'] = True
+    form['dataset_comments_sub'] = True
+    resp = form.submit()
+
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
+    assert Subscription.objects.count() == 2
+    assert len(mail.outbox) == 2
+
+    staff_user = UserFactory(is_staff=True)
+    app.set_user(staff_user)
+    dataset = subscription_data['dataset']
+
+    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit()
+
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == dataset.get_absolute_url()
+    assert len(mail.outbox) == 3

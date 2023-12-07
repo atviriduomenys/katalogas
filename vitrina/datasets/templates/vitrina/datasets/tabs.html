@@ -4,13 +4,13 @@
     <ul>
         {% if detail_url %}
         <li class="{% if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
-            <a href="{{ detail_url }}" id="detail_tab">
+            <a href="{{ detail_url }}#info" id="detail_tab" aria-label="Informacija">
                 {% translate "Informacija" %}
             </a>
         </li>
         {% endif %}
         {% if structure_url %}
-        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure'%} is-active {% endif %}">
+        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'version-list' or request.resolver_match.url_name == 'version-detail' or request.resolver_match.url_name == 'dataset-structure-import' %} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">
                 {% translate "Struktūra" %}
             </a>

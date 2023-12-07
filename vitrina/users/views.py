@@ -1,3 +1,4 @@
+import datetime
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -19,11 +20,35 @@ from vitrina.users.models import User
 from vitrina import settings
 from datetime import datetime
 from pandas import period_range
+from allauth.account.forms import SignupForm, perform_login
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from allauth.account.models import EmailAddress, EmailConfirmation
+from django.http import HttpResponseRedirect
 
 
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
+    account_inactive_template = 'vitrina/users/account_inactive.html'
     form_class = LoginForm
+
+    def form_valid(self, form):
+        if settings.ACCOUNT_EMAIL_VERIFICATION == 'mandatory':
+            user = EmailAddress.objects.filter(email=self.request.POST['email'])
+            if user:
+                if user[0].verified is True:
+                    login(self.request, form.get_user(),
+                          backend='django.contrib.auth.backends.ModelBackend')
+                    return HttpResponseRedirect(self.get_success_url())
+                else:
+                    return render(self.request, self.account_inactive_template)
+            else:
+                login(self.request, form.get_user(),
+                      backend='django.contrib.auth.backends.ModelBackend')
+                return HttpResponseRedirect(self.get_success_url())
+        else:
+            login(self.request, form.get_user(),
+                  backend='django.contrib.auth.backends.ModelBackend')
+            return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -32,18 +57,40 @@ class LoginView(BaseLoginView):
             return reverse('user-task-list', args=[self.request.user.pk])
         return super().get_success_url()
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Prisijungimas')
+        return context
 
-class RegisterView(CreateView):
+
+class RegisterView(CreateView, SignupForm, PasswordResetTokenGenerator):
     template_name = 'vitrina/users/register.html'
     form_class = RegisterForm
+    cleaned_data = None
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            self.cleaned_data = form.cleaned_data
+            user = super(RegisterView, self).save(request)
+            hash_val = self.request.POST['csrfmiddlewaretoken']
+            email_address = EmailAddress.objects.get(user_id=user.pk)
+            EmailConfirmation.objects.create(
+                created=datetime.now(),
+                sent=datetime.now(),
+                key=hash_val,
+                email_address_id=email_address.id
+            )
+            perform_login(request=request, user=user,
+                          email_verification=settings.ACCOUNT_EMAIL_VERIFICATION,
+                          signup=False)
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Registracija')
+        return context
 
 
 class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -81,9 +128,11 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
+        context_data['current_title'] = _('Slaptažodžio nustatymas')
         context_data['form_info'] = _(
             "Tam, kad pabaigti autentifikaciją per viisp ir sukurti naują vartotoją portale, sugalvokite slaptažodį.")
         return context_data
+
 
 class PasswordResetView(BasePasswordResetView):
     form_class = PasswordResetForm
@@ -96,6 +145,11 @@ class PasswordResetView(BasePasswordResetView):
         messages.info(self.request, _(
             "Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Slaptažodžio atkūrimas')
+        return context
 
 
 class PasswordResetConfirmView(BasePasswordResetConfirmView):

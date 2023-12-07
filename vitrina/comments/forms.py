@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Frequency
@@ -22,9 +23,13 @@ class CommentForm(forms.ModelForm):
 
     def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['body'].label = False
-        self.fields['body'].widget.attrs.update({'title': _("Komentaras")})
-        self.obj = obj
+        if obj and isinstance(obj.__class__, ModelBase):
+            self.auto_id = 'id_' + str(obj.pk)
+            self.fields['body'].label = _("Komentaro tekstas objektui: ") + " " + str(obj)
+            self.fields['body'].widget.attrs.update({'title': _("Komentaras"),
+                                                     'id': 'id_' + 'body_' + str(obj.pk)})
+            self.fields['is_public'].widget.attrs.update({'id': 'id_' + 'is_public_' + str(obj.pk)})
+            self.obj = obj
 
 
 class RegisterRequestForm(CommentForm):

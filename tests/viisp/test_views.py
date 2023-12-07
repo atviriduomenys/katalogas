@@ -48,142 +48,19 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
         password=make_password("123")
     )
     extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test_company',
-        'coordinator_phone_number': '+37000000000'
+        'phone_number': '+37000000000',
+        'email': "test@testesttesttest.lt"
     }
+    org = OrganizationFactory()
     temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
     app.set_user(user)
     resp = app.get(reverse('partner-register'))
     form = resp.forms['partner-register-form']
     
     upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
+    form['organization'].force_value(org.pk)
     form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "123"
+    form['coordinator_phone_number'] = '+37000000000'
+    form['coordinator_email'] = user.email
     resp = form.submit()
-    org = Organization.objects.filter(company_code='1234-5678').first()
     assert resp.url == '/partner/register-complete/'
-
-@pytest.mark.haystack
-def test_form_submit_with_bad_password(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test_company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "1234"
-    form['confirm_password'] = "1234"
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_password')
-
-@pytest.mark.haystack
-def test_form_submit_with_not_matching_password(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test_company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "1234"
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_confirm_password')
-
-@pytest.mark.haystack
-def test_form_submit_with_not_matching_password(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test_company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "1234"
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_confirm_password')
-
-@pytest.mark.haystack
-def test_form_submit_with_already_existing_slug(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    org = OrganizationFactory(
-        slug='tc'
-    )
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "123"
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_company_slug')
-
-@pytest.mark.haystack
-def test_form_submit_with_nonsense_slug(app: DjangoTestApp):
-    user = UserFactory(
-        email="test@testesttesttest.lt",
-        password=make_password("123")
-    )
-    extra_data = {
-        'company_code': '1234-5678',
-        'company_name': 'test company',
-        'coordinator_phone_number': '+37000000000'
-    }
-    org = OrganizationFactory(
-        slug='tc'
-    )
-    temp_user_account = SocialAccount.objects.create(user=user, extra_data=extra_data)
-    app.set_user(user)
-    resp = app.get(reverse('partner-register'))
-    form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
-    form['request_form'] = Upload('test.adoc', upload_file)
-    form['password'] = "123"
-    form['confirm_password'] = "123"
-    form['company_slug'] = 'tč'
-    resp = form.submit()
-    assert resp.html.find(id='error_1_id_company_slug')
-    

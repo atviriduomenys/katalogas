@@ -1,4 +1,5 @@
 import pathlib
+from enum import StrEnum
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
@@ -9,16 +10,24 @@ from filer.fields.file import FilerFileField
 from vitrina.datasets.models import Dataset
 
 
+class FormatName(StrEnum):
+    API = 'API'
+    UAPI = 'UAPI'
+
+
 class Format(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
+    # See FormatName for some values used in code.
     extension = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     mimetype = models.TextField(blank=True, null=True)
     rating = models.IntegerField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    media_type_uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = 'format'
@@ -156,7 +165,10 @@ class DatasetDistribution(models.Model):
 
     def get_download_url(self):
         if self.is_external_url():
-            return self.download_url
+            download_url = self.download_url
+            url_parts = download_url.split('//')
+            url_parts.insert(1, '//old.')
+            return ''.join(url_parts)
         elif self.file:
             return self.file.url
         return ""

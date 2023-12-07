@@ -3,6 +3,7 @@ import operator
 from enum import Enum
 from typing import Type
 
+from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
@@ -10,6 +11,8 @@ from django.db.models import Q
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.messages.helpers import email
+from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request
@@ -173,3 +176,42 @@ def hash_api_key(api_key: str) -> str:
     hasher = PBKDF2PasswordHasher()
     salt = settings.HASHER_SALT
     return hasher.encode(api_key, salt)
+
+
+def create_subscription(user, organization):
+    return Subscription.objects.create(
+        user=user,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=organization.pk,
+        sub_type=Subscription.ORGANIZATION,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+        request_comments_sub=True,
+        project_comments_sub=True
+    )
+
+
+def manage_subscriptions_for_representative(subscribe, user, organization):
+    subscription = Subscription.objects.filter(
+        user=user,
+        object_id=organization.id,
+        content_type=get_content_type_for_model(Organization),
+    )
+    if subscribe:
+        if not subscription:
+            create_subscription(user, organization)
+            email([user.email], 'vitrina/orgs/emails/subscribed', {
+                'organization': organization,
+            })
+        else:
+            subscription.update(
+                dataset_comments_sub=True,
+                request_comments_sub=True,
+                project_comments_sub=True,
+            )
+            email([user.email], 'vitrina/orgs/emails/subscription_updated', {
+                'organization': organization,
+            })
+    else:
+        if subscription:
+            subscription.delete()

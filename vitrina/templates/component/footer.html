@@ -16,10 +16,14 @@
                 <p>{% translate "el. p." %} <a href="mailto:info@ivpk.lt"><span class="has-text-dark">info@ivpk.lt</span></a></p>
             </div>
             <div class="column is-6">
-                <p>{% translate "Užsiprenumeruokite mūsų naujienlaiškį" %}</p>
+                <p id="newsletter_search_title">{% translate "Užsiprenumeruokite mūsų naujienlaiškį" %}</p>
                 <form class="field has-addons media-content" action="/subscribeNewsletter" method="post">
                     <p class="control is-expanded">
-                        <input class="input newsletter-input" type="email" required="required" placeholder="{% translate "Įveskite el. pašto adresą..." %}" name="email" title="{% translate "El. paštas" %}">
+                        <input class="input newsletter-input" type="email" id="newsletter-input-email" required="required"
+                               placeholder="{% translate 'Įveskite el. pašto adresą...' %}"
+                               name="email" title="{% translate 'El. paštas' %}"
+                               aria-labelledby="newsletter_search_title"
+                        >
                     </p>
                     <p class="control">
                         <button class="button is-light" type="submit">

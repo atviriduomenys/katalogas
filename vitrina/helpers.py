@@ -6,7 +6,6 @@ from typing import Type
 from typing import Tuple
 from typing import Union
 from typing import Dict
-from typing import Callable
 from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
@@ -19,15 +18,25 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string
+from django.template import engines
 
 from vitrina import settings
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+<<<<<<< HEAD
 from vitrina.messages.models import EmailTemplate, SentMail
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+=======
+from vitrina.messages.models import EmailTemplate
+from vitrina.orgs.models import Organization
+from vitrina.requests.models import Request
+from vitrina.messages.models import SentMail
+>>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0
 
 
 class Filter:
@@ -440,8 +449,8 @@ def submit(title=None):
     return Submit('submit', title, css_class='button is-primary'),
 
 
-def get_current_domain(request: WSGIRequest) -> str:
-    protocol = "https" if request.is_secure() else "http"
+def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
+    protocol = "https" if request.is_secure() or ensure_secure else "http"
     domain = Site.objects.get_current().domain
     localhost = '127.0.0.1' in domain
     if not localhost:
@@ -449,6 +458,7 @@ def get_current_domain(request: WSGIRequest) -> str:
     return request.build_absolute_uri(domain)
 
 
+<<<<<<< HEAD
 def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
     list_keys = base_template_content[base_template_content.find("{") + 1:base_template_content.rfind("}")].replace(
@@ -484,8 +494,39 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
                 else:
                     email_content = email_content.replace("{" + key + "}", '')
             email_subject = str(email_template.subject)
+=======
+def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
+    try:
+        return EmailTemplate.objects.get(identifier=name)
+    except EmailTemplate.DoesNotExist:
+        return None
+>>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0
 
-    return {'email_content': email_content, 'email_subject': email_subject}
+
+def prepare_email_by_identifier(
+    name: str,  # template name
+    context: dict[str, Any] | None = None,
+    *,
+    # Allow user to override email templates via Admin.
+    override: bool = True,
+) -> dict[str, str]:
+    context = context or {}
+
+    email_template = None
+    if override:
+        email_template = _get_email_tempate_from_db(name)
+
+    if email_template:
+        engine = engines['django']
+        template = engine.from_string(email_template.template)
+        content = template.render(context)
+
+    else:
+        content = render_to_string(name, context)
+        subject, *lines = content.splitlines()
+        content = '\n'.join(lines[2:])
+
+    return {'email_content': content, 'email_subject': subject}
 
 
 def send_email_with_logging(email_data, email_list):
@@ -513,4 +554,72 @@ def send_email_with_logging(email_data, email_list):
         email_subject=email_data['email_subject'],
         email_content=email_data['email_content'],
         email_sent=email_send
+<<<<<<< HEAD
     )
+=======
+    )
+
+
+def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
+    duration = {
+        'selected': duration,
+        'label': _("Laikotarpis"),
+        'fields': [
+            {'value': 'duration-yearly', 'label': _("Kas metus")},
+            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
+            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
+            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
+            {'value': 'duration-daily', 'label': _("Kas dieną")}
+        ],
+    }
+    sort = {
+            'selected': sorting,
+            'label': _("Rūšiuoti"),
+            'fields': [
+                {'value': 'sort-year-desc', 'label': _("Naujausi")},
+                {'value': 'sort-year-asc', 'label': _("Seniausi")},
+            ] if indicator == 'publication' else [
+                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
+                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
+            ]
+        }
+    active_indicator = {
+        'selected': indicator,
+        'label': _("Rodiklis"),
+    }
+    if model is Request:
+        active_indicator.update({
+                'fields': [
+                    {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                    {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
+                    {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
+                ]
+            })
+    if model is Dataset and filter:
+        active_indicator.update({
+            'fields': [
+                {'value': 'download-request-count', 'label': _("Atsisiuntimų (užklausų) skaičius")},
+                {'value': 'download-object-count', 'label': _("Atsisiuntimų (objektų) skaičius")},
+                {'value': 'object-count', 'label': _("Objektų skaičius")},
+                {'value': 'field-count', 'label': _("Savybių (duomenų laukų) skaičius")},
+                {'value': 'model-count', 'label': _("Esybių (modelių) skaičius")},
+                {'value': 'distribution-count', 'label': _("Duomenų šaltinių (distribucijų) skaičius")},
+                {'value': 'dataset-count', 'label': _("Duomenų rinkinių skaičius")},
+                {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                {'value': 'project-count', 'label': _("Projektų skaičius")},
+            ] + ([{'value': 'level-average', 'label': _("Brandos lygis (vidurkis)")}] if filter != 'level' else [])
+        })
+    if model is Organization:
+        active_indicator.update({
+            'fields': [
+                {'value': 'organization-count', 'label': _("Organizacijų skaičius (pavaldžių)")},
+                {'value': 'coordinator-count', 'label': _("Koordinatorių skaičius")},
+                {'value': 'representative-count', 'label': _("Tvarkytojų skaičius")},
+            ]
+        })
+    return {
+        'duration': duration,
+        'sort': sort,
+        'active_indicator': active_indicator
+    }
+>>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0

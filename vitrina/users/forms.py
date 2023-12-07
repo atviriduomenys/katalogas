@@ -1,20 +1,17 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Field, Submit
+from crispy_forms.layout import Div, Field, Layout, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.forms import Form, EmailField, CharField, PasswordInput, BooleanField, ModelForm, ModelChoiceField
-
+from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import prepare_email_by_identifier, send_email_with_logging
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
-from vitrina.helpers import buttons, submit, send_email_with_logging
-from vitrina.helpers import prepare_email_by_identifier
-from django.core.mail import send_mail
 
 
 class LoginForm(Form):
@@ -100,9 +97,9 @@ class RegisterForm(UserCreationForm):
 
 class PasswordSetForm(ModelForm):
     password = CharField(label=_("Slaptažodis"), strip=False,
-                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
+                         widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])
     confirm_password = CharField(label=_("Pakartokite slaptažodį"), strip=False,
-                    widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+                                 widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
     
     class Meta:
         model = User

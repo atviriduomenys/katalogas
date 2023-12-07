@@ -10,9 +10,13 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from vitrina.orgs.models import Representative
+from django.contrib.contenttypes.models import ContentType
 
 
 from vitrina.orgs.models import Organization, RepresentativeRequest
+from django.utils.translation import gettext_lazy as _
+
 
 
 class RootOrganizationFilter(admin.SimpleListFilter):
@@ -47,10 +51,8 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     template_name = 'vitrina/orgs/approve.html'
     list_display = (
         'user',
-        'document',
-        'org_code',
-        'org_name',
-        'org_slug', 
+        'organization',
+        'document_download',
         'account_actions',
     )
 
@@ -62,8 +64,27 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
 
     def has_module_permission(self, request):
         return True
+    
+    def document_download(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('partner-register-download', kwargs={'pk': obj.id}),
+            obj.document.name
+        )
 
     def account_actions(self, obj):
+        representative_already_exists = Representative.objects.filter(
+            user=obj.user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=obj.organization.id
+        ).first()
+
+        if representative_already_exists:
+            return format_html(
+                '<a href={}>{}</a>',
+                    reverse('partner-register-suspend', kwargs={'pk': obj.id}),
+                    _("Suspenduoti")
+        )
         return format_html(
             '<a class="button" href="{}">Confirm</a>&nbsp;'
             '<a class="button" href="{}">Deny</a>',

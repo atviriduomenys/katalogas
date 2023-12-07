@@ -9,6 +9,7 @@
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
         <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+        <li><a href="{% url 'organization-plans' organization.pk %}"><span>{% translate "Planas" %}</span></a></li>
     </ul>
 {% endblock %}
 

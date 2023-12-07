@@ -1,12 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django.utils.translation import gettext_lazy as _
-
-import vitrina.settings as settings
 from vitrina.comments.models import Comment
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import send_email_with_logging
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.messages.helpers import prepare_email_by_identifier_for_sub # this function will be renamed to email
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task
 
@@ -57,7 +54,16 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
         content_type=content_type,
         object_id=object_id,
     )
+    org_subs = []
     email_list = []
+    org_email_list = []
+    if obj and isinstance(obj, Dataset) and obj.organization:
+        org_subs = Subscription.objects.exclude(user=user).filter(
+            sub_type=Subscription.ORGANIZATION,
+            content_type=ContentType.objects.get_for_model(obj.organization),
+            object_id=obj.organization.pk,
+        )
+
     for sub in object_subs:
         if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
@@ -70,17 +76,51 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
             )
         if sub.user.email:
             email_list.append(sub.user.email)
+    for sub in org_subs:
+        if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
+            create_task(
+                comment_type=comment_type,
+                content_type=content_type,
+                object_id=object_id,
+                user=sub.user,
+                obj=obj,
+                comment_object=comment_object
+            )
+            if sub.user.email and sub.user.email not in email_list:
+                org_email_list.append(sub.user.email)
     send_mail_to_object_subscribers(email_list, content_type, object_id)
+    if len(org_subs) > 0:
+        send_mail_to_object_subscribers(email_list, content_type, object_id, org=obj.organization)
 
 
-def send_mail_to_object_subscribers(email_list, content_type, object_id):
-    sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
-    if not isinstance(sub_object, Comment):
-        obj = sub_object.title
-    else:
-        obj = sub_object.body
-    email_data = prepare_email_by_identifier_for_sub('comment-created-sub',
-                                                     'Sveiki, jūsų prenumeruojam objektui {sub_object},'
-                                                     ' parašytas naujas komentaras.',
-                                                     'Parašytas naujas komentaras', {'sub_object': obj})
-    send_email_with_logging(email_data, email_list)
+
+# def send_mail_to_object_subscribers(email_list, content_type, object_id):
+#     sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
+#     if not isinstance(sub_object, Comment):
+#         obj = sub_object.title
+#     else:
+#         obj = sub_object.body
+#     email_data = prepare_email_by_identifier_for_sub('comment-created-sub',
+#                                                      'Sveiki, jūsų prenumeruojam objektui {sub_object},'
+#                                                      ' parašytas naujas komentaras.',
+#                                                      'Parašytas naujas komentaras', {'sub_object': obj})
+#     send_email_with_logging(email_data, email_list)
+
+
+def send_mail_to_object_subscribers(
+    email_list,
+    content_type,
+    object_id,
+    org=None,
+):
+    try:
+        obj = content_type.model_class().get(pk=object_id)
+    except content_type.model_class().DoesNotExist:
+        obj = None
+    if isinstance(object, Comment):
+        obj = None  # FIXME: Get real comment object
+    prepare_email_by_identifier_for_sub(email_list, 'vitrina/comments/emails/sub/created', { # will be renamed to email
+        'object': obj,
+        'comment': '',  # FIXME: Add comment text
+    })
+

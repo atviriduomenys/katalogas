@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 import environ
 from pathlib import Path
-from base64 import b64decode
 
 from django.utils.translation import gettext_lazy as _
 
@@ -53,6 +52,14 @@ ALLOWED_HOSTS = (
     ['localhost', '127.0.0.1'] +
     env.list('ALLOWED_HOSTS', default=[])
 )
+
+# If runing behind proxy, set this to HTTP_X_FORWARDED_PROTO
+_SECURE_PROXY_SSL_HEADER = env.str(
+    'DJANGO_SECURE_PROXY_SSL_HEADER',
+    default=None,
+)
+if _SECURE_PROXY_SSL_HEADER:
+    SECURE_PROXY_SSL_HEADER = (_SECURE_PROXY_SSL_HEADER, "https")
 
 # Application definition
 
@@ -138,6 +145,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
     # Django CMS
@@ -381,7 +389,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'
 
 LOGGING = {
@@ -400,3 +408,5 @@ LOGGING = {
 }
 CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
+
+TRANSLATION_CLIENT_ID = env('TRANSLATION_CLIENT_ID', default='')

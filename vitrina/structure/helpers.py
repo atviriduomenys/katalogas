@@ -147,3 +147,12 @@ _si_unit_re = re.compile('^' + _expr + r'(?:\ ' + _expr + ')*$', flags=re.VERBOS
 def is_si_unit(unit: str) -> bool:
     return _si_unit_re.match(unit) is not None
 
+
+def get_type_repr(meta):
+    required = ' required' if meta.required else ''
+    unique = ' unique' if meta.unique else ''
+    args = ''
+    type = meta.type if meta.type != 'inherit' else ''
+    if meta.type_args:
+        args = f'({meta.type_args})'
+    return f'{type}{args}{unique}{required}'

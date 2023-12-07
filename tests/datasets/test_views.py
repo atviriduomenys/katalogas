@@ -21,6 +21,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, 
     DatasetRelationFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -981,7 +982,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['description'] = 'Added new dataset description'
     resp = form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Added title")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
@@ -1228,6 +1229,54 @@ def test_dataset_members_add_member(app: DjangoTestApp):
     assert rep.apikey_set.count() == 0
 
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_member_subscription(app: DjangoTestApp):
+    subscriptions_before = Subscription.objects.all()
+    assert len(subscriptions_before) == 0
+
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+    url = reverse('dataset-members', kwargs={'pk': dataset.pk})
+    user = UserFactory(email='test@example.com')
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.COORDINATOR,
+    )
+
+    app.set_user(coordinator.user)
+
+    resp = app.get(url)
+
+    resp = resp.click(linkid="add-member-btn")
+
+    form = resp.forms['representative-form']
+    form['email'] = 'test@example.com'
+    form['role'] = Representative.MANAGER
+    form['subscribe'] = True
+    resp = form.submit()
+
+    assert resp.headers['location'] == url
+
+    rep = Representative.objects.get(
+        content_type=ct,
+        object_id=dataset.id,
+        email='test@example.com',
+    )
+    assert rep.user == user
+    assert rep.user.organization == dataset.organization
+    assert rep.role == Representative.MANAGER
+    assert rep.has_api_access is False
+    assert rep.apikey_set.count() == 0
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ['test@example.com']
+
+    subscriptions = Subscription.objects.all()
+    assert len(subscriptions) == 1
+    assert subscriptions[0].sub_type == Subscription.DATASET
 
 
 @pytest.mark.django_db
@@ -1829,7 +1878,7 @@ def test_dataset_create_non_public(app: DjangoTestApp):
     form['is_public'] = False
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert added_dataset.first().is_public is False
     assert added_dataset.first().published is None
 
@@ -1846,7 +1895,7 @@ def test_dataset_create_public(app: DjangoTestApp):
     form['is_public'] = True
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
-    assert added_dataset.count() == 1
+    assert added_dataset.count() == 2
     assert added_dataset.first().is_public is True
     assert added_dataset.first().published is not None
 

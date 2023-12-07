@@ -4,7 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import ListView, DetailView, DeleteView, UpdateView, TemplateView
+from django.views.generic import ListView, DetailView, DeleteView, TemplateView
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Action, has_perm
@@ -81,6 +82,9 @@ class TaskListView(LoginRequiredMixin, ListView):
             active_filter = 'all'
         context['cats'] = cats
         context['active_filter'] = active_filter
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+        }
         return context
 
 
@@ -93,12 +97,17 @@ class TaskView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         task = self.object
         org = ''
+        object_url = None
         if task.organization_id is not None:
             org = Organization.objects.filter(pk=task.organization_id).values_list('title', flat=True).first()
-        if task.object_id is not None and task.content_type_id is not None:
+        if task.content_object:
             object_url = task.content_object.get_absolute_url
         context['org'] = org
         context['object_url'] = object_url
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('user-task-list', args=[self.request.user.pk]): _('Užduotys'),
+        }
         return context
 
 
@@ -116,6 +125,11 @@ class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse('user-task-list', kwargs={'pk': self.request.user.pk}))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Užduoties uždarymas')
+        return context
 
     def delete(self, request, *args, **kwargs):
         self.object.status = Task.COMPLETED

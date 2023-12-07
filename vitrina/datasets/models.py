@@ -1,13 +1,19 @@
 import pathlib
 import tagulous
+import requests
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.db.models import Sum
+from django.dispatch import receiver
 from django.urls import reverse
+from django.utils.safestring import mark_safe
+
+from django.apps import apps
 
 from filer.fields.file import FilerFileField
+from parler.signals import post_translation_save
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
@@ -20,6 +26,8 @@ from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Licence, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
+from vitrina.settings import TRANSLATION_CLIENT_ID
+
 from django.utils.translation import gettext_lazy as _
 
 
@@ -27,7 +35,7 @@ class DatasetGroup(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
     )
-    created = models.DateTimeField(blank=True, null=True,  auto_now_add=True)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
     class Meta:
         ordering = ['created']
@@ -120,7 +128,8 @@ class Dataset(TranslatableModel):
 
     organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True, verbose_name=_('Licenzija'))
+    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True,
+                                verbose_name=_('Licenzija'))
 
     status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
     published = models.DateTimeField(blank=True, null=True)
@@ -131,7 +140,7 @@ class Dataset(TranslatableModel):
     temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
 
     update_frequency = models.CharField(max_length=255, blank=True, null=True)
-    frequency = models.ForeignKey(Frequency, models.DO_NOTHING, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
+    frequency = models.ForeignKey(Frequency, models.SET_NULL, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
     access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
@@ -187,7 +196,8 @@ class Dataset(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
-    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True, null=True)
+    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True,
+                                          null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
     financed = models.BooleanField(blank=True, null=True)
@@ -467,6 +477,257 @@ class Dataset(TranslatableModel):
             )
         )["model_requests__sum"] or 0
 
+    def get_metadata_objects_for_version(self):
+        meta_objects = []
+        models = []
+        props = []
+
+        metadata = self.metadata.first()
+        if metadata and metadata.draft is True:
+            if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                if latest_version.name != metadata.name:
+                    label = mark_safe(
+                        f"<a href={self.get_absolute_url()}>{self.title}</a> name: "
+                        f"<span class='tag is-danger is-light is-medium'>{latest_version.name}</span> -> "
+                        f"<span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                    )
+                    meta_objects.append((metadata.pk, label))
+            else:
+                label = mark_safe(
+                    f"<a href={self.get_absolute_url()}>{self.title}</a> name: "
+                    f"<span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                )
+                meta_objects.append((metadata.pk, label))
+
+        for model in self.model_set.all():
+            metadata = model.metadata.first()
+            if metadata and metadata.draft is True:
+                models.append(model)
+                if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                    label_str = f"<a href='{model.get_absolute_url()}' class='model_metadata'>{model.name}</a>"
+                    if latest_version.name != metadata.name:
+                        label_str += (
+                            f" name: <span class='tag is-danger is-light is-medium'>{latest_version.name}</span> ->"
+                            f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                        )
+                    latest_version.ref = None if latest_version.ref == '' else latest_version.ref
+                    metadata.ref = None if metadata.ref == '' else metadata.ref
+                    if latest_version.ref != metadata.ref:
+                        label_str += (
+                            f" ref: <span class='tag is-danger is-light is-medium'>{latest_version.ref}</span> -> "
+                            f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                        )
+                    if latest_version.level_given != metadata.level_given:
+                        label_str += (
+                            f" level: <span class='tag is-danger is-light is-medium'>{latest_version.level_given}"
+                            f"</span> -> <span class='tag is-success is-light is-medium'>{metadata.level_given}"
+                            f"</span>"
+                        )
+                    if latest_version.base != model.base:
+                        label_str += (
+                            f" base: <span class='tag is-danger is-light is-medium'>{latest_version.base}</span> ->"
+                            f" <span class='tag is-success is-light is-medium'>{model.base.model.name}</span>"
+                        )
+                    label = mark_safe(label_str)
+                    meta_objects.append((metadata.pk, label))
+                else:
+                    label_str = (
+                        f"<a href='{model.get_absolute_url()}' class='model_metadata'>{model.name}</a>"
+                        f" name: <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                    )
+                    if metadata.ref:
+                        label_str += f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                    if metadata.level_given:
+                        label_str += (f" level: "
+                                      f"<span class='tag is-success is-light is-medium'>{metadata.level_given}</span>")
+                    if model.base:
+                        label_str += (f" base: "
+                                      f"<span class='tag is-success is-light is-medium'>{model.base.model.name}</span>")
+                    label = mark_safe(label_str)
+                    meta_objects.append((metadata.pk, label))
+
+            for prop in model.model_properties.filter(given=True):
+                metadata = prop.metadata.first()
+                if metadata and metadata.draft is True:
+                    props.append(prop)
+
+                    if prop.model not in models:
+                        label_str = (
+                            f"<a href='{prop.model.get_absolute_url()}' class='model_metadata disabled'>"
+                            f"{prop.model.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                        )
+                        label = mark_safe(label_str)
+                        meta_objects.append((prop.model.metadata.first().pk, label))
+                        models.append(prop.model)
+
+                    if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                        label_str = f"<a href='{prop.get_absolute_url()}' class='prop_metadata'>{prop.name}</a>"
+                        if latest_version.name != metadata.name:
+                            label_str += (
+                                f" name: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.name}</span> ->"
+                                f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                            )
+                        if latest_version.type_repr != metadata.type_repr:
+                            label_str += (
+                                f" type: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.type_repr}</span> -> "
+                                f"<span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
+                            )
+                        latest_version.ref = None if latest_version.ref == '' else latest_version.ref
+                        metadata.ref = None if metadata.ref == '' else metadata.ref
+                        if latest_version.ref != metadata.ref:
+                            label_str += (
+                                f" ref: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.ref}</span> -> "
+                                f"<span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                            )
+                        if latest_version.level_given != metadata.level_given:
+                            label_str += (
+                                f" level: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.level_given}"
+                                f"</span> -> <span class='tag is-success is-light is-medium'>"
+                                f"{metadata.level_given}</span>"
+                            )
+                        if latest_version.access != metadata.access:
+                            label_str += (
+                                f" access: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.get_access_display()}</span> ->"
+                                f" <span class='tag is-success is-light is-medium'>"
+                                f"{metadata.get_access_display()}</span>"
+                            )
+                        label = mark_safe(label_str)
+                        meta_objects.append((metadata.pk, label))
+                    else:
+                        label_str = (
+                            f"<a href='{prop.get_absolute_url()}' class='prop_metadata'>{prop.name}</a>"
+                            f" name: <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                        )
+                        if metadata.type:
+                            label_str += (
+                                f" type: <span class='tag is-success is-light is-medium'>"
+                                f"{metadata.type_repr}</span>"
+                            )
+                        if metadata.ref:
+                            label_str += (
+                                f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
+                            )
+                        if metadata.level_given:
+                            label_str += (
+                                f" level: "
+                                f"<span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
+                            )
+                        if metadata.access:
+                            label_str += (
+                                f" access: <span class='tag is-success is-light is-medium'>"
+                                f"{metadata.get_access_display()}</span>"
+                            )
+                        label = mark_safe(label_str)
+                        meta_objects.append((metadata.pk, label))
+                if enum := prop.enums.first():
+                    for enum_item in enum.enumitem_set.all():
+                        metadata = enum_item.metadata.first()
+                        if metadata and metadata.draft is True:
+                            if enum.object.model not in models:
+                                label_str = (
+                                    f"<a href='{enum.object.model.get_absolute_url()}' class='model_metadata disabled'>"
+                                    f"{enum.object.model.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                                )
+                                label = mark_safe(label_str)
+                                meta_objects.append((enum.object.model.metadata.first().pk, label))
+                                models.append(enum.object.model)
+                            if enum.object not in props:
+                                label_str = (
+                                    f"<a href='{enum.object.get_absolute_url()}' class='prop_metadata disabled'>"
+                                    f"{enum.object.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
+                                )
+                                label = mark_safe(label_str)
+                                meta_objects.append((enum.object.metadata.first().pk, label))
+                                props.append(enum.object)
+
+                            if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                                label_str = f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
+
+                                latest_version.prepare = None if latest_version.prepare == '' \
+                                    else latest_version.prepare
+                                metadata.prepare = None if metadata.prepare == '' else metadata.prepare
+                                if latest_version.prepare != metadata.prepare:
+                                    label_str += (
+                                        f" prepare: <span class='tag is-danger is-light is-medium'>"
+                                        f"{latest_version.prepare}</span> ->"
+                                        f" <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                                    )
+                                latest_version.source = None if latest_version.source == '' else latest_version.source
+                                metadata.source = None if metadata.source == '' else metadata.source
+                                if latest_version.source != metadata.source:
+                                    label_str += (
+                                        f" source: <span class='tag is-danger is-light is-medium'>"
+                                        f"{latest_version.source}</span> -> "
+                                        f"<span class='tag is-success is-light is-medium'>{metadata.source}</span>"
+                                    )
+                                label = mark_safe(label_str)
+                                meta_objects.append((metadata.pk, label))
+                            else:
+                                label_str = (
+                                    f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
+                                )
+                                if metadata.prepare:
+                                    label_str += (
+                                        f" prepare: <span class='tag is-success is-light is-medium'>"
+                                        f"{metadata.prepare}</span>"
+                                    )
+                                if metadata.source:
+                                    label_str += (
+                                        f" source: <span class='tag is-success is-light is-medium'>"
+                                        f"{metadata.source}</span>"
+                                    )
+                                label = mark_safe(label_str)
+                                meta_objects.append((metadata.pk, label))
+        return meta_objects
+
+    def save_translation(self, translation, *args, **kwargs):
+        if translation.language_code == 'lt':
+            if not self.has_translation(language_code='en'):
+                lt_title = self.lt_title()
+                lt_description = self.lt_description()
+
+                self.create_translation(language_code='en')
+                self.set_current_language('en')
+
+                response_title = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
+
+                response_desc = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
+
+        super(Dataset, self).save_translation(translation, *args, **kwargs)
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22
@@ -536,6 +797,8 @@ class HarvestingResult(models.Model):
     class Meta:
         managed = False
         db_table = 'harvesting_result'
+
+
 # --------------------------->8-------------------------------------
 
 
@@ -635,7 +898,8 @@ class DatasetEvent(models.Model):
     user = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True, null=True)  # Field renamed because of name conflict.
+    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True,
+                               null=True)  # Field renamed because of name conflict.
 
     class Meta:
         managed = False
@@ -712,6 +976,15 @@ class DatasetStructure(models.Model):
     class Meta:
         db_table = 'dataset_structure'
 
+    def __str__(self):
+        if self.dataset.metadata.first():
+            if self.dataset.metadata.first().title:
+                return self.dataset.metadata.first().title
+            else:
+                return self.dataset.metadata.first().name
+        else:
+            return str(_("Struktūra"))
+
     def get_absolute_url(self):
         return reverse('dataset-structure', kwargs={'pk': self.dataset.pk})
 
@@ -778,6 +1051,8 @@ class HarvestedVisit(models.Model):
     class Meta:
         managed = False
         db_table = 'harvested_visit'
+
+
 # --------------------------->8-------------------------------------
 
 

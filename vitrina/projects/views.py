@@ -1,4 +1,3 @@
-from django.core.mail import send_mail
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -13,7 +12,6 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
-from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
@@ -67,6 +65,10 @@ class ProjectDetailView(HistoryMixin, DetailView):
             Action.UPDATE,
             self.object
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+        }
         return context
 
 
@@ -183,6 +185,15 @@ class ProjectHistoryView(HistoryView):
     history_url_name = 'project-history'
     tabs_template_name = 'vitrina/projects/tabs.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+            reverse('project-detail', args=[self.object.pk]): self.object
+        }
+        return context
+
 
 class ProjectDatasetsView(HistoryMixin, ListView):
     model = Dataset
@@ -208,6 +219,11 @@ class ProjectDatasetsView(HistoryMixin, ListView):
             Action.UPDATE,
             self.object
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('project-list'): _('Panaudojimo atvejai'),
+            reverse('project-detail', args=[self.object.pk]): self.object
+        }
         return context
 
 

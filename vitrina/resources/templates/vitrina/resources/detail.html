@@ -36,7 +36,9 @@
                         {% endif %}
                     </span>
                     {% if resource.is_external_url %}
-                        <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                        {% if resource.get_download_url %}
+                            <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                        {% endif %}
                     {% else %}
                         <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
                     {% endif %}
@@ -81,7 +83,12 @@
                                 <tr>
                                     <th>{% translate "Atnaujinta" %}</th>
                                     {% if resource.dataset.frequency.hours == 0 %}
-                                        <td>{% translate 'Realiu laiku' %}</td>
+                                        {% get_current_language as LANGUAGE_CODE %}
+                                        {% if LANGUAGE_CODE == "EN" %}
+                                            <td>{{dataset.frequency.title_en}}</td>
+                                        {% else %}
+                                            <td>{{dataset.frequency.title}}</td>
+                                        {% endif %}
                                     {% else %}
                                         <td>{{ resource.modified|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                     {% endif %}

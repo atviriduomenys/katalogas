@@ -2642,7 +2642,8 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
 
             if (
                 self.dataset.is_public and
-                self.dataset.status != Dataset.HAS_DATA
+                self.dataset.status != Dataset.HAS_DATA and
+                self.dataset.status != Dataset.PLANNED
             ):
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.dataset),
@@ -2677,6 +2678,20 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+
+        if (
+            dataset.is_public and
+            dataset.status == Dataset.PLANNED and
+            not dataset.plandataset_set.exists()
+        ):
+            dataset.status = Dataset.INVENTORED
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
+                                   object_id=dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.INVENTORED,
+                                   user=self.request.user)
+            dataset.save(update_fields=['status'])
+
         return redirect(reverse('dataset-plans', args=[dataset.pk]))
 
     def get_context_data(self, **kwargs):
@@ -2711,6 +2726,20 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+
+        if (
+            dataset.is_public and
+            dataset.status == Dataset.PLANNED and
+            not dataset.plandataset_set.exists()
+        ):
+            dataset.status = Dataset.INVENTORED
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
+                                   object_id=dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.INVENTORED,
+                                   user=self.request.user)
+            dataset.save(update_fields=['status'])
+
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 

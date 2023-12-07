@@ -27,16 +27,13 @@ from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
-<<<<<<< HEAD
 from vitrina.messages.models import EmailTemplate, SentMail
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-=======
 from vitrina.messages.models import EmailTemplate
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
 from vitrina.messages.models import SentMail
->>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0
 
 
 class Filter:
@@ -458,7 +455,7 @@ def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
     return request.build_absolute_uri(domain)
 
 
-<<<<<<< HEAD
+
 def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
     list_keys = base_template_content[base_template_content.find("{") + 1:base_template_content.rfind("}")].replace(
@@ -494,13 +491,12 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
                 else:
                     email_content = email_content.replace("{" + key + "}", '')
             email_subject = str(email_template.subject)
-=======
+
 def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
     try:
         return EmailTemplate.objects.get(identifier=name)
     except EmailTemplate.DoesNotExist:
         return None
->>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0
 
 
 def prepare_email_by_identifier(
@@ -554,9 +550,6 @@ def send_email_with_logging(email_data, email_list):
         email_subject=email_data['email_subject'],
         email_content=email_data['email_content'],
         email_sent=email_send
-<<<<<<< HEAD
-    )
-=======
     )
 
 
@@ -622,4 +615,3 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
         'sort': sort,
         'active_indicator': active_indicator
     }
->>>>>>> 3d6ef1e1496c57237148af60578664d46d8d5fd0

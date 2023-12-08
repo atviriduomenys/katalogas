@@ -86,6 +86,7 @@ class DatasetResourceForm(forms.ModelForm):
             'name',
             'access',
             'is_parameterized',
+            'imported',
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -110,6 +111,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('access_url'),
             Field('format'),
             Field('download_url'),
+            Field('imported'),
             Field('data_service'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
@@ -121,6 +123,9 @@ class DatasetResourceForm(forms.ModelForm):
         if resource and resource.metadata.first():
             self.initial['access'] = resource.metadata.first().access
             self.initial['name'] = resource.metadata.first().name
+
+        if not dataset.type.filter(name='catalog'):
+            self.fields['imported'].widget = forms.HiddenInput()
 
     def clean(self):
         file = self.cleaned_data.get('file')

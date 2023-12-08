@@ -11,7 +11,7 @@
 
 {% block content %}
 
-    {% include 'vitrina/projects/tabs.html' %}
+    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
 
     <div class="columns no-margin-bottom">
         <div class="column is-one-quarter">

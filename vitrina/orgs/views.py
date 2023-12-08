@@ -39,6 +39,7 @@ from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateFor
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative
 from vitrina.plans.models import Plan
+from vitrina.projects.models import Project
 from vitrina.settings import CLIENTS_AUTH_BEARER, CLIENTS_API_URL
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
@@ -940,8 +941,10 @@ class OrganizationApiKeysView(
         internal = ApiKey.objects.filter(organization=self.object)
         scopes = ApiScope.objects.filter(organization=self.object).values_list('key_id', flat=True)
         external = ApiKey.objects.filter(pk__in=scopes).exclude(pk__in=internal)
+        project_ids = Project.objects.filter(datasets__organization=self.object).values_list('pk', flat=True)
+        project_keys = ApiKey.objects.filter(project_id__in=project_ids)
         context_data['internal_keys'] = internal
-        context_data['external_keys'] = external
+        context_data['external_keys'] = external | project_keys
         return context_data
 
 

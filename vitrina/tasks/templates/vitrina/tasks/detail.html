@@ -20,7 +20,7 @@
                                 <p class="dataset-list-title">{{ task.created }}</p>
                                 <p class="dataset-list-description">
                                     {% if task.description is not None %}
-                                        {{ task.description }}
+                                        {{ task.description | safe }}
                                     {% endif %}
                                 </p>
                                 {% if task.content_object is not None %}

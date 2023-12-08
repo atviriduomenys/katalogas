@@ -5,6 +5,8 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative, Organization
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.projects.models import Project
+
 
 class ApiKey(models.Model):
     DUPLICATE = "DUPLICATE"
@@ -27,6 +29,12 @@ class ApiKey(models.Model):
     )
     organization = models.ForeignKey(
         Organization,
+        models.CASCADE,
+        blank=True,
+        null=True
+    )
+    project = models.ForeignKey(
+        Project,
         models.CASCADE,
         blank=True,
         null=True

@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'vitrina/projects/tabs.html' %}
+    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
         {% for dataset in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
             <article class="media">

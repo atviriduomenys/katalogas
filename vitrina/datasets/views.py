@@ -395,6 +395,28 @@ class DatasetDetailView(
         return context_data
 
 
+class DatasetDeleteView(
+    PermissionRequiredMixin, RevisionMixin, DeleteView
+):
+    model = Dataset
+    template_name = 'confirm_delete.html'
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        if dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.DELETE, dataset)
+
+    def get_success_url(self):
+        return reverse('dataset-list')
+
+    def delete(self, request, *args, **kwargs):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        dataset.delete()
+        return HttpResponseRedirect(self.get_success_url())
+
+
 class OpenDataPortalDatasetDetailView(View):
     def get(self, request):
         dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
@@ -462,7 +484,6 @@ class DatasetCreateView(
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.slug = slugify(self.object.title)
         self.object.organization_id = self.kwargs.get('pk')
 
         if self.object.is_public:
@@ -585,7 +606,6 @@ class DatasetUpdateView(
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.slug = slugify(self.object.title)
         tags = form.cleaned_data['tags']
         self.object.tags.set(tags)
         base_email_template = "Sveiki, duomenų rinkinys {0} buvo atnaujintas"
@@ -2622,7 +2642,8 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
 
             if (
                 self.dataset.is_public and
-                self.dataset.status != Dataset.HAS_DATA
+                self.dataset.status != Dataset.HAS_DATA and
+                self.dataset.status != Dataset.PLANNED
             ):
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.dataset),
@@ -2657,6 +2678,20 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+
+        if (
+            dataset.is_public and
+            dataset.status == Dataset.PLANNED and
+            not dataset.plandataset_set.exists()
+        ):
+            dataset.status = Dataset.INVENTORED
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
+                                   object_id=dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.INVENTORED,
+                                   user=self.request.user)
+            dataset.save(update_fields=['status'])
+
         return redirect(reverse('dataset-plans', args=[dataset.pk]))
 
     def get_context_data(self, **kwargs):
@@ -2691,6 +2726,20 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
+
+        if (
+            dataset.is_public and
+            dataset.status == Dataset.PLANNED and
+            not dataset.plandataset_set.exists()
+        ):
+            dataset.status = Dataset.INVENTORED
+            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
+                                   object_id=dataset.pk,
+                                   type=Comment.STATUS,
+                                   status=Comment.INVENTORED,
+                                   user=self.request.user)
+            dataset.save(update_fields=['status'])
+
         return redirect(reverse('plan-detail', args=[plan.receiver.pk, plan.pk]))
 
 

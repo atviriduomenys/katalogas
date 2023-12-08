@@ -133,6 +133,7 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

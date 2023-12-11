@@ -2,6 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
@@ -71,7 +72,7 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
-    file_format = FileFormat()
+    file_format = FileFormat(extension='URL')
     user = UserFactory(is_staff=True, organization=dataset.organization)
     app.set_user(user)
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
@@ -169,7 +170,7 @@ def test_create_resource_without_name(app: DjangoTestApp):
         object_id=resource.pk,
         name='resource3'
     )
-    format = FileFormat()
+    format = FileFormat(extension='URL')
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'New resource'
     form['format'] = format.pk
@@ -180,3 +181,35 @@ def test_create_resource_without_name(app: DjangoTestApp):
     assert new_resource.count() == 1
     assert new_resource.first().metadata.count() == 1
     assert new_resource.first().metadata.first().name == 'resource4'
+
+
+@pytest.mark.django_db
+def test_create_resource_with_file_and_wrong_format(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='URL')
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['file'] = Upload('test.csv', b'Column\nValue')
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Formatas nesutampa su įkelto failo formatu.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_create_resource_with_download_url_and_wrong_format(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='CSV')
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['download_url'] = "www.test.com"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Pasirinkite nuorodos formatą.'
+    ]]

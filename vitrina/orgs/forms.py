@@ -380,6 +380,27 @@ class OrganizationMergeForm(Form):
         return organization
 
 
+class ProjectApiKeyForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['project_id'] = self.project.pk
+
+
 class ApiKeyForm(ModelForm):
     organization_id = IntegerField(widget=HiddenInput(), required=False)
     client_name = CharField(label=_('Pavadinimas'), required=False)
@@ -402,6 +423,42 @@ class ApiKeyForm(ModelForm):
         )
 
         self.initial['organization_id'] = self.organization.pk
+
+    def clean_client_name(self):
+        name = self.cleaned_data.get('client_name')
+        if name:
+            expr = "^[a-z0-9_]*$"
+            found = re.search(expr, name)
+            if not found:
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+
+class ProjectApiKeyForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+    client_name = CharField(label=_('Pavadinimas'), required=False)
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id', 'client_name',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Field('client_name'),
+            Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['project_id'] = self.project.pk
 
     def clean_client_name(self):
         name = self.cleaned_data.get('client_name')
@@ -443,6 +500,35 @@ class ApiKeyRegenerateForm(ModelForm):
 
         self.initial['new_key'] = api_key
         self.initial['organization_id'] = self.organization.pk
+
+
+class ProjectApiKeyRegenerateForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+    new_key = CharField(label=_('Naujas slaptažodis'), required=False, disabled=True,
+                        help_text="Naujas raktas parodomas tik vieną kartą, \n"
+                                  + "po pakeitimo, nebebus galimybės pamatyti rakto, todėl jis turi būti išsisaugotas!")
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id', 'new_key',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-regenerate-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Field('new_key'),
+            Submit('submit', _("Saugoti"), css_class='button is-primary'),
+        )
+
+        api_key = secrets.token_urlsafe()
+
+        self.initial['new_key'] = api_key
+        self.initial['project_id'] = self.project.pk
 
 
 class ApiScopeForm(Form):

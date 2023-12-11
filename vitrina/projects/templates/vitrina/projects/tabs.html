@@ -12,6 +12,13 @@
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>
+        {% if has_perm %}
+            <li class="{%if request.resolver_match.url_name == 'project-permissions' %} is-active {% endif %}">
+                <a href="{% url 'project-permissions' request.resolver_match.kwargs.pk %}">
+                    {% translate "Leidimai" %}
+                </a>
+            </li>
+        {% endif %}
         {% if can_manage_history %}
             <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
                 <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">

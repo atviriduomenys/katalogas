@@ -53,24 +53,18 @@
         {% endif %}
 
             {% if internal_keys %}
-{#                {% if can_update_organization %}#}
-
-{#            	{% endif %}#}
                 <table class="table is-fullwidth">
                     <tbody>
                     <tr>
                         <th>{% translate "Pavadinimas" %}</th>
-{#                        {% if has_permission %}#}
                             <td></td>
                             <td></td>
-{#                        {% endif %}#}
                     </tr>
                     {% for i in internal_keys %}
                         <tr>
                             <td>
                                 <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">{{ i.api_key }}</a>
                             </td>
-{#                            {% if has_permission %}#}
                                 <td style="width:10%">
                                     <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
                                        class="button is-primary is-small">
@@ -83,7 +77,6 @@
                                         {% translate "Pašalinti" %}
                                     </a>
                                 </td>
-{#                            {% endif %}#}
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -94,16 +87,29 @@
                 <table class="table is-fullwidth">
                     <tbody>
                     <tr>
-                        <th>{% translate "Organizacija" %}</th>
-{#                        {% if has_permission %}#}
+                        <th>{% translate "Organizacija/Panaudojimo atvejis" %}</th>
+                        <th>{% translate "Pavadinimas" %}</th>
                             <td></td>
                             <td></td>
-{#                        {% endif %}#}
                     </tr>
                     {% for i in external_keys %}
                         <tr>
-                            <td>{{ i.organization }}</td>
-{#                            {% if has_permission %}#}
+                            <td>
+                                {% if i.organization %}
+                                    <a href="{{ i.organization.get_absolute_url }}">{{ i.organization }}</a>
+                                {% else %}
+                                    <a href="{{ i.project.get_absolute_url }}">{{ i.project }}</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if i.organization %}
+                                    <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">
+                                {% else %}
+                                    <a href="{% url 'project-apikeys-detail' i.project.id i.pk %}">
+                                {% endif %}
+                                    {{ i.api_key }}
+                                </a>
+                            </td>
                                 <td style="width:10%">
                                     <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
                                        class="button is-primary is-small">
@@ -116,7 +122,6 @@
                                         {% translate "Pašalinti" %}
                                     </a>
                                 </td>
-{#                            {% endif %}#}
                         </tr>
                     {% endfor %}
                     </tbody>

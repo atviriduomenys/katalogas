@@ -14,6 +14,7 @@ class FileFormat(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('word')
+    extension = 'CSV'
 
 
 class DatasetDistributionFactory(DjangoModelFactory):

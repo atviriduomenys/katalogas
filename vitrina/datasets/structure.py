@@ -327,6 +327,7 @@ class Enum(Metadata):
 
     meta: Metadata = field(init=False)
     errors: list[str] = field(default_factory=list, init=False)
+    comments: list[Comment] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -731,7 +732,8 @@ def _read_comment(
     )
 
     comment.meta = state.last
-    comment.meta.comments.append(comment)
+    if hasattr(comment.meta, 'comments'):
+        comment.meta.comments.append(comment)
 
     return comment
 

@@ -51,8 +51,6 @@ class DistributionFormat(models.Model):
 
 class DatasetDistribution(models.Model):
     UPLOAD_TO = "data"
-
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -133,6 +131,7 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

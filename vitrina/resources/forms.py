@@ -86,6 +86,7 @@ class DatasetResourceForm(forms.ModelForm):
             'name',
             'access',
             'is_parameterized',
+            'upload_to_storage'
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -102,6 +103,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('name'),
             Field('access'),
             Field('is_parameterized'),
+            Field('upload_to_storage'),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field('period_start', placeholder=_("Pasirinkite pradžios datą")),

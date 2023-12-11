@@ -26,6 +26,8 @@ BASE_DIR = Path(env.path(
     default=Path(__file__).resolve().parent.parent,
 ))
 
+SPINTA_EXECUTABLE_PATH = os.path.join(BASE_DIR, 'spinta-env', 'bin', 'spinta')
+
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / '.env')
 

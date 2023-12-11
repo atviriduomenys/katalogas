@@ -86,7 +86,7 @@ class DatasetResourceForm(forms.ModelForm):
             'name',
             'access',
             'is_parameterized',
-            'upload_to_storage'
+            'upload_to_storage',
             'imported',
         )
 

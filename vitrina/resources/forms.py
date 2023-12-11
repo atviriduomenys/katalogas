@@ -9,7 +9,7 @@ from crispy_forms.layout import Field, Submit, Layout
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 
 
@@ -149,3 +149,13 @@ class DatasetResourceForm(forms.ModelForm):
         if access == '':
             return None
         return access
+
+
+class FormatAdminForm(forms.ModelForm):
+    extension = forms.CharField(label=_("Failo plėtinys"))
+    title = forms.CharField(label=_("Pavadinimas"))
+    mimetype = forms.CharField(label=_("MIME tipas"))
+
+    class Meta:
+        model = Format
+        fields = ('extension', 'title', 'mimetype', 'rating',)

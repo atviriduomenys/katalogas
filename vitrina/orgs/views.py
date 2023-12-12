@@ -912,7 +912,7 @@ class OrganizationApiKeysView(
 
         keys_in_database = ApiKey.objects.all()
         for key in keys_in_database:
-            if key.client_id in key_client_ids:
+            if key.client_id not in key_client_ids:
                 key.enabled = False
                 key.save()
 
@@ -1093,21 +1093,37 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organization = self.organization
-        api_key = secrets.token_urlsafe()
-        self.object.api_key = hash_api_key(api_key)
-        self.object.enabled = True
-        self.object.save()
         permissions = ['spinta_set_meta_fields', 'spinta_getone', 'spinta_getall', 'spinta_search', 'spinta_changes']
-        for p in permissions:
-            ApiScope.objects.create(
-                key=self.object,
-                organization=self.organization,
-                scope=p,
-                enabled=True
-            )
-        messages.info(self.request, 'API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
-                      + api_key)
-        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+        api_key = secrets.token_urlsafe()
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'secret': api_key,
+            'scopes': permissions
+        }
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients', json=data, headers=headers)
+        if response.status_code == 200:
+            if 'client_id' in response.json() and 'client_name' in response.json():
+                self.object.client_id = response.json()['client_id']
+                self.object.client_name = response.json()['client_name']
+                self.object.api_key = hash_api_key(api_key)
+                self.object.enabled = True
+                self.object.save()
+                for p in permissions:
+                    ApiScope.objects.create(
+                        key=self.object,
+                        organization=self.organization,
+                        scope=p,
+                        enabled=True
+                    )
+                messages.info(self.request,
+                              _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
+                                + api_key))
+                return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+        else:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+            return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
 class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
@@ -1176,7 +1192,18 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.save()
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'client_name': self.object.client_name
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code == 200:
+            self.object.save()
+        else:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
@@ -1190,6 +1217,7 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.apikey = get_object_or_404(ApiKey, pk=kwargs.get('apikey_id'))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1218,7 +1246,19 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.api_key = hash_api_key(form.cleaned_data.get('new_key'))
-        self.object.save()
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'secret': form.cleaned_data.get('new_key')
+        }
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_name,
+                                           json=data, headers=headers)
+        if response.status_code == 200:
+            self.object.save()
+        else:
+            if response.status_code != 200:
+                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
@@ -1240,9 +1280,12 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
         )
 
     def delete(self, request, *args, **kwargs):
-        # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
-        #
-        self.apikey.delete()
+        response = requests.delete(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_id)
+        if response.status_code == 200:
+            self.apikey.delete()
+        else:
+            messages.error(self.request, _('API rakto pašalinti nepavyko.'))
+            return reverse('organization-apikeys', kwargs={'pk': self.kwargs.get('pk')})
         success_url = self.get_success_url()
         return HttpResponseRedirect(success_url)
 
@@ -1321,7 +1364,6 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             if target_org.exists():
                 if target_org.get().pk != self.organization.pk:
                     organization = target_org.get()
-                    # todo siųsti emailus
                     title = f'Prašoma prieigos prie duomenų: {self.api_key}'
                     base_email_content = """
                                         Gautas pranešimas, kad prašoma suteikti prieigą prie duomenų:
@@ -1348,32 +1390,56 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             if metadata.exists():
                 dataset = Dataset.objects.filter(pk=metadata.get().dataset.pk).first()
 
+        scope_list = []
         if form.cleaned_data.get('read'):
             for s in read:
+                sc = 'spinta_' + scope_name + s
                 ApiScope.objects.create(
-                    scope='spinta_' + scope_name + s,
+                    scope=sc,
                     organization=organization,
                     dataset=dataset,
                     key=self.api_key,
                     enabled=True
                 )
+                scope_list.append(sc)
         if form.cleaned_data.get('write'):
             for s in write:
+                sc = 'spinta_' + scope_name + s
                 ApiScope.objects.create(
-                    scope='spinta_' + scope_name + s,
+                    scope=sc,
                     organization=organization,
                     dataset=dataset,
                     key=self.api_key,
                     enabled=True
                 )
+                scope_list.append(sc)
         if form.cleaned_data.get('remove'):
+            sc = 'spinta_' + scope_name + '_wipe'
             ApiScope.objects.create(
-                scope='spinta_' + scope_name + '_wipe',
+                scope=sc,
                 organization=organization,
                 dataset=dataset,
                 key=self.api_key,
                 enabled=True
             )
+            scope_list.append(sc)
+
+        existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
+
+        for new in scope_list:
+            if new not in existing:
+                existing.append(new)
+
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
 
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
@@ -1466,6 +1532,7 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
                     organization=self.organization,
                     enabled=True
                 )
+            existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
         return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
 
 
@@ -1578,6 +1645,17 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
                 dataset=dataset,
                 enabled=True
             )
+        existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
 
 
@@ -1614,7 +1692,6 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
         if scope_name == 'spinta_set_meta_fields' or scope_name == 'set_meta_fields':
             scopes = ApiScope.objects.filter(key_id=api_key, scope__contains='set_meta_fields')
             for scope in scopes:
-                # todo post i api ???
                 scope.delete()
         elif scope_name == '(viskas)':
             scopes = ApiScope.objects.filter(
@@ -1626,8 +1703,20 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
                     )
                 )
             for scope in scopes:
-                # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
                 scope.delete()
+
+        existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 
@@ -1668,8 +1757,20 @@ class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionReq
             scopes = ApiScope.objects.filter(key=self.api_key, dataset=self.object)
 
         for sc in scopes:
-            # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
             sc.delete()
+
+        existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
     def get_success_url(self):
@@ -1717,7 +1818,17 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
                     scope.enabled = True
                 scope.save()
 
-        # todo post enabled/disabled to spinta ???
+        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list('scope', flat=True)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
 
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
@@ -1750,7 +1861,18 @@ class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):
             else:
                 sc.enabled = True
             sc.save()
-        # todo post enabled/disabled to spinta ???
+
+        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list('scope', flat=True)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': list(existing)
+        }
+        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                            json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
 
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 

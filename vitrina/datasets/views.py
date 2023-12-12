@@ -1562,16 +1562,6 @@ class DatasetStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
-    def update_context_data(self, context):
-        super().update_context_data(context)
-
-        indicator = self.request.GET.get('indicator', None) or 'dataset-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-
-        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
-        return context
-
 
 class DatasetStatsView(DatasetStatsMixin, DatasetListView):
     title = _("Būsena")

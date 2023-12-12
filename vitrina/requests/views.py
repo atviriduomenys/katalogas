@@ -230,17 +230,6 @@ class RequestStatsMixin(StatsMixin):
         else:
             return _("Laikas")
 
-    def update_context_data(self, context):
-        super().update_context_data(context)
-
-        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
-        sorting = self.request.GET.get('sort', None) or 'sort-desc'
-        duration = self.request.GET.get('duration', None) or 'duration-yearly'
-
-        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
-
-        return context
-
 
 class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     title = _("Būsena")
@@ -256,7 +245,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         statuses = self.get_filter_data(facet_fields)
         requests = context['object_list']
 
-        indicator = self.request.GET.get('active_indicator', None) or 'request-count'
+        indicator = self.request.GET.get('indicator', None) or 'request-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
         start_date = self.get_start_date()

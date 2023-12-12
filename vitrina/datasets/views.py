@@ -4,7 +4,7 @@ import json
 import secrets
 import uuid
 import pytz
-
+import os
 from datetime import datetime, date
 from typing import List
 from urllib.parse import urlencode
@@ -48,7 +48,7 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 
 from vitrina.api.models import ApiKey
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub # will need changed into email
-from vitrina.helpers import prepare_email_by_identifier # will need changed into email
+from vitrina.helpers import prepare_email_by_identifier, email
 from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
@@ -72,8 +72,8 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.helpers import get_selected_value, Filter, DateFilter, prepare_email_by_identifier, \
-    send_email_with_logging, get_stats_filter_options_based_on_model
+from vitrina.helpers import get_selected_value, Filter, DateFilter, send_email_with_logging, \
+    get_stats_filter_options_based_on_model
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -121,7 +121,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
         datasets = super().get_queryset()
         datasets = get_datasets_for_user(self.request, datasets)
         sorting = self.request.GET.get('sort', None)
-
+        datasets = datasets.models(Dataset)
         if self.request.GET.get('q') and not sorting:
             sorting = 'sort-by-relevance'
 
@@ -518,13 +518,6 @@ class DatasetCreateView(
                                                sub_type=Subscription.ORGANIZATION,
                                                content_type=sub_ct,
                                                dataset_update_sub=True)
-            email_data = prepare_email_by_identifier_for_sub('dataset-created-sub',
-                                                            'Sveiki, jūsų prenumeruojamai organizacijai {organization},'
-                                                            'sukurtas naujas duomenų rinkinys {object}.',
-                                                            'Sukurtas duomenų rinkinys', {
-                                                                 'organization': self.object.organization.title,
-                                                                 'object': self.object.title
-                                                             })
 
             subs = Subscription.objects.filter(
                 (
@@ -553,10 +546,15 @@ class DatasetCreateView(
                         orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                         sub_email_list = [org.email for org in orgs]
                     sub_email_list.append(sub.user.email)
-
-            prepare_email_by_identifier(sub_email_list, 'vitrina/datasets/emails/sub/created', {
-                'dataset': self.object,
-            })
+                dataset_url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('dataset-detail', args=[self.object.id])
+                )
+                email(sub_email_list, 'dataset-created-sub',
+                                   'vitrina/datasets/emails/sub/created.md', {
+                                        'dataset': self.object.title,
+                                         'link': dataset_url
+                                    })
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -687,12 +685,6 @@ class DatasetUpdateView(
                     model_meta.save()
 
         queries = []
-        if self.object.organization:
-            email_data = prepare_email_by_identifier('dataset-updated', base_email_template,
-                                                     'Duomenų rinkinys atnaujintas',
-                                                     {'dataset-updated': self.object})
-            if self.object.organization.email:
-                send_email_with_logging(email_data, [self.object.organization.email])
 
         org_subs = Subscription.objects.none()
         if self.object.organization:
@@ -764,8 +756,10 @@ class DatasetUpdateView(
                 if sub.user.email not in sub_email_list:
                     sub_email_list.append(sub.user.email)
         if sub_email_list:
-            prepare_email_by_identifier(sub_email_list, 'vitrina/datasets/emails/sub/updated', {
-                'dataset': self.object,
+            email([self.object.organization.email], 'dataset-updated',
+            "vitrina/datasets/emails/sub/updated.md", {
+                                                     'title': self.object,
+                                                     'link': self.request.build_absolute_uri()
             })
 
         return HttpResponseRedirect(self.get_success_url())
@@ -959,13 +953,6 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
-    base_email_template = """
-         Buvote įtraukti į {organization} organizacijos
-         narių sąrašo, tačiau nesate registruotas Lietuvos
-         atvirų duomenų portale. Prašome sekite šia nuoroda,
-         kad užsiregistruotumėte ir patvirtintumėte savo narystę
-         organizacijoje: {url} 
-    """
 
     def has_permission(self):
         return has_perm(
@@ -1031,11 +1018,11 @@ class CreateMemberView(
                 reverse('representative-register', kwargs={'token': token})
             )
 
-            email_data = prepare_email_by_identifier('auth-org-representative-without-credentials',
-                                                     self.base_email_template,
-                                                     'Kvietimas prisijungti prie atvirų duomenų portalo',
-                                                     {'dataset': self.dataset, 'url': url})
-            send_email_with_logging(email_data, [self.object.email])
+            email([self.object.email], 'auth-org-representative-without-credentials',
+                  "vitrina/email/offer_to_join_portal.md", {
+                      'dataset': self.dataset,
+                      'link': url
+                  })
             messages.info(self.request, _(
                 "Naudotojui išsiųstas laiškas dėl registracijos"
             ))

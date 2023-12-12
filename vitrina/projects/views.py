@@ -103,6 +103,12 @@ class ProjectCreateView(
         email_data = prepare_email_by_identifier('use-case-registered',
                                                  'Sveiki, portale užregistruotas naujas panaudos atvejis.',
                                                  'Užregistruotas naujas panaudos atvejis', [])
+        prepare_email_by_identifier_for_sub(
+            [self.object.email],
+            'vitrina/orgs/templates/vitrina/emails/project_create.md',
+            {
+                'obj': self.object,
+            })
         if self.object.user is not None:
             if self.object.user.email is not None:
                 send_email_with_logging(email_data, email_data)
@@ -171,6 +177,12 @@ class ProjectUpdateView(
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
         send_email_with_logging(email_data, sub_email_list)
+        # prepare_email_by_identifier_for_sub(
+        #     [self.object.email],
+        #     'vitrina/orgs/templates/vitrina/emails/project_updated.md',
+        #     {
+        #         'obj': self.object,
+        #     })
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

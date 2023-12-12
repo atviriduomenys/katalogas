@@ -16,7 +16,7 @@ from vitrina.comments.helpers import create_task, create_subscription, send_mail
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import get_current_domain, email
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
@@ -204,12 +204,6 @@ class ExternalCommentView(
     def post(self, request, dataset_id, external_content_type, external_object_id):
         form_class = get_comment_form_class()
         form = form_class(external_object_id, request.POST)
-        base_email_content = """
-            Gautas pranešimas, kad duomenyse yra klaida:
-            {0}
-            Klaida užregistruota objektui: {1},
-            {2}/{3}'
-        """
         if form.is_valid():
             comment = form.save(commit=False)
             comment.user = request.user
@@ -250,19 +244,15 @@ class ExternalCommentView(
 
                 url = f"{get_current_domain(self.request)}/datasets/" \
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
-                email_data = prepare_email_by_identifier('error-in-data', base_email_content, title,
-                                                         {
-                                                             'url': url,
-                                                             'external_object_id': external_object_id,
-                                                             'dataset_name': dataset.name,
-                                                             'external_content_type': external_content_type
-                                                          }
-                                                         )
-                send_email_with_logging(email_data, [emails])
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
+                email(emails, 'error-in-data',
+                      "vitrina/comments/emails/sub/comment_about_error_in_data.md", {
+                          'title': dataset.title,
+                          'link': url
+                      })
             create_task("New", external_content_type, external_object_id, request.user)
             comment.save()
         else:

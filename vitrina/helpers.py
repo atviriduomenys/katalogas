@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+import markdown
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
@@ -18,8 +19,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from django.template.loader import render_to_string
-from django.template import engines
+from django.template.loader import render_to_string, get_template
+from django.template import engines, Template, Context
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -34,6 +35,7 @@ from vitrina.messages.models import EmailTemplate
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
 from vitrina.messages.models import SentMail
+from django.template.loaders.app_directories import Loader
 
 
 class Filter:
@@ -492,6 +494,7 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
                     email_content = email_content.replace("{" + key + "}", '')
             email_subject = str(email_template.subject)
 
+
 def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
     try:
         return EmailTemplate.objects.get(identifier=name)
@@ -525,6 +528,76 @@ def prepare_email_by_identifier(
     return {'email_content': content, 'email_subject': subject}
 
 
+def email(
+    recipients: list[str],
+    email_identifier: str,
+    name: str,  # template name
+    context: dict[str, Any] | None = None,
+    *,
+    # Allow user to override email templates via Admin.
+    override: bool = True,
+) -> dict[str, str]:
+    context = context or {}
+    data_dict = {}
+    email_template = None
+    email_send = False
+    subject = None
+    if override:
+        email_template = _get_email_tempate_from_db(email_identifier)
+    if email_template:
+        subject = email_template.subject
+        template_db = email_template.template
+        template = Template(template_db)
+        for key in template.nodelist:
+            if type(key).__name__ == 'VariableNode':
+                data_dict.update({key.token.contents: context[key.token.contents]})
+        context = Context(data_dict)
+        content = template.render(context)
+        html_message = markdown.markdown(content)
+    else:
+        template_path = get_template(name)
+        with open(template_path.origin.name, encoding="utf-8") as file:
+            read_data = file.readlines()
+        content = render_to_string(name, context)
+        html_message = markdown.markdown(content)
+        send_email_title = content.split('\n')
+        content_to_save = markdown.markdown(''.join(read_data))
+        EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=content_to_save,
+            subject=read_data[0].split('\n')[0],
+            title=read_data[0].split('\n')[0]
+        )
+    try:
+        send_mail(
+            subject=_(subject) if subject else _(send_email_title[0]),
+            message=_(str(content)),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=['ernestas.toliatas@atea.lt'],
+            html_message=html_message
+        )
+        email_send = True
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", _(send_email_title[0]),
+                        _(str(content)), recipients, e)
+        email_send = False
+
+    SentMail.objects.create(
+        created=datetime.datetime.now(),
+        deleted=None,
+        deleted_on=None,
+        modified=datetime.datetime.now(),
+        version=0,
+        recipient=recipients,
+        email_subject=subject,
+        email_content=content,
+        email_sent=email_send
+    )
+
+
 def send_email_with_logging(email_data, email_list):
     email_send = True
     try:
@@ -539,18 +612,18 @@ def send_email_with_logging(email_data, email_list):
         logging.warning("Email was not sent", _(email_data['email_subject']),
                         _(email_data['email_content']), email_list, e)
         email_send = False
-
-    SentMail.objects.create(
-        created=datetime.datetime.now(),
-        deleted=None,
-        deleted_on=None,
-        modified=datetime.datetime.now(),
-        version=0,
-        recipient=email_list,
-        email_subject=email_data['email_subject'],
-        email_content=email_data['email_content'],
-        email_sent=email_send
-    )
+    #
+    # SentMail.objects.create(
+    #     created=datetime.datetime.now(),
+    #     deleted=None,
+    #     deleted_on=None,
+    #     modified=datetime.datetime.now(),
+    #     version=0,
+    #     recipient=email_list,
+    #     email_subject=email_data['email_subject'],
+    #     email_content=email_data['email_content'],
+    #     email_sent=email_send
+    # )
 
 
 def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):

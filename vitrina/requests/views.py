@@ -645,9 +645,15 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             ) and self.object.status == Request.APPROVED
         }
         context_data.update(extra_context_data)
-        if request.status == "REJECTED" and self.request.method == "POST":
-            email_data = prepare_email_by_identifier('request-rejected', self.request_rejected_base_template,
+        if request.status == "REJECTED":
+            email_data = prepare_email_by_identifier_for_sub('request-rejected', self.request_rejected_base_template,
                                                      'Poreikis atmestas', {'comment': request.comment})
+            # prepare_email_by_identifier_for_sub(
+            #     [self.object.email],
+            #     'vitrina/requests/templates/vitrina/emails/request_for_dataset_rejected.md',
+            #     {
+            #         'obj': self.object,
+            #     })
             if request.user is not None:
                 if request.user.email is not None:
                     send_email_with_logging(email_data, [request.user.email])
@@ -656,18 +662,31 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
                                                      'Sveiki, Jūsų poreikis duomenų rinkiniui atverti patvirtintas.',
                                                      'Poreikis patvirtintas',
                                                      [])
+            prepare_email_by_identifier_for_sub(
+                [self.object.email],
+                'vitrina/requests/templates/vitrina/emails/request_for_dataset_approved.md',
+                {
+                    'obj': self.object,
+                })
             if request.user is not None:
                 if request.user.email is not None:
                     send_email_with_logging(email_data, [request.user.email])
 
         elif request.status == "CREATED" and self.request.method == "POST":
-            email_data = prepare_email_by_identifier('request-registered',
-                                                     self.request_add_email_base_template,
-                                                     'Užregistruotas naujas poreikis',
-                                                     {'request_path': self.request.path_info})
-            if request.user is not None:
-                if request.user.email is not None:
-                    send_email_with_logging(email_data, [request.user.email])
+            pass
+            # email_data = prepare_email_by_identifier('request-registered',
+            #                                          self.request_add_email_base_template,
+            #                                          'Užregistruotas naujas poreikis',
+            #                                          {'request_path': self.request.path_info})
+            # prepare_email_by_identifier_for_sub(
+            #     [self.object.email],
+            #     'vitrina/requests/templates/vitrina/emails/request_for_dataset_created.md',
+            #     {
+            #         'obj': self.object,
+            #     })
+            # if request.user is not None:
+            #     if request.user.email is not None:
+            #         send_email_with_logging(email_data, [request.user.email])
         return context_data
 
 
@@ -734,6 +753,12 @@ class RequestCreateView(
                                                                                     'organization': organization.title,
                                                                                     'object': self.object.title
                                                                  })
+                # prepare_email_by_identifier_for_sub(
+                #     [self.object.email],
+                #     'vitrina/requests/templates/vitrina/emails/request_created_organization_sub.md',
+                #     {
+                #         'obj': self.object,
+                #     })
                 sub_email_list = []
                 for sub in subs:
                     Task.objects.create(
@@ -921,6 +946,12 @@ class RequestUpdateView(
                                                          'Sveiki, pranešame jums apie tai, kad,'
                                                          ' poreikis {object} buvo atnaujintas.',
                                                          'Atnaujintas poreikis', {'object': self.object.title})
+        prepare_email_by_identifier_for_sub(
+            [self.object.email],
+            'vitrina/requests/templates/vitrina/emails/request_rejected_organization_sub.md',
+            {
+                'obj': self.object,
+            })
         sub_email_list = []
         for sub in subs:
             Task.objects.create(

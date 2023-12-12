@@ -1,5 +1,5 @@
-Pakeistas duomenų rinkinys: {{ dataset }}
+Pakeistas duomenų rinkinys: {{title}}
 
 Sveiki,
 
-pakeistas duomenų rinkinys {{ dataset|link }}.
+duomenų rinkinys [{{title}}]({{link}}) pakeistas.

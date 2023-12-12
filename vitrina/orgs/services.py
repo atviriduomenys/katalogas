@@ -11,7 +11,7 @@ from django.db.models import Q
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.messages.helpers import email
+# from vitrina.messages.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project

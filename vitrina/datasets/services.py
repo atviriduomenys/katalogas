@@ -12,7 +12,7 @@ from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
-from vitrina.messages.helpers import email
+# from vitrina.messages.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization

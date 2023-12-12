@@ -11,7 +11,7 @@ from django.views.generic import CreateView
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
-from vitrina.messages.helpers import email
+# from vitrina.messages.helpers import email
 from django.utils.translation import gettext_lazy as _
 
 

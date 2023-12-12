@@ -10,7 +10,7 @@ from allauth.socialaccount.providers.oauth2.views import (
 from allauth.socialaccount.helpers import (
     complete_social_login
 )
-from vitrina.messages.helpers import email
+# from vitrina.messages.helpers import email
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider

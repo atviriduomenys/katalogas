@@ -20,7 +20,7 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
-from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_options_based_on_model
+from vitrina.helpers import get_stats_filter_options_based_on_model
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -37,16 +37,12 @@ from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
-from vitrina.helpers import send_email_with_logging
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.helpers import email, get_current_domain
 from django.http import HttpResponse
 
 
 class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     template_name = 'confirm_approve.html'
-    base_template_content = """
-        Jūsų koordinatoriaus paraiška buvo patvirtinta.   
-    """
     email_identifier = "coordinator-request-approved"
 
     def dispatch(self, request, *args, **kwargs):
@@ -87,13 +83,18 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
             type=Task.REQUEST
         )
         task.save()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
-            'Koordinatoriaus paraiškos patvirtinimas',
-            []
-        )
         sub_email_list = [user.email]
-        send_email_with_logging(email_data, sub_email_list)
+        organization_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('organization-detail', args=[org.pk])
+        )
+
+        email(sub_email_list, self.email_identifier,
+              "vitrina/orgs/emails/representative_created.md", {
+                  'user': user.first_name,
+                  'link': organization_url
+              })
+
         return self.get_success_url()
 
     def get_success_url(self):
@@ -144,25 +145,21 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.representative_request.delete()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
-            'Koordinatoriaus paraiškos atmetimas',
-            []
-        )
         sub_email_list = [self.representative_request.user.email]
-        send_email_with_logging(email_data, sub_email_list)
+        email([sub_email_list], self.email_identifier,
+              "vitrina/emails/request_denied.md", {
+                  'user': self.representative_request.user
+              })
+
         return self.get_success_url()
 
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
+
 class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_suspend.html'
-    base_template_content = """
-        Jūsų koordinatoriaus teisės buvo suspenduotos.   
-    """
-    email_identifier = "coordinator-request-suspended"
 
     def dispatch(self, request, *args, **kwargs):
         self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
@@ -190,20 +187,12 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         representative_role.save()
         user_to_grant_coordiantor_rights.organization = self.representative_request.organization
         user_to_grant_coordiantor_rights.save()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
-            'Koordinatoriaus paraiškos atmetimas',
-            []
-        )
         self.representative_request.user = user_to_grant_coordiantor_rights
         self.representative_request.save()
-        sub_email_list = [self.representative_request.user.email]
-        send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
 
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
-
 
 
 class OrganizationListView(ListView):
@@ -488,14 +477,7 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
-    base_template_content = """
-         Buvote įtraukti į {organization} organizacijos
-         narių sąrašo, tačiau nesate registruotas Lietuvos
-         atvirų duomenų portale. Prašome sekite šia nuoroda,
-         kad užsiregistruotumėte ir patvirtintumėte savo narystę
-         organizacijoje: {url} 
-    """
-    email_identifier = "auth-org-representative-without-credentials"
+    email_identifier = "organization-member-add"
 
     organization: Organization
 
@@ -561,16 +543,13 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            email_data = prepare_email_by_identifier(
-                self.email_identifier,  self.base_template_content,
-                'Kvietimas prisijungti prie atvirų duomenų portalo',
-                 {
-                     'organization': self.organization.title,
-                      'url': url
-                 }
-             )
+            if form.cleaned_data['role'] == 'manager':
+                email(
+                    [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
+                        'organization': self.organization.title,
+                        'link': url
+                    })
 
-            send_email_with_logging(email_data, [self.object.email])
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 

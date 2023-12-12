@@ -20,7 +20,6 @@ class EmailTemplate(models.Model):
     variables = models.TextField(blank=True, null=True)
     subject = models.TextField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
-    email_keys = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = True

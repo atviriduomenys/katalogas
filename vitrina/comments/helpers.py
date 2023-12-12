@@ -2,7 +2,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import send_email_with_logging
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub # this function will be renamed to email
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task

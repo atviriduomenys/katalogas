@@ -4,7 +4,6 @@ from django.db import migrations
 from vitrina.orgs.models import Organization
 
 def fix_ordering(apps, schema_editor):
-    #Organization = apps.get_model("vitrina_orgs", "Organization")
     Organization.fix_tree(fix_paths=True)
 
 

@@ -22,6 +22,7 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from vitrina.api.services import get_auth_session
 from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_options_based_on_model
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
@@ -40,7 +41,7 @@ from vitrina.orgs.models import Organization, Representative, RepresentativeRequ
 from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative
 from vitrina.plans.models import Plan
 from vitrina.projects.models import Project
-from vitrina.settings import CLIENTS_AUTH_BEARER, CLIENTS_API_URL
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -885,10 +886,7 @@ class OrganizationApiKeysView(
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-
-        headers = {
-            "Authorization": CLIENTS_AUTH_BEARER}
-        response = requests.get(CLIENTS_API_URL, headers=headers)
+        response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients')
         keys = response.json()
         key_client_ids = []
         if response.status_code == 200:
@@ -1030,11 +1028,6 @@ class OrganizationApiKeysDetailView(
                     if s.enabled:
                         dt.update({'enabled': True})
                 scopes_final[k] = dt
-            # if k == '(viskas)':
-            #     dt.update({'title': '(viskas)'})
-            #     for s in v:
-            #         dt.update({'enabled': s.enabled})
-            #     scopes_final[k] = dt
             else:
                 dt.update({'title': k})
                 for s in v:
@@ -1148,9 +1141,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
         suffixes = ["_getone", "_getall", "_search", "_changes", "_insert", "_upsert", "_update", "_patch",
                     "_delete", "_wipe"]
         if self.api_key.client_id:
-            headers = {
-                "Authorization": CLIENTS_AUTH_BEARER}
-            response = requests.get(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+            response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id)
             if response.status_code == 200:
                 if 'scopes' in response.json():
                     scopes = response.json()['scopes']
@@ -1249,9 +1240,7 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
         )
 
     def delete(self, request, *args, **kwargs):
-        # headers = {
-        #     "Authorization": CLIENTS_AUTH_BEARER}
-        # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+        # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
         #
         self.apikey.delete()
         success_url = self.get_success_url()
@@ -1333,7 +1322,6 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
                 if target_org.get().pk != self.organization.pk:
                     organization = target_org.get()
                     # todo siųsti emailus
-                    # url = self.api_key.get_absolute_url()
                     title = f'Prašoma prieigos prie duomenų: {self.api_key}'
                     base_email_content = """
                                         Gautas pranešimas, kad prašoma suteikti prieigą prie duomenų:
@@ -1526,8 +1514,6 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
         create_write = False
         create_wipe = False
 
-        scopes = ApiScope.objects.none()
-
         organization = None
         dataset = None
         scope_name = self.object.name
@@ -1640,9 +1626,7 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
                     )
                 )
             for scope in scopes:
-                # headers = {
-                #     "Authorization": CLIENTS_AUTH_BEARER}
-                # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+                # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
                 scope.delete()
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
@@ -1684,9 +1668,7 @@ class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionReq
             scopes = ApiScope.objects.filter(key=self.api_key, dataset=self.object)
 
         for sc in scopes:
-            # headers = {
-            #     "Authorization": CLIENTS_AUTH_BEARER}
-            # response = requests.delete(CLIENTS_API_URL + '/' + self.api_key.client_id, headers=headers)
+            # response = requests.delete(SPINTA_SERVER_API_URL + '/' + self.api_key.client_id)
             sc.delete()
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 

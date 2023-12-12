@@ -132,6 +132,8 @@ class DatasetResourceForm(forms.ModelForm):
     def clean(self):
         file = self.cleaned_data.get('file')
         url = self.cleaned_data.get('download_url')
+        upload = self.cleaned_data.get('upload_to_storage')
+
         if file and url:
             raise ValidationError(_(
                 "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
@@ -144,6 +146,10 @@ class DatasetResourceForm(forms.ModelForm):
             self.add_error('file', _(
                 "Arba įkelkite duomenų faią."
             ))
+        if 'get.data.gov.lt' in url and not upload:
+            self.cleaned_data['upload_to_storage'] = True
+            self.data = self.data.copy()
+            self.data['upload_to_storage'] = 'on'
         return self.cleaned_data
 
     def clean_access(self):

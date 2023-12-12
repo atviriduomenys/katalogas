@@ -1219,10 +1219,11 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         orgs = [ra.organization for ra in  RequestAssignment.objects.filter(
             request=self.request_obj
         )]
-        user_can_manage_datasets = self.request.user.organization in orgs
+        user_can_manage_datasets = False
+        if not self.request.user.is_anonymous:
+            user_can_manage_datasets = self.request.user.organization in orgs
         context['request_obj'] = self.request_obj
         context['show_edit_buttons'] = user_can_manage_datasets
-        # context['datasets'] = datasets
         return context
 
     def get_plan_object(self):

@@ -104,7 +104,6 @@ class DatasetResourceForm(forms.ModelForm):
             Field('name'),
             Field('access'),
             Field('is_parameterized'),
-            Field('upload_to_storage'),
             Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
@@ -115,6 +114,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('download_url'),
             Field('imported'),
             Field('data_service'),
+            Field('upload_to_storage'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )

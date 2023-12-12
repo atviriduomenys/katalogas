@@ -133,7 +133,12 @@
                  </div>
                  {% if can_update %}
                     <div class="buttons is-right">
-                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}"
+                           class="button is-primary is-normal m-t-md is-size-6-mobile">
+                            {% translate "Nuskaityti struktūrą" %}
+                        </a>
+                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}"
+                           class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Naujas modelis" %}
                         </a>
                     </div>

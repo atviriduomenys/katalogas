@@ -61,7 +61,7 @@ def _fix_mp(
 
 def update_paths(apps, schema_editor):
     Organization = apps.get_model("vitrina_orgs", "Organization")
-    _fix_mp(Organization, ['title'])
+    _fix_mp(Organization, ['created'])
 
 
 class Migration(migrations.Migration):

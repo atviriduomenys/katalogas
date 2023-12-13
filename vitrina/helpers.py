@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import datetime
 import calendar
@@ -519,8 +520,10 @@ def email(
     if override:
         email_template = _get_email_tempate_from_db(email_identifier)
     if email_template:
+        from unidecode import unidecode
         subject = email_template.subject
         template_db = email_template.template
+        template_db = unidecode(template_db)
         template = Template(template_db)
         for key in template.nodelist:
             if type(key).__name__ == 'VariableNode':
@@ -550,7 +553,7 @@ def email(
             message=_(str(content)),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipients],
-            html_message=html_message
+            html_message=html_message,
         )
         email_send = True
     except Exception as e:

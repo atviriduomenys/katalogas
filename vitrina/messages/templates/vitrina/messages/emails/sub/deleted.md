@@ -1,8 +1,7 @@
-Prenumerata atšaukta: {{ obj }}
+Prenumerata atšaukta: {{obj}}
 
 Sveiki,
 
-sėkmingai atsisakėte {{ obj|link }} prenumeratos.
+sėkmingai atsisakėte [{{obj}}]({{subscribe_url}}) prenumeratos.
 
-Jei prenumeratos atsisakėte per klaidą, galite [užsiprenumeruoti(subscribe_url)
-iš naujo.
+Jei prenumeratos atsisakėte per klaidą, galite [užsiprenumeruoti]({{unsubscribe_url}}) iš naujo.

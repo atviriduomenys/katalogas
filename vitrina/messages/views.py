@@ -1,17 +1,16 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import CreateView
-
+from django.urls import reverse
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
 from vitrina.users.models import User
-# from vitrina.messages.helpers import email
+from vitrina.helpers import email, get_current_domain
 from django.utils.translation import gettext_lazy as _
 
 
@@ -40,10 +39,27 @@ class UnsubscribeView(LoginRequiredMixin, View):
         if qs.exists():
             qs.delete()
             messages.success(request, _("Sėkmingai atsisakėte prenumeratos."))
-        email(user.email, 'vitrina/messages/emails/sub/deleted', {
+
+        unsubscribe_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('unsubscribe', kwargs={'content_type_id': content_type_id,
+                                           'obj_id': obj_id,
+                                           'user_id': user_id})
+        )
+
+        subscribe_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('subscribe-form', kwargs={'content_type_id': content_type_id,
+                                           'obj_id': obj_id,
+                                           'user_id': user_id})
+        )
+
+        email([user.email], 'newsletter-unsubscribed', 'vitrina/messages/emails/sub/deleted.md', {
             'obj': obj,
-            'subscribe_url': '',  # TODO: get subscribe url
+            'subscribe_url': subscribe_url,
+            'unsubscribe_url': unsubscribe_url
         })
+
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
@@ -94,12 +110,28 @@ class SubscribeFormView(
         if sub_type in dict(Subscription.SUB_TYPE_CHOICES):
             self.object.sub_type = sub_type
 
+        unsubscribe_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('unsubscribe', kwargs={'content_type_id': self.object.content_type_id,
+                                           'obj_id': self.object.object_id,
+                                           'user_id': self.object.user_id
+                                           })
+        )
+
+        subscribe_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('subscribe-form', kwargs={'content_type_id': self.object.content_type_id,
+                                           'obj_id': self.object.object_id,
+                                           'user_id': self.object.user_id})
+        )
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
-            email(self.user.email, 'vitrina/messages/emails/sub/created', {
-                'obj': self.obj,
-                'unsubscribe_url': '',  # TODO: get unsubscribe url
+
+            email([self.object.user.email], 'newsletter-subscribed', 'vitrina/messages/emails/sub/created.md', {
+                'obj': self.object,
+                'subscribe_url': subscribe_url,
+                'unsubscribe_url': unsubscribe_url
             })
         except IntegrityError:
             existing_subscription = Subscription.objects.filter(

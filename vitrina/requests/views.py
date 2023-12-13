@@ -53,7 +53,6 @@ from vitrina.datasets.services import (get_frequency_and_format,
                                        get_requests)
 from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
     get_stats_filter_options_based_on_model, email, get_current_domain
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import Action, has_perm

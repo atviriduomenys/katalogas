@@ -26,10 +26,10 @@ BASE_DIR = Path(env.path(
     default=Path(__file__).resolve().parent.parent,
 ))
 
-SPINTA_EXECUTABLE = "spinta"
+SPINTA_EXECUTABLE = os.path.join(BASE_DIR, 'spinta-env', 'bin', 'spinta')
 SPINTA_SERVER_URL = "https://put-test.data.gov.lt"
 SPINTA_SERVER_NAME = "put-test.data.gov.lt"
-SPINTA_PATH = None
+SPINTA_PATH = os.path.join(BASE_DIR, 'spinta-env', 'data')
 
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / '.env')

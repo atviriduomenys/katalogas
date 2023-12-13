@@ -51,7 +51,7 @@ class ResourceDetailView(
             Representative,
             self.object.dataset,
         )
-        # TODO: use spinta POST /:inspect to fetch manifest
+        # TODO: use spinta POST /:inspect to fetch manifest after #477 is done
         context['structure_acceptable'] = True
         context['params'] = self.object.params.all().order_by('name')
         context['models'] = self.object.model_set.all()

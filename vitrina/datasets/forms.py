@@ -165,6 +165,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 )
             if metadata:
                 raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+
+            if not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
 

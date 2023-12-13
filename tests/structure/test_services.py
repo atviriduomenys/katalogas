@@ -1819,3 +1819,30 @@ def test_structure_export__params(app: DjangoTestApp):
         '11,,,,,type,string,,,,5,open,dct:type,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
     )
+
+
+@pytest.mark.django_db
+def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp/ššš,,,,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset)
+    )
+    assert metadata.count() == 0
+    comments = Comment.objects.filter(
+        content_type=ContentType.objects.get_for_model(structure),
+        object_id=structure.pk
+    )
+    assert comments.count() == 1
+    assert 'kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.' in comments[0].body

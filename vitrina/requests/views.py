@@ -888,16 +888,6 @@ class RequestUpdateView(
         if org_subs:
             subs = org_subs | subs
 
-        email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
-                                                         'Sveiki, pranešame jums apie tai, kad,'
-                                                         ' poreikis {object} buvo atnaujintas.',
-                                                         'Atnaujintas poreikis', {'object': self.object.title})
-        prepare_email_by_identifier_for_sub(
-            [self.object.email],
-            'vitrina/requests/templates/vitrina/emails/request_rejected_organization_sub.md',
-            {
-                'obj': self.object,
-            })
         sub_email_list = []
         for sub in subs:
             Task.objects.create(
@@ -915,7 +905,6 @@ class RequestUpdateView(
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
-        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):

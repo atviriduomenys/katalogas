@@ -502,32 +502,6 @@ def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
         return None
 
 
-def prepare_email_by_identifier(
-    name: str,  # template name
-    context: dict[str, Any] | None = None,
-    *,
-    # Allow user to override email templates via Admin.
-    override: bool = True,
-) -> dict[str, str]:
-    context = context or {}
-
-    email_template = None
-    if override:
-        email_template = _get_email_tempate_from_db(name)
-
-    if email_template:
-        engine = engines['django']
-        template = engine.from_string(email_template.template)
-        content = template.render(context)
-
-    else:
-        content = render_to_string(name, context)
-        subject, *lines = content.splitlines()
-        content = '\n'.join(lines[2:])
-
-    return {'email_content': content, 'email_subject': subject}
-
-
 def email(
     recipients: list[str],
     email_identifier: str,
@@ -612,18 +586,6 @@ def send_email_with_logging(email_data, email_list):
         logging.warning("Email was not sent", _(email_data['email_subject']),
                         _(email_data['email_content']), email_list, e)
         email_send = False
-    #
-    # SentMail.objects.create(
-    #     created=datetime.datetime.now(),
-    #     deleted=None,
-    #     deleted_on=None,
-    #     modified=datetime.datetime.now(),
-    #     version=0,
-    #     recipient=email_list,
-    #     email_subject=email_data['email_subject'],
-    #     email_content=email_data['email_content'],
-    #     email_sent=email_send
-    # )
 
 
 def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):

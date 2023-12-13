@@ -47,8 +47,7 @@ from reversion.views import RevisionMixin
 from parler.views import TranslatableUpdateView, TranslatableCreateView, LanguageChoiceMixin, ViewUrlMixin
 
 from vitrina.api.models import ApiKey
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub # will need changed into email
-from vitrina.helpers import prepare_email_by_identifier, email
+from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
@@ -704,26 +703,6 @@ class DatasetUpdateView(
         sub_email_list = []
         email_data_sub = None
         for sub in subs:
-            if sub.sub_type == Subscription.ORGANIZATION:
-                title = f"{self.object.organization} organizacijos duomenų rinkinys"
-                description = f"Atnaujintas organizacijos {self.object.organization} duomenų rinkinys."
-                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-organization',
-                                                                     'Sveiki, pranešame jums apie tai, kad,'
-                                                                     'jūsų prenumeruojamos organizacijos {organization}'
-                                                                     'duomenų rinkinys: {object}, buvo atnaujintas.',
-                                                                     'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object.organization.title,
-                                                                      'object': self.object.title})
-            else:
-                title = f"Duomenų rinkinys: {self.object}"
-                description = f"Atnaujintas duomenų rinkinys: {self.object}"
-                email_data_sub = prepare_email_by_identifier_for_sub('dataset-updated-sub-type-dataset',
-                                                                     'Sveiki, pranešame jums apie tai, kad,'
-                                                                     ' jūsų prenumeruojamas duomenų rinkinys'
-                                                                     ' {organization} buvo atnaujintas.',
-                                                                     'Atnaujintas duomenų rinkinys',
-                                                                     {'organization': self.object.title}
-                                                                     )
             queries.append(Subscription.objects.filter(Q(object_id=self.object.organization.pk) | Q(object_id=None),
                                                        sub_type=Subscription.ORGANIZATION,
                                                        content_type=get_content_type_for_model(Organization),

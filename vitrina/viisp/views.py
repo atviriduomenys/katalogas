@@ -10,13 +10,12 @@ from allauth.socialaccount.providers.oauth2.views import (
 from allauth.socialaccount.helpers import (
     complete_social_login
 )
-# from vitrina.messages.helpers import email
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider
 from vitrina.viisp.xml_utils import get_response_with_ticket_id
 from vitrina.viisp.xml_utils import get_response_with_user_data
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, email
 from base64 import b64decode
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -129,7 +128,7 @@ def _confirm_viisp_email(
     viisp_token_key = ViispTokenKey.objects.first().key_content
     s = URLSafeSerializer(viisp_token_key)
     token = s.dumps([user_data.get(key) for key in user_data])
-    email(email_address, 'vitrina/viisp/emails/email_confirmation', {
+    email([email_address], 'viisp-confirmation', 'vitrina/viisp/emails/email_confirmation.md', {
         'confirmation_url': "%s%s" % (
             base_url,
             reverse('viisp-account-merge', kwargs={'token': token})

@@ -575,7 +575,7 @@ def email(
             subject=_(subject) if subject else _(send_email_title[0]),
             message=_(str(content)),
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=['ernestas.toliatas@atea.lt'],
+            recipient_list=[recipients],
             html_message=html_message
         )
         email_send = True

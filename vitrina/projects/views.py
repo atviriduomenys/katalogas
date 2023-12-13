@@ -540,6 +540,7 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, pk=kwargs['pk'])
+        self.apikey = get_object_or_404(ApiKey, pk=kwargs['apikey_id'])
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -572,8 +573,19 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.api_key = hash_api_key(form.cleaned_data.get('new_key'))
-        self.object.save()
-        # todo post to API
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'secret': form.cleaned_data.get('new_key')
+        }
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_name,
+                                           json=data, headers=headers)
+        if response.status_code == 200:
+            self.object.save()
+        else:
+            if response.status_code != 200:
+                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('project-permissions', args=[self.project.pk]))
 
 

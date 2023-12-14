@@ -93,7 +93,16 @@
                                         <td>{{ resource.modified|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                     {% endif %}
                                 </tr>
-                            </tbody>
+                                <tr>
+                                    <th>{% translate "Publikuojamas saugykloje" %}</th>
+                                    <td>
+                                        {% if resource.upload_to_storage %}
+                                        {% translate "Taip" %}
+                                        {% else %}
+                                        {% translate "Ne" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
                         </table>
                     </div>
                 </div>

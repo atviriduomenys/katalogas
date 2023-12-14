@@ -20,8 +20,12 @@ import subprocess
 def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
     env = os.environ.copy()
     env['SPINTA_CONFIG'] = f"{base_dir}/config.yml"
+
+    base_dir_path = Path(base_dir)
+    manifest_path = base_dir_path / "manifest.csv"
+
     result = subprocess.run(
-        [spinta_executable, "push", f"{base_dir}/manifest.csv", "--no-progress-bar", "-o", spinta_server_name],
+        [spinta_executable, "push", str(manifest_path), "--no-progress-bar", "-o", spinta_server_name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
@@ -33,7 +37,7 @@ def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
 
 
 def handle_error(stderr, base_dir):
-    lines = stderr.split('\n')
+    lines = stderr.splitlines('\n')
     try:
         start = lines.index(next(line for line in lines if line.startswith('Traceback')))
         end = lines.index(next(line for line in lines[start:] if not line.startswith(' ')))
@@ -83,10 +87,7 @@ def main():
         manifest_csv_path = base_dir / 'manifest.csv'
 
         tabular_data = _resource_models_to_tabular(resource)
-        try:
-            first_item = next(tabular_data)
-        except StopIteration:
-            first_item = None
+        first_item = next(tabular_data, None)
 
         if first_item is not None:
             with open(manifest_csv_path, 'w', newline='') as f:

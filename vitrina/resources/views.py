@@ -5,27 +5,63 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
-from django.views.generic import CreateView, UpdateView, DeleteView, DetailView
+from django.utils.translation import gettext_lazy as _
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import Action, has_perm
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from django.utils.translation import gettext_lazy as _
-
 from vitrina.structure.models import Metadata
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
 
+class ResourceDetailView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    DetailView
+):
+    template_name = 'vitrina/resources/detail.html'
+    model = DatasetDistribution
+    pk_url_kwarg = 'resource_id'
+
+    detail_url_name = "resource-detail"
+    history_url_name = "dataset-history"
+
+    def get_history_object(self):
+        return self.object.dataset
+
+    def get_detail_url(self):
+        return self.object.dataset.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['resource'] = self.object
+        context['dataset'] = self.object.dataset
+        context['can_update'] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object.dataset,
+        )
+        # TODO: use spinta POST /:inspect to fetch manifest after #477 is done
+        # TODO: do not change to True until inspect is finished and html is correct
+        context['structure_acceptable'] = False
+        context['params'] = self.object.params.all().order_by('name')
+        context['models'] = self.object.model_set.all()
+        return context
+
+
 class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = DatasetDistribution
-    template_name = 'base_form.html'
+    template_name = 'vitrina/resources/form.html'
     context_object_name = 'datasetdistribution'
     form_class = DatasetResourceForm
 
@@ -120,7 +156,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
 
 class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = DatasetDistribution
-    template_name = 'base_form.html'
+    template_name = 'vitrina/resources/form.html'
     context_object_name = 'datasetdistribution'
     form_class = DatasetResourceForm
 
@@ -227,40 +263,6 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                                    user=self.request.user)
             dataset.save()
         return redirect(dataset)
-
-
-class ResourceDetailView(
-    HistoryMixin,
-    DatasetStructureMixin,
-    DetailView
-):
-    template_name = 'vitrina/resources/detail.html'
-    model = DatasetDistribution
-    pk_url_kwarg = 'resource_id'
-
-    detail_url_name = "resource-detail"
-    history_url_name = "dataset-history"
-
-    def get_history_object(self):
-        return self.object.dataset
-
-    def get_detail_url(self):
-        return self.object.dataset.get_absolute_url()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['resource'] = self.object
-        context['dataset'] = self.object.dataset
-        context['can_update'] = has_perm(self.request.user, Action.UPDATE, self.object)
-        context['can_view_members'] = has_perm(
-            self.request.user,
-            Action.VIEW,
-            Representative,
-            self.object.dataset,
-        )
-        context['params'] = self.object.params.all().order_by('name')
-        context['models'] = self.object.model_set.all()
-        return context
 
 
 class ResourceModelCreateView(ModelCreateView):

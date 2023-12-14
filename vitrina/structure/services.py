@@ -1095,6 +1095,41 @@ def _models_to_tabular(
                 yield to_row(DATASET, {})
 
 
+def _resource_models_to_tabular(
+    resource: DatasetDistribution,
+    separator: bool = False
+):
+    resource_models = Model.objects.filter(distribution=resource, dataset=resource.dataset).order_by('metadata__order')
+    base = None
+    for model in resource_models:
+        if model.base and not base:
+            yield from _base_to_tabular(model.base)
+            base = model.base
+        elif not model.base and base:
+            yield from _end_marker('base')
+            base = None
+        if meta := model.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'model': _to_relative_model_name(meta.name, resource.dataset),
+                'level': meta.level_given,
+                'access': _get_access(meta.access),
+                'title': meta.title,
+                'description': meta.description,
+                'uri': meta.uri,
+                'source': meta.source,
+                'prepare': meta.prepare,
+                'ref': ', '.join([
+                    prop.property.name
+                    for prop in model.property_list.all()]
+                ) if model.property_list.exists() else ''
+            })
+            yield from _params_to_tabular(model)
+            yield from _properties_to_tabular(model)
+            if separator:
+                yield to_row(DATASET, {})
+
+
 def _resource_to_tabular(
     resource: DatasetDistribution
 ):

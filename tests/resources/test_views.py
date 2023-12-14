@@ -90,6 +90,36 @@ def test_add_form_correct_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
+    file_format = FileFormat(title='URL', extension='URL')
+    resource = DatasetDistributionFactory(title='base title', description='base description',
+                                          format=file_format, file=None)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form['download_url'] = 'get.data.gov.lt'
+    resp = form.submit()
+    resource.refresh_from_db()
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.filter().count() == 1
+    assert resource.upload_to_storage is True
+
+
+@pytest.mark.django_db
+def test_change_form_upload_checked(app: DjangoTestApp):
+    resource = DatasetDistributionFactory(title='base title', description='base description')
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form['upload_to_storage'] = True
+    resp = form.submit()
+    resource.refresh_from_db()
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.filter().count() == 1
+    assert resource.upload_to_storage is True
+
+
+@pytest.mark.django_db
 def test_click_add_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)

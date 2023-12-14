@@ -189,7 +189,7 @@ def test_request_update_subscription_email(app: DjangoTestApp, subscription_data
     request.refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == request.get_absolute_url()
-    assert len(mail.outbox) == 2
+    assert len(mail.outbox) == 1
 
 
 @pytest.mark.django_db

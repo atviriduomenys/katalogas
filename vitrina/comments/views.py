@@ -41,6 +41,11 @@ class CommentView(
         obj = get_object_or_404(content_type.model_class(), pk=object_id)
         form_class = get_comment_form_class(obj, request.user)
         form = form_class(obj, request.POST)
+        link = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('comment', kwargs={'content_type_id': content_type.id,
+                                       'object_id': object_id})
+        )
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -154,7 +159,7 @@ class CommentView(
             comment.save()
             create_task("New", content_type, obj.pk, request.user, obj=obj)
             create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs("New", content_type, obj.pk, request.user, obj=obj)
+            send_mail_and_create_tasks_for_subs("New", content_type, obj.pk, request.user, link, obj=obj)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -167,6 +172,12 @@ class ReplyView(LoginRequiredMixin, View):
         form = CommentForm(obj, request.POST)
 
         if form.is_valid():
+            link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('reply', kwargs={'content_type_id': content_type_id,
+                                         'object_id': object_id,
+                                         'parent_id': parent_id})
+            )
             comment = Comment.objects.create(
                 type=Comment.USER,
                 user=request.user,
@@ -183,7 +194,7 @@ class ReplyView(LoginRequiredMixin, View):
             create_subscription(request.user, comment)
 
             send_mail_and_create_tasks_for_subs("Reply", comment_ct, parent_id,
-                                                request.user, obj=obj, comment_object=parent_comment)
+                                                request.user, link, obj=obj, comment_object=parent_comment)
             comment_task = Task.objects.filter(
                 comment_object=parent_comment
             ).first()

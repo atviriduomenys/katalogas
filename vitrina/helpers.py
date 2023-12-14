@@ -547,20 +547,20 @@ def email(
             subject=read_data[0].split('\n')[0],
             title=read_data[0].split('\n')[0]
         )
-    try:
-        send_mail(
-            subject=_(subject) if subject else _(send_email_title[0]),
-            message=_(str(content)),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipients],
-            html_message=html_message,
-        )
-        email_send = True
-    except Exception as e:
-        import logging
-        logging.warning("Email was not sent", _(send_email_title[0]),
-                        _(str(content)), recipients, e)
-        email_send = False
+    # try:
+    send_mail(
+        subject=_(subject) if subject else _(send_email_title[0]),
+        message=_(str(content)),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[recipients],
+        html_message=html_message,
+    )
+    email_send = True
+    # except Exception as e:
+    #     import logging
+    #     logging.warning("Email was not sent", _(send_email_title[0]),
+    #                     _(str(content)), recipients, e)
+    #     email_send = False
 
     SentMail.objects.create(
         created=datetime.datetime.now(),

@@ -1006,8 +1006,12 @@ class CreateMemberView(
             if not user.organization:
                 user.organization = self.dataset.organization
                 user.save()
-
-            manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
+            link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('dataset-detail', kwargs={'pk': self.object.object_id})
+            )
+            manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user,
+                                                    self.dataset, link)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -1145,7 +1149,10 @@ class UpdateMemberView(
             self.object.user.save()
 
         self.dataset.save()
-
+        link = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('dataset-detail', kwargs={'pk': self.dataset.pk})
+        )
         manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
 
         if self.object.has_api_access:

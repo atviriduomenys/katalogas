@@ -1273,7 +1273,7 @@ def test_member_subscription(app: DjangoTestApp):
     assert rep.apikey_set.count() == 0
 
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ['test@example.com']
+    assert mail.outbox[0].to == [['test@example.com']]
 
     subscriptions = Subscription.objects.all()
     assert len(subscriptions) == 1

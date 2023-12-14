@@ -11,7 +11,7 @@ from django.db.models import Q
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
-# from vitrina.messages.helpers import email
+from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
@@ -195,7 +195,7 @@ def create_subscription(user, organization):
     )
 
 
-def manage_subscriptions_for_representative(subscribe, user, organization):
+def manage_subscriptions_for_representative(subscribe, user, organization, link):
     subscription = Subscription.objects.filter(
         user=user,
         object_id=organization.id,
@@ -204,17 +204,21 @@ def manage_subscriptions_for_representative(subscribe, user, organization):
     if subscribe:
         if not subscription:
             create_subscription(user, organization)
-            email([user.email], 'vitrina/orgs/emails/subscribed', {
-                'organization': organization,
-            })
+            if user.email:
+                email([user.email], 'newsletter-org-subscription-created-representative', 'vitrina/orgs/emails/subscribed.md', {
+                    'organization': organization,
+                    'link': link
+                })
         else:
             subscription.update(
                 dataset_comments_sub=True,
                 request_comments_sub=True,
                 project_comments_sub=True,
             )
-            email([user.email], 'vitrina/orgs/emails/subscription_updated', {
+            email([user.email], 'newsletter-org-subscription-updated-representative',
+                  'vitrina/orgs/emails/subscription_updated.md', {
                 'organization': organization,
+                'link': link
             })
     else:
         if subscription:

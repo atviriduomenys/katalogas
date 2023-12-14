@@ -5,7 +5,8 @@ from vitrina.datasets.models import Dataset
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub # this function will be renamed to email
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task
-
+from vitrina.helpers import get_current_domain, email
+from django.urls import reverse
 
 def get_title_description_by_comment_type(comment_type, content_type, object_id):
     if comment_type == "Reply":
@@ -47,7 +48,7 @@ def create_subscription(user, comment):
     )
 
 
-def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, user, obj=None, comment_object=None):
+def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, user, link, obj=None, comment_object=None):
     object_subs = Subscription.objects.exclude(user=user).filter(
         sub_type=content_type.model.upper(),
         content_type=content_type,
@@ -87,25 +88,38 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
             )
             if sub.user.email and sub.user.email not in email_list:
                 org_email_list.append(sub.user.email)
-    send_mail_to_object_subscribers(email_list, content_type, object_id)
+    send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type)
     if len(org_subs) > 0:
-        send_mail_to_object_subscribers(email_list, content_type, object_id, org=obj.organization)
+        send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type, org=obj.organization)
 
 
 def send_mail_to_object_subscribers(
     email_list,
     content_type,
     object_id,
+    link,
+    comment_type,
     org=None,
 ):
     try:
-        obj = content_type.model_class().get(pk=object_id)
+        if org:
+            sub_object = org
+        else:
+            sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
     except content_type.model_class().DoesNotExist:
-        obj = None
-    if isinstance(object, Comment):
-        obj = None  # FIXME: Get real comment object
-    prepare_email_by_identifier_for_sub(email_list, 'vitrina/comments/emails/sub/created', { # will be renamed to email
-        'object': obj,
-        'comment': '',  # FIXME: Add comment text
-    })
+        sub_object = None
+
+    if comment_type == 'New':
+        email_identifier = 'comment-for-sub'
+        file = 'vitrina/comments/emails/sub/created.md'
+    else:
+        email_identifier = 'replay-comment-for-sub'
+        file = 'vitrina/comments/emails/sub/replay.md'
+
+    if sub_object is not None:
+        email(email_list, email_identifier, file, {
+            'object': sub_object,
+            'link': link
+        })
+
 

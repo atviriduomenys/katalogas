@@ -1,5 +1,5 @@
-Jūsų prenumerata atnaujinta
+Sukurta prenumerata organizacijai {{organization}}
 
 Sveiki,
 
-Jūsų prenumerata {{ organization|link }} organizacijoje atnaujinta.
+orgazinacijos prenumerata atnaujinta [{{organization}}]({{link}}) prenumeratą.

@@ -23,7 +23,7 @@ from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, email
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -2336,9 +2336,11 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
 
         rel_projects = Project.objects.filter(datasets=version.dataset)
         emails = []
+        version_content_type_list = []
         for proj in rel_projects:
             emails.append(proj.user.email)
             version_content_type = ContentType.objects.get_for_model(version)
+            version_content_type_list.append(version_content_type)
             Task.objects.create(
                 # FIXME: Maybe task title and describtion should be generated
                 #        on display.
@@ -2356,13 +2358,11 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
                 status=Task.CREATED,
             )
 
-        send_email(emails, 'vitrina/structure/emails/new_version', {
-            'base_url': get_current_domain(self.request),
-            'dataset': self.dataset,
-            'version': version,
-            # FIXME: ISSUE-39: Add unsubscribe from new_version emails link.
-            'unsubscribe_url': '',
-
+        url = f"{get_current_domain(self.request)}/datasets/" \
+              f"{version.dataset.pk}/version/{version.pk}"
+        email(emails, 'new-dataset-structure-version', 'vitrina/structure/emails/new_version.md', {
+            'dataset': version.dataset.title,
+            'url': url,
         })
 
         metadata = form.cleaned_data.get('metadata', [])

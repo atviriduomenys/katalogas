@@ -1,5 +1,5 @@
-Sukurta prenumerata organizacijai
+Sukurta prenumerata organizacijai {{organization}}
 
 Sveiki,
 
-užsisakėte {{ organization|link }} prenumeratą.
+užsisakėte orgazinacijos [{{organization}}]({{link}}) prenumeratą.

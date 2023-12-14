@@ -12,7 +12,7 @@ from haystack.backends import SQ
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
-# from vitrina.messages.helpers import email
+from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
@@ -290,24 +290,29 @@ def create_subscription(user, dataset):
     )
 
 
-def manage_subscriptions_for_representative(subscribe, user, dataset):
+def manage_subscriptions_for_representative(subscribe, user, dataset, link):
     subscription = Subscription.objects.filter(user=user,
                                                object_id=dataset.id,
                                                content_type=get_content_type_for_model(Dataset))
     if subscribe:
         if not subscription:
-            create_subscription(user, dataset)
-            email(user.email, 'vitrina/messages/emails/subscribed', {
-                'obj': dataset,
-            })
+            if user.email:
+                create_subscription(user, dataset)
+                email([user.email], 'newsletter-dataset-subscription-created-representative',
+                      'vitrina/messages/emails/sub/dataset_sub_created.md', {
+                        'obj': dataset,
+                        'link': link
+                })
         else:
             subscription.update(
                 dataset_comments_sub=True,
                 request_comments_sub=True,
                 project_comments_sub=True,
             )
-            email(user.email, 'vitrina/messages/emails/subscription_updated', {
+            email([user.email], 'newsletter-dataset-subscription-updated-representative',
+                  'vitrina/messages/emails/sub/dataset_sub_updated.md', {
                 'obj': dataset,
+                'link': link
             })
     else:
         if subscription:

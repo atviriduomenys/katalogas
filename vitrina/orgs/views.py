@@ -546,7 +546,11 @@ class RepresentativeCreateView(
             if not user.organization:
                 user.organization = self.organization
                 user.save()
-            manage_subscriptions_for_representative(subscribe, user, self.organization)
+            link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('organization-detail', kwargs={'pk': self.object.object_id})
+            )
+            manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -632,8 +636,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         if not self.object.user.organization:
             self.object.user.organization = self.organization
             self.object.user.save()
-
-        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization)
+        link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('organization-detail', kwargs={'pk': self.organization.pk})
+            )
+        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization, link)
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()

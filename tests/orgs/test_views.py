@@ -284,7 +284,7 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
            representative_data['organization']
     assert Representative.objects.filter(email="new@gmail.com").first().user is None
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ["new@gmail.com"]
+    assert mail.outbox[0].to == [["new@gmail.com"]]
 
 
 @pytest.mark.django_db
@@ -309,7 +309,7 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
     assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ["manager@gmail.com"]
+    assert mail.outbox[0].to == [["manager@gmail.com"]]
 
     subscription = Subscription.objects.get(user=representative_data['manager'])
     assert subscription.sub_type == Subscription.ORGANIZATION

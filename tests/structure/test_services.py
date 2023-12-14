@@ -757,6 +757,36 @@ def test_structure_with_enums(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_with_enum_and_null_value(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        '1,,,,,type,string,,,,5,open,dct:type,,\n'
+        ',,,,,,enum,Type,,"CREATED",,,,,\n'
+        ',,,,,,,,,null,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid='1')
+    prop_enum = Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == 'Type'
+    assert list(prop_enum[0].enumitem_set.values_list('metadata__prepare', flat=True)) == ['CREATED', 'null']
+
+
+@pytest.mark.django_db
 def test_structure_with_params(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'

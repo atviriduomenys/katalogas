@@ -28,7 +28,7 @@ from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_option
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
-    get_stats_filter_options_based_on_model
+    get_stats_filter_options_based_on_model, email
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -1347,18 +1347,14 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             if target_org.exists():
                 if target_org.get().pk != self.organization.pk:
                     organization = target_org.get()
-                    title = f'Prašoma prieigos prie duomenų: {self.api_key}'
-                    base_email_content = """
-                                        Gautas pranešimas, kad prašoma suteikti prieigą prie duomenų:
-                                        {0}
-                                    """
                     url = f"{get_current_domain(self.request)}{self.api_key.get_absolute_url()}"
                     rep_emails = Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(organization),
                         object_id=organization.pk).values_list('email', flat=True)
-                    email_data = prepare_email_by_identifier('apikey-request', base_email_content, title,
-                                                             [url])
-                    send_email_with_logging(email_data, [rep_emails])
+                    email([rep_emails], 'apikey-request', 'vitrina/orgs/emails/request_for_data.md', {
+                        'api_key': self.api_key,
+                        'url': url
+                    })
                     Task.objects.create(
                         content_type=ContentType.objects.get_for_model(ApiKey),
                         object_id=self.api_key.pk,

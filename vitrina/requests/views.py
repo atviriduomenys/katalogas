@@ -35,7 +35,7 @@ from vitrina.datasets.services import (get_frequency_and_format,
                                        get_values_for_frequency,
                                        sort_publication_stats,
                                        get_requests)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
+from vitrina.helpers import DateFilter, Filter, get_selected_value, \
     get_stats_filter_options_based_on_model, email, get_current_domain
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative

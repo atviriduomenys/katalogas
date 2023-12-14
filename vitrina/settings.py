@@ -26,11 +26,6 @@ BASE_DIR = Path(env.path(
     default=Path(__file__).resolve().parent.parent,
 ))
 
-SPINTA_EXECUTABLE = os.path.join(BASE_DIR, 'spinta-env', 'bin', 'spinta')
-SPINTA_SERVER_URL = "https://127.0.0.1:8000"
-SPINTA_SERVER_NAME = "127.0.0.1:8000"
-SPINTA_PATH = os.path.join(BASE_DIR, 'spinta-env', 'data')
-
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
@@ -49,6 +44,11 @@ SECRET_KEY = env('SECRET_KEY', default=(
 VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
 VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
 VIISP_PID = env('VIISP_PID')
+
+SPINTA_EXECUTABLE = env('SPINTA_EXECUTABLE')
+SPINTA_SERVER_URL = env('SPINTA_SERVER_URL')
+SPINTA_SERVER_NAME = env('SPINTA_SERVER_NAME')
+SPINTA_PATH = env('SPINTA_PATH')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=True)

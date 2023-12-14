@@ -19,7 +19,7 @@ import subprocess
 
 def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
     env = os.environ.copy()
-    env['SPINTA_CONFIG'] = f"{base_dir}/config.yml"
+    env['SPINTA_CONFIG'] = str(base_dir / "config.yml")
 
     base_dir_path = Path(base_dir)
     manifest_path = base_dir_path / "manifest.csv"
@@ -63,14 +63,14 @@ def main():
             "keymaps": {
                 "default": {
                     "type": "sqlalchemy",
-                    "dsn": f"sqlite:///{base_dir}/keymap.db"
+                    "dsn": f"sqlite:///{base_dir / 'keymap.db'}"
                 }
             },
             "manifest": "default",
             "manifests": {
                 "default": {
                     "type": "csv",
-                    "path": f"{base_dir}/manifest.csv",
+                    "path": str(base_dir / "manifest.csv"),
                     "backend": "default",
                     "keymap": "default",
                     "mode": "internal"
@@ -78,7 +78,7 @@ def main():
             },
             "accesslog": {
                 "type": "file",
-                "file": f"{base_dir}/accesslog.json"
+                "file": str(base_dir / "accesslog.json")
             }
         }
         with open(base_dir / 'config.yml', 'w') as f:

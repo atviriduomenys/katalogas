@@ -162,8 +162,6 @@ class DatasetResourceForm(forms.ModelForm):
 
         if 'get.data.gov.lt' in url and not upload:
             self.cleaned_data['upload_to_storage'] = True
-            self.data = self.data.copy()
-            self.data['upload_to_storage'] = 'on'
         return self.cleaned_data
 
     def clean_access(self):

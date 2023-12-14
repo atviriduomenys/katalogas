@@ -1153,7 +1153,7 @@ class UpdateMemberView(
             get_current_domain(self.request),
             reverse('dataset-detail', kwargs={'pk': self.dataset.pk})
         )
-        manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset)
+        manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user, self.dataset, link)
 
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():

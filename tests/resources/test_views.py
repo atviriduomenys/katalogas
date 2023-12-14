@@ -91,11 +91,12 @@ def test_add_form_correct_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
-    resource = DatasetDistributionFactory(title='base title', description='base description')
+    file_format = FileFormat(title='URL', extension='URL')
+    resource = DatasetDistributionFactory(title='base title', description='base description',
+                                          format=file_format, file=None)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
-    form['format'] = FileFormat(extension='URL').id
     form['download_url'] = 'get.data.gov.lt'
     resp = form.submit()
     resource.refresh_from_db()

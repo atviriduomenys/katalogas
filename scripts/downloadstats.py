@@ -38,14 +38,15 @@ def main(
         target: str = Option("http://localhost:8000", help=(
                 "target server url"
         )),
-        config_file: str = Option('~/.config/vitrina/downloadstats.json'),
-        state_file: str = Option('~/.local/share/vitrina/state.json'),
-        bot_status_file: str = Option('~/.local/share/vitrina/downloadstats.json'),
+        config_file: str = Option(os.path.expanduser('~/.config/vitrina/downloadstats.json')),
+        state_file: str = Option(os.path.expanduser('~/.local/share/vitrina/state.json')),
+        bot_status_file: str = Option(os.path.expanduser('~/.local/share/vitrina/downloadstats.json')),
 ):
     transactions = {}
     current_state = {'files': {}}
 
     bots_found = {'agents': {}}
+    apikey = ""
 
     limit = 1000
     total_lines_read = 0
@@ -83,8 +84,10 @@ def main(
 
     if os.path.exists(config_file):
         with open(config_file, 'r') as config:
-            bot_list = json.load(config).get('bots')
+            data = json.load(config)
+            bot_list = data.get('bots')
             bots.update(bot_list)
+            apikey = data.get('apikey')
 
     if not os.path.exists(logfile):
         print(f'File {logfile} not found. Aborting.')
@@ -96,6 +99,7 @@ def main(
 
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
+    session.headers.update({'Authorization': 'ApiKey {}'.format(apikey)})
 
     total_lines_in_file = 0
     d = deque([], maxlen=limit)
@@ -149,15 +153,15 @@ def parse_user_agent(agent):
 
 def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions):
     for i in d:
-        if 'txn' in i:
+        if '"txn"' in i:
             entry = json.loads(i)
             txn = entry['txn']
             timestamp = entry['time']
             dt = None
             try:
                 dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-            except:
-                print('Wrong timestamp format')
+            except ValueError as ve:
+                print(f'Wrong timestamp format {timestamp}')
             requests = 1
             if txn not in transactions:
                 transactions[txn] = {'time': dt}
@@ -269,7 +273,8 @@ def post_data(data, name, session, endpoint):
                 "requests": st.get('requests'),
                 "objects": st.get('objects')
             }
-            session.post(endpoint, data=info)
+            req = session.post(endpoint, data=info)
+            req.raise_for_status()
             pbar.update(1)
         data[model] = []
 

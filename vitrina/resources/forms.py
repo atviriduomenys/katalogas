@@ -148,7 +148,7 @@ class DatasetResourceForm(forms.ModelForm):
             ))
 
         fmt = self.cleaned_data.get('format')
-        if not file and url and fmt.extension not in ['URL', 'API', 'UAPI']:
+        if not file and url and fmt and fmt.extension not in ['URL', 'API', 'UAPI']:
             self.add_error('format', _(
                 "Pasirinkite nuorodos formatą."
             ))

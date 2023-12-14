@@ -95,6 +95,7 @@ def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form['format'] = FileFormat(extension='URL')
     form['download_url'] = 'get.data.gov.lt'
     resp = form.submit()
     resource.refresh_from_db()

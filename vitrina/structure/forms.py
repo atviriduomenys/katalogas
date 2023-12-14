@@ -789,6 +789,9 @@ class VersionForm(forms.ModelForm):
 
     def clean_released(self):
         released = self.cleaned_data.get('released')
-        if released and released < datetime.datetime.today().date():
-            raise ValidationError(_('Galima nurodyti tik šiandienos arba ateities datą.'))
+        if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
+            raise ValidationError(_('Versija gali įsigalioti ne anksčiau kaip po 2 savaičių.'))
+        latest_version = self.dataset.dataset_version.order_by('-created').first()
+        if latest_version and released < latest_version.released:
+            raise ValidationError(_('Versija negali įsigalioti anksčiau už praėjusią versiją.'))
         return released

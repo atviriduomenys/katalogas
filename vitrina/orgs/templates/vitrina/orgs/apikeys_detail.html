@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Raktai" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block head %}
+    <style>
+        .list_item {
+		  	list-style-type: disc;
+		  	margin-left: 1em;
+		}
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/orgs/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            <h4 class="custom-title is-size-4-mobile">Rakto peržiūra</h4>
+        </div>
+    </div>
+    <div class="rows">
+        <div class="row">
+            <a href="{% url 'organization-apikeys-regenerate' organization.pk key.pk %}"
+                class="button is-link is-normal m-t-md is-size-6-mobile is-pulled-right"
+                id="change_key">
+                    {% translate "Keisti slaptažodį" %}
+            </a>
+        </div>
+        <div class="row is-full">
+{#                {% if can_update_organization %}#}
+
+{#            	{% endif %}#}
+            <table class="table is-fullwidth">
+                <tbody>
+                <tr>
+                    <th>{% translate "ID" %}</th>
+                    <th>{% translate "Pavadinimas" %}</th>
+                </tr>
+                <tr>
+                    <td>{{ key.client_id }}</td>
+                    <td>{{ key.client_name }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <a href="{% url 'organization-apikeys-scope-create' organization.pk key.pk %}"
+                class="button is-primary is-normal m-t-md is-size-6-mobile is-pulled-right"
+                id="add_scope">
+                    {% translate "Naujas leidimas" %}
+            </a>
+        </div>
+        {% if scopes %}
+            <div class="row is-full">
+{#                {% if can_update_organization %}#}
+
+{#            	{% endif %}#}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Objektas" %}</th>
+                        <th>{% translate "Skaityti" %}</th>
+                        <th>{% translate "Rašyti" %}</th>
+                        <th>{% translate "Valyti" %}</th>
+                        <th style="width:10%"></th>
+                        <th style="width:10%"></th>
+                        <th style="width:10%"></th>
+                    </tr>
+                    {% for k, v in scopes.items %}
+                        <tr>
+                            <td>
+                                {% if v.url %}
+                                    <a href="{{ v.url }}">{{ v.title }}</a>
+                                {% else %}
+                                    {{ v.title }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if v.read %}
+                                    <input type="checkbox" checked="checked" disabled="disabled" class="is-primary">
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if v.write %}
+                                    <input type="checkbox" checked="checked" disabled="disabled" class="is-primary">
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if v.wipe %}
+                                    <input type="checkbox" checked="checked" disabled="disabled" class="is-primary">
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if k %}
+                                    {% if v.obj %}
+                                        <a href="{% url 'organization-apikeys-scope-object-change' organization.pk key.pk v.ct.pk v.obj.pk %}"
+                                    {% else %}
+                                        <a href="{% url 'organization-apikeys-scope-change' organization.pk key.pk k %}"
+                                    {% endif %}
+                                       class="button is-small is-primary">
+                                        {% translate "Redaguoti" %}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if k %}
+                                    {% if v.obj %}
+                                        <a href="{% url 'organization-apikeys-scope-object-delete' organization.pk key.pk v.ct.pk v.obj.pk %}"
+                                    {% else %}
+                                        <a href="{% url 'organization-apikeys-scope-delete' organization.pk key.pk k %}"
+                                    {% endif %}
+                                       class="button is-small is-danger">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if v.obj %}
+                                    <a href="{% url 'organization-apikeys-scope-object-toggle' organization.pk key.pk v.ct.pk v.obj.pk %}"
+                                {% else %}
+                                    <a href="{% url 'organization-apikeys-scope-toggle' organization.pk key.pk k %}"
+                               {% endif %}
+                                   class="button is-small is-warning">
+                                    {% if v.enabled %}
+                                        {% translate "Išjungti" %}
+                                    {% else %}
+                                        {% translate "Įjungti" %}
+                                    {% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+            {% include "vitrina/common/pagination.html" %}
+        </div>
+    </div>
+{% endblock %}

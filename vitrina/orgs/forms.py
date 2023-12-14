@@ -1,25 +1,28 @@
+import secrets
 from urllib.parse import urlparse
+import re
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.forms import (
-    BooleanField, CharField, ChoiceField, DateField, DateInput,
-    EmailField, FileField, Form, HiddenInput, IntegerField,
-    ModelChoiceField, ModelForm, ModelMultipleChoiceField,
-    Textarea, URLField,
-)
+from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
+    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
+    DateField, DateInput, Textarea, CheckboxInput
 from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
 
+from vitrina.api.models import ApiKey, ApiScope
+from vitrina.api.services import is_duplicate_key
+from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import get_coordinators_count
+from vitrina.orgs.services import get_coordinators_count, hash_api_key
 from vitrina.plans.models import Plan
 
+from vitrina.structure.models import Metadata
 
 class ProviderWidget(ModelSelect2Widget):
     model = Organization
@@ -375,3 +378,213 @@ class OrganizationMergeForm(Form):
             else:
                 return url.kwargs.get('pk')
         return organization
+
+
+class ProjectApiKeyForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['project_id'] = self.project.pk
+
+
+class ApiKeyForm(ModelForm):
+    organization_id = IntegerField(widget=HiddenInput(), required=False)
+    client_name = CharField(label=_('Pavadinimas'), required=False)
+
+    class Meta:
+        model = ApiKey
+        fields = ('organization_id', 'client_name',)
+
+    def __init__(self, organization, *args, **kwargs):
+        self.organization = organization
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "apikey-form"
+        self.helper.layout = Layout(
+            Field('organization_id'),
+            Field('client_name'),
+            Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['organization_id'] = self.organization.pk
+
+    def clean_client_name(self):
+        name = self.cleaned_data.get('client_name')
+        if name:
+            expr = "^[a-z0-9_]*$"
+            found = re.search(expr, name)
+            if not found:
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+
+class ProjectApiKeyForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+    client_name = CharField(label=_('Pavadinimas'), required=False)
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id', 'client_name',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Field('client_name'),
+            Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+        self.initial['project_id'] = self.project.pk
+
+    def clean_client_name(self):
+        name = self.cleaned_data.get('client_name')
+        if name:
+            expr = "^[a-z0-9_]*$"
+            found = re.search(expr, name)
+            if not found:
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+
+class ApiKeyRegenerateForm(ModelForm):
+    organization_id = IntegerField(widget=HiddenInput(), required=False)
+    new_key = CharField(label=_('Naujas slaptažodis'), required=False, disabled=True,
+                        help_text="Naujas raktas parodomas tik vieną kartą, \n"
+                                  + "po pakeitimo, nebebus galimybės pamatyti rakto, todėl jis turi būti išsisaugotas!")
+
+    class Meta:
+        model = ApiKey
+        fields = ('organization_id', 'new_key',)
+
+    def __init__(self, organization, *args, **kwargs):
+        self.organization = organization
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "apikey-regenerate-form"
+        self.helper.layout = Layout(
+            Field('organization_id'),
+            Field('new_key'),
+            Submit('submit', _('Redaguoti') if instance else _("Sukurti"), css_class='button is-primary'),
+        )
+
+        api_key = secrets.token_urlsafe()
+
+        self.initial['new_key'] = api_key
+        self.initial['organization_id'] = self.organization.pk
+
+
+class ProjectApiKeyRegenerateForm(ModelForm):
+    project_id = IntegerField(widget=HiddenInput(), required=False)
+    new_key = CharField(label=_('Naujas slaptažodis'), required=False, disabled=True,
+                        help_text="Naujas raktas parodomas tik vieną kartą, \n"
+                                  + "po pakeitimo, nebebus galimybės pamatyti rakto, todėl jis turi būti išsisaugotas!")
+
+    class Meta:
+        model = ApiKey
+        fields = ('project_id', 'new_key',)
+
+    def __init__(self, project, *args, **kwargs):
+        self.project = project
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "project-apikey-regenerate-form"
+        self.helper.layout = Layout(
+            Field('project_id'),
+            Field('new_key'),
+            Submit('submit', _("Saugoti"), css_class='button is-primary'),
+        )
+
+        api_key = secrets.token_urlsafe()
+
+        self.initial['new_key'] = api_key
+        self.initial['project_id'] = self.project.pk
+
+
+class ApiScopeForm(Form):
+    scope = CharField(label=_('Objektas'), required=True)
+    read = BooleanField(label=_('Skaityti'), widget=CheckboxInput, required=False)
+    write = BooleanField(label=_('Rašyti'), widget=CheckboxInput, required=False)
+    remove = BooleanField(label=_('Valyti'), widget=CheckboxInput, required=False)
+
+    def __init__(self, organization, api_key, scope, *args, **kwargs):
+        read = ["_getone", "_getall", "_search"]
+        write = ["_insert", "_upsert", "_update", "_patch", "_delete"]
+
+        self.organization = organization
+        self.api_key = api_key
+        self.scope = scope
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "apiscope-form"
+        self.helper.layout = Layout(
+            Field('scope'),
+            Field('read'),
+            Field('write'),
+            Field('remove'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+        )
+        self.initial['scope'] = self.scope
+        if self.scope:
+            if scope == '(viskas)':
+                scopes = ApiScope.objects.filter(key=api_key).exclude(scope__icontains='datasets_gov')
+            else:
+                scopes = ApiScope.objects.filter(key=api_key, scope__icontains=self.scope)
+
+            for sc in scopes:
+                if any(s in sc.scope for s in read):
+                    self.initial['read'] = True
+                if any(s in sc.scope for s in write):
+                    self.initial['write'] = True
+                if 'wipe' in sc.scope:
+                    self.initial['remove'] = True
+
+    def clean(self):
+        scope = self.cleaned_data.get('scope')
+        read = self.cleaned_data.get('read')
+        write = self.cleaned_data.get('write')
+        remove = self.cleaned_data.get('remove')
+        if scope:
+            if scope == 'spinta_set_meta_fields' or scope == 'set_meta_fields':
+                if read or write or remove:
+                    self.add_error('scope', _("Šiai sričiai negalima pridėti skaitymo/rašymo/šalinimo veiksmų."))
+            else:
+                if scope != '(viskas)':
+                    target_org = Organization.objects.filter(name=scope)
+                    target_dataset = Metadata.objects.filter(
+                        content_type=ContentType.objects.get_for_model(Dataset),
+                        name=scope)
+                    if not target_org.exists() and not target_dataset.exists():
+                        self.add_error('scope', _("Objektas su tokia name reikšme neegzistuoja."))
+        return self.cleaned_data

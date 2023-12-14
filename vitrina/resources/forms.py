@@ -9,7 +9,7 @@ from crispy_forms.layout import Field, Submit, Layout
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 
 
@@ -86,6 +86,7 @@ class DatasetResourceForm(forms.ModelForm):
             'name',
             'access',
             'is_parameterized',
+            'imported',
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -110,6 +111,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('access_url'),
             Field('format'),
             Field('download_url'),
+            Field('imported'),
             Field('data_service'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
@@ -121,6 +123,9 @@ class DatasetResourceForm(forms.ModelForm):
         if resource and resource.metadata.first():
             self.initial['access'] = resource.metadata.first().access
             self.initial['name'] = resource.metadata.first().name
+
+        if not dataset.type.filter(name='catalog'):
+            self.fields['imported'].widget = forms.HiddenInput()
 
     def clean(self):
         file = self.cleaned_data.get('file')
@@ -135,8 +140,23 @@ class DatasetResourceForm(forms.ModelForm):
                 "Pateikite duomenų atsisiuntimo nuorodą."
             ))
             self.add_error('file', _(
-                "Arba įkelkite duomenų faią."
+                "Arba įkelkite duomenų failą."
             ))
+
+        fmt = self.cleaned_data.get('format')
+        if fmt:
+            if not file and url and fmt.extension not in ['URL', 'API', 'UAPI']:
+                self.add_error('format', _(
+                    "Pasirinkite nuorodos formatą."
+                ))
+            elif not url and file:
+                fmt_extension = fmt.extension.upper().strip()
+                file_extension = file.extension.upper().strip()
+                if fmt_extension != file_extension:
+                    self.add_error('format', _(
+                        "Formatas nesutampa su įkelto failo formatu."
+                    ))
+
         return self.cleaned_data
 
     def clean_access(self):
@@ -144,3 +164,13 @@ class DatasetResourceForm(forms.ModelForm):
         if access == '':
             return None
         return access
+
+
+class FormatAdminForm(forms.ModelForm):
+    extension = forms.CharField(label=_("Failo plėtinys"))
+    title = forms.CharField(label=_("Pavadinimas"))
+    mimetype = forms.CharField(label=_("MIME tipas"))
+
+    class Meta:
+        model = Format
+        fields = ('extension', 'title', 'mimetype', 'rating',)

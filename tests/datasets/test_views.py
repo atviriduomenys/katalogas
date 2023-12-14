@@ -16,6 +16,7 @@ from webtest import Upload
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category
+from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
     DatasetRelationFactory
@@ -26,7 +27,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
-from vitrina.plans.models import Plan
+from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.users.factories import UserFactory, ManagerFactory
@@ -1972,3 +1973,195 @@ def test_add_dataset_to_plan_title_with_distribution(app: DjangoTestApp):
     plan = Plan.objects.filter(plandataset__dataset=dataset)
     assert plan.count() == 1
     assert plan.first().title == "Duomenų rinkinio papildymas"
+
+
+@pytest.mark.django_db
+def test_delete_dataset_from_last_plan(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.PLANNED)
+    plan = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan
+    )
+
+    form = app.get(reverse('dataset-plans-delete', args=[plan.pk])).forms['delete-form']
+    form.submit()
+
+    dataset.refresh_from_db()
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 0
+    assert dataset.status == Dataset.INVENTORED
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.INVENTORED
+
+
+@pytest.mark.django_db
+def test_delete_dataset_from_non_last_plan(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.PLANNED)
+    plan1 = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan1
+    )
+    plan2 = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan2
+    )
+
+    form = app.get(reverse('dataset-plans-delete', args=[plan2.pk])).forms['delete-form']
+    form.submit()
+
+    dataset.refresh_from_db()
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 1
+    assert dataset.status == Dataset.PLANNED
+    assert dataset.comments.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_not_public_dataset_from_last_plan(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(
+        organization=organization,
+        is_public=False,
+        status=Dataset.UNASSIGNED
+    )
+    plan = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan
+    )
+
+    form = app.get(reverse('dataset-plans-delete', args=[plan.pk])).forms['delete-form']
+    form.submit()
+
+    dataset.refresh_from_db()
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 0
+    assert dataset.status == Dataset.UNASSIGNED
+    assert dataset.comments.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_opened_dataset_from_last_plan(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
+    DatasetDistributionFactory(dataset=dataset)
+    plan = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan
+    )
+
+    form = app.get(reverse('dataset-plans-delete', args=[plan.pk])).forms['delete-form']
+    form.submit()
+
+    dataset.refresh_from_db()
+    plan = Plan.objects.filter(plandataset__dataset=dataset)
+    assert plan.count() == 0
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_last_distribution_from_dataset(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
+    resource = DatasetDistributionFactory(dataset=dataset)
+
+    app.get(reverse('resource-delete', args=[resource.pk]))
+
+    dataset.refresh_from_db()
+    assert dataset.datasetdistribution_set.count() == 0
+    assert dataset.status == Dataset.INVENTORED
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.INVENTORED
+
+
+@pytest.mark.django_db
+def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
+    resource1 = DatasetDistributionFactory(dataset=dataset)
+    resource2 = DatasetDistributionFactory(dataset=dataset)
+
+    app.get(reverse('resource-delete', args=[resource2.pk]))
+
+    dataset.refresh_from_db()
+    assert dataset.datasetdistribution_set.count() == 1
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(
+        organization=organization,
+        status=Dataset.UNASSIGNED,
+        is_public=False
+    )
+    resource = DatasetDistributionFactory(dataset=dataset)
+
+    app.get(reverse('resource-delete', args=[resource.pk]))
+
+    dataset.refresh_from_db()
+    assert dataset.datasetdistribution_set.count() == 0
+    assert dataset.status == Dataset.UNASSIGNED
+    assert dataset.comments.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=organization)
+    app.set_user(user)
+    dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
+    resource = DatasetDistributionFactory(dataset=dataset)
+    plan = PlanFactory()
+    PlanDataset.objects.create(
+        dataset=dataset,
+        plan=plan
+    )
+
+    app.get(reverse('resource-delete', args=[resource.pk]))
+
+    dataset.refresh_from_db()
+    assert dataset.datasetdistribution_set.count() == 0
+    assert dataset.status == Dataset.PLANNED
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.PLANNED
+
+
+@pytest.mark.django_db
+def test_dataset_with_name_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['name'] = "test/ąčę"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
+    ]]

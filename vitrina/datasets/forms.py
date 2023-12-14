@@ -75,6 +75,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         fields = (
             'is_public',
             'tags',
+            'catalog',
             'licence',
             'frequency',
             'access_rights',
@@ -88,7 +89,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'name',
         )
         labels = {
-            'tags': _("Žymės")
+            'tags': _("Žymės"),
+            'catalog': _("Katalogas")
         }
 
     def __init__(self, *args, **kwargs):
@@ -110,6 +112,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('files'),
             Field('tags',
                   placeholder=_('Surašykite aktualius raktinius žodžius')),
+            Field('catalog'),
             Field('licence'),
             Field('frequency'),
             Field('type'),
@@ -149,18 +152,22 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     def clean_name(self):
         name = self.cleaned_data.get('name')
 
-        if self.instance and self.instance.pk and self.instance.metadata.first():
-            metadata = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                name=name
-            ).exclude(pk=self.instance.metadata.first().pk)
-        else:
-            metadata = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                name=name
-            )
-        if metadata:
-            raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+        if name:
+            if self.instance and self.instance.pk and self.instance.metadata.first():
+                metadata = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    name=name
+                ).exclude(pk=self.instance.metadata.first().pk)
+            else:
+                metadata = Metadata.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    name=name
+                )
+            if metadata:
+                raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+
+            if not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
 

@@ -2,7 +2,12 @@ from django.urls import path
 
 from vitrina.datasets.views import DatasetListView
 from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
-    RepresentativeDeleteView, OrganizationManagementsView, OrganizationUpdateView
+    RepresentativeDeleteView, OrganizationManagementsView, OrganizationUpdateView, OrganizationApiKeysView, \
+    OrganizationApiKeysCreateView, OrganizationApiKeysUpdateView, OrganizationApiKeysDeleteView, \
+    OrganizationApiKeysDetailView, OrganizationApiKeysScopeCreateView, OrganizationApiKeysScopeChangeView, \
+    OrganizationApiKeysScopeDeleteView, OrganizationApiKeysScopeToggleView, OrganizationApiKeysRegenerateView, \
+    OrganizationApiKeysScopeObjectChangeView, OrganizationApiKeysScopeObjectDeleteView, \
+    OrganizationApiKeysScopeObjectToggleView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
@@ -38,6 +43,30 @@ urlpatterns = [
     path('partner/download/<int:pk>/', RepresentativeRequestDownloadView.as_view(), name='partner-register-download'),
     path('orgs/<int:pk>/plans/', OrganizationPlanView.as_view(), name='organization-plans'),
     path('orgs/<int:pk>/plans/add/', OrganizationPlanCreateView.as_view(), name='organization-plans-create'),
+    path('orgs/<int:pk>/apikeys/', OrganizationApiKeysView.as_view(), name='organization-apikeys'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/', OrganizationApiKeysDetailView.as_view(),
+         name='organization-apikeys-detail'),
+    path('orgs/<int:pk>/apikeys/add/', OrganizationApiKeysCreateView.as_view(), name='organization-apikeys-create'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/change/', OrganizationApiKeysUpdateView.as_view(),
+         name='organization-apikeys-update'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/regenerate/', OrganizationApiKeysRegenerateView.as_view(),
+         name='organization-apikeys-regenerate'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/remove/', OrganizationApiKeysDeleteView.as_view(),
+         name='organization-apikeys-delete'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/scope/add/', OrganizationApiKeysScopeCreateView.as_view(),
+         name='organization-apikeys-scope-create'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<str:scope>/change/', OrganizationApiKeysScopeChangeView.as_view(),
+         name='organization-apikeys-scope-change'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<int:content_type_id>/<int:obj_id>/change/',
+         OrganizationApiKeysScopeObjectChangeView.as_view(), name='organization-apikeys-scope-object-change'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<str:scope>/delete/', OrganizationApiKeysScopeDeleteView.as_view(),
+         name='organization-apikeys-scope-delete'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<int:content_type_id>/<int:obj_id>/delete/',
+         OrganizationApiKeysScopeObjectDeleteView.as_view(), name='organization-apikeys-scope-object-delete'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<str:scope>/toggle/', OrganizationApiKeysScopeToggleView.as_view(),
+         name='organization-apikeys-scope-toggle'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/<int:content_type_id>/<int:obj_id>/toggle/',
+         OrganizationApiKeysScopeObjectToggleView.as_view(), name='organization-apikeys-scope-object-toggle'),
     path('orgs/<int:pk>/plans/history/', OrganizationPlansHistoryView.as_view(), name='organization-plans-history'),
     path('orgs/<int:pk>/merge/', OrganizationMergeView.as_view(), name='merge-organizations'),
     path('orgs/<int:organization_id>/<int:merge_organization_id>/merge/confirm/',

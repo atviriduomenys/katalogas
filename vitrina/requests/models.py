@@ -263,6 +263,9 @@ class RequestAssignment(models.Model):
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
+    def __str__(self):
+        return self.organization.__str__()
+
     @property
     def display_date(self):
         from vitrina.comments.models import Comment

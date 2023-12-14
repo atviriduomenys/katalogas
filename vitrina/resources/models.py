@@ -20,17 +20,19 @@ class Format(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     # See FormatName for some values used in code.
-    extension = models.TextField(blank=True, null=True)
+    extension = models.TextField(_("Failo plėtinys"), blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    mimetype = models.TextField(blank=True, null=True)
-    rating = models.IntegerField(blank=True, null=True)
-    title = models.CharField(max_length=255, blank=True)
+    mimetype = models.TextField(_("MIME tipas"), blank=True, null=True)
+    rating = models.IntegerField(_("Vertinimas"), blank=True, null=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
     uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
     media_type_uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = 'format'
+        verbose_name = _("Formatas")
+        verbose_name_plural = _("Formatai")
 
     def __str__(self):
         return self.title
@@ -133,6 +135,7 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)
@@ -165,10 +168,7 @@ class DatasetDistribution(models.Model):
 
     def get_download_url(self):
         if self.is_external_url():
-            download_url = self.download_url
-            url_parts = download_url.split('//')
-            url_parts.insert(1, '//old.')
-            return ''.join(url_parts)
+            return self.download_url
         elif self.file:
             return self.file.url
         return ""

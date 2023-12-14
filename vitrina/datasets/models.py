@@ -222,7 +222,7 @@ class Dataset(TranslatableModel):
         unique_together = (('internal_id', 'organization_id'),)
 
     def __str__(self):
-        return self.safe_translation_getter('title', language_code=self.get_current_language())
+        return self.safe_translation_getter('title', language_code=self.get_current_language()) or ' '
 
     def lt_title(self):
         return self.safe_translation_getter('title', language_code='lt')
@@ -954,7 +954,7 @@ class DatasetStructure(models.Model):
     title = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(
         Dataset,
-        models.DO_NOTHING,
+        models.SET_NULL,
         blank=True,
         null=True,
     )
@@ -1030,7 +1030,7 @@ class DatasetVisit(models.Model):
     version = models.IntegerField()
     last_visited = models.DateTimeField(blank=True, null=True)
     visit_count = models.IntegerField()
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True)
 
     class Meta:
         managed = False

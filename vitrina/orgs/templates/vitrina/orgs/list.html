@@ -7,6 +7,17 @@
 
 {% block current_title %}{% translate "Organizacijos" %}{% endblock %}
 
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            {% translate 'Pradžia' %}
+        </span></a></li>
+    </ul>
+{% endblock %}
+
 {% block content %}
     <div class="card mb-5">
         <div class="card-content">

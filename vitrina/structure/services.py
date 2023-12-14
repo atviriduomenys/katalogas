@@ -97,6 +97,9 @@ def _load_datasets(
         ).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
+        elif not meta.name.isascii():
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+            loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:
@@ -413,7 +416,7 @@ def _parse_prepare(prepare: str, meta: struct.Metadata) -> dict:
     if prepare:
         try:
             return spyna.parse(prepare)
-        except ParseError as e:
+        except BaseException as e:
             if hasattr(meta, 'errors'):
                 meta.errors.append(_(f'Klaida skaitant formulę "{prepare}"": {e}'))
     return {}
@@ -852,7 +855,7 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         url = f"https://get.data.gov.lt/{model}/?{query}"
     try:
         res = requests.get(url)
-    except requests.exceptions.RequestException:
+    except BaseException:
         return {}
 
     try:

@@ -167,10 +167,7 @@ class DatasetDistribution(models.Model):
 
     def get_download_url(self):
         if self.is_external_url():
-            download_url = self.download_url
-            url_parts = download_url.split('//')
-            url_parts.insert(1, '//old.')
-            return ''.join(url_parts)
+            return self.download_url
         elif self.file:
             return self.file.url
         return ""

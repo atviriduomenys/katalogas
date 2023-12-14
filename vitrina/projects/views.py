@@ -16,6 +16,7 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.api.services import get_auth_session
 from vitrina.datasets.models import Dataset
 from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
@@ -23,6 +24,7 @@ from vitrina.orgs.forms import ProjectApiKeyRegenerateForm, ProjectApiKeyForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
@@ -326,38 +328,61 @@ class ProjectApiKeysCreateView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.project = self.project
-        api_key = secrets.token_urlsafe()
-        self.object.api_key = hash_api_key(api_key)
-        self.object.enabled = True
-        self.object.save()
-        # todo post new key to API
-
         permissions = ["_getone", "_getall", "_search", "_changes"]
-        datasets = self.project.datasets.all()
-        url = f"{get_current_domain(self.request)}/projects/" \
-              f"{self.project.pk}/permissions/{self.object.pk}"
+        api_key = secrets.token_urlsafe()
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'secret': api_key,
+            'scopes': []
+        }
+        scopes_to_post = []
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients', json=data, headers=headers)
+        if response.status_code == 200:
+            if 'client_id' in response.json() and 'client_name' in response.json():
+                self.object.client_id = response.json()['client_id']
+                self.object.client_name = response.json()['client_name']
+                self.object.api_key = hash_api_key(api_key)
+                self.object.enabled = True
+                self.object.save()
 
-        for d in datasets:
-            meta = d.metadata.first()
-            if meta:
-                for p in permissions:
-                    ApiScope.objects.create(
-                        key=self.object,
-                        dataset=d,
-                        scope='spinta_' + meta.name + p,
-                        enabled=None
-                    )
-                Task.objects.create(
-                    title="Naujas duomenų leidimo prašymas rinkiniui: {}".format(d.title),
-                    description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudos atvejui:"
-                                f" {self.project.title}." +
-                                f"<br/><a href=" + url + ">Peržiūrėti leidimus</a>.",
-                    organization=d.organization,
-                    status=Task.CREATED,
-                    type=Task.REQUEST
-                )
-        messages.info(self.request, 'API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
-                      + api_key)
+                datasets = self.project.datasets.all()
+                url = f"{get_current_domain(self.request)}/projects/" \
+                    f"{self.project.pk}/permissions/{self.object.pk}"
+
+                for d in datasets:
+                    meta = d.metadata.first()
+                    if meta:
+                        for p in permissions:
+                            sc = 'spinta_' + meta.name + p
+                            ApiScope.objects.create(
+                                key=self.object,
+                                dataset=d,
+                                scope=sc,
+                                enabled=None
+                            )
+                            scopes_to_post.append(sc)
+                        Task.objects.create(
+                            title="Naujas duomenų leidimo prašymas rinkiniui: {}".format(d.title),
+                            description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudos atvejui:"
+                                        f" {self.project.title}." +
+                                        f"<br/><a href=" + url + ">Peržiūrėti leidimus</a>.",
+                            organization=d.organization,
+                            status=Task.CREATED,
+                            type=Task.REQUEST
+                        )
+                new_scopes = {
+                    'scopes': scopes_to_post
+                }
+                resp = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + response.json()['client_id'],
+                                                json=new_scopes, headers=headers)
+                if not resp.status_code == 200:
+                    messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+                messages.info(self.request, _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti.'
+                                              ' Sukurtas raktas:' + api_key))
+        else:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('project-permissions', args=[self.project.pk]))
 
 
@@ -431,6 +456,7 @@ class ProjectPermissionsToggleView(PermissionRequiredMixin, View):
 
     def get(self, request, **kwargs):
         scopes = ApiScope.objects.filter(key=self.apikey, dataset=self.dataset)
+        scope_list = []
         for sc in scopes:
             if sc.enabled:
                 sc.enabled = False
@@ -438,7 +464,24 @@ class ProjectPermissionsToggleView(PermissionRequiredMixin, View):
             else:
                 sc.enabled = True
                 sc.save()
-                # todo post to API
+                scope_list.append(sc)
+        existing = (ApiScope.objects.filter(key=self.apikey, dataset=self.dataset, enabled=True)
+                    .values_list('scope', flat=True))
+        ex_list = list(existing)
+        for s in scope_list:
+            if s not in ex_list:
+                ex_list.append(s)
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'scopes': ex_list
+        }
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients' + self.apikey.client_id,
+                                           json=data, headers=headers)
+        if response.status_code != 200:
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+
         return redirect(reverse('project-apikeys-detail', args=[self.project.pk, self.apikey.pk]))
 
 
@@ -497,6 +540,7 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, pk=kwargs['pk'])
+        self.apikey = get_object_or_404(ApiKey, pk=kwargs['apikey_id'])
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -529,8 +573,19 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.api_key = hash_api_key(form.cleaned_data.get('new_key'))
-        self.object.save()
-        # todo post to API
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        data = {
+            'secret': form.cleaned_data.get('new_key')
+        }
+        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_name,
+                                           json=data, headers=headers)
+        if response.status_code == 200:
+            self.object.save()
+        else:
+            if response.status_code != 200:
+                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('project-permissions', args=[self.project.pk]))
 
 

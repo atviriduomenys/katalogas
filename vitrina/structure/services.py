@@ -97,6 +97,9 @@ def _load_datasets(
         ).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
+        elif not meta.name.isascii():
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+            loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:

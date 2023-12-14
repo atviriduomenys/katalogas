@@ -1697,6 +1697,7 @@ class PropertyUpdateView(
             'name' in form.changed_data or
             'type' in form.changed_data or
             'ref' in form.changed_data or
+            'ref_others' in form.changed_data or
             'level' in form.changed_data or
             'access' in form.changed_data
         ):

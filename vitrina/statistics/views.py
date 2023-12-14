@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.services import get_frequency_and_format, update_facet_data, get_query_for_frequency, \
     get_values_for_frequency
+from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.statistics.models import StatRoute
 
 
@@ -54,6 +55,13 @@ class StatsMixin:
         indicator = self.request.GET.get('indicator', None) or self.default_indicator
         sorting = self.request.GET.get('sort', None) or self.default_sort
         duration = self.request.GET.get('duration', None) or self.default_duration
+        context['options'] = get_stats_filter_options_based_on_model(
+            self.model,
+            duration,
+            sorting,
+            indicator,
+            filter=self.filter
+        )
 
         frequency, ff = get_frequency_and_format(duration)
         labels = self.get_time_labels(start_date, frequency)

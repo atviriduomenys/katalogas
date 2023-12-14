@@ -2151,3 +2151,17 @@ def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
     assert dataset.comments.first().status == Comment.PLANNED
+
+
+@pytest.mark.django_db
+def test_dataset_with_name_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['name'] = "test/ąčę"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
+    ]]

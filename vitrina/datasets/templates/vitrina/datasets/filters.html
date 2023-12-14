@@ -44,7 +44,7 @@
 {% for filter in filters %}
 <nav class="category-panel mb-5" id="filter_id">
   {% if filter.stats and active_filter != filter.name %}
-    <a href="{% if 'selected_facets' in request.GET %}{{ filter.get_stats_url }}
+    <a href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}
              {% else %}{{ filter.get_stats_url }}selected_facets=organization_exact:{{ organization_id }}{% endif %}"
        id="dataset-{{ filter.name }}-stats"
     >

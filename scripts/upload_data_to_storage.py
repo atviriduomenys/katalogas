@@ -37,7 +37,7 @@ def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
 
 
 def handle_error(stderr, base_dir):
-    lines = stderr.splitlines('\n')
+    lines = stderr.splitlines()
     try:
         start = lines.index(next(line for line in lines if line.startswith('Traceback')))
         end = lines.index(next(line for line in lines[start:] if not line.startswith(' ')))

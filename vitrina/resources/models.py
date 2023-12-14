@@ -164,7 +164,7 @@ class DatasetDistribution(models.Model):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
     def is_external_url(self):
-        return self.type == "URL"
+        return True if self.download_url else False
 
     def get_download_url(self):
         if self.is_external_url():

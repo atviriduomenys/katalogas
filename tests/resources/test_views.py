@@ -243,3 +243,24 @@ def test_create_resource_with_download_url_and_wrong_format(app: DjangoTestApp):
     assert list(resp.context['form'].errors.values()) == [[
         'Pasirinkite nuorodos formatą.'
     ]]
+
+
+@pytest.mark.django_db
+def test_create_resource_with_existing_download_url(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='URL')
+    DatasetDistributionFactory(
+        dataset=dataset,
+        format=format,
+        download_url="http://www.test.com"
+    )
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['download_url'] = "http://www.test.com"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja.'
+    ]]

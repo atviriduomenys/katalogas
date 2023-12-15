@@ -580,6 +580,43 @@ def test_structure_with_resource_and_existing_distribution(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_with_resource_and_existing_distribution_without_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '2,,,,City,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '4,,,,,title,string,,,,5,open,dct:title,,\n'
+        '5,,,,Country,,,,,,,,,,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    distribution = DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='http://www.example.com',
+        title=""
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution.refresh_from_db()
+    assert Metadata.objects.get(uuid='1').object == distribution
+    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
+    assert distribution.title == 'resource'
+
+
+@pytest.mark.django_db
 def test_structure_with_resource_and_without_distribution(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'

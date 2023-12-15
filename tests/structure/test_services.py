@@ -93,6 +93,35 @@ def test_structure_prefixes(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_prefix_after_enum(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,enum,Size,,"SMALL",,,,,\n'
+        ',,,,,,,,,"MEDIUM",,,,,\n'
+        ',,,,,,,,,"BIG",,,,,\n'
+        ',,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\n'
+        ',,,,,,,dct,,,,,http://purl.org/dc/terms/,,'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    prefixes = Prefix.objects.all()
+    assert prefixes.count() == 2
+    assert list(prefixes.filter(
+        content_type=ContentType.objects.get_for_model(structure.dataset),
+        object_id=structure.dataset.pk
+    ).values_list('metadata__name', flat=True)) == ['dcat', 'dct']
+
+
+@pytest.mark.django_db
 def test_structure_datasets(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'

@@ -578,6 +578,9 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
+                elif not distribution.title:
+                    distribution.title = resource_meta.name
+                    distribution.save()
 
                 if md := distribution.metadata.first():
                     if not resource_meta.id:

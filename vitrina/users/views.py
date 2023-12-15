@@ -1,29 +1,36 @@
-import datetime
+from datetime import datetime
+
+from allauth.account.utils import perform_login
+from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView as BasePasswordResetView, \
-    PasswordResetConfirmView as BasePasswordResetConfirmView
+from django.contrib.auth.views import (
+    LoginView as BaseLoginView,
+    PasswordResetView as BasePasswordResetView,
+    PasswordResetConfirmView as BasePasswordResetConfirmView, PasswordChangeView
+)
 from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, make_aware
 from allauth.socialaccount.models import SocialAccount
+from allauth.account.forms import SignupForm
+from allauth.account.models import EmailAddress, EmailConfirmation
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.http import HttpResponseRedirect
 
+from vitrina import settings
 from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
-from vitrina.users.forms import LoginForm, RegisterForm, PasswordSetForm, PasswordResetForm, PasswordResetConfirmForm
-from vitrina.users.forms import UserProfileEditForm
+from vitrina.users.forms import (
+    LoginForm, RegisterForm, PasswordSetForm,
+    PasswordResetForm, PasswordResetConfirmForm,
+    UserProfileEditForm, CustomPasswordChangeForm
+)
 from vitrina.users.models import User
-from vitrina import settings
-from datetime import datetime
-from pandas import period_range
-from allauth.account.forms import SignupForm, perform_login
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from allauth.account.models import EmailAddress, EmailConfirmation
-from django.http import HttpResponseRedirect
 
 
 class LoginView(BaseLoginView):
@@ -245,6 +252,33 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return redirect('user-profile', pk=self.request.user.id)
 
 
+class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, PasswordChangeView):
+    form_class = CustomPasswordChangeForm
+    template_name = 'base_form.html'
+
+    def has_permission(self):
+        user = get_object_or_404(User, id=self.kwargs['pk'])
+        return has_perm(self.request.user, Action.UPDATE, user)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        else:
+            return redirect('user-profile', pk=self.request.user.id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _('Naudotojo slaptažodžio keitimas')
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Slaptažodžio keitimas sėkmingas"))
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('user-profile', kwargs={'pk': self.kwargs['pk']})
+
+
 class UserStatsView(TemplateView):
     template_name = 'users_count_stats_chart.html'
 
@@ -334,4 +368,3 @@ class UserStatsView(TemplateView):
         data = self.get_data()
         context['data'] = data
         return context
-

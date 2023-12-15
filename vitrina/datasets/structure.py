@@ -400,7 +400,7 @@ def detect_read_errors(path: str) -> list[str]:
         return ["File does not exist."]
 
     with path.open('rb') as f:
-        sample = f.readline(200).rstrip()
+        sample = f.readline(200).rstrip(b"\r\n")
 
         if error := _detect_separator_errors(sample):
             return [error]

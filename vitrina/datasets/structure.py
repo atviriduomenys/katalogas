@@ -759,10 +759,10 @@ def _read_prefix(
 
     prefix.meta = state.last
 
-    if prefix.meta.prefixes.get(name):
+    if prefix.meta.meta.prefixes.get(name):
         prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
 
-    prefix.meta.prefixes[name] = prefix
+    prefix.meta.meta.prefixes[name] = prefix
 
     return prefix
 

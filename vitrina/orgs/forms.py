@@ -129,6 +129,86 @@ class OrganizationUpdateForm(ModelForm):
                 raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
 
+class OrganizationCreateForm(ModelForm):
+    title = CharField(label=_('Pavadinimas'), required=True)
+    company_code = CharField(label=_('Registracijos numeris'), required=True)
+    name = CharField(label=_('Kodinis pavadinimas'), required=True)
+    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
+                                    label=_('Jurisdikcija'),
+                                    required=True)
+    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
+    email = CharField(label=_('Elektroninis paštas'), required=True)
+    phone = CharField(label=_('Telefono numeris'), required=True)
+    address = CharField(label=_('Adresas'), required=True)
+    description = CharField(label=_('Aprašymas'), widget=Textarea, required=False)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'company_code',
+            'title',
+            'name',
+            'kind',
+            'jurisdiction',
+            'image',
+            'website',
+            'email',
+            'phone',
+            'address',
+            'provider',
+            'description',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial = kwargs.get('initial')
+        disable_fields = True if initial else False
+        button = ("Sukurti")
+        parent = self.instance.get_parent()
+        if parent:
+            self.fields['jurisdiction'].initial = parent
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "organization-form"
+        self.helper.layout = Layout(
+            Field('title', placeholder=_("Pavadinimas")),
+            Field('company_code', placeholder=_("Registracijos numeris")),
+            Field('name', placeholder=_('Kodinis pavadinimas')),
+            Field('kind', placeholder=_("Tipas")),
+            Field('jurisdiction', placeholder=_("Jurisdikcija")),
+            Field('image', placeholder=_("Logotipas")),
+            Field('website', placeholder=_("Tinklalapis")),
+            Field('email', placeholder=_("Elektroninis paštas")),
+            Field('phone', placeholder=_("Telefono numeris")),
+            Field('address', placeholder=_("Adresas")),
+            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('description', placeholder=_("Aprašymas")),
+            Submit('submit', button, css_class='button is-primary')
+        )
+        if initial:
+            self.fields['title'].widget.attrs['readonly'] = True
+            self.fields['company_code'].widget.attrs['readonly'] = True
+            self.fields['address'].widget.attrs['readonly'] = True
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            if not name.islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any((not c.isalnum() and c != '_') for c in name):
+                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            else:
+                return name
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.width < 256 or image.height < 256:
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
+        return image
+
 
 class RepresentativeUpdateForm(ModelForm):
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)

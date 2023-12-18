@@ -323,7 +323,7 @@
                         data = json_data.data;
                         let table_obj = document.getElementById('info-table-body');
                         $.each(data, function (index, item) {
-                            for(var i = 0; i < 5; i++){
+                            for(var i = 0; i < data.length; i++){
                                 let newRow = table_obj.append(data[i]);
                             }
                             if (index === 0) {

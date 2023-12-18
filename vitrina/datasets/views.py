@@ -446,11 +446,17 @@ class DatasetDistributionPreviewView(ListView):
                     data = data[next(iter(data))].values.tolist()
                     data = data[:5]
             elif 'csv' in distribution.file.path:
-                data = pd.read_csv(distribution.file.path)
-                data = data.values.tolist()
-                data = data[:5]
+                readed_data = pd.read_csv(distribution.file.path)
+                headers = readed_data.columns.values
+                first_5_values = readed_data.values.tolist()
+                data.append(list(headers))
+                data.append(first_5_values[:5])
             else:
                 data = [['Only xlsx or csv files are available']]
+        else:
+            rows = open(distribution.file.path, encoding='utf-8')
+            rows = itertools.islice(rows, 100)
+            data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 

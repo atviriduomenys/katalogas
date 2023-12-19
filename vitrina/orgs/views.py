@@ -963,6 +963,14 @@ class OrganizationApiKeysView(
         response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients')
         keys = response.json()
         key_client_ids = []
+
+        msg = None
+        storage = messages.get_messages(self.request)
+        if len(storage._loaded_messages) == 1:
+            if storage._loaded_messages[0].level == 20:
+                msg = storage._loaded_messages[0]
+                del storage._loaded_messages[0]
+
         if response.status_code == 200:
             for key in keys:
                 client_id = key.get('client_id')
@@ -1008,6 +1016,8 @@ class OrganizationApiKeysView(
             Representative,
             self.object
         )
+        if msg:
+            context_data['success_message'] = msg
         context_data['organization_id'] = self.object.pk
         context_data['organization'] = self.object
         internal = ApiKey.objects.filter(organization=self.object)

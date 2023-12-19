@@ -52,6 +52,12 @@
             </div>
         {% endif %}
 
+        {% if success_message %}
+            <div class="row">
+                <div class="notification is-danger is-light">{{ success_message }}</div>
+            </div>
+        {% endif %}
+
             {% if internal_keys %}
                 <table class="table is-fullwidth">
                     <tbody>

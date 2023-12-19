@@ -6,15 +6,14 @@ django.setup()
 
 import csv
 import hashlib
-from pathlib import Path
+import subprocess
 import yaml
+from pathlib import Path
 from typer import run
 
 from django.conf import settings
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.services import _resource_models_to_tabular
-
-import subprocess
 
 
 def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
@@ -23,32 +22,25 @@ def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
 
     base_dir_path = Path(base_dir)
     manifest_path = base_dir_path / "manifest.csv"
-
     result = subprocess.run(
-        [spinta_executable, "push", str(manifest_path), "--no-progress-bar", "-o", spinta_server_name],
+        [spinta_executable, '--tb=native', "push", str(manifest_path), "--no-progress-bar", "-o", spinta_server_name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
         text=True
     )
-    print(result)
     if result.returncode != 0:
         handle_error(result.stderr, base_dir)
 
 
-def handle_error(stderr, base_dir):
+def handle_error(stderr):
     lines = stderr.splitlines()
-    try:
-        start = lines.index(next(line for line in lines if line.startswith('Traceback')))
-        end = lines.index(next(line for line in lines[start:] if not line.startswith(' ')))
-        error_message = '\n'.join(lines[start:end])
-        print(error_message)  # Print the error message
-    except StopIteration:
-        print("No traceback found in stderr")
-        print(lines)
-    except ValueError:
-        print("Default value not found in lines")
-        print(lines)
+    start = next((i for i, line in enumerate(lines) if line.startswith('Traceback')), None)
+    if start is not None:
+        end = next((i for i, line in enumerate(lines[start:], start) if not line.startswith(' ')
+                    and not line.startswith('Traceback')), None)
+        if end is not None and end != start:
+            return lines[end]
 
 
 def main():

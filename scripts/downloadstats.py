@@ -160,7 +160,7 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
             dt = None
             try:
                 dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-            except ValueError as ve:
+            except ValueError:
                 print(f'Wrong timestamp format {timestamp}')
             requests = 1
             if txn not in transactions:
@@ -181,25 +181,29 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                 transactions[txn]['objects'] = objects
                 model = transactions[txn].get('model')
                 if 'time' in entry:
-                    dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                    try:
+                        dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                    except ValueError:
+                        print('Wrong timestamp format {}'.format(entry.get('time')))
                 else:
                     dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                date = dt.date()
-                hour = dt.hour
-                minute = dt.minute
-                agent = transactions[txn].get('agent')
-                frmt = transactions[txn].get('format')
-                obj = [
-                    {
-                        'date': date,
-                        'hour': hour,
-                        'minute': minute,
-                        'format': frmt,
-                        'reqs': requests,
-                        'count': objects,
-                        'agent': agent,
-                    }
-                ]
+                if dt:
+                    date = dt.date()
+                    hour = dt.hour
+                    minute = dt.minute
+                    agent = transactions[txn].get('agent')
+                    frmt = transactions[txn].get('format')
+                    obj = [
+                        {
+                            'date': date,
+                            'hour': hour,
+                            'minute': minute,
+                            'format': frmt,
+                            'reqs': requests,
+                            'count': objects,
+                            'agent': agent,
+                        }
+                    ]
                 if model is not None and len(model) > 0:
                     if model not in final_stats:
                         final_stats[model] = obj
@@ -263,7 +267,7 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
 
 def post_data(data, name, session, endpoint):
     pbar = tqdm("Posting download stats", total=sum([len(stats) for stats in data.values()]))
-    for model, stats in data.items():
+    for model, stats in list(data.items()):
         for st in stats:
             info = {
                 "source": name,
@@ -276,7 +280,7 @@ def post_data(data, name, session, endpoint):
             req = session.post(endpoint, data=info)
             req.raise_for_status()
             pbar.update(1)
-        data[model] = []
+        del data[model]
 
 
 def blocks(files, size=65536):

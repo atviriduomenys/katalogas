@@ -53,8 +53,6 @@ class DistributionFormat(models.Model):
 
 class DatasetDistribution(models.Model):
     UPLOAD_TO = "data"
-
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -135,6 +133,7 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
     imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
 
     # Deprecated fields bellow
@@ -164,14 +163,11 @@ class DatasetDistribution(models.Model):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
     def is_external_url(self):
-        return self.type == "URL"
+        return True if self.download_url else False
 
     def get_download_url(self):
         if self.is_external_url():
-            download_url = self.download_url
-            url_parts = download_url.split('//')
-            url_parts.insert(1, '//old.')
-            return ''.join(url_parts)
+            return self.download_url
         elif self.file:
             return self.file.url
         return ""

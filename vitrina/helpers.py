@@ -546,5 +546,5 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
     return {
         'duration': duration,
         'sort': sort,
-        'active_indicator': active_indicator
+        'indicator': active_indicator
     }

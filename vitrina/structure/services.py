@@ -97,6 +97,9 @@ def _load_datasets(
         ).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
+        elif not meta.name.isascii():
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+            loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:
@@ -575,6 +578,9 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
+                elif not distribution.title:
+                    distribution.title = resource_meta.name
+                    distribution.save()
 
                 if md := distribution.metadata.first():
                     if not resource_meta.id:
@@ -1086,6 +1092,41 @@ def _models_to_tabular(
             })
 
             yield from _comments_to_tabular(model)
+            yield from _params_to_tabular(model)
+            yield from _properties_to_tabular(model)
+            if separator:
+                yield to_row(DATASET, {})
+
+
+def _resource_models_to_tabular(
+    resource: DatasetDistribution,
+    separator: bool = False
+):
+    resource_models = Model.objects.filter(distribution=resource, dataset=resource.dataset).order_by('metadata__order')
+    base = None
+    for model in resource_models:
+        if model.base and not base:
+            yield from _base_to_tabular(model.base)
+            base = model.base
+        elif not model.base and base:
+            yield from _end_marker('base')
+            base = None
+        if meta := model.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'model': _to_relative_model_name(meta.name, resource.dataset),
+                'level': meta.level_given,
+                'access': _get_access(meta.access),
+                'title': meta.title,
+                'description': meta.description,
+                'uri': meta.uri,
+                'source': meta.source,
+                'prepare': meta.prepare,
+                'ref': ', '.join([
+                    prop.property.name
+                    for prop in model.property_list.all()]
+                ) if model.property_list.exists() else ''
+            })
             yield from _params_to_tabular(model)
             yield from _properties_to_tabular(model)
             if separator:

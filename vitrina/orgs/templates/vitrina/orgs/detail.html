@@ -4,6 +4,18 @@
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
 {% block current_title %}{{ organization.title }}{% endblock %}
 
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            {% translate 'Pradžia' %}
+        </span></a></li>
+		<li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+    </ul>
+{% endblock %}
+
 {% block head %}
     <style>
         .max-128x128 {

@@ -102,6 +102,11 @@
                            id="change_profile">
                             {% translate "Keisti duomenis" %}
                         </a>
+                        <a href="{%url 'users-password-change' pk=user.id %}"
+                           class="button is-primary is-normal is-size-6-mobile"
+                           id="change_password">
+                            {% translate "Keisti slaptažodį" %}
+                        </a>
                     </div>
                 </div>
                 {% endif %}

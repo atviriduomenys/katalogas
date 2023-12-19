@@ -28,6 +28,17 @@
                 </div>
             {% endif %}
         </div>
+        {% if success_message  %}
+            <div class="columns">
+                <div class="column">
+                    <article class="message is-danger">
+                        <div class="message-body">
+                            {{ success_message }}
+                        </div>
+                    </article>
+                </div>
+            </div>
+        {% endif %}
         {% if viisp_authorized %}
             <div class="columns">
                 <div class="column">

@@ -1992,14 +1992,35 @@ def test_param_delete(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_new_version_with_new_structure(app: DjangoTestApp):
+def test_new_version_with_released_date_earlier_than_two_weeks(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date(2000, 1, 1)
+    form['released'] = datetime.date.today()
     resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [["Galima nurodyti tik šiandienos arba ateities datą."]]
+    assert list(resp.context['form'].errors.values()) == [[
+        "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
+    ]]
+
+
+@pytest.mark.django_db
+def test_new_version_with_released_date_earlier_than_last_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form.submit()
+
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        "Versija negali įsigalioti anksčiau už praėjusią versiją."
+    ]]
 
 
 @pytest.mark.django_db
@@ -2030,7 +2051,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2074,7 +2095,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2084,7 +2105,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
     dataset_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [dataset_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2129,7 +2150,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2139,7 +2160,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     model_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2184,7 +2205,7 @@ def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2194,7 +2215,7 @@ def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
     prop_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2239,7 +2260,7 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2264,7 +2285,7 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
     model_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2309,7 +2330,7 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2319,7 +2340,7 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
     model_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2364,7 +2385,7 @@ def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2374,7 +2395,7 @@ def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
     prop_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2419,7 +2440,7 @@ def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2429,7 +2450,7 @@ def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
     prop_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2475,7 +2496,7 @@ def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2485,7 +2506,7 @@ def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
     model_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2531,7 +2552,7 @@ def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2541,7 +2562,7 @@ def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
     prop_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2587,7 +2608,7 @@ def test_new_version_with_updated_structure__property_access(app: DjangoTestApp)
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2597,7 +2618,7 @@ def test_new_version_with_updated_structure__property_access(app: DjangoTestApp)
     prop_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2658,7 +2679,7 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2668,7 +2689,7 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
     enum_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2729,7 +2750,7 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
     )
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2739,7 +2760,7 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
     enum_meta.save()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today()
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['metadata'] = [enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()

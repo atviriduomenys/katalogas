@@ -1,3 +1,4 @@
+from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -596,22 +597,27 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         )
         serializer.is_valid(raise_exception=True)
         instance = ModelDownloadStats(**serializer.validated_data)
-        existing = ModelDownloadStats.objects.filter(
-            source=instance.source,
-            model=instance.model,
-            model_format=instance.model_format,
-            created=instance.created
-        ).first()
-        if existing:
-            if instance.model_requests == 0:
-                existing.delete()
-            else:
-                existing.model_requests = instance.model_requests
-                existing.model_objects = instance.model_objects
-            existing.save()
-        else:
-            if not instance.model_requests == 0:
-                instance.save()
+        if instance.model_requests != 0:
+            try:
+                ModelDownloadStats.objects.create(
+                    source=instance.source,
+                    model=instance.model,
+                    model_format=instance.model_format,
+                    model_requests=instance.model_requests,
+                    model_objects=instance.model_objects,
+                    created=instance.created
+                )
+            except IntegrityError:
+                ModelDownloadStats.objects.update_or_create(
+                    source=instance.source,
+                    model=instance.model,
+                    model_format=instance.model_format,
+                    created=instance.created,
+                    defaults={
+                        "model_requests": instance.model_requests,
+                        "model_objects": instance.model_objects
+                    }
+                )
         serializer = ModelDownloadStatsSerializer(instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)

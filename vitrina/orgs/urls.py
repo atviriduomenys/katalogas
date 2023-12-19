@@ -17,6 +17,8 @@ from vitrina.orgs.views import OrganizationPlansHistoryView
 from vitrina.orgs.views import OrganizationMergeView
 from vitrina.orgs.views import ConfirmOrganizationMergeView
 from vitrina.orgs.views import RepresentativeApiKeyView
+from vitrina.orgs.views import OrganizationCreateSearchView, OrganizationCreateView, OrganizationCreateSearchUpdateView
+
 
 urlpatterns = [
     # @RequestMapping("/organizations")
@@ -25,6 +27,9 @@ urlpatterns = [
          name='organization-stats-jurisdiction'),
     path('orgs/<int:pk>/', OrganizationDetailView.as_view(), name='organization-detail'),
     path('orgs/<int:pk>/update/', OrganizationUpdateView.as_view(), name='organization-change'),
+    path('orgs/create/search-update', OrganizationCreateSearchUpdateView.as_view(), name='organization-create-search-update'),
+    path('orgs/create/search', OrganizationCreateSearchView.as_view(), name='organization-create-search'),
+    path('orgs/create/', OrganizationCreateView.as_view(), name='organization-create'),
     path('orgs/<int:pk>/members/', OrganizationMembersView.as_view(), name='organization-members'),
     path('orgs/<int:pk>/datasets/', DatasetListView.as_view(), name='organization-datasets'),
     path('orgs/<int:organization_id>/members/add/', RepresentativeCreateView.as_view(),

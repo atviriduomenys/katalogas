@@ -63,7 +63,7 @@ class Metadata(models.Model):
     ref = models.CharField(_("Ryšys"), max_length=255, blank=True, null=True)
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
     prepare = models.CharField(_("Formulė"), max_length=255, blank=True, null=True)
-    prepare_ast = models.JSONField(_("Formulės AST"), blank=True)
+    prepare_ast = models.JSONField(_("Formulės AST"), blank=True, null=True)
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
     average_level = models.FloatField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)

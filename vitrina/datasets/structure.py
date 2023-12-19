@@ -400,7 +400,7 @@ def detect_read_errors(path: str) -> list[str]:
         return ["File does not exist."]
 
     with path.open('rb') as f:
-        sample = f.readline(200).rstrip()
+        sample = f.readline(200).rstrip(b"\r\n")
 
         if error := _detect_separator_errors(sample):
             return [error]
@@ -757,12 +757,13 @@ def _read_prefix(
         description=row['description'],
     )
 
-    prefix.meta = state.last
+    prefix.meta = state.dataset or state.manifest
 
-    if prefix.meta.prefixes.get(name):
-        prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
+    if prefix.meta:
+        if prefix.meta.prefixes.get(name):
+            prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
 
-    prefix.meta.prefixes[name] = prefix
+        prefix.meta.prefixes[name] = prefix
 
     return prefix
 

@@ -7,6 +7,17 @@
 
 {% block current_title %}{% translate "Organizacijos" %}{% endblock %}
 
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            {% translate 'Pradžia' %}
+        </span></a></li>
+    </ul>
+{% endblock %}
+
 {% block content %}
     <div class="card mb-5">
         <div class="card-content">
@@ -26,6 +37,13 @@
                     </button>
                 </p>
             </form>
+            {% if user.is_superuser %}
+                <div class="button is-right">
+                    <a href="{% url 'organization-create-search' %}">
+                        {% translate "Nauja organizacija" %}
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="columns">

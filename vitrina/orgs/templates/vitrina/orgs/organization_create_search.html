@@ -5,7 +5,7 @@
 
 {% block content %}
 <input 
-    id="comapny_name_input" 
+    id="company_name_input"
     type="text" 
     name="city" 
     list="company_name_input_choices"
@@ -19,20 +19,17 @@
 {% block scripts %}
     <script type="text/javascript">
         $(function () {
-            let orgSearchInput = $('#comapny_name_input');
+            let orgSearchInput = $('#company_name_input');
             orgSearchInput.on('input', function(){
-                console.log('trasd')
                 if (orgSearchInput.val().length > 2) {
-                    console.log('test')
                     $('#company_name_input_choices').html('').load(
-                        "{% url 'organization-create-search-update' %}?q=" + orgSearchInput.val()
+                        "{% url 'organization-create-search-update' %}?q=" + encodeURIComponent(orgSearchInput.val())
                     );
                 }
             });
             let orgCreateContinueButton = $('#organization_create_continue_button');
             orgCreateContinueButton.on('click', function(){
-                console.log('trasd')
-                let orgSearchInput = $('#comapny_name_input');
+                let orgSearchInput = $('#company_name_input');
                 location.replace("{% url 'organization-create' %}?q=" + encodeURIComponent(orgSearchInput.val()))
             });
         });

@@ -21,8 +21,12 @@ from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count, hash_api_key
 from vitrina.plans.models import Plan
-
+from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
+
+class ChoiceFieldNoValidation(ChoiceField):
+    def validate(self, value):
+        pass
 
 class ProviderWidget(ModelSelect2Widget):
     model = Organization
@@ -43,16 +47,31 @@ class ProviderWidget(ModelSelect2Widget):
         queryset = queryset.filter(pk__in=ids)
         return queryset
 
-
 class OrganizationWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     max_results = 10
+    jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    jar_query_uri = "ja_pavadinimas.contains('{}')"
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
-        return queryset
+        if term:
+            if len(queryset) == 0:
+                data = get_data_from_spinta(
+                    model=self.jar_model_uri, 
+                    query=self.jar_query_uri.format(term)
+                ).get('_data')
+                org_list = [Organization(
+                    id=item.get('ja_kodas'),
+                    title=item.get('ja_pavadinimas'),
+                    company_code=item.get('ja_kodas'),
+                    address=item.get('pilnas_adresas')
 
+                ) for item in data]
+                queryset._result_cache.extend(org_list)
+                self.queryset = queryset      
+        return queryset
 
 class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
@@ -317,17 +336,15 @@ class RepresentativeCreateForm(ModelForm):
             ))
         return super().clean()
 
-
 class PartnerRegisterForm(ModelForm):
-    organization = ModelChoiceField(
+    organization = ChoiceFieldNoValidation(
         label=_("Organizacija"),
         required=True,
-        queryset=Organization.public.all(),
         widget=OrganizationWidget(attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0})
     )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
-    request_form = FileField(label=_("Prašymo forma"), required=True)
+    request_form = FileField(label=_("Prašymo forma"), required=False)
 
     class Meta:
         model = Organization
@@ -353,7 +370,6 @@ class PartnerRegisterForm(ModelForm):
 
     def clean(self):
         return self.cleaned_data
-
 
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)

@@ -12,7 +12,7 @@ class TestHandleError(unittest.TestCase):
         except ValueError as e:
             tb = traceback.format_exc()
 
-        result = handle_error(tb, "/path/to/base_dir")
+        result = handle_error(tb)
         self.assertEqual(result, "ValueError: Oh no")
 
 

@@ -47,14 +47,15 @@ def main(
         target: str = Option("http://localhost:8000", help=(
                 "target server url"
         )),
-        config_file: str = Option('~/.config/vitrina/downloadstats.json'),
-        state_file: str = Option('~/.local/share/vitrina/state.json'),
-        bot_status_file: str = Option('~/.local/share/vitrina/downloadstats.json'),
+        config_file: str = Option(os.path.expanduser('~/.config/vitrina/downloadstats.json')),
+        state_file: str = Option(os.path.expanduser('~/.local/share/vitrina/state.json')),
+        bot_status_file: str = Option(os.path.expanduser('~/.local/share/vitrina/downloadstats.json')),
 ):
     transactions = {}
     current_state = {'files': {}}
 
     bots_found = {'agents': {}}
+    apikey = ""
 
     limit = 1000
     total_lines_read = 0
@@ -92,8 +93,10 @@ def main(
 
     if os.path.exists(config_file):
         with open(config_file, 'r') as config:
-            bot_list = json.load(config).get('bots')
+            data = json.load(config)
+            bot_list = data.get('bots')
             bots.update(bot_list)
+            apikey = data.get('apikey')
 
     if not os.path.exists(logfile):
         print(f'File {logfile} not found. Aborting.')
@@ -105,6 +108,7 @@ def main(
 
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
+    session.headers.update({'Authorization': 'ApiKey {}'.format(apikey)})
 
     total_lines_in_file = 0
     d = deque([], maxlen=limit)
@@ -160,15 +164,15 @@ def parse_user_agent(agent):
 
 def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions):
     for i in d:
-        if 'txn' in i:
+        if '"txn"' in i:
             entry = json.loads(i)
             txn = entry['txn']
             timestamp = entry['time']
             dt = None
             try:
                 dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-            except:
-                print('Wrong timestamp format')
+            except ValueError:
+                print(f'Wrong timestamp format {timestamp}')
             requests = 1
             if txn not in transactions:
                 transactions[txn] = {'time': dt}
@@ -188,25 +192,29 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                 transactions[txn]['objects'] = objects
                 model = transactions[txn].get('model')
                 if 'time' in entry:
-                    dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                    try:
+                        dt = datetime.strptime(entry.get('time'), '%Y-%m-%dT%H:%M:%S.%f%z')
+                    except ValueError:
+                        print('Wrong timestamp format {}'.format(entry.get('time')))
                 else:
                     dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
-                date = dt.date()
-                hour = dt.hour
-                minute = dt.minute
-                agent = transactions[txn].get('agent')
-                frmt = transactions[txn].get('format')
-                obj = [
-                    {
-                        'date': date,
-                        'hour': hour,
-                        'minute': minute,
-                        'format': frmt,
-                        'reqs': requests,
-                        'count': objects,
-                        'agent': agent,
-                    }
-                ]
+                if dt:
+                    date = dt.date()
+                    hour = dt.hour
+                    minute = dt.minute
+                    agent = transactions[txn].get('agent')
+                    frmt = transactions[txn].get('format')
+                    obj = [
+                        {
+                            'date': date,
+                            'hour': hour,
+                            'minute': minute,
+                            'format': frmt,
+                            'reqs': requests,
+                            'count': objects,
+                            'agent': agent,
+                        }
+                    ]
                 if model is not None and len(model) > 0:
                     if model not in final_stats:
                         final_stats[model] = obj
@@ -270,7 +278,7 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
 
 def post_data(data, name, session, endpoint):
     pbar = tqdm("Posting download stats", total=sum([len(stats) for stats in data.values()]))
-    for model, stats in data.items():
+    for model, stats in list(data.items()):
         for st in stats:
             info = {
                 "source": name,
@@ -280,9 +288,10 @@ def post_data(data, name, session, endpoint):
                 "requests": st.get('requests'),
                 "objects": st.get('objects')
             }
-            session.post(endpoint, data=info)
+            req = session.post(endpoint, data=info)
+            req.raise_for_status()
             pbar.update(1)
-        data[model] = []
+        del data[model]
 
 
 def blocks(files, size=65536):

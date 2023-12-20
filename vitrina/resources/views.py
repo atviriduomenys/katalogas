@@ -91,8 +91,6 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     def form_valid(self, form):
         resource = form.save(commit=False)
         resource.dataset = self.dataset
-        if resource.download_url:
-            resource.type = 'URL'
         resource.save()
 
         name = form.cleaned_data.get('name')

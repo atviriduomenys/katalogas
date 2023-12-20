@@ -93,5 +93,6 @@ def get_spinta_auth():
 
 def get_auth_session():
     with requests.Session() as session:
-        session.headers.update(get_spinta_auth())
+        if get_spinta_auth():
+            session.headers.update(get_spinta_auth())
         return session

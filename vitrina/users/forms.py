@@ -1,7 +1,8 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
 from django.contrib.auth import authenticate
-from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm
+from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm, \
+    PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -173,6 +174,24 @@ class PasswordResetConfirmForm(SetPasswordForm):
             Field('new_password1', placeholder=_("Naujas slaptažodis")),
             Field('new_password2', placeholder=_("Pakartokite slaptažodį")),
             Submit('submit', _("Atstatyti slaptažodį"), css_class='button is-primary'),
+        )
+
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    class Meta:
+        model = User
+        fields = ("old_password", "new_password1", "new_password2")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "password-change-form"
+        self.helper.layout = Layout(
+            Field('old_password', placeholder=_("Senas slaptažodis")),
+            Field('new_password1', placeholder=_("Naujas slaptažodis")),
+            Field('new_password2', placeholder=_("Pakartokite naują slaptažodį")),
+            Submit('submit', _("Patvirtinti keitimą"), css_class='button is-primary'),
         )
 
 

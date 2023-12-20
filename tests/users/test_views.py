@@ -116,6 +116,43 @@ def test_reset_password_with_correct_email(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+def test_change_password_with_no_user(app: DjangoTestApp, user: User):
+    user1 = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    resp = app.get(reverse('users-password-change', kwargs={'pk': user1.id}))
+    assert resp.url == reverse('login')
+
+
+@pytest.mark.django_db
+def test_change_password_with_wrong_user(app: DjangoTestApp, user: User):
+    user1 = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    user2 = User.objects.create_user(email="testas2@testas.com", password="testas123")
+
+    app.set_user(user1)
+    resp = app.get(reverse('users-password-change', kwargs={'pk': user2.id}))
+    assert resp.url == reverse('user-profile', kwargs={'pk': user1.id})
+
+
+@pytest.mark.django_db
+def test_change_password_with_correct_user(app: DjangoTestApp, user: User):
+    user1 = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    app.set_user(user1)
+
+    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form['old_password'] = "testas123"
+    form['new_password1'] = "testavicius1234"
+    form['new_password2'] = "testavicius1234"
+    resp = form.submit()
+    assert resp.url == reverse('user-profile', kwargs={'pk': user1.id})
+
+    form = app.get(reverse('login')).forms['login-form']
+    form['email'] = "testas1@testas.com"
+    form['password'] = "testavicius1234"
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('home')
+
+
+@pytest.mark.django_db
 def test_profile_view_no_login(app: DjangoTestApp, user: User):
     resp = app.get(reverse('user-profile', kwargs={'pk': '1'}))
     assert resp.status_code == 302

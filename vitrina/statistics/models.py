@@ -17,6 +17,7 @@ class ModelDownloadStats(models.Model):
     class Meta:
         managed = True
         db_table = 'model_download_statistic'
+        unique_together = (('source', 'model', 'model_format', 'created'),)
 
 
 class DatasetStats(models.Model):

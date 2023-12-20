@@ -853,9 +853,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         org = form.cleaned_data.get('organization')
-        org_is_registered = Organization.objects.filter(
-            company_code=org
-        )
+        org_is_registered = Organization.objects.filter(id=org).first()
         if not org_is_registered:
             org_data = get_data_from_spinta(
                 model=self.jar_model_uri, 
@@ -870,7 +868,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             )
         representative_request = RepresentativeRequest(
             user=self.request.user,
-            organization=org,
+            organization=org_is_registered or org,
             document=form.cleaned_data.get('request_form')
         )
         representative_request.save()

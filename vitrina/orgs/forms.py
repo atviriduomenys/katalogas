@@ -344,7 +344,7 @@ class PartnerRegisterForm(ModelForm):
     )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
-    request_form = FileField(label=_("Prašymo forma"), required=False)
+    request_form = FileField(label=_("Prašymo forma"), required=True)
 
     class Meta:
         model = Organization

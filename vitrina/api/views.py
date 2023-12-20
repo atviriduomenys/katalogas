@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils import timezone
+
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.renderers import _SpecRenderer
@@ -19,18 +20,23 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
+from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
-from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
-    DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
-    PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
-    PatchDatasetDistributionSerializer, ModelDownloadStatsSerializer
+from vitrina.api.serializers import (
+    CatalogSerializer, CategorySerializer,
+    DatasetDistributionSerializer, DatasetSerializer, DatasetStructureSerializer,
+    LicenceSerializer,
+    ModelDownloadStatsSerializer,
+    PatchDatasetDistributionSerializer, PatchDatasetSerializer,
+    PostDatasetDistributionSerializer, PostDatasetSerializer, PostDatasetStructureSerializer,
+    PutDatasetDistributionSerializer,
+)
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
-from vitrina.api.helpers import get_datasets_for_rdf
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -486,8 +492,51 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetStructureViewSet(
+class UploadToStorageViewSet(ModelViewSet):
+    serializer_class = DatasetDistributionSerializer
+    queryset = DatasetDistribution.objects.filter(upload_to_storage=True)
 
+    @swagger_auto_schema(
+        operation_summary="List all uploadable distributions",
+        tags=["Retrieving Data"],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Get a single uploadable distribution",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a uploadable distribution",
+        tags=["Adding Data"],
+        request_body=DatasetDistributionSerializer,
+        responses={status.HTTP_201_CREATED: DatasetDistributionSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update uploadable distribution by ID",
+        tags=["Updating Data"],
+        request_body=DatasetDistributionSerializer,
+        responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Remove a uploadable distribution",
+        tags=["Removing Data"],
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+class DatasetStructureViewSet(
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,

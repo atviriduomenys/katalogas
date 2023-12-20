@@ -1,5 +1,9 @@
+import json
 import os
+import urllib.parse
+
 import django
+import requests
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
@@ -9,10 +13,9 @@ import hashlib
 import subprocess
 import yaml
 from pathlib import Path
-from typer import run
+from typer import run, Option
 
 from django.conf import settings
-from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.services import _resource_models_to_tabular
 
 
@@ -30,7 +33,7 @@ def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
         text=True
     )
     if result.returncode != 0:
-        handle_error(result.stderr, base_dir)
+        handle_error(result.stderr)
 
 
 def handle_error(stderr):
@@ -43,9 +46,27 @@ def handle_error(stderr):
             return lines[end]
 
 
-def main():
-    for resource in DatasetDistribution.objects.filter(upload_to_storage=True):
-        sha1 = hashlib.sha1(str(resource.id).encode()).hexdigest()
+def main(
+        target: str = Option("http://localhost:8001", help=(
+                "target server url"
+        )),
+        config_file: str = Option(os.path.expanduser('~/.config/vitrina/data_upload.json'))
+):
+    apikey = ""
+    if os.path.exists(config_file):
+        with open(config_file, 'r') as config:
+            data = json.load(config)
+            apikey = data.get('apikey')
+
+    url = urllib.parse.urljoin(target, 'partner/api/1/distributions')
+    session = requests.Session()
+    session.headers.update({'Authorization': 'ApiKey {}'.format(apikey)})
+
+    response = session.get(url)
+    data = response.json()
+
+    for resource in data:
+        sha1 = hashlib.sha1(str(resource['id']).encode()).hexdigest()
         base_dir = Path(settings.SPINTA_PATH) / sha1[:2] / sha1[2:4] / sha1[4:]
         base_dir.mkdir(parents=True, exist_ok=True)
         config = {

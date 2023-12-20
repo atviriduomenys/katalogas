@@ -1,12 +1,18 @@
-from django.urls import path, include
+from django.urls import include, path
 from django.views.generic import TemplateView
+
+from allauth.account.views import confirm_email, email_verification_sent
 from rest_framework.routers import DefaultRouter
 
-from vitrina.api.views import CatalogViewSet, DatasetViewSet, CategoryViewSet, LicenceViewSet, \
-    DatasetDistributionViewSet, DatasetStructureViewSet, InternalDatasetViewSet, InternalDatasetDistributionViewSet, \
-    InternalDatasetStructureViewSet, PartnerApiView, DatasetModelDownloadViewSet
-from vitrina.api.views import edp_dcat_ap_rdf
-from allauth.account.views import confirm_email, email_verification_sent
+from vitrina.api.views import (
+    CatalogViewSet, CategoryViewSet,
+    DatasetDistributionViewSet, DatasetModelDownloadViewSet, DatasetStructureViewSet, DatasetViewSet,
+    InternalDatasetDistributionViewSet, InternalDatasetStructureViewSet, InternalDatasetViewSet,
+    LicenceViewSet,
+    PartnerApiView,
+    UploadToStorageViewSet,
+    edp_dcat_ap_rdf,
+)
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'catalogs', CatalogViewSet, basename="api-catalog")
@@ -59,6 +65,14 @@ urlpatterns = [
              'delete': 'destroy'
          }), name="api-single-distribution-internal"),
 
+    # distribution api urls
+    path('partner/api/1/distributions/',
+         UploadToStorageViewSet.as_view({
+             'get': 'retrieve',
+             'patch': 'partial_update',
+             'delete': 'destroy'
+         }), name="api-all-distributions-upload-to-storage"),
+
     # dataset structure api urls
     path('partner/api/1/datasets/<int:datasetId>/structure',
          DatasetStructureViewSet.as_view({
@@ -84,21 +98,7 @@ urlpatterns = [
              'post': 'create'
          }), name="api-download-stats-internal"),
 
-    # @RequestMapping("/api")
-    # @GetMapping("/partner/api/1")
-    # @GetMapping("partner/api/1/licences")
-    # @GetMapping("/public/api/1")
     path('public/api/1/', TemplateView.as_view(template_name="vitrina/api/public_api.html"), name="public-api"),
-    # @GetMapping("/edp/api/1")
-
-    # @RequestMapping("/edp")
-    # @RequestMapping("/edp/refresh")
-    # @RequestMapping("/edp/dcat-ap.rdf")
-
-    # @GetMapping("/sparql")
-
-    # @RequestMapping("/rdf")
-    # @PostMapping("/rdf/search")
     path('edp/dcat-ap.rdf', edp_dcat_ap_rdf, name="edp-dcat-ap-rdf"),
     path('register/account-confirm-email/?P<key>\w+', confirm_email, name='account_confirm_email'),
     path('register/email-verification-sent/', email_verification_sent,

@@ -555,8 +555,17 @@ class OrganizationCreateView(
     def form_valid(self, form):
         org = Organization.add_root(
             title=form.cleaned_data.get('title'),
+            name=form.cleaned_data.get('name'),
+            jurisdiction=form.cleaned_data.get('jurisdiction'),
+            image=form.cleaned_data.get('image'),
             company_code=form.cleaned_data.get('company_code'),
             address=form.cleaned_data.get('address'),
+            email=form.cleaned_data.get('email'),
+            phone=form.cleaned_data.get('phone'),
+            description=form.cleaned_data.get('description'),
+            provider=True,
+            is_public=True,
+
         )
         return HttpResponseRedirect(self.get_success_url(org))
 
@@ -808,6 +817,8 @@ class PartnerRegisterInfoView(TemplateView):
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
     template_name = 'base_form.html'
+    jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    jar_query_uri = "ja_kodas={}"
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
@@ -841,9 +852,23 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        org = form.cleaned_data.get('organization')
+        org_is_registered = Organization.objects.filter(id=org).first()
+        if not org_is_registered:
+            org_data = get_data_from_spinta(
+                model=self.jar_model_uri, 
+                query=self.jar_query_uri.format(org)
+            ).get('_data')[0]
+            org = Organization.add_root(
+                title=org_data.get('ja_pavadinimas'),
+                address=org_data.get('pilnas_adresas'),
+                company_code=org_data.get('ja_kodas'),
+                provider=True,
+                is_public=True
+            )
         representative_request = RepresentativeRequest(
             user=self.request.user,
-            organization=form.cleaned_data.get('organization'),
+            organization=org_is_registered or org,
             document=form.cleaned_data.get('request_form')
         )
         representative_request.save()

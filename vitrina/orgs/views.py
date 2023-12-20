@@ -1,6 +1,7 @@
 import json
 import secrets
 from datetime import datetime
+from typing import List
 
 import pandas as pd
 import requests
@@ -491,8 +492,10 @@ class OrganizationUpdateView(
             self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
         return HttpResponseRedirect(self.get_success_url())
 
+
 class OrganizationCreateSearchView(TemplateView):
     template_name = 'vitrina/orgs/organization_create_search.html'
+
 
 class OrganizationCreateSearchUpdateView(TemplateView):
     template_name = 'vitrina/orgs/organization_create_search_items.html'
@@ -502,7 +505,7 @@ class OrganizationCreateSearchUpdateView(TemplateView):
     def get_context_data(self, **kwargs):
         q = self.request.GET.get('q')
         context = super().get_context_data(**kwargs)
-        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q)).get('_data')
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q)).get('_data', [])
         company_names = [data_item.get('ja_pavadinimas') for data_item in data]
         extra_context = {
             'company_names': company_names
@@ -518,11 +521,14 @@ class OrganizationCreateView(
 ):
     model = Organization
     form_class = OrganizationCreateForm
-    template_name = 'base_form.html'
+    template_name = 'vitrina/orgs/organization_form.html'
     view_url_name = 'organization:create'
     context_object_name = 'organization'
     model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
     query_uri = "ja_pavadinimas.contains('{}')"
+
+    data: List
+    spinta_errors: List
 
     def has_permission(self):
         return self.request.user.is_superuser
@@ -530,24 +536,28 @@ class OrganizationCreateView(
     def handle_no_permission(self):
         return redirect('home')
 
+    def dispatch(self, request, *args, **kwargs):
+        q = request.GET.get('q')
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q))
+        errors = data.get('errors', [])
+        if errors:
+            errors = [_("Nepavyko atnaujinti duomenų iš JAR:")] + errors
+        self.spinta_errors = errors
+        self.data = data.get('_data', [])
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _('Nauja organizacija')
+        context['spinta_errors'] = self.spinta_errors
         return context
 
-    def get(self, request, *args, **kwargs):
-        return super(OrganizationCreateView, self).get(request, *args, **kwargs)
-
     def get_form_kwargs(self):
-        q = self.request.GET.get('q')
         kwargs = super().get_form_kwargs()
-
-        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q)).get('_data')
-        if data and len(data) == 1:
+        if self.data and len(self.data) == 1:
             initial_dict = {
-                'title': data[0].get('ja_pavadinimas'),
-                'company_code': data[0].get('ja_kodas'),
-                'address': data[0].get('pilnas_adresas')
+                'title': self.data[0].get('ja_pavadinimas'),
+                'company_code': self.data[0].get('ja_kodas'),
+                'address': self.data[0].get('pilnas_adresas')
             }
             kwargs['initial'] = initial_dict
         return kwargs
@@ -562,7 +572,6 @@ class OrganizationCreateView(
 
     def get_success_url(self, organization):
         return reverse('organization-detail', kwargs={'pk': organization.pk})
-
 
 
 class RepresentativeCreateView(

@@ -371,45 +371,48 @@ class PropertyStructureView(
                 ]
             ):
                 data = get_data_from_spinta(self.model, f":summary/{self.property}")
+                context['errors'] = data.get('errors', [])
                 data = data.get('_data', [])
-                if data and 'count' in data[0]:
-                    data = sorted(data, key=lambda x: x['count'], reverse=True)
-                context['data'] = data
 
-                if type == 'geometry':
-                    transformed_data = []
-                    context['graph_type'] = 'map'
-                    srid = get_srid(metadata.type_args)
-                    if len(data) > 0:
-                        for item in data:
-                            centroid = loads(item.get('centroid'))
-                            x = centroid.x
-                            y = centroid.y
-                            if srid != WGS84:
-                                x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
-                            item['centroid'] = [x, y]
-                            transformed_data.append(item)
-                    context['data'] = transformed_data
-                    context['source_srid'] = srid
-                    context['target_srid'] = WGS84
-                elif (
-                        type in ['boolean', 'ref'] or
-                        (type in ['string', 'integer'] and self.property.enums.exists())
-                ):
-                    if len(data) > 0:
-                        max_count = max([item['count'] for item in data])
+                if data:
+                    if 'count' in data[0]:
+                        data = sorted(data, key=lambda x: x['count'], reverse=True)
+                    context['data'] = data
+
+                    if type == 'geometry':
+                        transformed_data = []
+                        context['graph_type'] = 'map'
+                        srid = get_srid(metadata.type_args)
+                        if len(data) > 0:
+                            for item in data:
+                                centroid = loads(item.get('centroid'))
+                                x = centroid.x
+                                y = centroid.y
+                                if srid != WGS84:
+                                    x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
+                                item['centroid'] = [x, y]
+                                transformed_data.append(item)
+                        context['data'] = transformed_data
+                        context['source_srid'] = srid
+                        context['target_srid'] = WGS84
+                    elif (
+                            type in ['boolean', 'ref'] or
+                            (type in ['string', 'integer'] and self.property.enums.exists())
+                    ):
+                        if len(data) > 0:
+                            max_count = max([item['count'] for item in data])
+                        else:
+                            max_count = 0
+                        context['max_count'] = max_count
+                        context['graph_type'] = 'horizontal'
                     else:
-                        max_count = 0
-                    context['max_count'] = max_count
-                    context['graph_type'] = 'horizontal'
-                else:
-                    x_values = [item['bin'] for item in data]
-                    y_values = [item['count'] for item in data]
-                    context['x_values'] = x_values
-                    context['y_values'] = y_values
-                    context['x_title'] = self.property.title or self.property.name
-                    context['y_title'] = _("Kiekis")
-                    context['graph_type'] = 'vertical'
+                        x_values = [item['bin'] for item in data]
+                        y_values = [item['count'] for item in data]
+                        context['x_values'] = x_values
+                        context['y_values'] = y_values
+                        context['x_title'] = self.property.title or self.property.name
+                        context['y_title'] = _("Kiekis")
+                        context['graph_type'] = 'vertical'
         return context
 
     def get_structure_url(self):

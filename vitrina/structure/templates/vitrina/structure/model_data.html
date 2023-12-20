@@ -35,7 +35,11 @@
             <div class="message is-danger">
                 <div class="message-body">
                     {% for error in errors %}
-                    <p>{{ error.message }}</p>
+                        {% if error.message %}
+                            <p>{{ error.message }}</p>
+                        {% else %}
+                            <p>{{ error }}</p>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -310,7 +314,7 @@
                 }
             });
 
-            let width = $('.items').css('width');
+            let width = $('.dropdown-menu').css('width');
             selectCheckList.find('span.anchor').css('width', width);
         });
 
@@ -435,8 +439,8 @@
 
         function select() {
             let selected_cols = [];
-            $('.items li input:checked').each(function() {
-                let value = $(this).siblings('span')[0].innerText;
+            $('.dropdown-menu li input:checked').each(function() {
+                let value = $(this).siblings('label')[0].innerText;
                 selected_cols.push(value);
             });
 

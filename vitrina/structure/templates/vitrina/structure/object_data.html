@@ -37,7 +37,11 @@
             <div class="message is-danger">
                 <div class="message-body">
                     {% for error in errors %}
-                    <p>{{ error.message }}</p>
+                        {% if error.message %}
+                            <p>{{ error.message }}</p>
+                        {% else %}
+                            <p>{{ error }}</p>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>

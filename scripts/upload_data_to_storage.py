@@ -57,12 +57,11 @@ def main(
         with open(config_file, 'r') as config:
             data = json.load(config)
             apikey = data.get('apikey')
-
-    url = urllib.parse.urljoin(target, 'partner/api/1/distributions')
+    distribution_url = urllib.parse.urljoin(target, 'partner/api/1/distributions')
     session = requests.Session()
     session.headers.update({'Authorization': 'ApiKey {}'.format(apikey)})
 
-    response = session.get(url)
+    response = session.get(distribution_url)
     data = response.json()
 
     for resource in data:
@@ -99,8 +98,11 @@ def main(
 
         manifest_csv_path = base_dir / 'manifest.csv'
 
-        tabular_data = _resource_models_to_tabular(resource)
-        first_item = next(tabular_data, None)
+        distribution_id = resource['id']
+        tabular_url = urllib.parse.urljoin(target, f'partner/api/1/distribution/id/{distribution_id}/tabular-data')
+        response = session.get(tabular_url)
+        tabular_data = response.json()
+        first_item = tabular_data[0] if tabular_data else None
 
         if first_item is not None:
             with open(manifest_csv_path, 'w', newline='') as f:

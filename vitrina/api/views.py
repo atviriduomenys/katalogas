@@ -37,6 +37,7 @@ from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
+from vitrina.structure.services import _resource_models_to_tabular
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -534,6 +535,19 @@ class UploadToStorageViewSet(ModelViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+class DistributionTabularDataViewSet(ModelViewSet):
+    @swagger_auto_schema(
+        operation_summary="Get tabular data for a single uploadable distribution",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        distribution_id = kwargs.get('distributionId')
+        dataset_distribution_instance = DatasetDistribution.objects.get(id=distribution_id)
+        tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
+        tabular_data_list = list(tabular_data)
+        return Response(tabular_data_list)
 
 
 class DatasetStructureViewSet(

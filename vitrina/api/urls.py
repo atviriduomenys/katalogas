@@ -6,7 +6,8 @@ from rest_framework.routers import DefaultRouter
 
 from vitrina.api.views import (
     CatalogViewSet, CategoryViewSet,
-    DatasetDistributionViewSet, DatasetModelDownloadViewSet, DatasetStructureViewSet, DatasetViewSet,
+    DatasetDistributionViewSet, DistributionTabularDataViewSet,
+    DatasetModelDownloadViewSet, DatasetStructureViewSet, DatasetViewSet,
     InternalDatasetDistributionViewSet, InternalDatasetStructureViewSet, InternalDatasetViewSet,
     LicenceViewSet,
     PartnerApiView,
@@ -71,6 +72,10 @@ urlpatterns = [
              'get': 'list',
              'post': 'create',
          }), name="api-all-distributions-upload-to-storage"),
+    path('partner/api/1/distribution/id/<int:distributionId>/tabular-data/',
+         DistributionTabularDataViewSet.as_view({
+             'get': 'retrieve',
+         }), name="api-distribution-tabular-data"),
 
     # dataset structure api urls
     path('partner/api/1/datasets/<int:datasetId>/structure',

@@ -23,9 +23,6 @@ msgid "kliento id"
 msgstr "client id"
 
 #: .\vitrina\api\admin.py:15
-#| msgid "Priskirta"
-msgstr "Assigned"
-
 msgid "Nepriskirti"
 msgstr "Unassigned"
 
@@ -67,22 +64,6 @@ msgstr "Scope"
 #: .\vitrina\users\templates\vitrina\users\profile.html:88
 msgid "Organizacija"
 msgstr "Organization"
-
-#: .\vitrina\api\models.py:100 .\vitrina\datasets\forms.py:414
-#: .\vitrina\datasets\models.py:51 .\vitrina\datasets\models.py:1076
-#: .\vitrina\datasets\models.py:1142
-#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:193
-#: .\vitrina\datasets\templates\vitrina\datasets\detail.html:229
-#: .\vitrina\datasets\templates\vitrina\datasets\plans.html:61
-#: .\vitrina\orgs\templates\vitrina\orgs\plans.html:58
-#: .\vitrina\plans\models.py:126
-#: .\vitrina\projects\templates\vitrina\projects\permissions.html:57
-#: .\vitrina\requests\forms.py:150
-#: .\vitrina\requests\templates\vitrina\requests\plans.html:63
-#: .\vitrina\structure\models.py:80 .\vitrina\structure\models.py:145
-#: .\vitrina\structure\models.py:435 .\vitrina\tasks\models.py:43
-msgid "Duomenų rinkiniai"
-msgstr "Datasets"
 
 msgid "Duomenų rinkinys"
 msgstr "Dataset"
@@ -520,7 +501,7 @@ msgid ""
 msgstr ""
 "SPARQL (abbreviation of SPARQL protocol and RDF query language) is "
 "database semantic query language capable of retrieving and managing data "
-"stored in the "Resource Description Framework" (RDF) format."
+"stored in the \"Resource Description Framework\" (RDF) format."
 
 #: .\vitrina\cms\templates\vitrina\cms\sparql.html:26
 msgid ""
@@ -605,10 +586,10 @@ msgstr "Add to plan comment"
 
 #: .\vitrina\comments\models.py:27
 msgid "Struktūros importavimo komentaras"
-msgstr "Strucutre import comment"
+msgstr "Structure import comment"
 
 msgid "Struktūros importavimo klaida"
-msgstr "Strucutre import error"
+msgstr "Structure import error"
 
 #: .\vitrina\comments\models.py:37 .\vitrina\datasets\models.py:72
 msgid "Inventorintas"
@@ -1052,7 +1033,7 @@ msgstr "Data opening"
 #: .\vitrina\structure\views.py:1726 .\vitrina\structure\views.py:2023
 #: .\vitrina\structure\views.py:2125 .\vitrina\structure\views.py:2230
 msgid "Struktūra"
-msgstr "Strucutre"
+msgstr "Structure"
 
 #: .\vitrina\datasets\models.py:1065
 msgid "Ryšio identifikatorius"
@@ -1219,7 +1200,7 @@ msgstr "Organization attribution"
 #: .\vitrina\datasets\views.py:1801
 #: .\vitrina\templates\component\categories.html:8
 msgid "Duomenų rinkinių kategorijos"
-msgstr "Datasets categories"
+msgstr "Dataset categories"
 
 #: .\vitrina\datasets\templates\vitrina\datasets\coretable.html:7
 #: .\vitrina\projects\templates\vitrina\projects\detail.html:47
@@ -1988,7 +1969,7 @@ msgstr "Dataset edit"
 
 #: .\vitrina\datasets\views.py:828
 msgid "Struktūros importas"
-msgstr "Strucutre import"
+msgstr "Structure import"
 
 #: .\vitrina\datasets\views.py:969 .\vitrina\orgs\views.py:632
 msgid "Tvarkytojo pridėjimas"
@@ -3434,7 +3415,7 @@ msgstr "Notes"
 
 #: .\vitrina\requests\templates\vitrina\requests\detail.html:317
 msgid "Struktūros failas"
-msgstr "Strucutre file"
+msgstr "Structure file"
 
 #: .\vitrina\requests\templates\vitrina\requests\detail.html:331
 msgid "Organizacijos atsakymas"
@@ -3971,7 +3952,7 @@ msgstr "Dataset distribution"
 
 #: .\vitrina\structure\forms.py:233
 msgid "Duomenų filtras"
-msgstr "Data filter
+msgstr "Data filter"
 
 #: .\vitrina\structure\forms.py:234 .\vitrina\structure\forms.py:554
 msgid "Klasė"
@@ -5095,7 +5076,7 @@ msgstr "Metadata only"
 
 #: .\vitrina\templates\vitrina\datasets\facets.html:19
 msgid "Struktūra įkelta"
-msgstr "Strucutre imported"
+msgstr "Structure imported"
 
 #: .\vitrina\templates\vitrina\datasets\facets.html:31
 msgid "Inventorinta"
@@ -5397,7 +5378,7 @@ msgid ""
 "Jūsų el. paštu buvo išsiųstas patvirtinimas. Paspauskite nuorodą el.pašto "
 "turinyje."
 msgstr ""
-"A confirmation has been sent to your e-mail address. Click a link in the e-mail.
+"A confirmation has been sent to your e-mail address. Click a link in the e-mail."
 
 #: .\vitrina\viisp\templates\vitrina\viisp\login_first.html:8
 msgid ""
@@ -5413,8 +5394,8 @@ msgid ""
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
 
-#~ msgid "Įkelta duomenų struktūra"
-#~ msgstr "Uploaded data structure"
+msgid "Įkelta duomenų struktūra"
+msgstr "Uploaded data structure"
 
 #, python-brace-format
 #~ msgid ""

@@ -218,7 +218,6 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
 
-
 class OrganizationListView(ListView):
     model = Organization
     template_name = 'vitrina/orgs/list.html'
@@ -487,7 +486,7 @@ class OrganizationUpdateView(
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.save()
-        if not self.object.get_parent() == form.cleaned_data['jurisdiction']:
+        if not isinstance(form.cleaned_data['jurisdiction'], Organization):
             form.cleaned_data['jurisdiction'].fix_tree(fix_paths=True)
             self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
         return HttpResponseRedirect(self.get_success_url())

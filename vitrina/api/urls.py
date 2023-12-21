@@ -68,9 +68,8 @@ urlpatterns = [
     # distribution api urls
     path('partner/api/1/distributions/',
          UploadToStorageViewSet.as_view({
-             'get': 'retrieve',
-             'patch': 'partial_update',
-             'delete': 'destroy'
+             'get': 'list',
+             'post': 'create',
          }), name="api-all-distributions-upload-to-storage"),
 
     # dataset structure api urls

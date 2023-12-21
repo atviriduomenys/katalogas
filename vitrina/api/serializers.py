@@ -333,6 +333,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
             'type',
             'url',
             'version',
+            'upload_to_storage'
         ]
 
     def get_url(self, obj):

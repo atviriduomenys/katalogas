@@ -16,7 +16,6 @@ from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
-from vitrina.datasets.factories import DatasetTranslationFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -820,6 +819,38 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
         'type': distribution.type,
         'url': f"http://{domain}{dataset.get_absolute_url()}",
         'version': distribution.distribution_version
+    }]
+
+
+@pytest.mark.django_db
+def test_get_all_distributions(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(dataset=dataset, upload_to_storage=True)
+    DatasetDistributionFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
+    res = app.get(reverse('api-all-distributions-upload-to-storage'))
+    assert res.json == [{
+        'description': distribution.description,
+        'file': distribution.filename_without_path(),
+        'geo_location': distribution.geo_location,
+        'id': distribution.pk,
+        'issued': distribution.issued,
+        'periodEnd': str(distribution.period_end),
+        'periodStart': str(distribution.period_start),
+        'title': distribution.title,
+        'type': distribution.type,
+        'url': f"http://{domain}{dataset.get_absolute_url()}",
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }]
 
 

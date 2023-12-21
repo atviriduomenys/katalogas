@@ -785,7 +785,8 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
         'title': distribution.title,
         'type': distribution.type,
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }]
 
 
@@ -818,7 +819,8 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
         'title': distribution.title,
         'type': distribution.type,
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }]
 
 
@@ -972,7 +974,8 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1012,7 +1015,8 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1053,7 +1057,8 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1093,7 +1098,8 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1215,7 +1221,8 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1255,7 +1262,8 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1295,7 +1303,8 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1435,7 +1444,8 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Updated title",
         'type': "FILE",
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1474,7 +1484,8 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Updated title",
         'type': "URL",
         'url': "http://example.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1515,7 +1526,8 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Updated title",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 

@@ -16,10 +16,9 @@ from pathlib import Path
 from typer import run, Option
 
 from django.conf import settings
-from vitrina.structure.services import _resource_models_to_tabular
 
 
-def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
+def run_spinta_command(base_dir, spinta_server_name, spinta_executable, resource_id, target, session):
     env = os.environ.copy()
     env['SPINTA_CONFIG'] = str(base_dir / "config.yml")
 
@@ -33,7 +32,17 @@ def run_spinta_command(base_dir, spinta_server_name, spinta_executable):
         text=True
     )
     if result.returncode != 0:
-        handle_error(result.stderr)
+        error_text = handle_error(result.stderr)
+        task_url = urllib.parse.urljoin(target, f'partner/api/1/tasks/{resource_id}/')
+        response = session.post(task_url, data={'error_text': error_text,
+                                                'title': 'Klaida keliant duomenis į saugyklą',
+                                                'app_name': 'vitrina_resources',
+                                                'model_name': 'DatasetDistribution',
+                                                'task_type': 'ERROR_DISTRIBUTION'})
+        task_create_response = response.json()
+        print(task_create_response)
+    else:
+        print('completed')
 
 
 def handle_error(stderr):
@@ -57,7 +66,8 @@ def main(
         with open(config_file, 'r') as config:
             data = json.load(config)
             apikey = data.get('apikey')
-    distribution_url = urllib.parse.urljoin(target, 'partner/api/1/distributions')
+
+    distribution_url = urllib.parse.urljoin(target, 'partner/api/1/distributions/')
     session = requests.Session()
     session.headers.update({'Authorization': 'ApiKey {}'.format(apikey)})
 
@@ -99,7 +109,7 @@ def main(
         manifest_csv_path = base_dir / 'manifest.csv'
 
         distribution_id = resource['id']
-        tabular_url = urllib.parse.urljoin(target, f'partner/api/1/distribution/id/{distribution_id}/tabular-data')
+        tabular_url = urllib.parse.urljoin(target, f'partner/api/1/distribution/id/{distribution_id}/tabular-data/')
         response = session.get(tabular_url)
         tabular_data = response.json()
         first_item = tabular_data[0] if tabular_data else None
@@ -114,7 +124,8 @@ def main(
                     writer.writerow(row.values())
         else:
             continue
-        run_spinta_command(base_dir, settings.SPINTA_SERVER_NAME, settings.SPINTA_EXECUTABLE)
+        run_spinta_command(base_dir, settings.SPINTA_SERVER_NAME, settings.SPINTA_EXECUTABLE,
+                           resource['id'], target, session)
 
 
 if __name__ == '__main__':

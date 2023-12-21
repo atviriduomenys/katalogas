@@ -12,7 +12,7 @@ from vitrina.api.views import (
     LicenceViewSet,
     PartnerApiView,
     UploadToStorageViewSet,
-    edp_dcat_ap_rdf,
+    edp_dcat_ap_rdf, TaskViewSet,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -65,6 +65,14 @@ urlpatterns = [
              'patch': 'partial_update',
              'delete': 'destroy'
          }), name="api-single-distribution-internal"),
+
+    # Task api urls
+    path('partner/api/1/tasks/<int:objectId>/', TaskViewSet.as_view({
+        'get': 'retrieve',
+        'post': 'create',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='api-task'),
 
     # distribution api urls
     path('partner/api/1/distributions/',

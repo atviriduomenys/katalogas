@@ -1,9 +1,11 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils import timezone
+from django.apps import apps
 
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
@@ -21,7 +23,7 @@ from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
-from vitrina.api.models import ApiDescription
+from vitrina.api.models import ApiDescription, ApiKey
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
     CatalogSerializer, CategorySerializer,
@@ -30,7 +32,7 @@ from vitrina.api.serializers import (
     ModelDownloadStatsSerializer,
     PatchDatasetDistributionSerializer, PatchDatasetSerializer,
     PostDatasetDistributionSerializer, PostDatasetSerializer, PostDatasetStructureSerializer,
-    PutDatasetDistributionSerializer,
+    PutDatasetDistributionSerializer, TaskSerializer,
 )
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
@@ -38,6 +40,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.services import _resource_models_to_tabular
+from vitrina.tasks.models import Task
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -548,6 +551,75 @@ class DistributionTabularDataViewSet(ModelViewSet):
         tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
         tabular_data_list = list(tabular_data)
         return Response(tabular_data_list)
+
+
+class TaskViewSet(ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = (APIKeyPermission,)
+    queryset = Task.objects.all()
+    lookup_url_kwarg = 'objectId'
+
+    @swagger_auto_schema(
+        operation_summary="List all tasks",
+        tags=["Retrieving Data"],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Get a single task",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a task",
+        tags=["Adding Data"],
+        request_body=TaskSerializer,
+        responses={status.HTTP_201_CREATED: TaskSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        title = request.data.get('title', '')
+        error_text = request.data.get('error_text', '')
+        task_type = request.data.get('task_type', '')
+        app_name = request.data.get('app_name', '')
+        model_name = request.data.get('model_name', '')
+        model = apps.get_model(app_name, model_name)
+        object_id = self.kwargs['objectId']
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        task, created = Task.objects.update_or_create(
+            object_id=object_id,
+            title=title,
+            defaults={
+                'description': error_text,
+                'content_type': ContentType.objects.get_for_model(model),
+                'status': Task.CREATED,
+                'type': task_type,
+            }
+        )
+
+        task.save()
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @swagger_auto_schema(
+        operation_summary="Update task by ID",
+        tags=["Updating Data"],
+        request_body=TaskSerializer,
+        responses={status.HTTP_200_OK: TaskSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Remove a task",
+        tags=["Removing Data"],
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class DatasetStructureViewSet(

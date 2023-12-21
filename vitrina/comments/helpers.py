@@ -90,7 +90,7 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
                 org_email_list.append(sub.user.email)
     send_mail_to_object_subscribers(email_list, content_type, object_id)
     if len(org_subs) > 0:
-        send_mail_to_object_subscribers(email_list, content_type, object_id, org=obj.organization)
+        send_mail_to_object_subscribers(org_email_list, content_type, object_id, org=obj.organization)
 
 
 def send_mail_to_object_subscribers(email_list, content_type, object_id, org=None):

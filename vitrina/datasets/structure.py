@@ -584,6 +584,8 @@ def _read_resource(
             description=row['description'],
         )
 
+        _validate_name(name, resource)
+
         resource.dataset = state.dataset
         resource.dataset.resources[name] = resource
 
@@ -636,6 +638,8 @@ def _read_model(
         title=row['title'],
         description=row['description'],
     )
+
+    _validate_name(name, model)
 
     if model.ref:
         model.ref_props = [x.strip() for x in model.ref.split(',')]
@@ -697,6 +701,8 @@ def _read_property(
 
     if dtype['error']:
         prop.errors.append(dtype['error'])
+
+    _validate_name(name, prop)
 
     if prop.ref and prop.type in ('ref', 'backref', 'generic'):
         ref_model, ref_props = _parse_property_ref(prop.ref)
@@ -828,6 +834,8 @@ def _read_param(
         if isinstance(node, Dataset) or isinstance(node, Model):
             last = node
 
+    _validate_name(name, param)
+
     param.meta = last
     if param.meta.params.get(name):
         if param.prepare in [e.prepare for e in param.meta.params[name]]:
@@ -924,3 +932,8 @@ def _parse_dtype_string(dtype: str) -> dict:
         'unique': unique,
         'error': error,
     }
+
+
+def _validate_name(name: str, meta: Metadata):
+    if not name.isascii() and hasattr(meta, 'errors'):
+        meta.errors.append(_(f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))

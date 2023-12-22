@@ -500,7 +500,8 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
 class UploadToStorageViewSet(ModelViewSet):
     serializer_class = UploadToStorageSerializer
     permission_classes = (APIKeyPermission,)
-    queryset = DatasetDistribution.objects.filter(upload_to_storage=True)
+    queryset = DatasetDistribution.objects.filter(upload_to_storage=True)\
+        .exclude(download_url__icontains="get.data.gov.lt")
 
     @swagger_auto_schema(
         operation_summary="List all uploadable distributions",

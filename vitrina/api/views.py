@@ -32,14 +32,15 @@ from vitrina.api.serializers import (
     ModelDownloadStatsSerializer,
     PatchDatasetDistributionSerializer, PatchDatasetSerializer,
     PostDatasetDistributionSerializer, PostDatasetSerializer, PostDatasetStructureSerializer,
-    PutDatasetDistributionSerializer, TaskSerializer,
+    PutDatasetDistributionSerializer, TaskSerializer, UploadToStorageSerializer,
 )
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.statistics.models import ModelDownloadStats
-from vitrina.structure.services import _resource_models_to_tabular
+from vitrina.structure.models import Metadata
+from vitrina.structure.services import _resource_models_to_tabular, create_or_get_uapi_format
 from vitrina.tasks.models import Task
 
 CATALOG_TAG = 'Catalogs'
@@ -497,7 +498,8 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
 
 
 class UploadToStorageViewSet(ModelViewSet):
-    serializer_class = DatasetDistributionSerializer
+    serializer_class = UploadToStorageSerializer
+    permission_classes = (APIKeyPermission,)
     queryset = DatasetDistribution.objects.filter(upload_to_storage=True)
 
     @swagger_auto_schema(
@@ -541,6 +543,8 @@ class UploadToStorageViewSet(ModelViewSet):
 
 
 class DistributionTabularDataViewSet(ModelViewSet):
+    permission_classes = (APIKeyPermission,)
+
     @swagger_auto_schema(
         operation_summary="Get tabular data for a single uploadable distribution",
         tags=["Retrieving Data"],
@@ -551,6 +555,40 @@ class DistributionTabularDataViewSet(ModelViewSet):
         tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
         tabular_data_list = list(tabular_data)
         return Response(tabular_data_list)
+
+
+class DistributionCreateAfterUploadToStorage(ModelViewSet):
+    permission_classes = (APIKeyPermission,)
+
+    @swagger_auto_schema(
+        operation_summary="Create UAPI type distribution",
+        tags=["Adding data"],
+    )
+    def create(self, request, *args, **kwargs):
+        distribution_id = kwargs.get('distributionId')
+        dataset_id = request.data.get('dataset_id')
+
+        metadata = Metadata.objects.get(object_id=distribution_id)
+        format_obj = create_or_get_uapi_format()
+        dataset = Dataset.objects.get(id=dataset_id)
+
+        if not metadata.source and metadata.name.startswith("datasets/gov") or "datasets/gov" in metadata.name:
+            url = f"https://get.data.gov.lt/{metadata.name}/:ns"
+        elif metadata.source:
+            url = metadata.source
+        else:
+            url = None
+
+        DatasetDistribution.objects.create(
+            dataset=dataset,
+            download_url=url,
+            format=format_obj,
+            title=metadata.name,
+            type='URL',
+            upload_to_storage=True
+        )
+
+        return Response({"message": "UAPI DatasetDistribution created successfully"}, status=status.HTTP_201_CREATED)
 
 
 class TaskViewSet(ModelViewSet):
@@ -585,6 +623,7 @@ class TaskViewSet(ModelViewSet):
         task_type = request.data.get('task_type', '')
         app_name = request.data.get('app_name', '')
         model_name = request.data.get('model_name', '')
+        org_id = request.data.get('org_id', '')
         model = apps.get_model(app_name, model_name)
         object_id = self.kwargs['objectId']
         serializer = self.get_serializer(data=request.data)
@@ -598,6 +637,7 @@ class TaskViewSet(ModelViewSet):
                 'content_type': ContentType.objects.get_for_model(model),
                 'status': Task.CREATED,
                 'type': task_type,
+                'organization_id': org_id
             }
         )
 

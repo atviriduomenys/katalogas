@@ -12,7 +12,7 @@ from vitrina.api.views import (
     LicenceViewSet,
     PartnerApiView,
     UploadToStorageViewSet,
-    edp_dcat_ap_rdf, TaskViewSet,
+    edp_dcat_ap_rdf, TaskViewSet, DistributionCreateAfterUploadToStorage,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -84,6 +84,10 @@ urlpatterns = [
          DistributionTabularDataViewSet.as_view({
              'get': 'retrieve',
          }), name="api-distribution-tabular-data"),
+    path('partner/api/1/distribution/id/<int:distributionId>/create-distribution/',
+         DistributionCreateAfterUploadToStorage.as_view({
+             'post': 'create',
+         }), name="api-distribution-create-after-upload-to-storage"),
 
     # dataset structure api urls
     path('partner/api/1/datasets/<int:datasetId>/structure',

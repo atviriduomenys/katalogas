@@ -2248,7 +2248,7 @@ msgstr "Weekly"
 
 #: .\vitrina\helpers.py:498
 msgid "Kas dieną"
-msgstr "Dayly"
+msgstr "Daily"
 
 #: .\vitrina\helpers.py:503
 #: .\vitrina\requests\templates\vitrina\requests\dataset_status.html:52

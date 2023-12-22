@@ -138,8 +138,9 @@ class OrganizationUpdateForm(ModelForm):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "žodžiai gali būti atskirti _ simboliu,"
                                         "jokie kiti simboliai negalimi."))
-            else:
-                return name
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
 
     def clean_image(self):
         image = self.cleaned_data.get('image')
@@ -218,8 +219,9 @@ class OrganizationCreateForm(ModelForm):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "žodžiai gali būti atskirti _ simboliu,"
                                         "jokie kiti simboliai negalimi."))
-            else:
-                return name
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
 
     def clean_image(self):
         image = self.cleaned_data.get('image')

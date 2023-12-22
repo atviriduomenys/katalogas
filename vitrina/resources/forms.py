@@ -184,6 +184,12 @@ class DatasetResourceForm(forms.ModelForm):
             return None
         return access
 
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and not name.isascii():
+            raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
+
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

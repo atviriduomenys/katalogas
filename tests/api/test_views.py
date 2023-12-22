@@ -853,6 +853,7 @@ def test_get_all_distributions(app: DjangoTestApp):
     })
     res = app.get(reverse('api-all-distributions-upload-to-storage'))
     assert res.json == [{
+        'dataset_id': distribution.dataset.id,
         'description': distribution.description,
         'file': distribution.filename_without_path(),
         'geo_location': distribution.geo_location,

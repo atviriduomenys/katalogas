@@ -77,6 +77,16 @@ def create_structure_objects(structure: DatasetStructure) -> None:
             )
 
 
+def create_or_get_uapi_format():
+    format_obj, created = Format.objects.get_or_create(extension='UAPI')
+    if created:
+        format_obj.title = 'Saugyklos API'
+        format_obj.mimetype = "application/vnd.api+json"
+        format_obj.save()
+
+    return format_obj
+
+
 def _load_datasets(
     state: struct.State,
     dataset: Dataset
@@ -638,11 +648,7 @@ def _link_distributions(
                     status=Comment.OPENED,
                 )
 
-            format, created = Format.objects.get_or_create(extension='UAPI')
-            if created:
-                format.title = 'Saugyklos API'
-                format.mimetype = "application/vnd.api+json"
-                format.save()
+            format = create_or_get_uapi_format()
             distribution = DatasetDistribution.objects.create(
                 dataset=dataset,
                 download_url=url,
@@ -1273,4 +1279,3 @@ def transform_coordinates(point_x, point_y, source_srid, target_srid):
         f"EPSG:{target_srid}"
     )
     return transformer.transform(point_x, point_y)
-

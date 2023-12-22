@@ -16,7 +16,6 @@ from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
-from vitrina.datasets.factories import DatasetTranslationFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -334,6 +333,8 @@ def test_get_all_datasets(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "spatial": dataset.spatial_coverage,
@@ -399,6 +400,8 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "spatial": dataset.spatial_coverage,
@@ -454,6 +457,8 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "spatial": dataset.spatial_coverage,
@@ -541,6 +546,8 @@ def test_create_dataset(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": ['en', 'lt'],
         "spatial": dataset.spatial_coverage,
@@ -612,6 +619,8 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "title": "Updated title",
         "description": "Updated description",
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "spatial": dataset.spatial_coverage,
@@ -654,6 +663,8 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "title": "Updated title",
         "description": "Updated description",
         "modified": timezone.localtime(dataset.modified).isoformat(),
+        'organization_id': dataset.organization.id,
+        'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "spatial": dataset.spatial_coverage,
@@ -786,7 +797,8 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
         'title': distribution.title,
         'type': distribution.type,
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }]
 
 
@@ -819,7 +831,43 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
         'title': distribution.title,
         'type': distribution.type,
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
+    }]
+
+
+@pytest.mark.django_db
+def test_get_all_distributions(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    dataset = DatasetFactory()
+    distribution = DatasetDistributionFactory(dataset=dataset, upload_to_storage=True)
+    DatasetDistributionFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
+    res = app.get(reverse('api-all-distributions-upload-to-storage'))
+    assert res.json == [{
+        'dataset_id': distribution.dataset.id,
+        'description': distribution.description,
+        'file': distribution.filename_without_path(),
+        'geo_location': distribution.geo_location,
+        'id': distribution.pk,
+        'issued': distribution.issued,
+        'organization_id': distribution.dataset.organization.id,
+        'periodEnd': str(distribution.period_end),
+        'periodStart': str(distribution.period_start),
+        'title': distribution.title,
+        'type': distribution.type,
+        'update_interval': distribution.dataset.frequency.hours,
+        'url': f"http://{domain}{dataset.get_absolute_url()}",
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }]
 
 
@@ -941,7 +989,8 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -981,7 +1030,8 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1022,7 +1072,8 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1062,7 +1113,8 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1184,7 +1236,8 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1224,7 +1277,8 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1264,7 +1318,8 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Test distribution",
         'type': "URL",
         'url': "http://test.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1404,7 +1459,8 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         'title': "Updated title",
         'type': "FILE",
         'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1443,7 +1499,8 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         'title': "Updated title",
         'type': "URL",
         'url': "http://example.com/",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 
@@ -1484,7 +1541,8 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'title': "Updated title",
         'type': "FILE",
         'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version
+        'version': distribution.distribution_version,
+        'upload_to_storage': distribution.upload_to_storage,
     }
 
 

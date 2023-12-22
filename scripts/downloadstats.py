@@ -1,4 +1,3 @@
-import resource
 import os
 import json
 import urllib.parse
@@ -28,6 +27,16 @@ bots = {
     'DataForSeoBot',
     'Adsbot'
 }
+
+
+def get_peak_memory():
+    if os.name == 'posix':
+        import resource
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    else:
+        import psutil
+        process = psutil.Process(os.getpid())
+        return process.memory_info().peak_wset
 
 
 def main(
@@ -113,7 +122,8 @@ def main(
         bytesread = 0
         if existing_offset > 0:
             f.seek(existing_offset)
-        for line in f:
+        line = f.readline()
+        while line:
             bytesread += len(str.encode(line))
             d.append(line)
             total_lines_read += 1
@@ -124,10 +134,11 @@ def main(
             state_entry = {
                 logfile: {
                     'size': file_size,
-                    'offset': bytesread
+                    'offset': f.tell()
                 }
             }
             pbar.update(1)
+            line = f.readline()
         find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
 
     post_data(temp, name, session, endpoint_url)
@@ -143,7 +154,7 @@ def main(
     print(f'Total lines read: {total_lines_read}')
     print(f'Total model entries found: {len(final_stats.keys())}')
     print(f'Total transaction entries in file: {len(transactions)}')
-    print(f'Peak Memory Usage = {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}')
+    print(f'Peak Memory Usage = {get_peak_memory()}')
 
 
 def parse_user_agent(agent):

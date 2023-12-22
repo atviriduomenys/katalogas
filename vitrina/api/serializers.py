@@ -13,6 +13,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.helpers import get_current_domain
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
+from vitrina.tasks.models import Task
 
 
 class LicenceSerializer(serializers.ModelSerializer):
@@ -150,6 +151,8 @@ class DatasetSerializer(serializers.ModelSerializer):
         label="",
         help_text="dcat:theme - Category of the dataset",
     )
+    organization_id = serializers.SerializerMethodField()
+    organization_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Dataset
@@ -171,6 +174,8 @@ class DatasetSerializer(serializers.ModelSerializer):
             'keyword',
             'landingPage',
             'theme',
+            'organization_id',
+            'organization_title'
         ]
 
     def get_landingPage(self, obj):
@@ -180,6 +185,12 @@ class DatasetSerializer(serializers.ModelSerializer):
             domain = get_current_domain(request)
             landing_page = f"{domain}{obj.get_absolute_url()}"
         return landing_page
+
+    def get_organization_id(self, obj):
+        return obj.organization.id
+
+    def get_organization_title(self, obj):
+        return obj.organization.title
 
 
 class PostDatasetSerializer(DatasetSerializer):
@@ -333,6 +344,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
             'type',
             'url',
             'version',
+            'upload_to_storage'
         ]
 
     def get_url(self, obj):
@@ -345,6 +357,59 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
                 domain = get_current_domain(request)
                 dataset_url = f"{domain}{obj.dataset.get_absolute_url()}"
             return dataset_url
+
+
+class UploadToStorageSerializer(DatasetDistributionSerializer):
+    organization_id = serializers.SerializerMethodField()
+    dataset_id = serializers.SerializerMethodField()
+    update_interval = serializers.SerializerMethodField()
+
+    class Meta(DatasetDistributionSerializer.Meta):
+        fields = DatasetDistributionSerializer.Meta.fields + ['organization_id', 'dataset_id', 'update_interval']
+
+    def get_organization_id(self, obj):
+        return obj.dataset.organization.id
+
+    def get_dataset_id(self, obj):
+        return obj.dataset.id
+
+    def get_update_interval(self, obj):
+        return obj.dataset.frequency.hours
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True)
+    created = serializers.DateTimeField(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    organization = serializers.PrimaryKeyRelatedField(read_only=True)
+    comment_object = serializers.PrimaryKeyRelatedField(read_only=True)
+    status = serializers.ChoiceField(choices=Task.STATUSES, default=Task.CREATED)
+    type = serializers.ChoiceField(choices=Task.TYPES, default=Task.COMMENT)
+    role = serializers.ChoiceField(choices=Task.ROLES, required=False)
+    comment = serializers.CharField(required=False, allow_blank=True)
+    due_date = serializers.DateTimeField(required=False)
+    assigned = serializers.DateTimeField(read_only=True)
+    completed = serializers.DateTimeField(read_only=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            'title',
+            'created',
+            'user',
+            'organization',
+            'comment_object',
+            'status',
+            'type',
+            'role',
+            'comment',
+            'due_date',
+            'assigned',
+            'completed',
+            'description',
+            'content_object'
+        ]
 
 
 class PostDatasetDistributionSerializer(DatasetDistributionSerializer):

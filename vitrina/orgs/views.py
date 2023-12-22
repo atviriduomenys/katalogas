@@ -1,6 +1,7 @@
 import json
 import secrets
 from datetime import datetime
+from typing import List
 
 import pandas as pd
 import requests
@@ -34,7 +35,7 @@ from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, ApiKeyForm, \
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, OrganizationCreateForm, ApiKeyForm, \
     ApiScopeForm, ApiKeyRegenerateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
@@ -43,6 +44,7 @@ from vitrina.plans.models import Plan
 from vitrina.projects.models import Project
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
+from vitrina.structure.services import get_data_from_spinta
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
@@ -491,6 +493,96 @@ class OrganizationUpdateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
+class OrganizationCreateSearchView(TemplateView):
+    template_name = 'vitrina/orgs/organization_create_search.html'
+
+
+class OrganizationCreateSearchUpdateView(TemplateView):
+    template_name = 'vitrina/orgs/organization_create_search_items.html'
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = 'ja_pavadinimas.contains("{}")'
+
+    def get_context_data(self, **kwargs):
+        q = self.request.GET.get('q')
+        context = super().get_context_data(**kwargs)
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q)).get('_data', [])
+        company_names = [data_item.get('ja_pavadinimas') for data_item in data]
+        extra_context = {
+            'company_names': company_names
+        }
+        context.update(extra_context)
+        return context
+
+
+class OrganizationCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView
+):
+    model = Organization
+    form_class = OrganizationCreateForm
+    template_name = 'vitrina/orgs/organization_form.html'
+    view_url_name = 'organization:create'
+    context_object_name = 'organization'
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = "ja_pavadinimas.contains('{}')"
+
+    data: List
+    spinta_errors: List
+
+    def has_permission(self):
+        return self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        return redirect('home')
+
+    def dispatch(self, request, *args, **kwargs):
+        q = request.GET.get('q')
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q))
+        errors = data.get('errors', [])
+        if errors:
+            errors = [_("Nepavyko atnaujinti duomenų iš JAR:")] + errors
+        self.spinta_errors = errors
+        self.data = data.get('_data', [])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['spinta_errors'] = self.spinta_errors
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.data and len(self.data) == 1:
+            initial_dict = {
+                'title': self.data[0].get('ja_pavadinimas'),
+                'company_code': self.data[0].get('ja_kodas'),
+                'address': self.data[0].get('pilnas_adresas')
+            }
+            kwargs['initial'] = initial_dict
+        return kwargs
+
+    def form_valid(self, form):
+        org = Organization.add_root(
+            title=form.cleaned_data.get('title'),
+            name=form.cleaned_data.get('name'),
+            jurisdiction=form.cleaned_data.get('jurisdiction'),
+            image=form.cleaned_data.get('image'),
+            company_code=form.cleaned_data.get('company_code'),
+            address=form.cleaned_data.get('address'),
+            email=form.cleaned_data.get('email'),
+            phone=form.cleaned_data.get('phone'),
+            description=form.cleaned_data.get('description'),
+            provider=True,
+            is_public=True,
+
+        )
+        return HttpResponseRedirect(self.get_success_url(org))
+
+    def get_success_url(self, organization):
+        return reverse('organization-detail', kwargs={'pk': organization.pk})
+
+
 class RepresentativeCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -734,6 +826,8 @@ class PartnerRegisterInfoView(TemplateView):
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
     template_name = 'base_form.html'
+    jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    jar_query_uri = "ja_kodas={}"
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
@@ -767,9 +861,23 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
+        org = form.cleaned_data.get('organization')
+        org_is_registered = Organization.objects.filter(id=org).first()
+        if not org_is_registered:
+            org_data = get_data_from_spinta(
+                model=self.jar_model_uri, 
+                query=self.jar_query_uri.format(org)
+            ).get('_data')[0]
+            org = Organization.add_root(
+                title=org_data.get('ja_pavadinimas'),
+                address=org_data.get('pilnas_adresas'),
+                company_code=org_data.get('ja_kodas'),
+                provider=True,
+                is_public=True
+            )
         representative_request = RepresentativeRequest(
             user=self.request.user,
-            organization=form.cleaned_data.get('organization'),
+            organization=org_is_registered or org,
             document=form.cleaned_data.get('request_form')
         )
         representative_request.save()
@@ -889,6 +997,14 @@ class OrganizationApiKeysView(
         response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients')
         keys = response.json()
         key_client_ids = []
+
+        msg = None
+        storage = messages.get_messages(self.request)
+        if len(storage._loaded_messages) == 1:
+            if storage._loaded_messages[0].level == 20:
+                msg = storage._loaded_messages[0]
+                del storage._loaded_messages[0]
+
         if response.status_code == 200:
             for key in keys:
                 client_id = key.get('client_id')
@@ -934,6 +1050,8 @@ class OrganizationApiKeysView(
             Representative,
             self.object
         )
+        if msg:
+            context_data['success_message'] = msg
         context_data['organization_id'] = self.object.pk
         context_data['organization'] = self.object
         internal = ApiKey.objects.filter(organization=self.object)
@@ -1120,10 +1238,10 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
                 messages.info(self.request,
                               _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
                                 + api_key))
-                return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+                # return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
         else:
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-            return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
+        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
 class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):

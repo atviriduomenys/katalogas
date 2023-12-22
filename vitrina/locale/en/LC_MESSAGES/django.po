@@ -42,7 +42,7 @@ msgstr "API key"
 
 #: .\vitrina\api\models.py:87
 msgid "Taikymo sritis"
-msgstr "Scope"
+msgstr "Application area"
 
 #: .\vitrina\api\models.py:93 .\vitrina\datasets\forms.py:234
 #: .\vitrina\datasets\models.py:1082
@@ -491,7 +491,7 @@ msgstr "SPARQL search"
 
 #: .\vitrina\cms\templates\vitrina\cms\sparql.html:24
 msgid "SPARQL Punktas"
-msgstr "SPARQL section"
+msgstr "SPARQL Punkt"
 
 #: .\vitrina\cms\templates\vitrina\cms\sparql.html:25
 msgid ""
@@ -1981,7 +1981,7 @@ msgstr "The user has been sent an email for registration"
 
 #: .\vitrina\datasets\views.py:1115 .\vitrina\orgs\views.py:728
 msgid "Tvarkytojo redagavimas"
-msgstr "Edit manager"
+msgstr "Edit user"
 
 #: .\vitrina\datasets\views.py:1360
 msgid "Poreikių pridėjimas"
@@ -2014,7 +2014,7 @@ msgstr "Property count"
 #: .\vitrina\datasets\views.py:1478 .\vitrina\helpers.py:531
 #: .\vitrina\requests\views.py:177
 msgid "Esybių (modelių) skaičius"
-msgstr "Model count"
+msgstr " Entities (Model) count"
 
 #: .\vitrina\datasets\views.py:1479 .\vitrina\helpers.py:532
 #: .\vitrina\requests\views.py:178
@@ -2232,23 +2232,23 @@ msgstr "IV quarter"
 
 #: .\vitrina\helpers.py:494
 msgid "Kas metus"
-msgstr "Year"
+msgstr "Yearly"
 
 #: .\vitrina\helpers.py:495
 msgid "Kas ketvirtį"
-msgstr "Quarter"
+msgstr "Quarterly"
 
 #: .\vitrina\helpers.py:496
 msgid "Kas mėnesį"
-msgstr "Month"
+msgstr "Monthly"
 
 #: .\vitrina\helpers.py:497
 msgid "Kas savaitę"
-msgstr "Week"
+msgstr "Weekly"
 
 #: .\vitrina\helpers.py:498
 msgid "Kas dieną"
-msgstr "Day"
+msgstr "Dayly"
 
 #: .\vitrina\helpers.py:503
 #: .\vitrina\requests\templates\vitrina\requests\dataset_status.html:52
@@ -2347,7 +2347,7 @@ msgstr ""
 #: .\vitrina\messages\forms.py:100
 msgid ""
 "Ši forma skirta tik projektų prenumeratai, kitas prenumeratas galite "
-"gautikitose atitinkamose formose"
+"gauti kitose atitinkamose formose"
 msgstr ""
 "This form is only for project subscription. You can find other subscriptions in other corresponding forms."
 
@@ -2665,7 +2665,7 @@ msgstr "Role"
 
 #: .\vitrina\orgs\models.py:131
 msgid "Tvarkytojas"
-msgstr "Manager"
+msgstr "Data editor"
 
 #: .\vitrina\orgs\models.py:183
 msgid "Ataskaita"
@@ -2857,7 +2857,7 @@ msgstr "To start"
 #: .\vitrina\orgs\templates\vitrina\orgs\plans.html:32
 #: .\vitrina\orgs\views.py:952
 msgid "Naujas terminas"
-msgstr "New term"
+msgstr "New deadline"
 
 #: .\vitrina\orgs\views.py:305
 msgid "Organizacijų skaičius pagal valdymo sritį laike"
@@ -3181,7 +3181,7 @@ msgid "atmestas"
 msgstr "rejected"
 
 #: .\vitrina\projects\templates\vitrina\projects\list.html:71
-msgid "Nėra panaudojimo atvėjo"
+msgid "Nėra panaudojimo atvejo"
 msgstr "No use case"
 
 #: .\vitrina\projects\templates\vitrina\projects\permissions.html:5
@@ -4696,7 +4696,7 @@ msgstr "Organization coordinator"
 
 #: .\vitrina\tasks\models.py:30
 msgid "Organizacijos tvarkytojas"
-msgstr "Organization manager"
+msgstr "Data editor"
 
 #: .\vitrina\tasks\models.py:42
 msgid "Raktas"
@@ -5255,7 +5255,7 @@ msgstr "Subscriptions"
 
 #: .\vitrina\users\templates\vitrina\users\profile.html:47
 msgid "Užsiregistravo prieš"
-msgstr "Registered for"
+msgstr "Registered before"
 
 #: .\vitrina\users\templates\vitrina\users\profile.html:56
 msgid "Prisijungė prieš"
@@ -5465,7 +5465,7 @@ msgstr "Uploaded data structure"
 #~ msgstr "Request to improve or replace current dataset"
 
 #~ msgid "Sukurta prieš"
-#~ msgstr "Created for"
+#~ msgstr "Created before"
 
 #~ msgid "Lietuvos atvirų duomenų portalas"
 #~ msgstr "Open data in Lithuania"

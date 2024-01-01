@@ -828,6 +828,11 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     template_name = 'base_form.html'
     jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
     jar_query_uri = "ja_kodas={}"
+    base_template_content = """
+        Portale pateiktas naujas koordinatoriaus prašymas.\n
+        {0}
+    """
+    email_identifier = "coordinator-request-created"
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
@@ -875,13 +880,39 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
                 provider=True,
                 is_public=True
             )
-        representative_request = RepresentativeRequest(
+        representative_request_already_exists = RepresentativeRequest.objects.filter(
             user=self.request.user,
-            organization=org_is_registered or org,
-            document=form.cleaned_data.get('request_form')
-        )
-        representative_request.save()
-
+            organization=org_is_registered or org
+        ).first()
+        if not representative_request_already_exists:
+            representative_request = RepresentativeRequest(
+                user=self.request.user,
+                organization=org_is_registered or org,
+                document=form.cleaned_data.get('request_form')
+            )
+            representative_request.save()
+            org = org_is_registered or org
+            supervisors = Representative.objects.filter(
+                role=Representative.SUPERVISOR
+            )
+            for supervisor in supervisors:
+                task = Task.objects.create(
+                    title="Naujo duomenų teikėjo: {} prašymas".format(org.company_code),
+                    description=f"Portale pateiktas naujas duomenų teikėjo prašymas: {org.company_code}.",
+                    organization=org,
+                    user=supervisor.user,
+                    status=Task.CREATED,
+                    type=Task.REQUEST,
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=org.pk,
+                )
+                task.save()
+            url = "{}/coordinator-admin/vitrina_orgs/representativerequest/".format(get_current_domain(self.request))
+            email_data = prepare_email_by_identifier(self.email_identifier,
+                                                     self.base_template_content,
+                                                     'Portale pateiktas naujas koordinatoriaus prašymas',
+                                                     [url])
+            send_email_with_logging(email_data, [s.email for s in supervisors])
         return redirect(reverse('partner-register-complete'))
 
 

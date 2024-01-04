@@ -1037,13 +1037,10 @@ class OrganizationApiKeysView(
                 del storage._loaded_messages[0]
 
         if response.status_code == 200:
-            print(response.json())
             for key in keys:
                 client_id = key.get('client_id')
                 client_name = key.get('client_name')
-                org = Organization.objects.filter(name=client_name)
-                if not org.exists():
-                    org = None
+                org = Organization.objects.filter(name=client_name).first()
                 key_client_ids.append(client_id)
 
                 if not ApiKey.objects.filter(client_id=client_id).exists():
@@ -1270,7 +1267,6 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
                 messages.info(self.request,
                               _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
                                 + api_key))
-                # return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
         else:
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))

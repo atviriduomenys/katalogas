@@ -1040,9 +1040,7 @@ class OrganizationApiKeysView(
             for key in keys:
                 client_id = key.get('client_id')
                 client_name = key.get('client_name')
-                org = Organization.objects.filter(name=client_name)
-                if not org.exists():
-                    org = None
+                org = Organization.objects.filter(name=client_name).first()
                 key_client_ids.append(client_id)
 
                 if not ApiKey.objects.filter(client_id=client_id).exists():

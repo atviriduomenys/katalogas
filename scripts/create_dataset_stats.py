@@ -1,4 +1,6 @@
 import os
+from json import JSONDecodeError
+
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
@@ -136,11 +138,14 @@ def _update_dataset_maturity_level_and_object_count_stats(
         object_count = 0
         for model in dataset.model_set.all():
             res = requests.get(f"https://get.data.gov.lt/{str(model)}?count()")
-            data = json.loads(res.content)
-            data = data.get('_data', [])
-            if data:
-                count = data[0].get('count()', 0)
-                object_count += count
+            try:
+                data = json.loads(res.content)
+                data = data.get('_data', [])
+                if data:
+                    count = data[0].get('count()', 0)
+                    object_count += count
+            except JSONDecodeError as e:
+                print(f'Error retrieving info for model: {model}')
         maturity_level = dataset.get_level() or None
 
         key = (dataset.published.date(), dataset.pk)

@@ -588,9 +588,8 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
-                elif not distribution.title:
-                    distribution.title = resource_meta.name
-                    distribution.save()
+                distribution.title = resource_meta.name
+                distribution.save()
 
                 if md := distribution.metadata.first():
                     if not resource_meta.id:
@@ -603,9 +602,8 @@ def _link_distributions(
                     i,
                     use_existing_meta=True
                 )
-                if not metadata.name:
-                    metadata.name = resource_meta.name
-                    metadata.save()
+                metadata.name = resource_meta.name
+                metadata.save()
 
                 _clean_errors(distribution)
                 _load_comments(dataset, resource_meta.comments, distribution)
@@ -659,9 +657,8 @@ def _link_distributions(
         elif distribution.download_url:
             resource_meta.source = distribution.download_url
 
-        if not distribution.title:
-            distribution.title = title
-            distribution.save()
+        distribution.title = title
+        distribution.save()
 
         if md := distribution.metadata.first():
             resource_meta.id = md.uuid
@@ -673,9 +670,8 @@ def _link_distributions(
             1,
             use_existing_meta=True
         )
-        if not metadata.name:
-            metadata.name = resource_meta.name
-            metadata.save()
+        metadata.name = resource_meta.name
+        metadata.save()
 
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)

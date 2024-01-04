@@ -1267,7 +1267,6 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
                 messages.info(self.request,
                               _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
                                 + api_key))
-                # return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
         else:
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))

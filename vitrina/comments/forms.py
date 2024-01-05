@@ -50,6 +50,14 @@ class DatasetCommentForm(RegisterRequestForm):
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'register_request', 'increase_frequency', 'body',)
 
+    def clean(self):
+        request = self.cleaned_data.get('register_request')
+        public = self.cleaned_data.get('is_public')
+        if request:
+            if not public:
+                self.add_error('is_public', _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" +
+                                              " viešas"))
+        return self.cleaned_data
 
 class RequestCommentForm(CommentForm):
     status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))

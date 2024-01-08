@@ -78,7 +78,7 @@ class ApiDescription(models.Model):
 
 
 class ApiScope(models.Model):
-    enabled = models.BooleanField(blank=True, null=True)
+    enabled = models.BooleanField(blank=True, null=True, initial=True)
     key = models.ForeignKey(
         ApiKey,
         models.CASCADE,

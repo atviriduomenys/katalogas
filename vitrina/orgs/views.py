@@ -1055,12 +1055,6 @@ class OrganizationApiKeysView(
                 'api_error'] = ('Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti'
                                 + ' su raktais Saugykloje.')
 
-        keys_in_database = ApiKey.objects.all()
-        for key in keys_in_database:
-            if key.client_id not in key_client_ids:
-                key.enabled = False
-                key.save()
-
         context_data['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),

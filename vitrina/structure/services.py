@@ -100,6 +100,9 @@ def _load_datasets(
         elif not meta.name.isascii():
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
             loaded_metadata.append(metadata)
+        elif any([ch.isupper() for ch in meta.name]):
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
+            loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:

@@ -624,9 +624,11 @@ class PropertyForm(forms.ModelForm):
         if name:
             if not name[0].islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any([ch.isupper() for ch in name]):
+                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
             elif any((not c.isalnum() and c != '_') for c in name):
-                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                                        "žodžiai gali būti atskirti _ simboliu,"
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu, "
                                         "jokie kiti simboliai negalimi."))
             elif not name.isascii():
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))

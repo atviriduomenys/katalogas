@@ -58,7 +58,8 @@ class Filter:
         # For tree-like filters
         parent: str = '',
         stats: bool = True,
-        display_method: str = None
+        display_method: str = None,
+        use_str: bool = False,
     ):
         self.name = name
         self.title = title
@@ -72,6 +73,7 @@ class Filter:
         self.parent = parent
         self.stats = stats
         self.display_method = display_method
+        self.use_str = use_str
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -120,7 +122,10 @@ class Filter:
             elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
-                    title = obj.title
+                    if self.use_str:
+                        title = str(obj)
+                    else:
+                        title = obj.title
                 except ObjectDoesNotExist:
                     if value == "-1":
                         title = "Nepriskirta"

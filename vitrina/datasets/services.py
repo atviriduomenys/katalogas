@@ -27,6 +27,7 @@ def update_facet_data(
     field_name: str,
     model_class: Type = None,
     choices: Dict = None,
+    use_str: bool = False
 ) -> List[Any]:
     updated_facet_data = []
     if facet_fields and field_name in facet_fields:
@@ -35,7 +36,10 @@ def update_facet_data(
             if model_class:
                 try:
                     obj = model_class.objects.get(pk=facet[0])
-                    display_value = obj.title
+                    if use_str:
+                        display_value = str(obj)
+                    else:
+                        display_value = obj.title
                 except ObjectDoesNotExist:
                     continue
             elif choices:

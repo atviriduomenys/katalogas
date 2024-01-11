@@ -47,7 +47,7 @@
         <td>
             <ul class="mt-0 ml-4">
                 {% for category in dataset.category.all %}
-                    <li>{{ category.title }}</li>
+                    <li>{{ category }}</li>
                 {% endfor %}
             </ul>
             {% if can_update_dataset %}

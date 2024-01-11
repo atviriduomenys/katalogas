@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.forms import (BooleanField, CharField, DateField, HiddenInput,
                           ModelChoiceField, ModelForm,
-                          MultipleChoiceField,
                           CheckboxSelectMultiple,
                           ModelMultipleChoiceField, RadioSelect, Textarea)
 from django.utils.safestring import mark_safe

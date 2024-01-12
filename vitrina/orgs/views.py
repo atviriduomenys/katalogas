@@ -1,6 +1,7 @@
 import json
 import secrets
 from datetime import datetime
+from json import JSONDecodeError
 from typing import List
 
 import pandas as pd
@@ -35,7 +36,8 @@ from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, OrganizationCreateForm, ApiKeyForm, \
+from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, \
+    OrganizationCreateForm, ApiKeyForm, \
     ApiScopeForm, ApiKeyRegenerateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
@@ -169,6 +171,7 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
+
 class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_suspend.html'
@@ -204,7 +207,7 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         user_to_grant_coordiantor_rights.organization = self.representative_request.organization
         user_to_grant_coordiantor_rights.save()
         email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier,  self.base_template_content,
+            self.email_identifier, self.base_template_content,
             'Koordinatoriaus paraiškos atmetimas',
             []
         )
@@ -216,7 +219,6 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
 
     def get_success_url(self):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
-
 
 
 class OrganizationListView(ListView):
@@ -870,7 +872,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         org_is_registered = Organization.objects.filter(id=org).first()
         if not org_is_registered:
             org_data = get_data_from_spinta(
-                model=self.jar_model_uri, 
+                model=self.jar_model_uri,
                 query=self.jar_query_uri.format(org)
             ).get('_data')[0]
             org = Organization.add_root(
@@ -1025,32 +1027,54 @@ class OrganizationApiKeysView(
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients')
-        keys = response.json()
         key_client_ids = []
-
         msg = None
+        error = False
+        err_message = ''
+
         storage = messages.get_messages(self.request)
         if len(storage._loaded_messages) == 1:
             if storage._loaded_messages[0].level == 20:
                 msg = storage._loaded_messages[0]
                 del storage._loaded_messages[0]
 
-        if response.status_code == 200:
-            for key in keys:
-                client_id = key.get('client_id')
-                client_name = key.get('client_name')
-                org = Organization.objects.filter(name=client_name).first()
-                key_client_ids.append(client_id)
-
-                if not ApiKey.objects.filter(client_id=client_id).exists():
-                    ApiKey.objects.create(
-                        client_id=client_id,
-                        client_name=client_name,
-                        organization=org,
-                        enabled=True
-                    )
+        try:
+            response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients')
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error retrieving keys: {e}'
         else:
+            try:
+                keys = response.json()
+            except JSONDecodeError as e:
+                err_message = f'Error decoding JSON: {e}'
+
+            if response.status_code == 200:
+                for key in keys:
+                    client_id = key.get('client_id')
+                    client_name = key.get('client_name')
+                    org = Organization.objects.filter(name=client_name).first()
+                    key_client_ids.append(client_id)
+
+                    if not ApiKey.objects.filter(client_id=client_id).exists():
+                        ApiKey.objects.create(
+                            client_id=client_id,
+                            client_name=client_name,
+                            organization=org,
+                            enabled=True
+                        )
+                keys_in_database = ApiKey.objects.filter(client_id__isnull=False)
+
+                for key in keys_in_database:
+                    if key.client_id not in key_client_ids:
+                        key.enabled = False
+                        key.save()
+            else:
+                error = True
+                err_message = f'Error syncing apikeys'
+
+        if error:
+            print(err_message)
             context_data[
                 'api_error'] = ('Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti'
                                 + ' su raktais Saugykloje.')
@@ -1243,25 +1267,36 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
             'secret': api_key,
             'scopes': permissions
         }
-        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients', json=data, headers=headers)
-        if response.status_code == 200:
-            if 'client_id' in response.json() and 'client_name' in response.json():
-                self.object.client_id = response.json()['client_id']
-                self.object.client_name = response.json()['client_name']
-                self.object.api_key = hash_api_key(api_key)
-                self.object.enabled = True
-                self.object.save()
-                for p in permissions:
-                    ApiScope.objects.create(
-                        key=self.object,
-                        organization=self.organization,
-                        scope=p,
-                        enabled=True
-                    )
-                messages.info(self.request,
-                              _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
-                                + api_key))
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients', json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error creating apikey: {api_key}, {e}'
         else:
+            if response.status_code == 200:
+                if 'client_id' in response.json() and 'client_name' in response.json():
+                    self.object.client_id = response.json()['client_id']
+                    self.object.client_name = response.json()['client_name']
+                    self.object.api_key = hash_api_key(api_key)
+                    self.object.enabled = True
+                    self.object.save()
+                    for p in permissions:
+                        ApiScope.objects.create(
+                            key=self.object,
+                            organization=self.organization,
+                            scope=p,
+                            enabled=True
+                        )
+                    messages.info(self.request,
+                                  _('API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:'
+                                    + api_key))
+            else:
+                error = True
+                err_message = 'Unable to create scopes for apikey'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
@@ -1297,29 +1332,42 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
         suffixes = ["_getone", "_getall", "_search", "_changes", "_insert", "_upsert", "_update", "_patch",
                     "_delete", "_wipe"]
         if self.api_key.client_id:
-            response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id)
-            if response.status_code == 200:
-                if 'scopes' in response.json():
-                    scopes = response.json()['scopes']
+            error = False
+            err_message = ''
+            try:
+                response = get_auth_session().get(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id)
+            except requests.exceptions.RequestException as e:
+                error = True
+                err_message = f'Error updating key with client_id: {self.api_key.client_id}, {e}'
+            else:
+                if response.status_code == 200:
+                    if 'scopes' in response.json():
+                        scopes = response.json()['scopes']
 
-                    existing = ApiScope.objects.filter(key=self.api_key)
-                    for ex in existing:
-                        ex.delete()
+                        existing = ApiScope.objects.filter(key=self.api_key)
+                        for ex in existing:
+                            ex.delete()
 
-                    for scope in scopes:
-                        org = None
-                        if any((match := ext) in scope for ext in suffixes):
-                            code = scope.removeprefix(prefix).removesuffix(match)
-                            if code:
-                                org = Organization.objects.filter(name=code.removeprefix('_datasets_gov_')).get()
-                        if scope != 'spinta_set_meta_fields':
-                            ApiScope.objects.create(
-                                key=self.api_key,
-                                scope=scope,
-                                enabled=True,
-                                organization=org,
-                                dataset=None
-                            )
+                        for scope in scopes:
+                            org = None
+                            if any((match := ext) in scope for ext in suffixes):
+                                code = scope.removeprefix(prefix).removesuffix(match)
+                                if code:
+                                    org = Organization.objects.filter(name=code.removeprefix('_datasets_gov_')).get()
+                            if scope != 'spinta_set_meta_fields':
+                                ApiScope.objects.create(
+                                    key=self.api_key,
+                                    scope=scope,
+                                    enabled=True,
+                                    organization=org,
+                                    dataset=None
+                                )
+                else:
+                    error = True
+                    err_message = f'Unable to create scopes for apikey with client_id {self.api_key.client_id}'
+            if error:
+                print(err_message)
+                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
 
         context['current_title'] = _("Rakto redagavimas")
         context['parent_links'] = {
@@ -1338,11 +1386,22 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
         data = {
             'client_name': self.object.client_name
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code == 200:
-            self.object.save()
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error updating apikey with client_id: {self.api_key.client_id}, {e}'
         else:
+            if response.status_code == 200:
+                self.object.save()
+            else:
+                error = True
+                err_message = f'Error updating apikey with client_id: {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
@@ -1392,13 +1451,23 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         data = {
             'secret': form.cleaned_data.get('new_key')
         }
-        response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_name,
-                                           json=data, headers=headers)
-        if response.status_code == 200:
-            self.object.save()
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().post(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_name,
+                                               json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error regenerating apikey with client_name: {self.apikey.client_name}, {e}'
         else:
-            if response.status_code != 200:
-                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
+            if response.status_code == 200:
+                self.object.save()
+            else:
+                error = True
+                err_message = f'Error regenerating apikey with client_name: {self.apikey.client_name}'
+        if error:
+            print(err_message)
+            messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
@@ -1420,12 +1489,22 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
         )
 
     def delete(self, request, *args, **kwargs):
-        response = requests.delete(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_id)
-        if response.status_code == 200:
-            self.apikey.delete()
+        error = False
+        err_message = ''
+        try:
+            response = requests.delete(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_id)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error removing apikey with client_id: {self.apikey.client_id}, {e}'
         else:
+            if response.status_code == 200:
+                self.apikey.delete()
+            else:
+                error = True
+                err_message = f'Error removing apikey with client_id: {self.apikey.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('API rakto pašalinti nepavyko.'))
-            return reverse('organization-apikeys', kwargs={'pk': self.kwargs.get('pk')})
         success_url = self.get_success_url()
         return HttpResponseRedirect(success_url)
 
@@ -1576,11 +1655,21 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code != 200:
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error adding scope for apikey with client_id: {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error adding scope for apikey with client_id: {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 
@@ -1673,6 +1762,27 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
                     enabled=True
                 )
             existing = ApiScope.objects.filter(key=self.api_key).values_list('scope', flat=True)
+            headers = {
+                "Content-Type": "application/json; charset=utf-8"
+            }
+            data = {
+                'scopes': list(existing)
+            }
+            error = False
+            err_message = ''
+            try:
+                response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                    json=data, headers=headers)
+            except requests.exceptions.RequestException as e:
+                error = True
+                err_message = f'Error updating scopes for apikey with client_id: {self.api_key.client_id}, {e}'
+            else:
+                if response.status_code != 200:
+                    error = True
+                    err_message = f'Error updating scopes for apikey with client_id: {self.api_key.client_id}'
+            if error:
+                print(err_message)
+                messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
 
 
@@ -1792,9 +1902,20 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code != 200:
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error updating scope for apikey with client_id: {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error updating scope for apikey with client_id: {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect((reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk])))
 
@@ -1836,12 +1957,12 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
         elif scope_name == '(viskas)':
             scopes = ApiScope.objects.filter(
                 Q(key_id=api_key) & (
-                    Q(scope='spinta_getone') |
-                    Q(scope='spinta_getall') |
-                    Q(scope='spinta_search') |
-                    Q(scope='spinta_changes')
-                    )
+                        Q(scope='spinta_getone') |
+                        Q(scope='spinta_getall') |
+                        Q(scope='spinta_search') |
+                        Q(scope='spinta_changes')
                 )
+            )
             for scope in scopes:
                 scope.delete()
 
@@ -1852,11 +1973,21 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
                                             json=data, headers=headers)
-        if response.status_code != 200:
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error updating scopes for apikey with client_id {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error updating scopes for apikey with client_id {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 
@@ -1906,11 +2037,21 @@ class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionReq
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code != 200:
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error updating scopes for apikey with client_id: {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error updating scopes for apikey with client_id: {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
     def get_success_url(self):
@@ -1965,11 +2106,21 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code != 200:
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error toggling scopes for apikey with client_id {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error toggling scopes for apikey with client_id {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 
@@ -2009,11 +2160,21 @@ class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):
         data = {
             'scopes': list(existing)
         }
-        response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
-                                            json=data, headers=headers)
-        if response.status_code != 200:
+        error = False
+        err_message = ''
+        try:
+            response = get_auth_session().patch(SPINTA_SERVER_URL + '/auth/clients/' + self.api_key.client_id,
+                                                json=data, headers=headers)
+        except requests.exceptions.RequestException as e:
+            error = True
+            err_message = f'Error toggling scopes for apikey with client_id {self.api_key.client_id}, {e}'
+        else:
+            if response.status_code != 200:
+                error = True
+                err_message = f'Error toggling scopes for apikey with client_id {self.api_key.client_id}'
+        if error:
+            print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
-
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
 
 

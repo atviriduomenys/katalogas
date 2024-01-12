@@ -28,7 +28,7 @@
             <div class="columns">
                 {% if internal_keys %}
                     <div class="column is-three-quarters">
-                        <h4 class="custom-title is-size-4-mobile">Vidiniai raktai</h4>
+                        <h4 class="custom-title is-size-4-mobile">{% translate 'Vidiniai raktai' %}</h4>
                     </div>
                 {% endif %}
                 <div class="column buttons
@@ -69,7 +69,9 @@
                     {% for i in internal_keys %}
                         <tr>
                             <td>
-                                <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">{{ i.api_key }}</a>
+                                <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">
+                                    {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
+                                </a>
                             </td>
                                 <td style="width:10%">
                                     <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
@@ -89,7 +91,7 @@
                 </table>
             {% endif %}
             {% if external_keys %}
-                <h4 class="custom-title is-size-4-mobile">Išoriniai raktai</h4>
+                <h4 class="custom-title is-size-4-mobile">{% translate 'Išoriniai raktai' %}</h4>
                 <table class="table is-fullwidth">
                     <tbody>
                     <tr>
@@ -113,7 +115,7 @@
                                 {% else %}
                                     <a href="{% url 'project-apikeys-detail' i.project.id i.pk %}">
                                 {% endif %}
-                                    {{ i.api_key }}
+                                    {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
                                 </a>
                             </td>
                                 <td style="width:10%">

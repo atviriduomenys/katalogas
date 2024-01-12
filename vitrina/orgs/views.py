@@ -1353,7 +1353,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
                             if any((match := ext) in scope for ext in suffixes):
                                 code = scope.removeprefix(prefix).removesuffix(match)
                                 if code:
-                                    org = Organization.objects.filter(name=code.removeprefix('_datasets_gov_')).get()
+                                    org = Organization.objects.filter(name=code.removeprefix('_datasets_gov_')).first()
                             if scope != 'spinta_set_meta_fields':
                                 ApiScope.objects.create(
                                     key=self.api_key,
@@ -1706,7 +1706,8 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
-            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+            reverse('organization-apikeys-detail', args=[self.organization.pk,
+                                                         self.api_key.pk]): self.api_key.client_id,
         }
         return context
 
@@ -1820,7 +1821,8 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
-            reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]): self.api_key,
+            reverse('organization-apikeys-detail', args=[self.organization.pk,
+                                                         self.api_key.pk]): self.api_key.client_id,
         }
         return context
 

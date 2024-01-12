@@ -450,7 +450,7 @@ class ProjectPermissionsToggleView(PermissionRequiredMixin, View):
             else:
                 sc.enabled = True
                 sc.save()
-                scope_list.append(sc)
+                scope_list.append(sc.scope)
         existing = (ApiScope.objects.filter(key=self.apikey, dataset=self.dataset, enabled=True)
                     .values_list('scope', flat=True))
         ex_list = list(existing)

@@ -32,6 +32,7 @@ class StatsMixin:
     filter = None
     filter_model = None
     filter_choices = None
+    use_str = False
     list_url = ""
     max_values_in_time_chart = 10
     has_time_graph = True
@@ -143,7 +144,8 @@ class StatsMixin:
             facet_fields,
             self.filter,
             self.filter_model,
-            self.filter_choices
+            self.filter_choices,
+            self.use_str
         )
 
     def get_start_date(self):

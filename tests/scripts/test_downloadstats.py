@@ -141,7 +141,6 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     # assert session.post.call_args.kwargs['headers'] == {
     #     'Authorization': 'ApiKey SECRETKEY',
     # }
-
     state_file = tmp_path / 'state.json'
     assert json.loads(state_file.read_text()) == {
         'files': {

@@ -158,3 +158,5 @@ Email template identifiers (emails that supposed to be sent from administrative 
  25. auth-viisp-merge
  26. coordinator-request-approved
  27. coordinator-request-denied
+ 28. coordinator-request-created
+ 

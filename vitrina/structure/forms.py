@@ -354,6 +354,8 @@ class ModelCreateForm(forms.ModelForm):
             elif any(not c.isalnum() for c in name):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
             elif metadata:
                 raise ValidationError(_("Modelis su tokiu kodiniu pavadinimu jau egzistuoja."))
         return name
@@ -622,10 +624,14 @@ class PropertyForm(forms.ModelForm):
         if name:
             if not name[0].islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any([ch.isupper() for ch in name]):
+                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
             elif any((not c.isalnum() and c != '_') for c in name):
-                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                                        "žodžiai gali būti atskirti _ simboliu,"
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu, "
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_level(self):
@@ -731,6 +737,8 @@ class ParamForm(forms.ModelForm):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "žodžiai gali būti atskirti _ simboliu,"
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_prepare(self):
@@ -751,11 +759,6 @@ class ParamForm(forms.ModelForm):
             except:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
-
-
-# class MetadataChoiceField(forms.ModelMultipleChoiceField):
-#     def label_from_instance(self, obj):
-#         return obj.object.get
 
 
 class VersionForm(forms.ModelForm):

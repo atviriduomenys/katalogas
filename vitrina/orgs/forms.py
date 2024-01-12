@@ -21,8 +21,12 @@ from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import get_coordinators_count, hash_api_key
 from vitrina.plans.models import Plan
-
+from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
+
+class ChoiceFieldNoValidation(ChoiceField):
+    def validate(self, value):
+        pass
 
 class ProviderWidget(ModelSelect2Widget):
     model = Organization
@@ -43,16 +47,31 @@ class ProviderWidget(ModelSelect2Widget):
         queryset = queryset.filter(pk__in=ids)
         return queryset
 
-
 class OrganizationWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     max_results = 10
+    jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    jar_query_uri = "ja_pavadinimas.contains('{}')"
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
-        return queryset
+        if term:
+            if len(queryset) == 0:
+                data = get_data_from_spinta(
+                    model=self.jar_model_uri, 
+                    query=self.jar_query_uri.format(term)
+                ).get('_data')
+                org_list = [Organization(
+                    id=item.get('ja_kodas'),
+                    title=item.get('ja_pavadinimas'),
+                    company_code=item.get('ja_kodas'),
+                    address=item.get('pilnas_adresas')
 
+                ) for item in data]
+                queryset._result_cache.extend(org_list)
+                self.queryset = queryset      
+        return queryset
 
 class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
@@ -119,8 +138,90 @@ class OrganizationUpdateForm(ModelForm):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "žodžiai gali būti atskirti _ simboliu,"
                                         "jokie kiti simboliai negalimi."))
-            else:
-                return name
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
+
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.width < 256 or image.height < 256:
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
+        return image
+
+class OrganizationCreateForm(ModelForm):
+    title = CharField(label=_('Pavadinimas'), required=True)
+    company_code = CharField(label=_('Registracijos numeris'), required=True)
+    name = CharField(label=_('Kodinis pavadinimas'), required=True)
+    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
+                                    label=_('Jurisdikcija'),
+                                    required=True)
+    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
+    email = CharField(label=_('Elektroninis paštas'), required=True)
+    phone = CharField(label=_('Telefono numeris'), required=True)
+    address = CharField(label=_('Adresas'), required=True)
+    description = CharField(label=_('Aprašymas'), widget=Textarea, required=False)
+
+    class Meta:
+        model = Organization
+        fields = (
+            'company_code',
+            'title',
+            'name',
+            'kind',
+            'jurisdiction',
+            'image',
+            'website',
+            'email',
+            'phone',
+            'address',
+            'provider',
+            'description',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial = kwargs.get('initial')
+        disable_fields = True if initial else False
+        button = ("Sukurti")
+        parent = self.instance.get_parent()
+        if parent:
+            self.fields['jurisdiction'].initial = parent
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "organization-form"
+        self.helper.layout = Layout(
+            Field('title', placeholder=_("Pavadinimas")),
+            Field('company_code', placeholder=_("Registracijos numeris")),
+            Field('name', placeholder=_('Kodinis pavadinimas')),
+            Field('kind', placeholder=_("Tipas")),
+            Field('jurisdiction', placeholder=_("Jurisdikcija")),
+            Field('image', placeholder=_("Logotipas")),
+            Field('website', placeholder=_("Tinklalapis")),
+            Field('email', placeholder=_("Elektroninis paštas")),
+            Field('phone', placeholder=_("Telefono numeris")),
+            Field('address', placeholder=_("Adresas")),
+            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('description', placeholder=_("Aprašymas")),
+            Submit('submit', button, css_class='button is-primary')
+        )
+        if initial:
+            self.fields['title'].widget.attrs['readonly'] = True
+            self.fields['company_code'].widget.attrs['readonly'] = True
+            self.fields['address'].widget.attrs['readonly'] = True
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            if not name.islower():
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any((not c.isalnum() and c != '_') for c in name):
+                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu,"
+                                        "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
 
     def clean_image(self):
         image = self.cleaned_data.get('image')
@@ -237,12 +338,10 @@ class RepresentativeCreateForm(ModelForm):
             ))
         return super().clean()
 
-
 class PartnerRegisterForm(ModelForm):
-    organization = ModelChoiceField(
+    organization = ChoiceFieldNoValidation(
         label=_("Organizacija"),
         required=True,
-        queryset=Organization.public.all(),
         widget=OrganizationWidget(attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0})
     )
     coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
@@ -273,7 +372,6 @@ class PartnerRegisterForm(ModelForm):
 
     def clean(self):
         return self.cleaned_data
-
 
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)

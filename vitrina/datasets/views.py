@@ -202,6 +202,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     multiple=True,
                     is_int=False,
                     parent='parent_category',
+                    use_str=True,
                 ),
                 Filter(
                     *filter_args,
@@ -227,6 +228,7 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                     Frequency,
                     multiple=False,
                     is_int=True,
+                    use_str=True,
                 ),
                 Filter(
                     *filter_args,
@@ -865,6 +867,7 @@ class DatasetStructureImportView(
         self.object.dataset = self.dataset
         self.object.save()
         self.object.dataset.current_structure = self.object
+        self.object.dataset.save()
         create_structure_objects(self.object)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
@@ -1791,6 +1794,7 @@ class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
     current_title = _("Duomenų rinkinių atnaujinimo dažnumas")
     filter = 'frequency'
     filter_model = Frequency
+    use_str = True
 
     def get_graph_title(self, indicator):
         if indicator == 'level-average' or indicator == 'object-count':
@@ -1819,6 +1823,7 @@ class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
     current_title = _("Duomenų rinkinių kategorijos")
     filter = 'category'
     filter_model = Category
+    use_str = True
 
     def get_graph_title(self, indicator):
         if indicator == 'level-average' or indicator == 'object-count':
@@ -2394,7 +2399,11 @@ class FilterCategoryView(LoginRequiredMixin, View):
             categories = categories.filter(pk__in=ids)
 
         if term := request.GET.get('term'):
-            categories = categories.filter(title__icontains=term)
+            lang = get_language()
+            if lang == 'en':
+                categories = categories.filter(title_en__icontains=term)
+            else:
+                categories = categories.filter(title__icontains=term)
 
         for cat in categories:
             category_data[cat.pk] = {
@@ -2841,6 +2850,7 @@ class UpdateDatasetCategoryFilters(FacetedSearchView):
                 Category,
                 multiple=True,
                 is_int=False,
+                use_str=True,
             ),
             items = []
             for item in filter[0].items():

@@ -168,6 +168,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
             if not name.isascii():
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+            if any([ch.isupper() for ch in name]):
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
         return name
 
 

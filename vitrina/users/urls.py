@@ -1,8 +1,12 @@
 from django.contrib.auth.views import LogoutView
-from django.urls import path, re_path
+from django.urls import path
 
-from vitrina.users.views import LoginView, ProfileEditView, RegisterView, PasswordSetView, PasswordResetView, PasswordResetConfirmView, ProfileView, \
+from vitrina.users.views import (
+    LoginView, RegisterView,
+    ProfileView, ProfileEditView,
+    PasswordSetView, PasswordResetView, PasswordResetConfirmView, CustomPasswordChangeView,
     UserStatsView
+)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -13,22 +17,6 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('user/profile/<int:pk>/', ProfileView.as_view(), name='user-profile'),
     path('user/profile/<int:pk>/edit', ProfileEditView.as_view(), name='user-profile-change'),
-    path('user/stats-graph', UserStatsView.as_view(), name='users-stats-graph')
-    # @GetMapping("/login")
-    # @GetMapping("/register")
-    # @GetMapping("/reset")
-    # @PostMapping("/reset")
-    # @GetMapping("/user/changePassword")
-    # @GetMapping("/reset/new")
-    # @PostMapping("/user/savePassword")
-    # @PostMapping("/reset/new")
-    # @PostMapping("/profile/password/change")
-    # @PostMapping("/login")
-    # @PostMapping("/register")
-    # @GetMapping("/logout")
-    # @GetMapping("/initPasswordReset")
-    # @GetMapping("/sso")
-    # @GetMapping("/sso/admin")
-    # @RequestMapping("/user")
-    # @GetMapping("/profile")
+    path('user/profile/<int:pk>/password/change', CustomPasswordChangeView.as_view(), name='users-password-change'),
+    path('user/stats-graph', UserStatsView.as_view(), name='users-stats-graph'),
 ]

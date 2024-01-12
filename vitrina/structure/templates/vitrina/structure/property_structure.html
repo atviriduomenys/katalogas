@@ -151,6 +151,18 @@
             {% else %}
                 <div id="map" style="height: 400px;"></div>
             {% endif %}
+        {% elif errors %}
+            <div class="message is-danger">
+                <div class="message-body">
+                    {% for error in errors %}
+                        {% if error.message %}
+                            <p>{{ error.message }}</p>
+                        {% else %}
+                            <p>{{ error }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
         {% endif %}
 
         {% if metadata.type == 'string' or metadata.type == 'integer' %}

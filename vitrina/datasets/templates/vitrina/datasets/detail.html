@@ -22,7 +22,11 @@
     </ul>
 {% endblock %}
 
-{% block current_title %}{{ dataset.title }}{% endblock %}
+{% block current_title %}
+    {% objectlanguage dataset LANGUAGE_CODE %}
+        {{ dataset.title }}
+    {% endobjectlanguage %}
+{% endblock %}
 
 {% block head %}
     <style>

@@ -37,6 +37,13 @@
                     </button>
                 </p>
             </form>
+            {% if user.is_superuser %}
+                <div class="button is-right">
+                    <a href="{% url 'organization-create-search' %}">
+                        {% translate "Nauja organizacija" %}
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="columns">

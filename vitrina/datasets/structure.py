@@ -400,7 +400,7 @@ def detect_read_errors(path: str) -> list[str]:
         return ["File does not exist."]
 
     with path.open('rb') as f:
-        sample = f.readline(200).rstrip()
+        sample = f.readline(200).rstrip(b"\r\n")
 
         if error := _detect_separator_errors(sample):
             return [error]
@@ -584,6 +584,8 @@ def _read_resource(
             description=row['description'],
         )
 
+        _validate_name(name, resource)
+
         resource.dataset = state.dataset
         resource.dataset.resources[name] = resource
 
@@ -636,6 +638,8 @@ def _read_model(
         title=row['title'],
         description=row['description'],
     )
+
+    _validate_model_name(name, model)
 
     if model.ref:
         model.ref_props = [x.strip() for x in model.ref.split(',')]
@@ -698,6 +702,8 @@ def _read_property(
     if dtype['error']:
         prop.errors.append(dtype['error'])
 
+    _validate_property_name(name, prop)
+
     if prop.ref and prop.type in ('ref', 'backref', 'generic'):
         ref_model, ref_props = _parse_property_ref(prop.ref)
         prop.ref = get_relative_model_name(state.dataset, ref_model)
@@ -757,12 +763,13 @@ def _read_prefix(
         description=row['description'],
     )
 
-    prefix.meta = state.last
+    prefix.meta = state.dataset or state.manifest
 
-    if prefix.meta.prefixes.get(name):
-        prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
+    if prefix.meta:
+        if prefix.meta.prefixes.get(name):
+            prefix.errors.append(_(f'Prefiksas "{name}" jau egzistuoja.'))
 
-    prefix.meta.prefixes[name] = prefix
+        prefix.meta.prefixes[name] = prefix
 
     return prefix
 
@@ -826,6 +833,8 @@ def _read_param(
     for node in state.stack:
         if isinstance(node, Dataset) or isinstance(node, Model):
             last = node
+
+    _validate_name(name, param)
 
     param.meta = last
     if param.meta.params.get(name):
@@ -923,3 +932,33 @@ def _parse_dtype_string(dtype: str) -> dict:
         'unique': unique,
         'error': error,
     }
+
+
+def _validate_name(name: str, meta: Metadata):
+    if name:
+        if not name.isascii() and hasattr(meta, 'errors'):
+            meta.errors.append(_(f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+
+
+def _validate_model_name(name: str, meta: Model):
+    if name:
+        name = name.split('/')[-1]
+        _validate_name(name, meta)
+        if not name[0].isupper():
+            meta.errors.append(_(f'Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "{name}".'))
+        elif any(not c.isalnum() for c in name):
+            meta.errors.append(_(f'Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, '
+                                 f'jokie kiti simboliai negalimi: "{name}".'))
+
+
+def _validate_property_name(name: str, meta: Property):
+    if name:
+        _validate_name(name, meta)
+        if not name[0].islower():
+            meta.errors.append(_(f'Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: "{name}".'))
+        elif any([ch.isupper() for ch in name]):
+            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
+        elif any((not ch.isalnum() and ch != '_' and ch != '.') for ch in name):
+            meta.errors.append(_(f'Pavadinime gali būti mažosios raidės ir skaičiai, ' 
+                                 f'žodžiai gali būti atskirti _ simboliu, arba . simboliu, '
+                                 f'jei tai denormalizuotas laukas, jokie kiti simboliai negalimi: "{name}".'))

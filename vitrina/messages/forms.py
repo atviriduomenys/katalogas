@@ -97,7 +97,7 @@ class SubscriptionForm(ModelForm):
                                     " tą galite padaryti iš atitinkamo projekto puslapio"))
 
         if self.ct.model.upper() == Subscription.PROJECT and (dataset_update_sub or request_update_sub):
-            raise ValidationError(_("Ši forma skirta tik projektų prenumeratai, kitas prenumeratas galite gauti"
+            raise ValidationError(_("Ši forma skirta tik projektų prenumeratai, kitas prenumeratas galite gauti "
                                     "kitose atitinkamose formose"))
 
         if not dataset_update_sub and not request_update_sub and not project_update_sub:

@@ -77,6 +77,16 @@ def create_structure_objects(structure: DatasetStructure) -> None:
             )
 
 
+def create_or_get_uapi_format():
+    format_obj, created = Format.objects.get_or_create(extension='UAPI')
+    if created:
+        format_obj.title = 'Saugyklos API'
+        format_obj.mimetype = "application/vnd.api+json"
+        format_obj.save()
+
+    return format_obj
+
+
 def _load_datasets(
     state: struct.State,
     dataset: Dataset
@@ -99,6 +109,9 @@ def _load_datasets(
             loaded_metadata.append(metadata)
         elif not meta.name.isascii():
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+            loaded_metadata.append(metadata)
+        elif any([ch.isupper() for ch in meta.name]):
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
             loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
@@ -578,6 +591,8 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
+                distribution.title = resource_meta.name
+                distribution.save()
 
                 if md := distribution.metadata.first():
                     if not resource_meta.id:
@@ -590,6 +605,9 @@ def _link_distributions(
                     i,
                     use_existing_meta=True
                 )
+                metadata.name = resource_meta.name
+                metadata.save()
+
                 _clean_errors(distribution)
                 _load_comments(dataset, resource_meta.comments, distribution)
                 for model_meta in resource_meta.models.values():
@@ -631,11 +649,7 @@ def _link_distributions(
                     status=Comment.OPENED,
                 )
 
-            format, created = Format.objects.get_or_create(extension='UAPI')
-            if created:
-                format.title = 'Saugyklos API'
-                format.mimetype = "application/vnd.api+json"
-                format.save()
+            format = create_or_get_uapi_format()
             distribution = DatasetDistribution.objects.create(
                 dataset=dataset,
                 download_url=url,
@@ -645,6 +659,9 @@ def _link_distributions(
             )
         elif distribution.download_url:
             resource_meta.source = distribution.download_url
+
+        distribution.title = title
+        distribution.save()
 
         if md := distribution.metadata.first():
             resource_meta.id = md.uuid
@@ -656,6 +673,9 @@ def _link_distributions(
             1,
             use_existing_meta=True
         )
+        metadata.name = resource_meta.name
+        metadata.save()
+
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)
         for model_meta in dataset_meta.models.values():
@@ -855,14 +875,14 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         url = f"https://get.data.gov.lt/{model}/?{query}"
     try:
         res = requests.get(url)
-    except BaseException:
-        return {}
+    except requests.RequestException as e:
+        return {'errors': [str(e)]}
 
     try:
         data = json.loads(res.content)
         return data
-    except JSONDecodeError:
-        return {}
+    except JSONDecodeError as e:
+        return {'errors': [str(e)]}
 
 
 def _parse_access(value: str):
@@ -1095,6 +1115,41 @@ def _models_to_tabular(
                 yield to_row(DATASET, {})
 
 
+def _resource_models_to_tabular(
+    resource: DatasetDistribution,
+    separator: bool = False
+):
+    resource_models = Model.objects.filter(distribution=resource, dataset=resource.dataset).order_by('metadata__order')
+    base = None
+    for model in resource_models:
+        if model.base and not base:
+            yield from _base_to_tabular(model.base)
+            base = model.base
+        elif not model.base and base:
+            yield from _end_marker('base')
+            base = None
+        if meta := model.metadata.first():
+            yield to_row(DATASET, {
+                'id': meta.uuid,
+                'model': _to_relative_model_name(meta.name, resource.dataset),
+                'level': meta.level_given,
+                'access': _get_access(meta.access),
+                'title': meta.title,
+                'description': meta.description,
+                'uri': meta.uri,
+                'source': meta.source,
+                'prepare': meta.prepare,
+                'ref': ', '.join([
+                    prop.property.name
+                    for prop in model.property_list.all()]
+                ) if model.property_list.exists() else ''
+            })
+            yield from _params_to_tabular(model)
+            yield from _properties_to_tabular(model)
+            if separator:
+                yield to_row(DATASET, {})
+
+
 def _resource_to_tabular(
     resource: DatasetDistribution
 ):
@@ -1223,4 +1278,3 @@ def transform_coordinates(point_x, point_y, source_srid, target_srid):
         f"EPSG:{target_srid}"
     )
     return transformer.transform(point_x, point_y)
-

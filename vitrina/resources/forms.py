@@ -86,14 +86,15 @@ class DatasetResourceForm(forms.ModelForm):
             'name',
             'access',
             'is_parameterized',
+            'upload_to_storage',
             'imported',
         )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
-        resource = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if resource else _("Sukurti")
+        self.resource = self.instance if self.instance and self.instance.pk else None
+        button = _("Redaguoti") if self.resource else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "resource-form"
@@ -113,6 +114,7 @@ class DatasetResourceForm(forms.ModelForm):
             Field('download_url'),
             Field('imported'),
             Field('data_service'),
+            Field('upload_to_storage'),
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )
@@ -120,9 +122,9 @@ class DatasetResourceForm(forms.ModelForm):
         related_datasets = self.dataset.related_datasets.values_list('dataset__pk', flat=True)
         self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
 
-        if resource and resource.metadata.first():
-            self.initial['access'] = resource.metadata.first().access
-            self.initial['name'] = resource.metadata.first().name
+        if self.resource and self.resource.metadata.first():
+            self.initial['access'] = self.resource.metadata.first().access
+            self.initial['name'] = self.resource.metadata.first().name
 
         if not dataset.type.filter(name='catalog'):
             self.fields['imported'].widget = forms.HiddenInput()
@@ -130,6 +132,8 @@ class DatasetResourceForm(forms.ModelForm):
     def clean(self):
         file = self.cleaned_data.get('file')
         url = self.cleaned_data.get('download_url')
+        upload = self.cleaned_data.get('upload_to_storage')
+
         if file and url:
             raise ValidationError(_(
                 "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
@@ -157,6 +161,21 @@ class DatasetResourceForm(forms.ModelForm):
                         "Formatas nesutampa su įkelto failo formatu."
                     ))
 
+        if 'get.data.gov.lt' in url and not upload:
+            self.cleaned_data['upload_to_storage'] = True
+
+        if self.resource:
+            distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
+                download_url=url
+            ).exclude(
+                pk=self.resource.pk
+            )
+        else:
+            distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
+                download_url=url
+            )
+        if distributions_with_same_url.exists():
+            self.add_error('download_url', _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."))
         return self.cleaned_data
 
     def clean_access(self):
@@ -164,6 +183,12 @@ class DatasetResourceForm(forms.ModelForm):
         if access == '':
             return None
         return access
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and not name.isascii():
+            raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+        return name
 
 
 class FormatAdminForm(forms.ModelForm):

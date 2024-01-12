@@ -1,7 +1,7 @@
 from django.db import models
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 
 class Category(MP_Node):
@@ -31,17 +31,20 @@ class Category(MP_Node):
 
     node_order_by = ['title']
 
+    objects = MP_NodeManager()
+
     class Meta:
         db_table = 'category'
 
     def __str__(self):
+        lang = get_language()
+        if lang == 'en' and self.title_en:
+            return self.title_en
         return self.title
 
     def get_family_objects(self):
         yield from self.get_ancestors()
         yield from self.get_descendants()
-
-    objects = MP_NodeManager()
 
 
 class Licence(models.Model):
@@ -85,4 +88,7 @@ class Frequency(models.Model):
         ordering = ['hours']
 
     def __str__(self):
+        lang = get_language()
+        if lang == 'en' and self.title_en:
+            return self.title_en
         return self.title

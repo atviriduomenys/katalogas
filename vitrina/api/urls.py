@@ -1,7 +1,6 @@
 from django.urls import include, path
 from django.views.generic import TemplateView
 
-from allauth.account.views import confirm_email, email_verification_sent
 from rest_framework.routers import DefaultRouter
 
 from vitrina.api.views import (
@@ -116,7 +115,4 @@ urlpatterns = [
 
     path('public/api/1/', TemplateView.as_view(template_name="vitrina/api/public_api.html"), name="public-api"),
     path('edp/dcat-ap.rdf', edp_dcat_ap_rdf, name="edp-dcat-ap-rdf"),
-    path('register/account-confirm-email/?P<key>\w+', confirm_email, name='account_confirm_email'),
-    path('register/email-verification-sent/', email_verification_sent,
-         name='account_email_verification_sent'),
 ]

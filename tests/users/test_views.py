@@ -1,4 +1,7 @@
+import re
+
 import pytest
+from allauth.account.models import EmailConfirmation
 from django.core import mail
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -211,3 +214,25 @@ def test_profile_edit_form_correct_login(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == reverse('user-profile', kwargs={'pk': user.pk})
     assert user.phone == '12341234'
+
+
+@pytest.mark.django_db
+def test_email_confirmation_after_sign_up(app: DjangoTestApp):
+    form = app.get(reverse('register')).forms['register-form']
+    form['first_name'] = "Test"
+    form['last_name'] = "User"
+    form['email'] = "test123@test.com"
+    form['password1'] = "somethingverydifficult?"
+    form['password2'] = "somethingverydifficult?"
+    form['agree_to_terms'] = True
+    form.submit()
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["test123@test.com"]
+    assert EmailConfirmation.objects.count() == 1
+    assert EmailConfirmation.objects.first().email_address.verified is False
+
+    url = re.search(r'(https?://\S+)', mail.outbox[0].body).group()
+    form = app.get(url).forms['confirm_email_form']
+    form.submit()
+    assert EmailConfirmation.objects.first().email_address.verified is True
+

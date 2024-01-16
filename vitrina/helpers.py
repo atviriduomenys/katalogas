@@ -536,36 +536,38 @@ def email(
         context = Context(data_dict)
         content = template.render(context)
         html_message = markdown.markdown(content)
+        html_message = '\n'.join(html_message.splitlines()[1:])
     else:
         template_path = get_template(name)
         with open(template_path.origin.name, encoding="utf-8") as file:
             read_data = file.readlines()
         content = render_to_string(name, context)
         html_message = markdown.markdown(content)
-        send_email_title = content.split('\n')
-        content_to_save = markdown.markdown(''.join(read_data))
+        html_message = '\n'.join(html_message.splitlines()[1:])
+        send_email_title = content.splitlines()
+        content_to_save = markdown.markdown(''.join(read_data[2:]))
         EmailTemplate.objects.create(
             created=datetime.datetime.now(),
             version=0,
             identifier=email_identifier,
             template=content_to_save,
-            subject=read_data[0].split('\n')[0],
-            title=read_data[0].split('\n')[0]
+            subject=read_data[0].splitlines()[0],
+            title=read_data[0].splitlines()[0]
         )
-    # try:
-    send_mail(
-        subject=_(subject) if subject else _(send_email_title[0]),
-        message=_(str(content)),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[recipients],
-        html_message=html_message,
-    )
-    email_send = True
-    # except Exception as e:
-    #     import logging
-    #     logging.warning("Email was not sent", _(send_email_title[0]),
-    #                     _(str(content)), recipients, e)
-    #     email_send = False
+    try:
+        send_mail(
+            subject=_(subject) if subject else _(send_email_title[0]),
+            message=_(str(content)),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            html_message=html_message,
+        )
+        email_send = True
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", _(send_email_title[0]),
+                        _(str(content)), recipients, e)
+        email_send = False
 
     SentMail.objects.create(
         created=datetime.datetime.now(),

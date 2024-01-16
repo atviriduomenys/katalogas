@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django.utils.text import Truncator
 
 from vitrina.messages.models import Subscription, EmailTemplate
+from django.template import Template
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
@@ -32,17 +33,24 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         return super(EmailTemplateAdmin, self).add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
-        import re
+        email_keys_from_db = []
+        email_keys_from_form = []
         self.exclude = ('created', 'deleted', 'deleted_on', 'modified_on')
         email_template = EmailTemplate.objects.filter(id=object_id).first()
         if request.method == "POST":
-            list_keys = request.POST['template'][
-                        request.POST['template'].find("{") + 1:request.POST['template'].rfind("}")].split()
-            template_keys_from_form = [word for word in list_keys if word.startswith("{") or word.endswith("}")]
-            template_keys_from_form = [re.sub('[^a-zA-Z0-9 \n\.]', '', key.strip(".")) for key in template_keys_from_form]
-            for key in template_keys_from_form:
-                if key not in email_template.email_keys:
-                    raise NotValidKeyException("Not valid key template. Check email template.")
+            template_db = email_template.template
+            template_db = Template(template_db)
+            template_form = Template(request.POST['template'])
+            for key in template_db.nodelist:
+                if type(key).__name__ == 'VariableNode':
+                    email_keys_from_db.append(key.filter_expression.token)
+            for key in template_form:
+                if type(key).__name__ == 'VariableNode':
+                    email_keys_from_form.append(key.filter_expression.token)
+            for key in email_keys_from_form:
+                if key not in email_keys_from_db:
+                    return "<p> Not valid key template. Check email template. </p>"
+                    # raise NotValidKeyException("Not valid key template. Check email template.")
         return super(EmailTemplateAdmin, self).change_view(request, object_id)
 
 

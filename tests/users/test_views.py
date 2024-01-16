@@ -112,7 +112,7 @@ def test_reset_password_with_correct_email(app: DjangoTestApp, user: User):
     assert resp.status_code == 302
     assert resp.url == reverse('home')
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [[user.email]]
+    assert mail.outbox[0].to == [user.email]
 
 
 @pytest.mark.django_db

@@ -463,27 +463,16 @@ def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
     return request.build_absolute_uri(domain)
 
 
-
 def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
-    list_keys = base_template_content[base_template_content.find("{") + 1:base_template_content.rfind("}")].replace(
-        '{', '').replace('}', '').split()
-    email_template_to_save = base_template_content
-    if email_template_keys:
-        for key in list_keys:
-            if key in email_template_keys.keys():
-                if email_template_keys[key] is not None:
-                    base_template_content = base_template_content.replace("{" + key + "}", email_template_keys[key])
-            else:
-                base_template_content = base_template_content.replace("{" + key + "}", '')
     if not email_template:
         email_subject = email_title = email_title_subject
-        email_content = base_template_content
+        email_content = base_template_content.format(*email_template_keys)
         created_template = EmailTemplate.objects.create(
             created=datetime.datetime.now(),
             version=0,
             identifier=email_identifier,
-            template=email_template_to_save,
+            template=base_template_content,
             subject=_(email_title_subject),
             title=_(email_title)
         )
@@ -491,14 +480,10 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
     else:
         email_template = email_template.first()
         email_content = str(email_template.template)
-        if email_template_keys:
-            for key in list_keys:
-                if key in email_template_keys.keys():
-                    if email_template_keys[key] is not None:
-                        email_content = email_content.replace("{" + key + "}", email_template_keys[key])
-                else:
-                    email_content = email_content.replace("{" + key + "}", '')
-            email_subject = str(email_template.subject)
+        email_content = email_content.format(*email_template_keys)
+        email_subject = str(email_template.subject)
+
+    return {'email_content': email_content, 'email_subject': email_subject}
 
 
 def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:

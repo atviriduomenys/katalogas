@@ -41,6 +41,7 @@ def test_logged_in_coordinator_user_accesses_data_provider_form(app: DjangoTestA
     resp = app.get(reverse('partner-register'))
     assert resp.html.find(id='partner-register-form')
 
+
 @pytest.mark.haystack
 def test_form_submit_with_correct_data(app: DjangoTestApp):
     user = UserFactory(

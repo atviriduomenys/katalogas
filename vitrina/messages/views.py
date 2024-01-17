@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView
 
@@ -23,7 +24,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
         user = get_object_or_404(User, pk=user_id)
 
         if request.user.is_authenticated and request.user.pk != user.pk:
-            messages.error(request, _("Jūs neturit teisės panaikinti prenumeratos kitam vartotojui."))
+            messages.error(request, _("Jūs neturite teisės panaikinti prenumeratos kitam vartotojui."))
             return redirect(obj)
 
         if Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
@@ -35,7 +36,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
         if user is not None:
             if user.email is not None:
                 send_email_with_logging(email_data, [user.email])
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        return HttpResponseRedirect(reverse('user-profile', args=[user.pk]) + "#sub")
 
 
 class SubscribeFormView(

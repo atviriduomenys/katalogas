@@ -541,8 +541,8 @@ def email(
         )
     try:
         send_mail(
-            subject=_(subject) if subject else _(send_email_title[0]),
-            message=_(str(content)),
+            subject=subject if subject else send_email_title[0],
+            message=str(content),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=recipients,
             html_message=html_message,
@@ -550,7 +550,7 @@ def email(
         email_send = True
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", _(send_email_title[0]),
+        logging.warning("Email was not sent", send_email_title[0],
                         _(str(content)), recipients, e)
         email_send = False
 

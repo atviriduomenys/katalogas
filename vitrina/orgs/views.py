@@ -1031,11 +1031,15 @@ class OrganizationApiKeysView(
         msg = None
         error = False
         err_message = ''
+        delete_error = False
 
         storage = messages.get_messages(self.request)
         if len(storage._loaded_messages) == 1:
             if storage._loaded_messages[0].level == 20:
                 msg = storage._loaded_messages[0]
+                del storage._loaded_messages[0]
+            elif storage._loaded_messages[0].level == 40:
+                delete_error = True
                 del storage._loaded_messages[0]
 
         try:
@@ -1076,8 +1080,11 @@ class OrganizationApiKeysView(
         if error:
             print(err_message)
             context_data[
-                'api_error'] = ('Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti'
+                'api_error'] = _('Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti'
                                 + ' su raktais Saugykloje.')
+
+        if delete_error:
+            context_data['delete_error'] = _('API rakto pašalinimas nesėkmingas.')
 
         context_data['parent_links'] = {
             reverse('home'): _('Pradžia'),
@@ -1515,7 +1522,8 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
-            reverse('organization-apikeys-detail', args=[self.organization.pk, self.apikey.pk]): self.apikey,
+            reverse('organization-apikeys-detail',
+                    args=[self.organization.pk, self.apikey.pk]): self.apikey.client_id,
             reverse('organization-apikeys', args=[self.organization.pk]): _("Raktai"),
         }
         return context

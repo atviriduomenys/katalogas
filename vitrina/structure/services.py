@@ -618,7 +618,7 @@ def _link_distributions(
                         model.distribution = distribution
                         model.save()
 
-                _create_errors(resource_meta.errors, distribution)
+                _create_errors(resource_meta.errors, dataset.current_structure)
     else:
         title = dataset_meta.name.split('/')[-1]
         url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
@@ -686,7 +686,7 @@ def _link_distributions(
                 model.distribution = distribution
                 model.save()
 
-        _create_errors(resource_meta.errors, distribution)
+        _create_errors(resource_meta.errors, dataset.current_structure)
 
 
 def _link_models(dataset: Dataset, dataset_meta: struct.Dataset):

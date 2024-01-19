@@ -584,7 +584,7 @@ def _read_resource(
             description=row['description'],
         )
 
-        _validate_name(name, resource)
+        _validate_resource_name(name, resource)
 
         resource.dataset = state.dataset
         resource.dataset.resources[name] = resource
@@ -962,3 +962,11 @@ def _validate_property_name(name: str, meta: Property):
             meta.errors.append(_(f'Pavadinime gali būti mažosios raidės ir skaičiai, ' 
                                  f'žodžiai gali būti atskirti _ simboliu, arba . simboliu, '
                                  f'jei tai denormalizuotas laukas, jokie kiti simboliai negalimi: "{name}".'))
+
+
+def _validate_resource_name(name: str, meta: Model):
+    if name:
+        name = name.split('/')[-1]
+        _validate_name(name, meta)
+        if any([ch.isupper() for ch in name]):
+            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))

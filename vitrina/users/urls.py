@@ -6,7 +6,7 @@ from vitrina.users.views import (
     LoginView, RegisterView,
     ProfileView, ProfileEditView,
     PasswordSetView, PasswordResetView, PasswordResetConfirmView, CustomPasswordChangeView,
-    UserStatsView, ConfirmEmailView
+    UserStatsView, ConfirmEmailView, PleaseConfirmEmailView
 )
 
 urlpatterns = [
@@ -23,4 +23,5 @@ urlpatterns = [
     re_path(r'register/account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
             name='account_confirm_email'),
     path('register/email-verification-sent/', email_verification_sent, name='account_email_verification_sent'),
+    path('please_confirm_email', PleaseConfirmEmailView.as_view(), name='please_confirm_email'),
 ]

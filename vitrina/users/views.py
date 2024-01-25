@@ -48,7 +48,7 @@ class LoginView(BaseLoginView):
                           backend='django.contrib.auth.backends.ModelBackend')
                     return HttpResponseRedirect(self.get_success_url())
                 else:
-                    return render(self.request, self.account_inactive_template)
+                    return HttpResponseRedirect(reverse('please_confirm_email'))
             else:
                 login(self.request, form.get_user(),
                       backend='django.contrib.auth.backends.ModelBackend')
@@ -373,3 +373,6 @@ class UserStatsView(TemplateView):
 
 class ConfirmEmailView(BaseConfirmEmailView):
     template_name = 'vitrina/users/confirm_email.html'
+
+class PleaseConfirmEmailView(TemplateView):
+    template_name = 'vitrina/users/please_confirm_email.html'

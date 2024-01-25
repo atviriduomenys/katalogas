@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView
 from django.urls import reverse
@@ -60,7 +61,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
             'unsubscribe_url': unsubscribe_url
         })
 
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        return HttpResponseRedirect(reverse('user-profile', args=[user.pk]) + "#sub")
 
 
 class SubscribeFormView(

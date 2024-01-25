@@ -418,3 +418,6 @@ TRANSLATION_CLIENT_ID = env('TRANSLATION_CLIENT_ID', default='')
 SPINTA_SERVER_URL = env('SPINTA_SERVER_URL', default='https://get-test.data.gov.lt/auth/clients/')
 SPINTA_SERVER_CLIENT_ID = env('SPINTA_SERVER_CLIENT_ID', default='')
 SPINTA_SERVER_CLIENT_SECRET = env('SPINTA_SERVER_CLIENT_SECRET', default='')
+
+SECURE_HSTS_SECONDS = 31536000 # The max-age must be at least 31536000 seconds (1 year)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True

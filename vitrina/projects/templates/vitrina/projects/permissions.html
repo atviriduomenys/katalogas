@@ -50,7 +50,24 @@
                 </div>
             </div>
         {% endif %}
+        <div class="columns">
+            <div class="column">
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Rakto ID" %}</th>
+                        <th>{% translate "Rakto pavadinimas" %}</th>
+                    </tr>
+                    <tr>
+                        <td>{{ project_key.client_id }}</td>
+                        <td>{{ project_key.client_name }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         {% if scopes %}
+        <div class="row is-full">
             <table class="table is-fullwidth">
                 <tbody>
                     <tr>
@@ -83,6 +100,11 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        {% else %}
+            <div class="">
+                <p>{% translate 'Šiuo metu raktas leidimų neturi' %}</p>
+            </div>
         {% endif %}
     {% include "vitrina/common/pagination.html" %}
 {% endblock %}

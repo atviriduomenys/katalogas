@@ -1,11 +1,12 @@
+from allauth.account.views import email_verification_sent
 from django.contrib.auth.views import LogoutView
-from django.urls import path
+from django.urls import path, re_path
 
 from vitrina.users.views import (
     LoginView, RegisterView,
     ProfileView, ProfileEditView,
     PasswordSetView, PasswordResetView, PasswordResetConfirmView, CustomPasswordChangeView,
-    UserStatsView
+    UserStatsView, ConfirmEmailView, PleaseConfirmEmailView
 )
 
 urlpatterns = [
@@ -19,4 +20,8 @@ urlpatterns = [
     path('user/profile/<int:pk>/edit', ProfileEditView.as_view(), name='user-profile-change'),
     path('user/profile/<int:pk>/password/change', CustomPasswordChangeView.as_view(), name='users-password-change'),
     path('user/stats-graph', UserStatsView.as_view(), name='users-stats-graph'),
+    re_path(r'register/account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
+            name='account_confirm_email'),
+    path('register/email-verification-sent/', email_verification_sent, name='account_email_verification_sent'),
+    path('please_confirm_email', PleaseConfirmEmailView.as_view(), name='please_confirm_email'),
 ]

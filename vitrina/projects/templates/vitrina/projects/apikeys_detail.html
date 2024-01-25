@@ -57,6 +57,10 @@
                     </tbody>
                 </table>
             </div>
+        {% else %}
+            <div class="content">
+                <p>{% translate 'Šiuo metu raktas galiojančių leidimų neturi.' %}</p>
+            </div>
         {% endif %}
             {% include "vitrina/common/pagination.html" %}
         </div>

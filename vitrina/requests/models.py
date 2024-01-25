@@ -263,6 +263,10 @@ class RequestAssignment(models.Model):
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
+    class Meta:
+        db_table = 'request_assignment'
+        unique_together = (('organization', 'request'),)
+
     def __str__(self):
         return self.organization.__str__()
 

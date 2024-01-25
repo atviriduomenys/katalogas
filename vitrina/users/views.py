@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from allauth.account.utils import perform_login
+from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
@@ -47,7 +48,7 @@ class LoginView(BaseLoginView):
                           backend='django.contrib.auth.backends.ModelBackend')
                     return HttpResponseRedirect(self.get_success_url())
                 else:
-                    return render(self.request, self.account_inactive_template)
+                    return HttpResponseRedirect(reverse('please_confirm_email'))
             else:
                 login(self.request, form.get_user(),
                       backend='django.contrib.auth.backends.ModelBackend')
@@ -368,3 +369,10 @@ class UserStatsView(TemplateView):
         data = self.get_data()
         context['data'] = data
         return context
+
+
+class ConfirmEmailView(BaseConfirmEmailView):
+    template_name = 'vitrina/users/confirm_email.html'
+
+class PleaseConfirmEmailView(TemplateView):
+    template_name = 'vitrina/users/please_confirm_email.html'

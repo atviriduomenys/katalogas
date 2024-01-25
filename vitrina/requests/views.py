@@ -43,7 +43,7 @@ from vitrina.orgs.services import Action, has_perm
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.forms import (RequestEditOrgForm,
                                     RequestForm,
-                                    RequestPlanForm,
+                                    RequestIncludePlanForm,
                                     RequestSearchForm)
 from vitrina.requests.models import (Organization,
                                      Request,
@@ -56,6 +56,8 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
 from django.http.response import HttpResponsePermanentRedirect, Http404
+from vitrina.requests.forms import RequestPlanForm
+from vitrina.plans.models import PlanDataset
 
 ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
@@ -1005,8 +1007,8 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['obj'] = self.request_obj
-        context['create_form'] = PlanForm(self.request_obj, self.organizations, self.request.user)
-        context['include_form'] = RequestPlanForm(self.request_obj)
+        context['create_form'] = RequestPlanForm(self.request_obj, self.organizations, self.request.user)
+        context['include_form'] = RequestIncludePlanForm(self.request_obj)
         context['current_title'] = _("Įtraukti į planą")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
@@ -1019,9 +1021,9 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def post(self, request, *args, **kwargs):
         form_type = request.POST.get('form_type')
         if form_type == 'create_form':
-            form = PlanForm(self.request_obj, self.organizations, request.user, request.POST)
+            form = RequestPlanForm(self.request_obj, self.organizations, request.user, request.POST)
         else:
-            form = RequestPlanForm(self.request_obj, request.POST)
+            form = RequestIncludePlanForm(self.request_obj, request.POST)
 
         if form.is_valid():
             if form_type == 'create_form':
@@ -1030,6 +1032,24 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                     plan=plan,
                     request=self.request_obj
                 )
+                data = form.cleaned_data
+                datasets = data.get('datasets')
+                if datasets:
+                    for dataset in datasets:
+                        PlanDataset.objects.create(
+                            plan=plan,
+                            dataset=dataset
+                        )
+                else:
+                    request_object_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
+                                                          request_id=self.request_obj.pk) \
+                    .values_list('object_id', flat=True)
+                    datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by('-created')
+                    for dataset in datasets:
+                        PlanDataset.objects.create(
+                            plan=plan,
+                            dataset=dataset
+                        )                     
                 set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
 
             else:

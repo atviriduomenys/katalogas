@@ -2412,9 +2412,9 @@ class VersionListView(
         status = self.request.GET.get('status', 'not_deployed')
         context['dataset'] = self.dataset
         if status == 'deployed':
-            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by('-released')
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by('version')
         else:
-            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by('-released')
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by('version')
         context['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -2609,8 +2609,8 @@ class VersionDetailView(
                         if prev_version.access != prop_meta.access:
                             changed_attrs.append({
                                 'attr': 'access',
-                                'value_before': prev_version.access,
-                                'value_after': prop_meta.access,
+                                'value_before': prev_version.get_access_display(),
+                                'value_after': prop_meta.get_access_display(),
                             })
                     else:
                         new = True
@@ -2636,7 +2636,7 @@ class VersionDetailView(
                         if prop_meta.access:
                             changed_attrs.append({
                                 'attr': 'access',
-                                'value_after': prop_meta.access,
+                                'value_after': prop_meta.get_access_display(),
                             })
                     changes.append({
                         'title': prop.name,

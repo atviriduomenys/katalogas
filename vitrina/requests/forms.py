@@ -20,6 +20,9 @@ from vitrina.datasets.models import Dataset
 from django.utils.html import format_html
 
 from django_select2.forms import ModelSelect2MultipleWidget
+from vitrina.orgs.forms import OrganizationPlanForm
+from vitrina.requests.models import RequestObject
+from django.contrib.contenttypes.models import ContentType
 
 
 class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
@@ -186,7 +189,7 @@ class PlanChoiceField(ModelChoiceField):
             return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
-class RequestPlanForm(ModelForm):
+class RequestIncludePlanForm(ModelForm):
     plan = PlanChoiceField(
         label=_("Terminas"),
         widget=RadioSelect(),
@@ -223,3 +226,49 @@ class RequestPlanForm(ModelForm):
         ):
             raise ValidationError(_("Poreikis jau priskirtas šiam planui."))
         return plan
+
+class RequestPlanForm(OrganizationPlanForm):
+    form_type = CharField(widget=HiddenInput(), initial="create_form")
+    datasets = IconChoiceField(
+        queryset=None,
+        widget=CheckboxSelectMultiple,
+        help_text=_("Jei į planą norite įtraukti ne visus rinkinius, pažymėkite tuos, kuriuos pageidaujate įtraukti. Jei nebus pažymėtas nei vienas rinkinys, tada visi rinkiniai priskirti poreikiui bus įtraukti į planą."),
+        required=False
+    )
+
+    class Meta:
+        model = Plan
+        fields = ('title', 'description', 'deadline', 'provider', 'provider_title', 'receiver',)
+    
+    def __init__(self, obj, organizations, user, *args, **kwargs):
+        self.obj = obj
+        super().__init__(organizations, user, *args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "plan-form"
+        self.helper.layout = Layout(
+            Field('form_type'),
+            Field('organizations'),
+            Field('user_id'),
+            Field('title'),
+            Field('description'),
+            Field('deadline'),
+            Field('receiver'),
+            Field('provider'),
+            Field('provider_title'),
+            Field('datasets'),
+            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+        )
+        request_object_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
+                                                          request_id=self.obj.pk) \
+        .values_list('object_id', flat=True)
+        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by('-created')
+        self.fields['datasets'].queryset = datasets
+        if len(self.organizations) == 1:
+            self.initial['receiver'] = self.organizations[0]
+            self.fields['receiver'].widget = HiddenInput()
+        else:
+            organization_ids = [org.pk for org in self.organizations]
+            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+
+        self.initial['title'] = self.obj.get_plan_title()

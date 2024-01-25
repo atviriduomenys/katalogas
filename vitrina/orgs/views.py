@@ -1499,12 +1499,12 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
         error = False
         err_message = ''
         try:
-            response = requests.delete(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_id)
+            response = get_auth_session().delete(SPINTA_SERVER_URL + '/auth/clients/' + self.apikey.client_id)
         except requests.exceptions.RequestException as e:
             error = True
             err_message = f'Error removing apikey with client_id: {self.apikey.client_id}, {e}'
         else:
-            if response.status_code == 200:
+            if response.status_code == 204:
                 self.apikey.delete()
             else:
                 error = True

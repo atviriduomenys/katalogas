@@ -2,4 +2,4 @@ Naujas duomenų rinkinys: {{ dataset }}
 
 Sveiki,
 
-užregistruotas naujas duomenų rinkinys {{ dataset|link }}.
+užregistruotas naujas duomenų rinkinys [{{dataset}}]({{link}}).

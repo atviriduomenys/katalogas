@@ -653,12 +653,12 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            if form.cleaned_data['role'] == 'manager':
-                email(
-                    [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
-                        'organization': self.organization.title,
-                        'link': url
-                    })
+
+            email(
+                [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
+                    'organization': self.organization.title,
+                    'link': url
+                })
 
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()

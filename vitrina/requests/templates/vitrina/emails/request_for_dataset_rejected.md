@@ -1,3 +1,3 @@
 Koordinatoriaus paraiška: {{ object }}
 
-Sveiki, portale atšauktas duomenų rinkinys
+Sveiki, portale atšauktas duomenų rinkinys.

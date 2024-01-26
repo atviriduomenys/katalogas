@@ -757,11 +757,15 @@ class DatasetUpdateView(
                 if sub.user.email not in sub_email_list:
                     sub_email_list.append(sub.user.email)
         if sub_email_list:
-            email([self.object.organization.email], 'dataset-updated',
-            "vitrina/datasets/emails/sub/updated.md", {
-                                                     'title': self.object,
-                                                     'link': self.request.build_absolute_uri()
-            })
+            email(
+                [self.object.organization.email],
+                'dataset-updated',
+                "vitrina/datasets/emails/sub/updated.md",
+                {
+                    'title': self.object,
+                    'link': "%s%s" % (get_current_domain(self.request), self.object.get_absolute_url())
+                }
+            )
 
         return HttpResponseRedirect(self.get_success_url())
 

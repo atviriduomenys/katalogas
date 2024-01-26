@@ -1,3 +1,3 @@
-Koordinatoriaus paraiška atmesta: {{ object }}
+Koordinatoriaus paraiška patvirtinta: {{ object }}
 
-Jūsų koordinatoriaus paraiška buvo atšaukta.
+Jūsų koordinatoriaus paraiška buvo patvirtinta.

@@ -2,6 +2,6 @@ Prenumerata atšaukta: {{obj}}
 
 Sveiki,
 
-sėkmingai atsisakėte [{{obj}}]({{subscribe_url}}) prenumeratos.
+sėkmingai atsisakėte [{{obj}}]({{unsubscribe_url}}) prenumeratos.
 
-Jei prenumeratos atsisakėte per klaidą, galite [užsiprenumeruoti]({{unsubscribe_url}}) iš naujo.
+Jei prenumeratos atsisakėte per klaidą, galite [užsiprenumeruoti]({{subscribe_url}}) iš naujo.

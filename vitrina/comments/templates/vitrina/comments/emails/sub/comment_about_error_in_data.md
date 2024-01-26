@@ -1,3 +1,3 @@
 Pranešimas apie klaidą: {{title}}
 
-Sveiki, gautas pranešimas apie kaidą duomenyse [{{title}}]({{url}})
+Sveiki, gautas pranešimas apie kaidą duomenyse [{{title}}]({{url}}).

@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.text import Truncator
+from django.utils.translation import gettext_lazy as _
 
-from vitrina.messages.models import Subscription, EmailTemplate
+from vitrina.messages.models import Subscription, EmailTemplate, SentMail
 from django.template import Template
 
 
@@ -54,5 +55,26 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         return super(EmailTemplateAdmin, self).change_view(request, object_id)
 
 
+class SentMailAdmin(admin.ModelAdmin):
+    list_display = ('recipient_list', 'email_subject', 'email_content_shortened', 'email_sent',)
+
+    def recipient_list(self, obj):
+        if len(obj.recipient) >= 50:
+            return obj.recipient[:50] + "..."
+        else:
+            return obj.recipient
+
+    recipient_list.short_description = _('Gavėjai')
+
+    def email_content_shortened(self, obj):
+        if len(obj.email_content) >= 50:
+            return obj.email_content[:50] + "..."
+        else:
+            return obj.email_content
+
+    email_content_shortened.short_description = _('Turinys')
+
+
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(EmailTemplate, EmailTemplateAdmin)
+admin.site.register(SentMail, SentMailAdmin)

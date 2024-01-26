@@ -1,3 +1,3 @@
 Koordinatoriaus paraiška: {{ object }}
 
-Sveiki, prenumeruojamai organizacijai atsauktas poreikis
+Sveiki, prenumeruojamai organizacijai atsauktas poreikis.

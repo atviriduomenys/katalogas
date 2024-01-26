@@ -4,11 +4,15 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
 from vitrina.tasks.models import Task
-from vitrina.helpers import get_current_domain, email
-from django.urls import reverse
+from vitrina.helpers import email
+
+
+NEW_COMMENT = 'New'
+REPLY_COMMENT = 'Reply'
+
 
 def get_title_description_by_comment_type(comment_type, content_type, object_id):
-    if comment_type == "Reply":
+    if comment_type == REPLY_COMMENT:
         title = f"Parašytas atsakymas komentarui: {content_type}, id: {object_id}"
         description = f"Atsakyta į komentarą {content_type}, id: {object_id}."
     else:
@@ -100,15 +104,12 @@ def send_mail_to_object_subscribers(
     comment_type,
     org=None,
 ):
-    try:
-        if org:
-            sub_object = org
-        else:
-            sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
-    except content_type.model_class().DoesNotExist:
-        sub_object = None
+    if org:
+        sub_object = org
+    else:
+        sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
 
-    if comment_type == 'New':
+    if comment_type == NEW_COMMENT:
         email_identifier = 'comment-for-sub'
         file = 'vitrina/comments/emails/sub/created.md'
     else:

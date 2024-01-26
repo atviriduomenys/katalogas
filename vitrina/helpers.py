@@ -503,25 +503,21 @@ def email(
     override: bool = True,
 ) -> dict[str, str]:
     context = context or {}
-    data_dict = {}
     email_template = None
-    email_send = False
     subject = None
     if override:
         email_template = _get_email_tempate_from_db(email_identifier)
     if email_template:
-        from unidecode import unidecode
-        subject = email_template.subject
+        subject_template = email_template.subject
+        subject_template = Template(subject_template)
+        subject_context = Context(context)
+        subject = subject_template.render(subject_context)
+
         template_db = email_template.template
-        template_db = unidecode(template_db)
         template = Template(template_db)
-        for key in template.nodelist:
-            if type(key).__name__ == 'VariableNode':
-                data_dict.update({key.token.contents: context[key.token.contents]})
-        context = Context(data_dict)
+        context = Context(context)
         content = template.render(context)
         html_message = markdown.markdown(content)
-        html_message = '\n'.join(html_message.splitlines()[1:])
     else:
         template_path = get_template(name)
         with open(template_path.origin.name, encoding="utf-8") as file:
@@ -568,19 +564,17 @@ def email(
 
 
 def send_email_with_logging(email_data, email_list):
-    email_send = True
     try:
         send_mail(
-            subject=_(email_data['email_subject']),
-            message=_(str(email_data['email_content'].encode('utf-8'))),
+            subject=email_data['email_subject'],
+            message=email_data['email_content'],
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=email_list,
         )
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", _(email_data['email_subject']),
-                        _(email_data['email_content']), email_list, e)
-        email_send = False
+        logging.warning("Email was not sent", email_data['email_subject'],
+                        email_data['email_content'], email_list, e)
 
 
 def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):

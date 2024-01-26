@@ -43,9 +43,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
 
         unsubscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            reverse('unsubscribe', kwargs={'content_type_id': content_type_id,
-                                           'obj_id': obj_id,
-                                           'user_id': user_id})
+            obj.get_absolute_url()
         )
 
         subscribe_url = "%s%s" % (
@@ -111,26 +109,20 @@ class SubscribeFormView(
         if sub_type in dict(Subscription.SUB_TYPE_CHOICES):
             self.object.sub_type = sub_type
 
-        unsubscribe_url = "%s%s" % (
-            get_current_domain(self.request),
-            reverse('unsubscribe', kwargs={'content_type_id': self.object.content_type_id,
-                                           'obj_id': self.object.object_id,
-                                           'user_id': self.object.user_id
-                                           })
-        )
-
         subscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            reverse('subscribe-form', kwargs={'content_type_id': self.object.content_type_id,
-                                           'obj_id': self.object.object_id,
-                                           'user_id': self.object.user_id})
+            self.obj.get_absolute_url()
+        )
+        unsubscribe_url = "%s%s#sub" % (
+            get_current_domain(self.request),
+            reverse('user-profile', args=[self.user.pk])
         )
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
 
             email([self.object.user.email], 'newsletter-subscribed', 'vitrina/messages/emails/sub/created.md', {
-                'obj': self.object,
+                'obj': self.obj,
                 'subscribe_url': subscribe_url,
                 'unsubscribe_url': unsubscribe_url
             })

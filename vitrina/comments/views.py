@@ -12,7 +12,8 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.comments.forms import CommentForm
-from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs
+from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs, NEW_COMMENT, \
+    REPLY_COMMENT
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
@@ -43,8 +44,7 @@ class CommentView(
         form = form_class(obj, request.POST)
         link = "%s%s" % (
             get_current_domain(self.request),
-            reverse('comment', kwargs={'content_type_id': content_type.id,
-                                       'object_id': object_id})
+            obj.get_absolute_url()
         )
 
         if form.is_valid():
@@ -157,9 +157,9 @@ class CommentView(
             else:
                 comment.type = Comment.USER
             comment.save()
-            create_task("New", content_type, obj.pk, request.user, obj=obj)
+            create_task(NEW_COMMENT, content_type, obj.pk, request.user, obj=obj)
             create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs("New", content_type, obj.pk, request.user, link, obj=obj)
+            send_mail_and_create_tasks_for_subs(NEW_COMMENT, content_type, obj.pk, request.user, link, obj=obj)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -174,9 +174,7 @@ class ReplyView(LoginRequiredMixin, View):
         if form.is_valid():
             link = "%s%s" % (
                 get_current_domain(self.request),
-                reverse('reply', kwargs={'content_type_id': content_type_id,
-                                         'object_id': object_id,
-                                         'parent_id': parent_id})
+                obj.get_absolute_url()
             )
             comment = Comment.objects.create(
                 type=Comment.USER,
@@ -189,11 +187,11 @@ class ReplyView(LoginRequiredMixin, View):
             )
             comment_ct = ContentType.objects.get_for_model(comment)
             parent_comment = Comment.objects.get(pk=parent_id)
-            create_task("Reply", content_type, object_id, request.user, obj=obj,
+            create_task(REPLY_COMMENT, content_type, object_id, request.user, obj=obj,
                         comment_object=comment, comment_ct=comment_ct)
             create_subscription(request.user, comment)
 
-            send_mail_and_create_tasks_for_subs("Reply", comment_ct, parent_id,
+            send_mail_and_create_tasks_for_subs(REPLY_COMMENT, comment_ct, parent_id,
                                                 request.user, link, obj=obj, comment_object=parent_comment)
             comment_task = Task.objects.filter(
                 comment_object=parent_comment
@@ -236,6 +234,11 @@ class ExternalCommentView(
                     external_object_id=external_object_id,
                     external_content_type=external_content_type,
                 )
+                set_comment(Request.CREATED)
+                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
+                comment.rel_object_id = new_request.pk
+                comment.type = Comment.REQUEST
+            else:
                 representatives = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(Dataset),
                     object_id=dataset_id)
@@ -255,16 +258,12 @@ class ExternalCommentView(
 
                 url = f"{get_current_domain(self.request)}/datasets/" \
                       f"{dataset_id}/data/{external_content_type}/{external_object_id}"
-                set_comment(Request.CREATED)
-                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
-                comment.rel_object_id = new_request.pk
-                comment.type = Comment.REQUEST
                 email(emails, 'error-in-data',
                       "vitrina/comments/emails/sub/comment_about_error_in_data.md", {
                           'title': dataset.title,
-                          'link': url
+                          'url': url
                       })
-            create_task("New", external_content_type, external_object_id, request.user)
+            create_task(NEW_COMMENT, external_content_type, external_object_id, request.user)
             comment.save()
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -289,7 +288,7 @@ class ExternalReplyView(LoginRequiredMixin, View):
                 body=form.cleaned_data.get('body'),
                 is_public=form.cleaned_data.get('is_public')
             )
-            create_task("Reply", external_content_type, parent_id, request.user)
+            create_task(REPLY_COMMENT, external_content_type, parent_id, request.user)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(reverse('object-data', kwargs={

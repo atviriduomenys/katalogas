@@ -225,7 +225,7 @@ def test_create_resource_with_file_and_wrong_format(app: DjangoTestApp):
     form['file'] = Upload('test.csv', b'Column\nValue')
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[
-        'Formatas nesutampa su įkelto failo formatu.'
+        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
     ]]
 
 
@@ -241,7 +241,7 @@ def test_create_resource_with_download_url_and_wrong_format(app: DjangoTestApp):
     form['download_url'] = "www.test.com"
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[
-        'Pasirinkite nuorodos formatą.'
+        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
     ]]
 
 

@@ -149,33 +149,41 @@ class DatasetResourceForm(forms.ModelForm):
 
         fmt = self.cleaned_data.get('format')
         if fmt:
-            if not file and url and fmt.extension not in ['URL', 'API', 'UAPI']:
-                self.add_error('format', _(
-                    "Pasirinkite nuorodos formatą."
-                ))
+            fmt_extension = fmt.extension.upper().strip()
+            if not file and url:
+                url_extension = url.split('.')
+                url_extension = url_extension[-1].upper().strip() if url_extension else None
+
+                if (
+                    url_extension != fmt_extension and
+                    fmt_extension not in ['URL', 'API', 'UAPI']
+                ):
+                    self.add_error('format', _(
+                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                    ))
             elif not url and file:
-                fmt_extension = fmt.extension.upper().strip()
                 file_extension = file.extension.upper().strip()
                 if fmt_extension != file_extension:
                     self.add_error('format', _(
-                        "Formatas nesutampa su įkelto failo formatu."
+                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
                     ))
 
         if 'get.data.gov.lt' in url and not upload:
             self.cleaned_data['upload_to_storage'] = True
 
-        if self.resource:
-            distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
-                download_url=url
-            ).exclude(
-                pk=self.resource.pk
-            )
-        else:
-            distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
-                download_url=url
-            )
-        if distributions_with_same_url.exists():
-            self.add_error('download_url', _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."))
+        if url:
+            if self.resource:
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
+                    download_url=url
+                ).exclude(
+                    pk=self.resource.pk
+                )
+            else:
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
+                    download_url=url
+                )
+            if distributions_with_same_url.exists():
+                self.add_error('download_url', _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."))
         return self.cleaned_data
 
     def clean_access(self):

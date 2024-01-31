@@ -23,6 +23,7 @@ from django.views.generic.edit import FormView
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
+from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.api.services import get_auth_session

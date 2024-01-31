@@ -35,9 +35,8 @@ from vitrina.datasets.services import (get_frequency_and_format,
                                        get_values_for_frequency,
                                        sort_publication_stats,
                                        get_requests)
-from vitrina.helpers import DateFilter, Filter, get_selected_value, send_email_with_logging, \
-    get_stats_filter_options_based_on_model
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.helpers import DateFilter, Filter, get_selected_value, \
+    get_stats_filter_options_based_on_model, email, get_current_domain
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import Action, has_perm
@@ -591,10 +590,6 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
     detail_url_name = 'request-detail'
     history_url_name = 'request-history'
     plan_url_name = 'request-plans'
-    request_rejected_base_template = """
-        Sveiki, Jūsų poreikis duomenų rinkiniui atverti atmestas. <br><br>Priežastis:<br><br> {0}    
-    """
-    request_add_email_base_template = 'Sveiki, portale užregistruotas naujas poreikis duomenų rinkiniui: {0}'
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -679,11 +674,12 @@ class RequestCreateView(
                                                    content_type=get_content_type_for_model(Organization),
                                                    object_id=org_id,
                                                    request_update_sub=True)
-                email_data = prepare_email_by_identifier_for_sub('request-created-sub',
-                                                                 'Sveiki, jūsų prenumeruojamai organizacijai {0},'
-                                                                 ' sukurtas naujas poreikis {1}.',
-                                                                 'Sukurtas naujas poreikis', [organization,
-                                                                                              self.object])
+
+                email([organization.email], 'request-created-sub', 'vitrina/emails/request_created_organization_sub.md',
+                      {
+                          'request': self.object.title,
+                          'link': get_current_domain(self.request) + '/requets/' + str(self.object.pk) + '/'
+                      })
                 sub_email_list = []
                 for sub in subs:
                     Task.objects.create(
@@ -701,7 +697,6 @@ class RequestCreateView(
                             orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                             sub_email_list = [org.email for org in orgs]
                         sub_email_list.append(sub.user.email)
-                send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -894,10 +889,6 @@ class RequestUpdateView(
         if org_subs:
             subs = org_subs | subs
 
-        email_data = prepare_email_by_identifier_for_sub('request-updated-sub',
-                                                         'Sveiki, pranešame jums apie tai, kad,'
-                                                         ' poreikis {0} buvo atnaujintas.',
-                                                         'Atnaujintas poreikis', [self.object])
         sub_email_list = []
         for sub in subs:
             Task.objects.create(
@@ -915,7 +906,6 @@ class RequestUpdateView(
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
-        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def has_permission(self):

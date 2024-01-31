@@ -24,12 +24,13 @@ from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.api.services import get_auth_session
 from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_options_based_on_model
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
-    get_stats_filter_options_based_on_model
+    get_stats_filter_options_based_on_model, email
 from django.template.defaultfilters import date as _date
 from vitrina import settings
 from vitrina.api.models import ApiKey
@@ -52,16 +53,12 @@ from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
-from vitrina.helpers import send_email_with_logging
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.helpers import email, get_current_domain
 from django.http import HttpResponse
 
 
 class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     template_name = 'confirm_approve.html'
-    base_template_content = """
-        Jūsų koordinatoriaus paraiška buvo patvirtinta.   
-    """
     email_identifier = "coordinator-request-approved"
 
     def dispatch(self, request, *args, **kwargs):
@@ -102,13 +99,18 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
             type=Task.REQUEST
         )
         task.save()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier, self.base_template_content,
-            'Koordinatoriaus paraiškos patvirtinimas',
-            []
-        )
         sub_email_list = [user.email]
-        send_email_with_logging(email_data, sub_email_list)
+        organization_url = "%s%s" % (
+            get_current_domain(self.request),
+            reverse('organization-detail', args=[org.pk])
+        )
+
+        email(sub_email_list, self.email_identifier,
+              "vitrina/orgs/emails/representative_created.md", {
+                  'user': user.first_name,
+                  'link': organization_url
+              })
+
         return self.get_success_url()
 
     def get_success_url(self):
@@ -159,13 +161,12 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         self.representative_request.delete()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier, self.base_template_content,
-            'Koordinatoriaus paraiškos atmetimas',
-            []
-        )
         sub_email_list = [self.representative_request.user.email]
-        send_email_with_logging(email_data, sub_email_list)
+        email([sub_email_list], self.email_identifier,
+              "vitrina/emails/request_denied.md", {
+                  'user': self.representative_request.user
+              })
+
         return self.get_success_url()
 
     def get_success_url(self):
@@ -175,10 +176,6 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
 class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
     representative_request: RepresentativeRequest
     template_name = 'confirm_suspend.html'
-    base_template_content = """
-        Jūsų koordinatoriaus teisės buvo suspenduotos.   
-    """
-    email_identifier = "coordinator-request-suspended"
 
     def dispatch(self, request, *args, **kwargs):
         self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
@@ -206,15 +203,8 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         representative_role.save()
         user_to_grant_coordiantor_rights.organization = self.representative_request.organization
         user_to_grant_coordiantor_rights.save()
-        email_data = prepare_email_by_identifier_for_sub(
-            self.email_identifier, self.base_template_content,
-            'Koordinatoriaus paraiškos atmetimas',
-            []
-        )
         self.representative_request.user = user_to_grant_coordiantor_rights
         self.representative_request.save()
-        sub_email_list = [self.representative_request.user.email]
-        send_email_with_logging(email_data, sub_email_list)
         return self.get_success_url()
 
     def get_success_url(self):
@@ -593,15 +583,7 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
-    base_template_content = """
-         Buvote įtraukti į {0} organizacijos
-         narių sąrašo, tačiau nesate registruotas Lietuvos
-         atvirų duomenų portale. Prašome sekite šia nuoroda,
-         kad užsiregistruotumėte ir patvirtintumėte savo narystę
-        'organizacijoje:\n'
-        '{1}   
-    """
-    email_identifier = "auth-org-representative-without-credentials"
+    email_identifier = "organization-member-add"
 
     organization: Organization
 
@@ -658,7 +640,11 @@ class RepresentativeCreateView(
             if not user.organization:
                 user.organization = self.organization
                 user.save()
-            manage_subscriptions_for_representative(subscribe, user, self.organization)
+            link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('organization-detail', kwargs={'pk': self.object.object_id})
+            )
+            manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
@@ -667,12 +653,13 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
             )
-            email_data = prepare_email_by_identifier(
-                self.email_identifier, self.base_template_content,
-                'Kvietimas prisijungti prie atvirų duomenų portalo',
-                [self.organization, url]
-            )
-            send_email_with_logging(email_data, [self.object.email])
+
+            email(
+                [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
+                    'organization': self.organization.title,
+                    'link': url
+                })
+
             messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
@@ -743,8 +730,11 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         if not self.object.user.organization:
             self.object.user.organization = self.organization
             self.object.user.save()
-
-        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization)
+        link = "%s%s" % (
+                get_current_domain(self.request),
+                reverse('organization-detail', kwargs={'pk': self.organization.pk})
+            )
+        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization, link)
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -1591,18 +1581,14 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             if target_org.exists():
                 if target_org.get().pk != self.organization.pk:
                     organization = target_org.get()
-                    title = f'Prašoma prieigos prie duomenų: {self.api_key}'
-                    base_email_content = """
-                                        Gautas pranešimas, kad prašoma suteikti prieigą prie duomenų:
-                                        {0}
-                                    """
                     url = f"{get_current_domain(self.request)}{self.api_key.get_absolute_url()}"
                     rep_emails = Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(organization),
                         object_id=organization.pk).values_list('email', flat=True)
-                    email_data = prepare_email_by_identifier('apikey-request', base_email_content, title,
-                                                             [url])
-                    send_email_with_logging(email_data, [rep_emails])
+                    email([rep_emails], 'apikey-request', 'vitrina/orgs/emails/request_for_data.md', {
+                        'api_key': self.api_key,
+                        'url': url
+                    })
                     Task.objects.create(
                         content_type=ContentType.objects.get_for_model(ApiKey),
                         object_id=self.api_key.pk,

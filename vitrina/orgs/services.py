@@ -11,8 +11,7 @@ from django.db.models import Q
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.helpers import send_email_with_logging
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
+from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
@@ -197,28 +196,31 @@ def create_subscription(user, organization):
     )
 
 
-def manage_subscriptions_for_representative(subscribe, user, organization):
-    subscription = Subscription.objects.filter(user=user,
-                                               object_id=organization.id,
-                                               content_type=get_content_type_for_model(Organization))
+def manage_subscriptions_for_representative(subscribe, user, organization, link):
+    subscription = Subscription.objects.filter(
+        user=user,
+        object_id=organization.id,
+        content_type=get_content_type_for_model(Organization),
+    )
     if subscribe:
         if not subscription:
             create_subscription(user, organization)
             if user.email:
-                email_data = prepare_email_by_identifier_for_sub('newsletter-org-subscription-created-representative',
-                                                                 'Sveiki, Jum sukurta organizacijos prenumerata.',
-                                                                 'Sukurta prenumerata organizacijai', [])
-                send_email_with_logging(email_data, [user.email])
+                email([user.email], 'newsletter-org-subscription-created-representative', 'vitrina/orgs/emails/subscribed.md', {
+                    'organization': organization,
+                    'link': link
+                })
         else:
-            subscription.update(dataset_comments_sub=True,
-                                request_comments_sub=True,
-                                project_comments_sub=True)
-            if user.email:
-                email_text = 'Sveiki, Jūsų organizacijos ({}) prenumerata atnaujinta.'.format(organization)
-                email_data = prepare_email_by_identifier_for_sub('newsletter-org-subscription-updated-representative',
-                                                                 email_text,
-                                                                 'Atnaujinta organizacijos prenumerata', [])
-                send_email_with_logging(email_data, [user.email])
+            subscription.update(
+                dataset_comments_sub=True,
+                request_comments_sub=True,
+                project_comments_sub=True,
+            )
+            email([user.email], 'newsletter-org-subscription-updated-representative',
+                  'vitrina/orgs/emails/subscription_updated.md', {
+                'organization': organization,
+                'link': link
+            })
     else:
         if subscription:
             subscription.delete()

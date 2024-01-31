@@ -10,25 +10,21 @@ from allauth.socialaccount.providers.oauth2.views import (
 from allauth.socialaccount.helpers import (
     complete_social_login
 )
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider
-from vitrina.viisp.xml_utils import get_response_with_ticket_id, \
-get_response_with_user_data
-from vitrina.helpers import get_current_domain
+from vitrina.viisp.xml_utils import get_response_with_ticket_id
+from vitrina.viisp.xml_utils import get_response_with_user_data
+from vitrina.helpers import get_current_domain, email
 from base64 import b64decode
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from vitrina.users.models import User
 from allauth.account.utils import perform_login
 from cryptography.fernet import Fernet
-from django.http import HttpResponse
 from allauth.socialaccount.models import SocialAccount
 from itsdangerous.url_safe import URLSafeSerializer
-from vitrina.helpers import send_email_with_logging
 import bcrypt
-
 
 
 class VIISPLoginView(TemplateView):
@@ -52,13 +48,10 @@ class VIISPLoginView(TemplateView):
         url = VIISPOAuth2Adapter.authorize_url
         return redirect(url + "?" + "ticket={}".format(ticket_id))
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class VIISPCompleteLoginView(View):
-    base_template_content = """
-        Pabaikite registraciją su viisp, patvirtinant elektroninį paštą:\n'
-    '{0}   
-    """
-    email_identifier = "auth-viisp-merge"
+
     def get(self, request, token=None):
         return redirect('home')
 
@@ -79,7 +72,7 @@ class VIISPCompleteLoginView(View):
 
         if not user_data.get('email'):
             return redirect('change-email')
-        
+
         if not user_data.get('personal_code'):
             error_data = {}
             return render(request, 'allauth/socialaccount/api_error.html', error_data)
@@ -117,23 +110,30 @@ class VIISPCompleteLoginView(View):
                             signal_kwargs={"sociallogin": login},
                         )
             else:
-                viisp_token_key = ViispTokenKey.objects.first().key_content
-                s = URLSafeSerializer(viisp_token_key)
-                token = s.dumps([user_data.get(key) for key in user_data])
-                sub_email_list = [user_data.get('email')]
-                url = "%s%s" % (
+                _confirm_viisp_email(
+                    user_data.get('email'),
+                    user_data,
                     get_current_domain(self.request),
-                    reverse('viisp-account-merge', kwargs={'token': token})
                 )
-                email_data = prepare_email_by_identifier_for_sub(
-                    self.email_identifier,  self.base_template_content,
-                    'Elektroninio pašto patvirtinimas',
-                    [url]
-                )
-                send_email_with_logging(email_data, sub_email_list)
                 return redirect('confirm-email')
         login = provider.sociallogin_from_response(request, user_data)
         return complete_social_login(request, login)
+
+
+def _confirm_viisp_email(
+    email_address: str | None,
+    user_data: dict[str, str],
+    base_url: str,
+) -> None:
+    viisp_token_key = ViispTokenKey.objects.first().key_content
+    s = URLSafeSerializer(viisp_token_key)
+    token = s.dumps([user_data.get(key) for key in user_data])
+    email([email_address], 'viisp-confirmation', 'vitrina/viisp/emails/email_confirmation.md', {
+        'confirmation_url': "%s%s" % (
+            base_url,
+            reverse('viisp-account-merge', kwargs={'token': token})
+        ),
+    })
 
 
 class ChangeEmailView(TemplateView):
@@ -169,6 +169,7 @@ class VIISPAccountMergeView(View):
                     'ticket_id': merge_data[5]
                 }
             except:
+                # FIXME: https://github.com/atviriduomenys/katalogas/issues/836
                 return redirect('home')
             provider = providers.registry.by_id(VIISPProvider.id, request)
             login = provider.sociallogin_from_response(request, merge_data_dict)
@@ -181,6 +182,7 @@ class VIISPAccountMergeView(View):
                 signal_kwargs={"sociallogin": login},
             )
         return redirect('home')
+
 
 oauth2_login = OAuth2LoginView.adapter_view(VIISPOAuth2Adapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(VIISPOAuth2Adapter)

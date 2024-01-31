@@ -19,7 +19,6 @@ from reversion.views import RevisionMixin
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.services import get_auth_session
 from vitrina.datasets.models import Dataset
-from vitrina.messages.helpers import prepare_email_by_identifier_for_sub
 from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import ProjectApiKeyRegenerateForm, ProjectApiKeyForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -29,7 +28,7 @@ from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
-from vitrina.helpers import prepare_email_by_identifier, send_email_with_logging, get_current_domain
+from vitrina.helpers import get_current_domain
 
 
 class ProjectListView(ListView):
@@ -109,12 +108,6 @@ class ProjectCreateView(
             user=self.request.user,
             type=Task.REQUEST
         )
-        email_data = prepare_email_by_identifier('use-case-registered',
-                                                 'Sveiki, portale užregistruotas naujas panaudos atvejis.',
-                                                 'Užregistruotas naujas panaudos atvejis', [])
-        if self.object.user is not None:
-            if self.object.user.email is not None:
-                send_email_with_logging(email_data, email_data)
 
         Subscription.objects.create(
             user=self.request.user,
@@ -159,10 +152,7 @@ class ProjectUpdateView(
                                            project_update_sub=True)
         if self.object.user is not None:
             subs = subs.exclude(user=self.object.user)
-        email_data = prepare_email_by_identifier_for_sub('project-updated-sub',
-                                                         'Sveiki, pranešame jums apie tai, kad,'
-                                                         ' panaudos atvėjis {0} buvo atnaujintas.',
-                                                         'Atnaujintas panaudos atvėjis', [self.object])
+
         sub_email_list = []
         for sub in subs:
             Task.objects.create(
@@ -179,7 +169,6 @@ class ProjectUpdateView(
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
-        send_email_with_logging(email_data, sub_email_list)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

@@ -60,7 +60,10 @@ class SentMail(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    recipient = models.CharField(max_length=255, blank=True, null=True)
+    recipient = models.CharField(max_length=500, blank=True, null=True, verbose_name=_("Gavėjas"))
+    email_subject = models.TextField(blank=True, null=True, verbose_name="Tema")
+    email_content = models.TextField(blank=True, null=True, verbose_name="Turinys")
+    email_sent = models.BooleanField(blank=True, null=True, verbose_name="Išsiųsta")
 
     class Meta:
         managed = True

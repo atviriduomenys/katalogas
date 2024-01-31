@@ -23,7 +23,7 @@ from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import get_current_domain, email
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -2330,11 +2330,6 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
         version = form.save(commit=False)
         version.dataset = self.dataset
 
-        base_email_content = """
-                    Gautas pranešimas, kad sukurta nauja duomenų rinkinio struktūros versija:
-                    {0}
-                """
-
         latest_version = self.dataset.dataset_version.order_by('-version').first()
         if latest_version and latest_version.version:
             version.version = latest_version.version + 1
@@ -2344,24 +2339,34 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
 
         rel_projects = Project.objects.filter(datasets=version.dataset)
         emails = []
-        title = f"Sukurta nauja duomenų rinkinio struktūros versija: {ContentType.objects.get_for_model(version)}," \
-                f" id: {version.pk}"
+        version_content_type_list = []
         for proj in rel_projects:
             emails.append(proj.user.email)
+            version_content_type = ContentType.objects.get_for_model(version)
+            version_content_type_list.append(version_content_type)
             Task.objects.create(
-                title=title,
-                description=f"Sukurta nauja duomenų rinkinio struktūros versija.",
-                content_type=ContentType.objects.get_for_model(version),
+                # FIXME: Maybe task title and describtion should be generated
+                #        on display.
+                title=(
+                    "Sukurta nauja duomenų rinkinio struktūros versija: "
+                    f"{version_content_type}, "
+                    f"id: {version.pk}"
+                ),
+                description=(
+                    f"Sukurta nauja duomenų rinkinio struktūros versija."
+                ),
+                content_type=version_content_type,
                 object_id=version.pk,
                 user=proj.user,
-                status=Task.CREATED
+                status=Task.CREATED,
             )
 
         url = f"{get_current_domain(self.request)}/datasets/" \
               f"{version.dataset.pk}/version/{version.pk}"
-        email_data = prepare_email_by_identifier('new-dataset-structure-version', base_email_content, title,
-                                                 [url])
-        send_email_with_logging(email_data, [emails])
+        email(emails, 'new-dataset-structure-version', 'vitrina/structure/emails/new_version.md', {
+            'dataset': version.dataset.title,
+            'url': url,
+        })
 
         metadata = form.cleaned_data.get('metadata', [])
 

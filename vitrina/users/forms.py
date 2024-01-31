@@ -10,7 +10,7 @@ from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceF
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import prepare_email_by_identifier, send_email_with_logging
+from vitrina.helpers import email
 from vitrina.orgs.models import Organization
 from vitrina.users.models import User
 
@@ -145,12 +145,8 @@ class PasswordResetForm(BasePasswordResetForm):
 
     def send_mail(self, subject_template_name, email_template_name,
                   context, from_email, to_email, html_email_template_name=None):
-        base_email_template = """Sveiki, norėdami susikurti naują slaptažodį turite paspausti šią nuorodą: {0}/"""
         url = "{0}://{1}/reset/{2}/{3}".format(context['protocol'], context['domain'], context['uid'], context['token'])
-        email_data = prepare_email_by_identifier('auth-password-reset-token', base_email_template,
-                                                 'Slaptazodzio atstatymas',
-                                                 [url])
-        send_email_with_logging(email_data, [to_email])
+        email([to_email], 'auth-password-reset-token', "vitrina/email/password_reset.md", {'link': url})
 
 
 class PasswordResetConfirmForm(SetPasswordForm):

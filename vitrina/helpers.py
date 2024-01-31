@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import datetime
 import calendar
@@ -10,6 +11,7 @@ from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+import markdown
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
@@ -18,6 +20,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string, get_template
+from django.template import engines, Template, Context
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -25,9 +29,14 @@ from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+from vitrina.messages.models import EmailTemplate, SentMail
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from vitrina.messages.models import EmailTemplate
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
+from vitrina.messages.models import SentMail
+from django.template.loaders.app_directories import Loader
 
 
 class Filter:
@@ -477,18 +486,95 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
     return {'email_content': email_content, 'email_subject': email_subject}
 
 
+def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
+    try:
+        return EmailTemplate.objects.get(identifier=name)
+    except EmailTemplate.DoesNotExist:
+        return None
+
+
+def email(
+    recipients: list[str],
+    email_identifier: str,
+    name: str,  # template name
+    context: dict[str, Any] | None = None,
+    *,
+    # Allow user to override email templates via Admin.
+    override: bool = True,
+) -> dict[str, str]:
+    context = context or {}
+    email_template = None
+    subject = None
+    if override:
+        email_template = _get_email_tempate_from_db(email_identifier)
+    if email_template:
+        subject_template = email_template.subject
+        subject_template = Template(subject_template)
+        subject_context = Context(context)
+        subject = subject_template.render(subject_context)
+
+        template_db = email_template.template
+        template = Template(template_db)
+        context = Context(context)
+        content = template.render(context)
+        html_message = markdown.markdown(content)
+    else:
+        template_path = get_template(name)
+        with open(template_path.origin.name, encoding="utf-8") as file:
+            read_data = file.readlines()
+        content = render_to_string(name, context)
+        html_message = markdown.markdown(content)
+        html_message = '\n'.join(html_message.splitlines()[1:])
+        send_email_title = content.splitlines()
+        content_to_save = markdown.markdown(''.join(read_data[2:]))
+        EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=content_to_save,
+            subject=read_data[0].splitlines()[0],
+            title=read_data[0].splitlines()[0]
+        )
+    try:
+        send_mail(
+            subject=subject if subject else send_email_title[0],
+            message=str(content),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            html_message=html_message,
+        )
+        email_send = True
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", send_email_title[0],
+                        _(str(content)), recipients, e)
+        email_send = False
+
+    SentMail.objects.create(
+        created=datetime.datetime.now(),
+        deleted=None,
+        deleted_on=None,
+        modified=datetime.datetime.now(),
+        version=0,
+        recipient=recipients,
+        email_subject=subject,
+        email_content=content,
+        email_sent=email_send
+    )
+
+
 def send_email_with_logging(email_data, email_list):
     try:
         send_mail(
-            subject=_(email_data['email_subject']),
-            message=_(email_data['email_content']),
+            subject=email_data['email_subject'],
+            message=email_data['email_content'],
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=email_list,
         )
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", _(email_data['email_subject']),
-                        _(email_data['email_content']), email_list, e)
+        logging.warning("Email was not sent", email_data['email_subject'],
+                        email_data['email_content'], email_list, e)
 
 
 def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):

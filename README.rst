@@ -148,7 +148,7 @@ Email template identifiers (emails that supposed to be sent from administrative 
  15. auth-new-password
  16. auth-admin-credentials
  17. use-case-registered
- 18. request-registered
+ 18. request-registered ({0} - request title)
  19. use-case-rejected
  20. dataset-updated, current keys ({0} - object)
  21. request-approved

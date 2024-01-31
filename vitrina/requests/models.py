@@ -269,6 +269,12 @@ class RequestAssignment(models.Model):
 
     def __str__(self):
         return self.organization.__str__()
+    
+    @property
+    def display_status(self):
+        for status in Request.STATUSES:
+            if status[0] == self.status:
+                return status[1]
 
     @property
     def display_date(self):

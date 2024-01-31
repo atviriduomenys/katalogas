@@ -2349,6 +2349,20 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             obj.save()
 
         self.organization.delete()
+
+        request_assignments = RequestAssignment.objects.filter(
+            organization=self.organization
+        )
+        for request_assignment in request_assignments:
+            duplicate_ra = RequestAssignment.objects.filter(
+                organization=self.merge_organization,
+                request=request_assignment.request
+            ).first()
+            if duplicate_ra:
+                duplicate_ra.delete()
+            else:
+                request_assignment.organization = self.merge_organization
+                request_assignment.save()
         return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))
 
 

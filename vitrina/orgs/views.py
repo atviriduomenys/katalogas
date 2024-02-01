@@ -23,6 +23,7 @@ from django.views.generic.edit import FormView
 from itsdangerous import URLSafeSerializer
 from reversion import set_comment
 from reversion.models import Version
+from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.api.services import get_auth_session
@@ -2349,6 +2350,20 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             obj.save()
 
         self.organization.delete()
+
+        request_assignments = RequestAssignment.objects.filter(
+            organization=self.organization
+        )
+        for request_assignment in request_assignments:
+            duplicate_ra = RequestAssignment.objects.filter(
+                organization=self.merge_organization,
+                request=request_assignment.request
+            ).first()
+            if duplicate_ra:
+                duplicate_ra.delete()
+            else:
+                request_assignment.organization = self.merge_organization
+                request_assignment.save()
         return redirect(reverse('organization-detail', args=[self.merge_organization.pk]))
 
 

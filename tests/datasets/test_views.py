@@ -80,7 +80,7 @@ def test_distribution_preview(app: DjangoTestApp, dataset_detail_data):
         'dataset_id': dataset_detail_data['dataset'].pk,
         'distribution_id': dataset_detail_data['dataset_distribution'].pk
     }))
-    assert resp.json == {'data': [['Column'], ['Value']]}
+    assert resp.json == {'data': [['Column'], [['Value']]]}
 
 
 @pytest.fixture

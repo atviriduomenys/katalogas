@@ -443,12 +443,22 @@ class DatasetDistributionPreviewView(ListView):
                     sheet_name: data.parse(sheet_name) for sheet_name in data.sheet_names
                 }
                 if len(data.keys()) > 1:
-                    raise "Not implemented for more than one value"
-                data = data[next(iter(data))].values.tolist()
+                    data = [['Only one sheet is allowed in file']]
+                else:
+                    data = data[next(iter(data))].values.tolist()
+                    data = data[:5]
+            elif 'csv' in distribution.file.path:
+                readed_data = pd.read_csv(distribution.file.path)
+                headers = readed_data.columns.values
+                first_5_values = readed_data.values.tolist()
+                data.append(list(headers))
+                data.append(first_5_values[:5])
             else:
-                rows = open(distribution.file.path, encoding='utf-8')
-                rows = itertools.islice(rows, 100)
-                data = list(csv.reader(rows, delimiter=";"))
+                data = [['Only xlsx or csv files are available']]
+        else:
+            rows = open(distribution.file.path, encoding='utf-8')
+            rows = itertools.islice(rows, 100)
+            data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 

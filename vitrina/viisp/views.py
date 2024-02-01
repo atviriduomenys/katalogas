@@ -168,9 +168,8 @@ class VIISPAccountMergeView(View):
                     'phone': merge_data[4],
                     'ticket_id': merge_data[5]
                 }
-            except:
-                # FIXME: https://github.com/atviriduomenys/katalogas/issues/836
-                return redirect('home')
+            except IndexError:
+                return redirect('change-email')
             provider = providers.registry.by_id(VIISPProvider.id, request)
             login = provider.sociallogin_from_response(request, merge_data_dict)
             user = User.objects.filter(email=merge_data_dict.get('email')).first()

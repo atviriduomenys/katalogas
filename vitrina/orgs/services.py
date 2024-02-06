@@ -63,7 +63,7 @@ acl = {
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetStructure, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.CREATE): [Role.ALL],
-    (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
+    (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR, Role.COORDINATOR],
     (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],

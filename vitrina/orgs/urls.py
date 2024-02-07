@@ -7,7 +7,7 @@ from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, R
     OrganizationApiKeysDetailView, OrganizationApiKeysScopeCreateView, OrganizationApiKeysScopeChangeView, \
     OrganizationApiKeysScopeDeleteView, OrganizationApiKeysScopeToggleView, OrganizationApiKeysRegenerateView, \
     OrganizationApiKeysScopeObjectChangeView, OrganizationApiKeysScopeObjectDeleteView, \
-    OrganizationApiKeysScopeObjectToggleView
+    OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
@@ -70,6 +70,8 @@ urlpatterns = [
          OrganizationApiKeysScopeObjectDeleteView.as_view(), name='organization-apikeys-scope-object-delete'),
     path('orgs/<int:pk>/apikeys/<int:apikey_id>/<str:scope>/toggle/', OrganizationApiKeysScopeToggleView.as_view(),
          name='organization-apikeys-scope-toggle'),
+    path('orgs/<int:pk>/apikeys/<int:apikey_id>/toggle/', OrganizationApiKeysToggleView.as_view(),
+         name='organization-apikeys-toggle'),
     path('orgs/<int:pk>/apikeys/<int:apikey_id>/<int:content_type_id>/<int:obj_id>/toggle/',
          OrganizationApiKeysScopeObjectToggleView.as_view(), name='organization-apikeys-scope-object-toggle'),
     path('orgs/<int:pk>/plans/history/', OrganizationPlansHistoryView.as_view(), name='organization-plans-history'),

@@ -105,6 +105,7 @@
                         <th>{% translate "Pavadinimas" %}</th>
                             <td></td>
                             <td></td>
+                            <td></td>
                     </tr>
                     {% for i in external_keys %}
                         <tr>
@@ -136,6 +137,18 @@
                                         {% translate "Pašalinti" %}
                                     </a>
                                 </td>
+                                {% if can_manage_keys %}
+                                    <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-toggle' organization.id i.pk %}"
+                                       class="button is-warning is-small">
+                                        {% if i.enabled %}
+                                            {% translate "Išjungti" %}
+                                        {% else %}
+                                            {% translate "Įjungti" %}
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                {% endif %}
                         </tr>
                     {% endfor %}
                     </tbody>

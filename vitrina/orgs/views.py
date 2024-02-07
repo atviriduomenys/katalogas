@@ -1095,6 +1095,11 @@ class OrganizationApiKeysView(
             Representative,
             self.object
         )
+        context_data['can_manage_keys'] = has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.object
+        )
         if msg:
             context_data['success_message'] = msg
         context_data['organization_id'] = self.object.pk
@@ -2119,6 +2124,29 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
             print(err_message)
             messages.error(self.request, _('Saugant API raktą įvyko klaida.'))
         return redirect(reverse('organization-apikeys-detail', args=[self.organization.pk, self.api_key.pk]))
+
+
+class OrganizationApiKeysToggleView(PermissionRequiredMixin, View):
+
+    def dispatch(self, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        self.api_key = get_object_or_404(ApiKey, pk=self.kwargs.get('apikey_id'))
+        return super().dispatch(*args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_KEYS,
+            self.organization,
+        )
+
+    def get(self, request, **kwargs):
+        if self.api_key.enabled:
+            self.api_key.enabled = False
+        else:
+            self.api_key.enabled = True
+        self.api_key.save()
+        return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 
 class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):

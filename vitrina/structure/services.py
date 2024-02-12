@@ -20,6 +20,7 @@ from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
+from vitrina.helpers import none_to_string
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import spyna
 from vitrina.structure.helpers import get_type_repr
@@ -471,42 +472,45 @@ def _create_or_update_metadata(
             if hasattr(obj_meta, 'type_args') and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
 
-        if (
-            (
-                isinstance(metadata.object, Dataset) and
-                metadata.name != obj_meta.name
-            ) or (
-                isinstance(metadata.object, Model) and
+        if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+            if (
                 (
-                    metadata.name != obj_meta.name or
-                    metadata.ref != obj_meta.ref or
-                    metadata.level_given != obj_meta.level_given or
-                    (metadata.object.base and obj_meta.base and
-                     metadata.object.base.model.full_name != obj_meta.base.name) or
-                    (not metadata.object.base and obj_meta.base) or
-                    (metadata.object.base and not obj_meta.base)
+                    isinstance(metadata.object, Dataset) and
+                    latest_version.name != obj_meta.name
+                ) or (
+                    isinstance(metadata.object, Model) and
+                    (
+                        latest_version.name != obj_meta.name or
+                        none_to_string(latest_version.ref) != none_to_string(obj_meta.ref) or
+                        latest_version.level_given != obj_meta.level_given or
+                        (latest_version.base and obj_meta.base and
+                         latest_version.base.model.full_name != obj_meta.base.name) or
+                        (not latest_version.base and obj_meta.base) or
+                        (latest_version.base and not obj_meta.base)
+                    )
+                ) or (
+                    isinstance(metadata.object, Property) and
+                    (
+                        latest_version.name != obj_meta.name or
+                        latest_version.type != obj_meta.type or
+                        latest_version.required != obj_meta.required or
+                        latest_version.unique != obj_meta.unique or
+                        latest_version.type_args != type_args or
+                        none_to_string(latest_version.ref) != none_to_string(obj_meta.ref) or
+                        latest_version.level_given != obj_meta.level_given or
+                        latest_version.access != access
+                    )
+                ) or (
+                    isinstance(metadata.object, EnumItem) and
+                    (
+                        none_to_string(latest_version.prepare) != none_to_string(obj_meta.prepare) or
+                        none_to_string(latest_version.source) != none_to_string(obj_meta.source)
+                    )
                 )
-            ) or (
-                isinstance(metadata.object, Property) and
-                (
-                    metadata.name != obj_meta.name or
-                    metadata.type != obj_meta.type or
-                    metadata.required != obj_meta.required or
-                    metadata.unique != obj_meta.unique or
-                    metadata.type_args != type_args or
-                    metadata.ref != obj_meta.ref or
-                    metadata.level_given != obj_meta.level_given or
-                    metadata.access != access
-                )
-            ) or (
-                isinstance(metadata.object, EnumItem) and
-                (
-                    metadata.prepare != obj_meta.prepare or
-                    metadata.source != obj_meta.source
-                )
-            )
-        ):
-            metadata.draft = True
+            ):
+                metadata.draft = True
+            else:
+                metadata.draft = False
 
         metadata.uuid = obj_meta.id
         metadata.name = obj_meta.name if hasattr(obj_meta, 'name') else ''

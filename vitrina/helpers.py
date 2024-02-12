@@ -639,3 +639,15 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
         'sort': sort,
         'indicator': active_indicator
     }
+
+
+def none_to_string(value):
+    if value is None:
+        return ""
+    return value
+
+
+def object_to_none(obj):
+    if not obj or not obj.pk:
+        return None
+    return obj

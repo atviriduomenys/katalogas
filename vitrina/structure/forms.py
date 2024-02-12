@@ -554,18 +554,16 @@ class PropertyForm(forms.ModelForm):
     source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
     prepare = forms.CharField(label=_("Duomenų transformacija"), required=False)
     uri = forms.CharField(label=_("Klasė"), required=False)
-    level = forms.TypedChoiceField(
+    level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=PROPERTY_LEVEL_CHOICES,
-        coerce=int,
     )
-    access = forms.TypedChoiceField(
+    access = forms.ChoiceField(
         label=_("Prieigos lygis"),
         required=False,
         choices=Metadata.ACCESS_TYPES,
-        coerce=int
     )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(

@@ -23,7 +23,7 @@ from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_current_domain, email
+from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -1184,11 +1184,14 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.description = form.cleaned_data.get('description')
             metadata.version += 1
 
-            if (
-                'value' in form.changed_data or
-                'source' in form.changed_data
-            ):
-                metadata.draft = True
+            if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                if (
+                    none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or
+                    none_to_string(latest_version.source) != none_to_string(metadata.source)
+                ):
+                    metadata.draft = True
+                else:
+                    metadata.draft = False
 
             metadata.save()
 
@@ -1451,15 +1454,6 @@ class ModelUpdateView(
         else:
             self.object.prepare_ast = ""
         self.object.ref = ', '.join(model_ref.values_list('metadata__name', flat=True)) if model_ref else ''
-
-        if (
-            'name' in form.changed_data or
-            'base' in form.changed_data or
-            'ref' in form.changed_data or
-            'level' in form.changed_data
-        ):
-            self.object.draft = True
-
         self.object.save()
 
         model.property_list.all().delete()
@@ -1522,6 +1516,18 @@ class ModelUpdateView(
 
         model.update_level()
         self.dataset.update_level()
+
+        if latest_version := self.object.metadataversion_set.order_by('-version__created').first():
+            if(
+                latest_version.name != self.object.name or
+                latest_version.base != object_to_none(model.base) or
+                none_to_string(latest_version.ref) != none_to_string(self.object.ref) or
+                latest_version.level_given != self.object.level_given
+            ):
+                self.object.draft = True
+            else:
+                self.object.draft = False
+            self.object.save()
 
         if form.cleaned_data.get('comment'):
             comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
@@ -1696,15 +1702,18 @@ class PropertyUpdateView(
             if prop.ref_model:
                 prop.ref_model = None
 
-        if (
-            'name' in form.changed_data or
-            'type' in form.changed_data or
-            'ref' in form.changed_data or
-            'ref_others' in form.changed_data or
-            'level' in form.changed_data or
-            'access' in form.changed_data
-        ):
-            self.object.draft = True
+        if latest_version := self.object.metadataversion_set.order_by('-version__created').first():
+            if(
+                latest_version.name != self.object.name or
+                latest_version.type_repr != self.object.type_repr or
+                none_to_string(latest_version.ref) != none_to_string(self.object.ref) or
+                latest_version.level_given != self.object.level_given or
+                latest_version.access != self.object.access
+            ):
+                self.object.draft = True
+            else:
+                self.object.draft = False
+
         self.object.save()
 
         self.model_obj.update_level()

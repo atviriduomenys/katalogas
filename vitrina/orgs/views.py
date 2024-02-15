@@ -2141,11 +2141,16 @@ class OrganizationApiKeysToggleView(PermissionRequiredMixin, View):
         )
 
     def get(self, request, **kwargs):
+        scopes = ApiScope.objects.filter(key=self.api_key)
         if self.api_key.enabled:
             self.api_key.enabled = False
         else:
             self.api_key.enabled = True
         self.api_key.save()
+        if len(scopes) > 0:
+            for scope in scopes:
+                scope.enabled = self.api_key.enabled
+                scope.save()
         return redirect(reverse('organization-apikeys', args=[self.organization.pk]))
 
 

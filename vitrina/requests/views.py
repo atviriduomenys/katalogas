@@ -840,9 +840,10 @@ class RequestOrgDeleteView(
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        request_id = self.object.request.pk
+        request = self.object.request
         self.object.delete()
-        return redirect(reverse('request-organizations', kwargs={'pk': request_id}))
+        request.save()
+        return redirect(reverse('request-organizations', kwargs={'pk': request.pk}))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -154,6 +154,7 @@ class RequestDatasetsEditForm(ModelForm):
             Submit('submit', button, css_class='button is-primary')
         )
 
+
 class RequestSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
@@ -166,9 +167,9 @@ class RequestSearchForm(FacetedSearchForm):
         if self.cleaned_data.get('q'):
             keyword = self.cleaned_data.get('q')
             if len(keyword) < 5:
-                q = self.searchqueryset.autocomplete(text__startswith=self.cleaned_data['q'])
+                q = self.searchqueryset.models(Request).autocomplete(text__startswith=self.cleaned_data['q'])
             else:
-                q = self.searchqueryset.autocomplete(text__contains=self.cleaned_data['q'])
+                q = self.searchqueryset.models(Request).autocomplete(text__contains=self.cleaned_data['q'])
             if len(q) != 0:
                 sqs = q
         if self.cleaned_data.get('date_from'):

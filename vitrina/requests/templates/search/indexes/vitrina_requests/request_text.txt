@@ -1,5 +1,6 @@
 {{ object.title }}
 {{ object.status }}
+{{ object.get_organization_titles }}
 {{ object.dataset_statuses }}
 {{ object.dataset.organization.title }}
 {{ object.dataset.organization.jurisdiction }}

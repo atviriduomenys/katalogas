@@ -665,38 +665,34 @@ class RequestCreateView(
             request_update_sub=True,
             request_comments_sub=True,
         )
-        if self.object.organizations.exists():
-            org_id_list = self.object.organizations.values_list('id', flat=True)
-            for org_id in org_id_list:
-                organization = get_object_or_404(Organization, pk=org_id)
-                subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
-                                                   sub_type=Subscription.ORGANIZATION,
-                                                   content_type=get_content_type_for_model(Organization),
-                                                   object_id=org_id,
-                                                   request_update_sub=True)
-
-                email([organization.email], 'request-created-sub', 'vitrina/emails/request_created_organization_sub.md',
-                      {
-                          'request': self.object.title,
-                          'link': get_current_domain(self.request) + '/requets/' + str(self.object.pk) + '/'
-                      })
-                sub_email_list = []
-                for sub in subs:
-                    Task.objects.create(
-                        title=f"Poreikis organizacijai: {organization}",
-                        description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
-                        content_type=get_content_type_for_model(Request),
-                        object_id=self.object.pk,
-                        organization=organization if organization else None,
-                        status=Task.CREATED,
-                        type=Task.REQUEST,
-                        user=sub.user
-                    )
-                    if sub.user.email and sub.email_subscribed:
-                        if sub.user.organization:
-                            orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
-                            sub_email_list = [org.email for org in orgs]
-                        sub_email_list.append(sub.user.email)
+        sub_email_list = []
+        for organization in orgs:
+            subs = Subscription.objects.filter(
+                Q(object_id=organization.pk) | Q(object_id=None),
+                sub_type=Subscription.ORGANIZATION,
+                content_type=get_content_type_for_model(Organization),
+                request_update_sub=True
+            )
+            for sub in subs:
+                Task.objects.create(
+                    title=f"Poreikis organizacijai: {organization}",
+                    description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
+                    content_type=get_content_type_for_model(Request),
+                    object_id=self.object.pk,
+                    organization=organization if organization else None,
+                    status=Task.CREATED,
+                    type=Task.REQUEST,
+                    user=sub.user
+                )
+                if sub.user.email and sub.email_subscribed and sub.user.email not in sub_email_list:
+                    sub_email_list.append(sub.user.email)
+        if sub_email_list:
+            email(sub_email_list, 'request-created-sub',
+                  'vitrina/emails/request_created_organization_sub.md',
+                  {
+                      'request': self.object.title,
+                      'link': get_current_domain(self.request) + '/requets/' + str(self.object.pk) + '/'
+                  })
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

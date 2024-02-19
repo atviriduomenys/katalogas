@@ -37,6 +37,7 @@ from vitrina import settings
 from vitrina.api.models import ApiKey
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import get_frequency_and_format, get_values_for_frequency, get_query_for_frequency
+from vitrina.datasets.services import manage_subscriptions_for_representative as manage_dataset_subscriptions
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, \
     OrganizationCreateForm, ApiKeyForm, \
@@ -649,7 +650,10 @@ class RepresentativeCreateView(
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({"representative_id": self.object.pk})
+            token = serializer.dumps({
+                "representative_id": self.object.pk,
+                "subscribe": subscribe
+            })
             url = "%s%s" % (
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})
@@ -792,6 +796,7 @@ class RepresentativeRegisterView(RegisterView):
             token = self.kwargs.get('token')
             serializer = URLSafeSerializer(settings.SECRET_KEY)
             data = serializer.loads(token)
+            subscribe = data.get('subscribe')
             try:
                 representative = Representative.objects.get(pk=data.get('representative_id'))
             except ObjectDoesNotExist:
@@ -803,9 +808,22 @@ class RepresentativeRegisterView(RegisterView):
                 if isinstance(representative.content_object, Organization):
                     user.organization = representative.content_object
                     user.save()
+
+                    link = "%s%s" % (
+                        get_current_domain(self.request),
+                        reverse('organization-detail', kwargs={'pk': representative.content_object.pk})
+                    )
+                    manage_subscriptions_for_representative(subscribe, user, representative.content_object, link)
+
                 elif isinstance(representative.content_object, Dataset):
                     user.organization = representative.content_object.organization
                     user.save()
+
+                    link = "%s%s" % (
+                        get_current_domain(self.request),
+                        reverse('dataset-detail', kwargs={'pk': representative.content_object.pk})
+                    )
+                    manage_dataset_subscriptions(subscribe, user, representative.content_object, link)
 
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')

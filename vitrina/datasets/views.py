@@ -1034,7 +1034,10 @@ class CreateMemberView(
         else:
             self.object.save()
             serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({"representative_id": self.object.pk})
+            token = serializer.dumps({
+                "representative_id": self.object.pk,
+                "subscribe": form.cleaned_data.get('subscribe')
+            })
             url = "%s%s" % (
                 get_current_domain(self.request),
                 reverse('representative-register', kwargs={'token': token})

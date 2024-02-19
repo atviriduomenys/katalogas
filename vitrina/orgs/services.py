@@ -192,7 +192,8 @@ def create_subscription(user, organization):
         email_subscribed=True,
         dataset_comments_sub=True,
         request_comments_sub=True,
-        project_comments_sub=True
+        project_comments_sub=True,
+        request_update_sub=True,
     )
 
 

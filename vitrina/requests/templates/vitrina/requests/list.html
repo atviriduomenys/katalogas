@@ -132,12 +132,15 @@
                                         {% translate "Būsena" %}:
                                         {{ i.object.get_status_display }}
                                     </span>
-                                    {% if i.object.organizations.all %}
+                                    {% if i.object.requestassignment_set.all %}
                                         <span class="tag is-white has-text-dark">
-                                            {% for organization in i.object.organizations.all %}
-                                                <a href="{{ organization.get_absolute_url }}">
-                                                    {{ organization.title }}
+                                            {% for assignment in i.object.requestassignment_set.all %}
+                                                <a href="{{ assignment.organization.get_absolute_url }}">
+                                                    {{ assignment.organization.title }}
                                                 </a>
+                                                {% if not forloop.last %}
+                                                    ,&nbsp;
+                                                {% endif %}
                                             {% endfor %}
                                         </span>
                                     {% endif %}

@@ -211,6 +211,9 @@ class Request(models.Model):
                         tags.append(tag)
         return tags
 
+    def get_organization_titles(self):
+        return list(self.requestassignment_set.values_list('organization__title', flat=True))
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

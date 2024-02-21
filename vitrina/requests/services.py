@@ -39,24 +39,3 @@ def update_facet_data(
             updated_facet_data.append(data)
     return updated_facet_data
 
-
-def can_update_request_org(request, user):
-    if not user.is_authenticated:
-        return False
-
-    is_my_request = user == request.user
-    is_supervisor = Representative.objects.filter(user=user, role=Representative.SUPERVISOR).exists()
-
-    if not (is_my_request or is_supervisor or user.is_superuser or user.is_staff):
-        if user.organization and user.organization in request.organizations.all():
-            return has_perm(user, Action.UPDATE, request)
-
-        representatives = user.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id__isnull=False,
-            object_id__in=request.organizations.values_list('id', flat=True)
-        )
-        if not representatives.exists():
-            return False
-
-    return has_perm(user, Action.UPDATE, request)

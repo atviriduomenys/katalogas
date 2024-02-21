@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load util_tags %}
+{% load request_tags %}
 
 {% block current_title %}{% translate "Organizacijos" %}{% endblock%}
 {% block parent_links %}
@@ -72,7 +73,8 @@
                             </article>
                         </td>
                         <td>
-                            {% if can_update_orgs %}
+                            {% has_organization_remove_perm organization request.user as can_delete %}
+                            {% if can_delete %}
                             <article class="media">
                                 <div class="media-content">
                                     <div class="content">

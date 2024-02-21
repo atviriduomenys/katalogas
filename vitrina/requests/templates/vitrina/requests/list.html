@@ -127,26 +127,26 @@
                                     </strong>
                                 </div>
 
-                                <div class="tags mt-2 mb-1">
-                                    <span class="tag is-white has-text-dark">
+                                <div class="tags mt-2">
+                                    <span class="tag is-white has-text-dark no-margin-bottom">
                                         {% translate "Būsena" %}:
                                         {{ i.object.get_status_display }}
                                     </span>
                                     {% if i.object.requestassignment_set.all %}
-                                        <span class="tag is-white has-text-dark">
-                                            {% for assignment in i.object.requestassignment_set.all %}
+                                        {% for assignment in i.object.requestassignment_set.all %}
+                                            <span class="tag is-white has-text-dark no-margin-bottom">
                                                 <a href="{{ assignment.organization.get_absolute_url }}">
                                                     {{ assignment.organization.title }}
                                                 </a>
                                                 {% if not forloop.last %}
                                                     ,&nbsp;
                                                 {% endif %}
-                                            {% endfor %}
-                                        </span>
+                                            </span>
+                                        {% endfor %}
                                     {% endif %}
                                 </div>
 
-                                <div class="tags mt-2 mb-1">
+                                <div class="tags mt-3 mb-1">
                                     {% if i.object.created %}
                                         <span class="tag is-white has-text-dark">
                                             {% translate "Registravimo data" %}:

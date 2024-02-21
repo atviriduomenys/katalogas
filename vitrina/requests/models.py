@@ -287,3 +287,6 @@ class RequestAssignment(models.Model):
             object_id=self.pk
         ).order_by('-created').first()
         return latest_status_comment.created if latest_status_comment else self.created
+
+    def get_acl_parents(self):
+        return self.organization.get_acl_parents()

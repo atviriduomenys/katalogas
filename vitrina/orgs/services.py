@@ -15,7 +15,7 @@ from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
-from vitrina.requests.models import Request
+from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
@@ -75,7 +75,8 @@ acl = {
     (Task, Action.UPDATE): [Role.ALL],
     (Organization, Action.MANAGE_KEYS): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.MANAGE_PROJECT_KEYS): [Role.AUTHOR, Role.SUPERVISOR],
-
+    (RequestAssignment, Action.CREATE): [Role.COORDINATOR],
+    (RequestAssignment, Action.DELETE): [Role.COORDINATOR],
 }
 
 

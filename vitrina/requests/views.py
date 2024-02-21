@@ -50,7 +50,7 @@ from vitrina.requests.models import (Organization,
                                      RequestAssignment,
                                      RequestObject,
                                      RequestStructure)
-from vitrina.requests.services import update_facet_data, can_update_request_org
+from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
@@ -741,7 +741,16 @@ class RequestOrganizationView(
         context = super().get_context_data(**kwargs)
         context['request_obj'] = self.request_obj
         context['organizations'] = self.get_queryset()
-        context['can_update_orgs'] = can_update_request_org(self.request_obj, self.request.user)
+        context['can_update_orgs'] = False
+        for req_assignment in self.request_obj.requestassignment_set.all():
+            if has_perm(
+                self.request.user,
+                Action.CREATE,
+                RequestAssignment,
+                req_assignment.organization
+            ):
+                context['can_update_orgs'] = True
+                break
         return context
 
     def get_plan_object(self):
@@ -800,8 +809,15 @@ class RequestOrgEditView(
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
-        user = self.request.user
-        return can_update_request_org(request, user)
+        for req_assignment in request.requestassignment_set.all():
+            if has_perm(
+                self.request.user,
+                Action.CREATE,
+                RequestAssignment,
+                req_assignment.organization
+            ):
+                return True
+        return False
 
     def handle_no_permission(self):
         messages.error(self.request, 'Šio poreikio organizacijų keisti negalite.')
@@ -822,28 +838,34 @@ class RequestOrgDeleteView(
     model = RequestAssignment
     template_name = 'confirm_delete.html'
 
+    request_assignment: RequestAssignment
+
+    def dispatch(self, request, *args, **kwargs):
+        self.request_assignment = get_object_or_404(RequestAssignment, pk=self.kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        self.object = self.get_object()
-        request = get_object_or_404(Request, pk=self.object.request.pk)
-        user = self.request.user
-        return can_update_request_org(request, user)
+        return has_perm(
+            self.request.user,
+            Action.DELETE,
+            self.request_assignment,
+            self.request_assignment.organization
+        )
 
     def handle_no_permission(self):
-        self.object = self.get_object()
-        request_id = self.object.request.pk
+        request_id = self.request_assignment.request.pk
         messages.error(self.request, 'Šio poreikio organizacijų keisti negalite.')
         return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': request_id}))
 
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        request = self.object.request
-        self.object.delete()
+        request = self.request_assignment.request
+        self.request_assignment.delete()
         request.save()
         return redirect(reverse('request-organizations', kwargs={'pk': request.pk}))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        request = self.get_object().request
+        request = self.request_assignment.request
         context['current_title'] = _("Termino pašalinimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),

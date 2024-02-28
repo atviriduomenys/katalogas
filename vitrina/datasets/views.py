@@ -527,6 +527,14 @@ class DatasetCreateView(
         self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
+        Representative.objects.create(
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk,
+            user=self.request.user,
+            email=self.request.user.email,
+            role=Representative.COORDINATOR if self.request.user.is_coordinator \
+                else Representative.MANAGER
+        )
 
         for file in form.cleaned_data.get('files', []):
             DatasetFile.objects.get_or_create(

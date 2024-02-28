@@ -108,7 +108,7 @@
                 <p class="has-text-black">{{ dataset.organization.phone|default_if_none:"" }}</p>
 
                 <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
-                <p class="has-text-black"><a href="{{ organization.website }}"
+                <p class="has-text-black"><a href="{{ dataset.organization.website }}"
                                                  target="_blank">{{ dataset.organization.website|default_if_none:"" }}</a></p>
 
                 {% if dataset.coordinator %}

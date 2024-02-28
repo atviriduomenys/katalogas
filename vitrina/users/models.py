@@ -43,6 +43,10 @@ class User(AbstractUser):
         return bool(self.representative_set.filter(role=Representative.MANAGER))
 
     @property
+    def is_coordinator(self):
+        return bool(self.representative_set.filter(role=Representative.COORDINATOR))
+
+    @property
     def is_supervisor(self):
         return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
                 

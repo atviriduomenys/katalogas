@@ -288,7 +288,7 @@ class RepresentativeCreateForm(ModelForm):
     email = EmailField(label=_("El. paštas"))
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
-    subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
+    subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
 
     object_model = Organization
     object_id: int
@@ -311,16 +311,6 @@ class RepresentativeCreateForm(ModelForm):
             Submit('submit', _("Sukurti"), css_class='button is-primary'),
         )
 
-        try:
-            content_type = ContentType.objects.get_for_model(self.object_model)
-            subscription = Subscription.objects.get(user=self.instance.user,
-                                                    content_type=content_type,
-                                                    object_id=self.object_id)
-            if subscription:
-                self.fields['subscribe'].initial = True
-        except ObjectDoesNotExist:
-            self.fields['subscribe'].initial = False
-
     def clean(self):
         email = self.cleaned_data.get('email')
         content_type = ContentType.objects.get_for_model(self.object_model)
@@ -337,6 +327,7 @@ class RepresentativeCreateForm(ModelForm):
                 "Narys su šiuo el. pašto adresu jau egzistuoja."
             ))
         return super().clean()
+
 
 class PartnerRegisterForm(ModelForm):
     organization = ChoiceFieldNoValidation(
@@ -372,6 +363,7 @@ class PartnerRegisterForm(ModelForm):
 
     def clean(self):
         return self.cleaned_data
+
 
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)

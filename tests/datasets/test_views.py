@@ -1229,7 +1229,7 @@ def test_dataset_members_add_member(app: DjangoTestApp):
     assert rep.has_api_access is False
     assert rep.apikey_set.count() == 0
 
-    assert len(mail.outbox) == 0
+    assert len(mail.outbox) == 1
 
 
 @pytest.mark.django_db

@@ -556,7 +556,7 @@ def email(
         deleted_on=None,
         modified=datetime.datetime.now(),
         version=0,
-        recipient=recipients,
+        recipient=list(recipients),
         email_subject=subject,
         email_content=content,
         email_sent=email_send

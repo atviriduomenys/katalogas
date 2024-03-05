@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -18,6 +18,7 @@ from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email
+from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
@@ -46,6 +47,7 @@ class CommentView(
             get_current_domain(self.request),
             obj.get_absolute_url()
         )
+        sub_email_list = []
 
         if form.is_valid():
             comment = form.save(commit=False)
@@ -78,6 +80,40 @@ class CommentView(
                 comment.type = Comment.REQUEST
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
+
+                if isinstance(obj, Dataset):
+                    if obj.organization.email:
+                        sub_email_list.append(obj.organization.email)
+
+                    subs = Subscription.objects.filter(
+                        Q(object_id=obj.pk) | Q(object_id=None),
+                        sub_type=Subscription.DATASET,
+                        content_type=ContentType.objects.get_for_model(obj),
+                        dataset_comments_sub=True
+                    )
+                    for sub in subs:
+                        if (
+                            sub.user.email and
+                            sub.email_subscribed and
+                            sub.user.email not in sub_email_list and
+                            Representative.objects.filter(
+                                content_type=ContentType.objects.get_for_model(obj),
+                                object_id=obj.pk,
+                                email=sub.user.email
+                            ).exists()
+                        ):
+                            sub_email_list.append(sub.user.email)
+
+                    if sub_email_list:
+                        email(
+                            sub_email_list,
+                            'request-created-sub',
+                            'vitrina/emails/request_created_organization_sub.md',
+                            {
+                                'request': new_request.title,
+                                'link': get_current_domain(self.request) + new_request.get_absolute_url()
+                            }
+                        )
 
             elif status := form.cleaned_data.get('status'):
                 user_org = request.user.organization
@@ -159,7 +195,15 @@ class CommentView(
             comment.save()
             create_task(NEW_COMMENT, content_type, obj.pk, request.user, obj=obj)
             create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs(NEW_COMMENT, content_type, obj.pk, request.user, link, obj=obj)
+            send_mail_and_create_tasks_for_subs(
+                NEW_COMMENT,
+                content_type,
+                obj.pk,
+                request.user,
+                link,
+                obj=obj,
+                excluded_emails=sub_email_list
+            )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
@@ -219,6 +263,8 @@ class ExternalCommentView(
             comment.external_object_id = external_object_id
             comment.external_content_type = external_content_type
             comment.type = Comment.USER
+            dataset = get_object_or_404(Dataset, pk=dataset_id)
+            sub_email_list = []
 
             if form.cleaned_data.get('register_request'):
                 new_request = Request.objects.create(
@@ -238,6 +284,39 @@ class ExternalCommentView(
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
+
+                if dataset.organization.email:
+                    sub_email_list.append(dataset.organization.email)
+
+                subs = Subscription.objects.filter(
+                    Q(object_id=dataset.pk) | Q(object_id=None),
+                    sub_type=Subscription.DATASET,
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    dataset_comments_sub=True
+                )
+                for sub in subs:
+                    if (
+                        sub.user.email and
+                        sub.email_subscribed and
+                        sub.user.email not in sub_email_list and
+                        Representative.objects.filter(
+                            content_type=ContentType.objects.get_for_model(dataset),
+                            object_id=dataset.pk,
+                            email=sub.user.email
+                        ).exists()
+                    ):
+                        sub_email_list.append(sub.user.email)
+
+                if sub_email_list:
+                    email(
+                        sub_email_list,
+                        'request-created-sub',
+                        'vitrina/emails/request_created_organization_sub.md',
+                        {
+                            'request': new_request.title,
+                            'link': get_current_domain(self.request) + new_request.get_absolute_url()
+                        }
+                    )
             else:
                 representatives = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(Dataset),

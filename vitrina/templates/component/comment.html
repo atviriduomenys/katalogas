@@ -72,7 +72,7 @@
                                 </small>
                             </p>
                         </div>
-                        {% if user.is_authenticated %}
+                        {% if user.is_authenticated and comment.can_reply %}
                             <div class="column">
                                 <a class="button is-primary is-pulled-right show-reply-form mt-1 mr-1"
                                    id="{{ comment.id }}">{% translate "Atsakyti" %}</a>

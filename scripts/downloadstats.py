@@ -55,7 +55,7 @@ def main(
     current_state = {'files': {}}
 
     bots_found = {'agents': {}}
-    apikey = input("Please enter api key or just press enter to load it from config")
+    apikey = ""
 
     limit = 1000
     total_lines_read = 0

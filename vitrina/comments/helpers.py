@@ -51,7 +51,19 @@ def create_subscription(user, comment):
     )
 
 
-def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, user, link, obj=None, comment_object=None):
+def send_mail_and_create_tasks_for_subs(
+    comment_type,
+    content_type,
+    object_id,
+    user,
+    link,
+    obj=None,
+    comment_object=None,
+    excluded_emails=None,
+):
+    if excluded_emails is None:
+        excluded_emails = []
+
     object_subs = Subscription.objects.exclude(user=user).filter(
         sub_type=content_type.model.upper(),
         content_type=content_type,
@@ -77,7 +89,11 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
                 obj=obj,
                 comment_object=comment_object
             )
-        if sub.user.email:
+        if (
+            sub.user.email and
+            sub.user.email not in email_list and
+            sub.user.email not in excluded_emails
+        ):
             email_list.append(sub.user.email)
     for sub in org_subs:
         if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
@@ -89,11 +105,30 @@ def send_mail_and_create_tasks_for_subs(comment_type, content_type, object_id, u
                 obj=obj,
                 comment_object=comment_object
             )
-            if sub.user.email and sub.user.email not in email_list:
+            if (
+                sub.user.email and
+                sub.user.email not in email_list and
+                sub.user.email not in org_email_list and
+                sub.user.email not in excluded_emails
+            ):
                 org_email_list.append(sub.user.email)
-    send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type)
+
+    send_mail_to_object_subscribers(
+        email_list,
+        content_type,
+        object_id,
+        link,
+        comment_type
+    )
     if len(org_subs) > 0:
-        send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type, org=obj.organization)
+        send_mail_to_object_subscribers(
+            org_email_list,
+            content_type,
+            object_id,
+            link,
+            comment_type,
+            org=obj.organization
+        )
 
 
 def send_mail_to_object_subscribers(

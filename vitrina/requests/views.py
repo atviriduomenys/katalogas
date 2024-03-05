@@ -53,6 +53,7 @@ from vitrina.requests.models import (Organization,
 from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
 from vitrina.tasks.models import Task
+from vitrina.users.models import User
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
 from django.http.response import HttpResponsePermanentRedirect, Http404
@@ -666,32 +667,48 @@ class RequestCreateView(
             request_comments_sub=True,
         )
         sub_email_list = []
-        for organization in orgs:
-            subs = Subscription.objects.filter(
-                Q(object_id=organization.pk) | Q(object_id=None),
-                sub_type=Subscription.ORGANIZATION,
-                content_type=get_content_type_for_model(Organization),
-                request_update_sub=True
-            )
-            for sub in subs:
-                Task.objects.create(
-                    title=f"Poreikis organizacijai: {organization}",
-                    description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
-                    content_type=get_content_type_for_model(Request),
-                    object_id=self.object.pk,
-                    organization=organization if organization else None,
-                    status=Task.CREATED,
-                    type=Task.REQUEST,
-                    user=sub.user
+        if not orgs:
+            sub_email_list = User.objects.filter(is_superuser=True).values_list('email', flat=True)
+        else:
+            for organization in orgs:
+                if organization.email:
+                    sub_email_list.append(organization.email)
+
+                subs = Subscription.objects.filter(
+                    Q(object_id=organization.pk) | Q(object_id=None),
+                    sub_type=Subscription.ORGANIZATION,
+                    content_type=get_content_type_for_model(Organization),
+                    request_update_sub=True
                 )
-                if sub.user.email and sub.email_subscribed and sub.user.email not in sub_email_list:
-                    sub_email_list.append(sub.user.email)
+                for sub in subs:
+                    Task.objects.create(
+                        title=f"Poreikis organizacijai: {organization}",
+                        description=f"Sukurtas naujas poreikis organizacijai: {organization}.",
+                        content_type=get_content_type_for_model(Request),
+                        object_id=self.object.pk,
+                        organization=organization if organization else None,
+                        status=Task.CREATED,
+                        type=Task.REQUEST,
+                        user=sub.user
+                    )
+                    if (
+                        sub.user.email and
+                        sub.email_subscribed and
+                        sub.user.email not in sub_email_list and
+                        Representative.objects.filter(
+                            content_type=ContentType.objects.get_for_model(organization),
+                            object_id=organization.pk,
+                            role=Representative.COORDINATOR,
+                            email=sub.user.email
+                        ).exists()
+                    ):
+                        sub_email_list.append(sub.user.email)
         if sub_email_list:
             email(sub_email_list, 'request-created-sub',
                   'vitrina/emails/request_created_organization_sub.md',
                   {
                       'request': self.object.title,
-                      'link': get_current_domain(self.request) + '/requets/' + str(self.object.pk) + '/'
+                      'link': get_current_domain(self.request) + self.object.get_absolute_url()
                   })
         return HttpResponseRedirect(self.get_success_url())
 
@@ -742,15 +759,21 @@ class RequestOrganizationView(
         context['request_obj'] = self.request_obj
         context['organizations'] = self.get_queryset()
         context['can_update_orgs'] = False
-        for req_assignment in self.request_obj.requestassignment_set.all():
-            if has_perm(
-                self.request.user,
-                Action.CREATE,
-                RequestAssignment,
-                req_assignment.organization
-            ):
-                context['can_update_orgs'] = True
-                break
+        if self.request.user.is_authenticated and (
+            self.request.user.is_staff or
+            self.request.user.is_superuser
+        ):
+            context['can_update_orgs'] = True
+        else:
+            for req_assignment in self.request_obj.requestassignment_set.all():
+                if has_perm(
+                    self.request.user,
+                    Action.CREATE,
+                    RequestAssignment,
+                    req_assignment.organization
+                ):
+                    context['can_update_orgs'] = True
+                    break
         return context
 
     def get_plan_object(self):
@@ -779,10 +802,34 @@ class RequestOrgEditView(
         orgs = form.cleaned_data.get('organizations')
         plural = form.cleaned_data.get('plural')
         ra_objects = RequestAssignment.objects.filter(request=self.object).all()
+        sub_email_list = []
         for ra in ra_objects:
             if ra.organization in orgs:
                 ra.delete()
         for org in orgs:
+            if org.email and org.email not in sub_email_list:
+                sub_email_list.append(org.email)
+
+            subs = Subscription.objects.filter(
+                Q(object_id=org.pk) | Q(object_id=None),
+                sub_type=Subscription.ORGANIZATION,
+                content_type=get_content_type_for_model(Organization),
+                request_update_sub=True
+            )
+            for sub in subs:
+                if (
+                    sub.user.email and
+                    sub.email_subscribed and
+                    sub.user.email not in sub_email_list and
+                    Representative.objects.filter(
+                        content_type=ContentType.objects.get_for_model(org),
+                        object_id=org.pk,
+                        role=Representative.COORDINATOR,
+                        email=sub.user.email
+                    ).exists()
+                ):
+                    sub_email_list.append(sub.user.email)
+
             self.object.organizations.add(org)
             RequestAssignment.objects.create(
                 organization=org,
@@ -797,17 +844,58 @@ class RequestOrgEditView(
                     ra_objects = RequestAssignment.objects.filter(request=self.object, organization=c_org).all()
                     for ra in ra_objects:
                         ra.delete()
+
+                    if c_org.email and c_org.email not in sub_email_list:
+                        sub_email_list.append(c_org.email)
+
+                    subs = Subscription.objects.filter(
+                        Q(object_id=c_org.pk) | Q(object_id=None),
+                        sub_type=Subscription.ORGANIZATION,
+                        content_type=get_content_type_for_model(Organization),
+                        request_update_sub=True
+                    )
+                    for sub in subs:
+                        if (
+                            sub.user.email and
+                            sub.email_subscribed and
+                            sub.user.email not in sub_email_list and
+                            Representative.objects.filter(
+                                content_type=ContentType.objects.get_for_model(c_org),
+                                object_id=c_org.pk,
+                                role=Representative.COORDINATOR,
+                                email=sub.user.email
+                            ).exists()
+                        ):
+                            sub_email_list.append(sub.user.email)
+
                     self.object.organizations.add(c_org)
                     RequestAssignment.objects.create(
                         organization=c_org,
                         request=self.object,
                         status=Request.CREATED
                     )
+
+        if sub_email_list:
+            email(
+                sub_email_list,
+                'request-created-sub',
+                'vitrina/emails/request_created_organization_sub.md',
+                {
+                    'request': self.object.title,
+                    'link': get_current_domain(self.request) + self.object.get_absolute_url()
+                }
+            )
+
         self.object.save()
         set_comment(Request.EDITED)
         return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.object.id}))
 
     def has_permission(self):
+        if self.request.user.is_authenticated and (
+            self.request.user.is_staff or
+            self.request.user.is_superuser
+        ):
+            return True
         request = get_object_or_404(Request, pk=self.kwargs.get('pk'))
         for req_assignment in request.requestassignment_set.all():
             if has_perm(

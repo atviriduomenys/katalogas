@@ -101,6 +101,11 @@ class Comment(models.Model):
             descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
+    def can_reply(self):
+        if self.type == self.REQUEST:
+            return False
+        return True
+
     def body_text(self):
         if self.type == self.REQUEST and self.rel_content_object:
             body_text = _(

@@ -938,14 +938,21 @@ class DatasetMembersView(
         )
 
     def get_queryset(self):
-        return (
+        coordinators = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Organization),
+            role=Representative.COORDINATOR,
+            object_id=self.object.organization.id
+        )
+        data_managers_for_dataset = (
             Representative.objects.
             filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
                 object_id=self.object.pk,
+                role=Representative.MANAGER,
             ).
             order_by("role", "first_name", 'last_name')
         )
+        return (coordinators | data_managers_for_dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

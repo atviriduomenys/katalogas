@@ -943,16 +943,17 @@ class DatasetMembersView(
             role=Representative.COORDINATOR,
             object_id=self.object.organization.id
         )
-        data_managers_for_dataset = (
+        coordinator_user_ids = [rep.id for rep in coordinators]
+        data_managers_for_datasets = (
             Representative.objects.
             filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
                 object_id=self.object.pk,
-                role=Representative.MANAGER,
             ).
+            exclude(user__id__in=coordinator_user_ids).
             order_by("role", "first_name", 'last_name')
         )
-        return (coordinators | data_managers_for_dataset)
+        return coordinators | data_managers_for_datasets
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

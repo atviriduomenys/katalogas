@@ -5,13 +5,26 @@
 {% block parent_url %}{% url 'djangocms_blog:posts-latest' %}{% endblock %}
 {% block current_title %}{{ post.title }}{% endblock %}
 
+{% block parent_links %}
+<ul class="p-t-sm">
+    <li>
+        <a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate "Pradžia" %}</span>
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
     <div class="columns">
         <article class="has-margin-bottom">
             {% if post.main_image %}
                 <div class="column is-3">
                     <figure>
-                        <img class="newsitem-thumb-image" src="{{ post.main_image.url }}" />
+                        <img class="newsitem-thumb-image" src="{{ post.main_image.url }}" alt="{{ post.title }}" />
                     </figure>
                 </div>
             {% endif %}

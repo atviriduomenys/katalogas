@@ -6,6 +6,16 @@
 
 {% block current_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
 
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate 'Pradžia' %}</span></a></li>
+    </ul>
+{% endblock %}
+
 {% block content %}
     <div class="columns">
         <div class="column is-one-quarter">
@@ -29,7 +39,7 @@
                 {% for i in page_obj %}
                 <article class="has-margin-bottom has-line-bottom">
                     <div class="columns single-item reverse-columns">
-                        <div class="column {% if i.getImageUUID %}is-10{% else %}is-12{% endif %}">
+                        <div class="column {% if i.image %}is-10{% else %}is-12{% endif %}">
                             <p>
                                 <a href="{{ i.get_absolute_url }}" class="usecase-url">
                                     {{ i.get_title }}
@@ -44,10 +54,10 @@
                             </p>
                             <p>{{ i.description|truncatewords:42 }}</p>
                         </div>
-                        {% if i.getImageUUID %}
+                        {% if i.image %}
                             <div class="column is-2">
                                 <figure class="image">
-                                    <img class="max-256x256" src="/image/{{ i.getImageUUID }}">
+                                    <img class="max-256x256" src="{{ i.image.url }}" alt="{{ i.title }}">
                                 </figure>
                             </div>
                         {% endif %}
@@ -58,7 +68,7 @@
                 <br>
                 {% include "vitrina/common/pagination.html" %}
             {% else %}
-                {% translate "Nėra panaudojimo atvėjo" %}
+                {% translate "Nėra panaudojimo atvejo" %}
             {% endif %}
         </div>
     </div>

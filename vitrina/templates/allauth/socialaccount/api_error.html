@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "VIISP API Klaida" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Atsiprašome, šiuo metu VIISP prisijungimas neveikia." %}</p>
+<br>
+{% if request.user.is_superuser %}
+  <h1 class="has-text-danger">{% translate "Klaidos informacija:" %}</h1>
+  <p>{{ error_response }}</p>
+  <p>{{ error_response_text }}</p>
+  <br>
+{% endif %}
+{% endblock %}

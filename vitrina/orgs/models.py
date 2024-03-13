@@ -1,4 +1,4 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
@@ -43,6 +43,8 @@ class Municipality(models.Model):
 
 
 class Organization(MP_Node):
+    UPLOAD_TO = "data/files"
+
     GOV = "gov"
     COM = "com"
     ORG = "org"
@@ -52,9 +54,11 @@ class Organization(MP_Node):
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
     }
 
+    GROUP = "group"
     MINISTRY = "ministry"
     MUNICIPALITY = "municipality"
     ROLES = (
+        (GROUP, _("Grupė")),
         (MINISTRY, _("Ministerija")),
         (MUNICIPALITY, _("Savivaldybė"))
     )
@@ -62,30 +66,34 @@ class Organization(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    description = models.TextField(blank=True, null=True)
-    municipality = models.CharField(max_length=255, blank=True, null=True)
-    region = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, verbose_name=_('Aprašymas'))
+    municipality = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Savivaldybė'))
+    region = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Regionas'))
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
+    title = models.TextField(blank=True, null=True, verbose_name=_('Pavadinimas'))
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    address = models.CharField(max_length=255, blank=True, null=True)
-    company_code = models.CharField(max_length=255, blank=True, null=True)
-    email = models.CharField(max_length=255, blank=True, null=True)
-    is_public = models.BooleanField(blank=True, null=True)
-    phone = models.CharField(max_length=255, blank=True, null=True)
-    jurisdiction = models.CharField(max_length=255, blank=True, null=True)
-    website = models.CharField(max_length=255, blank=True, null=True)
-    kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG)
-    role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True)
-    image = FilerImageField(null=True, blank=True, related_name="image_organization", on_delete=models.SET_NULL)
-    provider = models.BooleanField(_("Atvėrimo duomenų teikėjas"), default=False)
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Adresas'))
+    company_code = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Registracijos numeris'))
+    email = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Elektroninis paštas'))
+    is_public = models.BooleanField(blank=True, null=True, verbose_name=_('Organizacija viešinama'))
+    phone = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Telefono numeris'))
+    jurisdiction = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Jurisdikcija'))
+    website = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Tinklalapis'))
+    kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG, verbose_name=_('Tipas'))
+    role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True, verbose_name=_('Vaidmuo'))
+    image = FilerImageField(null=True, blank=True,
+                            related_name="image_organization",
+                            on_delete=models.SET_NULL, verbose_name=_('Logotipas'))
+    provider = models.BooleanField(default=False, verbose_name=_("Atvėrimo duomenų teikėjas"))
+    name = models.TextField(max_length=255, unique=True, blank=True, null=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     node_order_by = ["title"]
+    representatives = GenericRelation('Representative')
 
     class Meta:
         db_table = 'organization'
@@ -103,6 +111,15 @@ class Organization(MP_Node):
         parents = [self]
         parents.extend(self.get_ancestors())
         return parents
+
+    def dataset_tags(self):
+        from vitrina.datasets.models import Dataset
+        tags = []
+        for dataset in Dataset.objects.filter(organization=self.pk).all():
+            for tag in dataset.get_tag_list():
+                if tag not in tags:
+                    tags.append(tag)
+        return tags
 
 
 class Representative(models.Model):
@@ -130,6 +147,8 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
+    objects = models.Manager()
+
     class Meta:
         db_table = 'representative'
         unique_together = ['content_type', 'object_id', 'user']
@@ -155,12 +174,14 @@ class PublishedReport(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    data = models.TextField(blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
+    data = models.TextField(blank=True, null=True, verbose_name=_("Duomenys"))
+    title = models.TextField(blank=True, null=True, verbose_name=_('Pavadinimas'))
 
     class Meta:
         managed = True
         db_table = 'published_report'
+        verbose_name = _("Ataskaita")
+        verbose_name_plural = _("Ataskaitos")
 
 
 class Report(models.Model):
@@ -175,3 +196,22 @@ class Report(models.Model):
     class Meta:
         managed = True
         db_table = 'report'
+
+
+class OrganizationMapping(models.Model):
+    org_id = models.IntegerField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'organization_mapping'
+
+
+class RepresentativeRequest(models.Model):
+    user = models.ForeignKey('vitrina_users.User',  blank=True, null=True, on_delete=models.CASCADE)
+    document = models.FileField(upload_to='data/files/request_assignments')
+    organization = models.ForeignKey(Organization, blank=True, null=True, on_delete=models.CASCADE)
+
+    class Meta:
+        managed = True
+        db_table = 'representative_request'

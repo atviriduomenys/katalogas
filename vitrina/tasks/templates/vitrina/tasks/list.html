@@ -7,18 +7,99 @@
 {% block current_title %}{% translate "Užduotys" %}{% endblock %}
 
 {% block content %}
-    {% if page_obj %}
+
     <div class="columns">
-        <div class="column is-one-quarter is-hidden-mobile"></div>
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% for item in cats %}
+                <nav class="box category-panel mb-5">
+                        <p class="status-panel-heading" title="{{ item.title }}  {{ item.filter }}">
+                            <strong>{% translate item.title %}</strong>
+                        </p>
+                        {% for sub in item.types %}
+                                <div class="columns is-gapless m-0 mt-1">
+                                    <div class="column is-1">
+                                        <span class="icon glyphicon-list"></span>
+                                    </div>
+                                    <div class="column is-9">
+                                        <a href="{% url 'user-task-list' pk=user.pk %}?filter={{ sub.filter }}"
+                                           class="category-panel-block
+                                           {% if active_filter == sub.filter %}
+                                               has-text-weight-bold
+                                           {% else %}
+                                               has-text-dark
+                                           {% endif %}
+
+                                           ">{% translate sub.subtype %}</a>
+                                    </div>
+                                    <div class="column is-2 has-text-right">
+                                        <span>({{ sub.count }})</span>
+                                    </div>
+                                </div>
+                        {% endfor %}
+                </nav>
+            {% endfor %}
+        </div>
+
+        {% if page_obj %}
         <div class="column is-three-quarters">
             {% for i in page_obj %}
-                <article class="media is-expanded">
+                <article class="box media is-expanded">
                     <div class="media-content">
                         <div class="content">
-                            <strong class="dataset-list-title">{{ i.title }}</strong>
-                            <p class="dataset-list-description">
-                                {% translate "Sukurta prieš" %}: {{ i.created|timesince }}
-                            </p>
+                            <div class="columns">
+                                <div class="column is-12">
+                                    <a href="{% url 'user-task-detail' user.pk i.pk %}">
+                                        <strong class="dataset-list-title">{{ i.title }}</strong>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-2">
+                                    {{ i.created|date:"Y-m-d" }}
+                                </div>
+                                <div class="column">
+                                    {% translate i.status|title %}
+                                </div>
+                                <div class="column">
+                                    {% if i.user %}
+                                        {{ i.user }}
+                                    {% endif %}
+                                </div>
+                                <div class="column">
+                                    {% if i.is_due_or_expiring|first == True %}
+                                        <span class="has-text-danger">
+                                        {% translate 'Vėluoja' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
+                                            {% translate 'dieną' %}
+                                        {% else %}
+                                            {% translate 'dienas' %}
+                                        {% endif %}
+                                        </span>
+                                    {% elif i.is_due_or_expiring|first == False %}
+                                        <span class="has-text-warning">
+                                        {% translate 'Liko' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
+                                            {% translate 'diena' %}
+                                        {% else %}
+                                            {% translate 'dienos' %}
+                                        {% endif %}
+                                        </span>
+                                    {% else %}
+                                        {{ i.due_date|date:"Y-m-d" }}
+                                    {% endif %}
+                                </div>
+                                <div class="column">
+                                    <a href="{% url 'user-task-close' user.pk i.pk %}"
+                                       class="button is-primary stays-right">
+                                        {% translate "Uždaryti" %}
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-12">
+                                    <p>{{ i.description | safe }}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -26,10 +107,12 @@
             <br/>
             {% include "vitrina/common/pagination.html" %}
         </div>
+        {% else %}
+            <div class="column is-three-quarters">
+                <p>{% translate "Užduočių nėra!" %}</p>
+            </div>
+        {% endif %}
     </div>
-    <br/>
-    {% else %}
-    <p>{% translate "Užduočių nėra!" %}</p>
-    {% endif %}
+
 {% endblock %}
 

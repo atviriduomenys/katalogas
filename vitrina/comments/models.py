@@ -1,9 +1,11 @@
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
+from vitrina.requests.models import Request
 
 
 class Comment(models.Model):
@@ -13,6 +15,7 @@ class Comment(models.Model):
     REQUEST = "REQUEST"
     PROJECT = "PROJECT"
     STATUS = "STATUS"
+    PLAN = "PLAN"
     STRUCTURE = "STRUCTURE"
     STRUCTURE_ERROR = "STRUCTURE_ERROR"
     TYPES = (
@@ -20,20 +23,21 @@ class Comment(models.Model):
         (REQUEST, _("Prašymo atverti duomenis komentaras")),
         (PROJECT, _("Duomenų rinkinio įtraukimo į projektą komentaras")),
         (STATUS, _("Statuso keitimo komentaras")),
+        (PLAN, _("Įtraukimo į planą komentaras")),
         (STRUCTURE, _("Struktūros importavimo komentaras")),
         (STRUCTURE_ERROR, _("Struktūros importavimo klaida")),
     )
 
     INVENTORED = "INVENTORED"
-    STRUCTURED = "STRUCTURED"
+    PLANNED = "PLANNED"
     OPENED = "OPENED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     STATUSES = (
         (INVENTORED, _("Inventorintas")),
-        (STRUCTURED, _("Įkelta duomenų struktūra")),
+        (PLANNED, _("Planuojamas atverti")),
         (OPENED, _("Atvertas")),
-        (APPROVED, _("Patvirtintas")),
+        (APPROVED, _("Įvertintas")),
         (REJECTED, _("Atmestas"))
     )
 
@@ -75,6 +79,17 @@ class Comment(models.Model):
         ordering = ('-created',)
         get_latest_by = 'created'
 
+    def __str__(self):
+        return self.get_type_display()
+
+    def get_absolute_url(self):
+        if self.content_object:
+            return self.content_object.get_absolute_url()
+        elif self.rel_content_object:
+            return self.rel_content_object.get_absolute_url()
+        else:
+            return None
+
     def descendants(self, include_self=False, permission=False):
         descendants = []
         children = Comment.objects.filter(parent_id=self.pk).order_by('created')
@@ -86,22 +101,35 @@ class Comment(models.Model):
             descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
-    def body_text(self):
+    def can_reply(self):
         if self.type == self.REQUEST:
+            return False
+        return True
+
+    def body_text(self):
+        if self.type == self.REQUEST and self.rel_content_object:
             body_text = _(
                 f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
                 f"{self.rel_content_object.description}")
-        elif self.type == self.PROJECT:
+        elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(
                 "Šis duomenų rinkinys įtrauktas į "
                 f"{self.rel_content_object.get_title()} projektą."
             )
         elif self.type == self.STATUS:
-            body_text = _(
-                f"Statusas pakeistas į {self.get_status_display()}."
-            )
+            if isinstance(self.content_object, Request) and self.status == self.OPENED:
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}.")
+            elif isinstance(self.content_object, Request) and self.status == self.PLANNED:
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.PLANNED)}.")
+            else:
+                body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
+        elif self.type == self.PLAN and self.rel_content_object:
+            body_text = mark_safe(
+                f'Įtraukta į planą '
+                f'<a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
+            )
         else:
             body_text = self.body
         return body_text

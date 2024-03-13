@@ -3,15 +3,21 @@ import operator
 from enum import Enum
 from typing import Type
 
+from django.contrib.admin.options import get_content_type_for_model
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.db.models import Q
 
+from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.helpers import email
+from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
-from vitrina.requests.models import Request
+from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
@@ -24,6 +30,8 @@ class Action(Enum):
     COMMENT = "comment_with_status"
     STRUCTURE = 'structure'
     PLAN = 'plan'
+    MANAGE_KEYS = 'manage_keys'
+    MANAGE_PROJECT_KEYS = 'manage_project_keys'
 
 
 class Role(Enum):
@@ -48,21 +56,27 @@ acl = {
     (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
+    (Dataset, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (DatasetStructure, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.CREATE): [Role.ALL],
-    (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR],
+    (Request, Action.UPDATE): [Role.AUTHOR, Role.SUPERVISOR, Role.COORDINATOR],
     (Request, Action.DELETE): [Role.AUTHOR, Role.SUPERVISOR],
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.PLAN): [Role.AUTHOR, Role.SUPERVISOR],
+    (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
-
+    (Task, Action.UPDATE): [Role.ALL],
+    (Organization, Action.MANAGE_KEYS): [Role.COORDINATOR, Role.MANAGER],
+    (Project, Action.MANAGE_PROJECT_KEYS): [Role.AUTHOR, Role.SUPERVISOR],
+    (RequestAssignment, Action.CREATE): [Role.COORDINATOR],
+    (RequestAssignment, Action.DELETE): [Role.COORDINATOR],
 }
 
 
@@ -80,6 +94,14 @@ def is_supervisor(user: User, node: Model) -> bool:
     if isinstance(node, Organization):
         for rep in user.representative_set.all():
             if rep.is_supervisor(node):
+                return True
+    return False
+
+
+def is_manager(user: User, node: Model) -> bool:
+    if isinstance(node, Organization):
+        for rep in user.representative_set.all():
+            if rep.role == 'manager':
                 return True
     return False
 
@@ -127,6 +149,9 @@ def has_perm(
                     elif role == Role.SUPERVISOR:
                         if is_supervisor(user, node):
                             return True
+                    elif role == Role.MANAGER:
+                        if is_manager(user, node):
+                            return True
                     else:
                         ct = ContentType.objects.get_for_model(node)
                         where.append(Q(
@@ -151,3 +176,53 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
         ).
         count()
     )
+
+
+def hash_api_key(api_key: str) -> str:
+    hasher = PBKDF2PasswordHasher()
+    salt = settings.HASHER_SALT
+    return hasher.encode(api_key, salt)
+
+
+def create_subscription(user, organization):
+    return Subscription.objects.create(
+        user=user,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=organization.pk,
+        sub_type=Subscription.ORGANIZATION,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+        request_comments_sub=True,
+        project_comments_sub=True,
+        request_update_sub=True,
+    )
+
+
+def manage_subscriptions_for_representative(subscribe, user, organization, link):
+    subscription = Subscription.objects.filter(
+        user=user,
+        object_id=organization.id,
+        content_type=get_content_type_for_model(Organization),
+    )
+    if subscribe:
+        if not subscription:
+            create_subscription(user, organization)
+            if user.email:
+                email([user.email], 'newsletter-org-subscription-created-representative', 'vitrina/orgs/emails/subscribed.md', {
+                    'organization': organization,
+                    'link': link
+                })
+        else:
+            subscription.update(
+                dataset_comments_sub=True,
+                request_comments_sub=True,
+                project_comments_sub=True,
+            )
+            email([user.email], 'newsletter-org-subscription-updated-representative',
+                  'vitrina/orgs/emails/subscription_updated.md', {
+                'organization': organization,
+                'link': link
+            })
+    else:
+        if subscription:
+            subscription.delete()

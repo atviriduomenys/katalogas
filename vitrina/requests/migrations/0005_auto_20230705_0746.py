@@ -2,16 +2,23 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+from vitrina.datasets.models import Dataset
+from django.core.exceptions import ObjectDoesNotExist
+
 
 
 def migrate_request_datasets(apps, schema_editor):
     Request = apps.get_model('vitrina_requests', 'Request')
     ContentType = apps.get_model('contenttypes', 'ContentType')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
 
     for request in Request.objects.filter(dataset_id__isnull=False):
         request.content_type = ContentType.objects.get_for_model(Dataset)
         request.object_id = request.dataset_id
+        try:
+            dataset = Dataset.public.get(pk=request.dataset_id)
+            request.dataset = dataset
+        except ObjectDoesNotExist:
+            request.dataset = None
         request.save()
 
 
@@ -24,6 +31,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterModelOptions(
+            name='request',
+            options={'managed': True},
+        ),
+        migrations.AlterModelOptions(
+            name='requestevent',
+            options={'managed': True},
+        ),
+        migrations.AlterModelOptions(
+            name='requeststructure',
+            options={'managed': True},
+        ),
         migrations.AddField(
             model_name='request',
             name='content_type',
@@ -44,9 +63,5 @@ class Migration(migrations.Migration):
             name='object_id',
             field=models.PositiveIntegerField(null=True, verbose_name='Objekto id'),
         ),
-        migrations.RunPython(migrate_request_datasets),
-        migrations.RemoveField(
-            model_name='request',
-            name='dataset_id',
-        ),
+        migrations.RunPython(migrate_request_datasets)
     ]

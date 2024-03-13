@@ -11,5 +11,4 @@ urlpatterns = [
     path('datasets/<int:pk>/resource/<int:resource_id>', ResourceDetailView.as_view(), name='resource-detail'),
     path('datasets/<int:pk>/resource/<int:resource_id>/models/add/',
          ResourceModelCreateView.as_view(), name='resource-model-create'),
-    # @GetMapping("/resources")
 ]

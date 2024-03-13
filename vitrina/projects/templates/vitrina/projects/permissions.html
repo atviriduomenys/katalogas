@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n parler_tags %}
+
+{% block current_title %}{% translate "Leidimai" %}{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+
+        <div class="columns">
+            <div class="column">
+                {% if project_key %}
+                    <div class="column is-three-quarters">
+                        <h4 class="custom-title is-size-4-mobile">Leidimai</h4>
+                    </div>
+                {% else %}
+                    <div class="column is-three-quarters">
+                        <p>{% translate 'Projektas leidimų neturi' %}</p>
+                    </div>
+                {% endif %}
+            </div>
+            {% if project_key %}
+                <div class="buttons">
+                    <a href="{% url 'project-apikeys-regenerate' project.pk project_key.pk %}"
+                       class="button is-link is-normal m-t-md is-size-6-mobile is-pulled-right" id="change_key">
+                        {% translate "Keisti slaptažodį" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        {% if success_message  %}
+            <div class="columns">
+                <div class="column">
+                    <article class="message is-danger">
+                        <div class="message-body">
+                            {{ success_message }}
+                        </div>
+                    </article>
+                </div>
+            </div>
+        {% endif %}
+        {% if viisp_authorized %}
+            <div class="columns">
+                <div class="column">
+                    <a href="{% url 'project-permissions-create' project.pk %}"
+                        class="button is-primary is-normal m-t-md is-size-6-mobile is-pulled-right"
+                        id="add_permission">
+                            {% translate 'Prašyti leidimų' %}
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        <div class="columns">
+            <div class="column">
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Rakto ID" %}</th>
+                        <th>{% translate "Rakto pavadinimas" %}</th>
+                    </tr>
+                    <tr>
+                        <td>{{ project_key.client_id }}</td>
+                        <td>{{ project_key.client_name }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if scopes %}
+        <div class="row is-full">
+            <table class="table is-fullwidth">
+                <tbody>
+                    <tr>
+                        <th>{% translate "Duomenų rinkinys" %}</th>
+                        <th>{% translate "Leidimas" %}</th>
+                    </tr>
+                    {% for k, v in scopes.items %}
+                        <tr>
+                            <td style="width:10%">
+                                <a href="{{ k.get_absolute_url }}">
+                                    {{ k }}
+                                </a>
+                            </td>
+                            <td style="width:10%">
+                                <span class="icon">
+                                    {% if v.0 %}
+                                        {% if v.0.enabled == None %}
+                                            <i class="fa fa-hourglass"></i>
+                                        {%  elif v.0.enabled %}
+                                            <i class="fa fa-check"></i>
+                                        {%  elif v.0.enabled == False %}
+                                            <i class="fa fa-times"></i>
+                                        {% endif %}
+                                    {% else %}
+                                        <i class="fa fa-square"></i>
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="">
+                <p>{% translate 'Šiuo metu raktas leidimų neturi' %}</p>
+            </div>
+        {% endif %}
+    {% include "vitrina/common/pagination.html" %}
+{% endblock %}

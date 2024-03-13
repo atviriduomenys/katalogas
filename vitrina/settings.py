@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 import environ
 from pathlib import Path
-from base64 import b64decode
 
 from django.utils.translation import gettext_lazy as _
 
@@ -31,7 +30,9 @@ BASE_DIR = Path(env.path(
 environ.Env.read_env(BASE_DIR / '.env')
 
 BASE_DB_PATH = BASE_DIR / 'resources/adp-pg.sql'
-LOCALE_PATHS = [BASE_DIR / 'vitrina/locale/']
+LOCALE_PATHS = [
+    env.path('VITRINA_LOCALE_PATH', default=BASE_DIR / 'vitrina/locale/'),
+]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -42,6 +43,12 @@ SECRET_KEY = env('SECRET_KEY', default=(
 
 VIISP_AUTHORIZE_URL = env('VIISP_AUTHORIZE_URL')
 VIISP_PROXY_AUTH = env('VIISP_PROXY_AUTH')
+VIISP_PID = env('VIISP_PID')
+
+SPINTA_EXECUTABLE = BASE_DIR / env('SPINTA_EXECUTABLE')
+SPINTA_SERVER_URL = env('SPINTA_SERVER_URL')
+SPINTA_SERVER_NAME = env('SPINTA_SERVER_NAME')
+SPINTA_PATH = BASE_DIR / env('SPINTA_PATH')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', default=True)
@@ -50,6 +57,14 @@ ALLOWED_HOSTS = (
     ['localhost', '127.0.0.1'] +
     env.list('ALLOWED_HOSTS', default=[])
 )
+
+# If runing behind proxy, set this to HTTP_X_FORWARDED_PROTO
+_SECURE_PROXY_SSL_HEADER = env.str(
+    'DJANGO_SECURE_PROXY_SSL_HEADER',
+    default=None,
+)
+if _SECURE_PROXY_SSL_HEADER:
+    SECURE_PROXY_SSL_HEADER = (_SECURE_PROXY_SSL_HEADER, "https")
 
 # Application definition
 
@@ -64,6 +79,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django.contrib.redirects',
+    'django.contrib.humanize',
+    'extra_settings',
     'rest_framework',
     'drf_yasg',
     'vitrina.users',
@@ -133,6 +150,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
 
     # Django CMS
@@ -229,10 +247,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = env.path('MEDIA_ROOT', default=BASE_DIR / 'var/media/')
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATIC_ROOT = env.path('STATIC_ROOT', default=BASE_DIR / 'var/static/')
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
@@ -265,6 +283,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'VERIFIED_EMAIL': True
     }
 }
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 CMS_TEMPLATES = [
@@ -281,7 +300,7 @@ THUMBNAIL_PROCESSORS = (
 )
 THUMBNAIL_ALIASES = {
     '': {
-        'list': {'size': (480, 320), 'crop': True},
+        'list': {'size': (480, 320)},
     },
 }
 
@@ -320,15 +339,25 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'Test Domain <noreply@example.com>'
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='Test Domain <noreply@example.com>')
+email = env.email('EMAIL_URL', default='consolemail://')
+EMAIL_BACKEND = email['EMAIL_BACKEND']
+EMAIL_HOST = email['EMAIL_HOST']
+EMAIL_PORT = email['EMAIL_PORT']
+EMAIL_HOST_USER = email['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = email['EMAIL_HOST_PASSWORD']
+EMAIL_FILE_PATH = email['EMAIL_FILE_PATH']
+EMAIL_USE_TLS = email.get('EMAIL_USE_TLS')
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
+HASHER_SALT = "2LxpaW5qOe80xZjTPyzpgi"
+
 _search_url = env.search_url()
+_search_url['ENGINE'] = 'vitrina.datasets.search_backends.ElasticSearchEngine'
 _search_url_test = env.str(var="SEARCH_URL_TEST", default='')
 if _search_url_test:
     _search_url_test = env.search_url(var="SEARCH_URL_TEST")
@@ -365,5 +394,30 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_REDIRECT_URL = 'password-set'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
+CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
+
+TRANSLATION_CLIENT_ID = env('TRANSLATION_CLIENT_ID', default='')
+SPINTA_SERVER_URL = env('SPINTA_SERVER_URL', default='https://get-test.data.gov.lt/auth/clients/')
+SPINTA_SERVER_CLIENT_ID = env('SPINTA_SERVER_CLIENT_ID', default='')
+SPINTA_SERVER_CLIENT_SECRET = env('SPINTA_SERVER_CLIENT_SECRET', default='')
+
+SECURE_HSTS_SECONDS = 31536000 # The max-age must be at least 31536000 seconds (1 year)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True

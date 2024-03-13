@@ -1,4 +1,5 @@
 import pathlib
+from enum import StrEnum
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
@@ -9,19 +10,29 @@ from filer.fields.file import FilerFileField
 from vitrina.datasets.models import Dataset
 
 
+class FormatName(StrEnum):
+    API = 'API'
+    UAPI = 'UAPI'
+
+
 class Format(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    extension = models.TextField(blank=True, null=True)
+    # See FormatName for some values used in code.
+    extension = models.TextField(_("Failo plėtinys"), blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    mimetype = models.TextField(blank=True, null=True)
-    rating = models.IntegerField(blank=True, null=True)
-    title = models.CharField(max_length=255, blank=True)
+    mimetype = models.TextField(_("MIME tipas"), blank=True, null=True)
+    rating = models.IntegerField(_("Vertinimas"), blank=True, null=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    media_type_uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = 'format'
+        verbose_name = _("Formatas")
+        verbose_name_plural = _("Formatai")
 
     def __str__(self):
         return self.title
@@ -42,8 +53,6 @@ class DistributionFormat(models.Model):
 
 class DatasetDistribution(models.Model):
     UPLOAD_TO = "data"
-
-    # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -124,6 +133,8 @@ class DatasetDistribution(models.Model):
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
+    imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)
@@ -152,7 +163,7 @@ class DatasetDistribution(models.Model):
         return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
     def is_external_url(self):
-        return self.type == "URL"
+        return True if self.download_url else False
 
     def get_download_url(self):
         if self.is_external_url():

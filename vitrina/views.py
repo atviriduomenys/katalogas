@@ -12,8 +12,8 @@ from reversion.models import Version
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request
-from vitrina.projects.models import Project
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization
+from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -31,7 +31,7 @@ def home(request):
         'counts': {
             'dataset': Dataset.public.count(),
             'organization': Organization.public.count(),
-            'project': Project.public.count(),
+            'project': Project.objects.filter(status='APPROVED').count(),
             'coordinators': coordinator_count,
             'managers': manager_count,
             'users': user_count
@@ -48,7 +48,7 @@ def home(request):
         ),
         'requests': (
             Request.public.
-            select_related('organization').
+            prefetch_related('organizations').
             order_by('-created')[:3]
         ),
         'projects': (
@@ -66,6 +66,12 @@ def home(request):
             ).
             annotate(datasets=Count('dataset')).
             order_by('-datasets')[:3]
+        ),
+        'stat_routes': (
+          StatRoute.objects.filter(
+              featured=True
+          ).
+          order_by('order')
         ),
     })
 
@@ -138,6 +144,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
             ),
             'tabs_template_name': self.tabs_template_name,
         })
+        context['history'] = [dict(t) for t in {tuple(d.items()) for d in context['history']}]
         return context
 
     def get_detail_url_name(self):
@@ -211,3 +218,9 @@ class HistoryMixin:
     def get_detail_object(self):
         return self.object
 
+
+class ChartMixin:
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context

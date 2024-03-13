@@ -17,9 +17,14 @@
                 <i class="fas fa-info-circle"></i>
             </span>
         </th>
+        {% if data_maturity %}
         <td>
-            {{ openness }}
+            <span>{{ data_maturity|floatformat:"1" }}</span>
+            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
         </td>
+        {% else %}
+        <td>-</td>
+        {% endif %}
     </tr>
     {% if dataset.temporal_coverage %}
         <tr>
@@ -42,7 +47,7 @@
         <td>
             <ul class="mt-0 ml-4">
                 {% for category in dataset.category.all %}
-                    <li>{{ category.title }}</li>
+                    <li>{{ category }}</li>
                 {% endfor %}
             </ul>
             {% if can_update_dataset %}
@@ -75,6 +80,23 @@
             </th>
             <td>
                 {{ status }}
+            </td>
+        </tr>
+    {% endif %}
+    {% if public_status != None %}
+        <tr>
+            <th>
+                {% translate "Duomenų rinkinys viešinamas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Duomenų rinkinio viešumo būsena' %}"><i
+                            class="fas fa-info-circle"></i></span>
+            </th>
+            <td>
+              {% if public_status %}
+              {% translate "Taip" %}
+              {% else %}
+              {% translate "Ne" %}
+              {% endif %}
             </td>
         </tr>
     {% endif %}
@@ -149,10 +171,12 @@
     {% endif %}
     <tr>
         <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
+        <td>{{ dataset.created|date:"SHORT_DATETIME_FORMAT" }}</td>
     </tr>
     {% if dataset.modified %}
         <tr>
             <th>{% translate "Paskutinio atnaujinimo data" %}</th>
+            <td>{{ dataset.modified|date:"SHORT_DATETIME_FORMAT" }}</td>
         </tr>
     {% endif %}
     <tr>

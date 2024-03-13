@@ -1,16 +1,11 @@
 from django import forms
+from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Frequency
 from vitrina.comments.models import Comment
+from vitrina.requests.models import Request
 
-
-REQUEST_STATUSES = (
-    (None, _("---------")),
-    (Comment.OPENED, _("Atvertas")),
-    (Comment.APPROVED, _("Patvirtintas")),
-    (Comment.REJECTED, _("Atmestas"))
-)
 
 PROJECT_STATUSES = (
     (None, _("---------")),
@@ -28,8 +23,13 @@ class CommentForm(forms.ModelForm):
 
     def __init__(self, obj, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['body'].label = False
-        self.obj = obj
+        if obj and isinstance(obj.__class__, ModelBase):
+            self.auto_id = 'id_' + str(obj.pk)
+            self.fields['body'].label = _("Komentaro tekstas objektui: ") + " " + str(obj)
+            self.fields['body'].widget.attrs.update({'title': _("Komentaras"),
+                                                     'id': 'id_' + 'body_' + str(obj.pk)})
+            self.fields['is_public'].widget.attrs.update({'id': 'id_' + 'is_public_' + str(obj.pk)})
+            self.obj = obj
 
 
 class RegisterRequestForm(CommentForm):
@@ -50,9 +50,17 @@ class DatasetCommentForm(RegisterRequestForm):
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'register_request', 'increase_frequency', 'body',)
 
+    def clean(self):
+        request = self.cleaned_data.get('register_request')
+        public = self.cleaned_data.get('is_public')
+        if request:
+            if not public:
+                self.add_error('is_public', _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" +
+                                              " viešas"))
+        return self.cleaned_data
 
 class RequestCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=REQUEST_STATUSES, required=False, label=_("Būsena"))
+    status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))
 
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'status', 'body',)

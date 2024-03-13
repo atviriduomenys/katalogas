@@ -1,0 +1,109 @@
+{% load i18n %}
+{% load util_tags %}
+
+{% if stats %}
+<nav class="category-panel">
+  <a href="{% url 'request-list' %}?{{ request.GET.urlencode }}">
+    <p class="category-panel-heading">
+      <strong>&lt;- {% translate "Atgal į poreikių sąrašą" as orgTitle %} {{orgTitle|upper}}</strong>
+    </p>
+  </a>
+</nav>
+{% endif %}
+
+{# include "vitrina/datasets/partials/filter.html" with #}
+{# name='status' #}
+{# title=status_filter #}
+{# stats_url_name='request-status-stats' #}
+{# id='Request-status-stats' #}
+{# facet=status_facet #}
+{# selected=selected_status #}
+
+{% for filter in filters %}
+<nav class="category-panel mb-5" id="filter_id">
+  {% if filter.stats and active_filter != filter.name %}
+      {% if filter.name == 'dataset_status' %}
+        <a href="/datasets/stats/status/?indicator=request-count" id="dataset-status-stats">
+      {% else %}
+        <a href="{{ filter.get_stats_url_request }}" id="request-{{ filter.name }}-stats">
+      {% endif %}
+  {% endif %}
+    {% if filter.name != 'category' %}
+        <p class="{{ filter.name }}-panel-heading">
+            <span class="icon-text">
+            {% if filter.stats %}
+            <span class="icon">
+              <i class="fas fa-chart-bar fa-lg"></i>
+            </span>
+            {% endif %}
+            <span class="has-text-weight-bold">
+              {{ filter.title }}
+            </span>
+          </span>
+        </p>
+    {% endif %}
+  {% if filter.stats and active_filter != filter.name %}
+      </a>
+  {% endif %}
+  {% if active_filter != filter.name %}
+    {% if filter.name == 'organization' or filter.name == 'jurisdiction' %}
+        <label class="visually-hidden" for="{{ filter.name }}-filter-input">
+            {% translate 'Filtro paieška' %}
+        </label>
+        <input
+            class="input"
+            id="{{ filter.name }}-filter-input"
+            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
+        >
+        {% if filter.name == 'organization' %}
+          {% include "vitrina/datasets/organization_filter_items.html" %}
+        {% elif filter.name == 'jurisdiction' %}
+          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% endif %}        
+    {% endif %}
+  {% endif %}
+
+  {% for item in filter.items %}
+  <div class="columns is-gapless  m-0 mt-1">
+      <div class="column is-10">
+        <a href="{{ item.url }}"
+           class="category-panel-block {% if item.selected %}has-text-weight-bold{% endif %} has-text-dark"
+           id="{{ item.name }}_id">
+          <div class="columns">
+          <div class="column is-1">
+              {% if item.selected %}
+              <span class="icon">
+                <i class="far fa-check-square"></i>
+              </span>
+              {% else %}
+              <span class="icon">
+                <i class="far fa-square"></i>
+              </span>
+              {% endif %}
+          </div>
+          <div class="column is-11">
+              {% if filter.name == 'level' %}
+              <span class="icon-text">
+                {% for star in item.value|range %}
+                <i class="fas fa-star"></i>
+                {% endfor %}
+              </span>
+
+            {% else %}
+              {{ item.title }}
+            {% endif %}
+          </div>
+          </div>
+        </a>
+      </div>
+
+    <div class="column is-2 has-text-right">
+      <span class="is-size-6">({{ item.count }})</span>
+    </div>
+  </div>
+  {% endfor %}
+
+</nav>
+
+{% endfor %}

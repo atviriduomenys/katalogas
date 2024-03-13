@@ -1,8 +1,32 @@
 {% extends "base.html" %}
 {% load i18n %}
-
+{% load subscription_tags %}
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
 {% block current_title %}{{ organization.title }}{% endblock %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            {% translate 'Pradžia' %}
+        </span></a></li>
+		<li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block head %}
+    <style>
+        .max-128x128 {
+		  	max-width: 128px;
+		  	max-height: 128px;
+		  	height: auto;
+		  	width: auto;
+		}
+    </style>
+{% endblock %}
+
 
 {% block content %}
 
@@ -12,10 +36,18 @@
         <div class="column">
             <div class="columns no-margin-bottom">
                 <div class="column">
-                    <h3 class="custom-title is-size-4-mobile no-margin-bottom">{{ organization.title }}</h3>
+                    <h2 class="custom-title is-size-4-mobile no-margin-bottom">{{ organization.title }}</h2>
                 </div>
+				{% if can_update_organization %}
+					<div class="column buttons is-one-third">
+						<a href="{%url 'organization-change' pk=organization.id %}"
+						   class="button is-primary is-normal m-t-md is-size-6-mobile"
+						   id="change_organization">
+							{% translate "Redaguoti organizaciją" %}
+						</a>
+					</div>
+            	{% endif %}
             </div>
-
             <div class="content">
                 {% if organization.description %}
                 	<p class="no-margin-bottom">{{ organization.description | linebreaks }}</p>
@@ -33,48 +65,54 @@
         </div>
     
 	    <div class="column is-one-third">
-	            <div class="dataset-organization">
+	            <div>
 	                <div class="is-hidden-mobile">
 	                    {% if organization.image %}
-	                        <img src="{{ organization.image.url }}" class="image max-128x128 m-b-md">
+							<figure class="image max-128x128">
+	                        	<img src="{{ organization.image.url }}" class="image max-128x128 m-b-md" alt="{{ organization.title }}">
+							</figure>
 	                    {% endif %}
 	                </div>
 
 	                {% if ancestors %}
-	                	<p class="dataset-meta-title">{% translate "Pavaldus" %}</p>
+	                	<p class="has-text-dark">{% translate "Pavaldus" %}</p>
 	                	{% for anc in ancestors %}
-							<p class="dataset-meta-value">{{ anc }}</p>
+							<p class="has-text-black">{{ anc }}</p>
 						{% endfor %}
 	                {% endif %}
 
 	                {% if organization.company_code %}
-	                	<p class="dataset-meta-title">{% translate "Įmonės kodas" %}</p>
-	                	<p class="dataset-meta-value"> {{ organization.company_code }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Įmonės kodas" %}</p>
+	                	<p class="has-text-black"> {{ organization.company_code }}</p>
 	                {% endif %}
 
 	                {% if organization.email %}
-	                	<p class="dataset-meta-title">{% translate "El. paštas" %}</p>
-	                	<p class="dataset-meta-value"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
+	                	<p class="has-text-dark mt-1">{% translate "El. paštas" %}</p>
+	                	<p class="has-text-black"><a href="mailto:{{ organization.email }}">{{ organization.email }}</a></p>
 	                {% endif %}
 
 	                {% if organization.address %}
-	                	<p class="dataset-meta-title">{% translate "Buveinės adresas" %}</p>
-	                	<p class="dataset-meta-value">{{ organization.address }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Buveinės adresas" %}</p>
+	                	<p class="has-text-black">{{ organization.address }}</p>
 	                {% endif %}
 
 	                {% if organization.phone %}
-	                	<p class="dataset-meta-title">{% translate "Telefonas" %}</p>
-	                	<p class="dataset-meta-value">{{ organization.phone }}</p>
+	                	<p class="has-text-dark mt-1">{% translate "Telefonas" %}</p>
+	                	<p class="has-text-black">{{ organization.phone }}</p>
 	                {% endif %}
 
 	                {% if organization.website %}
-	                	<p class="dataset-meta-title">{% translate "Tinklalapis" %}</p>
-	                	<p class="dataset-meta-value">
+	                	<p class="has-text-dark mt-1">{% translate "Tinklalapis" %}</p>
+	                	<p class="has-text-black">
 	                		<a href="{{ organization.website }}"
 	                        	target="_blank">{{ organization.website }}
 	                    	</a>
 	                	</p>
 	                {% endif %}
+					<div class="content" id="organization_subscription">
+						{% translate "Užsiprenumeruokite naujienas, susijusias su organizacija" as description %}
+						{% subscription obj=organization user=request.user description=description %}
+					</div>
 	            </div>
 	        </div>
 	    </div>

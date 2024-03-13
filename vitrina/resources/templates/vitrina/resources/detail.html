@@ -7,6 +7,7 @@
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
         <li><a href="{{ resource.dataset.get_absolute_url }}"><span>{{ resource.dataset.title }}</span></a></li>
+        <li><a href="{{ resource.dataset.get_absolute_url }}#resources"><span>{% translate 'Duomenų šaltiniai' %}</span></a></li>
     </ul>
 {% endblock %}
 {% block current_title %}{{ resource.title }}{% endblock %}
@@ -17,10 +18,6 @@
 
     <div class="columns no-margin-bottom">
          <div class="column is-full">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                {{ resource.title }}
-            </h3>
-
             {% if can_update %}
                 <div class="buttons is-right">
                     <a href="{%url 'resource-change' resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
@@ -39,7 +36,9 @@
                         {% endif %}
                     </span>
                     {% if resource.is_external_url %}
-                        <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                        {% if resource.get_download_url %}
+                            <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
+                        {% endif %}
                     {% else %}
                         <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
                     {% endif %}
@@ -84,12 +83,26 @@
                                 <tr>
                                     <th>{% translate "Atnaujinta" %}</th>
                                     {% if resource.dataset.frequency.hours == 0 %}
-                                        <td>{% translate 'Realiu laiku' %}</td>
+                                        {% get_current_language as LANGUAGE_CODE %}
+                                        {% if LANGUAGE_CODE == "EN" %}
+                                            <td>{{dataset.frequency.title_en}}</td>
+                                        {% else %}
+                                            <td>{{dataset.frequency.title}}</td>
+                                        {% endif %}
                                     {% else %}
                                         <td>{{ resource.modified|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                     {% endif %}
                                 </tr>
-                            </tbody>
+                                <tr>
+                                    <th>{% translate "Publikuojamas saugykloje" %}</th>
+                                    <td>
+                                        {% if resource.upload_to_storage %}
+                                        {% translate "Taip" %}
+                                        {% else %}
+                                        {% translate "Ne" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
                         </table>
                     </div>
                 </div>
@@ -129,7 +142,14 @@
                  </div>
                  {% if can_update %}
                     <div class="buttons is-right">
-                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% if structure_acceptable %}
+                            <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}"
+                               class="button is-primary is-normal m-t-md is-size-6-mobile">
+                                {% translate "Nuskaityti struktūrą" %}
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}"
+                           class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Naujas modelis" %}
                         </a>
                     </div>

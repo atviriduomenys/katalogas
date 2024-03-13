@@ -11,6 +11,26 @@
 </nav>
 {% endif %}
 
+{% if user.organization %}
+<nav class="category-panel">
+    <a href="{% url 'organization-datasets' user.organization.pk %}?selected_facets=organization_exact:{{ user.organization.pk }}" id="org-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano organizacijos rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
+{% if user.can_see_manager_dataset_list_url %}
+<nav class="category-panel">
+    <a href="{% url 'manager-dataset-list' %}" id="manager-dataset-url">
+        <p class="category-panel-heading">
+            {% translate "Mano tvarkomi rinkiniai" %}
+        </p>
+    </a>
+</nav>
+{% endif %}
+
 
 
 {# include "vitrina/datasets/partials/filter.html" with #}
@@ -22,10 +42,12 @@
 {# selected=selected_status #}
 
 {% for filter in filters %}
-<nav class="category-panel mb-5">
-
+<nav class="category-panel mb-5" id="filter_id">
   {% if filter.stats and active_filter != filter.name %}
-  <a href="{{ filter.get_stats_url }}" id="dataset-{{ filter.name }}-stats">
+    <a href="{% if 'selected_facets' in request.GET or not organization_id %}{{ filter.get_stats_url }}
+             {% else %}{{ filter.get_stats_url }}selected_facets=organization_exact:{{ organization_id }}{% endif %}"
+       id="dataset-{{ filter.name }}-stats"
+    >
   {% endif %}
     <p class="{{ filter.name }}-panel-heading">
         <span class="icon-text">
@@ -34,69 +56,76 @@
           <i class="fas fa-chart-bar fa-lg"></i>
         </span>
         {% endif %}
-        <span class="has-text-weight-bold">
+        <span class="has-text-weight-bold" id="filter_title">
           {{ filter.title }}
         </span>
       </span>
     </p>
   {% if active_filter != filter.name %}
   </a>
-    {% if filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
+    {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
-            value="{% translate "Paieška" %}..."
-        >
+            placeholder="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}..."
+            title="{% translate 'Rezultatai ribojami, įveskite 3 simbolius' %}"
+            aria-labelledby="filter_title">
+        {% if filter.name == 'organization' %}
+          {% include "vitrina/datasets/organization_filter_items.html" %}
+        {% elif filter.name == 'category' %}
+          {% include "vitrina/datasets/category_filter_items.html" %}
+        {% elif filter.name == 'tags' %}
+          {% include "vitrina/datasets/tag_filter_items.html" %}
+        {% elif filter.name == 'jurisdiction' %}
+          {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% endif %}
     {% endif %}
   {% endif %}
 
   {% for item in filter.items %}
-  <div class="columns is-gapless  m-0 mt-1">
+      <div class="columns is-gapless {% if item.hidden %} is-hidden {% endif %} m-0 mt-1">
+      <div class="column is-10">
+            <a href="{{ item.url }}"
+               class="category-panel-block
+                {% if item.selected %}
+                has-text-weight-bold has-text-dark
+                {% else %}
+                has-text-dark
+                {% endif %}"
+               id="{{ item.name }}_id"
+               title="{{ item.name }}"
+               aria-label="{{ item.name }}">
+                  <div class="columns">
+                  <div class="column is-1">
+                      {% if item.selected %}
+                      <span class="icon">
+                        <i class="far fa-check-square"></i>
+                      </span>
+                      {% else %}
+                      <span class="icon">
+                        <i class="far fa-square"></i>
+                      </span>
+                      {% endif %}
+                  </div>
+                  <div class="column is-11">
+                      {% if filter.name == 'level' %}
+                      <span class="icon-text">
+                        {% for star in item.value|range %}
+                        <i class="fas fa-star"></i>
+                        {% endfor %}
+                      </span>
 
-    <div class="column is-1">
-      {% if item.selected %}
-      <span class="icon">
-        <i class="far fa-check-square"></i>
-      </span>
-      {% else %}
-      <span class="icon">
-        <i class="far fa-square"></i>
-      </span>
-      {% endif %}
-    </div>
-
-    <div class="column is-9">
-
-      {% if item.selected %}
-      <span class="category-panel-block has-text-weight-bold">
-      {% else %}
-      <a href="{{ item.url }}" class="category-panel-block has-text-grey" id="{{ item.name }}_id">
-      {% endif %}
-
-        {% if filter.name == 'level' %}
-          <span class="icon-text">
-            {% for star in item.value|range %}
-            <i class="fas fa-star"></i>
-            {% endfor %}
-          </span>
-
-        {% else %}
-          {{ item.title }}
-        {% endif %}
-
-      {% if item.selected %}
-      </span>
-      {% else %}
-      </a>
-      {% endif %}
-    </div>
-
-    <div class="column is-2 has-text-right">
-      <span class="is-size-6">({{ item.count }})</span>
-    </div>
-  </div>
+                    {% else %}
+                      {{ item.title }}
+                    {% endif %}
+                  </div>
+                  </div>
+              </a>
+      </div>
+      <div class="column is-2 has-text-right">
+        <span class="is-size-6">({{ item.count }})</span>
+      </div>
+      </div>
   {% endfor %}
-
 </nav>
-
 {% endfor %}

@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n parler_tags %}
+{% load dataset_tags %}
 
 {% block pageTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Poreikių sąrašas" %}{% endblock %}
 
-{% block parent_title %}
-    {% objectlanguage dataset LANGUAGE_CODE %}
-        {{ dataset.title }}
-    {% endobjectlanguage %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+    </ul>
 {% endblock %}
 
 {% block current_title %}
@@ -19,21 +26,20 @@
 
     {% include 'vitrina/datasets/tabs.html' %}
 
-   <div class="buttons is-right">
-        <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
-            href="{% url 'dataset-request-add' dataset.pk %}">
-            {% translate "Pridėti poreikį" %}
-        </a>
-    </div>
-
     {% if page_obj %}
+        {% if user_requests %}
+            <div class="column">
+                <div class="buttons is-right">
+                <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+                    href="{% url 'dataset-request-add' dataset.pk %}">
+                    {% translate "Pridėti poreikį" %}
+                </a>
+                </div>
+            </div>
+        {% endif %}
         <table class="table is-fullwidth">
             <tbody>
-                <tr>
-                    <th></th>
-                    <th></th>
-                </tr>
-                {% for request in page_obj %}
+                {% for request_obj in page_obj %}
                     <tr>
                     <td>
                     <article class="media">
@@ -41,25 +47,28 @@
                             <div class="content">
                                 <div>
                                     <strong>
-                                        <a href="{{ request.get_absolute_url }}" class="dataset-list-title">
-                                              {{ request.title }}
+                                        <a href="{{ request_obj.request.get_absolute_url }}" class="dataset-list-title">
+                                              {{ request_obj.request.title }}
                                         </a>
                                     </strong>
                                 </div>
                                 <p class="dataset-list-description">
-                                    {{ request.description }}
+                                    {{ request_obj.request.description }}
                                 </p>
                             </div>
                         </div>
                     </article>
                     </td>
                         <td>
-                            <div class="buttons is-right">
-                                <a id="remove-request-{{ request.pk }}-btn"  class="button is-danger is-small"
-                                   href="{% url 'dataset-request-remove' pk=dataset.pk request_id=request.pk %}">
-                                    {% translate "Pašalinti" %}
-                                </a>
-                            </div>
+                            {% has_remove_from_request_perm dataset request_obj.request request.user as can_delete %}
+                            {% if can_delete %}
+                                <div class="buttons is-right">
+                                    <a id="remove-request-{{ request_obj.request.pk }}-btn"  class="button is-link is-small"
+                                       href="{% url 'dataset-request-remove' dataset.pk request_obj.pk %}">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                </div>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
@@ -67,7 +76,21 @@
         </table>
         {% include "vitrina/common/pagination.html" %}
     {% else %}
-        {% translate "Šis duomenų rinkinys neturi jam registruotų poreikių." %}
+        <div class="columns">
+            <div class="column">
+                {% translate "Šis duomenų rinkinys neturi jam registruotų poreikių." %}
+            </div>
+            {% if user_requests %}
+                <div class="column">
+                    <div class="buttons is-right">
+                    <a id="add-member-btn" class="button is-primary m-t-xs m-b-lg"
+                        href="{% url 'dataset-request-add' dataset.pk %}">
+                        {% translate "Pridėti poreikį" %}
+                    </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     {% endif %}
     <br/>
 {% endblock %}

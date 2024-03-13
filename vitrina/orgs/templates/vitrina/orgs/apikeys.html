@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Raktai" %}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block head %}
+    <style>
+        .list_item {
+		  	list-style-type: disc;
+		  	margin-left: 1em;
+		}
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/orgs/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            <div class="columns">
+                {% if internal_keys %}
+                    <div class="column is-three-quarters">
+                        <h4 class="custom-title is-size-4-mobile">{% translate 'Vidiniai raktai' %}</h4>
+                    </div>
+                {% endif %}
+                <div class="column buttons
+                {% if internal_keys %}
+                    is-one-quarter
+                {% else %}
+                    is-full
+                {% endif %}
+                    ">
+			    <a href="{% url 'organization-apikeys-create' pk=organization.id %}"
+				    class="button is-primary is-normal m-t-md is-size-6-mobile is-pulled-right"
+					id="change_organization">
+					    {% translate "Naujas raktas" %}
+                </a>
+            </div>
+        </div>
+
+        {% if api_error %}
+            <div class="row">
+                <div class="notification is-danger is-light">{{ api_error }}</div>
+            </div>
+        {% endif %}
+
+        {% if delete_error %}
+            <div class="row mt-2">
+                <div class="notification is-danger is-light">{{ delete_error }}</div>
+            </div>
+        {% endif %}
+
+        {% if success_message %}
+            <div class="row">
+                <div class="notification is-danger is-light">{{ success_message }}</div>
+            </div>
+        {% endif %}
+
+            {% if internal_keys %}
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Pavadinimas" %}</th>
+                            <td></td>
+                            <td></td>
+                    </tr>
+                    {% for i in internal_keys %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">
+                                    {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
+                                </a>
+                            </td>
+                                <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
+                                       class="button is-primary is-small">
+                                        {% translate "Redaguoti" %}
+                                    </a>
+                                </td>
+                                <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-delete' organization.id i.pk %}"
+                                       class="button is-danger is-small">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if external_keys %}
+                <h4 class="custom-title is-size-4-mobile">{% translate 'Išoriniai raktai' %}</h4>
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Organizacija/Panaudojimo atvejis" %}</th>
+                        <th>{% translate "Pavadinimas" %}</th>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                    </tr>
+                    {% for i in external_keys %}
+                        <tr>
+                            <td>
+                                {% if i.organization %}
+                                    <a href="{{ i.organization.get_absolute_url }}">{{ i.organization }}</a>
+                                {% else %}
+                                    <a href="{{ i.project.get_absolute_url }}">{{ i.project }}</a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if i.organization %}
+                                    <a href="{% url 'organization-apikeys-detail' organization.id i.pk %}">
+                                {% else %}
+                                    <a href="{% url 'project-apikeys-detail' i.project.id i.pk %}">
+                                {% endif %}
+                                    {% if i.client_name %}{{ i.client_name }}{% else %}{{ i.client_id }}{% endif %}
+                                </a>
+                            </td>
+                                <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-update' organization.id i.pk %}"
+                                       class="button is-primary is-small">
+                                        {% translate "Redaguoti" %}
+                                    </a>
+                                </td>
+                                <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-delete' organization.id i.pk %}"
+                                       class="button is-danger is-small">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                </td>
+                                {% if can_manage_keys %}
+                                    <td style="width:10%">
+                                    <a href="{% url 'organization-apikeys-toggle' organization.id i.pk %}"
+                                       class="button is-warning is-small">
+                                        {% if i.enabled %}
+                                            {% translate "Išjungti" %}
+                                        {% else %}
+                                            {% translate "Įjungti" %}
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% include "vitrina/common/pagination.html" %}
+        </div>
+    </div>
+{% endblock %}

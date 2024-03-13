@@ -9,6 +9,7 @@
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
         <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+        <li><a href="{% url 'organization-plans' organization.pk %}"><span>{% translate "Planas" %}</span></a></li>
     </ul>
 {% endblock %}
 
@@ -18,20 +19,27 @@
 
     <div class="columns no-margin-bottom">
          <div class="column is-full">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                {{ plan.title }}
-            </h3>
-
-            {% if can_manage %}
-                <div class="buttons is-right">
-                    <a href="{%url 'plan-change' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Keisti" %}
-                    </a>
-                    <a href="{%url 'plan-delete' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Trinti" %}
-                    </a>
-                </div>
-            {% endif %}
+             <div class="buttons is-right">
+                 {% if can_close %}
+                    {% if plan.is_closed %}
+                        <a href="{%url 'plan-open' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Atidaryti" %}
+                         </a>
+                    {% else %}
+                         <a href="{%url 'plan-close' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                             {% translate "Uždaryti" %}
+                         </a>
+                    {% endif %}
+                 {% endif %}
+                 {% if can_manage %}
+                     <a href="{%url 'plan-change' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Keisti" %}
+                     </a>
+                     <a href="{%url 'plan-delete' plan.receiver.pk plan.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                         {% translate "Trinti" %}
+                     </a>
+                 {% endif %}
+             </div>
 
             <div class="content">
                 {% if plan.description %}
@@ -65,9 +73,9 @@
                                     <td>
                                         {% if plan.deadline %}
                                             {% if plan.deadline|is_past_due %}
-                                                <span class="tag is-danger">
+                                                <span class="tag is-danger is-light">
                                             {% else %}
-                                                <span class="tag is-success">
+                                                <span class="tag is-success is-light">
                                             {% endif %}
                                                 {{ plan.deadline|date:"SHORT_DATE_FORMAT"}}
                                             </span>
@@ -118,7 +126,7 @@
                                 <tr>
                                     <th>{% translate "Pavadinimas" %}</th>
                                     <th>{% translate "Priskirta" %}</th>
-                                    <th></th>
+                                    <td></td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -152,7 +160,7 @@
                                 <tr>
                                     <th>{% translate "Pavadinimas" %}</th>
                                     <th>{% translate "Priskirta" %}</th>
-                                    <th></th>
+                                    <td></td>
                                 </tr>
                             </thead>
                             <tbody>

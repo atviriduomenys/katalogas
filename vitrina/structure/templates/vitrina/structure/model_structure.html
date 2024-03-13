@@ -29,6 +29,8 @@
         {% include 'vitrina/structure/side_menu.html' %}
     </div>
 
+    {% define model.metadata.first as metadata %}
+
     <div class="column">
         <div class="mb-2">
             <span class="is-family-monospace is-size-6-mobile is-size-5 pr-3">
@@ -48,8 +50,17 @@
                 <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
             {% endif %}
 
-            <span>{{ model.metadata.first.average_level|default:"0"|floatformat:"1" }}</span>
-            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+            <span>{{ metadata.average_level|default:"0"|floatformat:"1" }}</span>
+            <span class="icon has-text-warning pr-3"><i class="fas fa-star"></i></span>
+
+            {% if metadata.metadata_version and metadata.draft %}
+                <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
+            {% elif metadata.metadata_version and not metadata.draft %}
+                <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
+            {% elif not metadata.metadata_version and metadata.draft %}
+                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+            {% endif %}
+
         </div>
         <div class="mb-2">
             {% if model.base %}
@@ -58,13 +69,13 @@
                     <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
                 </span>
             {% endif %}
-            {% if model.metadata.first.uri %}
+            {% if metadata.uri %}
                 <span>
                     uri:
-                    {% if model.metadata.first.uri_link %}
-                        <a href="{{ model.metadata.first.uri_link }}">{{ model.metadata.first.uri }}</a>
+                    {% if metadata.uri_link %}
+                        <a href="{{ metadata.uri_link }}">{{ metadata.uri }}</a>
                     {% else %}
-                        {{ model.metadata.first.uri }}
+                        {{ metadata.uri }}
                     {% endif %}
                 </span>
             {% endif %}
@@ -80,60 +91,85 @@
             <h4 class="custom-title is-size-4-mobile">{% translate "Duomenų laukai" %}</h4>
             {% if props_without_base %}
                 {% for prop in props_without_base %}
+                {% define prop.metadata.first as prop_metadata %}
                 <div class="mb-2">
-                    <span class="pr-3 is-family-monospace">
-                        <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
-                    </span>
-
-                    {% if prop.metadata.first.type %}
-                    <span class="is-bold pr-3">{{ prop.metadata.first.type }}</span>
-                    {% endif %}
-
-                    {% if prop.metadata.first.required %}
-                    <span class="is-italic pr-3">required</span>
-                    {% endif %}
-
-                    {% if prop.metadata.first.unique %}
-                    <span class="is-italic pr-3">unique</span>
-                    {% endif %}
-
-                    {% if prop.ref_model %}
-                    <span class="pr-3">
-                        model:
-                        <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
-                        {% if prop.property_list.all %}
-                            <span class="is-italic">
-                                {% for p in prop.property_list.all %}
-                                    {{ p }}
-                                {% endfor %}
+                    <div class="columns no-margin-bottom">
+                        <div class="column is-10">
+                            <span class="pr-3 is-family-monospace">
+                                <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
                             </span>
-                        {% endif %}
-                    </span>
-                    {% endif %}
 
-                    {% if prop.metadata.first.uri %}
-                        <span class="pr-3">
-                            uri:
-                            {% if prop.metadata.first.uri_link %}
-                                <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
-                            {% else %}
-                                {{ prop.metadata.first.uri }}
+                            {% if prop_metadata.type %}
+                            <span class="is-bold pr-3">{{ prop_metadata.type }}</span>
                             {% endif %}
-                        </span>
-                    {% endif %}
 
-                    {% if prop.metadata.first.access is not None %}
-                    <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
-                    {% endif %}
+                            {% if prop_metadata.required %}
+                            <span class="is-italic pr-3">required</span>
+                            {% endif %}
 
-                    {% if prop.metadata.first.level %}
-                    <span class="is-pulled-right">
-                        <span>{{ prop.metadata.first.level }}</span>
-                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
-                    </span>
-                    {% endif %}
-                    <br/>
-                    <p class="ml-4">{{ prop.metadata.first.title }}</p>
+                            {% if prop_metadata.unique %}
+                            <span class="is-italic pr-3">unique</span>
+                            {% endif %}
+                            {% if prop.ref_model %}
+                            <span class="pr-3">
+                                model:
+                                <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                                {% if prop.property_list.all %}
+                                    <span class="is-italic">
+                                        {% for p in prop.property_list.all %}
+                                            {{ p }}
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            </span>
+                            {% elif prop_metadata.ref %}
+                            <span class="pr-3">
+                                ref:
+                                <span class="is-italic">
+                                    {{ prop_metadata.ref }}
+                                </span>
+                            </span>
+                            {% endif %}
+
+                            {% if prop_metadata.uri %}
+                                <span class="pr-3">
+                                    uri:
+                                    {% if prop_metadata.uri_link %}
+                                        <a href="{{ prop_metadata.uri_link }}">{{ prop_metadata.uri }}</a>
+                                    {% else %}
+                                        {{ prop_metadata.uri }}
+                                    {% endif %}
+                                </span>
+                            {% endif %}
+
+                            {% if prop_metadata.access is not None %}
+                            <span class="mr-3 tag is-info is-light">{{ prop_metadata.get_access_display }}</span>
+                            {% endif %}
+
+                            <br/>
+                            <p class="ml-4">{{ prop_metadata.title }}</p>
+                        </div>
+
+                        <div class="column is-1">
+                            {% if prop_metadata.level %}
+                            <span class="is-pulled-right">
+                                <span>{{ prop_metadata.level }}</span>
+                                <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="column is-1">
+                            {% if prop_metadata.metadata_version and prop_metadata.draft %}
+                                <span class="tag is-danger is-light">{{ prop_metadata.metadata_version}} ({% translate "rengiama" %})</span>
+                            {% elif prop_metadata.metadata_version and not prop_metadata.draft %}
+                                <span class="tag is-success is-light">{{ prop_metadata.metadata_version }}</span>
+                            {% elif not prop_metadata.metadata_version and prop_metadata.draft %}
+                                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                            {% endif %}
+                        </div>
+
+                    </div>
                 </div>
                 {% endfor %}
             {% else %}
@@ -160,100 +196,124 @@
                         {% endif %}
                     </h4>
                     {% for prop in base_props %}
+                        {% define prop.metadata.first as prop_metadata %}
                         {% if prop.name in prop_dict.keys %}
                             {% get_value_by_key prop_dict prop.name as prop %}
                         {% endif%}
                         <div class="mb-2">
-                            <span class="pr-3 is-family-monospace">
-                                <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
-                            </span>
-
-                            {% if prop.metadata.first.type %}
-                            <span class="is-bold pr-3">
-                                {{ prop.metadata.first.type }}
-                                {% if prop.metadata.first.type_args %}
-                                    <span class="is-italic has-text-weight-normal">({{ prop.metadata.first.type_args }})</span>
+                            <div class="columns">
+                                {% if prop.model == model %}
+                                    <div class="column is-8">
+                                {% else %}
+                                    <div class="column is-10">
                                 {% endif %}
-                            </span>
-                            {% endif %}
-
-                            {% if prop.metadata.first.required %}
-                            <span class="is-italic pr-3">required</span>
-                            {% endif %}
-
-                            {% if prop.metadata.first.unique %}
-                            <span class="is-italic pr-3">unique</span>
-                            {% endif %}
-
-                            {% if prop.ref_model %}
-                            <span class="pr-3">
-                                model:
-                                <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
-                                {% if prop.property_list.all %}
-                                    <span class="is-italic">
-                                        {% for p in prop.property_list.all %}
-                                            {{ p }}
-                                        {% endfor %}
+                                    <span class="pr-3 is-family-monospace">
+                                        <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
                                     </span>
-                                {% endif %}
-                            </span>
-                            {% endif %}
 
-                            {% if prop.metadata.first.uri %}
-                                <span class="pr-3">
-                                    uri:
-                                    {% if prop.metadata.first.uri_link %}
-                                        <a href="{{ prop.metadata.first.uri_link }}">{{ prop.metadata.first.uri }}</a>
-                                    {% else %}
-                                        {{ prop.metadata.first.uri }}
-                                    {% endif %}
-                                </span>
-                            {% endif %}
-
-                            {% if prop.metadata.first.access is not None %}
-                            <span class="mr-3 tag is-info is-light">{{ prop.metadata.first.get_access_display }}</span>
-                            {% endif %}
-
-                            <div class="is-pulled-right">
-                                {% if prop.metadata.first.level %}
-                                <span>
-                                    <span>{{ prop.metadata.first.level }}</span>
-                                    <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
-                                </span>
-                                {% endif %}
-
-                                {% if can_manage_structure %}
-                                    <span class="mr-1 ml-3 no-margin-bottom">
-                                    {% if prop.model != model %}
-                                        <a href="{% url 'base-property-create' dataset.pk model.pk prop.pk %}" class="button is-primary is-small">
-                                            {% translate "Pridėti" %}
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary is-small">
-                                            {% translate "Keisti" %}
-                                        </a>
-                                        <a
-                                            href="{% url 'base-property-delete' dataset.pk model.pk prop.pk %}"
-                                            class="button is-danger is-small"
-                                            onclick="return confirm('Ar tikrai norite ištrinti?')"
-                                        >
-                                            {% translate "Trinti" %}
-                                        </a>
-                                    {% endif %}
+                                    {% if prop_metadata.type %}
+                                    <span class="is-bold pr-3">
+                                        {{ prop_metadata.type }}
+                                        {% if prop_metadata.type_args %}
+                                            <span class="is-italic has-text-weight-normal">({{ prop_metadata.type_args }})</span>
+                                        {% endif %}
                                     </span>
-                                {% endif %}
-                            </div>
+                                    {% endif %}
 
-                            <br/>
-                            <p class="ml-4">{{ prop.metadata.first.title }}</p>
+                                    {% if prop_metadata.required %}
+                                    <span class="is-italic pr-3">required</span>
+                                    {% endif %}
+
+                                    {% if prop_metadata.unique %}
+                                    <span class="is-italic pr-3">unique</span>
+                                    {% endif %}
+
+                                    {% if prop.ref_model %}
+                                    <span class="pr-3">
+                                        model:
+                                        <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                                        {% if prop.property_list.all %}
+                                            <span class="is-italic">
+                                                {% for p in prop.property_list.all %}
+                                                    {{ p }}
+                                                {% endfor %}
+                                            </span>
+                                        {% endif %}
+                                    </span>
+                                    {% endif %}
+
+                                    {% if prop_metadata.uri %}
+                                        <span class="pr-3">
+                                            uri:
+                                            {% if prop_metadata.uri_link %}
+                                                <a href="{{ prop_metadata.uri_link }}">{{ prop_metadata.uri }}</a>
+                                            {% else %}
+                                                {{ prop_metadata.uri }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if prop_metadata.access is not None %}
+                                    <span class="mr-3 tag is-info is-light">{{ prop_metadata.get_access_display }}</span>
+                                    {% endif %}
+
+                                    <br/>
+                                    <p class="ml-4">{{ prop_metadata.title }}</p>
+                                </div>
+
+                                <div class="column is-1">
+                                    {% if prop_metadata.level %}
+                                    <span>
+                                        <span>{{ prop_metadata.level }}</span>
+                                        <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% if prop.model == model %}
+                                <div class="column is-1">
+                                        {% if prop_metadata.metadata_version and prop_metadata.draft %}
+                                            <span class="tag is-danger is-light">{{ prop_metadata.metadata_version}} ({% translate "rengiama" %})</span>
+                                        {% elif prop_metadata.metadata_version and not prop_metadata.draft %}
+                                            <span class="tag is-success is-light">{{ prop_metadata.metadata_version }}</span>
+                                        {% elif not prop_metadata.metadata_version and prop_metadata.draft %}
+                                            <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                                        {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if prop.model == model %}
+                                    <div class="column is-2">
+                                {% else %}
+                                    <div class="column is-1">
+                                {% endif %}
+                                    {% if can_manage_structure %}
+                                        <span class="mr-1 ml-3 no-margin-bottom is-pulled-right">
+                                        {% if prop.model != model %}
+                                            <a href="{% url 'base-property-create' dataset.pk model.pk prop.pk %}" class="button is-primary is-small">
+                                                {% translate "Pridėti" %}
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary is-small">
+                                                {% translate "Keisti" %}
+                                            </a>
+                                            <a
+                                                href="{% url 'base-property-delete' dataset.pk model.pk prop.pk %}"
+                                                class="button is-link is-small"
+                                                onclick="return confirm('Ar tikrai norite ištrinti?')"
+                                            >
+                                                {% translate "Trinti" %}
+                                            </a>
+                                        {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
                         </div>
                     {% endfor %}
                 </div>
             {% endfor %}
         </div>
         {% endif %}
-        {% if model.metadata.first.description %}
-        <div><p>{{ model.metadata.first.description | markdown | safe }}</p></div>
+        {% if metadata.description %}
+        <div><p>{{ metadata.description | markdown | safe }}</p></div>
         {% endif %}
 
         {% if model.is_parameterized %}

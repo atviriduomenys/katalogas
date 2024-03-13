@@ -93,6 +93,35 @@ def test_structure_prefixes(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_prefix_after_enum(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,enum,Size,,"SMALL",,,,,\n'
+        ',,,,,,,,,"MEDIUM",,,,,\n'
+        ',,,,,,,,,"BIG",,,,,\n'
+        ',,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\n'
+        ',,,,,,,dct,,,,,http://purl.org/dc/terms/,,'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    prefixes = Prefix.objects.all()
+    assert prefixes.count() == 2
+    assert list(prefixes.filter(
+        content_type=ContentType.objects.get_for_model(structure.dataset),
+        object_id=structure.dataset.pk
+    ).values_list('metadata__name', flat=True)) == ['dcat', 'dct']
+
+
+@pytest.mark.django_db
 def test_structure_datasets(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
@@ -238,6 +267,58 @@ def test_structure_with_base_model(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
+    manifest_base = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/apskritis,,,,,,,,,,,,,\n'
+        ',,,,Apskritis,,,adm_kodas,,,4,,,,\n'
+        ',,,,,adm_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,adm_nuo,date,D,,,4,open,,,\n'
+    )
+
+    base_structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_base)
+        )
+    )
+
+    manifest_with_base = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/savivaldybe,,,,,,,,,,,,,\n'
+        ',,,/datasets/gov/rc/ar/apskritis/Apskritis,,,,,,,,,,,\n'
+        ',,,,Savivaldybe,,,sav_kodas,,,4,,,,\n'
+        ',,,,,sav_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,tipo_santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,sav_nuo,date,D,,,4,open,,,\n'
+    )
+
+    structure_with_base = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_with_base)
+        )
+    )
+
+    base_structure.dataset.current_structure = base_structure
+    base_structure.dataset.save()
+    create_structure_objects(base_structure)
+
+    structure_with_base.dataset.current_structure = structure_with_base
+    structure_with_base.dataset.save()
+    create_structure_objects(structure_with_base)
+
+    models = Model.objects.all()
+    assert models.count() == 2
+    assert Base.objects.count() == 1
+    assert models.filter(base__isnull=False).count() == 1
+    assert models.filter(base__isnull=False)[0].base.metadata.first().name == 'datasets/gov/rc/ar/apskritis/Apskritis'
+
+
+@pytest.mark.django_db
 def test_structure_with_property_ref(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
@@ -269,6 +350,60 @@ def test_structure_with_property_ref(app: DjangoTestApp):
     assert list(props.filter(ref_model__isnull=False).first().property_list.values_list(
         'property__metadata__name', flat=True
     )) == ['id']
+
+
+@pytest.mark.django_db
+def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
+    ref_manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/apskritis,,,,,,,,,,,,,\n'
+        '1,,,,Apskritis,,,adm_kodas,,,4,,,,\n'
+        ',,,,,adm_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,adm_nuo,date,D,,,4,open,,,\n'
+    )
+
+    ref_object_structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=ref_manifest)
+        )
+    )
+
+    ref_object_structure.dataset.current_structure = ref_object_structure
+    ref_object_structure.dataset.save()
+    create_structure_objects(ref_object_structure)
+
+    manifest_with_ref = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/rc/ar/savivaldybe,,,,,,,,,,,,,\n'
+        '2,,,,Savivaldybe,,,sav_kodas,,,4,,,,\n'
+        ',,,,,sav_kodas,integer,,,,4,open,,,\n'
+        ',,,,,tipas,string,,,,3,open,,,\n'
+        ',,,,,tipo_santrumpa,string,,,,3,open,,,\n'
+        ',,,,,pavadinimas,string,,,,3,open,,,\n'
+        ',,,,,apskritis,ref,/datasets/gov/rc/ar/apskritis/Apskritis,,,4,open,,,\n'
+        ',,,,,sav_nuo,date,D,,,4,open,,,\n'
+    )
+
+    structure_with_ref = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest_with_ref)
+        )
+    )
+
+    structure_with_ref.dataset.current_structure = structure_with_ref
+    structure_with_ref.dataset.save()
+    create_structure_objects(structure_with_ref)
+
+    county = Model.objects.filter(metadata__uuid='1').first()
+    municipality = Model.objects.filter(metadata__uuid='2').first()
+
+    props = Property.objects.filter(model=municipality)
+    assert props.count() == 6
+    assert props.filter(ref_model__isnull=False).count() == 1
+    assert props.filter(ref_model__isnull=False).first().ref_model == county
 
 
 @pytest.mark.django_db
@@ -415,6 +550,12 @@ def test_structure_with_comments(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
+        format=FileFormat(title="Saugykla", extension='UAPI'),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
@@ -464,6 +605,44 @@ def test_structure_with_resource_and_existing_distribution(app: DjangoTestApp):
     assert Metadata.objects.get(uuid='1').object == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
     assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
+
+
+@pytest.mark.django_db
+def test_structure_with_resource_and_existing_distribution_without_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '2,,,,City,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '4,,,,,title,string,,,,5,open,dct:title,,\n'
+        '5,,,,Country,,,,,,,,,,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    distribution = DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='http://www.example.com',
+        title=""
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution.refresh_from_db()
+    assert Metadata.objects.get(uuid='1').object == distribution
+    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
+    assert distribution.title == 'resource'
 
 
 @pytest.mark.django_db
@@ -495,6 +674,7 @@ def test_structure_with_resource_and_without_distribution(app: DjangoTestApp):
     assert distribution.metadata.first().source == 'http://www.example.com'
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
     assert Model.objects.get(metadata__uuid='5').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -529,6 +709,80 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
+
+
+@pytest.mark.django_db
+def test_structure_without_resource_and_existing_distribution_without_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,open,dct:title,,\n'
+        '2,,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    distribution = DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
+        format=FileFormat(title="Saugykla", extension='UAPI'),
+        title="",
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution.refresh_from_db()
+    assert distribution.metadata.count() == 1
+    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
+    assert Model.objects.get(metadata__uuid='1').distribution == distribution
+    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
+    assert distribution.title == "adp"
+
+
+@pytest.mark.django_db
+def test_structure_without_resource_and_existing_distribution_without_ns(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,open,dct:title,,\n'
+        '2,,,,Country,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    distribution = DatasetDistributionFactory(
+        dataset=structure.dataset,
+        type='URL',
+        download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/',
+        format=FileFormat(title="Saugykla", extension='UAPI'),
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    assert distribution.metadata.count() == 1
+    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'
+    assert Model.objects.get(metadata__uuid='1').distribution == distribution
+    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -559,6 +813,7 @@ def test_structure_without_resource_and_distribution(app: DjangoTestApp):
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert structure.dataset.status == Dataset.HAS_DATA
 
 
 @pytest.mark.django_db
@@ -603,6 +858,36 @@ def test_structure_with_enums(app: DjangoTestApp):
     assert prop_enum.count() == 1
     assert prop_enum[0].name == 'Type'
     assert list(prop_enum[0].enumitem_set.values_list('metadata__prepare', flat=True)) == ['CREATED', 'MODIFIED']
+
+
+@pytest.mark.django_db
+def test_structure_with_enum_and_null_value(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        '1,,,,,type,string,,,,5,open,dct:type,,\n'
+        ',,,,,,enum,Type,,"CREATED",,,,,\n'
+        ',,,,,,,,,null,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid='1')
+    prop_enum = Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == 'Type'
+    assert list(prop_enum[0].enumitem_set.values_list('metadata__prepare', flat=True)) == ['CREATED', 'null']
 
 
 @pytest.mark.django_db
@@ -766,42 +1051,6 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_structure_without_ids__datasets(app: DjangoTestApp):
-    manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='file.csv', data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
-
-    new_manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-    )
-    structure.file = FilerFileFactory(
-        file=FileField(filename='file.csv', data=new_manifest)
-    )
-
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(structure),
-        object_id=structure.pk
-    ).values_list('body', flat=True)) == [
-        'Duomenų rinkinys "datasets/gov/ivpk/adp" jau egzistuoja.'
-    ]
-
-
-@pytest.mark.django_db
 def test_structure_without_ids__prefixes(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
@@ -829,12 +1078,7 @@ def test_structure_without_ids__prefixes(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(Prefix),
-    ).values_list('body', flat=True)) == [
-        'Prefiksas "dcat" jau egzistuoja.'
-    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
 
 
 @pytest.mark.django_db
@@ -867,13 +1111,7 @@ def test_structure_without_ids__enums(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(EnumItem),
-    ).order_by('body').values_list('body', flat=True)) == [
-        'Pasirinkimas "BIG" jau egzistuoja.',
-        'Pasirinkimas "SMALL" jau egzistuoja.',
-    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
 
 
 @pytest.mark.django_db
@@ -906,13 +1144,7 @@ def test_structure_without_ids__params(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(ParamItem),
-    ).order_by('body').values_list('body', flat=True)) == [
-        'Parametras "BIG" jau egzistuoja.',
-        'Parametras "SMALL" jau egzistuoja.',
-    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
 
 
 @pytest.mark.django_db
@@ -943,12 +1175,7 @@ def test_structure_without_ids__models(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(Model),
-    ).values_list('body', flat=True)) == [
-        'Modelis "datasets/gov/ivpk/adp/City" jau egzistuoja.'
-    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
 
 
 @pytest.mark.django_db
@@ -983,12 +1210,7 @@ def test_structure_without_ids__properties(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(Comment.objects.filter(
-        type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(Property),
-    ).values_list('body', flat=True)) == [
-        'Savybė "id" jau egzistuoja.'
-    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
 
 
 @pytest.mark.django_db
@@ -1023,12 +1245,173 @@ def test_structure_without_ids__base(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_prefixes(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\n'
+        ',,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
-        content_type=ContentType.objects.get_for_model(Base),
+        content_type=ContentType.objects.get_for_model(structure),
     ).values_list('body', flat=True)) == [
-        'Bazė "datasets/gov/ivpk/adp/Base" jau egzistuoja.'
+       'Prefiksas "dcat" jau egzistuoja.'
     ]
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_enums(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,enum,Size,,"SMALL",,,,,\n'
+        ',,,,,,,,,"SMALL",,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=ContentType.objects.get_for_model(structure),
+    ).values_list('body', flat=True)) == [
+       'Galima reikšmė "SMALL" jau egzistuoja.'
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_params(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,param,ParamSize,,"SMALL",,,,,\n'
+        ',,,,,,,,,"SMALL",,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=ContentType.objects.get_for_model(structure),
+    ).values_list('body', flat=True)) == [
+       'Parametras "SMALL" jau egzistuoja.'
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_models(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=ContentType.objects.get_for_model(structure),
+    ).values_list('body', flat=True)) == [
+       'Modelis "datasets/gov/ivpk/adp/City" jau egzistuoja.'
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_properties(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,,Identifikatorius,\n'
+        ',,,,,id,integer,,,,5,open,,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=ContentType.objects.get_for_model(Model),
+    ).values_list('body', flat=True)) == [
+       'Savybė "id" jau egzistuoja.'
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_existing_dataset(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,resource1,,,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
+
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,resource1,,,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,open,,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    assert list(Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=ContentType.objects.get_for_model(structure),
+    ).values_list('body', flat=True)) == [
+       'Duomenų rinkinys "datasets/gov/ivpk/adp" jau egzistuoja.'
+    ]
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 0
 
 
 @pytest.mark.django_db
@@ -1570,3 +1953,30 @@ def test_structure_export__params(app: DjangoTestApp):
         '11,,,,,type,string,,,,5,open,dct:type,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
     )
+
+
+@pytest.mark.django_db
+def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp/ššš,,,,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset)
+    )
+    assert metadata.count() == 0
+    comments = Comment.objects.filter(
+        content_type=ContentType.objects.get_for_model(structure),
+        object_id=structure.pk
+    )
+    assert comments.count() == 1
+    assert 'kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.' in comments[0].body

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import datetime
 import calendar
@@ -6,22 +7,36 @@ from typing import Type
 from typing import Tuple
 from typing import Union
 from typing import Dict
-from typing import Callable
 from urllib.parse import urlencode
 from itertools import groupby
 from operator import itemgetter
 
+import markdown
 from django.contrib.sites.models import Site
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
+from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
+from django.template.loader import render_to_string, get_template
+from django.template import engines, Template, Context
 
+from vitrina import settings
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
+from vitrina.messages.models import EmailTemplate, SentMail
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from vitrina.messages.models import EmailTemplate
+from vitrina.orgs.models import Organization
+from vitrina.requests.models import Request
+from vitrina.messages.models import SentMail
+from django.template.loaders.app_directories import Loader
 
 
 class Filter:
@@ -52,6 +67,8 @@ class Filter:
         # For tree-like filters
         parent: str = '',
         stats: bool = True,
+        display_method: str = None,
+        use_str: bool = False,
     ):
         self.name = name
         self.title = title
@@ -64,9 +81,16 @@ class Filter:
         self.is_int = is_int
         self.parent = parent
         self.stats = stats
+        self.display_method = display_method
+        self.use_str = use_str
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
+        query = self.request.GET.urlencode()
+        return f'{path}?{query}'
+
+    def get_stats_url_request(self):
+        path = reverse(f'request-stats-{self.name}')
         query = self.request.GET.urlencode()
         return f'{path}?{query}'
 
@@ -97,18 +121,29 @@ class Filter:
             facet = fields[self.name]
             facet = facet
 
-        for value, count in facet[:self.limit]:
-            title = value
+        show_count = 0
+        for value, count in facet:
 
-            if self.model:
+            title = value
+            if self.model and self.display_method and getattr(self.model, self.display_method):
+                method = getattr(self.model, self.display_method)
+                title = method(self.model, value)
+            elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
-                    title = obj.title
+                    if self.use_str:
+                        title = str(obj)
+                    else:
+                        title = obj.title
                 except ObjectDoesNotExist:
-                    continue
+                    if value == "-1":
+                        title = "Nepriskirta"
+                    else:
+                        continue
             elif self.choices:
                 title = self.choices.get(value)
 
+            is_selected = value in selected if self.multiple else value == selected
             yield FilterItem(
                 value=value,
                 title=title,
@@ -118,8 +153,10 @@ class Filter:
                     if self.multiple else
                     value == selected
                 ),
-                url=get_filter_url(self.request, self.name, value),
+                url=get_filter_url(self.request, self.name, value, is_selected),
+                hidden=show_count > self.limit
             )
+            show_count += 1
 
 
 DateFacetItem = Tuple[
@@ -278,12 +315,13 @@ class DateFilter(Filter):
         for period, facet in facets:
             for value, title, count in facet:
                 start, end = period.get_period(value)
+                is_selected = value in selected
                 yield FilterItem(
                     value=value,
                     title=title,
                     count=count,
-                    selected=value in selected,
-                    url=f'?date_from={start}&date_to={end}',
+                    selected=is_selected,
+                    url=get_date_filter_url(self.request, start, end, is_selected),
                 )
 
 
@@ -292,6 +330,7 @@ class FilterItem:
     title: str
     count: str
     selected: bool
+    hidden: bool
 
     def __init__(
         self,
@@ -301,6 +340,7 @@ class FilterItem:
         count: int,
         selected: int,
         url: str,
+        hidden: bool = False
     ):
         self.name = value
         self.value = value
@@ -308,6 +348,7 @@ class FilterItem:
         self.count = count
         self.selected = selected
         self.url = url
+        self.hidden = hidden
 
 
 def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \
@@ -328,14 +369,67 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
     return selected_value
 
 
-def get_filter_url(request: WSGIRequest, key: str, value: str) -> str:
+def get_filter_url(request: WSGIRequest, key: str, value: str, selected: bool = False) -> str:
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
-    if "selected_facets" in query_dict:
-        query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+    if 'q' in query_dict:
+        query_dict.pop('q')
+    if selected:
+        val = '%s_exact:%s' % (key, value)
+        if val in query_dict.get('selected_facets', []):
+            query_dict['selected_facets'].remove(val)
     else:
-        query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+        if "selected_facets" in query_dict:
+            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+        else:
+            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    return "?" + urlencode(query_dict, True)
+
+
+def get_date_filter_url(
+    request: WSGIRequest,
+    start: datetime.date,
+    end: datetime.date,
+    selected: bool = False
+) -> str:
+    query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    if selected:
+        val = '%s_exact:%s' % (key, value)
+        if val in query_dict.get('selected_facets', []):
+            query_dict['selected_facets'].remove(val)
+        if is_org_dataset_list(request) and key == 'organization':
+            if 'selected_facets' in query_dict:
+                query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+            else:
+                query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    else:
+        if "selected_facets" in query_dict:
+            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+        else:
+            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    return "?" + urlencode(query_dict, True)
+
+
+def get_date_filter_url(
+    request: WSGIRequest,
+    start: datetime.date,
+    end: datetime.date,
+    selected: bool = False
+) -> str:
+    query_dict = dict(request.GET.copy())
+    if 'page' in query_dict:
+        query_dict.pop('page')
+    if selected:
+        if 'date_from' in query_dict:
+            query_dict.pop('date_from')
+        if 'date_to' in query_dict:
+            query_dict.pop('date_to')
+    else:
+        query_dict['date_from'] = start
+        query_dict['date_to'] = end
     return "?" + urlencode(query_dict, True)
 
 
@@ -360,10 +454,200 @@ def submit(title=None):
     return Submit('submit', title, css_class='button is-primary'),
 
 
-def get_current_domain(request: WSGIRequest) -> str:
-    protocol = "https" if request.is_secure() else "http"
+def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
+    protocol = "https" if request.is_secure() or ensure_secure else "http"
     domain = Site.objects.get_current().domain
     localhost = '127.0.0.1' in domain
     if not localhost:
         return request.build_absolute_uri("%s://%s" % (protocol, domain))
     return request.build_absolute_uri(domain)
+
+
+def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
+    email_template = EmailTemplate.objects.filter(identifier=email_identifier)
+    if not email_template:
+        email_subject = email_title = email_title_subject
+        email_content = base_template_content.format(*email_template_keys)
+        created_template = EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=base_template_content,
+            subject=_(email_title_subject),
+            title=_(email_title)
+        )
+        created_template.save()
+    else:
+        email_template = email_template.first()
+        email_content = str(email_template.template)
+        email_content = email_content.format(*email_template_keys)
+        email_subject = str(email_template.subject)
+
+    return {'email_content': email_content, 'email_subject': email_subject}
+
+
+def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
+    try:
+        return EmailTemplate.objects.get(identifier=name)
+    except EmailTemplate.DoesNotExist:
+        return None
+
+
+def email(
+    recipients: list[str],
+    email_identifier: str,
+    name: str,  # template name
+    context: dict[str, Any] | None = None,
+    *,
+    # Allow user to override email templates via Admin.
+    override: bool = True,
+) -> dict[str, str]:
+    context = context or {}
+    email_template = None
+    subject = None
+    if override:
+        email_template = _get_email_tempate_from_db(email_identifier)
+    if email_template:
+        subject_template = email_template.subject
+        subject_template = Template(subject_template)
+        subject_context = Context(context)
+        subject = subject_template.render(subject_context)
+
+        template_db = email_template.template
+        template = Template(template_db)
+        context = Context(context)
+        content = template.render(context)
+        html_message = markdown.markdown(content)
+    else:
+        template_path = get_template(name)
+        with open(template_path.origin.name, encoding="utf-8") as file:
+            read_data = file.readlines()
+        content = render_to_string(name, context)
+        html_message = markdown.markdown(content)
+        html_message = '\n'.join(html_message.splitlines()[1:])
+        send_email_title = content.splitlines()
+        content_to_save = markdown.markdown(''.join(read_data[2:]))
+        EmailTemplate.objects.create(
+            created=datetime.datetime.now(),
+            version=0,
+            identifier=email_identifier,
+            template=content_to_save,
+            subject=read_data[0].splitlines()[0],
+            title=read_data[0].splitlines()[0]
+        )
+    try:
+        send_mail(
+            subject=subject if subject else send_email_title[0],
+            message=str(content),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            html_message=html_message,
+        )
+        email_send = True
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", send_email_title[0],
+                        _(str(content)), recipients, e)
+        email_send = False
+
+    SentMail.objects.create(
+        created=datetime.datetime.now(),
+        deleted=None,
+        deleted_on=None,
+        modified=datetime.datetime.now(),
+        version=0,
+        recipient=list(recipients),
+        email_subject=subject,
+        email_content=content,
+        email_sent=email_send
+    )
+
+
+def send_email_with_logging(email_data, email_list):
+    try:
+        send_mail(
+            subject=email_data['email_subject'],
+            message=email_data['email_content'],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=email_list,
+        )
+    except Exception as e:
+        import logging
+        logging.warning("Email was not sent", email_data['email_subject'],
+                        email_data['email_content'], email_list, e)
+
+
+def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
+    duration = {
+        'selected': duration,
+        'label': _("Laikotarpis"),
+        'fields': [
+            {'value': 'duration-yearly', 'label': _("Kas metus")},
+            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
+            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
+            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
+            {'value': 'duration-daily', 'label': _("Kas dieną")}
+        ],
+    }
+    sort = {
+            'selected': sorting,
+            'label': _("Rūšiuoti"),
+            'fields': [
+                {'value': 'sort-year-desc', 'label': _("Naujausi")},
+                {'value': 'sort-year-asc', 'label': _("Seniausi")},
+            ] if indicator == 'publication' else [
+                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
+                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
+            ]
+        }
+    active_indicator = {
+        'selected': indicator,
+        'label': _("Rodiklis"),
+    }
+    if model is Request:
+        active_indicator.update({
+                'fields': [
+                    {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                    {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
+                    {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
+                ]
+            })
+    if model is Dataset and filter:
+        active_indicator.update({
+            'fields': [
+                {'value': 'download-request-count', 'label': _("Atsisiuntimų (užklausų) skaičius")},
+                {'value': 'download-object-count', 'label': _("Atsisiuntimų (objektų) skaičius")},
+                {'value': 'object-count', 'label': _("Objektų skaičius")},
+                {'value': 'field-count', 'label': _("Savybių (duomenų laukų) skaičius")},
+                {'value': 'model-count', 'label': _("Esybių (modelių) skaičius")},
+                {'value': 'distribution-count', 'label': _("Duomenų šaltinių (distribucijų) skaičius")},
+                {'value': 'dataset-count', 'label': _("Duomenų rinkinių skaičius")},
+                {'value': 'request-count', 'label': _("Poreikių skaičius")},
+                {'value': 'project-count', 'label': _("Projektų skaičius")},
+            ] + ([{'value': 'level-average', 'label': _("Brandos lygis (vidurkis)")}] if filter != 'level' else [])
+        })
+    if model is Organization:
+        active_indicator.update({
+            'fields': [
+                {'value': 'organization-count', 'label': _("Organizacijų skaičius (pavaldžių)")},
+                {'value': 'coordinator-count', 'label': _("Koordinatorių skaičius")},
+                {'value': 'representative-count', 'label': _("Tvarkytojų skaičius")},
+            ]
+        })
+    return {
+        'duration': duration,
+        'sort': sort,
+        'indicator': active_indicator
+    }
+
+
+def none_to_string(value):
+    if value is None:
+        return ""
+    return value
+
+
+def object_to_none(obj):
+    if not obj or not obj.pk:
+        return None
+    return obj

@@ -9,11 +9,11 @@
             <form id="delete-form" method="post">
                 {% csrf_token %}
                 <strong>
-                    <p >{% translate "Ar tikrai norite ištrinti" %} "{{ object }}"?</p>
+                    <p >{% translate "Ar tikrai norite ištrinti" %} "{{ object.client_id }}"?</p>
                      <br/>
                 </strong>
 
-                <a href="#" onclick="window.history.back(); return false;" class="button is-danger">{% translate 'Atšaukti' %}</a>
+                <a href="#" onclick="window.history.back(); return false;" class="button is-link">{% translate 'Atšaukti' %}</a>
                 <input class="button is-primary" type="submit" value="{% translate 'Patvirtinti' %}">
             </form>
         </div>

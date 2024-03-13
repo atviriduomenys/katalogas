@@ -1,6 +1,7 @@
 @charset "utf-8";
 
 $link: #007db2;
+$primary: rgba(98, 185, 212, 0.9);
 
 @import "~bulma/bulma.sass";
 @import "custom/icons";
@@ -75,4 +76,33 @@ $link: #007db2;
 
 .no-margin-bottom {
   margin-bottom: 0px !important;
+}
+
+.stays-right {
+  margin-left: auto;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.row {
+    display: flex;
+    border-bottom: 0.5px solid lightgray;
+}
+
+.cell {
+    flex: 1;
+    padding: 10px;
+}
+
+.is-middle {
+    align-self: center;
 }

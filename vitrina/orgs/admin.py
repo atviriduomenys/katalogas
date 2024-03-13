@@ -4,8 +4,19 @@ from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
+from django.contrib.admin import AdminSite
+from django.contrib.admin.forms import AuthenticationForm
+from django.urls import reverse
+from django.utils.html import format_html
+from django.shortcuts import render
+from django.template.loader import render_to_string
+from vitrina.orgs.models import Representative
+from django.contrib.contenttypes.models import ContentType
 
-from vitrina.orgs.models import Organization
+
+from vitrina.orgs.models import Organization, RepresentativeRequest
+from django.utils.translation import gettext_lazy as _
+
 
 
 class RootOrganizationFilter(admin.SimpleListFilter):
@@ -35,3 +46,67 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
 
 
 admin.site.register(Organization, OrganizationAdmin)
+
+class RepresentativeRequestAdmin(admin.ModelAdmin):
+    template_name = 'vitrina/orgs/approve.html'
+    list_display = (
+        'user',
+        'organization',
+        'document_download',
+        'account_actions',
+    )
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_module_permission(self, request):
+        return True
+    
+    def document_download(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('partner-register-download', kwargs={'pk': obj.id}),
+            obj.document.name
+        )
+
+    def account_actions(self, obj):
+        representative_already_exists = Representative.objects.filter(
+            user=obj.user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=obj.organization.id
+        ).first()
+
+        if representative_already_exists:
+            return format_html(
+                '<a href={}>{}</a>',
+                    reverse('partner-register-suspend', kwargs={'pk': obj.id}),
+                    _("Suspenduoti")
+        )
+        return format_html(
+            '<a class="button" href="{}">Confirm</a>&nbsp;'
+            '<a class="button" href="{}">Deny</a>',
+            reverse('partner-register-approve', kwargs={'pk': obj.id}),
+            reverse('partner-register-deny', kwargs={'pk': obj.id}),
+        )
+    account_actions.short_description = 'Account Actions'
+    account_actions.allow_tags = True
+
+class SupervisorAdminSite(AdminSite):
+    """
+    App-specific admin site implementation
+    """
+
+    login_form = AuthenticationForm
+    site_header = 'Supervisor admin site'
+
+    def has_permission(self, request):
+        """
+        Checks if the current user has access.
+        """
+        return request.user.is_supervisor or request.user.is_superuser
+
+site = SupervisorAdminSite(name='myadmin')
+site.register(RepresentativeRequest, RepresentativeRequestAdmin)

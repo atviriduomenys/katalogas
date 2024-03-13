@@ -1,9 +1,13 @@
+import datetime
+
 import markdown
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Q, Count
+from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +16,7 @@ from lark import ParseError
 
 from vitrina.structure import spyna
 from vitrina.structure.helpers import is_time_unit, is_si_unit
-from vitrina.structure.models import EnumItem, Metadata, Property, Model, Prefix
+from vitrina.structure.models import EnumItem, Metadata, Property, Model, Prefix, Version
 
 
 class EnumForm(forms.ModelForm):
@@ -31,6 +35,7 @@ class EnumForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.prop = prop
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "enum-form"
         self.helper.layout = Layout(
             Field('value'),
@@ -275,6 +280,7 @@ class ModelCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "model-form"
         self.helper.layout = Layout(
             Field('name'),
@@ -326,12 +332,32 @@ class ModelCreateForm(forms.ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
+        if self.dataset.name:
+            metadata_name = self.dataset.name + '/' + name
+        else:
+            metadata_name = name
+
+        if self.instance and self.instance.pk:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            ).exclude(pk=self.instance.pk)
+        else:
+            metadata = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Model),
+                name=metadata_name
+            )
+
         if name:
             if not name[0].isupper():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."))
             elif any(not c.isalnum() for c in name):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+            elif metadata:
+                raise ValidationError(_("Modelis su tokiu kodiniu pavadinimu jau egzistuoja."))
         return name
 
     def clean_uri(self):
@@ -534,17 +560,22 @@ class PropertyForm(forms.ModelForm):
         widget=forms.RadioSelect,
         choices=PROPERTY_LEVEL_CHOICES,
     )
-    access = forms.ChoiceField(label=_("Prieigos lygis"), required=False, choices=Metadata.ACCESS_TYPES)
+    access = forms.ChoiceField(
+        label=_("Prieigos lygis"),
+        required=False,
+        choices=Metadata.ACCESS_TYPES,
+    )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(
         label=_("Aprašymas"),
         required=False,
         widget=forms.Textarea(attrs={'rows': 8})
     )
+    type_args = forms.CharField(label=_("Tipo parametrai"), required=False)
 
     class Meta:
         model = Metadata
-        fields = ('dataset_id', 'name', 'type', 'ref', 'ref_others', 'source',
+        fields = ('dataset_id', 'name', 'type', 'type_args', 'ref', 'ref_others', 'source',
                   'prepare', 'uri', 'level', 'access', 'title', 'description',)
 
     def __init__(self, model, *args, **kwargs):
@@ -552,11 +583,13 @@ class PropertyForm(forms.ModelForm):
         instance = self.instance if self.instance and self.instance.pk else None
         self.model = model
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "property-form"
         self.helper.layout = Layout(
             Field('dataset_id'),
             Field('name'),
             Field('type'),
+            Field('type_args'),
             Field('ref'),
             Field('ref_others'),
             Field('source'),
@@ -589,10 +622,14 @@ class PropertyForm(forms.ModelForm):
         if name:
             if not name[0].islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+            elif any([ch.isupper() for ch in name]):
+                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
             elif any((not c.isalnum() and c != '_') for c in name):
-                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                                        "žodžiai gali būti atskirti _ simboliu,"
+                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
+                                        "žodžiai gali būti atskirti _ simboliu, "
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_level(self):
@@ -649,7 +686,7 @@ class PropertyForm(forms.ModelForm):
 
     def clean_ref_others(self):
         type = self.cleaned_data.get('type')
-        ref = self.cleaned_data.get('ref_others')
+        ref = self.cleaned_data.get('ref_others') or None
         if ref:
             if type == 'date' or type == 'datetime':
                 if not is_time_unit(ref):
@@ -678,6 +715,7 @@ class ParamForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "param-form"
         self.helper.layout = Layout(
             Field('name'),
@@ -697,6 +735,8 @@ class ParamForm(forms.ModelForm):
                 raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
                                         "žodžiai gali būti atskirti _ simboliu,"
                                         "jokie kiti simboliai negalimi."))
+            elif not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_prepare(self):
@@ -717,3 +757,42 @@ class ParamForm(forms.ModelForm):
             except:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
+
+
+class VersionForm(forms.ModelForm):
+    released = forms.DateField(
+        label=_("Įsigalioja"),
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    metadata = forms.MultipleChoiceField(
+        label=_("Įtraukiama į versiją"),
+        required=False,
+        widget=CheckboxSelectMultiple
+    )
+
+    class Meta:
+        model = Version
+        fields = ('released', 'description',)
+
+    def __init__(self, dataset, *args, **kwargs):
+        self.dataset = dataset
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "version-form"
+        self.helper.layout = Layout(
+            Field('released'),
+            Field('description',),
+            Field('metadata'),
+            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+        )
+        self.fields['metadata'].choices = self.dataset.get_metadata_objects_for_version()
+
+    def clean_released(self):
+        released = self.cleaned_data.get('released')
+        if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
+            raise ValidationError(_('Versija gali įsigalioti ne anksčiau kaip po 2 savaičių.'))
+        latest_version = self.dataset.dataset_version.order_by('-created').first()
+        if latest_version and released < latest_version.released:
+            raise ValidationError(_('Versija negali įsigalioti anksčiau už praėjusią versiją.'))
+        return released

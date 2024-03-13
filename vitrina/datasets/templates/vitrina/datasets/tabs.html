@@ -4,13 +4,13 @@
     <ul>
         {% if detail_url %}
         <li class="{% if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
-            <a href="{{ detail_url }}" id="detail_tab">
+            <a href="{{ detail_url }}#info" id="detail_tab" aria-label="Informacija">
                 {% translate "Informacija" %}
             </a>
         </li>
         {% endif %}
         {% if structure_url %}
-        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'dataset-structure-import' %} is-active {% endif %}">
+        <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'version-list' or request.resolver_match.url_name == 'version-detail' or request.resolver_match.url_name == 'dataset-structure-import' %} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">
                 {% translate "Struktūra" %}
             </a>
@@ -32,13 +32,13 @@
         {% endif %}
         <li class="{%if request.resolver_match.url_name == 'dataset-projects' %} is-active {% endif %}">
             <a href="{% url 'dataset-projects' request.resolver_match.kwargs.pk %}">
-                {% translate "Projektai" %}
+                {% translate "Panaudojimo atvejai" %}
             </a>
         </li>
         {% if plan_url %}
             <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
                 <a href="{{ plan_url }}">
-                    {% translate "Planai" %}
+                    {% translate "Planas" %}
                 </a>
             </li>
         {% endif %}
@@ -54,7 +54,7 @@
             </li>
         {% endif %}
         {% if can_manage_history and history_url %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name == 'dataset-history' or request.resolver_match.url_name == 'dataset-structure-history' or request.resolver_match.url_name == 'model-history' or request.resolver_match.url_name == 'property-history' or request.resolver_match.url_name == 'dataset-plans-history' %} is-active {% endif %}">
                 <a href="{{ history_url }}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>

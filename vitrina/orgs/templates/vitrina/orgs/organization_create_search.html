@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Nauja organizacija" %}{% endblock %}
+
+{% block content %}
+<input 
+    id="company_name_input"
+    type="text" 
+    name="city" 
+    list="company_name_input_choices"
+    placeholder="Paieška ribojama, įveskite bent 3 simbolius"
+    style="width: 100%;"
+>
+{% include "vitrina/orgs/organization_create_search_items.html" %}
+<button id="organization_create_continue_button" style="margin-top: 10px;"> {% translate "Tęsti" %}</button>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            let orgSearchInput = $('#company_name_input');
+            orgSearchInput.on('input', function(){
+                if (orgSearchInput.val().length > 2) {
+                    $('#company_name_input_choices').html('').load(
+                        "{% url 'organization-create-search-update' %}?q=" + encodeURIComponent(orgSearchInput.val())
+                    );
+                }
+            });
+            let orgCreateContinueButton = $('#organization_create_continue_button');
+            orgCreateContinueButton.on('click', function(){
+                let orgSearchInput = $('#company_name_input');
+                location.replace("{% url 'organization-create' %}?q=" + encodeURIComponent(orgSearchInput.val()))
+            });
+        });
+    </script>
+{% endblock %}

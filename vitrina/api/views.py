@@ -1,5 +1,12 @@
+from django.contrib.contenttypes.models import ContentType
+from django.db.utils import IntegrityError
+from django.http import HttpRequest
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils import timezone
+from django.apps import apps
+
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.renderers import _SpecRenderer
@@ -15,17 +22,26 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
-from vitrina.api.models import ApiDescription
-from vitrina.api.permissions import APIKeyPermission
-from vitrina.api.serializers import CatalogSerializer, DatasetSerializer, CategorySerializer, LicenceSerializer, \
-    DatasetDistributionSerializer, DatasetStructureSerializer, PostDatasetSerializer, PatchDatasetSerializer, \
-    PostDatasetDistributionSerializer, PostDatasetStructureSerializer, PutDatasetDistributionSerializer, \
-    PatchDatasetDistributionSerializer, ModelDownloadStatsSerializer
+from vitrina.api.helpers import get_datasets_for_rdf
+from vitrina.api.models import ApiDescription, ApiKey
+from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
+from vitrina.api.serializers import (
+    CatalogSerializer, CategorySerializer,
+    DatasetDistributionSerializer, DatasetSerializer, DatasetStructureSerializer,
+    LicenceSerializer,
+    ModelDownloadStatsSerializer,
+    PatchDatasetDistributionSerializer, PatchDatasetSerializer,
+    PostDatasetDistributionSerializer, PostDatasetSerializer, PostDatasetStructureSerializer,
+    PutDatasetDistributionSerializer, TaskSerializer, UploadToStorageSerializer,
+)
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.resources.models import DatasetDistribution
-
+from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.statistics.models import ModelDownloadStats
+from vitrina.structure.models import Metadata
+from vitrina.structure.services import _resource_models_to_tabular, create_or_get_uapi_format
+from vitrina.tasks.models import Task
 
 CATALOG_TAG = 'Catalogs'
 CATEGORY_TAG = 'Categories'
@@ -481,8 +497,173 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetStructureViewSet(
+class UploadToStorageViewSet(ModelViewSet):
+    serializer_class = UploadToStorageSerializer
+    permission_classes = (APIKeyPermission,)
+    queryset = DatasetDistribution.objects.filter(upload_to_storage=True)\
+        .exclude(download_url__icontains="get.data.gov.lt")
 
+    @swagger_auto_schema(
+        operation_summary="List all uploadable distributions",
+        tags=["Retrieving Data"],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Get a single uploadable distribution",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a uploadable distribution",
+        tags=["Adding Data"],
+        request_body=DatasetDistributionSerializer,
+        responses={status.HTTP_201_CREATED: DatasetDistributionSerializer()},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update uploadable distribution by ID",
+        tags=["Updating Data"],
+        request_body=DatasetDistributionSerializer,
+        responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Remove a uploadable distribution",
+        tags=["Removing Data"],
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+class DistributionTabularDataViewSet(ModelViewSet):
+    permission_classes = (APIKeyPermission,)
+
+    @swagger_auto_schema(
+        operation_summary="Get tabular data for a single uploadable distribution",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        distribution_id = kwargs.get('distributionId')
+        dataset_distribution_instance = DatasetDistribution.objects.get(id=distribution_id)
+        tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
+        tabular_data_list = list(tabular_data)
+        return Response(tabular_data_list)
+
+
+class DistributionCreateAfterUploadToStorage(ModelViewSet):
+    permission_classes = (APIKeyPermission,)
+
+    @swagger_auto_schema(
+        operation_summary="Create UAPI type distribution",
+        tags=["Adding data"],
+    )
+    def create(self, request, *args, **kwargs):
+        distribution_id = kwargs.get('distributionId')
+        dataset_id = request.data.get('dataset_id')
+
+        metadata = Metadata.objects.get(object_id=distribution_id)
+        format_obj = create_or_get_uapi_format()
+        dataset = Dataset.objects.get(id=dataset_id)
+
+        if not metadata.source and metadata.name.startswith("datasets/gov") or "datasets/gov" in metadata.name:
+            url = f"https://get.data.gov.lt/{metadata.name}/:ns"
+        elif metadata.source:
+            url = metadata.source
+        else:
+            url = None
+
+        DatasetDistribution.objects.create(
+            dataset=dataset,
+            download_url=url,
+            format=format_obj,
+            title=metadata.name,
+            type='URL',
+            upload_to_storage=True
+        )
+
+        return Response({"message": "UAPI DatasetDistribution created successfully"}, status=status.HTTP_201_CREATED)
+
+
+class TaskViewSet(ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = (APIKeyPermission,)
+    queryset = Task.objects.all()
+    lookup_url_kwarg = 'objectId'
+
+    @swagger_auto_schema(
+        operation_summary="List all tasks",
+        tags=["Retrieving Data"],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Get a single task",
+        tags=["Retrieving Data"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create a task",
+        tags=["Adding Data"],
+        request_body=TaskSerializer,
+        responses={status.HTTP_201_CREATED: TaskSerializer()}
+    )
+    def create(self, request, *args, **kwargs):
+        title = request.data.get('title', '')
+        error_text = request.data.get('error_text', '')
+        task_type = request.data.get('task_type', '')
+        app_name = request.data.get('app_name', '')
+        model_name = request.data.get('model_name', '')
+        org_id = request.data.get('org_id', '')
+        model = apps.get_model(app_name, model_name)
+        object_id = self.kwargs['objectId']
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        task, created = Task.objects.update_or_create(
+            object_id=object_id,
+            title=title,
+            defaults={
+                'description': error_text,
+                'content_type': ContentType.objects.get_for_model(model),
+                'status': Task.CREATED,
+                'type': task_type,
+                'organization_id': org_id
+            }
+        )
+
+        task.save()
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @swagger_auto_schema(
+        operation_summary="Update task by ID",
+        tags=["Updating Data"],
+        request_body=TaskSerializer,
+        responses={status.HTTP_200_OK: TaskSerializer()}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Remove a task",
+        tags=["Removing Data"],
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+class DatasetStructureViewSet(
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
@@ -579,6 +760,8 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
 
 
 class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    permission_classes = (HasStatsPostPermission,)
+
     @swagger_auto_schema(
         operation_summary="Add model statistics",
         request_body=ModelDownloadStatsSerializer,
@@ -589,7 +772,34 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
             data=request.data
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        instance = ModelDownloadStats(**serializer.validated_data)
+        if instance.model_requests != 0:
+            try:
+                ModelDownloadStats.objects.create(
+                    source=instance.source,
+                    model=instance.model,
+                    model_format=instance.model_format,
+                    model_requests=instance.model_requests,
+                    model_objects=instance.model_objects,
+                    created=instance.created
+                )
+            except IntegrityError:
+                ModelDownloadStats.objects.update_or_create(
+                    source=instance.source,
+                    model=instance.model,
+                    model_format=instance.model_format,
+                    created=instance.created,
+                    defaults={
+                        "model_requests": instance.model_requests,
+                        "model_objects": instance.model_objects
+                    }
+                )
         serializer = ModelDownloadStatsSerializer(instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+
+
+def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
+    return render(request, 'vitrina/api/edp/dcat_ap_rdf.html', {
+        'datasets': get_datasets_for_rdf(Dataset.public.all()),
+    }, content_type='application/rdf+xml')

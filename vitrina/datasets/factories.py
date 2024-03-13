@@ -1,9 +1,12 @@
+from typing import Union
+
 import factory
 import faker
+from django.utils import timezone
 from factory.django import DjangoModelFactory, FileField
 
 from vitrina import settings
-from vitrina.classifiers.factories import CategoryFactory, LicenceFactory, FrequencyFactory
+from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
@@ -31,6 +34,11 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 '''
 
 
+class DatasetTranslationFactory(DjangoModelFactory):
+    class Meta:
+        model = Dataset.translations
+
+
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
@@ -43,15 +51,28 @@ class DatasetFactory(DjangoModelFactory):
     status = Dataset.HAS_DATA
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
+    published = factory.Faker(
+        "date_time",
+        tzinfo=timezone.get_current_timezone(),
+    )
+    title = factory.Dict({
+        'en': factory.Faker('text', max_nb_chars=20, locale='en_US'),
+        'lt': factory.Faker('text', max_nb_chars=20, locale='lt_LT'),
+    })
+    description = factory.Dict({
+        'en': factory.Faker('text', locale='en_US'),
+        'lt': factory.Faker('text', locale='lt_LT'),
+    })
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
+        title = kwargs.pop('title')
+        description = kwargs.pop('description')
         dataset = model_class(*args, **kwargs)
-        fake = faker.Faker()
-        for lang in reversed(settings.LANGUAGES):
-            dataset.set_current_language(lang[0])
-            dataset.title = fake.word()
-            dataset.description = fake.catch_phrase()
+        for lang in ('en', 'lt'):
+            dataset.set_current_language(lang)
+            dataset.title = _get_language_value(lang, title)
+            dataset.description = _get_language_value(lang, description)
         dataset.save()
         return dataset
 
@@ -62,6 +83,21 @@ class DatasetFactory(DjangoModelFactory):
         if extracted:
             for tag in extracted:
                 self.tags.add(tag)
+
+    @factory.post_generation
+    def category(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for category in extracted:
+                self.category.add(category)
+
+
+def _get_language_value(lang: str, value: Union[str | dict]) -> str:
+    if isinstance(value, str):
+        return value
+    else:
+        return value[lang]
 
 
 class AttributionFactory(DjangoModelFactory):

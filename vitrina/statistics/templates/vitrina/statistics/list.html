@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load thumbnail %}
+
+{% block pageTitle %} | {% translate "Statistikos nuorodos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Statistikos nuorodos" %}{% endblock %}
+
+{% block current_title %}{% translate "Statistikos nuorodos" %}{% endblock %}
+{% block parent_title %}{% translate "Pradžia" %}{% endblock %}
+{% block parent_url %}{% url 'home' %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-three-quarters">
+
+            {% for i in page_obj %}
+                <article class="media">
+                    <div class="media-content">
+                        <div class="content">
+                            <div class="columns">
+                                <div class="column">
+                                    <a href="{{ i.url }}" class="dataset-list-title"><strong>{{ i.title | escape }}</strong></a>
+                                    <div class="columns">
+                                        <div class="column">
+                                            {% if i.description %}
+                                                <p class="dataset-list-description">
+                                                    {{ i.description }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if i.image %}
+                                    <div class="column is-one-quarter">
+                                        <figure class="image">
+                                            <img src="{{ i.image|thumbnail_url:'list' }}">
+                                        </figure>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+            <br/>
+            {% include "vitrina/common/pagination.html" %}
+            <br>
+        </div>
+    </div>
+{% endblock %}

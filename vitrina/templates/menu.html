@@ -2,20 +2,20 @@
 
 {# Rendering is not recursive, we're rendering everything together - level 0 as navbar, level 1 as item dropdown #}
 
-{% for child in children %}
-    {% if child.children %}
-        <div class="navbar-item has-dropdown is-hoverable {% if child.selected %} selected{% endif %}">
-            <a href="{{ child.attr.redirect_url|default:child.get_absolute_url }}" title="{{ child.get_menu_title }}"
-               class="navbar-link">{{ child.get_menu_title }}</a>
+{% for page, children in pages.items %}
+    {% if children %}
+        <div class="navbar-item has-dropdown is-hoverable {% if page.selected %} selected{% endif %}">
+            <a href="{{ page.get_redirect|default:page.get_absolute_url }}"
+               class="navbar-link">{{ page.get_menu_title }}</a>
             <div class="navbar-dropdown">
-                {% for cc in child.children %}
-                    <a href="{{ cc.attr.redirect_url|default:cc.get_absolute_url }}"
-                       class="navbar-item">{{ cc.get_menu_title }}</a>
+                {% for cc in children %}
+                    <a href="{{ cc.item.get_redirect|default:cc.item.get_absolute_url }}"
+                       class="navbar-item">{{ cc.item.get_menu_title }}</a>
                 {% endfor %}
             </div>
         </div>
     {% else %}
-        <a href="{{ child.attr.redirect_url|default:child.get_absolute_url }}"
-           class="navbar-item {% if child.selected %} selected{% endif %}">{{ child.get_menu_title }}</a>
+        <a href="{{ page.get_redirect|default:page.get_absolute_url }}"
+           class="navbar-item {% if page.selected %} selected{% endif %}">{{ page.get_menu_title }}</a>
     {% endif %}
 {% endfor %}

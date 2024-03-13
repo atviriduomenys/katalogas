@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Raktai" %}{% endblock%}
+
+{% block head %}
+    <style>
+        .list_item {
+		  	list-style-type: disc;
+		  	margin-left: 1em;
+		}
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column">
+            <h4 class="custom-title is-size-4-mobile">Rakto peržiūra</h4>
+        </div>
+    </div>
+    <div class="rows">
+        {% if scopes %}
+            <div class="row is-full">
+                <table class="table is-fullwidth">
+                    <tbody>
+                    <tr>
+                        <th>{% translate "Panaudojimo atvejis" %}</th>
+                        <th>{% translate "Leidimas" %}</th>
+                        <th style="width:10%"></th>
+                    </tr>
+                    {% for k, v in scopes.items %}
+                        <tr>
+                            <td>
+                                <a href="{{ k.get_absolute_url }}">{{ k }}</a>
+                            </td>
+                            <td>
+                                {% if v.0.enabled == None %}
+                                    <i class="fa fa-hourglass"></i>
+                                {% elif v.0.enabled %}
+                                    <i class="fa fa-check"></i>
+                                {% elif v.0.enabled == False %}
+                                    <i class="fa fa-times"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'project-permissions-toggle' project_id key.pk k.pk %}" class="button is-small is-warning">
+                                    {% if v.0.enabled %}
+                                        {% translate "Išjungti" %}
+                                    {% else %}
+                                        {% translate "Įjungti" %}
+                                    {% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="content">
+                <p>{% translate 'Šiuo metu raktas galiojančių leidimų neturi.' %}</p>
+            </div>
+        {% endif %}
+            {% include "vitrina/common/pagination.html" %}
+        </div>
+    </div>
+{% endblock %}

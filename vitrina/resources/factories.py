@@ -11,9 +11,10 @@ from vitrina.resources.models import DatasetDistribution, Format
 class FileFormat(DjangoModelFactory):
     class Meta:
         model = Format
-        django_get_or_create = ('title',)
+        django_get_or_create = ('title', 'extension')
 
     title = factory.Faker('word')
+    extension = 'CSV'
 
 
 class DatasetDistributionFactory(DjangoModelFactory):

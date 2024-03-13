@@ -11,9 +11,34 @@
 {% block pageOgTitle %} | {{ dataset.title }}{% endblock %}
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 
-{% block parent_title %}{% translate "Duomenų rinkiniai" %}{% endblock %}
-{% block parent_url %}{% url 'dataset-list' %}{% endblock %}
-{% block current_title %}{{ dataset.title }}{% endblock %}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block current_title %}
+    {% objectlanguage dataset LANGUAGE_CODE %}
+        {{ dataset.title }}
+    {% endobjectlanguage %}
+{% endblock %}
+
+{% block head %}
+    <style>
+        .max-128x128 {
+		  	max-width: 128px;
+		  	max-height: 128px;
+		  	height: auto;
+		  	width: auto;
+		}
+    </style>
+{% endblock %}
+
 
 {% block content %}
 
@@ -21,11 +46,6 @@
 
     <div class="columns no-margin-bottom">
         <div class="column">
-            <h3 class="custom-title is-size-4-mobile no-margin-bottom">
-                {% objectlanguage dataset LANGUAGE_CODE %}
-                    {{ dataset.title }}
-                {% endobjectlanguage %}
-            </h3>
             <p>
                 {% translate "Duomenų rinkinio peržiūros" %}:
                 {% get_hit_count for dataset as total_hits %}
@@ -35,6 +55,11 @@
                 <div class="buttons is-right">
                     <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
                         {% translate "Redaguoti rinkinį" %}
+                    </a>
+                </div>
+                <div class="buttons is-right">
+                    <a href="{%url 'dataset-delete' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="delete_dataset">
+                        {% translate "Pašalinti" %}
                     </a>
                 </div>
             {% endif %}
@@ -63,63 +88,73 @@
             </div>
         </div>
         <div class="column is-one-third">
-            <div class="dataset-organization">
+            <div>
                 <div class="is-hidden-mobile">
                     {% if org_logo %}
-                        <img src="{{MEDIA_URL}}{{ org_logo.url }}" class="image max-128x128 m-b-md">
+                        <figure class="image max-128x128">
+                            <img src="{{MEDIA_URL}}{{ org_logo.url }}" class="image max-128x128 m-b-md" alt="{{ dataset.organization.title }}">
+                        </figure>
                     {% endif %}
                 </div>
 
-                <p class="dataset-meta-title">{% translate "Organizacija" %}</p>
-                <p class="dataset-meta-value organization-title"><a
+                <p class="has-text-dark">{% translate "Organizacija" %}</p>
+                <p class="has-text-black organization-title"><a
                             href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a></p>
 
-                <p class="dataset-meta-title">{% translate "El. paštas" %}</p>
-                <p class="dataset-meta-value"><a href="mailto:{{ dataset.organization.email }}">{{ dataset.organization.email|default_if_none:"" }}</a></p>
+                <p class="has-text-dark">{% translate "El. paštas" %}</p>
+                <p class="has-text-black"><a href="mailto:{{ dataset.organization.email }}">{{ dataset.organization.email|default_if_none:"" }}</a></p>
 
-                <p class="dataset-meta-title">{% translate "Telefonas" %}</p>
-                <p class="dataset-meta-value">{{ dataset.organization.phone|default_if_none:"" }}</p>
+                <p class="has-text-dark">{% translate "Telefonas" %}</p>
+                <p class="has-text-black">{{ dataset.organization.phone|default_if_none:"" }}</p>
 
-                <p class="dataset-meta-title">{% translate "Tinklalapis" %}</p>
-                <p class="dataset-meta-value"><a href="{{ organization.website }}"
+                <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
+                <p class="has-text-black"><a href="{{ dataset.organization.website }}"
                                                  target="_blank">{{ dataset.organization.website|default_if_none:"" }}</a></p>
 
                 {% if dataset.coordinator %}
-                    <p class="dataset-meta-title">{% translate "Koordinatorius" %}</p>
-                    <p class="dataset-meta-value"><span>{{ dataset.coordinator }}</span></p>
-                    <p class="dataset-meta-value"><a href="mailto:{{ dataset.coordinator.email }}">{{ dataset.coordinator.email|default_if_none:"" }}</a>
+                    <p class="has-text-dark">{% translate "Koordinatorius" %}</p>
+                    <p class="has-text-black"><span>{{ dataset.coordinator }}</span></p>
+                    <p class="has-text-black"><a href="mailto:{{ dataset.coordinator.email }}">{{ dataset.coordinator.email|default_if_none:"" }}</a>
                     </p>
                     {% if dataset.coordinator.phone %}
-                        <p class="dataset-meta-value"><span>{{ dataset.coordinator.phone }}</span></p>
+                        <p class="has-text-black"><span>{{ dataset.coordinator.phone }}</span></p>
                     {% endif %}
                 {% endif %}
 
                 <hr class="custom-line-margin">
-                <p class="dataset-meta-title m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
+                <p class="has-text-dark m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
                 <p class="social-icons m-t-md">
                     <a target="_blank"
                        href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="dataset-meta-link">
+                       title="Facebook"
+                       aria-label="Facebook"
+                    >
                         <span class="icon is-gray">
                             <i class="fab fa-facebook-square fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
                        href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="dataset-meta-link m-l-sm">
+                       class="ml-1"
+                       title="LinkedIn"
+                       aria-label="LinkenIn"
+                    >
                         <span class="icon is-gray">
                             <i class="fab fa-linkedin fa-2x"></i>
                         </span>
                     </a>
                     <a target="_blank"
                        href="http://twitter.com/share?text={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="dataset-meta-link m-l-sm">
+                       class="ml-1"
+                       title="Twitter"
+                       aria-label="Twitter"
+                    >
                         <span class="icon is-gray">
                             <i class="fab fa-twitter-square fa-2x"></i>
                         </span>
                     </a>
                 </p>
-                <div class="dataset-meta-title" id="dataset_subscription">
+                <div class="has-text-dark" id="dataset_subscription">
                     {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" as description %}
                     {% subscription obj=dataset user=request.user description=description %}
                 </div>
@@ -128,9 +163,9 @@
     </div>
     {% if not dataset.series and not dataset.service %}
         {% if resources %}
-            <div class="columns no-margin-bottom">
+            <div class="columns no-margin-bottom" id="resources">
                 <div class="column is-full">
-                    <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h4>
+                    <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h2>
                     {% include 'vitrina/datasets/datatable.html' %}
                 </div>
             </div>
@@ -151,11 +186,12 @@
             <div class="columns">
                 <div class="column is-full">
                     <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation }}</h4>
-                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                           id="resource-table">
                         <thead>
                             <tr>
                                 <th>{% translate "Duomenų rinkinys" %}</th>
-                                <th></th>
+                                <td></td>
                             </tr>
                         </thead>
                         <tbody>
@@ -186,11 +222,12 @@
             <div class="columns">
                 <div class="column is-full">
                     <h4 class="custom-title is-size-4-mobile no-margin-bottom">{{ relation.inversive_title }}</h4>
-                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                    <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                           id="resource-table">
                         <thead>
                             <tr>
                                 <th>{% translate "Duomenų rinkinys" %}</th>
-                                <th></th>
+                                <td></td>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,14 +255,15 @@
 
     <div class="columns mt-6">
         <div class="column is-full">
-            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h4>
+            <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h2>
             {% if attributions %}
-                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
+                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                       id="resource-table">
                     <thead>
                     <tr>
                         <th>{% translate "Priskyrimo rūšis" %}</th>
                         <th>{% translate "Organizacija" %}</th>
-                        <th></th>
+                        <td></td>
                     </tr>
                     </thead>
                     <tbody>
@@ -255,14 +293,15 @@
             {% endif %}
             {% if can_update_dataset %}
                 <div class="buttons is-right">
-                    <a href="{%url 'attribution-add' dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_attribution">
+                    <a href="{%url 'attribution-add' dataset.id %}"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile is-flex"
+                       id="add_attribution">
                         {% translate "Priskirti organizaciją" %}
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
-
     <div class="columns no-margin-bottom">
         <div class="column is-three-quarters">
             {% comments obj=dataset user=request.user %}
@@ -286,10 +325,11 @@
                     $('html').toggleClass('is-clipped');
                     $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
                         data = json_data.data;
-                        var table_obj = document.getElementById('info-table-body');
-                        $("#info-table-body").empty();
+                        let table_obj = document.getElementById('info-table-body');
                         $.each(data, function (index, item) {
-                            var newRow = table_obj.insertRow(index);
+                            for(var i = 0; i < data.length; i++){
+                                let newRow = table_obj.append(data[i]);
+                            }
                             if (index === 0) {
                                 newRow.classList.add("preview-tr", "is-bold");
                             } else {
@@ -309,7 +349,6 @@
                     $('html').toggleClass('is-clipped');
                     $.getJSON('/dataset/{{ dataset.id }}/previewStructure', function (json_data) {
                         var table_obj = document.getElementById('info-table-body');
-                        $("#info-table-body").empty();
                         $.each(json_data, function (index, item) {
                             var newRow = table_obj.insertRow(index);
                             if (index === 0) {
@@ -329,6 +368,7 @@
                 $('.modal-button-close').click(function () {
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
+                    $("#info-table-body").empty();
                 });
             });
         });

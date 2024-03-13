@@ -3,19 +3,19 @@
 <div class="tabs">
     <ul>
         <li class="{%if request.resolver_match.url_name == detail_url_name %} is-active {% endif %}">
-            <a href="{% url detail_url_name request.resolver_match.kwargs.pk %}">
+            <a href="{% url detail_url_name request.resolver_match.kwargs.pk %}#info">
                 {% translate "Informacija" %}
             </a>
         </li>
         {% if plan_url %}
             <li class="{% if request.resolver_match.url_name == plan_url_name %} is-active {% endif %}">
                 <a href="{{ plan_url }}">
-                    {% translate "Planai" %}
+                    {% translate "Planas" %}
                 </a>
             </li>
         {% endif %}
         {% if can_manage_history %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
+            <li class="{%if request.resolver_match.url_name == 'request-history' or  request.resolver_match.url_name == 'request-plans-history' %} is-active {% endif %}">
                 <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>
@@ -24,6 +24,11 @@
         <li class="{%if request.resolver_match.url_name == 'request-datasets' %} is-active {% endif %}">
             <a href="{% url 'request-datasets' request.resolver_match.kwargs.pk %}" id="request-tab">
                 {% translate "Duomenų rinkiniai" %}
+            </a>
+        </li>
+        <li class="{%if request.resolver_match.url_name == 'request-organizations' %} is-active {% endif %}">
+            <a href="{% url 'request-organizations' request.resolver_match.kwargs.pk %}" id="request-tab">
+                {% translate "Organizacijos" %}
             </a>
         </li>
     </ul>

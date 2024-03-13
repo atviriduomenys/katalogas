@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load account %}
+
+{% block current_title %}{% translate "Patvirtinkite el. pašto adresą" %}{% endblock %}
+
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+        {% if confirmation %}
+            {% user_display confirmation.email_address.user as user_display %}
+
+            <p>{% blocktrans with confirmation.email_address.email as email %}Patvirtinkite, kad el. pašto adresas <a href="mailto:{{ email }}">{{ email }}</a> yra {{ user_display }} naudotojo el. pašto adresas.{% endblocktrans %}</p>
+
+            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" id="confirm_email_form">
+                {% csrf_token %}
+                <div class="buttons is-right">
+                    <button type="submit" class="button is-primary">{% trans 'Patvirtinti' %}</button>
+                </div>
+            </form>
+        {% else %}
+            <p>{% blocktrans %}El. pašto patvirtinimo nuoroda neteisinga arba pasibaigė galioti.{% endblocktrans %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

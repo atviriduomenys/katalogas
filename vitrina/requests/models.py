@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from vitrina.orgs.models import Organization
 from vitrina.requests.managers import PublicRequestManager
 from vitrina.users.models import User
+from vitrina.datasets.models import Dataset
 
 
 CREATED = "CREATED"
@@ -31,13 +32,23 @@ class Request(models.Model):
     REJECTED = "REJECTED"
     OPENED = "OPENED"
     ANSWERED = "ANSWERED"
+    PLANNED = "PLANNED"
     APPROVED = "APPROVED"
     STATUSES = {
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
-        (OPENED, _("Atvertas")),
+        (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
-        (APPROVED, _("Patvirtintas"))
+        (PLANNED, _("Suplanuotas")),
+        (APPROVED, _("Įvertintas"))
+    }
+    FILTER_STATUSES = {
+        CREATED: _("Pateiktas"),
+        REJECTED: _("Atmestas"),
+        OPENED: _("Įvykdytas"),
+        ANSWERED: _("Atsakytas"),
+        PLANNED: _("Suplanuotas"),
+        APPROVED: _("Įvertintas")
     }
 
     EDITED = "EDITED"
@@ -61,11 +72,11 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True, related_name='dataset_request')
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
     periodicity = models.CharField(max_length=255, blank=True, null=True)
     planned_opening_date = models.DateField(blank=True, null=True)
     purpose = models.CharField(max_length=255, blank=True, null=True)
@@ -78,6 +89,7 @@ class Request(models.Model):
     is_public = models.BooleanField(default=True)
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
+    organizations = models.ManyToManyField(Organization)
 
     objects = models.Manager()
     public = PublicRequestManager()
@@ -93,9 +105,17 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        if self.organization:
-            parents.extend(self.organization.get_acl_parents())
+        for org in self.organizations.all():
+            parents.extend(org.get_acl_parents())
         return parents
+
+    def get_plan_title(self):
+        if self.requestobject_set.filter(
+            external_object_id__isnull=False,
+            external_content_type__isnull=False,
+        ).exists():
+            return _("Klaidų duomenyse pataisymas")
+        return _("Duomenų rinkinio papildymas")
 
     def get_likes(self):
         from vitrina.likes.models import Like
@@ -109,8 +129,90 @@ class Request(models.Model):
             count()
         )
 
-    def is_created(self):
-        return self.status == self.CREATED
+    def is_not_closed(self):
+        return self.status != self.REJECTED and self.status != self.OPENED
+    
+    def jurisdiction(self) -> int | None:
+        jurisdictions = []
+        for org in self.organizations.all():
+            root_org = org.get_root()
+            if root_org.get_children_count() > 1:
+                jurisdictions.append(root_org.pk)
+        return jurisdictions
+
+    def dataset_statuses(self):
+        return list(Dataset.objects.filter(
+            request_objects__request=self
+        ).values_list('status', flat=True))
+
+    def dataset_organizations(self):
+        orgs = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset and dataset.organization not in orgs:
+                orgs.append(dataset.organization.pk)
+        return orgs
+
+    def dataset_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset and dataset.category not in cats:
+                cats.append(dataset.category)
+        return cats
+
+    def dataset_parent_categories(self):
+        cats = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for category in dataset.parent_category():
+                    if category not in cats:
+                        cats.append(category)
+        return cats
+
+    def dataset_group_list(self):
+        groups = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for group in dataset.get_group_list():
+                    if group not in groups:
+                        groups.append(group)
+        return groups
+
+    def dataset_get_tag_list(self):
+        tags = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset:
+                for tag in dataset.get_tag_list():
+                    if tag not in tags:
+                        tags.append(tag)
+        return tags
+
+    def get_organization_titles(self):
+        return list(self.requestassignment_set.values_list('organization__title', flat=True))
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -156,3 +258,35 @@ class RequestObject(models.Model):
 
     external_object_id = models.CharField(max_length=255, blank=True, null=True)
     external_content_type = models.CharField(max_length=255, blank=True, null=True)
+
+
+class RequestAssignment(models.Model):
+    organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
+    request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
+    status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+
+    class Meta:
+        db_table = 'request_assignment'
+        unique_together = (('organization', 'request'),)
+
+    def __str__(self):
+        return self.organization.__str__()
+    
+    @property
+    def display_status(self):
+        for status in Request.STATUSES:
+            if status[0] == self.status:
+                return status[1]
+
+    @property
+    def display_date(self):
+        from vitrina.comments.models import Comment
+        latest_status_comment = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(RequestAssignment),
+            object_id=self.pk
+        ).order_by('-created').first()
+        return latest_status_comment.created if latest_status_comment else self.created
+
+    def get_acl_parents(self):
+        return self.organization.get_acl_parents()

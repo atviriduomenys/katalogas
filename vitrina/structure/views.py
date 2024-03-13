@@ -6,7 +6,7 @@ from typing import List, Union
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Func, F, Value, TextField, Max
-from django.http import Http404, StreamingHttpResponse
+from django.http import Http404, StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -20,15 +20,22 @@ from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
+from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
+from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
-from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm
-from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param
-from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name
+from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm, VersionForm
+from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param, \
+    MetadataVersion
+from vitrina.structure.models import Version as _Version
+from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_srid, \
+    transform_coordinates
+from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
 EXCLUDED_COLS = ['_type', '_revision', '_base']
@@ -151,6 +158,7 @@ class DatasetStructureView(
         )
         context['can_manage_structure'] = self.can_manage_structure
         context['models'] = self.models
+        context['version'] = dataset.dataset_version.filter(deployed__isnull=False).order_by('-deployed').first()
         return context
 
     def get_structure_url(self):
@@ -271,6 +279,9 @@ class ModelStructureView(
         return None
 
 
+WGS84 = 4326
+
+
 class PropertyStructureView(
     HistoryMixin,
     StructureMixin,
@@ -341,6 +352,67 @@ class PropertyStructureView(
             self.object,
         )
         context['can_manage_structure'] = self.can_manage_structure
+
+        metadata = self.property.metadata.first()
+        if metadata and metadata.type:
+            type = metadata.type
+            if (
+                (type == 'string' and self.property.enums.exists()) or
+                (type == 'geometry' and get_srid(metadata.type_args)) or
+                type in [
+                    'boolean',
+                    'integer',
+                    'number',
+                    'datetime',
+                    'date',
+                    'time',
+                    'money',
+                    'ref',
+                ]
+            ):
+                data = get_data_from_spinta(self.model, f":summary/{self.property}")
+                context['errors'] = data.get('errors', [])
+                data = data.get('_data', [])
+
+                if data:
+                    if 'count' in data[0]:
+                        data = sorted(data, key=lambda x: x['count'], reverse=True)
+                    context['data'] = data
+
+                    if type == 'geometry':
+                        transformed_data = []
+                        context['graph_type'] = 'map'
+                        srid = get_srid(metadata.type_args)
+                        if len(data) > 0:
+                            for item in data:
+                                centroid = loads(item.get('centroid'))
+                                x = centroid.x
+                                y = centroid.y
+                                if srid != WGS84:
+                                    x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
+                                item['centroid'] = [x, y]
+                                transformed_data.append(item)
+                        context['data'] = transformed_data
+                        context['source_srid'] = srid
+                        context['target_srid'] = WGS84
+                    elif (
+                            type in ['boolean', 'ref'] or
+                            (type in ['string', 'integer'] and self.property.enums.exists())
+                    ):
+                        if len(data) > 0:
+                            max_count = max([item['count'] for item in data])
+                        else:
+                            max_count = 0
+                        context['max_count'] = max_count
+                        context['graph_type'] = 'horizontal'
+                    else:
+                        x_values = [item['bin'] for item in data]
+                        y_values = [item['count'] for item in data]
+                        context['x_values'] = x_values
+                        context['y_values'] = y_values
+                        context['x_title'] = self.property.title or self.property.name
+                        context['y_title'] = _("Kiekis")
+                        context['graph_type'] = 'vertical'
         return context
 
     def get_structure_url(self):
@@ -411,9 +483,9 @@ class ModelDataView(
             self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
             self.props = self.model.get_given_props()
         else:
-            self.models = Model.objects.\
-                annotate(access=Max('model_properties__metadata__access')).\
-                filter(dataset=self.object, access__gte=Metadata.PUBLIC).\
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
@@ -825,7 +897,7 @@ class GetAllApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:
@@ -864,7 +936,7 @@ class GetOneApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:
@@ -902,7 +974,7 @@ class ChangesApiView(ApiView):
         context['response'] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
-            HtmlFormatter(style=get_style_by_name('friendly'), noclasses=True)
+            HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
         )
 
         if self.model.name:
@@ -1111,6 +1183,16 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.title = form.cleaned_data.get('title')
             metadata.description = form.cleaned_data.get('description')
             metadata.version += 1
+
+            if latest_version := metadata.metadataversion_set.order_by('-version__created').first():
+                if (
+                    none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or
+                    none_to_string(latest_version.source) != none_to_string(metadata.source)
+                ):
+                    metadata.draft = True
+                else:
+                    metadata.draft = False
+
             metadata.save()
 
         # Save history
@@ -1206,10 +1288,10 @@ class ModelCreateView(
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
         if has_perm(
-            self.request.user,
-            Action.STRUCTURE,
-            Dataset,
-            self.dataset
+                self.request.user,
+                Action.STRUCTURE,
+                Dataset,
+                self.dataset
         ):
             self.models = Model.objects.filter(dataset=self.dataset).order_by('metadata__name')
         else:
@@ -1435,6 +1517,18 @@ class ModelUpdateView(
         model.update_level()
         self.dataset.update_level()
 
+        if latest_version := self.object.metadataversion_set.order_by('-version__created').first():
+            if(
+                latest_version.name != self.object.name or
+                latest_version.base != object_to_none(model.base) or
+                none_to_string(latest_version.ref) != none_to_string(self.object.ref) or
+                latest_version.level_given != self.object.level_given
+            ):
+                self.object.draft = True
+            else:
+                self.object.draft = False
+            self.object.save()
+
         if form.cleaned_data.get('comment'):
             comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
         else:
@@ -1524,7 +1618,7 @@ class PropertyCreateView(
         self.dataset.update_level()
 
         # Save history
-        set_comment(_(f'Pridėtas "{self.model_obj}" modelio duomenų laukas "{self.object.name}".'))
+        set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -1607,6 +1701,19 @@ class PropertyUpdateView(
             self.object.ref = form.cleaned_data.get('ref_others')
             if prop.ref_model:
                 prop.ref_model = None
+
+        if latest_version := self.object.metadataversion_set.order_by('-version__created').first():
+            if(
+                latest_version.name != self.object.name or
+                latest_version.type_repr != self.object.type_repr or
+                none_to_string(latest_version.ref) != none_to_string(self.object.ref) or
+                latest_version.level_given != self.object.level_given or
+                latest_version.access != self.object.access
+            ):
+                self.object.draft = True
+            else:
+                self.object.draft = False
+
         self.object.save()
 
         self.model_obj.update_level()
@@ -1885,7 +1992,7 @@ class DatasetStructureHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'dataset-structure-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -1918,6 +2025,12 @@ class DatasetStructureHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
         return context
 
     def get_structure_url(self):
@@ -1961,7 +2074,7 @@ class ModelHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'model-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -2014,6 +2127,19 @@ class ModelHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
+        if self.model_obj.name:
+            context['parent_links'].update({
+                reverse('model-structure', args=[
+                    self.kwargs.get('pk'),
+                    self.model_obj.name
+                ]): self.model_obj.title or self.model_obj.name
+            })
         return context
 
     def get_structure_url(self):
@@ -2035,14 +2161,6 @@ class ModelHistoryView(
     def get_api_url(self):
         return self.model_obj.get_api_url()
 
-    def get_history_url(self):
-        if self.model_obj.name:
-            return reverse(self.history_url_name, kwargs={
-                'pk': self.object.pk,
-                'model': self.model_obj.name,
-            })
-        return None
-
     def get_history_objects(self):
         property_ids = self.props.values_list('pk', flat=True)
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
@@ -2058,7 +2176,7 @@ class PropertyHistoryView(
 ):
     model = Dataset
     detail_url_name = 'dataset-detail'
-    history_url_name = 'property-history'
+    history_url_name = 'dataset-history'
     plan_url_name = 'dataset-plans'
     tabs_template_name = 'vitrina/datasets/tabs.html'
 
@@ -2114,6 +2232,24 @@ class PropertyHistoryView(
             Representative,
             self.object,
         )
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('dataset-list'): _('Duomenų rinkiniai'),
+            reverse('dataset-detail', args=[self.object.pk]): self.object.title,
+            reverse('dataset-structure', args=[self.object.pk]): _("Struktūra"),
+        }
+        if self.model_obj.name and self.property.name:
+            context['parent_links'].update({
+                reverse('model-structure', args=[
+                    self.kwargs.get('pk'),
+                    self.model_obj.name
+                ]): self.model_obj.title or self.model_obj.name,
+                reverse('property-structure', kwargs={
+                    'pk': self.kwargs.get('pk'),
+                    'model': self.model_obj.name,
+                    'prop': self.property.name,
+                }): self.property.title or self.property.name,
+            })
         return context
 
     def get_structure_url(self):
@@ -2136,14 +2272,463 @@ class PropertyHistoryView(
     def get_api_url(self):
         return self.model_obj.get_api_url()
 
-    def get_history_url(self):
-        if self.model_obj.name and self.property.name:
-            return reverse(self.history_url_name, kwargs={
-                'pk': self.object.pk,
-                'model': self.model_obj.name,
-                'prop': self.property.name,
-            })
-        return None
-
     def get_history_objects(self):
         return Version.objects.get_for_object(self.property).order_by('-revision__date_created')
+
+
+class GetUpdatedSummaryView(View):
+    def get(self, request, *args, **kwargs):
+        model = request.GET.get('model')
+        prop = request.GET.get('property')
+        source_srid = request.GET.get('source_srid')
+        target_srid = request.GET.get('target_srid')
+        min_lng = request.GET.get('min_lng')
+        min_lat = request.GET.get('min_lat')
+        max_lng = request.GET.get('max_lng')
+        max_lat = request.GET.get('max_lat')
+
+        if source_srid != target_srid:
+            min_lat, min_lng = transform_coordinates(min_lat, min_lng, target_srid, source_srid)
+            max_lat, max_lng = transform_coordinates(max_lat, max_lng, target_srid, source_srid)
+
+        query = f"bbox({min_lat}, {min_lng}, {max_lat}, {max_lng})"
+        data = get_data_from_spinta(model, f":summary/{prop}", query)
+        data = data.get('_data', [])
+
+        transformed_data = []
+        for item in data:
+            centroid = loads(item.get('centroid'))
+            x = centroid.x
+            y = centroid.y
+            if source_srid != target_srid:
+                x, y = transform_coordinates(centroid.x, centroid.y, source_srid, target_srid)
+            item['centroid'] = [x, y]
+            transformed_data.append(item)
+        return JsonResponse({'data': transformed_data})
+
+
+class VersionCreateView(CreateView, PermissionRequiredMixin):
+    model = _Version
+    form_class = VersionForm
+    template_name = 'vitrina/structure/version_form.html'
+
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            self.dataset
+        )
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['dataset'] = self.dataset
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        return context
+
+    def form_valid(self, form):
+        version = form.save(commit=False)
+        version.dataset = self.dataset
+
+        latest_version = self.dataset.dataset_version.order_by('-version').first()
+        if latest_version and latest_version.version:
+            version.version = latest_version.version + 1
+        else:
+            version.version = 1
+        version.save()
+
+        rel_projects = Project.objects.filter(datasets=version.dataset)
+        emails = []
+        version_content_type_list = []
+        for proj in rel_projects:
+            emails.append(proj.user.email)
+            version_content_type = ContentType.objects.get_for_model(version)
+            version_content_type_list.append(version_content_type)
+            Task.objects.create(
+                # FIXME: Maybe task title and describtion should be generated
+                #        on display.
+                title=(
+                    "Sukurta nauja duomenų rinkinio struktūros versija: "
+                    f"{version_content_type}, "
+                    f"id: {version.pk}"
+                ),
+                description=(
+                    f"Sukurta nauja duomenų rinkinio struktūros versija."
+                ),
+                content_type=version_content_type,
+                object_id=version.pk,
+                user=proj.user,
+                status=Task.CREATED,
+            )
+
+        url = f"{get_current_domain(self.request)}/datasets/" \
+              f"{version.dataset.pk}/version/{version.pk}"
+        email(emails, 'new-dataset-structure-version', 'vitrina/structure/emails/new_version.md', {
+            'dataset': version.dataset.title,
+            'url': url,
+        })
+
+        metadata = form.cleaned_data.get('metadata', [])
+
+        for meta in metadata:
+            if meta := Metadata.objects.filter(pk=meta).first():
+                meta.draft = False
+                meta.metadata_version = version
+                meta.save()
+
+                MetadataVersion.objects.create(
+                    metadata=meta,
+                    version=version,
+                    name=meta.name if meta.name else None,
+                    type=meta.type if meta.type else None,
+                    required=meta.required,
+                    unique=meta.unique,
+                    type_args=meta.type_args if meta.type_args else None,
+                    ref=meta.ref if meta.ref else None,
+                    source=meta.source if meta.source else None,
+                    prepare=meta.prepare if meta.prepare else None,
+                    level_given=meta.level_given,
+                    access=meta.access,
+                    base=meta.object.base if isinstance(meta.object, Model) else None
+                )
+
+        return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
+
+
+class VersionListView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
+    TemplateView
+):
+    template_name = 'vitrina/structure/version_list.html'
+    context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-plans-history'
+    plan_url_name = 'dataset-plans'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        status = self.request.GET.get('status', 'not_deployed')
+        context['dataset'] = self.dataset
+        if status == 'deployed':
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by('version')
+        else:
+            context['versions'] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by('version')
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset
+        )
+        context['selected_tab'] = status
+        return context
+
+    def get_history_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_plan_object(self):
+        return self.dataset
+
+
+class VersionDetailView(
+    HistoryMixin,
+    DatasetStructureMixin,
+    PlanMixin,
+    TemplateView
+):
+    template_name = 'vitrina/structure/version_detail.html'
+    context_object_name = 'dataset'
+    detail_url_name = 'dataset-detail'
+    history_url_name = 'dataset-plans-history'
+    plan_url_name = 'dataset-plans'
+
+    version: _Version
+
+    def dispatch(self, request, *args, **kwargs):
+        self.version = get_object_or_404(_Version, pk=kwargs.get('version_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dataset'] = self.dataset
+        context['version'] = self.version
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.dataset
+        )
+
+        changes = []
+        models = []
+        props = []
+        version_items = {
+            item.metadata.object: item
+            for item in self.version.metadataversion_set.all()
+        }
+
+        if dataset_meta := version_items.get(self.dataset):
+            prev_version = dataset_meta.metadata.metadataversion_set.filter(
+                version__created__lt=self.version.created
+            ).order_by('-version__created').first()
+            if prev_version:
+                changes.append({
+                    'title': self.dataset.title,
+                    'url': self.dataset.get_absolute_url(),
+                    'new': False,
+                    'changed_attrs': [{
+                        'attr': 'name',
+                        'value_before': prev_version.name,
+                        'value_after': dataset_meta.name
+                    }],
+                    'class': 'dataset_meta'
+                })
+            else:
+                changes.append({
+                    'title': self.dataset.title,
+                    'url': self.dataset.get_absolute_url(),
+                    'new': True,
+                    'changed_attrs': [{
+                        'attr': 'name',
+                        'value_after': dataset_meta.name
+                    }],
+                    'class': 'dataset_metadata'
+                })
+
+        for model in self.dataset.model_set.all():
+            if model_meta := version_items.get(model):
+                models.append(model)
+                prev_version = model_meta.metadata.metadataversion_set.filter(
+                    version__created__lt=self.version.created
+                ).order_by('-version__created').first()
+
+                changed_attrs = []
+                if prev_version:
+                    new = False
+                    if prev_version.name != model_meta.name:
+                        changed_attrs.append({
+                            'attr': 'name',
+                            'value_before': prev_version.name,
+                            'value_after': model_meta.name,
+                        })
+                    if prev_version.ref != model_meta.ref:
+                        changed_attrs.append({
+                            'attr': 'ref',
+                            'value_before': prev_version.ref,
+                            'value_after': model_meta.ref,
+                        })
+                    if prev_version.level_given != model_meta.level_given:
+                        changed_attrs.append({
+                            'attr': 'level',
+                            'value_before': prev_version.level_given,
+                            'value_after': model_meta.level_given,
+                        })
+                    if prev_version.base != model_meta.base:
+                        changed_attrs.append({
+                            'attr': 'base',
+                            'value_before': prev_version.base.model.name if prev_version.base else None,
+                            'value_after': model_meta.base.model.name if model_meta.base else None,
+                        })
+                else:
+                    new = True
+                    changed_attrs.append({
+                        'attr': 'name',
+                        'value_after': model_meta.name,
+                    })
+                    if model_meta.ref:
+                        changed_attrs.append({
+                            'attr': 'ref',
+                            'value_after': model_meta.ref,
+                        })
+                    if model_meta.level_given:
+                        changed_attrs.append({
+                            'attr': 'level',
+                            'value_after': model_meta.level_given,
+                        })
+                    if model_meta.base:
+                        changed_attrs.append({
+                            'attr': 'base',
+                            'value_after': model_meta.base.model.name,
+                        })
+                changes.append({
+                    'title': model.name,
+                    'url': model.get_absolute_url(),
+                    'new': new,
+                    'changed_attrs': changed_attrs,
+                    'class': 'model_metadata'
+                })
+
+            for prop in model.model_properties.filter(given=True):
+                changed_attrs = []
+
+                if prop_meta := version_items.get(prop):
+                    props.append(prop)
+                    prev_version = prop_meta.metadata.metadataversion_set.filter(
+                        version__created__lt=self.version.created
+                    ).order_by('-version__created').first()
+
+                    if prop.model not in models:
+                        changes.append({
+                            'title': prop.model.name,
+                            'url': prop.model.get_absolute_url(),
+                            'changed_attrs': [],
+                            'class': 'model_metadata'
+                        })
+                        models.append(prop.model)
+
+                    if prev_version:
+                        new = False
+                        if prev_version.name != prop_meta.name:
+                            changed_attrs.append({
+                                'attr': 'name',
+                                'value_before': prev_version.name,
+                                'value_after': prop_meta.name,
+                            })
+                        if prev_version.type_repr != prop_meta.type_repr:
+                            changed_attrs.append({
+                                'attr': 'type',
+                                'value_before': prev_version.type_repr,
+                                'value_after': prop_meta.type_repr,
+                            })
+                        if prev_version.ref != prop_meta.ref:
+                            changed_attrs.append({
+                                'attr': 'ref',
+                                'value_before': prev_version.ref,
+                                'value_after': prop_meta.ref,
+                            })
+                        if prev_version.level_given != prop_meta.level_given:
+                            changed_attrs.append({
+                                'attr': 'level',
+                                'value_before': prev_version.level_given,
+                                'value_after': prop_meta.level_given,
+                            })
+                        if prev_version.access != prop_meta.access:
+                            changed_attrs.append({
+                                'attr': 'access',
+                                'value_before': prev_version.get_access_display(),
+                                'value_after': prop_meta.get_access_display(),
+                            })
+                    else:
+                        new = True
+                        changed_attrs.append({
+                            'attr': 'name',
+                            'value_after': prop_meta.name,
+                        })
+                        if prop_meta.type:
+                            changed_attrs.append({
+                                'attr': 'type',
+                                'value_after': prop_meta.type_repr,
+                            })
+                        if prop_meta.ref:
+                            changed_attrs.append({
+                                'attr': 'ref',
+                                'value_after': prop_meta.ref,
+                            })
+                        if prop_meta.level_given:
+                            changed_attrs.append({
+                                'attr': 'level',
+                                'value_after': prop_meta.level_given,
+                            })
+                        if prop_meta.access:
+                            changed_attrs.append({
+                                'attr': 'access',
+                                'value_after': prop_meta.get_access_display(),
+                            })
+                    changes.append({
+                        'title': prop.name,
+                        'url': prop.get_absolute_url(),
+                        'new': new,
+                        'changed_attrs': changed_attrs,
+                        'class': 'prop_metadata'
+                    })
+
+                if enum := prop.enums.first():
+                    for enum_item in enum.enumitem_set.all():
+                        changed_attrs = []
+
+                        if enum_meta := version_items.get(enum_item):
+                            prev_version = enum_meta.metadata.metadataversion_set.filter(
+                                version__created__lt=self.version.created
+                            ).order_by('-version__created').first()
+
+                            if enum.object.model not in models:
+                                changes.append({
+                                    'title': enum.object.model.name,
+                                    'url': enum.object.model.get_absolute_url(),
+                                    'changed_attrs': [],
+                                    'class': 'model_metadata'
+                                })
+                                models.append(enum.object.model)
+                            if enum.object not in props:
+                                changes.append({
+                                    'title': enum.object.name,
+                                    'url': enum.object.get_absolute_url(),
+                                    'changed_attrs': [],
+                                    'class': 'prop_metadata'
+                                })
+                                props.append(enum.object)
+
+                            if prev_version:
+                                new = False
+                                if prev_version.prepare != enum_meta.prepare:
+                                    changed_attrs.append({
+                                        'attr': 'prepare',
+                                        'value_before': prev_version.prepare,
+                                        'value_after': enum_meta.prepare,
+                                    })
+                                if prev_version.source != enum_meta.source:
+                                    changed_attrs.append({
+                                        'attr': 'source',
+                                        'value_before': prev_version.source,
+                                        'value_after': enum_meta.source,
+                                    })
+                            else:
+                                new = True
+                                if enum_meta.prepare:
+                                    changed_attrs.append({
+                                        'attr': 'prepare',
+                                        'value_after': enum_meta.prepare,
+                                    })
+                                if enum_meta.source:
+                                    changed_attrs.append({
+                                        'attr': 'source',
+                                        'value_after': enum_meta.source,
+                                    })
+                            changes.append({
+                                'title': enum_item,
+                                'url': prop.get_absolute_url(),
+                                'new': new,
+                                'changed_attrs': changed_attrs,
+                                'class': 'enum_metadata'
+                            })
+
+        context['changes'] = changes
+
+        return context
+
+    def get_history_object(self):
+        return self.dataset
+
+    def get_detail_object(self):
+        return self.dataset
+
+    def get_plan_object(self):
+        return self.dataset
+
+    def get_structure_url(self):
+        return reverse('version-list', kwargs={
+            'pk': self.dataset.pk,
+        })

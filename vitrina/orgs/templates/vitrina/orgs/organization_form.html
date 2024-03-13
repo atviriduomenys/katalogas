@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}{% translate "Nauja organizacija" %}{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% if spinta_errors %}
+            <div class="message is-danger">
+                <div class="message-body">
+                    {% for error in spinta_errors %}
+                        {% if error.message %}
+                            <p>{{ error.message }}</p>
+                        {% else %}
+                            <p>{{ error }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% include "component/form.html" %}
+        </div>
+    </div>
+    <br/>
+{% endblock %}

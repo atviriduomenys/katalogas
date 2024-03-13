@@ -1,0 +1,16 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+
+{% block scripts %}
+    <script>
+        document.getElementById('id_download_url').addEventListener('input', function() {
+            var uploadField = document.getElementById('id_upload_to_storage');
+            if (this.value.includes('get.data.gov.lt')) {
+                uploadField.checked = true;
+                uploadField.disabled = true;
+            } else {
+                uploadField.disabled = false;
+            }
+        });
+    </script>
+{% endblock %}

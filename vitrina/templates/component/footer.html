@@ -13,13 +13,17 @@
                 <br/>
                 <p>{% translate "tel." %} (8 5) 266 51 61,</p>
                 <p>{% translate "faks." %} (8 5) 266 51 80,</p>
-                <p>{% translate "el. p." %} <a href="mailto:info@ivpk.lt">info@ivpk.lt</a></p>
+                <p>{% translate "el. p." %} <a href="mailto:info@ivpk.lt"><span class="has-text-dark">info@ivpk.lt</span></a></p>
             </div>
             <div class="column is-6">
-                <p>{% translate "Užsiprenumeruokite mūsų naujienlaiškį" %}</p>
+                <p id="newsletter_search_title">{% translate "Užsiprenumeruokite mūsų naujienlaiškį" %}</p>
                 <form class="field has-addons media-content" action="/subscribeNewsletter" method="post">
                     <p class="control is-expanded">
-                        <input class="input newsletter-input" type="email" required="required" placeholder="{% translate "Įveskite el. pašto adresą..." %}" name="email">
+                        <input class="input newsletter-input" type="email" id="newsletter-input-email" required="required"
+                               placeholder="{% translate 'Įveskite el. pašto adresą...' %}"
+                               name="email" title="{% translate 'El. paštas' %}"
+                               aria-labelledby="newsletter_search_title"
+                        >
                     </p>
                     <p class="control">
                         <button class="button is-light" type="submit">
@@ -30,7 +34,7 @@
                 <br/>
                 <p>{% translate "Susisiekite su mumis:" %}:</p>
                 <div class="footer-icons">
-                    <a class="footer-link" href="https://www.facebook.com/IVPKomitetas/" target="_blank">
+                    <a class="footer-link" href="https://www.facebook.com/IVPKomitetas/" target="_blank" title="Facebook" aria-label="Facebook">
                         <span class="icon">
                             <i class="fab fa-facebook-square fa-2x"></i>
                         </span>
@@ -40,7 +44,7 @@
                             {#<i class="fab fa-twitter-square fa-2x"></i>#}
                         {#</span>#}
                     {#</a>#}
-                    <a class="footer-link" href="mailto:atviriduomenys@ivpk.lt">
+                    <a class="footer-link" href="mailto:atviriduomenys@ivpk.lt" title="{% translate 'El. paštas' %}" aria-label="{% translate 'El. paštas' %}">
                         <span class="icon">
                             <i class="fas fa-envelope-square fa-2x"></i>
                         </span>

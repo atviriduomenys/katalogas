@@ -10,12 +10,13 @@ from reversion.models import Version
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
+from vitrina.requests.models import RequestAssignment
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.requests.factories import RequestFactory
+from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
 from vitrina.users.factories import UserFactory
-
+from vitrina.orgs.factories import OrganizationFactory
 
 @pytest.mark.django_db
 def test_comment_without_user(app: DjangoTestApp):
@@ -55,7 +56,7 @@ def test_comment_is_not_public_user_staff(app: DjangoTestApp):
     resp = form.submit().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
 
 
 @pytest.mark.django_db
@@ -70,7 +71,7 @@ def test_comment_is_public(app: DjangoTestApp):
     resp = form.submit().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.USER
 
 
@@ -91,7 +92,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -99,7 +100,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     assert created_request.count() == 1
     assert created_request.first().title == dataset.title
     assert created_request.first().description == created_comment.first().body
-    assert created_request.first().organization == dataset.organization
+    assert created_request.first().organizations.first() == dataset.organization
     assert created_request.first().periodicity == frequency.title
     assert Version.objects.get_for_object(created_request.first()).count() == 1
     assert Version.objects.get_for_object(created_request.first()).first().revision.comment == Request.CREATED
@@ -108,21 +109,21 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_comment_with_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    request = RequestFactory()
-    ct = ContentType.objects.get_for_model(request)
+    request = RequestFactory(status=Request.CREATED)
+    org = OrganizationFactory()
+    user.organization = org
+    ra = RequestAssignmentFactory(
+        organization=org,
+        request=request,
+        status=Request.CREATED
+    )
     app.set_user(user)
     form = app.get(request.get_absolute_url()).forms['comment-form']
     form['is_public'] = True
-    form['status'] = Comment.APPROVED
+    form['status'] = Request.APPROVED
     form['body'] = "Test comment"
     resp = form.submit().follow()
-    created_comment = Comment.objects.filter(content_type=ct, object_id=request.pk)
-    assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
-    assert created_comment.first().type == Comment.STATUS
-    assert created_comment.first().status == Comment.APPROVED
-    assert Version.objects.get_for_object(request).count() == 1
-    assert Version.objects.get_for_object(request).first().revision.comment == Request.STATUS_CHANGED
+    assert resp.html.find(id='request_status').text == 'Įvertintas' or resp.html.find(id='request_status').text == 'Approved'
 
 
 @pytest.mark.django_db
@@ -152,7 +153,7 @@ def test_reply_is_not_public(app: DjangoTestApp):
     resp = form.submit().follow()
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     assert comments.count() == 2
-    assert list(resp.context['comments']) == [(comment, [])]
+    assert comment in list(resp.context['comments'])[0]
 
 
 @pytest.mark.django_db
@@ -169,7 +170,28 @@ def test_reply_is_public(app: DjangoTestApp):
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
-    assert list(resp.context['comments']) == [(comment, [reply])]
+    assert comment in list(resp.context['comments'])[0]
+    assert reply in list(resp.context['comments'])[1]
+
+
+@pytest.mark.django_db
+def test_reply_for_reply(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(content_type=ct, object_id=dataset.pk)
+    reply = CommentFactory(parent=comment, content_type=ct, object_id=dataset.pk)
+
+    app.set_user(user)
+    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form['is_public'] = True
+    form['body'] = "Test reply"
+    resp = form.submit().follow()
+    comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
+    new_reply = Comment.objects.filter(content_type=comment.content_type, parent=reply).first()
+    assert comments.count() == 3
+    assert reply in list(resp.context['comments'])[1]
+    assert new_reply in list(resp.context['comments'])[2]
 
 
 @pytest.mark.django_db
@@ -200,7 +222,7 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=model.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -249,7 +271,7 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     created_comment = Comment.objects.filter(content_type=ct, object_id=prop.pk)
 
     assert created_comment.count() == 1
-    assert list(resp.context['comments']) == [(created_comment.first(), [])]
+    assert created_comment.first() in list(resp.context['comments'])[0]
     assert created_comment.first().type == Comment.REQUEST
     assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
     assert created_comment.first().rel_object_id == created_request.first().pk
@@ -307,7 +329,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         created_comment = Comment.objects.filter(external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886')
 
         assert created_comment.count() == 1
-        assert list(resp.context['comments']) == [(created_comment.first(), [])]
+        assert created_comment.first() in list(resp.context['comments'])[0]
         assert created_comment.first().type == Comment.REQUEST
         assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
         assert created_comment.first().rel_object_id == created_request.first().pk

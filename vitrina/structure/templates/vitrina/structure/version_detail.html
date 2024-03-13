@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Versija" %} {{ version }}{% endblock%}
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
+        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate "Struktūra" %}</span></a></li>
+        <li><a href="{% url 'version-list' dataset.pk %}"><span>{% translate "Keitimų žurnalas" %}</span></a></li>
+    </ul>
+{% endblock %}
+
+{% block head %}
+    <style>
+		.prop_metadata {
+		    padding-left: 1.5em;
+		}
+		.enum_metadata {
+		    padding-left: 3.5em;
+		}
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/datasets/tabs.html' %}
+
+    <div class="columns">
+        <div class="column">
+            <div>
+                <p>{% translate "Versija" %}: <span class="tag is-success is-light">{{ version }}</span></p>
+                <p>{% translate "Įsigaliojimo data" %}: {{ version.released|date:"SHORT_DATE_FORMAT" }}</p>
+                {% if version.description %}
+                    <p class="mt-1"><small>{{ version.description }}</small></p>
+                {% endif %}
+            </div>
+            <div>
+                <h4 class="custom-title is-size-4-mobile mt-4">{% translate "Keitimai" %}</h4>
+                {% if changes %}
+                    {% for change in changes %}
+                        <div class="mb-2 {{ change.class }}">
+                            {% if change.class == 'prop_metadata' or change.class == 'enum_metadata' %}
+                                <span>- </span>
+                            {% endif%}
+                            <a href="{{ change.url }}">{{ change.title }}</a>
+                            {% for attr in change.changed_attrs %}
+                                <span>{{ attr.attr }}:</span>
+                                {% if not change.new %}
+                                    <span class='tag is-danger is-light is-medium'>{{ attr.value_before }}</span> ->
+                                {% endif %}
+                                <span class='tag is-success is-light is-medium'>{{ attr.value_after }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>{% translate "Keitimų nėra." %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

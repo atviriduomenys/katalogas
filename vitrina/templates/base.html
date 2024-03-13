@@ -2,8 +2,14 @@
 {% load menu_tags %}
 {% load static %}
 {% load sass_tags %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% load extra_settings %}
+{% load util_tags %}
+{% get_google_analytics_id as GOOGLE_ANALYTICS_ID %}
+
 <!DOCTYPE html>
-<html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
 
@@ -26,7 +32,16 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
     <script src="{% url 'javascript-catalog' %}"></script>
+    {% if GOOGLE_ANALYTICS_ID != None %}
+        <script async src="https://www.googletagmanager.com/gtag/js?id={% get_setting 'GOOGLE_ANALYTICS_ID' default='' %}"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
+          gtag('config', '{% get_setting 'GOOGLE_ANALYTICS_ID' default='django-extra-settings' %}');
+        </script>
+    {% endif %}
     {% include "component/favicon.html" %}
     {% block head %}{% endblock %}
     {% if cssOverride %}
@@ -79,16 +94,29 @@
                             {% if parent_links %}
                                 <ul class="p-t-sm">
                                     {% for link, title in parent_links.items %}
-                                        <li><a href="{{ link }}"><span>{{ title }}</span></a></li>
+                                        <li>
+                                            <a href="{{ link }}">
+                                            {% if title == "Pradžia" %}
+                                                <span class="icon">
+                                                    <i class="fas fa-home"></i>
+                                                </span>
+                                            {% endif %}
+                                            <span>{{ title }}</span></a>
+                                        </li>
                                     {% endfor %}
                                 </ul>
-                            {% else %}
+                            {% elif parent_url and parent_title %}
                                 <ul class="p-t-sm">
                                     <li><a href="{% block parent_url %}{% endblock %}"><span>{% block parent_title %}{% endblock %}</span></a></li>
                                 </ul>
                             {% endif %}
                         {% endblock %}
-                        <span class="breadcrumbs-current is-size-5-mobile">{% block current_title %}{% endblock %}</span>
+                            <h1 class="breadcrumbs-current is-size-5-mobile">
+                                {% block current_title %}{% endblock %}
+                            </h1>
+                        {% if object_title %}
+                            <h2>{% block object_title %}{% endblock %}</h2>
+                        {% endif %}
                     </div>
                 </nav>
             {% endblock %}

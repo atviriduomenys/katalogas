@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+{% load humanize %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+
+{% block content %}
+    {% if tabs_template_name %}
+        {% include tabs %}
+    {% endif %}
+
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% if filters_template_name %}
+                {% include filters_template_name %}
+            {% endif %}
+        </div>
+        <div class="column is-three-quarters">
+            <div class="tabs">
+                <ul>
+                    <li class="format-tab" id="time_tab_id">
+                        <a href="#time" name="time" onclick="selectTab('time')">{% translate "Laiko juosta" %}</a>
+                    </li>
+                    <li class="format-tab" id="bar_tab_id">
+                        <a href="#bar" name="bar" onclick="selectTab('bar')">{% translate "Stulpelinė diagrama" %}</a>
+                    </li>
+                </ul>
+           </div>
+            {% if parameter_select_template_name %}
+                {% include parameter_select_template_name %}
+            {% endif %}
+           <div class="mb-5">
+               <div>
+                   <div class="tab-content mt-5" style="display: none;" id="bar_id">
+                        <div class="is-flex">
+                            <span>{{ title }}</span>
+                            <div class="stays-right">
+                                {{ yAxis_title }}
+                            </div>
+                        </div>
+
+                        {% for item in bar_chart_data %}
+                            <div class="is-flex">
+                                {% if item.full_url %}
+                                    <a href="{{ item.full_url }}" id="{{ item.filter_value }}">
+                                {% else %}
+                                    <a href="{{ list_url }}{{ item.url }}" id="{{ item.filter_value }}">
+                                {% endif %}
+                                    <strong style="color: black;">{{ item.display_value }}</strong>
+                                </a>
+                                <div class="stays-right">
+                                    <a href="">{{ item.count|intcomma:False }}</a>
+                                </div>
+                            </div>
+                            <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
+                        {% endfor %}
+                   </div>
+                   <div class="tab-content" style="display: none;" id="time_id">
+                        {% if time_chart_data %}
+                            {% include "vitrina/statistics/stats_graph.html" %}
+                        {% endif %}
+                   </div>
+               </div>
+           </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            selectTab();
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{time_chart_data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+
+            $('nav#filter_id a.category-panel-block').on('click', function(e) {
+                e.preventDefault();
+                chartType = location.hash;
+                url = $(this).attr('href')
+                if (chartType) {
+                    url = $(this).attr('href') + chartType;
+                }
+                location.href = url;
+            });
+        })
+
+        function selectTab(format=null) {
+            if (format == null) {
+                format = "time";
+                if (location.hash && (
+                    location.hash == "#bar" ||
+                    location.hash == "#time"
+                )) {
+                    format = location.hash.replace("#", "");
+                }
+            }
+
+            $(`.tab-content:not(#${format}_id)`).each(function() {
+                this.style.display = 'none';
+            });
+            $(`li.format-tab:not(#${format}_tab_id)`).each(function() {
+                $(this).removeClass('is-active');
+            });
+
+            let content = $(`.tab-content#${format}_id`);
+            let tab = $(`li.format-tab#${format}_tab_id`);
+            content.css('display', 'block');
+            tab.addClass('is-active');
+
+            if (format == 'bar') {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'none';
+                });
+            }
+            else {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'block';
+                });
+            }
+        }
+    </script>
+{% endblock %}

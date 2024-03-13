@@ -2,10 +2,14 @@
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}{% translate "Planai" %}{% endblock%}
+{% block current_title %}{% translate "Duomenų rinkiniai" %}{% endblock%}
 {% block parent_links %}
     <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon"><i class="fas fa-home"></i></span><span>{% translate 'Pradžia' %}</span>
+            </a>
+        </li>
         <li><a href="{% url 'request-list' %}"><span>{% translate 'Poreikiai ir pasiūlymai' %}</span></a></li>
         <li><a href="{% url 'request-detail' request_obj.pk %}"><span>{{ request_obj.title }}</span></a></li>
     </ul>
@@ -16,27 +20,19 @@
 
     <div class="columns">
         <div class="column">
-            {% if can_manage_plans %}
+            {% if show_edit_buttons %}
                 <div class="buttons is-right">
-                    {% if request_obj.is_created %}
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-include' request_obj.pk %}">
-                            {% translate "Įtraukti į planą" %}
-                        </a>
-                        <a id="add-plan" class="button is-primary m-t-xs m-b-lg"
-                           href="{% url 'request-plans-create' request_obj.pk %}">
-                            {% translate "Naujas planas" %}
-                        </a>
-                    {% endif %}
+                    <a id="add-dataset" class="button is-primary" href="{% url 'dataset-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
+                        {% translate "Naujas rinkinys" %}
+                    </a>
+                    <a id="add-dataset" class="button is-primary" href="{% url 'request-datasets-edit' pk=request_obj.pk %}">
+                        {% translate "Priskirti rinkinį" %}
+                    </a>
                 </div>
             {% endif %}
-
             {% if datasets %}
                 <table class="table is-fullwidth">
                     <tbody>
-                    <tr>
-                        <th></th>
-                    </tr>
                     {% for dataset in datasets %}
                         <tr>
                         <td>
@@ -59,7 +55,7 @@
                         </td>
                         <td>
                             <div class="buttons is-right">
-                                <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-danger is-small"
+                                <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
                                    href="{% url 'request-dataset-remove' pk=request_obj.pk dataset_id=dataset.pk %}">
                                     {% translate "Pašalinti" %}
                                 </a>

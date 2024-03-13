@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% load i18n parler_tags %}
+
+{% block pageTitle %} | {% translate "Duomenų rinkinių įkėlimo datos" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų rinkinių įkėlimo datos" %}{% endblock %}
+
+{% block current_title %}
+{% translate "Duomenų rinkinių įkėlimo datos" %}
+{% endblock %}
+
+{% block content %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {% include 'vitrina/orgs/tabs.html' %}
+    {% endif %}
+    <div class="columns">
+        <div class="column is-one-quarter is-hidden-mobile">
+            {% include "vitrina/datasets/filters.html" %}
+        </div>
+        <div class="column is-three-quarters">
+            <div class="tabs">
+                <ul>
+                    <li class="format-tab" id="time_tab_id">
+                        <a name="time" onclick="selectTab('time')">{% translate "Laiko juosta" %}</a>
+                    </li>
+                    <li class="format-tab" id="bar_tab_id">
+                        <a name="bar" onclick="selectTab('bar')">{% translate "Stulpelinė diagrama" %}</a>
+                    </li>
+                </ul>
+           </div>
+
+            {% include "vitrina/datasets/stats_parameter_select.html" with filter="publication" %}
+
+            <div class="mb-5">
+               <div>
+                   <div class="tab-content mt-5" style="display: none;" id="bar_id">
+                       <div class="is-flex">
+                            <span>{% translate "Įkėlimo data" %}</span>
+                            {% include "vitrina/datasets/stats_parameter_translation.html" %}
+                        </div>
+                        {% if selected_year %}
+                            {% for y, yv in year_stats.items reversed %}
+                                {% if selected_year in y %}
+                                    <div class="is-flex">
+                                        <a href="/datasets/stats/publication/quarter/{{ y }}?{{ request.GET.urlencode }}"
+                                            id="{{ y }}_id">
+                                            <strong style="color: black;">
+                                                {% if 'Q1' in y %}
+                                                    I
+                                                {% elif 'Q2' in y %}
+                                                    II
+                                                {% elif 'Q3' in y %}
+                                                    III
+                                                {% else %}
+                                                    IV
+                                                {% endif %}
+                                            {% translate "ketvirtis" %}
+                                            </strong>
+                                        </a>
+                                        <div class="stays-right">
+                                            {% if 'Q1' in y %}
+                                                <a href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-03-31">{{ yv }}</a>
+                                            {% elif 'Q2' in y %}
+                                                <a href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-06-30">{{ yv }}</a>
+                                            {% elif 'Q3' in y %}
+                                                <a href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-09-30">{{ yv }}</a>
+                                            {% else %}
+                                                <a href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-12-31">{{ yv }}</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <progress class="progress is-info"
+                                              value="{{ yv }}"
+                                              max="{{ max_count }}">
+                                    </progress>
+                                {% endif %}
+                            {% endfor %}
+                        {% elif selected_quarter %}
+                            {% for y, yv in year_stats.items reversed %}
+            {#                    {% for m, mv in yv.items reversed %}#}
+                                    <div class="is-flex">
+                                        <strong style="color: black;">
+                                            {% if '01' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-01-31">
+                                                    {% translate "Sausis" %}
+                                                </a>
+                                            {% elif '02' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-02-01&date_to={{ y|slice:":4" }}-02-28">
+                                                    {% translate "Vasaris" %}
+                                                </a>
+                                            {% elif '03' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-03-01&date_to={{ y|slice:":4" }}-03-31">
+                                                    {% translate "Kovas" %}
+                                                </a>
+                                            {% elif '04' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-04-31">
+                                                    {% translate "Balandis" %}
+                                                </a>
+                                            {% elif '05' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-05-01&date_to={{ y|slice:":4" }}-05-31">
+                                                    {% translate "Gegužė" %}
+                                                </a>
+                                            {% elif '06' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-06-01&date_to={{ y|slice:":4" }}-06-30">
+                                                    {% translate "Birželis" %}
+                                                </a>
+                                            {% elif '07' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-07-31">
+                                                    {% translate "Liepa" %}
+                                                </a>
+                                            {% elif '08' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-08-01&date_to={{ y|slice:":4" }}-08-31">
+                                                    {% translate "Rugpjūtis" %}
+                                                </a>
+                                            {% elif '09' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-09-01&date_to={{ y|slice:":4" }}-09-31">
+                                                    {% translate "Rugsėjis" %}
+                                                </a>
+                                            {% elif '10' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-10-31">
+                                                    {% translate "Spalis" %}
+                                                </a>
+                                            {% elif '11' in y|slice:"5:" %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-11-01&date_to={{ y|slice:":4" }}-11-31">
+                                                    {% translate "Lapkritis" %}
+                                                </a>
+                                            {% else %}
+                                                <a id="{{ y }}_id" href="/datasets/?date_from={{ y|slice:":4" }}-12-01&date_to={{ y|slice:":4" }}-12-31">
+                                                    {% translate "Gruodis" %}
+                                                </a>
+                                            {% endif %}
+                                        </strong>
+                                    <div class="stays-right">
+                                        <a
+                                        {% if '01' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-01-01&date_to={{ y|slice:":4" }}-01-31"
+                                        {% elif '02' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-02-01&date_to={{ y|slice:":4" }}-02-28"
+                                        {% elif '03' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-03-01&date_to={{ y|slice:":4" }}-03-31"
+                                        {% elif '04' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-04-01&date_to={{ y|slice:":4" }}-04-31"
+                                        {% elif '05' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-05-01&date_to={{ y|slice:":4" }}-05-31"
+                                        {% elif '06' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-06-01&date_to={{ y|slice:":4" }}-06-31"
+                                        {% elif '07' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-07-01&date_to={{ y|slice:":4" }}-07-31"
+                                        {% elif '08' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-08-01&date_to={{ y|slice:":4" }}-08-31"
+                                        {% elif '09' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-09-01&date_to={{ y|slice:":4" }}-09-31"
+                                        {% elif '10' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-10-01&date_to={{ y|slice:":4" }}-10-31"
+                                        {% elif '11' in y|slice:"5:" %}
+                                             href="/datasets/?date_from={{ y|slice:":4" }}-11-01&date_to={{ y|slice:":4" }}-11-31"
+                                        {% else %}
+                                            href="/datasets/?date_from={{ y|slice:":4" }}-12-01&date_to={{ y|slice:":4" }}-12-31"
+                                        {% endif %}
+                                        >{{ yv }}
+                                        </a>
+                                    </div>
+                                </div>
+                                <progress class="progress is-info"
+                                          value="{{ yv }}"
+                                          max="{{ max_count }}">
+                                </progress>
+            {#                    {% endfor %}#}
+                            {% endfor %}
+                        {% else %}
+                            {% for y, yv in year_stats.items %}
+                                <div class="is-flex">
+                                    <a href="/datasets/stats/publication/year/{{ y }}?{{ request.GET.urlencode }}"
+                                        id="{{ y }}_id">
+                                        <strong style="color: black;">{{ y }}</strong>
+                                    </a>
+                                    <div class="stays-right"><a href="/datasets/?date_from={{ y }}-01-01&date_to={{ y }}-12-31">{{ yv }}</a></div>
+                                </div>
+                                <progress class="progress is-info"
+                                      value="{{ yv }}"
+                                      max="{{ max_count }}">
+                                </progress>
+                            {% endfor %}
+                        {% endif %}
+                   </div>
+                   <div class="tab-content" style="display: none;" id="time_id">
+                        {% if data %}
+                            {% include "vitrina/statistics/stats_graph.html" %}
+                        {% endif %}
+                   </div>
+               </div>
+           </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(function () {
+            selectTab();
+            let ctx = document.getElementById("chart").getContext("2d");
+            const data = {{data|safe}};
+            var graph_title = "{{graph_title}}";
+            var y_title = "{{yAxis_title}}";
+            var x_title = "{{xAxis_title}}";
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: data
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: graph_title
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest',
+                        axis: 'xy',
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: y_title
+                            },
+                            stacked: true
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: x_title
+                            },
+                        }
+                    }
+                },
+            });
+
+            $('nav#filter_id a.category-panel-block').on('click', function(e) {
+                e.preventDefault();
+                chartType = location.hash;
+                url = $(this).attr('href')
+                if (chartType) {
+                    url = $(this).attr('href') + chartType;
+                }
+                location.href = url;
+            });
+        })
+
+        function selectTab(format=null) {
+            if (format == null) {
+                format = "time";
+                if (location.hash && (
+                    location.hash == "#bar" ||
+                    location.hash == "#time"
+                )) {
+                    format = location.hash.replace("#", "");
+                }
+            }
+
+            $(`.tab-content:not(#${format}_id)`).each(function() {
+                this.style.display = 'none';
+            });
+            $(`li.format-tab:not(#${format}_tab_id)`).each(function() {
+                $(this).removeClass('is-active');
+            });
+
+            let content = $(`.tab-content#${format}_id`);
+            let tab = $(`li.format-tab#${format}_tab_id`);
+            content.css('display', 'block');
+            tab.addClass('is-active');
+
+            if (format == 'bar') {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'none';
+                });
+            }
+            else {
+                $('form#duration_select_id').each(function() {
+                    this.style.display = 'block';
+                });
+            }
+        }
+
+        function submitForm(formId) {
+            form = $(`form#${formId}`);
+            chartType = location.hash;
+            if (form.first() && chartType) {
+                form[0].action = form[0].action + chartType;
+            }
+            form.trigger('submit');
+        }
+    </script>
+{% endblock %}

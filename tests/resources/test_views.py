@@ -2,6 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
@@ -71,7 +72,7 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
-    file_format = FileFormat()
+    file_format = FileFormat(extension='URL')
     user = UserFactory(is_staff=True, organization=dataset.organization)
     app.set_user(user)
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
@@ -86,6 +87,36 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert DatasetDistribution.objects.filter().count() == 1
     assert DatasetDistribution.objects.first().metadata.count() == 1
     assert DatasetDistribution.objects.first().metadata.first().name == 'resource1'
+
+
+@pytest.mark.django_db
+def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
+    file_format = FileFormat(title='URL', extension='URL')
+    resource = DatasetDistributionFactory(title='base title', description='base description',
+                                          format=file_format, file=None)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form['download_url'] = 'get.data.gov.lt'
+    resp = form.submit()
+    resource.refresh_from_db()
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.filter().count() == 1
+    assert resource.upload_to_storage is True
+
+
+@pytest.mark.django_db
+def test_change_form_upload_checked(app: DjangoTestApp):
+    resource = DatasetDistributionFactory(title='base title', description='base description')
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form['upload_to_storage'] = True
+    resp = form.submit()
+    resource.refresh_from_db()
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.filter().count() == 1
+    assert resource.upload_to_storage is True
 
 
 @pytest.mark.django_db
@@ -169,7 +200,7 @@ def test_create_resource_without_name(app: DjangoTestApp):
         object_id=resource.pk,
         name='resource3'
     )
-    format = FileFormat()
+    format = FileFormat(extension='URL')
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'New resource'
     form['format'] = format.pk
@@ -180,3 +211,56 @@ def test_create_resource_without_name(app: DjangoTestApp):
     assert new_resource.count() == 1
     assert new_resource.first().metadata.count() == 1
     assert new_resource.first().metadata.first().name == 'resource4'
+
+
+@pytest.mark.django_db
+def test_create_resource_with_file_and_wrong_format(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='URL')
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['file'] = Upload('test.csv', b'Column\nValue')
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_create_resource_with_download_url_and_wrong_format(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='CSV')
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['download_url'] = "www.test.com"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
+    ]]
+
+
+@pytest.mark.django_db
+def test_create_resource_with_existing_download_url(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    format = FileFormat(extension='URL')
+    DatasetDistributionFactory(
+        dataset=dataset,
+        format=format,
+        download_url="http://www.test.com"
+    )
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = format.pk
+    form['download_url'] = "http://www.test.com"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[
+        'Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja.'
+    ]]

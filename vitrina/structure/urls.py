@@ -1,6 +1,6 @@
 from django.urls import path
 
-from vitrina.structure.views import DatasetStructureView
+from vitrina.structure.views import DatasetStructureView, VersionCreateView
 from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import ModelStructureView
 from vitrina.structure.views import PropertyStructureView
@@ -24,6 +24,9 @@ from vitrina.structure.views import ParamDeleteView
 from vitrina.structure.views import DatasetStructureHistoryView
 from vitrina.structure.views import ModelHistoryView
 from vitrina.structure.views import PropertyHistoryView
+from vitrina.structure.views import GetUpdatedSummaryView
+from vitrina.structure.views import VersionListView
+from vitrina.structure.views import VersionDetailView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -59,4 +62,8 @@ urlpatterns = [
          EnumUpdateView.as_view(), name='enum-update'),
     path('datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/',
          EnumDeleteView.as_view(), name='enum-delete'),
+    path('get_updated_summary/', GetUpdatedSummaryView.as_view(), name='get_updated_summary'),
+    path('datasets/<int:pk>/version/', VersionListView.as_view(), name='version-list'),
+    path('datasets/<int:pk>/version/add/', VersionCreateView.as_view(), name='version-create'),
+    path('datasets/<int:pk>/version/<int:version_id>/', VersionDetailView.as_view(), name='version-detail'),
 ]

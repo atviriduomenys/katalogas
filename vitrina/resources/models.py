@@ -176,7 +176,12 @@ class DatasetDistribution(models.Model):
         return self.format
 
     def is_previewable(self):
-        return (self.extension() == "CSV" or self.extension() == "XLSX") and self.file.file.size > 0
+        return (
+            self.file and self.file.file and
+            self.file.file.storage.exists(self.file.file.name) and
+            (self.extension() == "CSV" or self.extension() == "XLSX") and
+            self.file.file.size > 0
+        )
 
     def get_acl_parents(self):
         parents = [self]

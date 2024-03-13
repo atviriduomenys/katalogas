@@ -13,3 +13,13 @@ def has_organization_remove_perm(request_assignment, user):
         request_assignment,
         request_assignment.organization
     )
+
+
+@assignment_tag
+def has_author_view_perm(request, user):
+    return has_perm(
+        user,
+        Action.VIEW,
+        request,
+    )
+

@@ -7,7 +7,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.projects.factories import ProjectFactory
-from vitrina.requests.factories import RequestFactory
+from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.factories import UserFactory
 
@@ -38,13 +38,14 @@ def test_get_comment_form_class_for_request_with_staff_perm():
 
 @pytest.mark.django_db
 def test_get_comment_form_class_for_request_with_manager_perm():
-    request = RequestFactory()
-    request.organizations.add(OrganizationFactory())
+    request_assignment = RequestAssignmentFactory()
+    request = request_assignment.request
+    organization = request_assignment.organization
     request.save()
-    ct = ContentType.objects.get_for_model(request.organizations.first())
+    ct = ContentType.objects.get_for_model(organization)
     manager = RepresentativeFactory(
         content_type=ct,
-        object_id=request.organizations.first().pk,
+        object_id=organization.pk,
         role=Representative.MANAGER
     )
     res = get_comment_form_class(request, manager.user)
@@ -53,13 +54,14 @@ def test_get_comment_form_class_for_request_with_manager_perm():
 
 @pytest.mark.django_db
 def test_get_comment_form_class_for_request_with_coordinator_perm():
-    request = RequestFactory()
-    request.organizations.add(OrganizationFactory())
+    request_assignment = RequestAssignmentFactory()
+    request = request_assignment.request
+    organization = request_assignment.organization
     request.save()
-    ct = ContentType.objects.get_for_model(request.organizations.first())
+    ct = ContentType.objects.get_for_model(organization)
     coordinator = RepresentativeFactory(
         content_type=ct,
-        object_id=request.organizations.first().pk,
+        object_id=organization.pk,
         role=Representative.COORDINATOR
     )
     res = get_comment_form_class(request, coordinator.user)

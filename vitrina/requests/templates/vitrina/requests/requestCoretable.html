@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load like_tags %}
+{% load request_tags %}
 
 <table class="table custom-table-padding">
     <tbody>
@@ -43,6 +44,15 @@
         <td>{{ request_object.periodicity }}</td>
     </tr>
     {% endif %}
+
+    {% has_author_view_perm request_object request.user as can_view_author %}
+    {% if can_view_author %}
+        <tr>
+            <th>{% translate "Autorius" %}</th>
+            <td>{{ request_object.user }}<br/> <small><a href="mailto:{{ request_object.user.email }}">{{ request_object.user.email }}</a></small></td>
+        </tr>
+    {% endif %}
+
     <tr>
         <th>{% translate "Patinka" %}:</th>
         <td id="request_likes">

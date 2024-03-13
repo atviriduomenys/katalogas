@@ -105,8 +105,8 @@ class Request(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
-        for org in self.organizations.all():
-            parents.extend(org.get_acl_parents())
+        for org in self.requestassignment_set.all():
+            parents.extend(org.organization.get_acl_parents())
         return parents
 
     def get_plan_title(self):

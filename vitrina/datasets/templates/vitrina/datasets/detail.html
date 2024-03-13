@@ -324,14 +324,13 @@
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
                     $.getJSON('/datasets/{{ dataset.id }}/preview/' + $(this).attr('id'), function (json_data) {
-                        data = json_data.data;
-                        let table_obj = document.getElementById('info-table-body');
+                        var data = json_data.data;
+                        var table_obj = document.getElementById('info-table-body');
+                        $("#info-table-body").empty();
                         $.each(data, function (index, item) {
-                            for(var i = 0; i < data.length; i++){
-                                let newRow = table_obj.append(data[i]);
-                            }
+                            var newRow = table_obj.insertRow(index);
                             if (index === 0) {
-                                newRow.classList.add("preview-tr", "is-bold");
+                                newRow.classList.add("preview-tr", "has-text-weight-bold");
                             } else {
                                 newRow.className = "preview-tr";
                             }

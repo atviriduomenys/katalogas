@@ -438,27 +438,38 @@ class DatasetDistributionPreviewView(ListView):
         data = []
         if distribution.is_previewable():
             if 'xlsx' in distribution.file.path:
-                data = pd.ExcelFile(distribution.file.path)
-                data = {
-                    sheet_name: data.parse(sheet_name) for sheet_name in data.sheet_names
+                read_data = pd.ExcelFile(distribution.file.path)
+                read_data = {
+                    sheet_name: read_data.parse(sheet_name) for sheet_name in read_data.sheet_names
                 }
-                if len(data.keys()) > 1:
+                if len(read_data.keys()) > 1:
                     data = [['Only one sheet is allowed in file']]
                 else:
-                    data = data[next(iter(data))].values.tolist()
-                    data = data[:5]
+                    read_data = read_data[next(iter(read_data))]
+                    headers = read_data.columns.values
+                    first_5_values = read_data.values.tolist()
+                    data.append(list(headers))
+                    data.extend(first_5_values[:5])
+
             elif 'csv' in distribution.file.path:
-                readed_data = pd.read_csv(distribution.file.path)
-                headers = readed_data.columns.values
-                first_5_values = readed_data.values.tolist()
-                data.append(list(headers))
-                data.append(first_5_values[:5])
+                read_data = None
+
+                try:
+                    read_data = pd.read_csv(distribution.file.path, delimiter=";")
+                except ValueError:
+                    try:
+                        read_data = pd.read_csv(distribution.file.path, encoding="cp1257", delimiter=";")
+                    except ValueError:
+                        pass
+                if read_data is not None:
+                    headers = read_data.columns.values
+                    first_5_values = read_data.values.tolist()
+                    data.append(list(headers))
+                    data.extend(first_5_values[:5])
+                else:
+                    data = [[_("Nepavyko nuskaityti failo")]]
             else:
                 data = [['Only xlsx or csv files are available']]
-        else:
-            rows = open(distribution.file.path, encoding='utf-8')
-            rows = itertools.islice(rows, 100)
-            data = list(csv.reader(rows, delimiter=";"))
         return JsonResponse({'data': data})
 
 

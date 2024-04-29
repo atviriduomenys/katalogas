@@ -32,5 +32,15 @@
                 $('.terms-div').toggleClass('is-hidden');
             });
         });
+
+        function onCaptchaClick () {
+            var button = $('input#submit-id-submit');
+            button.prop('disabled', false);
+        }
+
+        function onCaptchaExpire () {
+            var button = $('input#submit-id-submit');
+            button.prop('disabled', true);
+        }
     </script>
 {% endblock %}

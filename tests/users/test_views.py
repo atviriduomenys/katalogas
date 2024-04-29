@@ -1,9 +1,11 @@
 import re
+from unittest.mock import patch
 
 import pytest
 from allauth.account.models import EmailConfirmation
 from django.core import mail
 from django.urls import reverse
+from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
 
 from vitrina import settings
@@ -42,60 +44,72 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
-def test_register_with_short_name(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms['register-form']
-    form['first_name'] = "T"
-    form['last_name'] = "User"
-    form['email'] = "test_@test.com"
-    form['password1'] = "test123?"
-    form['password2'] = "test123?"
-    form['agree_to_terms'] = True
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[name_error]]
-    assert User.objects.filter(email='test_@test.com').count() == 0
+def test_register_with_short_name(csrf_exempt_django_app: DjangoTestApp):
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "T",
+            'last_name': "User",
+            'email': "test_@test.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        assert list(resp.context['form'].errors.values()) == [[name_error]]
+        assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_with_name_with_numbers(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms['register-form']
-    form['first_name'] = "T3st"
-    form['last_name'] = "User"
-    form['email'] = "test_@test.com"
-    form['password1'] = "test123?"
-    form['password2'] = "test123?"
-    form['agree_to_terms'] = True
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[name_error]]
-    assert User.objects.filter(email='test_@test.com').count() == 0
+def test_register_with_name_with_numbers(csrf_exempt_django_app: DjangoTestApp):
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "T3st",
+            'last_name': "User",
+            'email': "test_@test.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        assert list(resp.context['form'].errors.values()) == [[name_error]]
+        assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_without_agreeing_to_terms(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms['register-form']
-    form['first_name'] = "Test"
-    form['last_name'] = "User"
-    form['email'] = "test_@test.com"
-    form['password1'] = "test123?"
-    form['password2'] = "test123?"
-    form['agree_to_terms'] = False
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[terms_error]]
-    assert User.objects.filter(email='test_@test.com').count() == 0
+def test_register_without_agreeing_to_terms(csrf_exempt_django_app: DjangoTestApp):
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "Test",
+            'last_name': "User",
+            'email': "test_@test.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': False,
+            "g-recaptcha-response": "PASSED",
+        })
+        assert list(resp.context['form'].errors.values()) == [[terms_error]]
+        assert User.objects.filter(email='test_@test.com').count() == 0
 
 
 @pytest.mark.django_db
-def test_register_with_correct_data(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms['register-form']
-    form['first_name'] = "Test"
-    form['last_name'] = "User"
-    form['email'] = "test_@test.com"
-    form['password1'] = "test123?"
-    form['password2'] = "test123?"
-    form['agree_to_terms'] = True
-    resp = form.submit()
-    assert resp.status_code == 302
-    assert resp.url == reverse('home')
-    assert User.objects.filter(email='test_@test.com').count() == 1
+def test_register_with_correct_data(csrf_exempt_django_app: DjangoTestApp):
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "Test",
+            'last_name': "User",
+            'email': "test_@test.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        assert resp.status_code == 302
+        assert resp.url == reverse('home')
+        assert User.objects.filter(email='test_@test.com').count() == 1
 
 
 @pytest.mark.django_db
@@ -217,22 +231,26 @@ def test_profile_edit_form_correct_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_email_confirmation_after_sign_up(app: DjangoTestApp):
-    form = app.get(reverse('register')).forms['register-form']
-    form['first_name'] = "Test"
-    form['last_name'] = "User"
-    form['email'] = "test123@test.com"
-    form['password1'] = "somethingverydifficult?"
-    form['password2'] = "somethingverydifficult?"
-    form['agree_to_terms'] = True
-    form.submit()
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == ["test123@test.com"]
-    assert EmailConfirmation.objects.count() == 1
-    assert EmailConfirmation.objects.first().email_address.verified is False
+def test_email_confirmation_after_sign_up(csrf_exempt_django_app: DjangoTestApp):
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "Test",
+            'last_name': "User",
+            'email': "test123@test.com",
+            'password1': "somethingverydifficult?",
+            'password2': "somethingverydifficult?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
 
-    url = re.search(r'(https?://\S+)', mail.outbox[0].body).group()
-    form = app.get(url).forms['confirm_email_form']
-    form.submit()
-    assert EmailConfirmation.objects.first().email_address.verified is True
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == ["test123@test.com"]
+        assert EmailConfirmation.objects.count() == 1
+        assert EmailConfirmation.objects.first().email_address.verified is False
+
+        url = re.search(r'(https?://\S+)', mail.outbox[0].body).group()
+        form = csrf_exempt_django_app.get(url).forms['confirm_email_form']
+        form.submit()
+        assert EmailConfirmation.objects.first().email_address.verified is True
 

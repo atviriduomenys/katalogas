@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 
 from allauth.account.utils import perform_login
@@ -81,12 +82,11 @@ class RegisterView(CreateView, SignupForm, PasswordResetTokenGenerator):
         if form.is_valid():
             self.cleaned_data = form.cleaned_data
             user = super(RegisterView, self).save(request)
-            hash_val = self.request.POST['csrfmiddlewaretoken']
             email_address = EmailAddress.objects.get(user_id=user.pk)
             EmailConfirmation.objects.create(
                 created=datetime.now(),
                 sent=datetime.now(),
-                key=hash_val,
+                key=secrets.token_urlsafe(),
                 email_address_id=email_address.id
             )
             perform_login(request=request, user=user,
@@ -373,6 +373,7 @@ class UserStatsView(TemplateView):
 
 class ConfirmEmailView(BaseConfirmEmailView):
     template_name = 'vitrina/users/confirm_email.html'
+
 
 class PleaseConfirmEmailView(TemplateView):
     template_name = 'vitrina/users/please_confirm_email.html'

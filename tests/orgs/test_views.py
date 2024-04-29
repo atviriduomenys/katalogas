@@ -1,9 +1,11 @@
 import io
+from unittest.mock import patch
 
 import pytest
 from datetime import datetime
 
 from PIL import Image
+from django_recaptcha.client import RecaptchaResponse
 from freezegun import freeze_time
 import pytz
 from django.contrib.contenttypes.models import ContentType
@@ -316,7 +318,7 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
 
 
 @pytest.mark.django_db
-def test_register_after_adding_representative(app: DjangoTestApp, representative_data):
+def test_register_after_adding_representative(csrf_exempt_django_app: DjangoTestApp, representative_data):
     new_representative = RepresentativeFactory(
         email="new@gmail.com",
         content_type=ContentType.objects.get_for_model(Organization),
@@ -325,20 +327,24 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     )
     serializer = URLSafeSerializer(settings.SECRET_KEY)
     token = serializer.dumps({"representative_id": new_representative.pk})
-    form = app.get(reverse('representative-register', kwargs={'token': token})).forms['register-form']
-    form['first_name'] = "New"
-    form['last_name'] = "User"
-    form['email'] = "new@gmail.com"
-    form['password1'] = "test123?"
-    form['password2'] = "test123?"
-    form['agree_to_terms'] = True
-    resp = form.submit()
-    new_representative.refresh_from_db()
-    assert resp.status_code == 302
-    assert resp.url == reverse('home')
-    assert User.objects.filter(email='new@gmail.com').count() == 1
-    assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
-    assert new_representative.user.organization == representative_data['organization']
+
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('representative-register', kwargs={'token': token}), {
+            'first_name': "New",
+            'last_name': "User",
+            'email': "new@gmail.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        new_representative.refresh_from_db()
+        assert resp.status_code == 302
+        assert resp.url == reverse('home')
+        assert User.objects.filter(email='new@gmail.com').count() == 1
+        assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
+        assert new_representative.user.organization == representative_data['organization']
 
 
 @pytest.mark.django_db

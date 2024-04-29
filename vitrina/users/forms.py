@@ -8,6 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput
 from django.utils.translation import gettext_lazy as _
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import email
@@ -56,6 +58,10 @@ class RegisterForm(UserCreationForm):
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
     password2 = CharField(label=_("Pakartokite slaptažodį"), strip=False,
                           widget=PasswordInput(attrs={'autocomplete': 'new-password'}))
+    captcha = ReCaptchaField(label="", widget=ReCaptchaV2Checkbox(attrs={
+        'data-callback': 'onCaptchaClick',
+        'data-expired-callback': 'onCaptchaExpire'
+    }))
 
     error_messages = {
         'password_mismatch': _('Slaptažodžio laukai nesutapo'),
@@ -63,7 +69,7 @@ class RegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", 'password1', 'password2', 'agree_to_terms',)
+        fields = ("first_name", "last_name", "email", 'password1', 'password2', 'agree_to_terms', 'captcha')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,7 +83,8 @@ class RegisterForm(UserCreationForm):
             Field('password1', placeholder=_("Slaptažodis")),
             Field('password2', placeholder=_("Pakartokite slaptažodį")),
             Field('agree_to_terms'),
-            Submit('submit', _("Registruotis"), css_class='button is-primary'),
+            Field('captcha'),
+            Submit('submit', _("Registruotis"), css_class='button is-primary', disabled=True),
         )
 
     def clean(self):
@@ -94,6 +101,14 @@ class RegisterForm(UserCreationForm):
         if 'agree_to_terms' in cleaned_data and not cleaned_data['agree_to_terms']:
             self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
         return cleaned_data
+
+    def clean_email(self):
+        email_address = self.cleaned_data.get('email', '')
+        not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
+        if email_address:
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
+                raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
+        return email_address
 
 
 class PasswordSetForm(ModelForm):

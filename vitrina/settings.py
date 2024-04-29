@@ -112,6 +112,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'django_select2',
+    'django_recaptcha',
     'vitrina',
     'vitrina.cms',
     'vitrina.api',
@@ -421,3 +422,6 @@ SPINTA_SERVER_CLIENT_SECRET = env('SPINTA_SERVER_CLIENT_SECRET', default='')
 
 SECURE_HSTS_SECONDS = 31536000 # The max-age must be at least 31536000 seconds (1 year)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY', default='')
+RECAPTCHA_PRIVATE_KEY = env('RECAPTCHA_PRIVATE_KEY', default='')

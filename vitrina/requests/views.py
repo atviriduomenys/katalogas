@@ -1,4 +1,7 @@
+import functools
 import json
+import operator
+
 import numpy as np
 import pandas as pd
 import pytz
@@ -52,6 +55,7 @@ from vitrina.requests.models import (Organization,
                                      RequestStructure)
 from vitrina.requests.services import update_facet_data
 from vitrina.statistics.views import StatsMixin
+from vitrina.structure.models import Model, Property
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
@@ -1314,10 +1318,31 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        request_object_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
-                                                          request_id=self.request_obj.pk) \
-            .values_list('object_id', flat=True)
-        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by('-created')
+        args = []
+        datasets = []
+
+        dataset_ids = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            request_id=self.request_obj.pk
+        ).values_list('object_id', flat=True)
+        model_ids = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(Model),
+            request_id=self.request_obj.pk
+        ).values_list('object_id', flat=True)
+        property_ids = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(Property),
+            request_id=self.request_obj.pk
+        ).values_list('object_id', flat=True)
+
+        if dataset_ids:
+            args += [Q(pk__in=dataset_ids)]
+        if model_ids:
+            args += [Q(model__pk__in=model_ids)]
+        if property_ids:
+            args += [Q(model__model_properties__pk__in=property_ids)]
+        if args:
+            query = functools.reduce(operator.or_, args)
+            datasets = Dataset.objects.filter(query).order_by('-created')
         return datasets
 
     def get_context_data(self, **kwargs):

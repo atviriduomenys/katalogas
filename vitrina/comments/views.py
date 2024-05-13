@@ -23,6 +23,7 @@ from vitrina.orgs.models import Representative
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.models import Property, Model
 from vitrina.tasks.models import Task
 from django.utils.translation import gettext_lazy as _
 
@@ -67,8 +68,6 @@ class CommentView(
                     description=comment.body,
                     periodicity=frequency.title if frequency else "",
                 )
-                if hasattr(obj, 'organization'):
-                    new_request.organizations.add(obj.organization)
                 RequestObject.objects.create(
                     request=new_request,
                     object_id=object_id,
@@ -81,7 +80,25 @@ class CommentView(
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
 
-                if isinstance(obj, Dataset):
+                if isinstance(obj, Model):
+                    RequestAssignment.objects.create(
+                        request=new_request,
+                        organization=obj.dataset.organization,
+                        status=Request.CREATED
+                    )
+                elif isinstance(obj, Property):
+                    RequestAssignment.objects.create(
+                        request=new_request,
+                        organization=obj.model.dataset.organization,
+                        status=Request.CREATED
+                    )
+                elif isinstance(obj, Dataset):
+                    RequestAssignment.objects.create(
+                        request=new_request,
+                        organization=obj.organization,
+                        status=Request.CREATED
+                    )
+
                     if obj.organization.email:
                         sub_email_list.append(obj.organization.email)
 
@@ -279,6 +296,11 @@ class ExternalCommentView(
                     content_type=ContentType.objects.get_for_model(Dataset),
                     external_object_id=external_object_id,
                     external_content_type=external_content_type,
+                )
+                RequestAssignment.objects.create(
+                    request=new_request,
+                    organization=dataset.organization,
+                    status=Request.CREATED
                 )
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)

@@ -23,7 +23,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy, resolve
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -606,6 +606,17 @@ class DatasetCreateView(
                                         'dataset': self.object.title,
                                          'link': dataset_url
                                     })
+
+        next_url = self.request.GET.get('next')
+        if next_url:
+            match = resolve(next_url)
+            if match.url_name == 'request-datasets':
+                if request_id := match.kwargs.get('pk'):
+                    RequestObject.objects.create(
+                        request_id=request_id,
+                        object_id=self.object.pk,
+                        content_type=ContentType.objects.get_for_model(self.object)
+                    )
 
         return HttpResponseRedirect(self.get_success_url())
 

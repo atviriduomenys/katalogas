@@ -108,12 +108,15 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+    text_search_param = None
 
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get('organization_id')
         if legacy_org_redirect:
             new_query_dict = {'selected_facets': 'organization_exact:{}'.format(legacy_org_redirect)}
             return HttpResponsePermanentRedirect('?' + urlencode(new_query_dict, True))
+        if self.request.GET.get("q", None) is not None:
+            self.text_search_param = self.request.GET.get("q", None)
         return super().get(request)
 
     def get_queryset(self):
@@ -151,6 +154,24 @@ class DatasetListView(PlanMixin, FacetedSearchView):
                 datasets = datasets.order_by('en_title_s', '-type_order')
         elif sorting == 'sort-by-relevance':
             datasets = datasets.order_by('-type_order')
+        if self.request.GET.get('q', None):
+            if len(self.request.GET.get('q', None)) < 5:
+                datasets = datasets.autocomplete(text__startswith=self.text_search_param)
+            else:
+                datasets = datasets.autocomplete(text__contains=self.text_search_param)
+            if self.request.GET.get('selected_facets', None) is not None:
+                if 'organization' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(organization=int(self.request.GET.get('selected_facets').split(':')[1]))
+                if 'jurisdiction' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(jurisdiction=int(self.request.GET.get('selected_facets').split(':')[1]))
+                if 'status' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(status=self.request.GET.get('selected_facets').split(':')[1])
+                if 'category' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(category=int(self.request.GET.get('selected_facets').split(':')[1]))
+                if 'tags' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(tags=int(self.request.GET.get('selected_facets').split(':')[1]))
+                if 'formats' in self.request.GET.get('selected_facets'):
+                    datasets = datasets.filter(formats=int(self.request.GET.get('selected_facets').split(':')[1]))
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -259,8 +280,10 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             ],
             'group_facet': update_facet_data(self.request, facet_fields, 'groups', DatasetGroup),
             'selected_groups': get_selected_value(form, 'groups', True, False),
-            'q': form.cleaned_data.get('q', ''),
+            'q': self.request.GET.get('q', ''),
         }
+        if self.text_search_param and self.request.GET.get('q', None) is None:
+            extra_context['q'] = self.text_search_param
         search_query_dict = dict(self.request.GET.copy())
         if 'query' in search_query_dict:
             search_query_dict.pop('query')

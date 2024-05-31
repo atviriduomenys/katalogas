@@ -68,42 +68,55 @@
                         {% if selected_jurisdiction %}
                             {% for jurisdiction in jurisdictions %}
                                 {% if jurisdiction.title == selected_jurisdiction %}
-                                <div class="columns is-gapless  m-0 mt-1" style="cursor: pointer;"
-                                     onclick="removeFilter('{{ jurisdiction.title }}')"
-                                >
-                                    <span class="icon">
-                                        <i class="far fa-check-square"></i>
-                                    </span>
-
-                                    <div class="column is-9">
-                                        <span class="category-panel-block has-text-weight-bold">{{ jurisdiction.title }}</span>
-                                    </div>
-
-                                    <div class="column is-2 has-text-right">
-                                      <span class="is-size-6">({{ jurisdiction.count }})</span>
-                                    </div>
-                                </div>
+                                    <div class="columns is-gapless m-0 mt-1">
+                                          <div class="column is-10">
+                                                <a onclick="removeFilter('{{ jurisdiction.title }}')"
+                                                   class="category-panel-block has-text-weight-bold has-text-dark"
+                                                   title="{{ jurisdiction.title }}"
+                                                   aria-label="{{ jurisdiction.title }}"
+                                                >
+                                                    <div class="columns">
+                                                        <div class="column is-1">
+                                                          <span class="icon">
+                                                            <i class="far fa-check-square"></i>
+                                                          </span>
+                                                        </div>
+                                                        <div class="column is-11">
+                                                            {{ jurisdiction.title }}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                          </div>
+                                          <div class="column is-2 has-text-right">
+                                            <span class="is-size-6">({{ jurisdiction.count }})</span>
+                                          </div>
+                                      </div>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
                             {% for jurisdiction in jurisdictions %}
-                                <div class="columns is-gapless  m-0 mt-1 {% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %}">
-                                    <span class="icon">
-                                        <i class="far fa-square"></i>
-                                    </span>
-
-                                    <div class="column is-9">
+                                <div class="columns is-gapless m-0 mt-1 {% if forloop.counter > 10 %} facet-jurisdiction is-hidden {% endif %}">
+                                    <div class="column is-10">
                                         <a href="{{ jurisdiction.query }}"
                                            class="category-panel-block has-text-dark"
                                            title="{{ jurisdiction.title }}"
+                                           aria-label="{{ jurisdiction.title }}"
                                         >
-                                            {{ jurisdiction.title }}
+                                            <div class="columns">
+                                                <div class="column is-1">
+                                                  <span class="icon">
+                                                    <i class="far fa-square"></i>
+                                                  </span>
+                                                </div>
+                                                <div class="column is-11">
+                                                    {{ jurisdiction.title }}
+                                                </div>
+                                            </div>
                                         </a>
-                                    </div>
-
-                                    <div class="column is-2 has-text-right">
-                                      <span class="is-size-6">({{ jurisdiction.count }})</span>
-                                    </div>
+                                  </div>
+                                  <div class="column is-2 has-text-right">
+                                    <span class="is-size-6">({{ jurisdiction.count }})</span>
+                                  </div>
                                 </div>
                             {% endfor %}
                         {% endif %}

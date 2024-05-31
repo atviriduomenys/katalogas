@@ -167,11 +167,9 @@ class RequestSearchForm(FacetedSearchForm):
         if self.cleaned_data.get('q'):
             keyword = self.cleaned_data.get('q')
             if len(keyword) < 5:
-                q = self.searchqueryset.models(Request).autocomplete(text__startswith=self.cleaned_data['q'])
+                sqs = sqs.autocomplete(text__startswith=keyword)
             else:
-                q = self.searchqueryset.models(Request).autocomplete(text__contains=self.cleaned_data['q'])
-            if len(q) != 0:
-                sqs = q
+                sqs = sqs.autocomplete(text__icontains=keyword)
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(created__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):

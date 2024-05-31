@@ -69,6 +69,7 @@ class Filter:
         stats: bool = True,
         display_method: str = None,
         use_str: bool = False,
+        remove_search_query: bool = False,
     ):
         self.name = name
         self.title = title
@@ -83,6 +84,7 @@ class Filter:
         self.stats = stats
         self.display_method = display_method
         self.use_str = use_str
+        self.remove_search_query = remove_search_query
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -153,7 +155,7 @@ class Filter:
                     if self.multiple else
                     value == selected
                 ),
-                url=get_filter_url(self.request, self.name, value, is_selected),
+                url=get_filter_url(self.request, self.name, value, is_selected, self.remove_search_query),
                 hidden=show_count > self.limit
             )
             show_count += 1
@@ -369,11 +371,17 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
     return selected_value
 
 
-def get_filter_url(request: WSGIRequest, key: str, value: str, selected: bool = False) -> str:
+def get_filter_url(
+    request: WSGIRequest,
+    key: str,
+    value: str,
+    selected: bool = False,
+    remove_search_query: bool = False
+) -> str:
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
-    if 'q' in query_dict:
+    if remove_search_query and 'q' in query_dict:
         query_dict.pop('q')
     if selected:
         val = '%s_exact:%s' % (key, value)

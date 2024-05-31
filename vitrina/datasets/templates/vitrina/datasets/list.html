@@ -98,7 +98,7 @@
                        value="{{ q | escape }}" title="{% translate 'Paieška' %}"/>
                 {% for k, values in search_query.items %}
                     {% for v in values %}
-                        {% if k != 'q' %}
+                        {% if k != 'q' and k != 'page' %}
                             <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
                         {% endif %}
                     {% endfor %}

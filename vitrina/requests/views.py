@@ -172,6 +172,9 @@ class RequestListView(FacetedSearchView):
         }
         context.update(extra_context)
         context['sort'] = sorting
+        context['search_query'] = dict(self.request.GET.copy())
+        context['search_url'] = reverse('request-list')
+
         return context
 
 
@@ -1450,6 +1453,7 @@ class RequestOrgFiltersUpdate(FacetedSearchView):
                 Organization,
                 multiple=True,
                 is_int=False,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():
@@ -1481,6 +1485,7 @@ class RequestJurisdictionFiltersUpdate(FacetedSearchView):
                 Organization,
                 multiple=True,
                 is_int=False,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():

@@ -2871,6 +2871,7 @@ class UpdateDatasetOrgFilters(FacetedSearchView):
                 Organization,
                 multiple=True,
                 is_int=False,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():
@@ -2908,6 +2909,7 @@ class UpdateDatasetCategoryFilters(FacetedSearchView):
                 multiple=True,
                 is_int=False,
                 use_str=True,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():
@@ -2944,7 +2946,8 @@ class UpdateDatasetTagFilters(FacetedSearchView):
                 Dataset,
                 multiple=True,
                 is_int=False,
-                display_method="get_tag_title"
+                display_method="get_tag_title",
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():
@@ -2981,6 +2984,7 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
                     Organization,
                     multiple=True,
                     is_int=False,
+                    remove_search_query=True
             ),
             items = []
             for item in filter[0].items():

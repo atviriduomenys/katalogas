@@ -23,7 +23,7 @@
     <div class="card mb-5">
         <div class="card-content">
             <form id="request-filter" class="field has-addons is-fullwidth"
-                  action="{% url 'request-list' %}"
+                  action="{{ search_url }}"
                   method="get">
                 <div class="control is-expanded">
                     <label class="visually-hidden" for="request-search-input">{% translate 'Poreikio paieška' %}</label>
@@ -33,6 +33,13 @@
                            title="{% translate 'Ieškoti' %}"
                            id="request-search-input"
                     />
+                    {% for k, values in search_query.items %}
+                        {% for v in values %}
+                            {% if k != 'q' and k != 'page' %}
+                                <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
                 </div>
                 <p class="control">
                     <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">

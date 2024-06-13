@@ -20,8 +20,8 @@ class FinancingPlan(models.Model):
     received_financing = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     year = models.IntegerField(blank=True, null=True)
-    created_by = models.ForeignKey(User, models.DO_NOTHING, db_column='created_by', blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
+    created_by = models.ForeignKey(User, models.CASCADE, db_column='created_by', blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True

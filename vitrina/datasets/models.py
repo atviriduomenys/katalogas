@@ -124,12 +124,12 @@ class Dataset(TranslatableModel):
     category = models.ManyToManyField(Category, verbose_name=_('Kategorija'))
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
-    catalog = models.ForeignKey(Catalog, models.DO_NOTHING, db_column='catalog', blank=True, null=True)
+    catalog = models.ForeignKey(Catalog, models.SET_NULL, db_column='catalog', blank=True, null=True)
     origin = models.CharField(max_length=255, blank=True, null=True)
 
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.PROTECT, blank=True, null=True)
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, db_column='licence', blank=False, null=True,
+    licence = models.ForeignKey(Licence, models.SET_NULL, db_column='licence', blank=False, null=True,
                                 verbose_name=_('Licenzija'))
 
     status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
@@ -197,7 +197,7 @@ class Dataset(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
-    current_structure = models.ForeignKey('DatasetStructure', models.DO_NOTHING, related_name='+', blank=True,
+    current_structure = models.ForeignKey('DatasetStructure', models.SET_NULL, related_name='+', blank=True,
                                           null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
@@ -787,13 +787,13 @@ class HarvestingResult(models.Model):
     description = models.TextField(blank=True, null=True)
     remote_id = models.CharField(max_length=255, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
-    job = models.ForeignKey(HarvestingJob, models.DO_NOTHING, blank=True, null=True)
+    job = models.ForeignKey(HarvestingJob, models.CASCADE, blank=True, null=True)
     description_en = models.TextField(blank=True, null=True)
     keywords = models.TextField(blank=True, null=True)
     organization = models.TextField(blank=True, null=True)
     raw_data = models.TextField(blank=True, null=True)
     title_en = models.TextField(blank=True, null=True)
-    category = models.ForeignKey(Category, models.DO_NOTHING, blank=True, null=True)
+    category = models.ForeignKey(Category, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -852,8 +852,8 @@ class DatasetRemark(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     body = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    author = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
@@ -899,7 +899,7 @@ class DatasetEvent(models.Model):
     user = models.TextField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user_0 = models.ForeignKey(User, models.DO_NOTHING, db_column='user_id', blank=True,
+    user_0 = models.ForeignKey(User, models.CASCADE, db_column='user_id', blank=True,
                                null=True)  # Field renamed because of name conflict.
 
     class Meta:
@@ -1016,7 +1016,7 @@ class DatasetStructureField(models.Model):
     standard_title = models.CharField(max_length=255, blank=True, null=True)
     technical_title = models.CharField(max_length=255, blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -1048,7 +1048,7 @@ class HarvestedVisit(models.Model):
     version = models.IntegerField()
     last_visited = models.DateTimeField(blank=True, null=True)
     visit_count = models.IntegerField()
-    harvesting_result = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
+    harvesting_result = models.ForeignKey(HarvestingResult, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = False

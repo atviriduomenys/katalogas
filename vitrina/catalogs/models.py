@@ -19,7 +19,7 @@ class Catalog(models.Model):
     title_en = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    licence = models.ForeignKey(Licence, models.DO_NOTHING, blank=True, null=True)
+    licence = models.ForeignKey(Licence, models.PROTECT, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -43,7 +43,7 @@ class HarvestingJob(models.Model):
     translated = models.BooleanField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.CASCADE, db_column='organization', blank=True, null=True)
     active = models.BooleanField(blank=True, null=True)
 
     class Meta:

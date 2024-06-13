@@ -12,6 +12,8 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ['first_name', 'last_name', 'email']
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'organization')
     ordering = ('email',)
+    delete_confirmation_template = "vitrina/users/admin/delete_confirmation.html"
+    delete_selected_confirmation_template = "vitrina/users/admin/delete_selected_confirmation.html"
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),

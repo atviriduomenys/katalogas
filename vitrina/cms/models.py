@@ -17,7 +17,7 @@ class CmsAttachment(models.Model):
     file_data = models.TextField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
-    cms_page = models.ForeignKey('CmsPage', models.DO_NOTHING, blank=True, null=True)
+    cms_page = models.ForeignKey('CmsPage', models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -49,7 +49,7 @@ class CmsPage(models.Model):
     slug = models.TextField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
-    parent = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
+    parent = models.ForeignKey('self', models.SET_NULL, blank=True, null=True)
     language = models.CharField(max_length=255, blank=True, null=True)
     list_children = models.BooleanField()
 
@@ -180,7 +180,7 @@ class LearningMaterial(models.Model):
     learning_material_id = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     topic = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas"))
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
     video_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda"))
     summary = models.TextField(blank=True, null=True, verbose_name=_("Santrauka"))
     author_name = models.TextField(blank=True, null=True, verbose_name=_("Autorius"))
@@ -219,7 +219,7 @@ class NewsItem(models.Model):
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     author_name = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)

@@ -72,7 +72,7 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True, related_name='dataset_request')
+    dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True, related_name='dataset_request')
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -84,7 +84,7 @@ class Request(models.Model):
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
     is_public = models.BooleanField(default=True)
     structure_data = models.TextField(blank=True, null=True)
@@ -261,8 +261,8 @@ class RequestObject(models.Model):
 
 
 class RequestAssignment(models.Model):
-    organization = models.ForeignKey(Organization, models.DO_NOTHING, db_column='organization', blank=True, null=True)
-    request = models.ForeignKey(Request, models.DO_NOTHING, db_column='request', blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.PROTECT, db_column='organization', blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, db_column='request', blank=True, null=True)
     status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 

@@ -1,5 +1,4 @@
-from haystack.backends.elasticsearch7_backend import Elasticsearch7SearchBackend, FIELD_MAPPINGS, \
-    DEFAULT_FIELD_MAPPING, Elasticsearch7SearchEngine
+from haystack.backends.elasticsearch7_backend import Elasticsearch7SearchBackend, Elasticsearch7SearchEngine
 
 
 def _get_default_settings():
@@ -19,8 +18,8 @@ def _get_default_settings():
     return default_settings
 
 
-def _get_field_mappings():
-    field_mappings = FIELD_MAPPINGS
+def _get_field_mappings(backend):
+    field_mappings = backend.FIELD_MAPPINGS
     try:
         field_mappings['edge_ngram'].update({
             'search_analyzer': 'edgengram_search_analyzer',
@@ -39,8 +38,8 @@ class ElasticsearchBackend(Elasticsearch7SearchBackend):
         mapping = self._get_common_mapping()
 
         for _, field_class in fields.items():
-            field_mapping = _get_field_mappings().get(
-                field_class.field_type, DEFAULT_FIELD_MAPPING
+            field_mapping = _get_field_mappings(self).get(
+                field_class.field_type, self.DEFAULT_FIELD_MAPPING
             ).copy()
             if field_class.boost != 1.0:
                 field_mapping["boost"] = field_class.boost

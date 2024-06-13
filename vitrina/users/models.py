@@ -82,7 +82,7 @@ class OldPassword(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     password = models.CharField(max_length=60, blank=True, null=True)
-    user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -97,7 +97,7 @@ class PasswordResetToken(models.Model):
     version = models.IntegerField()
     expiry_date = models.DateTimeField(blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('User', models.CASCADE)
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -113,7 +113,7 @@ class SsoToken(models.Model):
     version = models.IntegerField()
     ip = models.CharField(max_length=255, blank=True, null=True)
     token = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey('User', models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True

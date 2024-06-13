@@ -43,7 +43,7 @@ class Project(models.Model):
     status = models.CharField(max_length=255, choices=STATUSES, blank=False, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
@@ -161,7 +161,7 @@ class ApplicationUseCase(models.Model):
     status = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -172,7 +172,7 @@ class ApplicationUseCase(models.Model):
 
 
 class ApplicationUsecaseDatasetIds(models.Model):
-    application_usecase = models.ForeignKey(ApplicationUseCase, models.DO_NOTHING)
+    application_usecase = models.ForeignKey(ApplicationUseCase, models.CASCADE)
     dataset_ids = models.BigIntegerField(blank=True, null=True)
 
     class Meta:

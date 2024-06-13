@@ -30,9 +30,9 @@ class UserVote(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     rating = models.IntegerField()
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
-    user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
-    harvested = models.ForeignKey(HarvestingResult, models.DO_NOTHING, blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
+    harvested = models.ForeignKey(HarvestingResult, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True

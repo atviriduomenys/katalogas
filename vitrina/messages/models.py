@@ -78,10 +78,10 @@ class UserSubscription(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
-    dataset = models.ForeignKey(Dataset, models.DO_NOTHING, db_column='dataset', blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, models.CASCADE, db_column='dataset', blank=True, null=True)
     # dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
-    user = models.ForeignKey(User, models.DO_NOTHING, db_column='user', blank=True, null=True)
+    user = models.ForeignKey(User, models.CASCADE, db_column='user', blank=True, null=True)
     # user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
 
     active = models.BooleanField()

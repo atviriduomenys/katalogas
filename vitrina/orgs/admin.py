@@ -45,7 +45,13 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
     search_fields = ('title',)
 
 
+class RepresentativeAdmin(admin.ModelAdmin):
+    pass
+
+
 admin.site.register(Organization, OrganizationAdmin)
+admin.site.register(Representative, RepresentativeAdmin)
+
 
 class RepresentativeRequestAdmin(admin.ModelAdmin):
     template_name = 'vitrina/orgs/approve.html'

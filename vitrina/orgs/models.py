@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -121,6 +122,17 @@ class Organization(MP_Node):
                     tags.append(tag)
         return tags
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # save related datasets to update search index
+        for dataset in self.dataset_set.all():
+            dataset.save()
+
+        # save related requests to update search index
+        for request_assignment in self.requestassignment_set.all():
+            request_assignment.request.save()
+
 
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
@@ -166,6 +178,17 @@ class Representative(models.Model):
             if organization in self.content_object.get_descendants():
                 return True
         return False
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # save related datasets to update search index
+        Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+        if isinstance(self.content_object, Dataset):
+            self.content_object.save()
+        elif isinstance(self.content_object, Organization):
+            for dataset in self.content_object.dataset_set.all():
+                dataset.save()
 
 
 class PublishedReport(models.Model):

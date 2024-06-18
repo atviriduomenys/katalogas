@@ -132,18 +132,25 @@ class Request(models.Model):
     def is_not_closed(self):
         return self.status != self.REJECTED and self.status != self.OPENED
     
-    def jurisdiction(self) -> int | None:
+    def jurisdiction(self):
         jurisdictions = []
-        for org in self.organizations.all():
-            root_org = org.get_root()
-            if root_org.get_children_count() > 1:
+        for item in self.requestassignment_set.all():
+            root_org = item.organization.get_root()
+            if root_org.get_children_count() > 0:
                 jurisdictions.append(root_org.pk)
         return jurisdictions
 
     def dataset_statuses(self):
-        return list(Dataset.objects.filter(
-            request_objects__request=self
-        ).values_list('status', flat=True))
+        statuses = []
+        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
+            request_id=self.pk,
+            content_type=ContentType.objects.get_for_model(Dataset)
+        )]
+        for dataset_id in dataset_ids:
+            dataset = Dataset.objects.filter(id=dataset_id).first()
+            if dataset and dataset.status not in statuses:
+                statuses.append(dataset.status)
+        return statuses
 
     def dataset_organizations(self):
         orgs = []

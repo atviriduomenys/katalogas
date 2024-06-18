@@ -41,7 +41,6 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
     list_display = ['title', 'numchild',]
     list_filter = (RootOrganizationFilter,)
-    form = movenodeform_factory(Organization)
     search_fields = ('title',)
 
 

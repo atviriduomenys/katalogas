@@ -1,10 +1,10 @@
-from haystack.fields import CharField
+from haystack.fields import CharField, EdgeNgramField
 from haystack.indexes import SearchIndex, Indexable
 from vitrina.orgs.models import Organization
 
 
 class OrganizationIndex(SearchIndex, Indexable):
-    text = CharField(document=True, use_template=True)
+    text = EdgeNgramField(document=True, use_template=True)
     title = CharField(model_attr='title')
 
     def get_model(self):

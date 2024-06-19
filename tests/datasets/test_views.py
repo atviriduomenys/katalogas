@@ -2165,3 +2165,9 @@ def test_dataset_with_name_error(app: DjangoTestApp):
     assert list(resp.context['form'].errors.values()) == [[
         'Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
     ]]
+
+
+@pytest.mark.haystack
+def test_search_with_partial_word_query(app: DjangoTestApp, search_datasets):
+    resp = app.get("%s?q=%s" % (reverse('dataset-list'), "vien"))
+    assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[0].pk]

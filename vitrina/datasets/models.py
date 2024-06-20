@@ -382,7 +382,7 @@ class Dataset(TranslatableModel):
     def jurisdiction(self) -> int | None:
         if self.organization:
             root_org = self.organization.get_root()
-            if root_org.get_children_count() > 1:
+            if root_org.get_children_count() > 0:
                 return root_org.pk
         return None
 

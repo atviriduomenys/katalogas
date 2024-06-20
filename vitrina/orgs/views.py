@@ -481,9 +481,13 @@ class OrganizationUpdateView(
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
         self.object.save()
-        if not isinstance(form.cleaned_data['jurisdiction'], Organization):
-            form.cleaned_data['jurisdiction'].fix_tree(fix_paths=True)
-            self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
+        if self.object.get_parent() != form.cleaned_data.get('jurisdiction'):
+            Organization.fix_tree(fix_paths=True)
+            if form.cleaned_data.get('jurisdiction'):
+                self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
+                # this is needed to update organization parent
+                node = Organization.objects.get(pk=self.object.pk)
+                node.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -557,20 +561,32 @@ class OrganizationCreateView(
         return kwargs
 
     def form_valid(self, form):
-        org = Organization.add_root(
-            title=form.cleaned_data.get('title'),
-            name=form.cleaned_data.get('name'),
-            jurisdiction=form.cleaned_data.get('jurisdiction'),
-            image=form.cleaned_data.get('image'),
-            company_code=form.cleaned_data.get('company_code'),
-            address=form.cleaned_data.get('address'),
-            email=form.cleaned_data.get('email'),
-            phone=form.cleaned_data.get('phone'),
-            description=form.cleaned_data.get('description'),
-            provider=True,
-            is_public=True,
-
-        )
+        if jurisdiction := form.cleaned_data.get('jurisdiction'):
+            org = jurisdiction.add_child(
+                title=form.cleaned_data.get('title'),
+                name=form.cleaned_data.get('name'),
+                image=form.cleaned_data.get('image'),
+                company_code=form.cleaned_data.get('company_code'),
+                address=form.cleaned_data.get('address'),
+                email=form.cleaned_data.get('email'),
+                phone=form.cleaned_data.get('phone'),
+                description=form.cleaned_data.get('description'),
+                provider=True,
+                is_public=True,
+            )
+        else:
+            org = Organization.add_root(
+                title=form.cleaned_data.get('title'),
+                name=form.cleaned_data.get('name'),
+                image=form.cleaned_data.get('image'),
+                company_code=form.cleaned_data.get('company_code'),
+                address=form.cleaned_data.get('address'),
+                email=form.cleaned_data.get('email'),
+                phone=form.cleaned_data.get('phone'),
+                description=form.cleaned_data.get('description'),
+                provider=True,
+                is_public=True,
+            )
         return HttpResponseRedirect(self.get_success_url(org))
 
     def get_success_url(self, organization):

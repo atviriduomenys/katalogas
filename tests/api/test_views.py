@@ -325,6 +325,7 @@ def test_get_all_datasets(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-dataset"))
+    dataset.refresh_from_db()
     assert res.json == [{
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -392,6 +393,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
     res = app.get(reverse("api-single-dataset", kwargs={
         'datasetId': dataset.pk
     }))
+    dataset.refresh_from_db()
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -449,6 +451,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
     res = app.get(reverse("api-single-dataset-internal", kwargs={
         'internalId': dataset.internal_id
     }))
+    dataset.refresh_from_db()
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),

@@ -1,0 +1,16 @@
+{% load util_tags %}
+{% load i18n %}
+
+{% get_current_language as LANGUAGE_CODE %}
+{% get_deploy_banner as banner %}
+{% if banner %}
+<div class="no-margin-bottom has-text-danger has-text-weight-medium py-2 pl-5">
+  <p>
+    {% if LANGUAGE_CODE == "en" and banner.message_en %}
+      {{ banner.message_en }}
+    {% else %}
+      {{ banner.message_lt }}
+    {% endif %}
+  </p>
+</div>
+{% endif %}

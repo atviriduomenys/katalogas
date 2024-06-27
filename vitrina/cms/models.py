@@ -250,3 +250,13 @@ class TermsOfUse(models.Model):
     class Meta:
         managed = False
         db_table = 'terms_of_use'
+
+
+class Deployment(models.Model):
+    start_date = models.DateTimeField(_("Diegimo darbų pradžia"))
+    end_date = models.DateTimeField(_("Diegimo darbų pabaiga"))
+    message_lt = models.TextField(_("Pranešimas (lietuvių kalba)"))
+    message_en = models.TextField(_("Pranešimas (anglų kalba)"), blank=True, null=True)
+
+    class Meta:
+        db_table = 'deployment'

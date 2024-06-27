@@ -4,11 +4,13 @@ from typing import Iterable
 
 from django import template
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from extra_settings.models import Setting
 from pyproj import Transformer
 from shapely.ops import transform
 from shapely.wkt import loads
 
+from vitrina.cms.models import Deployment
 from vitrina.structure.services import get_srid
 
 register = template.Library()
@@ -96,3 +98,13 @@ def convert_coordinates(
 def get_geometry_srid(type_args):
     srid = get_srid(type_args)
     return srid
+
+
+@assignment_tag
+def get_deploy_banner():
+    deploy = Deployment.objects.first()
+    now = timezone.now()
+
+    if deploy and deploy.start_date <= now <= deploy.end_date:
+        return deploy
+    return None

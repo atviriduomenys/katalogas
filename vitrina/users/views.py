@@ -1,8 +1,9 @@
 import secrets
 from datetime import datetime
 
-from allauth.account.utils import perform_login
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
+from allauth.utils import build_absolute_uri
+from django.contrib.sites.models import Site
 from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
@@ -18,12 +19,11 @@ from django.views.generic import CreateView, DetailView, UpdateView, TemplateVie
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, make_aware
 from allauth.socialaccount.models import SocialAccount
-from allauth.account.forms import SignupForm
-from allauth.account.models import EmailAddress, EmailConfirmation
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
 from django.http import HttpResponseRedirect
 
 from vitrina import settings
+from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
@@ -49,7 +49,9 @@ class LoginView(BaseLoginView):
                           backend='django.contrib.auth.backends.ModelBackend')
                     return HttpResponseRedirect(self.get_success_url())
                 else:
-                    return HttpResponseRedirect(reverse('please_confirm_email'))
+                    messages.error(self.request, _("El. pašto adresas nepatvirtintas. "
+                                                   "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
+                    return HttpResponseRedirect(reverse("login"))
             else:
                 login(self.request, form.get_user(),
                       backend='django.contrib.auth.backends.ModelBackend')
@@ -72,7 +74,7 @@ class LoginView(BaseLoginView):
         return context
 
 
-class RegisterView(CreateView, SignupForm, PasswordResetTokenGenerator):
+class RegisterView(CreateView):
     template_name = 'vitrina/users/register.html'
     form_class = RegisterForm
     cleaned_data = None
@@ -81,17 +83,27 @@ class RegisterView(CreateView, SignupForm, PasswordResetTokenGenerator):
         form = self.form_class(request.POST)
         if form.is_valid():
             self.cleaned_data = form.cleaned_data
-            user = super(RegisterView, self).save(request)
-            email_address = EmailAddress.objects.get(user_id=user.pk)
+            user = form.save()
+            email_address = EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=False)
             EmailConfirmation.objects.create(
                 created=datetime.now(),
                 sent=datetime.now(),
                 key=secrets.token_urlsafe(),
-                email_address_id=email_address.id
+                email_address=email_address
             )
-            perform_login(request=request, user=user,
-                          email_verification=settings.ACCOUNT_EMAIL_VERIFICATION,
-                          signup=False)
+            confirmation = EmailConfirmationHMAC(email_address)
+            url = reverse("account_confirm_email", args=[confirmation.key])
+            activate_url = build_absolute_uri(request, url)
+            email(
+                [email_address.email], 'confirm_email', 'vitrina/email/confirm_email.md',
+                {
+                    'site': Site.objects.get_current().domain,
+                    'user': str(user),
+                    'activate_url': activate_url
+                }
+            )
+            messages.success(self.request, _("Išsiuntėme jums laišką patvirtinimui. Sekite laiške pateikta "
+                                             "nuoroda, kad užbaigtumėte registraciją."))
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 
@@ -373,7 +385,3 @@ class UserStatsView(TemplateView):
 
 class ConfirmEmailView(BaseConfirmEmailView):
     template_name = 'vitrina/users/confirm_email.html'
-
-
-class PleaseConfirmEmailView(TemplateView):
-    template_name = 'vitrina/users/please_confirm_email.html'

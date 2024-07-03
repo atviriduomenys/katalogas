@@ -106,3 +106,11 @@ $primary: rgba(98, 185, 212, 0.9);
 .is-middle {
     align-self: center;
 }
+
+.is-selectable {
+    -webkit-touch-callout: auto;
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}

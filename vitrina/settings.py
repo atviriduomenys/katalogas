@@ -14,6 +14,7 @@ import os
 import environ
 from pathlib import Path
 
+from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
 
@@ -425,3 +426,11 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY', default='')
 RECAPTCHA_PRIVATE_KEY = env('RECAPTCHA_PRIVATE_KEY', default='')
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'is-light',
+    messages.INFO: 'is-info',
+    messages.SUCCESS: 'is-success',
+    messages.WARNING: 'is-warning',
+    messages.ERROR: 'is-danger',
+}

@@ -66,9 +66,13 @@
     {% if messages %}
         <ul class="messages">
             {% for message in messages %}
-                {% if message.tags %} <li class="{{ message.tags }}" id="message-list-{{ forloop.counter }}"> {% else %} <li> {% endif %}
-                    {{ message }}
-                    <span class="is-pulled-right message-close-button" onClick="HideMessage({{ forloop.counter }})">X</span>
+                <li id="message-list-{{ forloop.counter }}">
+                    <article class="message {{ message.tags }}">
+                        <div class="message-header">
+                            <p>{{ message }}</p>
+                            <button class="delete" aria-label="delete" onClick="HideMessage({{ forloop.counter }})"></button>
+                        </div>
+                    </article>
                 </li>
             {% endfor %}
         </ul>

@@ -807,6 +807,7 @@ class DatasetUpdateView(
                 }
             )
 
+        self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

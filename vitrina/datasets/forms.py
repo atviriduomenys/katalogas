@@ -188,6 +188,11 @@ class DatasetSearchForm(FacetedSearchForm):
                 sqs = sqs.autocomplete(text__startswith=keyword)
             else:
                 sqs = sqs.autocomplete(text__icontains=keyword)
+
+            datasets_with_name = self.searchqueryset.models(Dataset).filter(name__icontains=keyword)
+            datasets_with_model_name = self.searchqueryset.models(Dataset).filter(model_names__icontains=keyword)
+            sqs = sqs | datasets_with_name | datasets_with_model_name
+
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
         if self.cleaned_data.get('date_to'):

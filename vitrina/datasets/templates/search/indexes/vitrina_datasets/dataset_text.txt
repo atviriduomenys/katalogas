@@ -18,3 +18,5 @@
 {{ object.get_project_title_description }}
 {{ object.parent_category_titles }}
 {{ object.get_parent_organization_title }}
+{{ object.name }}
+{{ object.get_model_name_list }}

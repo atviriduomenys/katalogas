@@ -257,6 +257,9 @@ class Dataset(TranslatableModel):
     def get_model_title_list(self):
         return list(model.title for model in self.model_set.all())
 
+    def get_model_name_list(self):
+        return list(model.full_name for model in self.model_set.all() if model.name)
+
     def get_property_title_list(self):
         return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
 

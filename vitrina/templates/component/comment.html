@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load static %}
 {% load crispy_forms_tags %}
+{% load markdown_tags %}
 
 {% if comment.deleted %}
     {% if is_child %}
@@ -59,11 +60,9 @@
                                     {{ comment.parent.body_text|truncatechars:20 }}
                                 </p>
                             {% endif %}
-                            <p>
+                            <p class="no-margin-bottom">
                                 <strong>{{ comment.user | escape }}</strong>
-                                <br>
-                                {{ comment.body_text | escape }}
-                                <br>
+                                <div>{{ comment.body_text | markdown | safe }}</div>
                                 <small>
                                     {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}
                                     {% if not comment.is_public %}

@@ -732,6 +732,9 @@ class Dataset(TranslatableModel):
 
         super(Dataset, self).save_translation(translation, *args, **kwargs)
 
+    def is_opened(self):
+        return self.status == self.HAS_DATA
+
 
 # TODO: To be merged into Dataset:
 #       https://github.com/atviriduomenys/katalogas/issues/22

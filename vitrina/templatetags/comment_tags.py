@@ -36,6 +36,7 @@ def comments(obj, user, is_structure=False):
                 metadata__access__lt=Metadata.PUBLIC
             )
     comment_form_class = get_comment_form_class(obj, user)
+    is_opened = obj.is_opened() if hasattr(obj, "is_opened") else None
 
     comments_array = []
     for comment in obj_comments:
@@ -50,7 +51,7 @@ def comments(obj, user, is_structure=False):
         'user': user,
         'content_type': content_type,
         'object': obj,
-        'comment_form': comment_form_class(obj),
+        'comment_form': comment_form_class(obj, is_opened=is_opened),
         'submit_button_id': "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button"
     }
 
@@ -81,7 +82,7 @@ def external_comments(content_type, object_id, user, dataset):
         'user': user,
         'content_type': content_type,
         'object_id': object_id,
-        'comment_form': comment_form_class(None),
+        'comment_form': comment_form_class(None, is_opened=dataset.is_opened()),
         'submit_button_id': "id_submit_button",
         'external': True,
         'dataset': dataset,

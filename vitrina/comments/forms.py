@@ -17,11 +17,14 @@ PROJECT_STATUSES = (
 class CommentForm(forms.ModelForm):
     body = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}))
 
+    is_opened: bool
+
     class Meta:
         model = Comment
         fields = ('is_public', 'body',)
 
     def __init__(self, obj, *args, **kwargs):
+        self.is_opened = kwargs.pop('is_opened') if 'is_opened' in kwargs else None
         super().__init__(*args, **kwargs)
         if obj and isinstance(obj.__class__, ModelBase):
             self.auto_id = 'id_' + str(obj.pk)
@@ -37,6 +40,12 @@ class RegisterRequestForm(CommentForm):
 
     class Meta(CommentForm.Meta):
         fields = ('is_public', 'register_request', 'body',)
+
+    def __init__(self, obj, *args, **kwargs):
+        super().__init__(obj, *args, **kwargs)
+
+        if self.is_opened is False:
+            self.fields.pop('register_request')
 
 
 class DatasetCommentForm(RegisterRequestForm):
@@ -58,6 +67,7 @@ class DatasetCommentForm(RegisterRequestForm):
                 self.add_error('is_public', _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" +
                                               " viešas"))
         return self.cleaned_data
+
 
 class RequestCommentForm(CommentForm):
     status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))

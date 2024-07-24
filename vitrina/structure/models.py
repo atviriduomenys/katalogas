@@ -272,6 +272,9 @@ class Model(models.Model):
                     return type[1]
         return ''
 
+    def is_opened(self):
+        return self.dataset.is_opened()
+
 
 @reversion.register()
 class Property(models.Model):
@@ -344,6 +347,9 @@ class Property(models.Model):
 
     def get_acl_parents(self):
         return [self.model.dataset]
+
+    def is_opened(self):
+        return self.model.dataset.is_opened()
 
 
 class PropertyList(models.Model):

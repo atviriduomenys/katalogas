@@ -394,7 +394,7 @@ def precedes(a: str, b: str) -> bool:
     return False
 
 
-def detect_read_errors(path: str) -> list[str]:
+def detect_read_errors(path: str, encoding: str = 'utf-8') -> list[str]:
     path = pathlib.Path(path)
     if not path.exists():
         return ["File does not exist."]
@@ -405,7 +405,7 @@ def detect_read_errors(path: str) -> list[str]:
         if error := _detect_separator_errors(sample):
             return [error]
 
-        sample = sample.decode('utf-8', errors='replace')
+        sample = sample.decode(encoding, errors='replace')
         errors = []
         for name in sample.split(','):
             if error := _detect_header_errors(name):

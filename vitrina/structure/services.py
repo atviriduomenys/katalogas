@@ -20,7 +20,7 @@ from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
-from vitrina.helpers import none_to_string
+from vitrina.helpers import none_to_string, get_encoding
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure import spyna
 from vitrina.structure.helpers import get_type_repr
@@ -41,13 +41,13 @@ def create_structure_objects(structure: DatasetStructure) -> None:
             type=Comment.STRUCTURE_ERROR
         ).delete()
 
-        errors = []
-        if detect_read_errors(structure.file.path):
-            errors = detect_read_errors(structure.file.path)
+        encoding = get_encoding(structure.file.path)
+        if errors := detect_read_errors(structure.file.path, encoding):
+            pass
         else:
             with open(
                     structure.file.path,
-                    encoding='utf-8',
+                    encoding=encoding,
                     errors='replace',
             ) as f:
                 reader = csv.DictReader(f)

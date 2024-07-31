@@ -659,3 +659,12 @@ def object_to_none(obj):
     if not obj or not obj.pk:
         return None
     return obj
+
+
+def get_encoding(file_path):
+    with open(file_path, mode='rb') as f:
+        mark = f.readline(3)
+        if mark == b'\xef\xbb\xbf':
+            return 'utf-8-sig'
+        else:
+            return 'utf-8'

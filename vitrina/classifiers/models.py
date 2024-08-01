@@ -46,6 +46,13 @@ class Category(MP_Node):
         yield from self.get_ancestors()
         yield from self.get_descendants()
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # save related datasets to update search index
+        for dataset in self.dataset_set.all():
+            dataset.save()
+
 
 class Licence(models.Model):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59

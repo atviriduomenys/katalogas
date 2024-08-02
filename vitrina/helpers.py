@@ -512,7 +512,6 @@ def email(
 ) -> dict[str, str]:
     context = context or {}
     email_template = None
-    subject = None
     if override:
         email_template = _get_email_tempate_from_db(email_identifier)
     if email_template:
@@ -530,22 +529,28 @@ def email(
         template_path = get_template(name)
         with open(template_path.origin.name, encoding="utf-8") as file:
             read_data = file.readlines()
-        content = render_to_string(name, context)
-        html_message = markdown.markdown(content)
-        html_message = '\n'.join(html_message.splitlines()[1:])
-        send_email_title = content.splitlines()
+
+        subject_template_text = read_data[0].splitlines()[0]
+        subject_template = Template(subject_template_text)
+        subject_context = Context(context)
+        subject = subject_template.render(subject_context)
+
         content_to_save = markdown.markdown(''.join(read_data[2:]))
+        template = Template(content_to_save)
+        context = Context(context)
+        content = template.render(context)
+        html_message = markdown.markdown(content)
+
         EmailTemplate.objects.create(
-            created=datetime.datetime.now(),
             version=0,
             identifier=email_identifier,
             template=content_to_save,
-            subject=read_data[0].splitlines()[0],
-            title=read_data[0].splitlines()[0]
+            subject=subject_template_text,
+            title=subject_template_text
         )
     try:
         send_mail(
-            subject=subject if subject else send_email_title[0],
+            subject=subject,
             message=str(content),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=recipients,
@@ -554,15 +559,13 @@ def email(
         email_send = True
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", send_email_title[0],
+        logging.warning("Email was not sent", subject,
                         _(str(content)), recipients, e)
         email_send = False
 
     SentMail.objects.create(
-        created=datetime.datetime.now(),
         deleted=None,
         deleted_on=None,
-        modified=datetime.datetime.now(),
         version=0,
         recipient=list(recipients),
         email_subject=subject,

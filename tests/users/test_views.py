@@ -2,7 +2,7 @@ import re
 from unittest.mock import patch
 
 import pytest
-from allauth.account.models import EmailConfirmation
+from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
 from django.core import mail
 from django.urls import reverse
 from django_recaptcha.client import RecaptchaResponse
@@ -249,7 +249,8 @@ def test_email_confirmation_after_sign_up(csrf_exempt_django_app: DjangoTestApp)
         assert EmailConfirmation.objects.count() == 1
         assert EmailConfirmation.objects.first().email_address.verified is False
 
-        url = re.search(r'(https?://\S+)', mail.outbox[0].body).group()
+        confirmation = EmailConfirmationHMAC(EmailConfirmation.objects.first().email_address)
+        url = reverse("account_confirm_email", args=[confirmation.key])
         form = csrf_exempt_django_app.get(url).forms['confirm_email_form']
         form.submit()
         assert EmailConfirmation.objects.first().email_address.verified is True

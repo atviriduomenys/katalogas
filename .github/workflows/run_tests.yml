@@ -46,7 +46,7 @@ jobs:
           npm run build
   
       - name: Create DB image
-        run: docker-compose -f docker-compose-test.yml up -d
+        run: docker compose -f docker-compose-test.yml up -d
 
       - name: Test with pytest
         run: poetry run pytest -vvra --no-migrations --tb=short --cov=vitrina --cov=report=term-missing tests

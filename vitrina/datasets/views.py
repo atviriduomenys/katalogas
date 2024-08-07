@@ -777,8 +777,6 @@ class DatasetUpdateView(
         sorted_list = sorted(sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION)
 
         sub_email_list = []
-        if self.object.organization and self.object.organization.email:
-            sub_email_list.append(self.object.organization.email)
         for sub in sorted_list:
             Task.objects.create(
                 title=f"Duomenų rinkinys: {self.object}",
@@ -791,14 +789,11 @@ class DatasetUpdateView(
                 user=sub.user
             )
             if sub.user.email and sub.email_subscribed:
-                if sub.user.organization:
-                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
-                    sub_email_list = [org.email for org in orgs]
                 if sub.user.email not in sub_email_list:
                     sub_email_list.append(sub.user.email)
         if sub_email_list:
             email(
-                [self.object.organization.email],
+                sub_email_list,
                 'dataset-updated',
                 "vitrina/datasets/emails/sub/updated.md",
                 {

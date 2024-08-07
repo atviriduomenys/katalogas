@@ -319,7 +319,8 @@ def test_dataset_update_global_org_subscription_email(app: DjangoTestApp, subscr
         user=global_sub_user,
         content_type=ContentType.objects.get_for_model(Organization),
         sub_type=Subscription.ORGANIZATION,
-        dataset_update_sub=True
+        dataset_update_sub=True,
+        email_subscribed=True
     )
     assert Subscription.objects.count() == 1
 

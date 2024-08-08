@@ -37,7 +37,7 @@
                 <div class="parler-language-tabs" style="padding-bottom: 2em">
                     {% for tab in language_tabs %}
                         <span class="{{tab.3}}">
-                            <a class="button" href="{{tab.0}}">{{tab.1}}</a>
+                            <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
                         </span>
                     {% endfor %}
                 </div>
@@ -58,4 +58,28 @@
     }
 
 </style>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('select').on('select2:open', function (e) {
+                setTimeout(function() {
+                    $( "li.select2-results__option" ).each(function() {
+                        var title = $(this).text();
+                        $(this).attr("aria-labelledby", title);
+                    });
+                }, 500);
+            });
+        });
+
+        $(document).on('keyup', '.select2-search__field', function (e) {
+            setTimeout(function() {
+                $( "li.select2-results__option" ).each(function() {
+                    var title = $(this).text();
+                    $(this).attr("aria-labelledby", title);
+                });
+            }, 500);
+        });
+    </script>
 {% endblock %}

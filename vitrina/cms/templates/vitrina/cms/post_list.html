@@ -33,7 +33,7 @@
                 <div class="media-content single-item">
                     <div class="content">
                         <div class="m-b-sm">
-                            <p><a href="{{ i.get_absolute_url }}" class="usecase-url">{{ i.title }}</a></p>
+                            <h2 class="is-size-5"><a href="{{ i.get_absolute_url }}" class="usecase-url">{{ i.title }}</a></h2>
                             <p>
                                 <span>{% translate "Publikavimo data" %}: <i>{{ i.date_published|date:"SHORT_DATETIME_FORMAT" }}</i></span>
                                 {% if i.author %}<br/><span>{% translate "Autorius" %}: <i>{{ i.author }}</i></span>{% endif %}

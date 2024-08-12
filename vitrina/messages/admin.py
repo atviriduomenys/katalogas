@@ -12,14 +12,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     @admin.display()
     def content_object(self, obj):
-        if obj.content_object is not None:
+        if obj.content_object and hasattr(obj.content_object, 'get_absolute_url'):
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
                 obj.content_object.get_absolute_url(),
                 Truncator(obj.content_object).chars(42),
             )
         else:
-            return obj.content_type
+            return str(obj.content_type)
 
 
 class NotValidKeyException(Exception):

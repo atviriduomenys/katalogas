@@ -83,9 +83,9 @@ class Comment(models.Model):
         return self.get_type_display()
 
     def get_absolute_url(self):
-        if self.content_object:
+        if self.content_object and hasattr(self.content_object, 'get_absolute_url'):
             return self.content_object.get_absolute_url()
-        elif self.rel_content_object:
+        elif self.rel_content_object and hasattr(self.rel_content_object, 'get_absolute_url'):
             return self.rel_content_object.get_absolute_url()
         else:
             return None

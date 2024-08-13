@@ -1046,13 +1046,13 @@ django-classy-tags = ">=1"
 
 [[package]]
 name = "django-select2"
-version = "8.2.0"
+version = "8.2.1"
 description = "This is a Django_ integration of Select2_."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "django_select2-8.2.0-py3-none-any.whl", hash = "sha256:0e173ce49c6ea91efa9fc24c5ca8d1f8a3c545e60db779cf2c623d4e07405360"},
-    {file = "django_select2-8.2.0.tar.gz", hash = "sha256:43ca01fecff1bd9ffaf87de90a4beca86fe801edd0c0102c3230c34f81490b9a"},
+    {file = "django_select2-8.2.1-py3-none-any.whl", hash = "sha256:2d7f52b5cd362c4d0b1bf4caca8ad8463ae269b252eebbab4afabd762d08baf5"},
+    {file = "django_select2-8.2.1.tar.gz", hash = "sha256:dc03524c1cf7ef970e8b3ab2de76ce3179e414254fa812d8e2d2f0ba6fa487ba"},
 ]
 
 [package.dependencies]
@@ -1066,13 +1066,12 @@ test = ["pytest", "pytest-cov", "pytest-django", "selenium"]
 
 [[package]]
 name = "django-sortedm2m"
-version = "3.1.1"
+version = "4.0.0"
 description = "Drop-in replacement for Django's many to many field with sorted relations."
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-sortedm2m-3.1.1.tar.gz", hash = "sha256:136f3d4e0820b351608a7141d88ac3ba7fafcd37a9b8361ad00ffe616a790be5"},
-    {file = "django_sortedm2m-3.1.1-py2.py3-none-any.whl", hash = "sha256:c67ae0757e8e60ded15a9ba04d0862fe39fba3d5b865899c2472166ff0050f2c"},
+    {file = "django_sortedm2m-4.0.0-py2.py3-none-any.whl", hash = "sha256:7e76f3f3ea3184b4ca1d4043ec75316c606d00f5534fc71e69981d8b2198ff33"},
 ]
 
 [[package]]
@@ -1373,13 +1372,13 @@ doc = ["Sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "26.2.0"
+version = "27.0.0"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-26.2.0-py3-none-any.whl", hash = "sha256:7b123090774deff5f2cd3eb92a84dcbbf1e163f30a6d07321b7852c11bfe6a75"},
-    {file = "Faker-26.2.0.tar.gz", hash = "sha256:81768de19012147521140f0d8bf5353e501ac42c1065d25e0cac455d3615c0a7"},
+    {file = "Faker-27.0.0-py3-none-any.whl", hash = "sha256:55ed0c4ed7bf16800c64823805f6fbbe6d4823db4b7c0903f6f890b8e4d6c34b"},
+    {file = "faker-27.0.0.tar.gz", hash = "sha256:32c78b68d2ba97aaad78422e4035785de2b4bb46b81e428190fc11978da9036c"},
 ]
 
 [package.dependencies]

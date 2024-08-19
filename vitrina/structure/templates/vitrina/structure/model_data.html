@@ -126,7 +126,7 @@
             </div>
 
             <div class="mt-5 mb-2">
-                <p>{{ total_count }}</p>
+                <p id="total_count_id">{{ total_count }}</p>
             </div>
 
             <div class="filter-table">
@@ -303,6 +303,25 @@
 {% block scripts %}
     <script type="text/javascript">
         $(function () {
+            let datasetId = {{ dataset.pk }};
+            let model = "{{model.name}}";
+            let shownCount = {{data|length}};
+            let search = location.search;
+            $.ajax({
+                url: `/datasets/${datasetId}/data/${model}/count/${search}`
+            }).then(response => {
+                let count = response['total_count'];
+                let countSaved = response['total_count_saved'];
+                let totalCount = "";
+                if (shownCount == 1) {
+                    totalCount = gettext(`Rodoma ${shownCount} objektas iš ${count} (atnaujinta ${countSaved})`);
+                }
+                else {
+                    totalCount = gettext(`Rodoma ${shownCount} objektai iš ${count} (atnaujinta ${countSaved})`);
+                }
+                $('#total_count_id')[0].innerHTML = totalCount.toLocaleString('lt-LT');;
+            });
+
             let selectCheckList = $('#select_cols_id');
             let anchor = selectCheckList.find('.anchor');
             anchor.on('click', () => {

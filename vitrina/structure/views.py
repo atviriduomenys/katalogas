@@ -1,10 +1,10 @@
 import uuid
 import json
-from gettext import ngettext
 from typing import List, Union
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.db.models import Func, F, Value, TextField, Max
 from django.http import Http404, StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -439,6 +439,46 @@ class PropertyStructureView(
         return None
 
 
+class ModelDataCountView(View):
+    object: Dataset
+    model: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.object).first()
+        if not self.model:
+            raise Http404('No Model matches the given query.')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        count_query = ['count()']
+        for key, val in request.GET.items():
+            if not key.startswith('select(') and not key.startswith('sort('):
+                if val == '':
+                    count_query.append(key)
+                else:
+                    tag = f"{key}={val}"
+                    count_query.append(tag)
+
+        total_count = 0
+        count_query = '&'.join(count_query)
+        count_data = get_data_from_spinta(self.model, query=count_query)
+        count_data = count_data.get('_data')
+        if count_data and count_data[0].get('count()'):
+            total_count = count_data[0].get('count()')
+
+        # cache.set()
+
+        return JsonResponse({'count': total_count})
+
+
 class ModelDataView(
     HistoryMixin,
     StructureMixin,
@@ -516,7 +556,6 @@ class ModelDataView(
         select = 'select(*)'
         selected_cols = []
         query = ['limit(100)']
-        count_query = ['count()']
         for key, val in self.request.GET.items():
             if key.startswith('select('):
                 select = key
@@ -528,13 +567,10 @@ class ModelDataView(
                 if val == '':
                     tags.append(key)
                     query.append(key)
-                    if not key.startswith('sort('):
-                        count_query.append(key)
                 else:
                     tag = f"{key}={val}"
                     tags.append(tag)
                     query.append(tag)
-                    count_query.append(tag)
 
         query = '&'.join(query)
         data = get_data_from_spinta(self.model, query=query)
@@ -568,19 +604,6 @@ class ModelDataView(
             context['tags'] = tags
             context['select'] = select
             context['selected_cols'] = selected_cols or context['headers']
-
-            total_count = 0
-            count_query = '&'.join(count_query)
-            count_data = get_data_from_spinta(self.model, query=count_query)
-            count_data = count_data.get('_data')
-            if count_data and count_data[0].get('count()'):
-                total_count = count_data[0].get('count()')
-            total_count = ngettext(
-                f"Rodoma {len(context['data'])} objektas iš {total_count:,}",
-                f"Rodoma {len(context['data'])} objektai iš {total_count:,}",
-                len(context['data']),
-            )
-            context['total_count'] = total_count
 
         context['can_view_members'] = has_perm(
             self.request.user,

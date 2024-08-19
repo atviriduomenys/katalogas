@@ -417,6 +417,7 @@ CORS_ALLOWED_ORIGINS = ['https://test.epaslaugos.lt']
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
 
 TRANSLATION_CLIENT_ID = env('TRANSLATION_CLIENT_ID', default='')
+SPINTA_SERVER_BASE_URL = env('SPINTA_SERVER_BASE_URL', default='https://get-test.data.gov.lt/')
 SPINTA_SERVER_URL = env('SPINTA_SERVER_URL', default='https://get-test.data.gov.lt/auth/clients/')
 SPINTA_SERVER_CLIENT_ID = env('SPINTA_SERVER_CLIENT_ID', default='')
 SPINTA_SERVER_CLIENT_SECRET = env('SPINTA_SERVER_CLIENT_SECRET', default='')
@@ -433,4 +434,11 @@ MESSAGE_TAGS = {
     messages.SUCCESS: 'is-success',
     messages.WARNING: 'is-warning',
     messages.ERROR: 'is-danger',
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
 }

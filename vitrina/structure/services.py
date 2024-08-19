@@ -22,6 +22,7 @@ from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding
 from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.settings import SPINTA_SERVER_BASE_URL
 from vitrina.structure import spyna
 from vitrina.structure.helpers import get_type_repr
 from vitrina.structure.models import Metadata, Model, Property, Prefix, Enum, EnumItem, PropertyList, Param, \
@@ -872,13 +873,15 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
                 meta.errors.append(_(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.'))
 
 
-def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = ''):
+def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 60):
     if uuid:
-        url = f"https://get.data.gov.lt/{model}/{uuid}/?{query}"
+        url = f"{SPINTA_SERVER_BASE_URL}{model}/{uuid}/?{query}"
     else:
-        url = f"https://get.data.gov.lt/{model}/?{query}"
+        url = f"{SPINTA_SERVER_BASE_URL}{model}/?{query}"
     try:
-        res = requests.get(url)
+        res = requests.get(url, timeout=timeout)
+    except requests.ReadTimeout:
+        return {'errors': [_(f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})")]}
     except requests.RequestException as e:
         return {'errors': [str(e)]}
 

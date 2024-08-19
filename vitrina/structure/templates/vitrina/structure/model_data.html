@@ -310,13 +310,14 @@
             $.ajax({
                 url: `/datasets/${datasetId}/data/${model}/count/${search}`
             }).then(response => {
-                let count = response['count'];
+                let count = response['total_count'];
+                let countSaved = response['total_count_saved'];
                 let totalCount = "";
                 if (shownCount == 1) {
-                    totalCount = gettext(`Rodoma ${shownCount} objektas iš ${count}`);
+                    totalCount = gettext(`Rodoma ${shownCount} objektas iš ${count} (atnaujinta ${countSaved})`);
                 }
                 else {
-                    totalCount = gettext(`Rodoma ${shownCount} objektai iš ${count}`);
+                    totalCount = gettext(`Rodoma ${shownCount} objektai iš ${count} (atnaujinta ${countSaved})`);
                 }
                 $('#total_count_id')[0].innerHTML = totalCount.toLocaleString('lt-LT');;
             });

@@ -1,3 +1,4 @@
+import datetime
 import uuid
 import json
 from typing import List, Union
@@ -469,14 +470,25 @@ class ModelDataCountView(View):
 
         total_count = 0
         count_query = '&'.join(count_query)
-        count_data = get_data_from_spinta(self.model, query=count_query)
-        count_data = count_data.get('_data')
-        if count_data and count_data[0].get('count()'):
-            total_count = count_data[0].get('count()')
+        path = f"{self.model}/?{count_query}"
 
-        # cache.set()
+        if not cache.get(path):
+            count_data = get_data_from_spinta(self.model, query=count_query)
+            count_data = count_data.get('_data')
+            if count_data and count_data[0].get('count()'):
+                total_count = count_data[0].get('count()')
 
-        return JsonResponse({'count': total_count})
+            total_count_saved = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            cache.set(path, total_count, timeout=86400)
+            cache.set(path + "_saved", total_count_saved, timeout=86400)
+        else:
+            total_count = cache.get(path)
+            total_count_saved = cache.get(path + "_saved")
+
+        return JsonResponse({
+            'total_count': total_count,
+            'total_count_saved': total_count_saved
+        })
 
 
 class ModelDataView(

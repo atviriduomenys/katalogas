@@ -227,3 +227,20 @@ def manage_subscriptions_for_representative(subscribe, user, organization, link)
     else:
         if subscription:
             subscription.delete()
+
+
+def pre_representative_delete(rep: Representative):
+    if isinstance(rep.content_object, Organization) and rep.user:
+        org_repr = rep.user.representative_set.filter(
+            content_type=ContentType.objects.get_for_model(Organization)
+        )
+        dataset_repr_object_ids = rep.user.representative_set.filter(
+            content_type=ContentType.objects.get_for_model(Dataset)
+        ).values_list('object_id', flat=True)
+
+        if (
+                org_repr.count() == 1 and
+                not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
+        ):
+            rep.user.is_active = False
+            rep.user.save()

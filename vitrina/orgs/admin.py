@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.utils.translation import gettext_lazy as _
 from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
@@ -8,8 +7,6 @@ from django.contrib.admin import AdminSite
 from django.contrib.admin.forms import AuthenticationForm
 from django.urls import reverse
 from django.utils.html import format_html
-from django.shortcuts import render
-from django.template.loader import render_to_string
 from vitrina.orgs.models import Representative
 from django.contrib.contenttypes.models import ContentType
 
@@ -17,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from vitrina.orgs.models import Organization, RepresentativeRequest
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.orgs.services import pre_representative_delete
 
 
 class RootOrganizationFilter(admin.SimpleListFilter):
@@ -45,7 +43,15 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
 
 
 class RepresentativeAdmin(admin.ModelAdmin):
-    pass
+
+    def delete_model(self, request, obj):
+        pre_representative_delete(obj)
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            pre_representative_delete(obj)
+        super().delete_queryset(request, queryset)
 
 
 admin.site.register(Organization, OrganizationAdmin)

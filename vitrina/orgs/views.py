@@ -44,7 +44,8 @@ from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, Orga
     ApiScopeForm, ApiKeyRegenerateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
-from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative
+from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative, \
+    pre_representative_delete
 from vitrina.plans.models import Plan
 from vitrina.projects.models import Project
 from vitrina.settings import SPINTA_SERVER_URL
@@ -802,6 +803,11 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        pre_representative_delete(obj)
+        return super().delete(request, *args, **kwargs)
 
 
 class RepresentativeRegisterView(RegisterView):

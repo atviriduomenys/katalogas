@@ -6,7 +6,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, pre_representative_delete
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory
@@ -649,3 +649,81 @@ def test_dataset_structure_create_permission_organization_coordinator():
     )
     res = has_perm(coordinator.user, Action.CREATE, DatasetStructure, dataset)
     assert res is True
+
+
+@pytest.mark.django_db
+def test_pre_representative_delete__one_organization():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk
+    )
+    pre_representative_delete(rep)
+    rep.refresh_from_db()
+    assert rep.user.is_active is False
+
+
+@pytest.mark.django_db
+def test_pre_representative_delete__two_organizations():
+    user = UserFactory()
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(Organization)
+    rep = RepresentativeFactory(
+        content_type=ct,
+        object_id=organization1.pk,
+        user=user
+    )
+    RepresentativeFactory(
+        content_type=ct,
+        object_id=organization2.pk,
+        user=user
+    )
+    pre_representative_delete(rep)
+    user.refresh_from_db()
+    assert user.is_active is True
+
+
+@pytest.mark.django_db
+def test_pre_representative_delete__same_organization_dataset():
+    user = UserFactory()
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(organization=organization)
+    org_ct = ContentType.objects.get_for_model(organization)
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    rep = RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        user=user
+    )
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        user=user
+    )
+    pre_representative_delete(rep)
+    user.refresh_from_db()
+    assert user.is_active is False
+
+
+@pytest.mark.django_db
+def test_pre_representative_delete__different_organization_dataset():
+    user = UserFactory()
+    organization = OrganizationFactory()
+    dataset = DatasetFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    rep = RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        user=user
+    )
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        user=user
+    )
+    pre_representative_delete(rep)
+    user.refresh_from_db()
+    assert user.is_active is True

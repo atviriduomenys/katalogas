@@ -231,10 +231,44 @@ class OrganizationMapping(models.Model):
 
 
 class RepresentativeRequest(models.Model):
-    user = models.ForeignKey('vitrina_users.User',  blank=True, null=True, on_delete=models.CASCADE)
-    document = models.FileField(upload_to='data/files/request_assignments')
-    organization = models.ForeignKey(Organization, blank=True, null=True, on_delete=models.CASCADE)
+    CREATED = "CREATED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    STATUSES = {
+        (CREATED, _("Pateiktas")),
+        (APPROVED, _("Patvirtintas")),
+        (REJECTED, _("Atmestas")),
+    }
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta"))
+    user = models.ForeignKey(
+        'vitrina_users.User',
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name=_("Naudotojas")
+    )
+    document = models.FileField(upload_to='data/files/request_assignments', verbose_name=_("Pridėtas dokumentas"))
+    organization = models.ForeignKey(
+        Organization,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name=_("Organizacija"))
+    phone = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Telefono numeris'))
+    email = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('El. paštas'))
+    status = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=STATUSES,
+        verbose_name=_("Būsena"),
+        default=CREATED
+    )
 
     class Meta:
         managed = True
         db_table = 'representative_request'
+
+    def __str__(self):
+        return str(self.user) if self.user else ""

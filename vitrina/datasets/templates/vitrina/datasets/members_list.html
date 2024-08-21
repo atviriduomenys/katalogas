@@ -48,7 +48,15 @@
                 {% if m.user %}
                 <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
                 <td><a href="mailto:{{ m.user.email }}">{{ m.user.email }}</a></td>
-                <td>{{ m.user.phone|default:"-" }}</td>
+                <td>
+                    {% if m.phone %}
+                        {{ m.phone }}
+                    {% elif m.user.phone %}
+                        {{ m.user.phone }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 {% else %}
                 <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
                 <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>

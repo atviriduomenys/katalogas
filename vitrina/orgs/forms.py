@@ -6,20 +6,19 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, TextInput, \
-    HiddenInput, FileField, PasswordInput, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
+from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, \
+    HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
 from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
-from vitrina.api.services import is_duplicate_key
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import get_coordinators_count, hash_api_key
+from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
@@ -47,6 +46,7 @@ class ProviderWidget(ModelSelect2Widget):
         queryset = queryset.filter(pk__in=ids)
         return queryset
 
+
 class OrganizationWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
@@ -72,6 +72,7 @@ class OrganizationWidget(ModelSelect2Widget):
                 queryset._result_cache.extend(org_list)
                 self.queryset = queryset      
         return queryset
+
 
 class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
@@ -148,6 +149,7 @@ class OrganizationUpdateForm(ModelForm):
             if image.width < 256 or image.height < 256:
                 raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
+
 
 class OrganizationCreateForm(ModelForm):
     title = CharField(label=_('Pavadinimas'), required=True)

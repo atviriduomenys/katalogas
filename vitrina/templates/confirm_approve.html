@@ -9,7 +9,7 @@
             <form id="confirm-form" method="post">
                 {% csrf_token %}
                 <strong>
-                    <p >{% translate "Ar tikrai norite patvirtinti" %} "{{ object }}"?</p>
+                    <p >{% translate "Ar tikrai norite patvirtinti" %} "{{ object }}" {% translate "prašymą" %}?</p>
                      <br/>
                 </strong>
 

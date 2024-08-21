@@ -22,7 +22,7 @@ from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.settings import SPINTA_SERVER_BASE_URL
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.helpers import get_type_repr
 from vitrina.structure.models import Metadata, Model, Property, Prefix, Enum, EnumItem, PropertyList, Param, \
@@ -875,9 +875,9 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
 
 def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 60):
     if uuid:
-        url = f"{SPINTA_SERVER_BASE_URL}{model}/{uuid}/?{query}"
+        url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
-        url = f"{SPINTA_SERVER_BASE_URL}{model}/?{query}"
+        url = f"{SPINTA_SERVER_URL}/{model}/?{query}"
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:

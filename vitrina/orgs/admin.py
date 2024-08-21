@@ -1,3 +1,4 @@
+import pytz
 from django.contrib import admin
 from reversion.admin import VersionAdmin
 
@@ -7,9 +8,9 @@ from django.contrib.admin import AdminSite
 from django.contrib.admin.forms import AuthenticationForm
 from django.urls import reverse
 from django.utils.html import format_html
-from vitrina.orgs.models import Representative
-from django.contrib.contenttypes.models import ContentType
 
+from vitrina import settings
+from vitrina.orgs.models import Representative
 
 from vitrina.orgs.models import Organization, RepresentativeRequest
 from django.utils.translation import gettext_lazy as _
@@ -61,49 +62,76 @@ admin.site.register(Representative, RepresentativeAdmin)
 class RepresentativeRequestAdmin(admin.ModelAdmin):
     template_name = 'vitrina/orgs/approve.html'
     list_display = (
-        'user',
+        'created_display',
+        'user_display',
         'organization',
-        'document_download',
-        'account_actions',
+        'document_display',
+        'phone',
+        'email',
+        'status',
+        'account_actions_display',
     )
+    list_display_links = None
+    ordering = ('-created',)
+    actions = None
+    change_list_template = 'vitrina/orgs/admin/change_list.html'
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = {'title': _('Duomenų tiekėjų prašymų sąrašas')}
+        return super().changelist_view(request, extra_context=extra_context)
 
     def has_add_permission(self, request):
-        return True
+        return False
 
     def has_change_permission(self, request, obj=None):
-        return True
+        if obj and obj.status == RepresentativeRequest.CREATED:
+            return True
+        return False
 
     def has_module_permission(self, request):
         return True
-    
-    def document_download(self, obj):
+
+    def user_display(self, obj):
+        if obj.status == RepresentativeRequest.CREATED:
+            return format_html(
+                '<a href="{}">{}</a>',
+                reverse("supervisor_admin:vitrina_orgs_representativerequest_change", kwargs={'object_id': obj.id}),
+                str(obj.user)
+            )
+        return str(obj.user)
+    user_display.short_description = _('Naudotojas')
+    user_display.admin_order_field = 'user'
+
+    def document_display(self, obj):
         return format_html(
             '<a href="{}">{}</a>',
             reverse('partner-register-download', kwargs={'pk': obj.id}),
             obj.document.name
         )
+    document_display.short_description = _('Pridėtas dokumentas')
+    document_display.admin_order_field = 'document'
 
-    def account_actions(self, obj):
-        representative_already_exists = Representative.objects.filter(
-            user=obj.user,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=obj.organization.id
-        ).first()
-
-        if representative_already_exists:
+    def account_actions_display(self, obj):
+        if obj.status == RepresentativeRequest.CREATED:
             return format_html(
-                '<a href={}>{}</a>',
-                    reverse('partner-register-suspend', kwargs={'pk': obj.id}),
-                    _("Suspenduoti")
-        )
-        return format_html(
-            '<a class="button" href="{}">Confirm</a>&nbsp;'
-            '<a class="button" href="{}">Deny</a>',
-            reverse('partner-register-approve', kwargs={'pk': obj.id}),
-            reverse('partner-register-deny', kwargs={'pk': obj.id}),
-        )
-    account_actions.short_description = 'Account Actions'
-    account_actions.allow_tags = True
+                '<a class="button" href="{}">{}</a>&nbsp;'
+                '<a class="button" href="{}">{}</a>',
+                reverse('partner-register-approve', kwargs={'pk': obj.id}),
+                _("Patvirtinti"),
+                reverse('partner-register-deny', kwargs={'pk': obj.id}),
+                _("Atmesti")
+            )
+        return ""
+    account_actions_display.short_description = _('Veiksmai')
+    account_actions_display.allow_tags = True
+    account_actions_display.admin_order_field = 'status'
+
+    def created_display(self, obj):
+        timezone = pytz.timezone(settings.TIME_ZONE)
+        return obj.created.astimezone(timezone).strftime("%Y-%m-%d %H:%M") if obj.created else "-"
+    created_display.short_description = _('Sukurta')
+    created_display.admin_order_field = 'created'
+
 
 class SupervisorAdminSite(AdminSite):
     """
@@ -112,6 +140,7 @@ class SupervisorAdminSite(AdminSite):
 
     login_form = AuthenticationForm
     site_header = 'Supervisor admin site'
+    enable_nav_sidebar = False
 
     def has_permission(self, request):
         """
@@ -119,5 +148,6 @@ class SupervisorAdminSite(AdminSite):
         """
         return request.user.is_supervisor or request.user.is_superuser
 
-site = SupervisorAdminSite(name='myadmin')
+
+site = SupervisorAdminSite(name='supervisor_admin')
 site.register(RepresentativeRequest, RepresentativeRequestAdmin)

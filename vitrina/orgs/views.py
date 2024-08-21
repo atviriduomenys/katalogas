@@ -78,21 +78,25 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         org = self.representative_request.organization
-        user = User.objects.get(email=self.representative_request.user.email)
+        user = User.objects.get(email=self.representative_request.email)
         if not user.organization:
             user.organization = org
         user.save()
         rep = Representative.objects.create(
-            email=user.email,
+            email=self.representative_request.email,
             first_name=user.first_name,
             last_name=user.last_name,
-            phone=user.phone,
+            phone=self.representative_request.phone,
             object_id=org.id,
             role=Representative.COORDINATOR,
             user=user,
             content_type=ContentType.objects.get_for_model(org)
         )
         rep.save()
+
+        self.representative_request.status = RepresentativeRequest.APPROVED
+        self.representative_request.save()
+
         task = Task.objects.create(
             title="Naujo duomenų teikėjo: {} registracija".format(org.company_code),
             description=f"Portale užsiregistravo naujas duomenų teikėjas: {org.company_code}.",
@@ -102,7 +106,8 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
             type=Task.REQUEST
         )
         task.save()
-        sub_email_list = [user.email]
+
+        sub_email_list = [self.representative_request.email]
         organization_url = "%s%s" % (
             get_current_domain(self.request),
             reverse('organization-detail', args=[org.pk])
@@ -163,9 +168,10 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        self.representative_request.delete()
+        self.representative_request.status = RepresentativeRequest.REJECTED
+        self.representative_request.save()
         sub_email_list = [self.representative_request.user.email]
-        email([sub_email_list], self.email_identifier,
+        email(sub_email_list, self.email_identifier,
               "vitrina/emails/request_denied.md", {
                   'user': self.representative_request.user
               })
@@ -913,18 +919,23 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
                 provider=True,
                 is_public=True
             )
-        representative_request_already_exists = RepresentativeRequest.objects.filter(
+        else:
+            org = org_is_registered
+
+        representative_already_exists = Representative.objects.filter(
             user=self.request.user,
-            organization=org_is_registered or org
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=org.id
         ).first()
-        if not representative_request_already_exists:
+        if not representative_already_exists:
             representative_request = RepresentativeRequest(
                 user=self.request.user,
-                organization=org_is_registered or org,
-                document=form.cleaned_data.get('request_form')
+                organization=org,
+                document=form.cleaned_data.get('request_form'),
+                email=form.cleaned_data.get('coordinator_email'),
+                phone=form.cleaned_data.get('coordinator_phone_number'),
             )
             representative_request.save()
-            org = org_is_registered or org
             supervisors = Representative.objects.filter(
                 role=Representative.SUPERVISOR
             )

@@ -1,0 +1,16 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% block object-tools-items %}
+<form id="export"action="{% url 'admin:vitrina_datasets_datasetreport_changelist' %}" method="get" style="padding: 0px; margin: 0px;">
+    <input type="hidden" name="format" value="csv"/>
+    {% for k, v in request.GET.items %}
+        {% if k != 'format' %}
+            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
+        {% endif %}
+    {% endfor %}
+    <button type="submit" title="{% translate 'Eksportuoti' %}" aria-label="{% translate 'Eksportuoti' %}"
+            style="background-color: #00bbff !important; color: white !important; padding: 10px 20px !important;">
+        {% translate "Eksportuoti" %}
+    </button>
+</form>
+{% endblock %}

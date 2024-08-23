@@ -127,7 +127,7 @@ class Dataset(TranslatableModel):
     catalog = models.ForeignKey(Catalog, models.SET_NULL, db_column='catalog', blank=True, null=True)
     origin = models.CharField(max_length=255, blank=True, null=True)
 
-    organization = models.ForeignKey(Organization, models.PROTECT, blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.PROTECT, blank=True, null=True, verbose_name=_("Organizacija"))
 
     licence = models.ForeignKey(Licence, models.SET_NULL, db_column='licence', blank=False, null=True,
                                 verbose_name=_('Licenzija'))
@@ -734,6 +734,13 @@ class Dataset(TranslatableModel):
 
     def is_opened(self):
         return self.status == self.HAS_DATA
+
+
+class DatasetReport(Dataset):
+    class Meta:
+        proxy = True
+        verbose_name = _("Duomenų rinkinių ataskaita")
+        verbose_name_plural = _("Duomenų rinkinių ataskaita")
 
 
 # TODO: To be merged into Dataset:

@@ -1,0 +1,25 @@
+{% extends "admin/delete_confirmation.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_changelist' %}">{% translate 'Duomenų tiekėjų prašymų sąrašas' %}</a>
+&rsaquo; <a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_change' object.pk %}">{% translate 'Prašymo redagavimas' %}</a>
+&rsaquo; {% translate 'Pašalinti' %}
+</div>
+{% endblock %}
+
+
+{% block content %}
+    <p>{% blocktranslate with escaped_object=object %}Ar tikrai norite pašalinti duomenų tiekėjo "{{ escaped_object }}" prašymą? {% endblocktranslate %}</p>
+    <hr>
+    <form method="post">{% csrf_token %}
+    <div>
+    <input type="hidden" name="post" value="yes">
+    {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+    {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+    <input type="submit" value="{% translate 'Taip, esu tikras' %}">
+    <a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_change' object.pk %}" class="button cancel-link">{% translate "Ne, grįžti atgal" %}</a>
+    </div>
+    </form>
+{% endblock %}

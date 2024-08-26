@@ -182,3 +182,18 @@ class MultipleFilerField(FileField):
                 folder=current_folder
             )
         return file
+
+
+class TranslatedFileInput(ClearableFileInput):
+    template_name = 'component/clearable_file_input.html'
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context['widget'].update({
+            'file_input_text': _("Pasirinkti failą"),
+        })
+        return context
+
+
+class TranslatedFileField(FileField):
+    widget = TranslatedFileInput

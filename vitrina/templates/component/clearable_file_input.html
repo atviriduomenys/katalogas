@@ -1,0 +1,33 @@
+{% load static %}
+
+{% if widget.is_initial %}
+    {{ widget.initial_text }}: <a href="{{ widget.value.url }}">{{ widget.value }}</a>
+    {% if not widget.required %}
+        <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}>
+        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
+    {% endif %}<br>
+    {{ widget.input_text }}:
+{% endif %}
+<button type="button" id="{{ widget.name }}_button" onclick="openFileSelect('{{widget.name}}')">{{ widget.file_input_text }}</button>
+<span id="{{ widget.name }}_span"></span>
+<input type="file" name="{{ widget.name }}" onchange="onFileSelected(this, '{{widget.name}}')" style="display: none;" {% include "django/forms/widgets/attrs.html" %}>
+
+{% block form_scripts %}
+    <script type="text/javascript">
+        if (django != undefined) {
+            var $ = django.jQuery;
+        }
+
+        function openFileSelect(fieldName) {
+            $(`input[name='${fieldName}']`).click();
+        }
+
+        function onFileSelected(input, fieldName) {
+            if (input.files.length > 0) {
+                var file = input.files[0].name;
+                let span = $(`span[id='${fieldName}_span']`);
+                span.text(file);
+            }
+        }
+    </script>
+{% endblock %}

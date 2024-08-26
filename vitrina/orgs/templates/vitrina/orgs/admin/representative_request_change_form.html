@@ -1,0 +1,18 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+% load static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_changelist' %}">{% translate 'Duomenų tiekėjų prašymų sąrašas' %}</a>
+&rsaquo; {% translate 'Prašymo redagavimas' %}
+</div>
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+{% block content_subtitle %}<h2>{% translate 'Redaguoti duomenų tiekėjo prašymą' %}</h2>{% endblock %}
+
+{% block admin_change_form_document_ready %}
+    {{ block.super }}
+    {% block form_scripts %}{% endblock %}
+{% endblock %}

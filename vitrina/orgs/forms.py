@@ -15,9 +15,9 @@ from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerImageField
+from vitrina.fields import FilerImageField, TranslatedFileField
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
@@ -680,3 +680,34 @@ class ApiScopeForm(Form):
                     if not target_org.exists() and not target_dataset.exists():
                         self.add_error('scope', _("Objektas su tokia name reikšme neegzistuoja."))
         return self.cleaned_data
+
+
+class RepresentativeRequestForm(ModelForm):
+    user_name = CharField(label=_("Naudotojas"))
+    organization_name = CharField(label=_("Organizacija"))
+    phone_number = CharField(label=_("Telefono numeris"))
+    document = TranslatedFileField(label=_("Pridėtas dokumentas"))
+
+    class Meta:
+        model = RepresentativeRequest
+        fields = ('user_name', 'email', 'phone_number', 'organization_name', 'document',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.fields["user_name"].disabled = True
+        self.fields["user_name"].widget.attrs['style'] = "background-color: #f2f2f2;"
+        self.fields["email"].disabled = True
+        self.fields["email"].widget.attrs['style'] = "background-color: #f2f2f2;"
+        self.fields["phone_number"].disabled = True
+        self.fields["phone_number"].widget.attrs['style'] = "background-color: #f2f2f2;"
+        self.fields["organization_name"].disabled = True
+        self.fields["organization_name"].widget.attrs['style'] = "background-color: #f2f2f2;"
+
+        if instance:
+            self.initial['user_name'] = str(instance.user)
+            self.initial['organization_name'] = str(instance.organization)
+            if instance.phone:
+                self.initial['phone_number'] = instance.phone
+            else:
+                self.initial['phone_number'] = '-'

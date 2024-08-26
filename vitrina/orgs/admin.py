@@ -1,5 +1,6 @@
 import pytz
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.shortcuts import redirect
 from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
@@ -10,6 +11,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from vitrina import settings
+from vitrina.orgs.forms import RepresentativeRequestForm
 from vitrina.orgs.models import Representative
 
 from vitrina.orgs.models import Organization, RepresentativeRequest
@@ -74,7 +76,10 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     list_display_links = None
     ordering = ('-created',)
     actions = None
-    change_list_template = 'vitrina/orgs/admin/change_list.html'
+    change_list_template = 'vitrina/orgs/admin/representative_request_change_list.html'
+    change_form_template = 'vitrina/orgs/admin/representative_request_change_form.html'
+    delete_confirmation_template = 'vitrina/orgs/admin/representative_request_delete_confirmation.html'
+    form = RepresentativeRequestForm
 
     def changelist_view(self, request, extra_context=None):
         extra_context = {'title': _('Duomenų tiekėjų prašymų sąrašas')}
@@ -131,6 +136,14 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
         return obj.created.astimezone(timezone).strftime("%Y-%m-%d %H:%M") if obj.created else "-"
     created_display.short_description = _('Sukurta')
     created_display.admin_order_field = 'created'
+
+    def response_delete(self, request, obj_display, obj_id):
+        self.message_user(
+            request,
+            _(f'"{obj_display}" prašymas pašalintas sėkmingai.'),
+            messages.SUCCESS,
+        )
+        return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
 
 
 class SupervisorAdminSite(AdminSite):

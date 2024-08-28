@@ -17,7 +17,7 @@ from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
@@ -711,3 +711,11 @@ class RepresentativeRequestForm(ModelForm):
                 self.initial['phone_number'] = instance.phone
             else:
                 self.initial['phone_number'] = '-'
+
+
+class TemplateForm(ModelForm):
+    document = TranslatedFileField(label=_("Pridėtas dokumentas"))
+
+    class Meta:
+        model = Template
+        fields = ('text', 'document',)

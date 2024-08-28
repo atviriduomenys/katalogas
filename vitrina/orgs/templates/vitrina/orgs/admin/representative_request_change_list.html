@@ -1,3 +1,21 @@
 {% extends "admin/change_list.html" %}
+{% load i18n %}
+
 {% block breadcrumbs %}
+{% endblock %}
+
+{% block pretitle %}
+{% if template %}
+    <h1>
+        {% translate "Prašymo dokumento šablonas" %}:
+        <span style="font-weight: 300; font-size: 12px;">
+            <a href="{{ template.document.url }}" download style="margin-right: 10px;">{{ template.document.name }} </a>
+            <a href="{% url 'supervisor_admin:vitrina_orgs_template_change' template.pk %}" aria-label="{% translate 'Redaguoti šabloną' %}"
+               style="background-color: #00bbff; color: white; padding: 7px 10px;">
+                {% translate "Redaguoti šabloną" %}
+            </a>
+        </span>
+    </h1>
+    <hr/>
+{% endif %}
 {% endblock %}

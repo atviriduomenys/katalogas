@@ -272,3 +272,19 @@ class RepresentativeRequest(models.Model):
 
     def __str__(self):
         return str(self.user) if self.user else ""
+
+
+class Template(models.Model):
+    REPRESENTATIVE_REQUEST_ID = "representative_request"
+
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta"))
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True, verbose_name=_("Modifikuota"))
+    identifier = models.CharField(max_length=255, unique=True, verbose_name=_("Identifikatorius"))
+    text = models.CharField(max_length=100, verbose_name=_("Tekstas"))
+    document = models.FileField(upload_to='data/files/templates', verbose_name=_("Pridėtas dokumentas"))
+
+    class Meta:
+        db_table = 'template'
+
+    def __str__(self):
+        return self.document.name

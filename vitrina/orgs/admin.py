@@ -11,8 +11,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from vitrina import settings
-from vitrina.orgs.forms import RepresentativeRequestForm
-from vitrina.orgs.models import Representative
+from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm
+from vitrina.orgs.models import Representative, Template
 
 from vitrina.orgs.models import Organization, RepresentativeRequest
 from django.utils.translation import gettext_lazy as _
@@ -82,7 +82,10 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     form = RepresentativeRequestForm
 
     def changelist_view(self, request, extra_context=None):
-        extra_context = {'title': _('Duomenų tiekėjų prašymų sąrašas')}
+        extra_context = {
+            'title': _('Duomenų tiekėjų prašymų sąrašas'),
+            'template': Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first()
+        }
         return super().changelist_view(request, extra_context=extra_context)
 
     def has_add_permission(self, request):
@@ -146,6 +149,17 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
         return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
 
 
+class TemplateAdmin(admin.ModelAdmin):
+    change_form_template = 'vitrina/orgs/admin/template_change_form.html'
+    object_history_template = 'vitrina/orgs/admin/template_history.html'
+    form = TemplateForm
+
+    def response_change(self, request, obj):
+        msg = _('Šablonas pakeistas sėkmingai.')
+        self.message_user(request, msg, messages.SUCCESS)
+        return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
+
+
 class SupervisorAdminSite(AdminSite):
     """
     App-specific admin site implementation
@@ -164,3 +178,4 @@ class SupervisorAdminSite(AdminSite):
 
 site = SupervisorAdminSite(name='supervisor_admin')
 site.register(RepresentativeRequest, RepresentativeRequestAdmin)
+site.register(Template, TemplateAdmin)

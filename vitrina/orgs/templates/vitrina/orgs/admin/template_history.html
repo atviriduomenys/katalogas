@@ -1,0 +1,10 @@
+{% extends "admin/object_history.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_changelist' %}">{% translate 'Duomenų tiekėjų prašymų sąrašas' %}</a>
+&rsaquo; <a href="{% url 'supervisor_admin:vitrina_orgs_template_change' object.pk %}">{{ object }}</a>
+&rsaquo; {% translate 'Istorija' %}
+</div>
+{% endblock %}

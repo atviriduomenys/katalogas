@@ -10,12 +10,13 @@ from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharF
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
 from django.urls import resolve, Resolver404
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerImageField, TranslatedFileField
+from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
 from vitrina.orgs.services import get_coordinators_count
@@ -23,9 +24,12 @@ from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
 
-class ChoiceFieldNoValidation(ChoiceField):
+
+class ChoiceFieldRequiredValidationOnly(ChoiceField):
     def validate(self, value):
-        pass
+        if not value:
+            raise ValidationError(_("Šis laukas yra privalomas."))
+
 
 class ProviderWidget(ModelSelect2Widget):
     model = Organization
@@ -331,40 +335,75 @@ class RepresentativeCreateForm(ModelForm):
         return super().clean()
 
 
+def get_document_field_title():
+    template = Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first()
+    if template:
+        return mark_safe(
+            f"<span>{_('Prašymas')} *</span>&nbsp;&nbsp;&nbsp;"
+            f"<span style='font-size: 0.9rem; font-weight: 500'>"
+            f"<a href={template.document.url} download><i class='fa fa-file'></i> {template.text}</a>"
+            f"</span>"
+        )
+    else:
+        return _("Prašymas") + " *"
+
+
 class PartnerRegisterForm(ModelForm):
-    organization = ChoiceFieldNoValidation(
+    organization = ChoiceFieldRequiredValidationOnly(
         label=_("Organizacija"),
         required=True,
-        widget=OrganizationWidget(attrs={"data-placeholder": "Organizacijos paieška, įveskite simbolį", "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=OrganizationWidget(attrs={
+            "data-placeholder": "Organizacijos paieška, įveskite simbolį",
+            "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0
+        })
     )
-    coordinator_email = EmailField(label=_("Koordinatoriaus el. paštas"))
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
-    request_form = FileField(label=_("Prašymo forma"), required=True)
+    request_form = TranslatedFileField(
+        label=get_document_field_title,
+        required=True,
+        widget=TranslatedFileInput(file_input_text=_("Pridėti dokumentą"))
+    )
 
     class Meta:
         model = Organization
         fields = [
             'organization',
             'coordinator_phone_number',
-            'coordinator_email',
             'request_form'
         ]
 
-    def __init__(self, *args, initial={}, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "partner-register-form"
         self.helper.layout = Layout(
             Field('organization'),
-            Field('coordinator_phone_number', value=initial.get('coordinator_phone_number') or ''),
-            Field('coordinator_email', value=initial.get('coordinator_email'), readonly=True),
+            Field('coordinator_phone_number', placeholder=_('Formatas 0... arba +370...')),
             Field('request_form'),
             Submit('submit', _("Sukurti"), css_class='button is-primary')
         )
 
-    def clean(self):
-        return self.cleaned_data
+    def clean_coordinator_phone_number(self):
+        phone = self.cleaned_data.get('coordinator_phone_number')
+        if phone:
+            if (
+                not phone.startswith("0") and
+                not phone.startswith("+370")
+            ):
+                raise ValidationError(_("Neteisingas telefono numerio formatas."))
+            else:
+                if phone.startswith("0"):
+                    phone_end = phone.replace("0", "", 1)
+                else:
+                    phone_end = phone.replace("+370", "", 1)
+
+                if (
+                    len(phone_end) != 8 or
+                    not all([c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] for c in phone_end])
+                ):
+                    raise ValidationError(_("Neteisingas telefono numerio formatas."))
+        return phone
 
 
 class OrganizationPlanForm(ModelForm):

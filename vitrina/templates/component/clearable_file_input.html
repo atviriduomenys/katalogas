@@ -14,7 +14,7 @@
 
 {% block form_scripts %}
     <script type="text/javascript">
-        if (django != undefined) {
+        if (django != undefined && django.jQuery != undefined) {
             var $ = django.jQuery;
         }
 

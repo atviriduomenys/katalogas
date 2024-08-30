@@ -864,7 +864,7 @@ class PartnerRegisterInfoView(TemplateView):
 
 class PartnerRegisterView(LoginRequiredMixin, CreateView):
     form_class = PartnerRegisterForm
-    template_name = 'base_form.html'
+    template_name = 'vitrina/orgs/partners/register_form.html'
     jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
     jar_query_uri = "ja_kodas={}"
     base_template_content = """
@@ -879,30 +879,6 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
         if not user_social_account:
             return redirect('viisp_login')
         return super(PartnerRegisterView, self).get(request, *args, **kwargs)
-
-    def get_form_kwargs(self):
-        user = self.request.user
-        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
-        extra_data = {}
-        company_code = extra_data.get('company_code')
-        company_name = extra_data.get('company_name')
-        org = Organization.objects.filter(company_code=company_code).first()
-        company_name_slug = ""
-        if not org and company_name:
-            if len(company_name.split(' ')) > 1 and len(company_name.split(' ')) != ['']:
-                for item in company_name.split(' '):
-                    company_name_slug += item[0]
-            else:
-                company_name_slug = company_name[0]
-        elif org:
-            company_name_slug = org.slug
-        kwargs = super().get_form_kwargs()
-        initial_dict = {
-            'coordinator_phone_number': extra_data.get('coordinator_phone_number'),
-            'coordinator_email': user.email
-        }
-        kwargs['initial'] = initial_dict
-        return kwargs
 
     def form_valid(self, form):
         org = form.cleaned_data.get('organization')
@@ -927,12 +903,14 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.id
         ).first()
-        if not representative_already_exists:
+        if representative_already_exists:
+            return redirect('representative-exists')
+        else:
             representative_request = RepresentativeRequest(
                 user=self.request.user,
                 organization=org,
                 document=form.cleaned_data.get('request_form'),
-                email=form.cleaned_data.get('coordinator_email'),
+                email=self.request.user.email,
                 phone=form.cleaned_data.get('coordinator_phone_number'),
             )
             representative_request.save()
@@ -2484,3 +2462,7 @@ class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
             reverse('organization-members', args=[self.organization.pk]): _("Tvarkytojai"),
         }
         return context
+
+
+class RepresentativeExistsView(TemplateView):
+    template_name = 'vitrina/orgs/partners/representative_exists.html'

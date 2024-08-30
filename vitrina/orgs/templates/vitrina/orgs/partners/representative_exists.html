@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prašymo sukurti negalima" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Jums jau yra suteiktos duomenų tiekėjo teisės prie pasirinktos organizacijos. Galite naudotis sistema, papildomai teikti prašymo nebereikia." %}</p>
+  <br>
+  <p>
+    <a id="partner-register" href="{% url 'home' %}" class="button is-small is-primary">{% translate "Į pradžią" %}</a>
+  </p>
+{% endblock %}

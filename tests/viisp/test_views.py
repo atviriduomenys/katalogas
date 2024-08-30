@@ -62,6 +62,5 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
     form['organization'].force_value(org.pk)
     form['request_form'] = Upload('test.adoc', upload_file)
     form['coordinator_phone_number'] = '+37000000000'
-    form['coordinator_email'] = user.email
     resp = form.submit()
     assert resp.url == '/partner/register-complete/'

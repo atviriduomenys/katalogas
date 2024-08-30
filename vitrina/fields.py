@@ -186,11 +186,16 @@ class MultipleFilerField(FileField):
 
 class TranslatedFileInput(ClearableFileInput):
     template_name = 'component/clearable_file_input.html'
+    file_input_text = None
+
+    def __init__(self, file_input_text=None, attrs=None):
+        self.file_input_text = file_input_text
+        super().__init__(attrs)
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         context['widget'].update({
-            'file_input_text': _("Pasirinkti failą"),
+            'file_input_text': self.file_input_text or _("Pasirinkti failą"),
         })
         return context
 

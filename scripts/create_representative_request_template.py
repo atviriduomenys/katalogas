@@ -14,14 +14,15 @@ def main():
     Create representative request template
     """
 
-    template = Template(
-        identifier=Template.REPRESENTATIVE_REQUEST_ID,
-        text="atsisiųsti prašymo dokumento šabloną",
-    )
+    if not Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID):
+        template = Template(
+            identifier=Template.REPRESENTATIVE_REQUEST_ID,
+            text="atsisiųsti prašymo dokumento šabloną",
+        )
 
-    with open('resources/representative-request-template.doc', 'rb') as f:
-        template.document = File(f, name='Rašto dėl koordinatoriaus paskyrimo pavyzdys.doc')
-        template.save()
+        with open('representative-request-template.doc', 'rb') as f:
+            template.document = File(f, name='Rašto dėl koordinatoriaus paskyrimo pavyzdys.doc')
+            template.save()
 
 
 if __name__ == '__main__':

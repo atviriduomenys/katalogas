@@ -20,7 +20,7 @@ def main():
             text="atsisiųsti prašymo dokumento šabloną",
         )
 
-        with open('representative-request-template.doc', 'rb') as f:
+        with open('scripts/representative-request-template.doc', 'rb') as f:
             template.document = File(f, name='Rašto dėl koordinatoriaus paskyrimo pavyzdys.doc')
             template.save()
 

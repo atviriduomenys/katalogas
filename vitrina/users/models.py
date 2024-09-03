@@ -4,6 +4,8 @@ from django.db import models
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager
 
+from django.utils.translation import gettext_lazy as _
+
 
 class User(AbstractUser):
     username = None
@@ -31,6 +33,8 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'user'
+        verbose_name = _("Naudotojas")
+        verbose_name_plural = _("Naudotojai")
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

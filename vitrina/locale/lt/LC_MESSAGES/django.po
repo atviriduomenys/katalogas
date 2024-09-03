@@ -3308,3 +3308,6 @@ msgstr ""
 #: .\vitrina\users\views.py:110
 msgid "Naudotojo profilio redagavimas"
 msgstr ""
+
+msgid "The {name} “{obj}” was added successfully."
+msgstr "{name} “{obj}” pridėtas sėkmingai."

@@ -111,6 +111,56 @@ class RegisterForm(UserCreationForm):
         return email_address
 
 
+class RegisterAdminForm(UserCreationForm):
+    first_name = CharField(label=_("Vardas"), required=True, )
+    last_name = CharField(label=_("Pavardė"), required=True)
+    email = EmailField(label=_("Elektroninis pašto adresas"), required=True, error_messages={})
+    password1 = CharField(
+        label=_("Slaptažodis"),
+        strip=False,
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'})
+    )
+    password2 = CharField(
+        label=_("Slaptažodžio patvirtinimas"),
+        strip=False,
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        help_text=_("Patikrinimui įveskite tokį patį slaptažodį kaip anksčiau.")
+    )
+
+    error_messages = {
+        'password_mismatch': _('Slaptažodžio laukai nesutapo'),
+    }
+
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "email", 'password1', 'password2',)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        first_name = cleaned_data.get('first_name', "")
+        last_name = cleaned_data.get('last_name', "")
+
+        if len(first_name) < 3 or not first_name.isalpha():
+            self.add_error('first_name',
+                           _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"))
+        if len(last_name) < 3 or not last_name.isalpha():
+            self.add_error('last_name',
+                           _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
+        if 'agree_to_terms' in cleaned_data and not cleaned_data['agree_to_terms']:
+            self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
+        return cleaned_data
+
+    def clean_email(self):
+        email_address = self.cleaned_data.get('email', '')
+        not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
+        if email_address:
+            if User.objects.filter(email=email_address).exists():
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
+                raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
+        return email_address
+
+
 class PasswordSetForm(ModelForm):
     password = CharField(label=_("Slaptažodis"), strip=False,
                          widget=PasswordInput(attrs={'autocomplete': 'new-password'}), validators=[validate_password])

@@ -8,11 +8,23 @@ from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
+    ACTIVE = 'active'
+    AWAITING_CONFIRMATION = 'awaiting_confirmation'
+    SUSPENDED = 'suspended'
+    DELETED = 'deleted'
+
+    STATUSES = (
+        (ACTIVE, _("Aktyvus")),
+        (AWAITING_CONFIRMATION, _("Laukiama patvirtinimo")),
+        (SUSPENDED, _("Suspenduotas")),
+        (DELETED, _("Pašalintas")),
+    )
+
     username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    email = models.CharField(_("Elektroninis paštas"), unique=True, max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
@@ -23,6 +35,9 @@ class User(AbstractUser):
     phone = models.CharField(max_length=255, blank=True, null=True)
     needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
+    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
+
+    # Deprecated fields bellow
     disabled = models.BooleanField(default=False)
     suspended = models.BooleanField(default=False)
 

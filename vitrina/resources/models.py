@@ -26,8 +26,8 @@ class Format(models.Model):
     mimetype = models.TextField(_("MIME tipas"), blank=True, null=True)
     rating = models.IntegerField(_("Vertinimas"), blank=True, null=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
-    media_type_uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    uri = models.CharField(_("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    media_type_uri = models.CharField(_("Laikmenos tipo nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = 'format'
@@ -170,6 +170,8 @@ class DatasetDistribution(models.Model):
             return self.download_url
         elif self.file:
             return self.file.url
+        elif self.access_url:
+            return self.access_url
         return ""
 
     def get_format(self):

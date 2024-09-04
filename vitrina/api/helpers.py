@@ -40,7 +40,18 @@ def get_datasets_for_rdf(qs):
                 _get_category(c)
                 for c in dataset.category.all()
             ],
+            'hvd_categories': [
+                _get_category(c)
+                for c in dataset.category.filter(
+                    groups__translations__title="Didelės vertės rinkiniai"
+                )
+            ],
+            'keywords': [
+                k.name
+                for k in dataset.tags.all()
+            ],
             'published': dataset.published,
+            'modified': dataset.modified,
             'organization': dataset.organization,
             'frequency': _get_frequency(dataset.frequency),
             'licence': _get_licence(dataset.licence),
@@ -71,11 +82,13 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
                 'description': dist.description,
             },
         ],
-        'access_url': dist.access_url or dataset.get_absolute_url(),
+        'access_url': dataset.get_absolute_url(),
         'download_url': dist.get_download_url(),
         'licence': _get_licence(dataset.licence),
         'format': _get_format(dist.format),
         'media_type': _get_media_type(dist.format),
+        'created': dist.created,
+        'modified': dist.modified,
     }
 
 

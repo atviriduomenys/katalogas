@@ -36,10 +36,7 @@ def get_datasets_for_rdf(qs):
                 }
                 for t in dataset.translations.order_by('language_code')
             ),
-            'categories': [
-                _get_category(c)
-                for c in dataset.category.all()
-            ],
+            'categories': _get_categories(dataset),
             'hvd_categories': [
                 _get_category(c)
                 for c in dataset.category.filter(
@@ -90,6 +87,19 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         'created': dist.created,
         'modified': dist.modified,
     }
+
+
+def _get_categories(dataset):
+    categories = []
+
+    for c in dataset.category.exclude(
+        groups__translations__title="Didelės vertės rinkiniai"
+    ):
+        root_category = c.get_root()
+        if root_category not in categories:
+            categories.append(root_category)
+
+    return [_get_category(c) for c in categories]
 
 
 def _get_category(category: Category):

@@ -1984,7 +1984,9 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
     xmlns:skos="http://www.w3.org/2004/02/skos/core#"
     xmlns:schema="http://schema.org/"
     xmlns:dcat="http://www.w3.org/ns/dcat#"
-    xmlns:foaf="http://xmlns.com/foaf/0.1/">
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
@@ -1999,6 +2001,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         </dcat:theme>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>
@@ -2019,7 +2022,9 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">CSV failas</dct:title>
                 <dct:description xml:lang="lt">Atviras duomenų šaltinis.</dct:description>
-                <dcat:accessURL rdf:resource="/datasets/{dataset.id}/"/>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
                 <dcat:downloadURL rdf:resource="{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -2040,7 +2045,9 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/WEB_SERVICE"/>
                 <dct:title xml:lang="lt">Duomenų teikimo paslauga</dct:title>
                 <dct:description xml:lang="lt">Universali duomenų teikimo paslauga.</dct:description>
-                <dcat:accessURL rdf:resource="/datasets/{dataset.id}/"/>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
                 <dcat:downloadURL rdf:resource="{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>

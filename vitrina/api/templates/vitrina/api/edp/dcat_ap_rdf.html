@@ -12,17 +12,37 @@
     xmlns:skos="http://www.w3.org/2004/02/skos/core#"
     xmlns:schema="http://schema.org/"
     xmlns:dcat="http://www.w3.org/ns/dcat#"
-    xmlns:foaf="http://xmlns.com/foaf/0.1/">
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
     {% for dataset in datasets %}
-    <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri }}">
+    <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri|cut:' ' }}">
         {% for t in dataset.translations %}
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
         {% endfor %}
+        {% if dataset.hvd_categories %}
+        <dcatap:applicableLegislation>
+            <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
+        </dcatap:applicableLegislation>
+        {% for category in dataset.hvd_categories %}
+        <dcat:hvdCategory>
+            {% if category.uri %}
+            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
+            {% else %}
+            <skos:Concept>
+                {% for t in category.translations %}
+                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
+                {% endfor %}
+            </skos:Concept>
+            {% endif %}
+        </dcat:hvdCategory>
+        {% endfor %}
+        {% endif %}
         {% for category in dataset.categories %}
         <dcat:theme>
             {% if category.uri %}
-            <skos:Concept rdf:about="{{ category.uri }}"/>
+            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
             {% else %}
             <skos:Concept>
                 {% for t in category.translations %}
@@ -33,20 +53,23 @@
         </dcat:theme>
         {% endfor %}
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.published|date:"SHORT_DATE_FORMAT" }}</dct:issued>
+        {% if dataset.modified %}
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
+        {% endif %}
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
         <dct:publisher>
             <foaf:Organization>
                 <foaf:name>{{ dataset.organization.title }}</foaf:name>
                 <foaf:mbox rdf:resource="mailto:{{ dataset.organization.email }}"/>
                 {% if dataset.organization.website %}
-                <foaf:homepage rdf:resource="{{ dataset.organization.website }}"/>
+                <foaf:homepage rdf:resource="{{ dataset.organization.website|cut:' ' }}"/>
                 {% endif %}
             </foaf:Organization>
         </dct:publisher>
         {% if dataset.frequency %}
         <dct:accrualPeriodicity>
             {% if dataset.frequency.uri %}
-            <dct:Frequency rdf:about="{{ dataset.frequency.uri }}"/>
+            <dct:Frequency rdf:about="{{ dataset.frequency.uri|cut:' ' }}"/>
             {% else %}
             <dct:Frequency>
                 {% for t in dataset.frequency.translations %}
@@ -61,9 +84,12 @@
                 <vcard:hasEmail rdf:resource="mailto:{{ dataset.organization.email }}"/>
             </vcard:Kind>
         </dcat:contactPoint>
+        {% for keyword in dataset.keywords %}
+            <dcat:keyword>{{ keyword }}</dcat:keyword>
+        {% endfor %}
         {% for dist in dataset.distributions %}
         <dcat:distribution>
-            <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri }}">
+            <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|cut:' ' }}">
                 {% if dist.type %}
                 <dct:type rdf:resource="{{ dist.type }}"/>
                 {% endif %}
@@ -71,24 +97,28 @@
                 <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
                 <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
                 {% endfor %}
-                <dcat:accessURL rdf:resource="{{ dist.access_url }}"/>
-                <dcat:downloadURL rdf:resource="{{ dist.download_url }}"/>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.created|date:"SHORT_DATE_FORMAT" }}</dct:issued>
+                {% if dist.modified %}
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
+                {% endif %}
+                <dcat:accessURL rdf:resource="{{ current_domain_full }}{{ dist.access_url|cut:' ' }}"/>
+                <dcat:downloadURL rdf:resource="{{ dist.download_url|cut:' ' }}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
                 {% if dist.licence %}
                 <dct:license>
-                    <dct:LicenseDocument rdf:about="{{ dataset.licence.uri }}"/>
+                    <dct:LicenseDocument rdf:about="{{ dataset.licence.uri|cut:' ' }}"/>
                 </dct:license>
                 {% endif %}
                 {% if dist.media_type %}
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about="{{ dist.media_type.uri }}"/>
+                    <dct:MediaType rdf:about="{{ dist.media_type.uri|cut:' ' }}"/>
                 </dcat:mediaType>
                 {% endif %}
                 {% if dist.format %}
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about="{{ dist.format.uri }}"/>
+                    <dct:MediaTypeOrExtent rdf:about="{{ dist.format.uri|cut:' ' }}"/>
                 </dct:format>
                 {% endif %}
             </dcat:Distribution>

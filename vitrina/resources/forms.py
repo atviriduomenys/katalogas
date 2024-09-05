@@ -209,4 +209,4 @@ class FormatAdminForm(forms.ModelForm):
 
     class Meta:
         model = Format
-        fields = ('extension', 'title', 'mimetype', 'rating',)
+        fields = ('extension', 'title', 'mimetype', 'rating', 'uri', 'media_type_uri',)

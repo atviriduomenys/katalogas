@@ -905,8 +905,15 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.id
         ).first()
+        representative_request_already_exists = RepresentativeRequest.objects.filter(
+            user=self.request.user,
+            organization=org,
+            status=RepresentativeRequest.CREATED
+        )
         if representative_already_exists:
             return redirect('representative-exists')
+        elif representative_request_already_exists:
+            return redirect('representative-request-exists')
         else:
             representative_request = RepresentativeRequest(
                 user=self.request.user,
@@ -2468,3 +2475,7 @@ class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
 
 class RepresentativeExistsView(TemplateView):
     template_name = 'vitrina/orgs/partners/representative_exists.html'
+
+
+class RepresentativeRequestExistsView(TemplateView):
+    template_name = 'vitrina/orgs/partners/representative_request_exists.html'

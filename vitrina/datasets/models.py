@@ -739,8 +739,8 @@ class Dataset(TranslatableModel):
 class DatasetReport(Dataset):
     class Meta:
         proxy = True
-        verbose_name = _("Duomenų rinkinių ataskaita")
-        verbose_name_plural = _("Duomenų rinkinių ataskaita")
+        verbose_name = _("Duomenų rinkinių atnaujinimo ataskaita")
+        verbose_name_plural = _("Duomenų rinkinių atnaujinimo ataskaita")
 
 
 # TODO: To be merged into Dataset:

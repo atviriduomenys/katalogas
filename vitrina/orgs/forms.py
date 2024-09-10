@@ -6,9 +6,11 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.db.models import Q
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, \
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
+from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -25,10 +27,24 @@ from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
 
 
-class ChoiceFieldRequiredValidationOnly(ChoiceField):
+class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
     def validate(self, value):
         if not value:
             raise ValidationError(_("Šis laukas yra privalomas."))
+
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        try:
+            key = self.to_field_name or 'pk'
+            if isinstance(value, self.queryset.model):
+                value = getattr(value, key)
+            value = self.queryset.get(**{key: value})
+        except self.queryset.model.DoesNotExist:
+            pass
+        except (ValueError, TypeError):
+            raise ValidationError(self.error_messages['invalid_choice'], code='invalid_choice')
+        return value
 
 
 class ProviderWidget(ModelSelect2Widget):
@@ -51,31 +67,87 @@ class ProviderWidget(ModelSelect2Widget):
         return queryset
 
 
+def get_organization_queryset(jar_model_uri, jar_query_uri, value, queryset=None):
+    if queryset is None:
+        queryset = Organization.objects.none()
+    data = get_data_from_spinta(
+        model=jar_model_uri,
+        query=jar_query_uri.format(value)
+    ).get('_data', [])
+    org_list = [Organization(
+        id=item.get('ja_kodas'),
+        title=item.get('ja_pavadinimas'),
+        company_code=item.get('ja_kodas'),
+        address=item.get('pilnas_adresas')
+
+    ) for item in data]
+    if org_list:
+        if queryset._result_cache is None:
+            queryset._result_cache = []
+        queryset._result_cache.extend(org_list)
+    return queryset
+
+
 class OrganizationWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     max_results = 10
     jar_model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
-    jar_query_uri = "ja_pavadinimas.contains('{}')"
+    jar_query_uri_title = "ja_pavadinimas.contains('{}')"
+    jar_query_uri_code = "ja_kodas={}"
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
         if term:
             if len(queryset) == 0:
-                data = get_data_from_spinta(
-                    model=self.jar_model_uri, 
-                    query=self.jar_query_uri.format(term)
-                ).get('_data')
-                org_list = [Organization(
-                    id=item.get('ja_kodas'),
-                    title=item.get('ja_pavadinimas'),
-                    company_code=item.get('ja_kodas'),
-                    address=item.get('pilnas_adresas')
-
-                ) for item in data]
-                queryset._result_cache.extend(org_list)
-                self.queryset = queryset      
+                queryset = get_organization_queryset(
+                    self.jar_model_uri,
+                    self.jar_query_uri_title,
+                    term,
+                    queryset
+                )
+                self.queryset = queryset
         return queryset
+
+    def optgroups(self, name, value, attrs=None):
+        """Return only selected options and set QuerySet from `ModelChoicesIterator`."""
+        default = (None, [], 0)
+        groups = [default]
+        has_selected = False
+        selected_choices = {str(v) for v in value}
+        if not self.is_required and not self.allow_multiple_selected:
+            default[1].append(self.create_option(name, "", "", False, 0))
+        if not isinstance(self.choices, ModelChoiceIterator):
+            return super().optgroups(name, value, attrs=attrs)
+        selected_choices = {
+            c for c in selected_choices if c not in self.choices.field.empty_values
+        }
+        field_name = self.choices.field.to_field_name or "pk"
+        query = Q(**{"%s__in" % field_name: selected_choices})
+        queryset = self.choices.queryset.filter(query)
+        if selected_choices and not queryset:
+            queryset = get_organization_queryset(
+                self.jar_model_uri,
+                self.jar_query_uri_code,
+                list(selected_choices)[0]
+            )
+        for obj in queryset:
+            option_value = self.choices.choice(obj)[0]
+            option_label = self.label_from_instance(obj)
+
+            selected = str(option_value) in value and (
+                has_selected is False or self.allow_multiple_selected
+            )
+            if selected is True and has_selected is False:
+                has_selected = True
+            index = len(default[1])
+            subgroup = default[1]
+            subgroup.append(
+                self.create_option(
+                    name, option_value, option_label, selected_choices, index
+                )
+            )
+        return groups
 
 
 class OrganizationUpdateForm(ModelForm):
@@ -355,7 +427,8 @@ class PartnerRegisterForm(ModelForm):
         widget=OrganizationWidget(attrs={
             "data-placeholder": "Organizacijos paieška, įveskite simbolį",
             "style": "min-width: 650px;", 'data-width': '100%', 'data-minimum-input-length': 0
-        })
+        }),
+        queryset=Organization.public.all()
     )
     coordinator_phone_number = CharField(label=_("Koordinatoriaus telefono numeris"))
     request_form = TranslatedFileField(

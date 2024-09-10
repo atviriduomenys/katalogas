@@ -12,6 +12,13 @@
 {% block content_title %}{% endblock %}
 {% block content_subtitle %}<h2>{% translate 'Redaguoti duomenų tiekėjo prašymą' %}</h2>{% endblock %}
 
+{% block submit_buttons_bottom %}
+<div class="submit-row">
+    <a href="{% url 'supervisor_admin:vitrina_orgs_representativerequest_changelist' %}" ><button type="button" style="padding: 11px 20px!important;">{% translate 'Grįžti į sąrašą' %}</button></a>
+    <input type="submit" value="{% translate 'Išsaugoti' %}" class="default" name="_save">
+</div>
+{% endblock %}
+
 {% block admin_change_form_document_ready %}
     {{ block.super }}
     {% block form_scripts %}{% endblock %}

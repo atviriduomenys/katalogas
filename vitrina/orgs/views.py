@@ -82,17 +82,22 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         if not user.organization:
             user.organization = org
         user.save()
-        rep = Representative.objects.create(
-            email=self.representative_request.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            phone=self.representative_request.phone,
-            object_id=org.id,
-            role=Representative.COORDINATOR,
+        if not Representative.objects.filter(
             user=user,
-            content_type=ContentType.objects.get_for_model(org)
-        )
-        rep.save()
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=org.id
+        ):
+            rep = Representative.objects.create(
+                email=self.representative_request.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                phone=self.representative_request.phone,
+                object_id=org.id,
+                role=Representative.COORDINATOR,
+                user=user,
+                content_type=ContentType.objects.get_for_model(org)
+            )
+            rep.save()
 
         self.representative_request.status = RepresentativeRequest.APPROVED
         self.representative_request.save()
@@ -882,8 +887,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         org = form.cleaned_data.get('organization')
-        org_is_registered = Organization.objects.filter(id=org).first()
-        if not org_is_registered:
+        if org and not isinstance(org, Organization):
             org_data = get_data_from_spinta(
                 model=self.jar_model_uri,
                 query=self.jar_query_uri.format(org)
@@ -895,16 +899,21 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
                 provider=True,
                 is_public=True
             )
-        else:
-            org = org_is_registered
 
         representative_already_exists = Representative.objects.filter(
             user=self.request.user,
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.id
         ).first()
+        representative_request_already_exists = RepresentativeRequest.objects.filter(
+            user=self.request.user,
+            organization=org,
+            status=RepresentativeRequest.CREATED
+        )
         if representative_already_exists:
             return redirect('representative-exists')
+        elif representative_request_already_exists:
+            return redirect('representative-request-exists')
         else:
             representative_request = RepresentativeRequest(
                 user=self.request.user,
@@ -2466,3 +2475,7 @@ class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
 
 class RepresentativeExistsView(TemplateView):
     template_name = 'vitrina/orgs/partners/representative_exists.html'
+
+
+class RepresentativeRequestExistsView(TemplateView):
+    template_name = 'vitrina/orgs/partners/representative_request_exists.html'

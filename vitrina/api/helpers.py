@@ -36,11 +36,19 @@ def get_datasets_for_rdf(qs):
                 }
                 for t in dataset.translations.order_by('language_code')
             ),
-            'categories': [
+            'categories': _get_categories(dataset),
+            'hvd_categories': [
                 _get_category(c)
-                for c in dataset.category.all()
+                for c in dataset.category.filter(
+                    groups__translations__title="Didelės vertės rinkiniai"
+                )
+            ],
+            'keywords': [
+                k.name
+                for k in dataset.tags.all()
             ],
             'published': dataset.published,
+            'modified': dataset.modified,
             'organization': dataset.organization,
             'frequency': _get_frequency(dataset.frequency),
             'licence': _get_licence(dataset.licence),
@@ -71,12 +79,27 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
                 'description': dist.description,
             },
         ],
-        'access_url': dist.access_url or dataset.get_absolute_url(),
+        'access_url': dataset.get_absolute_url(),
         'download_url': dist.get_download_url(),
         'licence': _get_licence(dataset.licence),
         'format': _get_format(dist.format),
         'media_type': _get_media_type(dist.format),
+        'created': dist.created,
+        'modified': dist.modified,
     }
+
+
+def _get_categories(dataset):
+    categories = []
+
+    for c in dataset.category.exclude(
+        groups__translations__title="Didelės vertės rinkiniai"
+    ):
+        root_category = c.get_root()
+        if root_category not in categories:
+            categories.append(root_category)
+
+    return [_get_category(c) for c in categories]
 
 
 def _get_category(category: Category):

@@ -96,6 +96,7 @@ class FormatFilter(admin.SimpleListFilter):
 
 class DatasetReportAdmin(admin.ModelAdmin):
     list_display = (
+        'root_organization_display',
         'organization_display',
         'title_display',
         'distribution_published_display',
@@ -126,6 +127,18 @@ class DatasetReportAdmin(admin.ModelAdmin):
         return format_html('<a href="{}" target="_blank">{}</a>', obj.organization.get_absolute_url(), title)
     organization_display.short_description = _('Institucija')
     organization_display.allow_tags = True
+
+    def root_organization_display(self, obj):
+        root_organization = obj.organization.get_root()
+        if root_organization:
+            if len(root_organization.title) >= 40:
+                title = root_organization.title[:40] + "..."
+            else:
+                title = root_organization.title
+            return format_html('<a href="{}" target="_blank">{}</a>', root_organization.get_absolute_url(), title)
+        return "-"
+    root_organization_display.short_description = _('Tėvinė institucija')
+    root_organization_display.allow_tags = True
 
     def title_display(self, obj):
         if len(obj.title) >= 40:
@@ -247,6 +260,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 return value
 
         cols = {
+            'root_organization': _("Tėvinė institucija"),
             'organization': _("Institucija"),
             'dataset_title': _("Duomenų rinkinio pavadinimas"),
             'dataset_url': _("Duomenų rinkinio nuoroda"),
@@ -271,6 +285,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         for item in queryset:
             yield to_row(cols.keys(), {
                 'organization': item.organization.title,
+                'root_organization': item.organization.get_root().title if item.organization.get_root() else '-',
                 'dataset_title': item.title,
                 'dataset_url': "%s%s" % (get_current_domain(request), item.get_absolute_url()),
                 'created': self.distribution_published_display(item),

@@ -9,7 +9,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
-from django.db.models import Value
+from django.db.models import Value, Case, When, CharField, Func, F, Count, Q, Subquery, OuterRef
 from django.db.models.functions import Concat
 from django.http import StreamingHttpResponse
 from django.urls import reverse
@@ -26,6 +26,11 @@ from vitrina.users.forms import RegisterAdminForm
 from vitrina.users.models import User
 
 
+class AtTimeZone(Func):
+    function = "AT TIME ZONE"
+    template = f"(%(expressions)s %(function)s '{settings.TIME_ZONE}')"
+
+
 class UserAdmin(BaseUserAdmin):
     list_display = (
         'created_display',
@@ -35,8 +40,15 @@ class UserAdmin(BaseUserAdmin):
         'email',
         'status_display',
     )
-    search_fields = ['first_name', 'last_name', 'email']
-    list_filter = (FormatFilter, 'is_staff', 'is_superuser', 'is_active', 'organization')
+    search_fields = [
+        'first_name',
+        'last_name',
+        'email',
+        'created_formatted',
+        'last_login_formatted',
+        'main_organization',
+        'status_title'
+    ]
     ordering = ('first_name', 'last_name',)
     delete_confirmation_template = "vitrina/users/admin/delete_confirmation.html"
     delete_selected_confirmation_template = "vitrina/users/admin/delete_selected_confirmation.html"
@@ -45,6 +57,7 @@ class UserAdmin(BaseUserAdmin):
     add_form_template = "vitrina/users/admin/add_form.html"
     list_display_links = ('name_display',)
     actions = None
+    list_filter = (FormatFilter,)
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
@@ -64,6 +77,37 @@ class UserAdmin(BaseUserAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(full_name=Concat('first_name', Value(' '), 'last_name'))
+        queryset = queryset.annotate(created_with_tz=AtTimeZone(F('created')))
+        queryset = queryset.annotate(created_formatted=Func(
+            F('created_with_tz'),
+            Value('YYYY-MM-DD HH24:MI'),
+            function='to_char',
+            output_field=CharField()
+        ))
+        queryset = queryset.annotate(last_login_with_tz=AtTimeZone(F('last_login')))
+        queryset = queryset.annotate(last_login_formatted=Func(
+            F('last_login_with_tz'),
+            Value('YYYY-MM-DD HH24:MI'),
+            function='to_char',
+            output_field=CharField()
+        ))
+        queryset = queryset.annotate(status_title=Case(
+            When(status=User.ACTIVE, then=Value("Aktyvus")),
+            When(status=User.AWAITING_CONFIRMATION, then=Value("Laukiama patvirtinimo")),
+            When(status=User.SUSPENDED, then=Value("Suspenduotas")),
+            When(status=User.DELETED, then=Value("Pašalintas")),
+            output_field=CharField(),
+        ))
+        queryset = queryset.annotate(organization_rep_count=Count(
+            'representative__pk',
+            filter=Q(representative__content_type=ContentType.objects.get_for_model(Organization))
+        ))
+        queryset = queryset.annotate(main_organization=Case(
+            When(organization_rep_count=1, then=Subquery(
+                Organization.objects.filter(representatives__user_id=OuterRef('pk')).values('title')
+            )),
+            default=F('organization__title')
+        ))
         return queryset
 
     def name_display(self, obj: User) -> str:
@@ -91,7 +135,7 @@ class UserAdmin(BaseUserAdmin):
         else:
             return '-'
     organization_display.short_description = _("Organizacija")
-    organization_display.admin_order_field = 'organization'
+    organization_display.admin_order_field = 'main_organization'
 
     def created_display(self, obj):
         if obj.created:
@@ -177,6 +221,8 @@ class UserAdmin(BaseUserAdmin):
                 stream = self._export_user_list(change_list.queryset)
                 result = StreamingHttpResponse(stream, content_type='text/csv')
                 result['Content-Disposition'] = 'attachment; filename=Naudotojai.csv'
+        elif result.context_data.get('cl'):
+            result.context_data['cl'].has_filters = False
         return result
 
     def _export_user_list(self, queryset):

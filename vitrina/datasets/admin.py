@@ -18,7 +18,6 @@ from django.utils.translation import gettext_lazy as _
 from vitrina import settings
 from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, \
     Relation, DatasetReport
-from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
 from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
@@ -80,6 +79,19 @@ class DatasetLateFilter(admin.SimpleListFilter):
             return queryset.filter(pk__in=late_ids)
         if self.value() == "no":
             return queryset.filter(pk__in=not_late_ids)
+
+
+# This is needed to allow "format" query argument in DatasetReport list
+class FormatFilter(admin.SimpleListFilter):
+    title = ''
+    parameter_name = 'format'
+    template = 'vitrina/datasets/admin/hidden_filter.html'
+
+    def lookups(self, request, model_admin):
+        return (request.GET.get(self.parameter_name), ''),
+
+    def queryset(self, request, queryset):
+        return queryset
 
 
 class DatasetReportAdmin(admin.ModelAdmin):

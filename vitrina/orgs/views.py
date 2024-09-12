@@ -760,7 +760,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.object: Representative = form.save()
         subscribe = form.cleaned_data.get('subscribe')
 
-        if not self.object.user.organization:
+        if self.object.user and not self.object.user.organization:
             self.object.user.organization = self.organization
             self.object.user.save()
         link = "%s%s" % (
@@ -811,6 +811,15 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
     def has_permission(self):
         representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
         return has_perm(self.request.user, Action.DELETE, representative)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.role == Representative.COORDINATOR:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
+        else:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        return context
 
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})

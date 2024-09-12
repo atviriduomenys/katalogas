@@ -1253,6 +1253,15 @@ class DeleteMemberView(
         )
         return has_perm(self.request.user, Action.DELETE, representative)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.role == Representative.COORDINATOR:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
+        else:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        return context
+
     def get_success_url(self):
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),

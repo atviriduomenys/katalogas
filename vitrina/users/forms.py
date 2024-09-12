@@ -2,11 +2,12 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm, \
-    PasswordChangeForm
+    PasswordChangeForm, UserChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput
+from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput, \
+    TextInput
 from django.utils.translation import gettext_lazy as _
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
@@ -111,7 +112,7 @@ class RegisterForm(UserCreationForm):
         return email_address
 
 
-class RegisterAdminForm(UserCreationForm):
+class UserCreationAdminForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)
     email = EmailField(label=_("Elektroninis pašto adresas"), required=True, error_messages={})
@@ -146,8 +147,44 @@ class RegisterAdminForm(UserCreationForm):
         if len(last_name) < 3 or not last_name.isalpha():
             self.add_error('last_name',
                            _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
-        if 'agree_to_terms' in cleaned_data and not cleaned_data['agree_to_terms']:
-            self.add_error('agree_to_terms', _("Turite sutikti su naudojimo sąlygomis"))
+        return cleaned_data
+
+    def clean_email(self):
+        email_address = self.cleaned_data.get('email', '')
+        not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
+        if email_address:
+            if User.objects.filter(email=email_address).exists():
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
+                raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
+        return email_address
+
+
+class UserChangeAdminForm(UserChangeForm):
+    status = CharField(label="")
+    email_confirmed = BooleanField(label=_("Patvirtintas"))
+    organization_and_roles = CharField(label=_("Organizacijos ir rolės"))
+    created_date = CharField(label=_("Sukūrimo data"), widget=TextInput(attrs={'style': 'margin-right: 10px;'}))
+    last_login = CharField(label=_("Paskutinį kartą prisijungė"))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        if instance:
+            self.initial['created_date'] = instance.created
+            self.initial['last_login'] = instance.last_login
+
+    def clean(self):
+        cleaned_data = super().clean()
+        first_name = cleaned_data.get('first_name', "")
+        last_name = cleaned_data.get('last_name', "")
+
+        if len(first_name) < 3 or not first_name.isalpha():
+            self.add_error('first_name',
+                           _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"))
+        if len(last_name) < 3 or not last_name.isalpha():
+            self.add_error('last_name',
+                           _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
         return cleaned_data
 
     def clean_email(self):

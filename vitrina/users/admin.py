@@ -22,7 +22,7 @@ from vitrina.filters import FormatFilter
 from vitrina.helpers import email
 from vitrina.orgs.models import Organization
 from vitrina.structure.services import to_row
-from vitrina.users.forms import RegisterAdminForm
+from vitrina.users.forms import UserCreationAdminForm, UserChangeAdminForm
 from vitrina.users.models import User
 
 
@@ -53,19 +53,21 @@ class UserAdmin(BaseUserAdmin):
     delete_confirmation_template = "vitrina/users/admin/delete_confirmation.html"
     delete_selected_confirmation_template = "vitrina/users/admin/delete_selected_confirmation.html"
     change_list_template = 'vitrina/users/admin/change_list.html'
-    add_form = RegisterAdminForm
+    form = UserChangeAdminForm
+    add_form = UserCreationAdminForm
     add_form_template = "vitrina/users/admin/add_form.html"
     list_display_links = ('name_display',)
     actions = None
     list_filter = (FormatFilter,)
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'organization')}),
+        (None, {'fields': ('status',)}),
+        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed')}),
+        (_('Papildoma informacija'), {'fields': ('organization_and_roles',)}),
         (_('Leidimai'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'fields': ('is_active', 'is_staff', 'is_superuser',),
         }),
-        (_('Svarbios datos'), {'fields': ('last_login', 'date_joined')}),
+        (_('Svarbios datos'), {'fields': (('created_date', 'last_login'),)}),
     )
     add_fieldsets = (
         (None, {

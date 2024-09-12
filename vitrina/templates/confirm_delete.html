@@ -9,8 +9,14 @@
             <form id="delete-form" method="post">
                 {% csrf_token %}
                 <strong>
-                    <p >{% translate "Ar tikrai norite ištrinti" %} "{{ object.client_id }}"?</p>
-                     <br/>
+                    <p >
+                        {% if delete_text %}
+                            {{ delete_text }}
+                        {% else %}
+                            {% translate "Ar tikrai norite ištrinti" %} "{{ object }}"?
+                        {% endif %}
+                    </p>
+                    <br/>
                 </strong>
 
                 <a href="#" onclick="window.history.back(); return false;" class="button is-link">{% translate 'Atšaukti' %}</a>

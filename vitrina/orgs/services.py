@@ -243,5 +243,4 @@ def pre_representative_delete(rep: Representative):
                 not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
         ):
             rep.user.is_active = False
-            rep.user.status = User.SUSPENDED
             rep.user.save()

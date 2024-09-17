@@ -84,6 +84,9 @@ INSTALLED_APPS = [
     'extra_settings',
     'rest_framework',
     'drf_yasg',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'vitrina.users',
 
     # Django CMS
@@ -109,9 +112,6 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
     'django_select2',
     'django_recaptcha',
     'vitrina',

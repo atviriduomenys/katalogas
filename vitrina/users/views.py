@@ -385,3 +385,10 @@ class UserStatsView(TemplateView):
 
 class ConfirmEmailView(BaseConfirmEmailView):
     template_name = 'vitrina/users/confirm_email.html'
+
+    def post(self, *args, **kwargs):
+        result = super().post(*args, **kwargs)
+        if self.object and self.object.email_address:
+            self.object.email_address.user.status = User.ACTIVE
+            self.object.email_address.user.save()
+        return result

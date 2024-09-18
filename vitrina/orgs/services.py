@@ -239,8 +239,8 @@ def pre_representative_delete(rep: Representative):
         ).values_list('object_id', flat=True)
 
         if (
-                org_repr.count() == 1 and
-                not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
+            org_repr.count() == 1 and
+            not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
         ):
             rep.user.is_active = False
             rep.user.status = User.SUSPENDED

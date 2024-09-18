@@ -335,6 +335,7 @@ class UserAdmin(BaseUserAdmin):
                     }
                 )
                 obj.status = User.AWAITING_CONFIRMATION
+                obj.representative_set.update(email=obj.email)
 
             elif 'email_confirmed' in form.changed_data:
                 email_confirmed = form.cleaned_data.get('email_confirmed', False)

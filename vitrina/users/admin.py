@@ -263,7 +263,7 @@ class UserAdmin(BaseUserAdmin):
             'organization': _("Organizacija"),
             'full_name': _("Vardas ir pavardė"),
             'email': _("Elektroninis paštas"),
-            'status': _("Būsenas"),
+            'status': _("Būsena"),
         }
         rows = self._get_user(cols, queryset)
         rows = ({v: row[k] for k, v in cols.items()} for row in rows)

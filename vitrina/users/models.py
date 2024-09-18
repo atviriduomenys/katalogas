@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from vitrina.orgs.models import Organization, Representative
-from vitrina.users.managers import UserManager
+from vitrina.users.managers import UserManager, DeletedUserManager
 
 from django.utils.translation import gettext_lazy as _
 
@@ -24,7 +24,7 @@ class User(AbstractUser):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(_("Elektroninis paštas"), unique=True, max_length=255, blank=True, null=True)
+    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
@@ -35,7 +35,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=255, blank=True, null=True)
     needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
+    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
 
     # Deprecated fields bellow
     disabled = models.BooleanField(default=False)
@@ -45,6 +45,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+    objects_with_deleted = DeletedUserManager()
 
     class Meta:
         db_table = 'user'

@@ -78,7 +78,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         org = self.representative_request.organization
-        user = User.objects.get(email=self.representative_request.email)
+        user = self.representative_request.user
         if not user.organization:
             user.organization = org
         user.save()
@@ -88,7 +88,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
             object_id=org.id
         ):
             rep = Representative.objects.create(
-                email=self.representative_request.email,
+                email=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 phone=self.representative_request.phone,
@@ -112,7 +112,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         )
         task.save()
 
-        sub_email_list = [self.representative_request.email]
+        sub_email_list = [user.email]
         organization_url = "%s%s" % (
             get_current_domain(self.request),
             reverse('organization-detail', args=[org.pk])

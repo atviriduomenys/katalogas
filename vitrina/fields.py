@@ -2,7 +2,7 @@ import pathlib
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CheckboxInput
+from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CheckboxInput, CharField
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
 
@@ -202,3 +202,11 @@ class TranslatedFileInput(ClearableFileInput):
 
 class TranslatedFileField(FileField):
     widget = TranslatedFileInput
+
+
+class DisabledTextInput(TextInput):
+    template_name = 'component/disabled_text.html'
+
+
+class DisabledCharField(CharField):
+    widget = DisabledTextInput

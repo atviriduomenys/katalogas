@@ -5,24 +5,27 @@ from datetime import datetime
 import pytz
 from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
 from allauth.utils import build_absolute_uri
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db.models import Value, Case, When, CharField, Func, F, Count, Q, Subquery, OuterRef
 from django.db.models.functions import Concat
 from django.http import StreamingHttpResponse
+from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
 from vitrina.filters import FormatFilter
 from vitrina.helpers import email
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, RepresentativeRequest
 from vitrina.structure.services import to_row
-from vitrina.users.forms import RegisterAdminForm
+from vitrina.users.forms import UserCreationAdminForm, UserChangeAdminForm
 from vitrina.users.models import User
 
 
@@ -51,21 +54,31 @@ class UserAdmin(BaseUserAdmin):
     ]
     ordering = ('first_name', 'last_name',)
     delete_confirmation_template = "vitrina/users/admin/delete_confirmation.html"
-    delete_selected_confirmation_template = "vitrina/users/admin/delete_selected_confirmation.html"
     change_list_template = 'vitrina/users/admin/change_list.html'
-    add_form = RegisterAdminForm
+    change_form_template = 'vitrina/users/admin/change_form.html'
+    form = UserChangeAdminForm
+    add_form = UserCreationAdminForm
     add_form_template = "vitrina/users/admin/add_form.html"
     list_display_links = ('name_display',)
     actions = None
     list_filter = (FormatFilter,)
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'organization')}),
+        (None, {'fields': ('user_status',)}),
+        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed')}),
+        (_('Papildoma informacija'), {'fields': ('organizations_and_roles',)}),
         (_('Leidimai'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'fields': ('is_active', 'is_staff', 'is_superuser',),
         }),
-        (_('Svarbios datos'), {'fields': ('last_login', 'date_joined')}),
+        (_('Svarbios datos'), {'fields': (('created_date', 'last_login_date'),)}),
+    )
+    fieldsets_without_orgs = (
+        (None, {'fields': ('user_status',)}),
+        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed')}),
+        (_('Leidimai'), {
+            'fields': ('is_active', 'is_staff', 'is_superuser',),
+        }),
+        (_('Svarbios datos'), {'fields': (('created_date', 'last_login_date'),)}),
     )
     add_fieldsets = (
         (None, {
@@ -74,8 +87,22 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
+    def get_fieldsets(self, request, obj=None):
+        if not obj:
+            return self.add_fieldsets
+        elif obj.representative_set.filter(
+            content_type=ContentType.objects.get_for_model(Organization)
+        ):
+            return self.fieldsets
+        else:
+            return self.fieldsets_without_orgs
+
     def get_queryset(self, request):
-        queryset = super().get_queryset(request)
+        queryset = User.objects_with_deleted.get_queryset()
+        ordering = self.get_ordering(request)
+        if ordering:
+            queryset = queryset.order_by(*ordering)
+
         queryset = queryset.annotate(full_name=Concat('first_name', Value(' '), 'last_name'))
         queryset = queryset.annotate(created_with_tz=AtTimeZone(F('created')))
         queryset = queryset.annotate(created_formatted=Func(
@@ -157,7 +184,7 @@ class UserAdmin(BaseUserAdmin):
         if obj.status:
             if obj.status == User.ACTIVE:
                 return format_html(
-                    '<span style="color: lightgreen;">{}</span>',
+                    '<span style="color: limegreen;">{}</span>',
                     obj.get_status_display(),
                 )
             elif obj.status == User.AWAITING_CONFIRMATION:
@@ -236,7 +263,7 @@ class UserAdmin(BaseUserAdmin):
             'organization': _("Organizacija"),
             'full_name': _("Vardas ir pavardė"),
             'email': _("Elektroninis paštas"),
-            'status': _("Būsenas"),
+            'status': _("Būsena"),
         }
         rows = self._get_user(cols, queryset)
         rows = ({v: row[k] for k, v in cols.items()} for row in rows)
@@ -267,6 +294,113 @@ class UserAdmin(BaseUserAdmin):
                 'status': item.get_status_display() if item.status else "-",
             })
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = {
+            'title': "",
+            'subtitle': _("Redaguoti naudotoją")
+        }
+        return super().change_view(request, object_id, form_url, extra_context)
 
+    def response_change(self, request, obj):
+        msg = mark_safe(_(
+            f'Naudotojas "'
+            f'<a href="{reverse("admin:vitrina_users_user_change", args=[obj.pk])}">'
+            f'{str(obj)}</a>" pakeistas sėkmingai.')
+        )
+        self.message_user(request, msg, messages.SUCCESS)
+        return self.response_post_save_change(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if change:
+            if 'email' in form.changed_data:
+                if existing_email_address := EmailAddress.objects.filter(user=obj):
+                    existing_email_address.delete()
+                email_address = EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
+                EmailConfirmation.objects.create(
+                    created=datetime.now(),
+                    sent=datetime.now(),
+                    key=secrets.token_urlsafe(),
+                    email_address=email_address
+                )
+                confirmation = EmailConfirmationHMAC(email_address)
+                url = reverse("account_confirm_email", args=[confirmation.key])
+                activate_url = build_absolute_uri(request, url)
+                email(
+                    [email_address.email], 'confirm_email', 'vitrina/email/confirm_email.md',
+                    {
+                        'site': Site.objects.get_current().domain,
+                        'user': str(obj),
+                        'activate_url': activate_url
+                    }
+                )
+                obj.status = User.AWAITING_CONFIRMATION
+                obj.representative_set.update(email=obj.email)
+
+            elif 'email_confirmed' in form.changed_data:
+                email_confirmed = form.cleaned_data.get('email_confirmed', False)
+                obj.status = User.ACTIVE if email_confirmed else User.AWAITING_CONFIRMATION
+
+                email_address = EmailAddress.objects.filter(user=obj, email=obj.email).first()
+                if email_address:
+                    email_address.verified = email_confirmed
+                    email_address.save()
+
+            if 'is_active' in form.changed_data:
+                is_active = form.cleaned_data.get('is_active', False)
+                email_confirmed = form.cleaned_data.get('email_confirmed', False)
+                if is_active and email_confirmed:
+                    obj.status = User.ACTIVE
+                elif is_active:
+                    obj.status = User.AWAITING_CONFIRMATION
+                else:
+                    obj.status = User.SUSPENDED
+
+            obj.save()
+
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        reps = []
+        for rep in obj.representative_set.all():
+            if isinstance(rep.content_object, Organization):
+                rep_display = _(f'Organizacijos "{rep.content_object}" {rep.get_role_display().lower()}: '
+                                f'<a href="{reverse("admin:vitrina_orgs_representative_change", args=[rep.pk])}">'
+                                f'{rep.email}</a>')
+            else:
+                rep_display = _(f'Duomenų rinkinio "{rep.content_object}" {rep.get_role_display().lower()}: '
+                                f'<a href="{reverse("admin:vitrina_orgs_representative_change", args=[rep.pk])}">'
+                                f'{rep.email}</a>')
+            reps.append(rep_display)
+
+        extra_context = {
+            'protected': [mark_safe(rep) for rep in reps]
+        }
+        return super().delete_view(request, object_id, extra_context)
+
+    def delete_model(self, request, obj):
+        EmailAddress.objects.filter(user=obj).delete()
+        obj.subscription_set.all().delete()
+        obj.representativerequest_set.filter(
+            status=RepresentativeRequest.CREATED
+        ).update(
+            status=RepresentativeRequest.REJECTED
+        )
+
+        obj.deleted = True
+        obj.deleted_on = timezone.now()
+        obj.status = User.DELETED
+        obj.save()
+
+    def response_delete(self, request, obj_display, obj_id):
+        msg = mark_safe(_(
+            f'Naudotojas "'
+            f'<a href="{reverse("admin:vitrina_users_user_change", args=[obj_id])}">'
+            f'{str(obj_display)}</a>" pašalintas sėkmingai.')
+        )
+        self.message_user(request, msg, messages.SUCCESS)
+        return redirect(reverse("admin:vitrina_users_user_changelist"))
+
+
+admin.site.unregister(EmailAddress)
 admin.site.register(User, UserAdmin)
 

@@ -270,7 +270,7 @@ def get_datasets_for_user(request, datasets):
 def filter_out_non_public_datasets_for_user(user, datasets, is_org_dataset):
     if user.is_authenticated:
         if not (user.is_staff or user.is_superuser):
-            if user.representative_set:
+            if user.representative_set.all():
                 if is_org_dataset:
                     return datasets.filter(SQ(is_public='true') | SQ(is_public='false') | SQ(managers__contains=user.id))
                 else:

@@ -131,6 +131,7 @@ class RequestListView(FacetedSearchView):
                     choices=Request.FILTER_STATUSES,
                     multiple=False,
                     is_int=False,
+                    order=Request.statuses_ordered
                 ),
                 Filter(
                     *filter_args,

@@ -70,6 +70,7 @@ class Filter:
         display_method: str = None,
         use_str: bool = False,
         remove_search_query: bool = False,
+        order: classmethod = None,
     ):
         self.name = name
         self.title = title
@@ -85,6 +86,7 @@ class Filter:
         self.display_method = display_method
         self.use_str = use_str
         self.remove_search_query = remove_search_query
+        self.order = order
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -122,6 +124,9 @@ class Filter:
         else:
             facet = fields[self.name]
             facet = facet
+
+        if self.order:
+            facet = self.order(facet)
 
         show_count = 0
         for value, count in facet:

@@ -234,7 +234,6 @@ class OrganizationListView(ListView):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
         orgs = Organization.public.all()
-        orgs = orgs.exclude(Q(title__isnull=True) | Q(title=""))
 
         if query:
             orgs = orgs.filter(title__icontains=query)

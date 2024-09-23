@@ -186,9 +186,6 @@ class Representative(models.Model):
         Dataset = apps.get_model('vitrina_datasets', 'Dataset')
         if isinstance(self.content_object, Dataset):
             self.content_object.save()
-        elif isinstance(self.content_object, Organization):
-            for dataset in self.content_object.dataset_set.all():
-                dataset.save()
 
 
 class PublishedReport(models.Model):

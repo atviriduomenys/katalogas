@@ -361,8 +361,8 @@ class CustomPasswordChangeForm(PasswordChangeForm):
 
 
 class UserProfileEditForm(ModelForm):
-    first_name = CharField(label=_("Vardas"), required=False)
-    last_name = CharField(label=_("Pavardė"), required=False)
+    first_name = CharField(label=_("Vardas"), required=True)
+    last_name = CharField(label=_("Pavardė"), required=True)
     phone = CharField(label=_("Telefonas"), required=False)
     email = EmailField(label=_("El. paštas"), required=True)
     organization = ModelChoiceField(label=_("Organizacija"), required=False, queryset=Organization.public.all())
@@ -414,3 +414,27 @@ class UserProfileEditForm(ModelForm):
             organization_ids.extend(dataset_rep_ids)
 
             self.fields['organization'].queryset = self.fields['organization'].queryset.filter(pk__in=organization_ids)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        first_name = cleaned_data.get('first_name', "")
+        last_name = cleaned_data.get('last_name', "")
+
+        if first_name and len(first_name) < 3 or not first_name.isalpha():
+            self.add_error('first_name',
+                           _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"))
+        if last_name and len(last_name) < 3 or not last_name.isalpha():
+            self.add_error('last_name',
+                           _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"))
+        return cleaned_data
+
+    def clean_email(self):
+        email_address = self.cleaned_data.get('email', '')
+        not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
+        instance = self.instance if self.instance and self.instance.pk else None
+        if email_address:
+            if instance and User.objects.filter(email=email_address).exclude(pk=instance.pk).exists():
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
+                raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
+        return email_address

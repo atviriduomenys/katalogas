@@ -327,7 +327,7 @@ class UserAdmin(BaseUserAdmin):
                 url = reverse("account_confirm_email", args=[confirmation.key])
                 activate_url = build_absolute_uri(request, url)
                 email(
-                    [email_address.email], 'confirm_email', 'vitrina/email/confirm_email.md',
+                    [email_address.email], 'confirm_updated_email', 'vitrina/email/confirm_updated_email.md',
                     {
                         'site': Site.objects.get_current().domain,
                         'user': str(obj),

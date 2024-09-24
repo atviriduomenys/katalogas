@@ -47,7 +47,7 @@
             <tr>
                 {% if m.user %}
                 <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
-                <td><a href="mailto:{{ m.user.email }}">{{ m.user.email }}</a></td>
+                <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
                 <td>
                     {% if m.phone %}
                         {{ m.phone }}

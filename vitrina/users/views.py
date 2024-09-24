@@ -261,7 +261,32 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return super(ProfileEditView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        form.save()
+        obj = form.save()
+        if 'email' in form.changed_data:
+            if existing_email_address := EmailAddress.objects.filter(user=obj):
+                existing_email_address.delete()
+            email_address = EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
+            EmailConfirmation.objects.create(
+                created=datetime.now(),
+                sent=datetime.now(),
+                key=secrets.token_urlsafe(),
+                email_address=email_address
+            )
+            confirmation = EmailConfirmationHMAC(email_address)
+            url = reverse("account_confirm_email", args=[confirmation.key])
+            activate_url = build_absolute_uri(self.request, url)
+            email(
+                [email_address.email], 'confirm_updated_email', 'vitrina/email/confirm_updated_email.md',
+                {
+                    'site': Site.objects.get_current().domain,
+                    'user': str(obj),
+                    'activate_url': activate_url
+                }
+            )
+            obj.status = User.AWAITING_CONFIRMATION
+            obj.save()
+            obj.representative_set.update(email=obj.email)
+            messages.success(self.request, _("Išsiuntėme jums laišką el. pašto patvirtinimui."))
         return redirect('user-profile', pk=self.request.user.id)
 
 

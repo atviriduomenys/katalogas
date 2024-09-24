@@ -345,6 +345,8 @@ class UserAdmin(BaseUserAdmin):
                 if email_address:
                     email_address.verified = email_confirmed
                     email_address.save()
+                else:
+                    EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
 
             if 'is_active' in form.changed_data:
                 is_active = form.cleaned_data.get('is_active', False)

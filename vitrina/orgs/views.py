@@ -6,6 +6,7 @@ from typing import List
 
 import pandas as pd
 import requests
+from allauth.account.models import EmailAddress
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -20,7 +21,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from django.views.generic.edit import FormView
-from itsdangerous import URLSafeSerializer
+from itsdangerous import URLSafeSerializer, BadSignature
 from reversion import set_comment
 from reversion.models import Version
 from vitrina.requests.models import RequestAssignment
@@ -830,16 +831,32 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 
 class RepresentativeRegisterView(RegisterView):
+    data: dict
+
+    def dispatch(self, request, *args, **kwargs):
+        token = self.kwargs.get('token')
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        try:
+            self.data = serializer.loads(token)
+        except BadSignature:
+            return redirect('register-link-expired')
+        representative = Representative.objects.filter(pk=self.data.get('representative_id')).first()
+        if representative and representative.user:
+            return redirect('register-link-expired')
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
             user = form.save()
-            token = self.kwargs.get('token')
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            data = serializer.loads(token)
-            subscribe = data.get('subscribe')
+
+            EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=True)
+            user.status = User.ACTIVE
+            user.save()
+
+            subscribe = self.data.get('subscribe')
             try:
-                representative = Representative.objects.get(pk=data.get('representative_id'))
+                representative = Representative.objects.get(pk=self.data.get('representative_id'))
             except ObjectDoesNotExist:
                 representative = None
             if representative:
@@ -869,6 +886,10 @@ class RepresentativeRegisterView(RegisterView):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
+
+class RepresentativeRegisterExpiredView(TemplateView):
+    template_name = 'vitrina/orgs/register_link_expired.html'
 
 
 class PartnerRegisterInfoView(TemplateView):

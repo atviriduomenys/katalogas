@@ -327,7 +327,7 @@ class UserAdmin(BaseUserAdmin):
                 url = reverse("account_confirm_email", args=[confirmation.key])
                 activate_url = build_absolute_uri(request, url)
                 email(
-                    [email_address.email], 'confirm_email', 'vitrina/email/confirm_email.md',
+                    [email_address.email], 'confirm_updated_email', 'vitrina/email/confirm_updated_email.md',
                     {
                         'site': Site.objects.get_current().domain,
                         'user': str(obj),
@@ -345,6 +345,8 @@ class UserAdmin(BaseUserAdmin):
                 if email_address:
                     email_address.verified = email_confirmed
                     email_address.save()
+                else:
+                    EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
 
             if 'is_active' in form.changed_data:
                 is_active = form.cleaned_data.get('is_active', False)

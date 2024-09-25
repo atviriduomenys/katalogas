@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prašymo sukurti negalima" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga." %}</p>
+  <br>
+  <p>
+    <a href="{% url 'home' %}" class="button is-small is-primary">{% translate "Į pradžią" %}</a>
+  </p>
+{% endblock %}

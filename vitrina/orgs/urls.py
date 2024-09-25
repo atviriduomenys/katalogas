@@ -19,6 +19,7 @@ from vitrina.orgs.views import ConfirmOrganizationMergeView
 from vitrina.orgs.views import RepresentativeApiKeyView
 from vitrina.orgs.views import RepresentativeExistsView
 from vitrina.orgs.views import RepresentativeRequestExistsView
+from vitrina.orgs.views import RepresentativeRegisterExpiredView
 from vitrina.orgs.views import OrganizationCreateSearchView, OrganizationCreateView, OrganizationCreateSearchUpdateView
 
 
@@ -41,6 +42,7 @@ urlpatterns = [
     path('orgs/<int:organization_id>/members/<int:pk>/delete/', RepresentativeDeleteView.as_view(),
          name='representative-delete'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
+    path('register/link-expired', RepresentativeRegisterExpiredView.as_view(), name='register-link-expired'),
     path('partner/register-info/', PartnerRegisterInfoView.as_view(), name='partner-register-info'),
     path('partner/register/', PartnerRegisterView.as_view(), name='partner-register'),
     path('partner/register-complete/', PartnerRegisterCompleteView.as_view(), name='partner-register-complete'),

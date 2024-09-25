@@ -219,7 +219,12 @@ def test_profile_edit_form_wrong_login(app: DjangoTestApp, user: User):
 
 @pytest.mark.django_db
 def test_profile_edit_form_correct_login(app: DjangoTestApp):
-    user = User.objects.create_user(email="testas@testas.com", password="testas123")
+    user = User.objects.create_user(
+        email="testas@testas.com",
+        password="testas123",
+        first_name="test",
+        last_name="user"
+    )
     app.set_user(user)
     form = app.get(reverse('user-profile-change', kwargs={'pk': user.pk})).forms['user-profile-form']
     form['phone'] = '12341234'

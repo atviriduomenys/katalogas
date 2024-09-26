@@ -992,7 +992,7 @@ class DatasetStructure(models.Model):
         db_table = 'dataset_structure'
 
     def __str__(self):
-        if self.dataset.metadata.first():
+        if self.dataset and self.dataset.metadata.first():
             if self.dataset.metadata.first().title:
                 return self.dataset.metadata.first().title
             else:
@@ -1088,7 +1088,7 @@ class Attribution(models.Model):
 
 
 class DatasetAttribution(models.Model):
-    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name=_("Duomenų rinkinys"))
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
     organization = models.ForeignKey(
         Organization,
@@ -1155,13 +1155,13 @@ class DatasetRelation(models.Model):
     dataset = models.ForeignKey(
         Dataset,
         verbose_name=_("Duomenų rinkinys"),
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="dataset_relations"
     )
     part_of = models.ForeignKey(
         Dataset,
         verbose_name=_("Priklauso rinkiniui"),
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="related_datasets"
     )
 

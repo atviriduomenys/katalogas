@@ -202,9 +202,10 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         user = context_data.get('user')
         context_data['logged_in_user'] = self.request.user
 
-        subscriptions = Subscription.objects.filter(user=user)\
-            .exclude(sub_type=Subscription.COMMENT)\
-            .prefetch_related('content_object')
+        subscriptions = Subscription.objects.filter(
+            user=user,
+            object_id__isnull=False
+        ).exclude(sub_type=Subscription.COMMENT).prefetch_related('content_object')
         for sub in subscriptions:
             sub.fields = [(_("Laiškai"), sub.email_subscribed)]
             if sub.sub_type == Subscription.ORGANIZATION:

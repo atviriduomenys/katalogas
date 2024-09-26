@@ -118,6 +118,29 @@ class RegisterForm(UserCreationForm):
         return email_address
 
 
+class RepresentativeRegisterForm(RegisterForm):
+    email = EmailField(label=_("El. paštas"), required=True)
+
+    def __init__(self, representative, *args, **kwargs):
+        self.representative = representative
+        super().__init__(*args, **kwargs)
+
+        self.helper.layout = Layout(
+            Field('email', placeholder=_("El. paštas")),
+            Field('first_name', placeholder=_("Vardas")),
+            Field('last_name', placeholder=_("Pavardė")),
+            Field('password1', placeholder=_("Slaptažodis")),
+            Field('password2', placeholder=_("Pakartokite slaptažodį")),
+            Field('agree_to_terms'),
+            Field('captcha'),
+            Submit('submit', _("Registruotis"), css_class='button is-primary', disabled=True),
+        )
+
+        self.fields["email"].disabled = True
+        self.fields["email"].widget.attrs['style'] = "border-color: #767676;"
+        self.initial['email'] = self.representative.email
+
+
 class UserCreationAdminForm(UserCreationForm):
     first_name = CharField(label=_("Vardas"), required=True, )
     last_name = CharField(label=_("Pavardė"), required=True)

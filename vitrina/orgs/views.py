@@ -52,6 +52,7 @@ from vitrina.projects.models import Project
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
+from vitrina.users.forms import RepresentativeRegisterForm
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
@@ -831,7 +832,9 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 
 class RepresentativeRegisterView(RegisterView):
+    form_class = RepresentativeRegisterForm
     data: dict
+    representative: Representative
 
     def dispatch(self, request, *args, **kwargs):
         token = self.kwargs.get('token')
@@ -840,13 +843,19 @@ class RepresentativeRegisterView(RegisterView):
             self.data = serializer.loads(token)
         except BadSignature:
             return redirect('register-link-expired')
-        representative = Representative.objects.filter(pk=self.data.get('representative_id')).first()
-        if representative and representative.user:
+
+        self.representative = Representative.objects.filter(pk=self.data.get('representative_id')).first()
+        if not self.representative or self.representative.user:
             return redirect('register-link-expired')
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['representative'] = self.representative
+        return kwargs
+
     def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
+        form = self.form_class(self.representative, request.POST)
         if form.is_valid():
             user = form.save()
 

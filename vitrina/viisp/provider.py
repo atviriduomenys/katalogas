@@ -74,9 +74,11 @@ class VIISPProvider(OAuth2Provider):
             )
         else:
             user = sociallogin.user = adapter.new_user(request, sociallogin)
+            user.status = User.ACTIVE
             user.set_unusable_password()
             adapter.populate_user(request, sociallogin, common_fields)
         return sociallogin
-    
+
+
 provider_classes = [VIISPProvider]
 providers.registry.register(VIISPProvider)

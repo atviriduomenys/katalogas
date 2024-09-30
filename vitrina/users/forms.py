@@ -342,6 +342,9 @@ class PasswordResetForm(BasePasswordResetForm):
 
 
 class PasswordResetConfirmForm(SetPasswordForm):
+    error_messages = {
+        'password_mismatch': _('Slaptažodžiai nesutampa. Pabandykite įvesti dar kartą.'),
+    }
     new_password1 = CharField(
         label=_("Naujas slaptažodis"),
         widget=PasswordInput(attrs={'autocomplete': 'new-password'}),

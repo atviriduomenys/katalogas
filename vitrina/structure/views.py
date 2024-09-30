@@ -286,6 +286,123 @@ class ModelStructureView(
 WGS84 = 4326
 
 
+async def get_property_data(request, *args, **kwargs):
+    model = kwargs.get('model', '').replace('-', '/')
+    prop = kwargs.get('prop', '')
+    data = await get_data_from_spinta_async(model, f":summary/{prop}")
+    return JsonResponse(data)
+
+
+class PropertyGraphView(
+    PermissionRequiredMixin,
+    View
+):
+    template_name = 'vitrina/structure/property_graph.html'
+
+    object: Dataset
+    model: Model
+    models: List[Model]
+    props: List[Property]
+    can_manage_structure: bool
+
+    object: Dataset
+    model: Model
+    property: Property
+    models: List[Model]
+    props: List[Property]
+    can_manage_structure: bool
+
+    def has_permission(self):
+        return self.property in self.props
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.object).first()
+        if not self.model:
+            raise Http404('No Model matches the given query.')
+        prop_name = kwargs.get('prop')
+        self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
+
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        )
+        if self.can_manage_structure:
+            self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
+            self.props = self.model.get_given_props()
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        context = {}
+        data = json.loads(request.POST.get('data', ''))
+        context['errors'] = data.get('errors', [])
+        data = data.get('_data', [])
+        metadata = self.property.metadata.first()
+        if metadata:
+            prop_type = metadata.type
+            if data:
+                if 'count' in data[0]:
+                    data = sorted(data, key=lambda x: x['count'], reverse=True)
+                context['data'] = data
+
+                if prop_type == 'geometry':
+                    transformed_data = []
+                    context['graph_type'] = 'map'
+                    srid = get_srid(metadata.type_args)
+                    if len(data) > 0:
+                        for item in data:
+                            centroid = loads(item.get('centroid'))
+                            x = centroid.x
+                            y = centroid.y
+                            if srid != WGS84:
+                                x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
+                            item['centroid'] = [x, y]
+                            transformed_data.append(item)
+                    context['data'] = transformed_data
+                    context['source_srid'] = srid
+                    context['target_srid'] = WGS84
+                elif (
+                    prop_type in ['boolean', 'ref'] or
+                    (prop_type in ['string', 'integer'] and self.property.enums.exists())
+                ):
+                    if len(data) > 0:
+                        max_count = max([item['count'] for item in data])
+                    else:
+                        max_count = 0
+                    context['max_count'] = max_count
+                    context['graph_type'] = 'horizontal'
+                else:
+                    x_values = [item['bin'] for item in data]
+                    y_values = [item['count'] for item in data]
+                    context['x_values'] = x_values
+                    context['y_values'] = y_values
+                    context['x_title'] = self.property.title or self.property.name
+                    context['y_title'] = _("Kiekis")
+                    context['graph_type'] = 'vertical'
+
+        rendered_template = render_to_string(self.template_name, context)
+
+        return JsonResponse({
+            'rendered_template': rendered_template
+        })
+
+
 class PropertyStructureView(
     HistoryMixin,
     StructureMixin,
@@ -374,49 +491,8 @@ class PropertyStructureView(
                     'ref',
                 ]
             ):
-                data = get_data_from_spinta(self.model, f":summary/{self.property}")
-                context['errors'] = data.get('errors', [])
-                data = data.get('_data', [])
+                context['has_graph'] = True
 
-                if data:
-                    if 'count' in data[0]:
-                        data = sorted(data, key=lambda x: x['count'], reverse=True)
-                    context['data'] = data
-
-                    if type == 'geometry':
-                        transformed_data = []
-                        context['graph_type'] = 'map'
-                        srid = get_srid(metadata.type_args)
-                        if len(data) > 0:
-                            for item in data:
-                                centroid = loads(item.get('centroid'))
-                                x = centroid.x
-                                y = centroid.y
-                                if srid != WGS84:
-                                    x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
-                                item['centroid'] = [x, y]
-                                transformed_data.append(item)
-                        context['data'] = transformed_data
-                        context['source_srid'] = srid
-                        context['target_srid'] = WGS84
-                    elif (
-                            type in ['boolean', 'ref'] or
-                            (type in ['string', 'integer'] and self.property.enums.exists())
-                    ):
-                        if len(data) > 0:
-                            max_count = max([item['count'] for item in data])
-                        else:
-                            max_count = 0
-                        context['max_count'] = max_count
-                        context['graph_type'] = 'horizontal'
-                    else:
-                        x_values = [item['bin'] for item in data]
-                        y_values = [item['count'] for item in data]
-                        context['x_values'] = x_values
-                        context['y_values'] = y_values
-                        context['x_title'] = self.property.title or self.property.name
-                        context['y_title'] = _("Kiekis")
-                        context['graph_type'] = 'vertical'
         return context
 
     def get_structure_url(self):
@@ -2442,35 +2518,34 @@ class PropertyHistoryView(
         return Version.objects.get_for_object(self.property).order_by('-revision__date_created')
 
 
-class GetUpdatedSummaryView(View):
-    def get(self, request, *args, **kwargs):
-        model = request.GET.get('model')
-        prop = request.GET.get('property')
-        source_srid = request.GET.get('source_srid')
-        target_srid = request.GET.get('target_srid')
-        min_lng = request.GET.get('min_lng')
-        min_lat = request.GET.get('min_lat')
-        max_lng = request.GET.get('max_lng')
-        max_lat = request.GET.get('max_lat')
+async def get_updated_summary(request, *args, **kwargs):
+    model = request.GET.get('model')
+    prop = request.GET.get('property')
+    source_srid = request.GET.get('source_srid')
+    target_srid = request.GET.get('target_srid')
+    min_lng = request.GET.get('min_lng')
+    min_lat = request.GET.get('min_lat')
+    max_lng = request.GET.get('max_lng')
+    max_lat = request.GET.get('max_lat')
 
+    if source_srid != target_srid:
+        min_lat, min_lng = transform_coordinates(min_lat, min_lng, target_srid, source_srid)
+        max_lat, max_lng = transform_coordinates(max_lat, max_lng, target_srid, source_srid)
+
+    query = f"bbox({min_lat}, {min_lng}, {max_lat}, {max_lng})"
+    data = await get_data_from_spinta_async(model, f":summary/{prop}", query)
+    data = data.get('_data', [])
+
+    transformed_data = []
+    for item in data:
+        centroid = loads(item.get('centroid'))
+        x = centroid.x
+        y = centroid.y
         if source_srid != target_srid:
-            min_lat, min_lng = transform_coordinates(min_lat, min_lng, target_srid, source_srid)
-            max_lat, max_lng = transform_coordinates(max_lat, max_lng, target_srid, source_srid)
-
-        query = f"bbox({min_lat}, {min_lng}, {max_lat}, {max_lng})"
-        data = get_data_from_spinta(model, f":summary/{prop}", query)
-        data = data.get('_data', [])
-
-        transformed_data = []
-        for item in data:
-            centroid = loads(item.get('centroid'))
-            x = centroid.x
-            y = centroid.y
-            if source_srid != target_srid:
-                x, y = transform_coordinates(centroid.x, centroid.y, source_srid, target_srid)
-            item['centroid'] = [x, y]
-            transformed_data.append(item)
-        return JsonResponse({'data': transformed_data})
+            x, y = transform_coordinates(centroid.x, centroid.y, source_srid, target_srid)
+        item['centroid'] = [x, y]
+        transformed_data.append(item)
+    return JsonResponse({'data': transformed_data})
 
 
 class VersionCreateView(CreateView, PermissionRequiredMixin):

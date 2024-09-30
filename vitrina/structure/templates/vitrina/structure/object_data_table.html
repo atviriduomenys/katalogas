@@ -1,6 +1,5 @@
 {% load i18n %}
 {% load util_tags %}
-{% load comment_tags %}
 
 {% if errors %}
     <div class="message is-danger">
@@ -115,10 +114,4 @@
             </tbody>
         </table>
     </div>
-    {% if model.name %}
-        <div class="mt-6">
-            {% get_value_by_key data '_id' as id %}
-            {% external_comments content_type=model.name object_id=id user=request.user dataset=dataset %}
-        </div>
-    {% endif %}
 {% endif %}

@@ -30,6 +30,8 @@ from vitrina.structure.views import VersionDetailView
 from vitrina.structure.views import get_model_data_count
 from vitrina.structure.views import get_model_data
 from vitrina.structure.views import ModelDataTableView
+from vitrina.structure.views import ObjectDataTableView
+from vitrina.structure.views import get_object_data
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -51,6 +53,8 @@ urlpatterns = [
     path('datasets/<int:pk>/data/<str:model>/table/', ModelDataTableView.as_view(), name='model-data-table'),
     path('datasets/<int:pk>/data/<str:model>/table-data/', get_model_data, name='model-data-table-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/data/<str:model>/<str:uuid>/table/', ObjectDataTableView.as_view(), name='object-data-table'),
+    path('datasets/<int:pk>/data/<str:model>/<str:uuid>/table-data/', get_object_data, name='object-data-table-data'),
     path('datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/',
          ParamCreateView.as_view(), name='param-create'),
     path('datasets/<int:pk>/params/<int:param_id>/change/', ParamUpdateView.as_view(), name='param-update'),

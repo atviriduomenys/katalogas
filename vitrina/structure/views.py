@@ -729,6 +729,88 @@ class ModelDataView(
         return None
 
 
+async def get_object_data(request, *args, **kwargs):
+    model = kwargs.get('model', '').replace('-', '/')
+    object_uuid = kwargs.get('uuid', '')
+    data = await get_data_from_spinta_async(model, uuid=object_uuid)
+    return JsonResponse(data)
+
+
+class ObjectDataTableView(
+    PermissionRequiredMixin,
+    View
+):
+    template_name = 'vitrina/structure/object_data_table.html'
+
+    object: Dataset
+    model: Model
+    models: List[Model]
+    props: List[Property]
+    can_manage_structure: bool
+
+    def has_permission(self):
+        return self.model in self.models
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        model_name = kwargs.get('model')
+        self.model = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=self.object).first()
+        if not self.model:
+            raise Http404('No Model matches the given query.')
+
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        )
+        if self.can_manage_structure:
+            self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
+            self.props = self.model.get_given_props()
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        context = {
+            'request': request,
+            'dataset': self.object,
+            'model': self.model,
+        }
+        data = json.loads(request.POST.get('data', ''))
+        if data.get('errors'):
+            context['errors'] = data.get('errors')
+        else:
+            context['properties'] = {
+                prop.name: prop
+                for prop in self.props
+            }
+            all_props = self.model.get_given_props().values_list('metadata__name', flat=True)
+            exclude = all_props - context['properties'].keys()
+            exclude.update(EXCLUDED_COLS)
+
+            context['data'] = data
+            context['headers'] = [col for col in data.keys()]
+            context['excluded_cols'] = exclude
+
+        rendered_template = render_to_string(self.template_name, context)
+
+        return JsonResponse({
+            'rendered_template': rendered_template
+        })
+
+
 class ObjectDataView(
     HistoryMixin,
     StructureMixin,
@@ -786,24 +868,8 @@ class ObjectDataView(
         context['is_data'] = True
         context['dataset'] = self.object
         context['model'] = self.model
-
         context['models'] = self.models
-
-        data = get_data_from_spinta(self.model, uuid=self.kwargs.get('uuid'))
-        if data.get('errors'):
-            context['errors'] = data.get('errors')
-        else:
-            context['properties'] = {
-                prop.name: prop
-                for prop in self.props
-            }
-            all_props = self.model.get_given_props().values_list('metadata__name', flat=True)
-            exclude = all_props - context['properties'].keys()
-            exclude.update(EXCLUDED_COLS)
-
-            context['data'] = data
-            context['headers'] = [col for col in data.keys()]
-            context['excluded_cols'] = exclude
+        context['object_id'] = self.kwargs.get('uuid')
         context['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,

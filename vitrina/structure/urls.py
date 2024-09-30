@@ -27,7 +27,9 @@ from vitrina.structure.views import PropertyHistoryView
 from vitrina.structure.views import GetUpdatedSummaryView
 from vitrina.structure.views import VersionListView
 from vitrina.structure.views import VersionDetailView
-from vitrina.structure.views import ModelDataCountView
+from vitrina.structure.views import get_model_data_count
+from vitrina.structure.views import get_model_data
+from vitrina.structure.views import ModelDataTableView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -45,7 +47,9 @@ urlpatterns = [
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/change/',
          PropertyUpdateView.as_view(), name='property-update'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
-    path('datasets/<int:pk>/data/<str:model>/count/', ModelDataCountView.as_view(), name='model-data-count'),
+    path('datasets/<int:pk>/data/<str:model>/count/', get_model_data_count, name='model-data-count'),
+    path('datasets/<int:pk>/data/<str:model>/table/', ModelDataTableView.as_view(), name='model-data-table'),
+    path('datasets/<int:pk>/data/<str:model>/table-data/', get_model_data, name='model-data-table-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
     path('datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/',
          ParamCreateView.as_view(), name='param-create'),

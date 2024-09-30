@@ -2,6 +2,8 @@ import datetime
 import uuid
 import json
 from typing import List, Union
+from urllib import parse
+from urllib.parse import unquote
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -9,6 +11,7 @@ from django.core.cache import cache
 from django.db.models import Func, F, Value, TextField, Max
 from django.http import Http404, StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views import View
 from django.utils.translation import gettext_lazy as _
@@ -35,7 +38,7 @@ from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, 
     MetadataVersion
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import get_data_from_spinta, export_dataset_structure, get_model_name, get_srid, \
-    transform_coordinates
+    transform_coordinates, get_data_from_spinta_async
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
@@ -440,9 +443,39 @@ class PropertyStructureView(
         return None
 
 
-class ModelDataCountView(View):
+async def get_model_data(request, *args, **kwargs):
+    model = kwargs.get('model', '').replace('-', '/')
+    query = ['limit(100)']
+    for key, val in request.GET.items():
+        if key.startswith('select('):
+            select = key
+            query.append(select)
+        else:
+            if val == '':
+                query.append(key)
+            else:
+                tag = f"{key}={val}"
+                query.append(tag)
+
+    query = '&'.join(query)
+    data = await get_data_from_spinta_async(model, query=query)
+    return JsonResponse(data)
+
+
+class ModelDataTableView(
+    PermissionRequiredMixin,
+    View
+):
+    template_name = 'vitrina/structure/model_data_table.html'
+
     object: Dataset
     model: Model
+    models: List[Model]
+    props: List[Property]
+    can_manage_structure: bool
+
+    def has_permission(self):
+        return self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -456,39 +489,126 @@ class ModelDataCountView(View):
         ).filter(model_name=model_name, dataset=self.object).first()
         if not self.model:
             raise Http404('No Model matches the given query.')
+
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object
+        )
+        if self.can_manage_structure:
+            self.models = Model.objects.filter(dataset=self.object).order_by('metadata__name')
+            self.props = self.model.get_given_props()
+        else:
+            self.models = Model.objects. \
+                annotate(access=Max('model_properties__metadata__access')). \
+                filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
+                order_by('metadata__name')
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+
         return super().dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
-        count_query = ['count()']
-        for key, val in request.GET.items():
-            if not key.startswith('select(') and not key.startswith('sort('):
-                if val == '':
-                    count_query.append(key)
+    def post(self, request, *args, **kwargs):
+        context = {'dataset': self.object, 'model': self.model}
+        tags = []
+        select = 'select(*)'
+        selected_cols = []
+        query = self.request.POST.get('query', '')
+        if query:
+            query = unquote(query)
+            query = parse.urlsplit(query).query.split('&')
+            for param in query:
+                if '=' in param:
+                    key, val = param.split('=', 1)
                 else:
-                    tag = f"{key}={val}"
-                    count_query.append(tag)
+                    key, val = param, ""
 
-        total_count = 0
-        count_query = '&'.join(count_query)
-        path = f"{self.model}/?{count_query}"
+                if key.startswith('select('):
+                    select = key
+                    cols = select.replace('select(', '').replace(')', '')
+                    selected_cols = cols.split(',')
+                    selected_cols = [col.strip() for col in selected_cols]
+                else:
+                    if val == '':
+                        tags.append(key)
+                    else:
+                        tag = f"{key}={val}"
+                        tags.append(tag)
 
-        if not cache.get(path):
-            count_data = get_data_from_spinta(self.model, query=count_query)
-            count_data = count_data.get('_data')
-            if count_data and count_data[0].get('count()'):
-                total_count = count_data[0].get('count()')
-
-            total_count_saved = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            cache.set(path, total_count, timeout=86400)
-            cache.set(path + "_saved", total_count_saved, timeout=86400)
+        data = json.loads(request.POST.get('data', ''))
+        data_count = 0
+        if data.get('errors'):
+            context['errors'] = data.get('errors')
         else:
-            total_count = cache.get(path)
-            total_count_saved = cache.get(path + "_saved")
+            context['properties'] = {
+                prop.name: prop
+                for prop in self.props
+            }
+            all_props = self.model.get_given_props().values_list('metadata__name', flat=True)
+            exclude = all_props - context['properties'].keys()
+            exclude.update(EXCLUDED_COLS)
+
+            context['data'] = data.get('_data') or []
+            data_count = len(context['data'])
+            if context['data']:
+                context['headers'] = [col for col in context['data'][0].keys() if col not in exclude]
+            elif selected_cols:
+                context['headers'] = selected_cols
+            else:
+                _data = get_data_from_spinta(self.model, query="limit(1)")
+                _data = _data.get('_data')
+                if _data:
+                    context['headers'] = [col for col in _data[0].keys() if col not in exclude]
+                else:
+                    headers = ['_id']
+                    headers.extend(context['properties'].keys())
+                    context['headers'] = headers
+            context['excluded_cols'] = exclude
+            context['formats'] = FORMATS
+            context['tags'] = tags
+            context['select'] = select
+            context['selected_cols'] = selected_cols or context['headers']
+
+        rendered_template = render_to_string(self.template_name, context)
 
         return JsonResponse({
-            'total_count': total_count,
-            'total_count_saved': total_count_saved
+            'rendered_template': rendered_template,
+            'data_count': data_count
         })
+
+
+async def get_model_data_count(request, *args, **kwargs):
+    model = kwargs.get('model', '').replace('-', '/')
+    count_query = ['count()']
+    for key, val in request.GET.items():
+        if not key.startswith('select(') and not key.startswith('sort('):
+            if val == '':
+                count_query.append(key)
+            else:
+                tag = f"{key}={val}"
+                count_query.append(tag)
+
+    total_count = 0
+    count_query = '&'.join(count_query)
+    path = f"{model}/?{count_query}"
+
+    if not cache.get(path):
+        count_data = await get_data_from_spinta_async(model, query=count_query)
+        count_data = count_data.get('_data')
+        if count_data and count_data[0].get('count()'):
+            total_count = count_data[0].get('count()')
+
+        total_count_saved = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        cache.set(path, total_count, timeout=86400)
+        cache.set(path + "_saved", total_count_saved, timeout=86400)
+    else:
+        total_count = cache.get(path)
+        total_count_saved = cache.get(path + "_saved")
+
+    return JsonResponse({
+        'total_count': total_count,
+        'total_count_saved': total_count_saved
+    })
 
 
 class ModelDataView(
@@ -561,62 +681,7 @@ class ModelDataView(
         context['is_data'] = True
         context['dataset'] = self.object
         context['model'] = self.model
-
         context['models'] = self.models
-
-        tags = []
-        select = 'select(*)'
-        selected_cols = []
-        query = ['limit(100)']
-        for key, val in self.request.GET.items():
-            if key.startswith('select('):
-                select = key
-                cols = select.replace('select(', '').replace(')', '')
-                selected_cols = cols.split(',')
-                selected_cols = [col.strip() for col in selected_cols]
-                query.append(select)
-            else:
-                if val == '':
-                    tags.append(key)
-                    query.append(key)
-                else:
-                    tag = f"{key}={val}"
-                    tags.append(tag)
-                    query.append(tag)
-
-        query = '&'.join(query)
-        data = get_data_from_spinta(self.model, query=query)
-        if data.get('errors'):
-            context['errors'] = data.get('errors')
-        else:
-            context['properties'] = {
-                prop.name: prop
-                for prop in self.props
-            }
-            all_props = self.model.get_given_props().values_list('metadata__name', flat=True)
-            exclude = all_props - context['properties'].keys()
-            exclude.update(EXCLUDED_COLS)
-
-            context['data'] = data.get('_data') or []
-            if context['data']:
-                context['headers'] = [col for col in context['data'][0].keys() if col not in exclude]
-            elif selected_cols:
-                context['headers'] = selected_cols
-            else:
-                _data = get_data_from_spinta(self.model, query="limit(1)")
-                _data = _data.get('_data')
-                if _data:
-                    context['headers'] = [col for col in _data[0].keys() if col not in exclude]
-                else:
-                    headers = ['_id']
-                    headers.extend(context['properties'].keys())
-                    context['headers'] = headers
-            context['excluded_cols'] = exclude
-            context['formats'] = FORMATS
-            context['tags'] = tags
-            context['select'] = select
-            context['selected_cols'] = selected_cols or context['headers']
-
         context['can_view_members'] = has_perm(
             self.request.user,
             Action.VIEW,

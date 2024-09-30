@@ -892,6 +892,25 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         return {'errors': [str(e)]}
 
 
+async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 60):
+    if uuid:
+        url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
+    else:
+        url = f"{SPINTA_SERVER_URL}/{model}/?{query}"
+    try:
+        res = requests.get(url, timeout=timeout)
+    except requests.ReadTimeout:
+        return {'errors': [_(f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})")]}
+    except requests.RequestException as e:
+        return {'errors': [str(e)]}
+
+    try:
+        data = json.loads(res.content)
+        return data
+    except JSONDecodeError as e:
+        return {'errors': [str(e)]}
+
+
 def _parse_access(value: str):
     access = None
     if value:

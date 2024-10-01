@@ -174,7 +174,7 @@ class PasswordResetView(BasePasswordResetView):
 
 class PasswordResetConfirmView(BasePasswordResetConfirmView):
     form_class = PasswordResetConfirmForm
-    template_name = 'base_form.html'
+    template_name = 'vitrina/users/password_reset_form.html'
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):

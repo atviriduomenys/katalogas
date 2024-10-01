@@ -1796,7 +1796,7 @@ class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
             return _(f'{self.get_title_for_indicator(indicator)} '
                      f'pagal rinkinio brandos lygį rinkinio įkėlimo datai')
         else:
-            return _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
+            return _(f'{Y_TITLES.get(indicator, "")} pagal rinkinio brandos lygį laike')
 
 
 class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):

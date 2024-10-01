@@ -873,7 +873,7 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
                 meta.errors.append(_(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.'))
 
 
-def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 60):
+def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 30):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
@@ -892,7 +892,7 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
         return {'errors': [str(e)]}
 
 
-async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 60):
+async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = '', timeout: int = 30):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:

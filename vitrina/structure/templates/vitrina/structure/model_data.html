@@ -94,7 +94,15 @@
                         }
                         $('#total_count_id')[0].innerHTML = totalCount.toLocaleString('lt-LT');
                     });
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#model-data-table')[0].innerHTML = errorHtml;
                 });
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#model-data-table')[0].innerHTML = errorHtml;
             });
         });
 

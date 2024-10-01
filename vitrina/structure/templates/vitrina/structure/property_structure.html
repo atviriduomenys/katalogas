@@ -327,7 +327,15 @@
                             update_map(map, layerGroup, sourceSrid, targetSrid);
                         });
                     }
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#property-summary')[0].innerHTML = errorHtml;
                 });
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#property-summary')[0].innerHTML = errorHtml;
             });
         });
 

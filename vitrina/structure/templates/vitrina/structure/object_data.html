@@ -94,7 +94,15 @@
 
                         map.fitBounds(geoObj.getBounds());
                     });
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#object-data-table')[0].innerHTML = errorHtml;
                 });
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#object-data-table')[0].innerHTML = errorHtml;
             });
         });
     </script>

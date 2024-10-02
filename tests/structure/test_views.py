@@ -20,6 +20,7 @@ from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory
 from vitrina.structure.models import Metadata, Enum, EnumItem, Param
@@ -862,21 +863,21 @@ def test_getall(app: DjangoTestApp):
             'http': {
                 'name': 'HTTP',
                 'query': highlight(
-                    "https://get.data.gov.lt/test/dataset/TestModel",
+                    f"{SPINTA_SERVER_URL}/test/dataset/TestModel",
                     TextLexer(), HtmlFormatter()
                 )
             },
             'httpie': {
                 'name': 'HTTPie',
                 'query': highlight(
-                    'http GET "https://get.data.gov.lt/test/dataset/TestModel"',
+                    f'http GET "{SPINTA_SERVER_URL}/test/dataset/TestModel"',
                     TextLexer(), HtmlFormatter()
                 )
             },
             'curl': {
                 'name': 'curl',
                 'query': highlight(
-                    'curl "https://get.data.gov.lt/test/dataset/TestModel"',
+                    f'curl "{SPINTA_SERVER_URL}/test/dataset/TestModel"',
                     TextLexer(), HtmlFormatter()
                 )
             }
@@ -947,21 +948,21 @@ def test_getall_with_query(app: DjangoTestApp):
             'http': {
                 'name': 'HTTP',
                 'query': highlight(
-                    "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)",
+                    f"{SPINTA_SERVER_URL}/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)",
                     TextLexer(), HtmlFormatter()
                 )
             },
             'httpie': {
                 'name': 'HTTPie',
                 'query': highlight(
-                    'http GET "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
+                    f'http GET "{SPINTA_SERVER_URL}/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
                     TextLexer(), HtmlFormatter()
                 )
             },
             'curl': {
                 'name': 'curl',
                 'query': highlight(
-                    'curl "https://get.data.gov.lt/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
+                    f'curl "{SPINTA_SERVER_URL}/test/dataset/TestModel?select(_id,prop_2)&sort(-prop2)"',
                     TextLexer(), HtmlFormatter()
                 )
             }
@@ -1025,21 +1026,21 @@ def test_getone(app: DjangoTestApp):
             'http': {
                 'name': 'HTTP',
                 'query': highlight(
-                    "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886",
+                    f"{SPINTA_SERVER_URL}/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886",
                     TextLexer(), HtmlFormatter()
                 )
             },
             'httpie': {
                 'name': 'HTTPie',
                 'query': highlight(
-                    'http GET "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
+                    f'http GET "{SPINTA_SERVER_URL}/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
                     TextLexer(), HtmlFormatter()
                 )
             },
             'curl': {
                 'name': 'curl',
                 'query': highlight(
-                    'curl "https://get.data.gov.lt/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
+                    f'curl "{SPINTA_SERVER_URL}/test/dataset/TestModel/c7d66fa2-a880-443d-8ab5-2ab7f9c79886"',
                     TextLexer(), HtmlFormatter()
                 )
             }
@@ -1105,21 +1106,21 @@ def test_changes(app: DjangoTestApp):
             'http': {
                 'name': 'HTTP',
                 'query': highlight(
-                    "https://get.data.gov.lt/test/dataset/TestModel/:changes",
+                    f"{SPINTA_SERVER_URL}/test/dataset/TestModel/:changes",
                     TextLexer(), HtmlFormatter()
                 )
             },
             'httpie': {
                 'name': 'HTTPie',
                 'query': highlight(
-                    'http GET "https://get.data.gov.lt/test/dataset/TestModel/:changes"',
+                    f'http GET "{SPINTA_SERVER_URL}/test/dataset/TestModel/:changes"',
                     TextLexer(), HtmlFormatter()
                 )
             },
             'curl': {
                 'name': 'curl',
                 'query': highlight(
-                    'curl "https://get.data.gov.lt/test/dataset/TestModel/:changes"',
+                    f'curl "{SPINTA_SERVER_URL}/test/dataset/TestModel/:changes"',
                     TextLexer(), HtmlFormatter()
                 )
             }

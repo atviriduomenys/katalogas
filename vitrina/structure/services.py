@@ -881,7 +881,7 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {'errors': [_(f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})")]}
+        return {'errors': [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
     except requests.RequestException as e:
         return {'errors': [str(e)]}
 
@@ -900,7 +900,7 @@ async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None,
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {'errors': [_(f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})")]}
+        return {'errors': [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
     except requests.RequestException as e:
         return {'errors': [str(e)]}
 

@@ -32,6 +32,7 @@ from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.forms import EnumForm, ModelCreateForm, ModelUpdateForm, PropertyForm, ParamForm, VersionForm
 from vitrina.structure.models import Model, Property, Metadata, EnumItem, Enum, PropertyList, Base, ParamItem, Param, \
@@ -1164,7 +1165,7 @@ class GetAllApiView(ApiView):
         return context
 
     def get_query(self):
-        return f"https://get.data.gov.lt/{self.model}"
+        return f"{SPINTA_SERVER_URL}/{self.model}"
 
 
 class GetOneApiView(ApiView):
@@ -1191,7 +1192,7 @@ class GetOneApiView(ApiView):
         return context
 
     def get_query(self):
-        return f"https://get.data.gov.lt/{self.model}/{self.kwargs.get('uuid')}"
+        return f"{SPINTA_SERVER_URL}/{self.model}/{self.kwargs.get('uuid')}"
 
     def get_data_url(self):
         if self.model.name:
@@ -1238,7 +1239,7 @@ class ChangesApiView(ApiView):
         return context
 
     def get_query(self):
-        return f"https://get.data.gov.lt/{self.model}/:changes"
+        return f"{SPINTA_SERVER_URL}/{self.model}/:changes"
 
 
 class DatasetStructureExportView(PermissionRequiredMixin, View):

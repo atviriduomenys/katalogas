@@ -16,6 +16,7 @@ import tagulous
 from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
+from vitrina.datasets.forms import DatasetAdminForm
 from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, \
     Relation, DatasetReport
 from vitrina.filters import FormatFilter
@@ -30,6 +31,7 @@ class AttributionAdmin(admin.ModelAdmin):
 
 class DatasetAdmin(TranslatableAdmin, VersionAdmin):
     list_display = ('title', 'description', 'is_public')
+    form = DatasetAdminForm
 
 
 class GroupAdmin(TranslatableAdmin):

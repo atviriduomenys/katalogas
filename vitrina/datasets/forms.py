@@ -173,6 +173,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         return name
 
 
+class DatasetAdminForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        exclude = ('slug', 'current_structure')
+
+
 class DatasetSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)

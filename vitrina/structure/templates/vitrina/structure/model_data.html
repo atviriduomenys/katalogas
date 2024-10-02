@@ -30,271 +30,12 @@
         {% include 'vitrina/structure/side_menu.html' %}
     </div>
 
-    <div class="column is-three-quarters">
-        {% if errors %}
-            <div class="message is-danger">
-                <div class="message-body">
-                    {% for error in errors %}
-                        {% if error.message %}
-                            <p>{{ error.message }}</p>
-                        {% else %}
-                            <p>{{ error }}</p>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        {% else %}
-            <div class="field has-addons has-addons-right">
-              <p class="control">
-                <a class="button" onclick="downloadData()">
-                  {% translate "Atsisiųsti" %}
-                </a>
-              </p>
-              <p class="control">
-                <span class="select">
-                  <select id="select_format_id" aria-label="{% translate 'Atsisiuntimo formatas' %}">
-                      {% for format, name in formats.items %}
-                        <option value="{{ format }}">{{ name }}</option>
-                      {% endfor %}
-                  </select>
-                </span>
-              </p>
-            </div>
-            <div>
-                <h2 class="title is-4-mobile">{% translate "Filtras" %}:</h2>
-                <div class="tags are-medium">
-                    {% for tag in tags %}
-                        <span class="tag" id="remove_tag_{{ forloop.counter0 }}_id">
-                            {{ tag }}
-                            <button
-                                id="remove_tag_{{ tag }}_id"
-                                class="delete is-small"
-                                onclick="removeFilter('{{ tag }}', {{ forloop.counter0 }})"
-                                title="{% translate 'Pašalinti filtrą' %}"
-                                aria-label="{% translate 'Pašalinti filtrą' %}">
-                            </button>
-                        </span>
-                    {% endfor %}
-                    <div id="select_cols_id" class="dropdown is-hoverable">
-                        <div class="dropdown-trigger">
-                            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
-                                <span>{{ select|truncatechars:30 }}</span>
-                                <span class="icon is-small">
-                                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                                </span>
-                            </button>
-                        </div>
-                        <div class="dropdown-menu" id="dropdown-menu">
-                            <div class="dropdown-content">
-                                <ul>
-                                    {% if '_id' in selected_cols %}
-                                        <li>
-                                            <input id="_id" type="checkbox" checked title="_id"/>
-                                            <label for="_id">_id</label>
-                                        </li>
-                                    {% else %}
-                                        <li>
-                                            <input id="_id" type="checkbox" title="_id"/>
-                                            <label for="_id">_id</label>
-                                        </li>
-                                    {% endif %}
-
-                                    {% for col in properties.keys %}
-                                        {% if col in selected_cols %}
-                                        <li>
-                                            <input id="{{ col }}" type="checkbox" checked title="{{ col }}"/>
-                                            <label for="{{ col }}">{{ col }}</label>
-                                        </li>
-                                        {% else %}
-                                        <li>
-                                            <input id="{{ col }}" type="checkbox" title="{{ col }}"/>
-                                            <label for="{{ col }}">{{ col }}</label>
-                                        </li>
-                                        {% endif %}
-                                    {% endfor %}
-                                </ul>
-
-                                <div class="buttons">
-                                    <a class="button is-primary is-small m-t-md is-flex" onclick="select()">
-                                        {% translate "Rodyti" %}
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-5 mb-2">
-                <p id="total_count_id">{{ total_count }}</p>
-            </div>
-
-            <div class="filter-table">
-                <table class="table is-bordered">
-                    <tbody>
-                    <tr>
-                        {% for col in headers %}
-                            {% get_value_by_key properties col as prop %}
-                                <th id="{{ col }}_col_id" class="is-relative">
-                                    <div class="has-text-centered col-title">
-                                        <span>
-                                            {% if prop %}
-                                                <a href="{{ prop.get_absolute_url }}">{{ col }}</a>
-                                            {% else %}
-                                                {{ col }}
-                                            {% endif %}
-                                            {% if col == '_id' or prop.metadata.first.unique %}
-                                                <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
-                                            {% endif %}
-                                        </span>
-                                        <a class="is-size-7" id="{{ col }}_button_id" onclick="showFilterWindow('{{ col }}')">▼</a>
-                                    </div>
-                                    <div class="has-text-centered">
-                                        <small class="has-text-weight-normal is-italic">
-                                            {% if prop.ref_model %}
-                                                <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
-                                            {% else %}
-                                                {{ prop.metadata.first.type }}
-                                            {% endif %}
-                                        </small>
-                                    </div>
-
-                                    <div id="{{ col }}_filter_id" style="display: none">
-                                        <div class="table-menu">
-                                            <div class="field has-addons">
-                                              <div class="control">
-                                                <label for="{{ col }}_compare_select_id" class="label is-small">{% translate 'Rūšiavimo veiksmas' %}</label>
-                                                <div class="select is-small">
-                                                  <select id="{{ col }}_compare_select_id">
-                                                    <option value="=">=</option>
-                                                    <option value=">">></option>
-                                                    <option value="<"><</option>
-                                                    <option value=">=">>=</option>
-                                                    <option value="<="><=</option>
-                                                    <option value="!=">!=</option>
-                                                    <option value="contains">contains</option>
-                                                    <option value="startswith">startswith</option>
-                                                    <option value="endswith">endswith</option>
-                                                  </select>
-                                                </div>
-                                              </div>
-                                              <div class="control">
-                                                <label for="{{ col }}_compare_value_id" class="label is-small">{% translate 'Rūšiavimo reikšmė' %}</label>
-                                                <input class="input is-small" id="{{ col }}_compare_value_id" type="text" title="{% translate 'Palyginimo reikšmė' %}"/>
-                                              </div>
-                                            </div>
-                                            <div class="mb-3 is-inine-block">
-                                                <div class="buttons is-right">
-                                                    <span style="flex: auto; margin-bottom: 0.5em;">{% translate "Rūšiuoti" %}</span>
-                                                    <button id="{{ col }}_order_asc_id"
-                                                            class="button is-primary is-small"
-                                                            onclick="orderBy('{{ col }}', false)"
-                                                            title="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
-                                                            aria-label="{% translate 'Rūšiuoti mažėjimo tvarka' %}"
-                                                    >
-                                                        <span class="icon has-text-white"><i class="fas fa-arrow-up"></i></span>
-                                                    </button>
-                                                    <button id="{{ col }}_order_desc_id"
-                                                            class="button is-primary is-small"
-                                                            onclick="orderBy('{{ col }}')"
-                                                            title="{% translate 'Rūšiuoti didėjimo tvarka' %}"
-                                                            aria-label="{% translate 'Rūšiuoti didėjimo tvarka' %}"
-                                                    >
-                                                        <span class="icon has-text-white"><i class="fas fa-arrow-down"></i></span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="no-margin-bottom buttons is-right">
-                                                <button id="{{ col }}_hide_id" class="button is-primary is-small is-fixed-length" onclick="hide('{{ col }}')">
-                                                    {% translate "Slėpti" %}
-                                                </button>
-                                            </div>
-                                            <div class="buttons is-right">
-                                                <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
-                                                    {% translate "Filtruoti" %}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </th>
-                        {% endfor %}
-                    </tr>
-                    {% if data %}
-                        {% for row in data %}
-                            <tr>
-                                {% for col, val in row.items %}
-                                    {% get_value_by_key properties col as prop %}
-
-                                    {% if col not in excluded_cols %}
-                                        {% if col == '_id' %}
-                                            <td id="{{ col }}_col_id">
-                                                {% if model.name %}
-                                                    <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
-                                                {% else %}
-                                                    {{ val|slice:":8" }}
-                                                {% endif %}
-                                            </td>
-                                        {% elif val|is_dict %}
-                                            {% if prop.ref_model %}
-                                                {% get_value_by_key val '_id' as val %}
-                                                {% if val != None %}
-                                                    <td id="{{ col }}_col_id">
-                                                        {% if prop.ref_model.name %}
-                                                            <a href="{% url 'object-data' prop.ref_model.dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
-                                                        {% else %}
-                                                            {{ val|slice:":8" }}
-                                                        {% endif %}
-                                                    </td>
-                                                {% else %}
-                                                    <td class="has-background-white-ter"></td>
-                                                {% endif %}
-                                            {% else %}
-                                                {% if val != None %}
-                                                    {% for k, v in val.items %}
-                                                        {% if k == '_id' %}
-                                                            {% if v != None %}
-                                                                <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
-                                                            {% else %}
-                                                                <td class="has-background-white-ter"></td>
-                                                            {% endif %}
-                                                        {% else %}
-                                                            {% if v != None %}
-                                                                <td id="{{ col }}_col_id">{{ v }}</td>
-                                                            {% else %}
-                                                                <td class="has-background-white-ter"></td>
-                                                            {% endif %}
-                                                        {% endif %}
-                                                        {% if not forloop.last %}
-                                                            <br/>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                {% else %}
-                                                    <td class="has-background-white-ter"></td>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% elif val|is_number %}
-                                            <td id="{{ col }}_col_id" class="has-text-right">{{ val }}</td>
-                                        {% else %}
-                                            {% if val != None %}
-                                                <td id="{{ col }}_col_id">{{ val|truncatechars:256 }}</td>
-                                            {% else %}
-                                                <td class="has-background-white-ter"></td>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="{{ headers|length }}">{% translate "Duomenų nėra" %}</td>
-                        </tr>
-                    {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        {% endif %}
+    <div id="model-data-table" class="column is-three-quarters">
+        <div class="columns no-margin-bottom">
+            <div class="column is-4"></div>
+            <div class="column is-3 mt-6"><progress class="progress is-small is-primary" max="100"></progress></div>
+            <div class="column is-5"></div>
+        </div>
     </div>
 </div>
 
@@ -302,41 +43,68 @@
 
 {% block scripts %}
     <script type="text/javascript">
+
         $(function () {
             let datasetId = {{ dataset.pk }};
             let model = "{{model.name}}";
-            let shownCount = {{data|length}};
+            let modelFullName = "{{model.full_name}}";
+            modelFullName = modelFullName.replaceAll('/', '-')
             let search = location.search;
+
             $.ajax({
-                url: `/datasets/${datasetId}/data/${model}/count/${search}`
+                url: `/datasets/${datasetId}/data/${modelFullName}/table-data/${search}`,
             }).then(response => {
-                let count = response['total_count'];
-                let countSaved = response['total_count_saved'];
-                let totalCount = "";
-                if (shownCount == 1) {
-                    totalCount = gettext(`Rodoma ${shownCount} objektas iš ${count} (atnaujinta ${countSaved})`);
-                }
-                else {
-                    totalCount = gettext(`Rodoma ${shownCount} objektai iš ${count} (atnaujinta ${countSaved})`);
-                }
-                $('#total_count_id')[0].innerHTML = totalCount.toLocaleString('lt-LT');;
-            });
+                $.ajax({
+                    url: `/datasets/${datasetId}/data/${model}/table/`,
+                    type: "POST",
+                    data: {
+                        'csrfmiddlewaretoken': '{{csrf_token }}',
+                        'data': JSON.stringify(response),
+                        'query': search
+                    }
+                }).then(response => {
+                    $('#model-data-table')[0].innerHTML = response['rendered_template'];
+                    let shownCount = response['data_count'];
 
-            let selectCheckList = $('#select_cols_id');
-            let anchor = selectCheckList.find('.anchor');
-            anchor.on('click', () => {
-                if (selectCheckList.hasClass('visible')) {
-                    selectCheckList.removeClass('visible');
-                }
-                else {
-                    selectCheckList.addClass('visible');
-                }
-            });
+                    let selectCheckList = $('#select_cols_id');
+                    let anchor = selectCheckList.find('.anchor');
+                    anchor.on('click', () => {
+                        if (selectCheckList.hasClass('visible')) {
+                            selectCheckList.removeClass('visible');
+                        }
+                        else {
+                            selectCheckList.addClass('visible');
+                        }
+                    });
 
-            let width = $('.dropdown-menu').css('width');
-            selectCheckList.find('span.anchor').css('width', width);
+                    let width = $('.dropdown-menu').css('width');
+                    selectCheckList.find('span.anchor').css('width', width);
+
+                    $.ajax({
+                        url: `/datasets/${datasetId}/data/${modelFullName}/count/${search}`
+                    }).then(response => {
+                        let count = response['total_count'];
+                        let countSaved = response['total_count_saved'];
+                        let totalCount = "";
+                        if (shownCount == 1) {
+                            totalCount = gettext(`Rodoma ${shownCount} objektas iš ${count} (atnaujinta ${countSaved})`);
+                        }
+                        else {
+                            totalCount = gettext(`Rodoma ${shownCount} objektai iš ${count} (atnaujinta ${countSaved})`);
+                        }
+                        $('#total_count_id')[0].innerHTML = totalCount.toLocaleString('lt-LT');
+                    });
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#model-data-table')[0].innerHTML = errorHtml;
+                });
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#model-data-table')[0].innerHTML = errorHtml;
+            });
         });
-
 
         function showFilterWindow(col) {
             $(`div[id$='_filter_id']:not(#${col}_filter_id)`).each(function() {
@@ -483,7 +251,8 @@
             let search = location.search.substring(1);
             let searchParams = search.split('&');
 
-            let select = {{ selected_cols|safe }};
+            let select = $('#select_dropdown').data('selectedCols');
+            select = select.replace("[","").replace("]","").replaceAll("'", "").replaceAll(" ", "").split(',');
             let query = "";
             for (let param of searchParams) {
                 if (param) {

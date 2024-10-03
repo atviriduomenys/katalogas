@@ -1,13 +1,14 @@
 import pytz
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm, \
     PasswordChangeForm, UserChangeForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput
+from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput, \
+    HiddenInput
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -198,6 +199,22 @@ class UserChangeAdminForm(UserChangeForm):
     organizations_and_roles = DisabledCharField(label=_("Organizacijos ir rolės"), required=False)
     created_date = CharField(label=_("Sukūrimo data"), required=False)
     last_login_date = CharField(label=_("Paskutinį kartą prisijungė"), required=False)
+    password1 = CharField(
+        label=_("Atnaujinti slaptažodį"),
+        strip=False,
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        required=False
+    )
+    password2 = CharField(
+        label=_("Pakartoti slatažodį"),
+        strip=False,
+        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        required=False
+    )
+
+    error_messages = {
+        'password_mismatch': _('Slaptažodžio laukai nesutapo'),
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -213,6 +230,12 @@ class UserChangeAdminForm(UserChangeForm):
         self.fields["last_login_date"].widget.attrs['style'] = "background-color: #f2f2f2;"
 
         if instance:
+            if instance.status != User.ACTIVE:
+                if 'password1' in self.fields:
+                    self.fields['password1'].widget = HiddenInput()
+                if 'password' in self.fields:
+                    self.fields['password2'].widget = HiddenInput()
+
             tz = pytz.timezone(settings.TIME_ZONE)
             self.initial['created_date'] = instance.created.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
             if instance.last_login:
@@ -286,6 +309,33 @@ class UserChangeAdminForm(UserChangeForm):
             if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
                 raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
         return email_address
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise ValidationError(
+                self.error_messages['password_mismatch'],
+                code='password_mismatch',
+            )
+        return password2
+
+    def _post_clean(self):
+        super()._post_clean()
+        password = self.cleaned_data.get('password1')
+        if password:
+            try:
+                password_validation.validate_password(password, self.instance)
+            except ValidationError as error:
+                self.add_error('password1', error)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.cleaned_data.get('password1'):
+            user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+        return user
 
 
 class PasswordSetForm(ModelForm):

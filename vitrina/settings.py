@@ -441,3 +441,5 @@ CACHES = {
         "LOCATION": "unique-snowflake",
     }
 }
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = None

@@ -121,7 +121,7 @@ class Dataset(TranslatableModel):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'), blank=True, null=True)
+    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'), blank=True)
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.SET_NULL, db_column='catalog', blank=True, null=True)
@@ -166,9 +166,9 @@ class Dataset(TranslatableModel):
         'DatasetRelation',
         related_name="related_datasets",
         verbose_name=_("Duomenų rinkinio ryšiai"),
-        blank=True, null=True
+        blank=True
     )
-    type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True, null=True)
+    type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True)
     endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
     endpoint_type = models.ForeignKey(
         'DataServiceType',

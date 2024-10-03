@@ -239,6 +239,7 @@ def get_total_by_indicator_from_stats(st, indicator, total):
         if lev:
             level_avg = int(sum(lev) / len(lev))
         return level_avg
+    return total
 
 
 def get_public_dataset_id_list():

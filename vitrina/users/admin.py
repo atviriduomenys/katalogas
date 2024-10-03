@@ -65,7 +65,8 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {'fields': ('user_status',)}),
-        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed')}),
+        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed',
+                                                'password1', 'password2',)}),
         (_('Papildoma informacija'), {'fields': ('organizations_and_roles',)}),
         (_('Leidimai'), {
             'fields': ('is_active', 'is_staff', 'is_superuser',),
@@ -74,7 +75,8 @@ class UserAdmin(BaseUserAdmin):
     )
     fieldsets_without_orgs = (
         (None, {'fields': ('user_status',)}),
-        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed')}),
+        (_('Asmeninė informacija'), {'fields': ('first_name', 'last_name', 'email', 'email_confirmed',
+                                                'password1', 'password2',)}),
         (_('Leidimai'), {
             'fields': ('is_active', 'is_staff', 'is_superuser',),
         }),

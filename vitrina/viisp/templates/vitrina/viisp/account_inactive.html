@@ -2,10 +2,10 @@
 {% load i18n %}
 {% load static %}
 
-{% block current_title %}{% translate "Registracija negalima" %}{% endblock %}
+{% block current_title %}{% translate "Prisijungti nepavyko" %}{% endblock %}
 
 {% block content %}
-  <p>{% translate "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga." %}</p>
+  <p>{% translate "Jūsų paskyra yra neaktyvi." %}</p>
   <br>
   <p>
     <a href="{% url 'home' %}" class="button is-small is-primary">{% translate "Į pradžią" %}</a>

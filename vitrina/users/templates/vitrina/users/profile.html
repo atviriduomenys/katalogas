@@ -71,27 +71,27 @@
                 </div>
                 {% endif %}
 
-                {% if user.phone %}
                 <div class="columns">
                     <div class="column is-one-third has-text-right">
                         <strong>{% translate "Telefonas" %}</strong>
                     </div>
                     <div class="column">
-                        {{ user.phone }}
+                        {{ user.phone|default:"-" }}
                     </div>
                 </div>
-                {% endif %}
 
-                {% if user.organization %}
                 <div class="columns">
                     <div class="column is-one-third has-text-right">
                         <strong>{% translate "Organizacija" %}</strong>
                     </div>
                     <div class="column">
-                        <a href="{{ user.organization.get_absolute_url }}">{{ user.organization }}</a>
+                        {% if user.organization %}
+                            <a href="{{ user.organization.get_absolute_url }}">{{ user.organization }}</a>
+                        {% else %}
+                            <p>-</p>
+                        {% endif %}
                     </div>
                 </div>
-                {% endif %}
 
                 {% if can_edit_profile %}
                 <div class="columns">

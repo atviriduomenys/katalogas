@@ -473,21 +473,9 @@ class UserProfileEditForm(ModelForm):
 
         user = self.instance if self.instance and self.instance.pk else None
         if user:
-            organization_ids = []
-            if user.organization:
-                organization_ids.append(user.organization.pk)
-
-            organization_rep_ids = user.representative_set.filter(
+            organization_ids = user.representative_set.filter(
                 content_type=ContentType.objects.get_for_model(Organization)
             ).values_list('object_id', flat=True)
-
-            dataset_rep_ids = user.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Dataset)
-            ).values_list('object_id', flat=True)
-            dataset_rep_ids = Dataset.objects.filter(pk__in=dataset_rep_ids).values_list('organization__pk', flat=True)
-
-            organization_ids.extend(organization_rep_ids)
-            organization_ids.extend(dataset_rep_ids)
 
             self.fields['organization'].queryset = self.fields['organization'].queryset.filter(pk__in=organization_ids)
 

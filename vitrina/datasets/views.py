@@ -1049,9 +1049,6 @@ class CreateMemberView(
             self.object.user = user
             self.object.save()
 
-            if not user.organization:
-                user.organization = self.dataset.organization
-                user.save()
             link = "%s%s" % (
                 get_current_domain(self.request),
                 reverse('dataset-detail', kwargs={'pk': self.object.object_id})

@@ -659,16 +659,19 @@ def test_pre_representative_delete__one_organization():
         content_type=ct,
         object_id=organization.pk
     )
+    rep.user.organization = organization
+    rep.user.save()
     pre_representative_delete(rep)
     rep.refresh_from_db()
     assert rep.user.is_active is False
+    assert rep.user.organization is None
 
 
 @pytest.mark.django_db
 def test_pre_representative_delete__two_organizations():
-    user = UserFactory()
     organization1 = OrganizationFactory()
     organization2 = OrganizationFactory()
+    user = UserFactory(organization=organization2)
     ct = ContentType.objects.get_for_model(Organization)
     rep = RepresentativeFactory(
         content_type=ct,
@@ -683,6 +686,7 @@ def test_pre_representative_delete__two_organizations():
     pre_representative_delete(rep)
     user.refresh_from_db()
     assert user.is_active is True
+    assert user.organization == organization2
 
 
 @pytest.mark.django_db

@@ -23,7 +23,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina import settings
 from vitrina.filters import FormatFilter
 from vitrina.helpers import email
-from vitrina.orgs.models import Organization, RepresentativeRequest
+from vitrina.orgs.models import Organization, RepresentativeRequest, Representative
 from vitrina.structure.services import to_row
 from vitrina.users.forms import UserCreationAdminForm, UserChangeAdminForm
 from vitrina.users.models import User
@@ -237,6 +237,10 @@ class UserAdmin(BaseUserAdmin):
                 'activate_url': activate_url
             }
         )
+
+        # update related representatives
+        if reps := Representative.objects.filter(email=obj.email, user__isnull=True):
+            reps.update(user=obj)
 
         return super().response_add(request, obj, post_url_continue)
 

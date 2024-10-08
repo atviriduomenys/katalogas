@@ -64,6 +64,7 @@ class SentMail(models.Model):
     email_subject = models.TextField(blank=True, null=True, verbose_name="Tema")
     email_content = models.TextField(blank=True, null=True, verbose_name="Turinys")
     email_sent = models.BooleanField(blank=True, null=True, verbose_name="Išsiųsta")
+    identifier = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Identifikatorius"))
 
     class Meta:
         managed = True

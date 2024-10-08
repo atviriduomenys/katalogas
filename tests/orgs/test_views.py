@@ -290,6 +290,32 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
 
 
 @pytest.mark.django_db
+def test_representative_create_without_user_for_two_organizations(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    organization1 = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    app.set_user(user)
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': organization1.pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form.submit()
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': organization2.pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form.submit()
+
+    assert Representative.objects.filter(email="new@gmail.com").count() == 2
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["new@gmail.com"]
+
+
+@pytest.mark.django_db
 def test_representative_subscription(app: DjangoTestApp, representative_data):
     subscriptions_before = Subscription.objects.all()
     assert len(subscriptions_before) == 0

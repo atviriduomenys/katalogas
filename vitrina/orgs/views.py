@@ -24,6 +24,8 @@ from django.views.generic.edit import FormView
 from itsdangerous import URLSafeSerializer, BadSignature
 from reversion import set_comment
 from reversion.models import Version
+
+from vitrina.messages.models import SentMail
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
@@ -606,6 +608,10 @@ class OrganizationCreateView(
         return reverse('organization-detail', kwargs={'pk': organization.pk})
 
 
+DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = 'auth-org-representative-without-credentials'
+ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = "organization-member-add"
+
+
 class RepresentativeCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -614,7 +620,6 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
-    email_identifier = "organization-member-add"
 
     organization: Organization
 
@@ -677,24 +682,31 @@ class RepresentativeCreateView(
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         else:
-            self.object.save()
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({
-                "representative_id": self.object.pk,
-                "subscribe": subscribe
-            })
-            url = "%s%s" % (
-                get_current_domain(self.request),
-                reverse('representative-register', kwargs={'token': token})
-            )
-
-            email(
-                [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
-                    'organization': self.organization.title,
-                    'link': url
+            if not SentMail.objects.filter(
+                Q(
+                    Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER) |
+                    Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
+                ) & Q(recipient=f"['{self.object.email}']")
+            ):
+                self.object.save()
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                token = serializer.dumps({
+                    "representative_id": self.object.pk,
+                    "subscribe": subscribe
                 })
+                url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('representative-register', kwargs={'token': token})
+                )
 
-            messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
+                email(
+                    [self.object.email], ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+                    'vitrina/emails/request_for_organization_member_add.md', {
+                        'organization': self.organization.title,
+                        'link': url
+                    })
+
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
         if self.object.has_api_access:
@@ -891,6 +903,10 @@ class RepresentativeRegisterView(RegisterView):
                         reverse('dataset-detail', kwargs={'pk': representative.content_object.pk})
                     )
                     manage_dataset_subscriptions(subscribe, user, representative.content_object, link)
+
+            # update related representatives
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
+                reps.update(user=user)
 
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')

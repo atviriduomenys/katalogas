@@ -575,7 +575,8 @@ def email(
         recipient=list(recipients),
         email_subject=subject,
         email_content=content,
-        email_sent=email_send
+        email_sent=email_send,
+        identifier=email_identifier,
     )
 
 

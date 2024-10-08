@@ -48,7 +48,9 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, SentMail
+from vitrina.orgs.views import ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER, \
+    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
@@ -997,7 +999,6 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
-
     def has_permission(self):
         return has_perm(
             self.request.user,
@@ -1059,24 +1060,30 @@ class CreateMemberView(
                                                     self.dataset, link)
         else:
             self.object.save()
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({
-                "representative_id": self.object.pk,
-                "subscribe": form.cleaned_data.get('subscribe')
-            })
-            url = "%s%s" % (
-                get_current_domain(self.request),
-                reverse('representative-register', kwargs={'token': token})
-            )
+            if not SentMail.objects.filter(
+                Q(
+                    Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER) |
+                    Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
+                ) & Q(recipient=f"['{self.object.email}']")
+            ):
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                token = serializer.dumps({
+                    "representative_id": self.object.pk,
+                    "subscribe": form.cleaned_data.get('subscribe')
+                })
+                url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('representative-register', kwargs={'token': token})
+                )
 
-            email([self.object.email], 'auth-org-representative-without-credentials',
-                  "vitrina/email/offer_to_join_portal.md", {
-                      'dataset': self.dataset,
-                      'link': url
-                  })
-            messages.info(self.request, _(
-                "Naudotojui išsiųstas laiškas dėl registracijos"
-            ))
+                email([self.object.email], DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+                      "vitrina/email/offer_to_join_portal.md", {
+                          'dataset': self.dataset,
+                          'link': url
+                      })
+                messages.info(self.request, _(
+                    "Naudotojui išsiųstas laiškas dėl registracijos"
+                ))
         self.dataset.save()
 
         if self.object.has_api_access:

@@ -3,12 +3,14 @@ from unittest.mock import patch
 
 import pytest
 from allauth.account.models import EmailConfirmation, EmailConfirmationHMAC
+from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
 from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
 
 from vitrina import settings
+from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.users.models import User
 
 
@@ -110,6 +112,33 @@ def test_register_with_correct_data(csrf_exempt_django_app: DjangoTestApp):
         assert resp.status_code == 302
         assert resp.url == reverse('home')
         assert User.objects.filter(email='test_@test.com').count() == 1
+
+
+@pytest.mark.django_db
+def test_register_with_representative(csrf_exempt_django_app: DjangoTestApp):
+    organization = OrganizationFactory()
+    rep = RepresentativeFactory.create(
+        user=None,
+        email="test_@test.com",
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = csrf_exempt_django_app.post(reverse('register'), {
+            'first_name': "Test",
+            'last_name': "User",
+            'email': "test_@test.com",
+            'password1': "test123?",
+            'password2': "test123?",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        assert resp.status_code == 302
+        assert resp.url == reverse('home')
+        assert User.objects.filter(email='test_@test.com').count() == 1
+        rep.refresh_from_db()
+        rep.user = User.objects.filter(email='test_@test.com').first()
 
 
 @pytest.mark.django_db

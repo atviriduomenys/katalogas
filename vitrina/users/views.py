@@ -25,6 +25,7 @@ from django.http import HttpResponseRedirect
 from vitrina import settings
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
+from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
 from vitrina.users.forms import (
@@ -104,6 +105,11 @@ class RegisterView(CreateView):
             )
             messages.success(self.request, _("Išsiuntėme jums laišką patvirtinimui. Sekite laiške pateikta "
                                              "nuoroda, kad užbaigtumėte registraciją."))
+
+            # update related representatives
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
+                reps.update(user=user)
+
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
 

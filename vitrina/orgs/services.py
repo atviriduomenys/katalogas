@@ -245,3 +245,7 @@ def pre_representative_delete(rep: Representative):
             rep.user.is_active = False
             rep.user.status = User.SUSPENDED
             rep.user.save()
+
+        if rep.user.organization and rep.user.organization == rep.content_object:
+            rep.user.organization = None
+            rep.user.save()

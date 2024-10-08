@@ -25,6 +25,7 @@ from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
+from vitrina.users.models import User
 
 
 class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
@@ -396,15 +397,20 @@ class RepresentativeCreateForm(ModelForm):
             Representative.objects.
             filter(
                 content_type=content_type,
-                object_id=self.object_id,
                 email=email
             ).
             exists()
         ):
             self.add_error('email', _(
-                "Narys su šiuo el. pašto adresu jau egzistuoja."
+                "Organizacijos atstovas su šiuo el. pašto adresu jau egzistuoja jūsų arba kitoje organizacijoje."
             ))
         return super().clean()
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email, status=User.SUSPENDED):
+            raise ValidationError(_("Naudotojas su šiuo el. pašto adresu yra suspenduotas."))
+        return email
 
 
 def get_document_field_title():

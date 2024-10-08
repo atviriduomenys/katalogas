@@ -26,7 +26,7 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 
@@ -365,6 +365,23 @@ class DatasetMemberUpdateForm(RepresentativeUpdateForm):
 
 class DatasetMemberCreateForm(RepresentativeCreateForm):
     object_model = Dataset
+
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        content_type = ContentType.objects.get_for_model(self.object_model)
+        if (
+            Representative.objects.
+            filter(
+                content_type=content_type,
+                object_id=self.object_id,
+                email=email
+            ).
+            exists()
+        ):
+            self.add_error('email', _(
+                "Narys su šiuo el. pašto adresu jau egzistuoja."
+            ))
+        return super(forms.ModelForm, self).clean()
 
 
 class DatasetCategoryForm(Form):

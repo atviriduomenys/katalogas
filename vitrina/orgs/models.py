@@ -6,7 +6,8 @@ from django.urls import reverse
 from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
-from vitrina.orgs.managers import PublicOrganizationManager
+from vitrina.orgs.managers import PublicOrganizationManager, OrganizationRepresentativeManager, RepresentativeManager, \
+    RepresentativeWithDeletedManager, OrganizationRepresentativeWithDeletedManager
 
 from django.utils.translation import gettext_lazy as _
 
@@ -98,6 +99,8 @@ class Organization(MP_Node):
 
     class Meta:
         db_table = 'organization'
+        verbose_name = _("Organizacija")
+        verbose_name_plural = _("Organizacijos")
 
     def __str__(self):
         return self.title
@@ -143,23 +146,34 @@ class Representative(models.Model):
         (MANAGER, _("Tvarkytojas"))
     }
 
+    ACTIVE = 'active'
+    AWAITING_CONFIRMATION = 'awaiting_confirmation'
+    DELETED = 'deleted'
+    STATUSES = (
+        (ACTIVE, _("Aktyvus")),
+        (AWAITING_CONFIRMATION, _("Laukiama patvirtinimo")),
+        (DELETED, _("Pašalintas")),
+    )
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(max_length=255)
+    email = models.CharField(_("Elektroninis paštas"), max_length=255)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    role = models.CharField(choices=ROLES, max_length=255)
+    role = models.CharField(_("Rolė"), choices=ROLES, max_length=255)
     user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
     has_api_access = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
 
-    objects = models.Manager()
+    objects = RepresentativeManager()
+    objects_with_deleted = RepresentativeWithDeletedManager()
 
     class Meta:
         db_table = 'representative'
@@ -186,6 +200,16 @@ class Representative(models.Model):
         Dataset = apps.get_model('vitrina_datasets', 'Dataset')
         if isinstance(self.content_object, Dataset):
             self.content_object.save()
+
+
+class OrganizationRepresentative(Representative):
+    objects = OrganizationRepresentativeManager()
+    objects_with_deleted = OrganizationRepresentativeWithDeletedManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = _("Organizacijos atstovas")
+        verbose_name_plural = _("Organizacijos atstovų sąrašas")
 
 
 class PublishedReport(models.Model):

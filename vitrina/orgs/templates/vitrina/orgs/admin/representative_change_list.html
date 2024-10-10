@@ -6,7 +6,7 @@
     {% translate "Naujas organizacijos atstovas" %}
 </a></li>
 <li>
-<form id="export"action="{% url 'admin:vitrina_orgs_organizationrepresentative_changelist' %}" method="get" style="padding: 0px; margin: 0px;">
+<form id="export" action="{% url 'admin:vitrina_orgs_organizationrepresentative_changelist' %}" method="get" style="padding: 0px; margin: 0px;">
     <input type="hidden" name="format" value="csv"/>
     {% for k, v in request.GET.items %}
         {% if k != 'format' %}
@@ -19,4 +19,24 @@
     </button>
 </form>
 </li>
+{% endblock %}
+
+
+{% block result_list %}
+    <div style="padding: 20px 0px;">
+        <span style="margin-right: 20px;">
+            <a href="{{ manager_query }}">{% translate 'Tik tvarkytojai' %}</a>
+            {% if selected_role == 'manager' %}
+                <a href="{{ query_without_role }}" class="deletelink" style="padding-left: 0px;"></a>
+            {% endif %}
+        </span>
+        <span>
+            <a href="{{ coordinator_query }}">{% translate 'Tik koordinatoriai' %}</a>
+            {% if selected_role == 'coordinator' %}
+                <a href="{{ query_without_role }}" class="deletelink" style="padding-left: 0px;"></a>
+            {% endif %}
+        </span>
+    </div>
+
+    {{ block.super }}
 {% endblock %}

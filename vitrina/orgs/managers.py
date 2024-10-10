@@ -4,6 +4,9 @@ from treebeard.mp_tree import MP_NodeManager
 from django.apps import apps
 
 
+DELETED = 'deleted'
+
+
 class PublicOrganizationManager(MP_NodeManager):
     def get_queryset(self):
         return super().get_queryset().filter(
@@ -20,7 +23,7 @@ class OrganizationRepresentativeManager(Manager):
             content_type=ContentType.objects.get_for_model(Organization),
             deleted__isnull=True,
             deleted_on__isnull=True,
-        )
+        ).exclude(status=DELETED)
 
 
 class OrganizationRepresentativeWithDeletedManager(Manager):
@@ -36,7 +39,7 @@ class RepresentativeManager(Manager):
         return super().get_queryset().filter(
             deleted__isnull=True,
             deleted_on__isnull=True,
-        )
+        ).exclude(status=DELETED)
 
 
 class RepresentativeWithDeletedManager(Manager):

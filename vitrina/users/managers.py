@@ -1,13 +1,16 @@
 from django.contrib.auth.base_user import BaseUserManager
 
 
+DELETED = 'deleted'
+
+
 class UserManager(BaseUserManager):
 
     def get_queryset(self):
         return super().get_queryset().filter(
             deleted__isnull=True,
             deleted_on__isnull=True,
-        )
+        ).exclude(status=DELETED)
 
     def _create_user(self, email, password, **extra_fields):
         """

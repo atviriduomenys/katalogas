@@ -66,6 +66,25 @@ class RepresentativeAdmin(admin.ModelAdmin):
         super().delete_queryset(request, queryset)
 
 
+class RoleFilter(admin.SimpleListFilter):
+    title = ''
+    parameter_name = 'role'
+    template = 'component/hidden_filter.html'
+
+    def lookups(self, request, model_admin):
+        return [
+            (Representative.MANAGER, _("Tik tvarkytojai")),
+            (Representative.COORDINATOR, _("Tik koordinatoriai")),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == Representative.MANAGER:
+            return queryset.filter(role=Representative.MANAGER)
+        if self.value() == Representative.COORDINATOR:
+            return queryset.filter(role=Representative.COORDINATOR)
+        return queryset
+
+
 class OrganizationRepresentativeAdmin(admin.ModelAdmin):
     list_display = (
         'parent_organization_display',
@@ -88,7 +107,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
         'status_title',
     )
     change_list_template = 'vitrina/orgs/admin/representative_change_list.html'
-    list_filter = (FormatFilter,)
+    list_filter = (FormatFilter, RoleFilter,)
 
     def get_queryset(self, request):
         queryset = OrganizationRepresentative.objects_with_deleted.get_queryset()
@@ -162,7 +181,11 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
                 reverse('admin:vitrina_users_user_change', args=[obj.user.pk]),
                 f'{obj.user.first_name} {obj.user.last_name}'
             )
-        return "-"
+        else:
+            return format_html(
+                '<span style="color: red;">({})</span>',
+                _("pakvietimas išsiųstas"),
+            )
 
     full_name_display.short_description = _('Vardas ir pavardė')
     full_name_display.admin_order_field = 'full_name'
@@ -197,8 +220,26 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
     status_display.admin_order_field = 'status'
 
     def changelist_view(self, request, extra_context=None):
+        query_dict = request.GET.copy()
+        selected_role = None
+        if 'role' in query_dict:
+            selected_role = query_dict.get('role')
+            query_dict.pop('role')
+        query = query_dict.urlencode()
+        query_without_role = f'?{query}'
+        if query:
+            manager_query = f'?{query}&role={Representative.MANAGER}'
+            coordinator_query = f'?{query}&role={Representative.COORDINATOR}'
+        else:
+            manager_query = f'?role={Representative.MANAGER}'
+            coordinator_query = f'?role={Representative.COORDINATOR}'
+
         extra_context = {
-            'title': _("Organizacijos atstovų sąrašas")
+            'title': _("Organizacijos atstovų sąrašas"),
+            'manager_query': manager_query,
+            'coordinator_query': coordinator_query,
+            'query_without_role': query_without_role,
+            'selected_role': selected_role,
         }
         result = super().changelist_view(request, extra_context)
         if request.GET.get('format') and request.GET.get('format') == 'csv':

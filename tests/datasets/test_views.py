@@ -1876,6 +1876,7 @@ def test_dataset_create_non_public(app: DjangoTestApp):
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     form['title'] = 'Test dataset'
+    form['description'] = 'Test dataset description'
     form['is_public'] = False
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
@@ -1893,6 +1894,7 @@ def test_dataset_create_public(app: DjangoTestApp):
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     form['title'] = 'Test dataset'
+    form['description'] = 'Test dataset description'
     form['is_public'] = True
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")

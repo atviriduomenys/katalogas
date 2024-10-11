@@ -47,7 +47,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple
     )
-    description = TranslatedField(label=_('Aprašymas'))
+    description = TranslatedField(label=_('Aprašymas'), required=True)
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
@@ -126,6 +126,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
             Submit('submit', button, css_class='button is-primary')
         )
+
+        if self.language_code == 'en':
+            self.fields['description'].required = False
 
         if not instance:
             if Licence.objects.filter(is_default=True).exists():

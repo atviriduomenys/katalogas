@@ -44,7 +44,7 @@ from vitrina.datasets.services import manage_subscriptions_for_representative as
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, \
     OrganizationCreateForm, ApiKeyForm, \
-    ApiScopeForm, ApiKeyRegenerateForm
+    ApiScopeForm, ApiKeyRegenerateForm, RepresentativeTransferFunctionsForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative, \
@@ -841,6 +841,41 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         obj = self.get_object()
         pre_representative_delete(obj)
         return super().delete(request, *args, **kwargs)
+
+
+class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
+    form_class = RepresentativeTransferFunctionsForm
+    template_name = 'base_form.html'
+
+    organization: Organization
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.DELETE, self.representative)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['organization'] = self.organization
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_title'] = _(f'Pasirinkite organizacijos atstovą, kuriam norite peruduoti '
+                                     f'"{self.representative.full_name}" funkcijas.')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        return context
+
+    def form_valid(self, form):
+        return super().form_valid(form)
 
 
 class RepresentativeRegisterView(RegisterView):

@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 import re
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, Submit
+from crispy_forms.layout import Layout, Field, Submit, Button, HTML
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q
@@ -11,7 +11,7 @@ from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharF
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
 from django.forms.models import ModelChoiceIterator
-from django.urls import resolve, Resolver404
+from django.urls import resolve, Resolver404, reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
@@ -411,6 +411,27 @@ class RepresentativeCreateForm(ModelForm):
         if User.objects.filter(email=email, status=User.SUSPENDED):
             raise ValidationError(_("Naudotojas su šiuo el. pašto adresu yra suspenduotas."))
         return email
+
+
+class RepresentativeTransferFunctionsForm(Form):
+    representative = ModelChoiceField(
+        label=_("Organizacijos atstovas, kuriam yra perduodamos funkcijos"),
+        required=True,
+        queryset=Representative.objects.all()
+    )
+
+    def __init__(self, organization, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "transfer-functions-form"
+        self.helper.layout = Layout(
+            Field('representative'),
+            HTML(f'<a href="{reverse("organization-members", args=[organization.pk])}" '
+                 f'class="button is-primary">{_("Atšaukti")}</a>'),
+            Button('button', _("Tik perduoti"), css_class='button is-primary'),
+            Submit('submit', _("Perduoti ir pašalinti"), css_class='button is-primary'),
+        )
 
 
 def get_document_field_title():

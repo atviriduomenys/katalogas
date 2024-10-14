@@ -193,6 +193,12 @@ class Representative(models.Model):
                 return True
         return False
 
+    @property
+    def full_name(self):
+        if self.user:
+            return self.user.first_name + " " + self.user.last_name
+        return self.email
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 

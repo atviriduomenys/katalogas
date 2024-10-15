@@ -11,7 +11,7 @@ from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharF
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
     DateField, DateInput, Textarea, CheckboxInput
 from django.forms.models import ModelChoiceIterator
-from django.urls import resolve, Resolver404
+from django.urls import resolve, Resolver404, reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
@@ -411,6 +411,42 @@ class RepresentativeCreateForm(ModelForm):
         if User.objects.filter(email=email, status=User.SUSPENDED):
             raise ValidationError(_("Naudotojas su šiuo el. pašto adresu yra suspenduotas."))
         return email
+
+
+def _get_representative_label():
+    info = _("Naujam organizacijos atstovui yra perduodamos funkcijos prie visų buvusio organizacijos "
+             "atstovo susietų duomenų rinkinių. Jeigu buvęs organizacijos atstovas turėjo susietų organizacijos "
+             "tvarkytojų, jie yra susiejami su nauju organizacijos atstovu. ")
+
+    return mark_safe(f'{_("Organizacijos atstovas, kuriam yra perduodamos funkcijos")} '
+                     f'<span class="has-tooltip-multiline is-middle" data-tooltip="{info}">'
+                     f'<i class="fas fa-info-circle"></i></span>')
+
+
+class RepresentativeTransferFunctionsForm(Form):
+    representative = ModelChoiceField(
+        label=_get_representative_label(),
+        required=True,
+        queryset=Representative.objects.all(),
+        empty_label=_("Pasirinkti galima tik tos pačios rolės organizacijos atstovą")
+    )
+
+    def __init__(self, representative, organization, *args, **kwargs):
+        self.representative = representative
+        self.organization = organization
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "transfer-functions-form"
+        self.helper.layout = Layout(
+            Field('representative'),
+        )
+
+        organization_reps = self.organization.representatives.filter(
+            role=self.representative.role
+        ).exclude(pk=self.representative.pk)
+        self.fields['representative'].queryset = organization_reps
 
 
 def get_document_field_title():

@@ -57,7 +57,7 @@ def test_organization_members_tab(app: DjangoTestApp):
     resp = app.get(reverse('organization-members', args=[organization1.pk]))
     assert list(resp.context['members']) == [representative1]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == [
-        "Tvarkytojai",
+        "Organizacijos atstovai",
     ]
 
 

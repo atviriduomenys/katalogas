@@ -1196,10 +1196,6 @@ class UpdateMemberView(
     def form_valid(self, form):
         self.object: Representative = form.save()
 
-        if not self.object.user.organization:
-            self.object.user.organization = self.dataset.organization
-            self.object.user.save()
-
         self.dataset.save()
         link = "%s%s" % (
             get_current_domain(self.request),

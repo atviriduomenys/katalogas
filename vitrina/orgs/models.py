@@ -177,7 +177,6 @@ class Representative(models.Model):
 
     class Meta:
         db_table = 'representative'
-        unique_together = ['content_type', 'object_id', 'user']
 
     def __str__(self):
         return self.full_name_with_email

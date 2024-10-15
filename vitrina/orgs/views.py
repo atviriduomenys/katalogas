@@ -16,6 +16,7 @@ from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic import DetailView, View
@@ -864,7 +865,7 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.DELETE, self.representative)
+        return has_perm(self.request.user, Action.TRANSFER, self.representative)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -874,7 +875,7 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _(f'Pasirinkite organizacijos atstovą, kuriam norite peruduoti '
+        context['current_title'] = _(f'Pasirinkite organizacijos atstovą, kuriam norite perduoti '
                                      f'"{self.representative.full_name}" funkcijas.')
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
@@ -885,12 +886,191 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
         context['organization'] = self.organization
         return context
 
-    def get_success_url(self):
-        return reverse('organization-members', args=[self.organization.pk])
-
     def form_valid(self, form):
-        res = super().form_valid(form)
-        return res
+        if transfer_rep := form.cleaned_data.get('representative'):
+            if 'transfer_and_delete' in self.request.POST:
+                return redirect(reverse('transfer-and-delete-confirm', args=[
+                    self.organization.pk,
+                    self.representative.pk,
+                    transfer_rep.pk
+                ]))
+            elif 'transfer' in self.request.POST:
+                return redirect(reverse('transfer-confirm', args=[
+                    self.organization.pk,
+                    self.representative.pk,
+                    transfer_rep.pk
+                ]))
+        return redirect(reverse('organization-members', args=[self.organization.pk]))
+
+
+class RepresentativeTransferConfirmView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/representative_transfer_confirm.html'
+
+    organization: Organization
+    representative: Representative
+    transfer_representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('pk'))
+        self.transfer_representative = get_object_or_404(Representative, pk=kwargs.get('representative_id'))
+
+        if self.organization.representatives.filter(role=self.representative.role).count() < 2:
+            messages.error(
+                request,
+                _("Organizacija neturi atitinkamos rolės organizacijos atstovo. Siūlome registruoti")
+            )
+            return redirect(reverse("organization-members", args=[self.organization.pk]))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.TRANSFER, self.representative)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['confirm_text'] = _(f'Ar tikrai norite perduoti "{self.representative.full_name}" funkcijas atstovui?')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Organizacijos atstovai"),
+        }
+        context['organization'] = self.organization
+        return context
+
+    def post(self, *args, **kwargs):
+        dataset_reps = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            email=self.representative.email
+        )
+
+        for rep in dataset_reps:
+            dataset = rep.content_object
+            if already_existing_rep := dataset.representatives.filter(email=self.transfer_representative.email).first():
+                if (
+                    already_existing_rep.role != rep.role and
+                    rep.role == Representative.COORDINATOR
+                ):
+                    already_existing_rep.role = rep.role
+                    already_existing_rep.save()
+            else:
+                Representative.objects.create(
+                    email=self.transfer_representative.email,
+                    user=self.transfer_representative.user,
+                    phone=self.transfer_representative.phone,
+                    role=rep.role,
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    object_id=dataset.pk,
+                    status=Representative.ACTIVE,
+                )
+
+                if self.transfer_representative.user:
+                    link = "%s%s" % (
+                        get_current_domain(self.request),
+                        reverse('organization-detail', kwargs={'pk': self.organization.pk})
+                    )
+                    manage_subscriptions_for_representative(
+                        True,
+                        self.transfer_representative.user,
+                        self.organization,
+                        link
+                    )
+            rep.delete()
+
+        messages.success(
+            self.request,
+            _(f'Funkcijos sėkmingai perduotos "{self.transfer_representative.full_name}" atstovui.')
+        )
+        return redirect(reverse('organization-members', args=[self.organization.pk]))
+
+
+class RepresentativeTransferAndDeleteConfirmView(PermissionRequiredMixin, TemplateView):
+    template_name = 'vitrina/orgs/representative_transfer_confirm.html'
+
+    organization: Organization
+    representative: Representative
+    transfer_representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        self.representative = get_object_or_404(Representative, pk=kwargs.get('pk'))
+        self.transfer_representative = get_object_or_404(Representative, pk=kwargs.get('representative_id'))
+
+        if self.organization.representatives.filter(role=self.representative.role).count() < 2:
+            messages.error(
+                request,
+                _("Organizacija neturi atitinkamos rolės organizacijos atstovo. Siūlome registruoti")
+            )
+            return redirect(reverse("organization-members", args=[self.organization.pk]))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.TRANSFER, self.representative)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['confirm_text'] = _(f'Ar tikrai norite perduoti "{self.representative.full_name}" '
+                                    f'funkcijas ir pašalinti atstovą?')
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Organizacijos atstovai"),
+        }
+        context['organization'] = self.organization
+        return context
+
+    def post(self, *args, **kwargs):
+        dataset_reps = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            email=self.representative.email
+        )
+
+        for rep in dataset_reps:
+            dataset = rep.content_object
+            if already_existing_rep := dataset.representatives.filter(email=self.transfer_representative.email).first():
+                if (
+                    already_existing_rep.role != rep.role and
+                    rep.role == Representative.COORDINATOR
+                ):
+                    already_existing_rep.role = rep.role
+                    already_existing_rep.save()
+            else:
+                Representative.objects.create(
+                    email=self.transfer_representative.email,
+                    user=self.transfer_representative.user,
+                    phone=self.transfer_representative.phone,
+                    role=rep.role,
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    object_id=dataset.pk,
+                    status=Representative.ACTIVE,
+                )
+
+                if self.transfer_representative.user:
+                    link = "%s%s" % (
+                        get_current_domain(self.request),
+                        reverse('organization-detail', kwargs={'pk': self.organization.pk})
+                    )
+                    manage_subscriptions_for_representative(
+                        True,
+                        self.transfer_representative.user,
+                        self.organization,
+                        link
+                    )
+            rep.delete()
+
+        self.representative.deleted = True
+        self.representative.deleted_on = timezone.now()
+        self.representative.status = Representative.DELETED
+        self.representative.save()
+
+        messages.success(
+            self.request,
+            _(f'Funkcijos sėkmingai perduotos "{self.transfer_representative.full_name}" atstovui.')
+        )
+        return redirect(reverse('organization-members', args=[self.organization.pk]))
 
 
 class RepresentativeRegisterView(RegisterView):

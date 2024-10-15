@@ -845,7 +845,7 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
     form_class = RepresentativeTransferFunctionsForm
-    template_name = 'base_form.html'
+    template_name = 'vitrina/orgs/representative_transfer_functions_form.html'
 
     organization: Organization
     representative: Representative
@@ -853,6 +853,14 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
         self.representative = get_object_or_404(Representative, pk=kwargs.get('pk'))
+
+        if self.organization.representatives.filter(role=self.representative.role).count() < 2:
+            messages.error(
+                request,
+                _("Organizacija neturi atitinkamos rolės organizacijos atstovo. Siūlome registruoti")
+            )
+            return redirect(reverse("organization-members", args=[self.organization.pk]))
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -860,6 +868,7 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs['representative'] = self.representative
         kwargs['organization'] = self.organization
         return kwargs
 
@@ -871,11 +880,17 @@ class RepresentativeTransferFunctionsView(PermissionRequiredMixin, FormView):
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
             reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+            reverse('organization-members', args=[self.organization.pk]): _("Organizacijos atstovai"),
         }
+        context['organization'] = self.organization
         return context
 
+    def get_success_url(self):
+        return reverse('organization-members', args=[self.organization.pk])
+
     def form_valid(self, form):
-        return super().form_valid(form)
+        res = super().form_valid(form)
+        return res
 
 
 class RepresentativeRegisterView(RegisterView):

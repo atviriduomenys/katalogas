@@ -180,7 +180,7 @@ class Representative(models.Model):
         unique_together = ['content_type', 'object_id', 'user']
 
     def __str__(self):
-        return self.email
+        return self.full_name_with_email
 
     def get_acl_parents(self):
         parents = [self]
@@ -197,6 +197,12 @@ class Representative(models.Model):
     def full_name(self):
         if self.user:
             return self.user.first_name + " " + self.user.last_name
+        return self.email
+
+    @property
+    def full_name_with_email(self):
+        if self.user:
+            return f'{self.user.first_name} {self.user.last_name} ({self.email})'
         return self.email
 
     def save(self, *args, **kwargs):

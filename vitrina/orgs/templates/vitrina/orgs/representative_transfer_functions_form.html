@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block current_title %}{{ current_title }}{% endblock %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        {% for link, title in parent_links.items %}
+            <li>
+                <a href="{{ link }}">
+                {% if title == "Pradžia" %}
+                    <span class="icon">
+                        <i class="fas fa-home"></i>
+                    </span>
+                {% endif %}
+                    <span>{{ title }}</span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-half">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.representative|as_crispy_field }}
+                <div class="is-inline-block mt-3">
+                    <a href="{% url 'organization-members' organization.pk %}" class="button is-primary">{% translate "Atšaukti" %}</a>
+                    <button type="submit" name="transfer" class="button is-primary">{% translate "Tik perduoti" %}</button>
+                    <button type="submit" name="transfer_and_delete" class="button is-primary">{% translate "Perduoti ir pašalinti" %}</button>
+                </div>
+              </form>
+        </div>
+    </div>
+    <br/>
+{% endblock %}

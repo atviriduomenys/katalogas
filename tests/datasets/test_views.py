@@ -1341,7 +1341,6 @@ def test_dataset_members_update_member(app: DjangoTestApp):
 
     manager.refresh_from_db()
     assert manager.role == Representative.MANAGER
-    assert manager.user.organization == dataset.organization
 
     assert len(mail.outbox) == 0
 

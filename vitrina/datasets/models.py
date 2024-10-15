@@ -690,51 +690,50 @@ class Dataset(TranslatableModel):
                                 meta_objects.append((metadata.pk, label))
         return meta_objects
 
-    def save_translation(self, translation, *args, **kwargs):
-        if translation.language_code == 'lt':
-            if not self.has_translation(language_code='en') or not self.en_title() or not self.en_description():
-                lt_title = self.lt_title()
-                lt_description = self.lt_description()
+    def save_translations(self, *args, **kwargs):
+        super(Dataset, self).save_translations(*args, **kwargs)
 
-                if not self.has_translation(language_code='en'):
-                    self.create_translation(language_code='en')
-                self.set_current_language('en')
+        if not self.has_translation(language_code='en') or not self.en_title() or not self.en_description():
+            lt_title = self.lt_title()
+            lt_description = self.lt_description()
 
-                if lt_title and not self.en_title():
-                    response_title = requests.post(
-                        "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-                        json={
-                            "appId": "",
-                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                            "text": lt_title,
-                            "options": ""
-                        },
-                        headers={
-                            "client-id": TRANSLATION_CLIENT_ID,
-                            "Content-Type": "application/json; charset=utf-8"
-                        },
-                    )
-                    en_title = response_title.json()
-                    self.title = en_title
+            if not self.has_translation(language_code='en'):
+                self.create_translation(language_code='en')
+            self.set_current_language('en')
 
-                if lt_description and not self.en_description():
-                    response_desc = requests.post(
-                        "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-                        json={
-                            "appId": "",
-                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                            "text": lt_description,
-                            "options": ""
-                        },
-                        headers={
-                            "client-id": TRANSLATION_CLIENT_ID,
-                            "Content-Type": "application/json; charset=utf-8"
-                        },
-                    )
-                    en_description = response_desc.json()
-                    self.description = en_description
+            if lt_title and not self.en_title():
+                response_title = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
 
-        super(Dataset, self).save_translation(translation, *args, **kwargs)
+            if lt_description and not self.en_description():
+                response_desc = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
 
     def is_opened(self):
         return self.status == self.HAS_DATA

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django_otp.plugins.otp_email.models import EmailDevice
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
@@ -138,3 +139,19 @@ class SsoToken(models.Model):
     class Meta:
         managed = True
         db_table = 'sso_token'
+
+
+class UserEmailDevice(EmailDevice):
+
+    class Meta:
+        managed = True
+        db_table = 'user_email_device'
+
+    def send_mail(self, body, **kwargs):
+        from vitrina.helpers import email
+
+        token = body.strip("\n")
+        email([self.email or self.user.email], 'confirm-login', 'vitrina/email/confirm_login.md', {
+            'full_name': str(self.user),
+            'token': token,
+        })

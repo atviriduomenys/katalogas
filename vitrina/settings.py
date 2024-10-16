@@ -90,6 +90,8 @@ INSTALLED_APPS = [
     'vitrina.users',
 
     # Django CMS
+    'django_otp',
+    'django_otp.plugins.otp_email',
     'sass_processor',
     'sekizai',
     'cms',
@@ -149,6 +151,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

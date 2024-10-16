@@ -60,6 +60,7 @@ shapely = "^2.0.1"
 resource = "^0.2.1"
 django-recaptcha = "^4.0.0"
 numpy = "1.26.4"
+django-otp = "^1.5.4"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 pytest-cov = "^3.0.0"

@@ -4,6 +4,7 @@ from datetime import datetime
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from allauth.utils import build_absolute_uri
 from django.contrib.sites.models import Site
+from django_otp.forms import OTPAuthenticationForm
 from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
@@ -39,11 +40,13 @@ from vitrina.users.models import User
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     account_inactive_template = 'vitrina/users/account_inactive.html'
-    form_class = LoginForm
+    # form_class = LoginForm
+    form_class = OTPAuthenticationForm
 
     def form_valid(self, form):
         if settings.ACCOUNT_EMAIL_VERIFICATION == 'mandatory':
-            user = EmailAddress.objects.filter(email=self.request.POST['email'])
+            # user = EmailAddress.objects.filter(email=form.cleaned_data.get('email'))
+            user = EmailAddress.objects.filter(email=form.cleaned_data.get('username'))
             if user:
                 if user[0].verified is True:
                     login(self.request, form.get_user(),

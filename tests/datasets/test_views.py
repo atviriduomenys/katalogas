@@ -895,9 +895,8 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     dataset = DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
-    assert response.status_code == 302
-    assert str(dataset.id) in response.location
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -1944,6 +1943,22 @@ def test_dataset_update_from_non_public_to_public(app: DjangoTestApp):
 
     assert dataset.is_public is True
     assert dataset.published is not None
+
+
+@pytest.mark.django_db
+def test_dataset_update_without_permission(app: DjangoTestApp):
+    dataset1 = DatasetFactory()
+    dataset2 = DatasetFactory()
+    user = UserFactory()
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(dataset1),
+        object_id=dataset1.pk
+    )
+    app.set_user(user)
+
+    resp = app.get(reverse('dataset-change', kwargs={'pk': dataset2.id}), expect_errors=True)
+    assert resp.status_code == 403
 
 
 @pytest.mark.django_db

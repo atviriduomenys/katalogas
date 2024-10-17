@@ -339,3 +339,118 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         assert created_request.first().description == created_comment.first().body
         assert Version.objects.get_for_object(created_request.first()).count() == 1
         assert Version.objects.get_for_object(created_request.first()).first().revision.comment == Request.CREATED
+
+
+@pytest.mark.django_db
+def test_comment_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    csrf_exempt_django_app.set_user(user)
+    resp = csrf_exempt_django_app.post(reverse("comment", args=[ct.pk, dataset.pk]), {
+        'is_public': True,
+        'body': "Test comment"
+    }, expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk
+    )
+    csrf_exempt_django_app.set_user(user)
+    resp = csrf_exempt_django_app.post(reverse("reply", args=[ct.pk, dataset.pk, comment.pk]), {
+        'is_public': True,
+        'body': "Test comment"
+    }, expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_object_data_comment_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory()
+    csrf_exempt_django_app.set_user(user)
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+
+    resp = csrf_exempt_django_app.post(reverse('external-comment', args=[
+        dataset.pk,
+        model.name,
+        'c7d66fa2-a880-443d-8ab5-2ab7f9c79886'
+    ]), {
+        'is_public': True,
+        'body': "Test comment"
+    }, expect_errors=True)
+
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_object_data_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+    user = UserFactory()
+    csrf_exempt_django_app.set_user(user)
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    comment = CommentFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        external_object_id='c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+        external_content_type=model.full_name
+    )
+
+    resp = csrf_exempt_django_app.post(reverse('external-reply', args=[
+        model.name,
+        'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
+        comment.pk,
+    ]), {
+        'is_public': True,
+        'body': "Test comment",
+        'dataset_id': dataset.pk
+    }, expect_errors=True)
+
+    assert resp.status_code == 403

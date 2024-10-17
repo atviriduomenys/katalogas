@@ -6,7 +6,7 @@
 {% block content %}
     <div class="columns">
         <div class="column is-half">
-            <form id="close-form" method="post">
+            <form id="assign-form" method="post">
                 {% csrf_token %}
                 <strong>
                     <p>{% translate "Ar tikrai norite užduotį priskirti sau" %} "{{ task }}"?</p>

@@ -895,9 +895,8 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     dataset = DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}))
-    assert response.status_code == 302
-    assert str(dataset.id) in response.location
+    response = app.get(reverse('dataset-change', kwargs={'pk': dataset.id}), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db

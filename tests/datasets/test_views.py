@@ -1544,9 +1544,9 @@ def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_dataset_assign_new_category(csrf_exempt_django_app: DjangoTestApp):
+def test_dataset_assign_new_category(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    csrf_exempt_django_app.set_user(user)
+    app.set_user(user)
 
     group = DatasetGroupFactory()
     category1 = CategoryFactory()
@@ -1557,7 +1557,7 @@ def test_dataset_assign_new_category(csrf_exempt_django_app: DjangoTestApp):
     category3.groups.add(group)
 
     dataset = DatasetFactory()
-    resp = csrf_exempt_django_app.post(reverse('assign-category', args=[dataset.pk]), {
+    resp = app.post(reverse('assign-category', args=[dataset.pk]), {
         'category': [category1.pk, category2.pk]
     })
     assert resp.status_code == 302
@@ -1566,9 +1566,9 @@ def test_dataset_assign_new_category(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_dataset_change_category(csrf_exempt_django_app: DjangoTestApp):
+def test_dataset_change_category(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    csrf_exempt_django_app.set_user(user)
+    app.set_user(user)
 
     group = DatasetGroupFactory()
     category1 = CategoryFactory()
@@ -1582,7 +1582,7 @@ def test_dataset_change_category(csrf_exempt_django_app: DjangoTestApp):
     dataset.category.add(category1)
     dataset.category.add(category2)
 
-    resp = csrf_exempt_django_app.post(reverse('assign-category', args=[dataset.pk]), {
+    resp = app.post(reverse('assign-category', args=[dataset.pk]), {
         'category': [category3.pk]
     })
     assert resp.status_code == 302

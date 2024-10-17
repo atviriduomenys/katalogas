@@ -46,10 +46,10 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
-def test_register_with_short_name(csrf_exempt_django_app: DjangoTestApp):
+def test_register_with_short_name(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "T",
             'last_name': "User",
             'email': "test_@test.com",
@@ -63,10 +63,10 @@ def test_register_with_short_name(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_with_name_with_numbers(csrf_exempt_django_app: DjangoTestApp):
+def test_register_with_name_with_numbers(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "T3st",
             'last_name': "User",
             'email': "test_@test.com",
@@ -80,10 +80,10 @@ def test_register_with_name_with_numbers(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_without_agreeing_to_terms(csrf_exempt_django_app: DjangoTestApp):
+def test_register_without_agreeing_to_terms(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
@@ -97,10 +97,10 @@ def test_register_without_agreeing_to_terms(csrf_exempt_django_app: DjangoTestAp
 
 
 @pytest.mark.django_db
-def test_register_with_correct_data(csrf_exempt_django_app: DjangoTestApp):
+def test_register_with_correct_data(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
@@ -115,7 +115,7 @@ def test_register_with_correct_data(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_with_representative(csrf_exempt_django_app: DjangoTestApp):
+def test_register_with_representative(app: DjangoTestApp):
     organization = OrganizationFactory()
     rep = RepresentativeFactory.create(
         user=None,
@@ -125,7 +125,7 @@ def test_register_with_representative(csrf_exempt_django_app: DjangoTestApp):
     )
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
@@ -265,10 +265,10 @@ def test_profile_edit_form_correct_login(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_email_confirmation_after_sign_up(csrf_exempt_django_app: DjangoTestApp):
+def test_email_confirmation_after_sign_up(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        csrf_exempt_django_app.post(reverse('register'), {
+        app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test123@test.com",
@@ -285,7 +285,7 @@ def test_email_confirmation_after_sign_up(csrf_exempt_django_app: DjangoTestApp)
 
         confirmation = EmailConfirmationHMAC(EmailConfirmation.objects.first().email_address)
         url = reverse("account_confirm_email", args=[confirmation.key])
-        form = csrf_exempt_django_app.get(url).forms['confirm_email_form']
+        form = app.get(url).forms['confirm_email_form']
         form.submit()
         assert EmailConfirmation.objects.first().email_address.verified is True
 

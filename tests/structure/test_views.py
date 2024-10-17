@@ -30,7 +30,7 @@ from vitrina.structure.models import Version as _Version
 
 
 @pytest.mark.django_db
-def test_model_data(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -75,7 +75,7 @@ def test_model_data(csrf_exempt_django_app: DjangoTestApp):
             }
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse('model-data-table', args=[dataset.pk, model.name]), {
+    resp = app.post(reverse('model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data)
     })
     assert resp.context['headers'] == ['_id', 'prop_1', 'prop_2']
@@ -89,7 +89,7 @@ def test_model_data(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data_select(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -127,7 +127,7 @@ def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
             {'prop_1': 'test 2'}
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': "?select(prop_1)",
@@ -139,7 +139,7 @@ def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data_sort(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -177,7 +177,7 @@ def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
             {'prop_1': 'test 1'},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': "?select(prop_1)&sort(-prop_1)",
@@ -190,7 +190,7 @@ def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("operator", ['=', '<' '>' '<=', '>='])
-def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp, operator: str):
+def test_model_data_with_compare_operators(app: DjangoTestApp, operator: str):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -227,7 +227,7 @@ def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp
             {'prop_2': 2},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': f"?select(prop_2)&prop_2{operator}2",
@@ -240,7 +240,7 @@ def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("operator", ['contains', 'startswith', 'endswith'])
-def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp, operator: str):
+def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -277,7 +277,7 @@ def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp,
             {'prop_1': 'test 1'},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': f"?select(prop_1)&{operator}('test')",
@@ -289,7 +289,7 @@ def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp,
 
 
 @pytest.mark.django_db
-def test_object_data(csrf_exempt_django_app: DjangoTestApp):
+def test_object_data(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -326,7 +326,7 @@ def test_object_data(csrf_exempt_django_app: DjangoTestApp):
         'prop_1': "test 1",
         'prop_2': 1
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'object-data-table', args=[
             dataset.pk,
             model.name,

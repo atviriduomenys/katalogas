@@ -60,11 +60,28 @@ class ProjectListView(ListView):
         return context
 
 
-class ProjectDetailView(HistoryMixin, DetailView):
+class ProjectDetailView(PermissionRequiredMixin, HistoryMixin, DetailView):
     model = Project
     template_name = 'vitrina/projects/detail.html'
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
+
+    def has_permission(self):
+        project = get_object_or_404(Project, pk=self.kwargs.get('pk'))
+        has_update_perm = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            project,
+        )
+        if not has_update_perm:
+            if self.request.user.is_authenticated:
+                return (
+                    project.status == Project.APPROVED or
+                    project.user == self.request.user
+                )
+            else:
+                return project.status == Project.APPROVED
+        return True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

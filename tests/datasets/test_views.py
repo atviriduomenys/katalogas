@@ -2188,3 +2188,72 @@ def test_dataset_with_name_error(app: DjangoTestApp):
 def test_search_with_partial_word_query(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse('dataset-list'), "vien"))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [search_datasets[0].pk]
+
+
+@pytest.mark.django_db
+def test_project_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('dataset-projects', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_project_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('dataset-projects', args=[dataset.pk]))
+    assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_plan_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('dataset-plans', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_plan_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('dataset-plans', args=[dataset.pk]))
+    assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_request_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('dataset-requests', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('dataset-requests', args=[dataset.pk]))
+    assert response.context['dataset'] == dataset

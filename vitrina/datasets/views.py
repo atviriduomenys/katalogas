@@ -1277,6 +1277,7 @@ class DeleteMemberView(
 
 class DatasetProjectsView(
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     HistoryMixin,
     PlanMixin,
     ListView
@@ -1295,6 +1296,12 @@ class DatasetProjectsView(
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         return get_projects(self.request.user, self.object, order_value='-created')
@@ -1322,7 +1329,7 @@ class DatasetProjectsView(
         return context
 
 
-class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
+class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
     model = RequestObject
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
@@ -1337,6 +1344,12 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         model_ids = Model.objects.filter(dataset=self.object).values_list('pk', flat=True)
@@ -1385,7 +1398,13 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return get_requests(self.request.user, self.dataset)
+        if self.dataset.is_public:
+            return get_requests(self.request.user, self.dataset)
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.dataset) and
+                get_requests(self.request.user, self.dataset)
+            )
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -2609,6 +2628,7 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 class DatasetPlanView(
     HistoryMixin,
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     PlanMixin,
     TemplateView
 ):
@@ -2617,6 +2637,12 @@ class DatasetPlanView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-plans-history'
     plan_url_name = 'dataset-plans'
+
+    def has_permission(self):
+        if self.dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

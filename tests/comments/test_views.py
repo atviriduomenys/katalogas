@@ -342,12 +342,12 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_comment_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+def test_comment_on_non_public_dataset_without_permission(app: DjangoTestApp):
     user = UserFactory()
     dataset = DatasetFactory(is_public=False)
     ct = ContentType.objects.get_for_model(dataset)
-    csrf_exempt_django_app.set_user(user)
-    resp = csrf_exempt_django_app.post(reverse("comment", args=[ct.pk, dataset.pk]), {
+    app.set_user(user)
+    resp = app.post(reverse("comment", args=[ct.pk, dataset.pk]), {
         'is_public': True,
         'body': "Test comment"
     }, expect_errors=True)
@@ -355,7 +355,7 @@ def test_comment_on_non_public_dataset_without_permission(csrf_exempt_django_app
 
 
 @pytest.mark.django_db
-def test_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+def test_reply_on_non_public_dataset_without_permission(app: DjangoTestApp):
     user = UserFactory()
     dataset = DatasetFactory(is_public=False)
     ct = ContentType.objects.get_for_model(dataset)
@@ -363,8 +363,8 @@ def test_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: 
         content_type=ct,
         object_id=dataset.pk
     )
-    csrf_exempt_django_app.set_user(user)
-    resp = csrf_exempt_django_app.post(reverse("reply", args=[ct.pk, dataset.pk, comment.pk]), {
+    app.set_user(user)
+    resp = app.post(reverse("reply", args=[ct.pk, dataset.pk, comment.pk]), {
         'is_public': True,
         'body': "Test comment"
     }, expect_errors=True)
@@ -372,9 +372,9 @@ def test_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: 
 
 
 @pytest.mark.django_db
-def test_object_data_comment_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+def test_object_data_comment_on_non_public_dataset_without_permission(app: DjangoTestApp):
     user = UserFactory()
-    csrf_exempt_django_app.set_user(user)
+    app.set_user(user)
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -398,7 +398,7 @@ def test_object_data_comment_on_non_public_dataset_without_permission(csrf_exemp
         type='string',
     )
 
-    resp = csrf_exempt_django_app.post(reverse('external-comment', args=[
+    resp = app.post(reverse('external-comment', args=[
         dataset.pk,
         model.name,
         'c7d66fa2-a880-443d-8ab5-2ab7f9c79886'
@@ -411,9 +411,9 @@ def test_object_data_comment_on_non_public_dataset_without_permission(csrf_exemp
 
 
 @pytest.mark.django_db
-def test_object_data_reply_on_non_public_dataset_without_permission(csrf_exempt_django_app: DjangoTestApp):
+def test_object_data_reply_on_non_public_dataset_without_permission(app: DjangoTestApp):
     user = UserFactory()
-    csrf_exempt_django_app.set_user(user)
+    app.set_user(user)
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -443,7 +443,7 @@ def test_object_data_reply_on_non_public_dataset_without_permission(csrf_exempt_
         external_content_type=model.full_name
     )
 
-    resp = csrf_exempt_django_app.post(reverse('external-reply', args=[
+    resp = app.post(reverse('external-reply', args=[
         model.name,
         'c7d66fa2-a880-443d-8ab5-2ab7f9c79886',
         comment.pk,

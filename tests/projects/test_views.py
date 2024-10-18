@@ -96,7 +96,7 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_comment_with_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    project = ProjectFactory()
+    project = ProjectFactory(status=Project.CREATED)
     app.set_user(user)
 
     form = app.get(project.get_absolute_url()).forms['comment-form']
@@ -185,3 +185,22 @@ def test_remove_dataset_with_permission(app: DjangoTestApp):
 
     assert resp.headers['location'] == url
     assert project.datasets.all().count() == 0
+
+
+@pytest.mark.django_db
+def test_not_approved_project_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(status=Project.CREATED)
+    app.set_user(user)
+    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_not_approved_project_view_with_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(user=user, status=Project.CREATED)
+    app.set_user(user)
+
+    resp = app.get(reverse('project-detail', args=[project.pk]))
+    assert resp.context['object'] == project

@@ -6,3 +6,4 @@ class UsersConfig(AppConfig):
     name = 'vitrina.users'
     label = 'vitrina_users'
     verbose_name = _("Naudotojai")
+

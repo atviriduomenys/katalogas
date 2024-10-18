@@ -8,48 +8,48 @@ class UppercaseValidator:
     def validate(self, password, user=None):
         if not re.search(r'[A-Z]', password):
             raise ValidationError(
-                _("This password must contain at least one uppercase letter. (A - Z)"),
+                _("Slaptažodyje turi būti panaudota bent viena didžioji lotyniška raidė (A - Z)."),
                 code='password_no_upper',
             )
 
     def get_help_text(self):
-        return _("Your password must contain at least one uppercase letter. (A - Z)")
+        return _("Slaptažodyje turi būti panaudota bent viena didžioji lotyniška raidė (A - Z).")
 
 
 class LowercaseValidator:
     def validate(self, password, user=None):
         if not re.search(r'[a-z]', password):
             raise ValidationError(
-                _("This password must contain at least one lowercase letter. (a - z)"),
+                _("Slaptažodyje turi būti panaudota bent viena mažoji lotyniška raidė (a - z)."),
                 code='password_no_lower',
             )
 
     def get_help_text(self):
-        return _("Your password must contain at least one lowercase letter. (a - z)")
+        return _("Slaptažodyje turi būti panaudota bent viena mažoji lotyniška raidė (a - z).")
 
 
 class DigitValidator:
     def validate(self, password, user=None):
         if not re.search(r'\d', password):
             raise ValidationError(
-                _("This password must contain at least one digit. (0 - 9)"),
+                _("Slaptažodyje turi būti panaudotas bent vienas skaitmuo (0 - 9)."),
                 code='password_no_digit',
             )
 
     def get_help_text(self):
-        return _("Your password must contain at least one digit.")
+        return _("Slaptažodyje turi būti panaudotas bent vienas skaitmuo (0 - 9).")
 
 
 class SpecialCharacterValidator:
     def validate(self, password, user=None):
         if not re.search(r'[!@#$%^&*()_+\-=/.,\';\]\[|}{":?><]', password):
             raise ValidationError(
-                _("This password must contain at least one special character. ( !@#$%^&*()_+-=/.,';][|}{\":?>< )"),
+                _("Slaptažodyje turi būti panaudotas bent vienas specialusis simbolis ( !@#$%^&*()_+-=/.,';][|}{\":?>< )."),
                 code='password_no_special',
             )
 
     def get_help_text(self):
-        return _("Your password must contain at least one special character.")
+        return _("Slaptažodyje turi būti panaudotas bent vienas specialusis simbolis ( !@#$%^&*()_+-=/.,';][|}{\":?>< ).")
 
 
 class UniquePasswordValidator:
@@ -59,9 +59,9 @@ class UniquePasswordValidator:
             for old_password in old_passwords:
                 if check_password(password, old_password.password.strip()):
                     raise ValidationError(
-                        _("Your password cannot be the same as the last 3 passwords."),
+                        _("Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai."),
                         code='password_not_unique',
                     )
 
     def get_help_text(self):
-        return _("Your password cannot be the same as the last 3 passwords.")
+        return _("Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai.")

@@ -7,5 +7,3 @@ class UsersConfig(AppConfig):
     label = 'vitrina_users'
     verbose_name = _("Naudotojai")
 
-    def ready(self):
-        import vitrina.users.signals

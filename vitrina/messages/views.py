@@ -12,6 +12,7 @@ from django.urls import reverse
 from vitrina.datasets.models import Dataset
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
+from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.users.models import User
@@ -103,7 +104,7 @@ class SubscribeFormView(
     user: User
 
     def has_permission(self):
-        if isinstance(self.obj, Dataset):
+        if isinstance(self.obj, (Dataset, Organization)):
             if self.obj.is_public:
                 return True
             else:

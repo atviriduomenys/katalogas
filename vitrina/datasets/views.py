@@ -83,7 +83,7 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 
 
-class DatasetListView(PlanMixin, FacetedSearchView):
+class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
         'status',
@@ -110,6 +110,15 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def has_permission(self):
+        if is_org_dataset_list(self.request):
+            organization = get_object_or_404(Organization,pk=self.kwargs['pk'])
+            if organization.is_public:
+                return True
+            else:
+                return has_perm(self.request.user, Action.VIEW, organization)
+        return True
 
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get('organization_id')

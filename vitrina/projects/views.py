@@ -215,7 +215,7 @@ class ProjectHistoryView(HistoryView):
         return context
 
 
-class ProjectDatasetsView(HistoryMixin, ListView):
+class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
     model = Dataset
     template_name = 'vitrina/projects/datasets.html'
     paginate_by = 20
@@ -227,6 +227,17 @@ class ProjectDatasetsView(HistoryMixin, ListView):
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Project, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if not has_perm(self.request.user, Action.UPDATE, self.object):
+            if self.request.user.is_authenticated:
+                return (
+                    self.object.status == Project.APPROVED or
+                    self.object.user == self.request.user
+                )
+            else:
+                return self.object.status == Project.APPROVED
+        return True
 
     def get_queryset(self):
         return Dataset.public.filter(project=self.object).select_related('organization')

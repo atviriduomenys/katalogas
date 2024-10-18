@@ -374,10 +374,22 @@ class OrganizationManagementsView(OrganizationListView):
         return context
 
 
-class OrganizationDetailView(PlanMixin, DetailView):
+class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, DetailView):
     model = Organization
     template_name = 'vitrina/orgs/detail.html'
     plan_url_name = 'organization-plans'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.organization.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -1005,7 +1017,7 @@ class PartnerRegisterCompleteView(TemplateView):
     template_name = 'vitrina/orgs/partners/register_complete.html'
 
 
-class OrganizationPlanView(PlanMixin, TemplateView):
+class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, TemplateView):
     template_name = 'vitrina/orgs/plans.html'
     plan_url_name = 'organization-plans'
 
@@ -1014,6 +1026,12 @@ class OrganizationPlanView(PlanMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.organization.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

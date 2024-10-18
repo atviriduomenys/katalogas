@@ -229,6 +229,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'vitrina.validators.SpecialCharacterValidator',
     },
+    {
+        'NAME': 'vitrina.validators.UniquePasswordValidator',
+    },
 ]
 
 

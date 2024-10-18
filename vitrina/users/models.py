@@ -101,7 +101,7 @@ class OldPassword(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    password = models.CharField(max_length=60, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
 
     class Meta:

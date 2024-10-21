@@ -204,6 +204,11 @@ class UserAdmin(BaseUserAdmin):
                     '<span style="color: red;">{}</span>',
                     obj.get_status_display(),
                 )
+            elif obj.status == User.LOCKED:
+                return format_html(
+                    '<span style="color: grey;">{}</span>',
+                    obj.get_status_display(),
+                )
         return "-"
     status_display.short_description = _("Būsena")
     status_display.admin_order_field = 'status'

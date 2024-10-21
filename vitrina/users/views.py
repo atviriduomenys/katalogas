@@ -48,6 +48,8 @@ class LoginView(BaseLoginView):
                 if user[0].verified is True:
                     login(self.request, form.get_user(),
                           backend='django.contrib.auth.backends.ModelBackend')
+                    user_obj = User.objects.get(pk=self.request.user.id)
+                    user_obj.reset_failed_attempts()
                     return HttpResponseRedirect(self.get_success_url())
                 else:
                     messages.error(self.request, _("El. pašto adresas nepatvirtintas. "
@@ -184,6 +186,8 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
+        user_obj = form.save()
+        user_obj.reset_failed_attempts()
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
 

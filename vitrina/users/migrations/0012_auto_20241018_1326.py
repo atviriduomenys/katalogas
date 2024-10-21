@@ -17,4 +17,18 @@ class Migration(migrations.Migration):
             name='password',
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
+        migrations.AddField(
+            model_name='user',
+            name='failed_login_attempts',
+            field=models.IntegerField(default=0),
+        ),
+        migrations.AlterField(
+            model_name='user',
+            name='status',
+            field=models.CharField(blank=True,
+                                   choices=[('active', 'Aktyvus'), ('awaiting_confirmation', 'Laukiama patvirtinimo'),
+                                            ('suspended', 'Suspenduotas'), ('deleted', 'Pašalintas'),
+                                            ('locked', 'Užrakintas')], default='awaiting_confirmation', max_length=255,
+                                   null=True),
+        ),
     ]

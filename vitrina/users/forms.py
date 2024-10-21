@@ -46,7 +46,16 @@ class LoginForm(Form):
 
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
+            user = User.objects.get(email=email)
+
+            if user.failed_login_attempts >= 5 or user.status == user.LOCKED:
+                if user.status != User.LOCKED:
+                    user.lock_user()
+                raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. Po 5 nesėkmingų bandymų jūsų paskyra buvo užblokuota dėl saugumo priežasčių. Norėdami vėl prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį".'))
+
             if self.user_cache is None:
+                user.failed_login_attempts += 1
+                user.save()
                 raise ValidationError(_("Neteisingi prisijungimo duomenys"))
 
         return self.cleaned_data
@@ -269,6 +278,8 @@ class UserChangeAdminForm(UserChangeForm):
                 self.fields["is_active"].disabled = True
                 self.fields["is_staff"].disabled = True
                 self.fields["is_superuser"].disabled = True
+            elif self.instance.status == User.LOCKED:
+                self.fields["user_status"].widget.attrs['style'] = "background-color: #f2f2f2; color: grey;"
             if instance.emailaddress_set.first() and not instance.emailaddress_set.first().verified:
                 self.initial['email_confirmed'] = False
             else:

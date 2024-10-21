@@ -839,21 +839,22 @@ jsonfield = ">=3.0.0"
 
 [[package]]
 name = "django-filer"
-version = "2.2.7"
+version = "3.2.3"
 description = "A file management application for django that makes handling of files and images a breeze."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "django_filer-2.2.7-py3-none-any.whl", hash = "sha256:1113fcc3a6e9397225b1c6b8e72f847977279638e4ce8275c80746216a5c6c78"},
-    {file = "django_filer-2.2.7.tar.gz", hash = "sha256:40cdb6d3879a135409c60472bad1f40d790c2cf5403d4c8dd38189130d1fb2fd"},
+    {file = "django_filer-3.2.3-py3-none-any.whl", hash = "sha256:b0501899d2097a5c5e0c263a697071ca64e32b9cbe9172ad41e4d681b5e67377"},
+    {file = "django_filer-3.2.3.tar.gz", hash = "sha256:a7c173484416e5d71f80838b5105213acf119184267e4e17f47ed3f197e3ba1d"},
 ]
 
 [package.dependencies]
-django = ">=2.2,<5"
-django-mptt = "*"
+django = ">=3.2"
 django-polymorphic = "*"
 easy-thumbnails = {version = "*", extras = ["svg"]}
-Unidecode = ">=0.04,<1.2"
+
+[package.extras]
+heif = ["pillow-heif"]
 
 [[package]]
 name = "django-formtools"
@@ -903,23 +904,6 @@ files = [
 django-etc = ">=1.2.0"
 
 [[package]]
-name = "django-js-asset"
-version = "2.2.0"
-description = "script tag with additional attributes for django.forms.Media"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "django_js_asset-2.2.0-py3-none-any.whl", hash = "sha256:7ef3e858e13d06f10799b56eea62b1e76706f42cf4e709be4e13356bc0ae30d8"},
-    {file = "django_js_asset-2.2.0.tar.gz", hash = "sha256:0c57a82cae2317e83951d956110ce847f58ff0cdc24e314dbc18b35033917e94"},
-]
-
-[package.dependencies]
-django = ">=3.2"
-
-[package.extras]
-tests = ["coverage"]
-
-[[package]]
 name = "django-libsass"
 version = "0.9"
 description = "A django-compressor filter to compile SASS files using libsass"
@@ -947,23 +931,6 @@ files = [
 
 [package.extras]
 docs = ["django (<5.0)"]
-
-[[package]]
-name = "django-mptt"
-version = "0.16.0"
-description = "Utilities for implementing Modified Preorder Tree Traversal with your Django Models and working with trees of Model instances."
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "django_mptt-0.16.0-py3-none-any.whl", hash = "sha256:8716849ba3318d94e2e100ed0923a05c1ffdf8195f8472b690dbaf737d2af3b5"},
-    {file = "django_mptt-0.16.0.tar.gz", hash = "sha256:56c9606bf0b329b5f5afd55dd8bfd073612ea1d5999b10903b09de62bee84c8e"},
-]
-
-[package.dependencies]
-django-js-asset = "*"
-
-[package.extras]
-tests = ["coverage[toml]", "mock-django"]
 
 [[package]]
 name = "django-parler"
@@ -3285,17 +3252,6 @@ files = [
 ]
 
 [[package]]
-name = "unidecode"
-version = "1.1.2"
-description = "ASCII transliterations of Unicode text"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-files = [
-    {file = "Unidecode-1.1.2-py2.py3-none-any.whl", hash = "sha256:4c9d15d2f73eb0d2649a151c566901f80a030da1ccb0a2043352e1dbf647586b"},
-    {file = "Unidecode-1.1.2.tar.gz", hash = "sha256:a039f89014245e0cad8858976293e23501accc9ff5a7bdbc739a14a2b7b85cdc"},
-]
-
-[[package]]
 name = "uritemplate"
 version = "4.1.1"
 description = "Implementation of RFC 6570 URI Templates"
@@ -3437,4 +3393,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "da20742431b0ef927232e09458016fc0586319379c498746b42399b61f298469"
+content-hash = "03e572e0fb82a7522bb71db68511a986ab511e8a936e952dfb9215544a2f03fc"

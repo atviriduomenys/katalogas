@@ -57,10 +57,9 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
     app.set_user(user)
     resp = app.get(reverse('partner-register'))
     form = resp.forms['partner-register-form']
-    
-    upload_file = open('tests/viisp/resources/test.adoc', 'rb').read()
+
     form['organization'].force_value(org.pk)
-    form['request_form'] = Upload('test.adoc', upload_file)
+    form['request_form'] = Upload('test.doc', b"Test")
     form['coordinator_phone_number'] = '+37000000000'
     resp = form.submit()
     assert resp.url == '/partner/register-complete/'

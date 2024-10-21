@@ -3,6 +3,7 @@ import pathlib
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CharField
+from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
 
@@ -203,6 +204,13 @@ class MultipleFilerField(FileField):
             data.name = data.original_filename
             return super().to_python(data)
         return super().to_python(data)
+
+    def bound_data(self, data, initial):
+        if data in (None, FILE_INPUT_CONTRADICTION):
+            return initial
+        elif isinstance(data, list) and isinstance(initial, list):
+            data.extend(initial)
+        return data
 
 
 class TranslatedFileInput(ClearableFileInput):

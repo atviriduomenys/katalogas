@@ -308,8 +308,12 @@ THUMBNAIL_ALIASES = {
 FILER_ADD_FILE_VALIDATORS = {
     "text/html": ["filer.validation.deny_html"],
     "image/svg+xml": ["filer.validation.deny"],
+    "text/javascript": ["filer.validation.deny"],
+    "application/javascript": ["filer.validation.deny"],
     "application/x-msdownload": ["filer.validation.deny"],
     "application/x-sh": ["filer.validation.deny"],
+    "application/x-httpd-php": ["filer.validation.deny"],
+    "application/octet-stream": ["filer.validation.deny"],
 }
 
 META_USE_OG_PROPERTIES = True

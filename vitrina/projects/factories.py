@@ -14,4 +14,4 @@ class ProjectFactory(DjangoModelFactory):
     version = 1
     title = factory.Faker('catch_phrase')
     image = factory.SubFactory(FilerImageFactory)
-    status = Project.CREATED
+    status = Project.APPROVED

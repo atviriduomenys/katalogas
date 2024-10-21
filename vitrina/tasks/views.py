@@ -88,10 +88,23 @@ class TaskListView(LoginRequiredMixin, ListView):
         return context
 
 
-class TaskView(LoginRequiredMixin, DetailView):
+class TaskView(PermissionRequiredMixin, DetailView):
     model = Task
     template_name = 'vitrina/tasks/detail.html'
     pk_url_kwarg = 'task_id'
+
+    task: Task
+
+    def dispatch(self, request, *args, **kwargs):
+        self.task = get_object_or_404(Task, pk=kwargs.get('task_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.request.user and self.request.user.is_authenticated:
+            user_tasks = get_active_tasks(self.request.user, all_tasks=True)
+            if user_tasks.filter(pk=self.task.pk):
+                return True
+        return False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -108,6 +121,7 @@ class TaskView(LoginRequiredMixin, DetailView):
             reverse('home'): _('Pradžia'),
             reverse('user-task-list', args=[self.request.user.pk]): _('Užduotys'),
         }
+        context['has_perm'] = self.has_permission()
         return context
 
 
@@ -121,10 +135,11 @@ class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.object)
-
-    def handle_no_permission(self):
-        return HttpResponseRedirect(reverse('user-task-list', kwargs={'pk': self.request.user.pk}))
+        if self.request.user and self.request.user.is_authenticated:
+            user_tasks = get_active_tasks(self.request.user, all_tasks=True)
+            if user_tasks.filter(pk=self.object.pk) and self.object.status != Task.COMPLETED:
+                return True
+        return False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -151,10 +166,11 @@ class AssignTaskView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.task)
-
-    def handle_no_permission(self):
-        return HttpResponseRedirect(reverse('user-task-list', kwargs={'pk': self.request.user.pk}))
+        if self.request.user and self.request.user.is_authenticated:
+            user_tasks = get_active_tasks(self.request.user, all_tasks=True)
+            if user_tasks.filter(pk=self.task.pk) and self.task.status != Task.COMPLETED:
+                return True
+        return False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

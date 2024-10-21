@@ -24,13 +24,8 @@ def manage_unmanaged_models():
 
 
 @pytest.fixture()
-def app(django_app):
-    yield django_app
-
-
-@pytest.fixture
-def csrf_exempt_django_app(django_app_factory):
-    return django_app_factory(csrf_checks=False)
+def app(django_app_factory):
+    yield django_app_factory(csrf_checks=False)
 
 
 def pytest_configure(config):

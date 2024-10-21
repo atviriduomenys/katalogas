@@ -344,7 +344,7 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
 
 
 @pytest.mark.django_db
-def test_register_after_adding_representative(csrf_exempt_django_app: DjangoTestApp, representative_data):
+def test_register_after_adding_representative(app: DjangoTestApp, representative_data):
     new_representative = RepresentativeFactory(
         email="new@gmail.com",
         content_type=ContentType.objects.get_for_model(Organization),
@@ -356,7 +356,7 @@ def test_register_after_adding_representative(csrf_exempt_django_app: DjangoTest
 
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('representative-register', kwargs={'token': token}), {
+        resp = app.post(reverse('representative-register', kwargs={'token': token}), {
             'first_name': "New",
             'last_name': "User",
             'email': "new@gmail.com",

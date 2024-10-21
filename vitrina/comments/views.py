@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect
@@ -15,7 +15,7 @@ from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs, NEW_COMMENT, \
     REPLY_COMMENT
 from vitrina.comments.models import Comment
-from vitrina.comments.services import get_comment_form_class
+from vitrina.comments.services import get_comment_form_class, has_comment_permission
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email
 from vitrina.messages.models import Subscription
@@ -30,18 +30,25 @@ from django.utils.translation import gettext_lazy as _
 
 class CommentView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     RevisionMixin,
     View
 ):
+    content_type: ContentType
+    obj: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        self.content_type = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get('object_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_comment_permission(self.obj, self.request.user)
+
     def post(self, request, content_type_id, object_id):
-        email_content = """
-            Sveiki, <br>
-            portale užregistruotas naujas pasiūlymas/pastaba: <br>
-            Pasiūlymo/pastabos teikėjo vardas: {0} <br>
-            Pasiūlymas/pastaba: {1}        
-        """
-        content_type = get_object_or_404(ContentType, pk=content_type_id)
-        obj = get_object_or_404(content_type.model_class(), pk=object_id)
+        obj = self.obj
+        content_type = self.content_type
+
         form_class = get_comment_form_class(obj, request.user)
         form = form_class(obj, request.POST)
         link = "%s%s" % (
@@ -226,10 +233,21 @@ class CommentView(
         return redirect(obj.get_absolute_url())
 
 
-class ReplyView(LoginRequiredMixin, View):
+class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    content_type: ContentType
+    obj: Model
+
+    def dispatch(self, request, *args, **kwargs):
+        self.content_type = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
+        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get('object_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_comment_permission(self.obj, self.request.user)
+
     def post(self, request, content_type_id, object_id, parent_id):
-        content_type = get_object_or_404(ContentType, pk=content_type_id)
-        obj = get_object_or_404(content_type.model_class(), pk=object_id)
+        content_type = self.content_type
+        obj = self.obj
         form = CommentForm(obj, request.POST)
 
         if form.is_valid():
@@ -268,9 +286,19 @@ class ReplyView(LoginRequiredMixin, View):
 
 class ExternalCommentView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     RevisionMixin,
     View
 ):
+    dataset: Dataset
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('dataset_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_comment_permission(self.dataset, self.request.user)
+
     def post(self, request, dataset_id, external_content_type, external_object_id):
         form_class = get_comment_form_class()
         form = form_class(external_object_id, request.POST)
@@ -280,7 +308,6 @@ class ExternalCommentView(
             comment.external_object_id = external_object_id
             comment.external_content_type = external_content_type
             comment.type = Comment.USER
-            dataset = get_object_or_404(Dataset, pk=dataset_id)
             sub_email_list = []
 
             if form.cleaned_data.get('register_request'):
@@ -299,7 +326,7 @@ class ExternalCommentView(
                 )
                 RequestAssignment.objects.create(
                     request=new_request,
-                    organization=dataset.organization,
+                    organization=self.dataset.organization,
                     status=Request.CREATED
                 )
                 set_comment(Request.CREATED)
@@ -307,13 +334,13 @@ class ExternalCommentView(
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
 
-                if dataset.organization.email:
-                    sub_email_list.append(dataset.organization.email)
+                if self.dataset.organization.email:
+                    sub_email_list.append(self.dataset.organization.email)
 
                 subs = Subscription.objects.filter(
-                    Q(object_id=dataset.pk) | Q(object_id=None),
+                    Q(object_id=self.dataset.pk) | Q(object_id=None),
                     sub_type=Subscription.DATASET,
-                    content_type=ContentType.objects.get_for_model(dataset),
+                    content_type=ContentType.objects.get_for_model(self.dataset),
                     dataset_comments_sub=True
                 )
                 for sub in subs:
@@ -322,8 +349,8 @@ class ExternalCommentView(
                         sub.email_subscribed and
                         sub.user.email not in sub_email_list and
                         Representative.objects.filter(
-                            content_type=ContentType.objects.get_for_model(dataset),
-                            object_id=dataset.pk,
+                            content_type=ContentType.objects.get_for_model(self.dataset),
+                            object_id=self.dataset.pk,
                             email=sub.user.email
                         ).exists()
                     ):
@@ -375,25 +402,35 @@ class ExternalCommentView(
         }))
 
 
-class ExternalReplyView(LoginRequiredMixin, View):
+class ExternalReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    dataset: Dataset
+
+    def has_permission(self):
+        return True
+
     def post(self, request, external_content_type, external_object_id, parent_id):
         form = CommentForm(None, request.POST)
 
-        if form.is_valid():
-            Comment.objects.create(
-                type=Comment.USER,
-                user=request.user,
-                external_object_id=external_object_id,
-                external_content_type=external_content_type,
-                parent_id=parent_id,
-                body=form.cleaned_data.get('body'),
-                is_public=form.cleaned_data.get('is_public')
-            )
-            create_task(REPLY_COMMENT, external_content_type, parent_id, request.user)
-        else:
-            messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
-        return redirect(reverse('object-data', kwargs={
-            'pk': form.data.get('dataset_id'),
-            'model': external_content_type,
-            'uuid': external_object_id,
-        }))
+        if dataset_id := form.data.get('dataset_id'):
+            dataset = get_object_or_404(Dataset, pk=dataset_id)
+            if has_comment_permission(dataset, request.user):
+                if form.is_valid():
+                    Comment.objects.create(
+                        type=Comment.USER,
+                        user=request.user,
+                        external_object_id=external_object_id,
+                        external_content_type=external_content_type,
+                        parent_id=parent_id,
+                        body=form.cleaned_data.get('body'),
+                        is_public=form.cleaned_data.get('is_public')
+                    )
+                    create_task(REPLY_COMMENT, external_content_type, parent_id, request.user)
+                else:
+                    messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
+                return redirect(reverse('object-data', kwargs={
+                    'pk': form.data.get('dataset_id'),
+                    'model': external_content_type,
+                    'uuid': external_object_id,
+                }))
+
+        return self.handle_no_permission()

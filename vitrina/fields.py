@@ -2,9 +2,11 @@ import pathlib
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CheckboxInput, CharField
+from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CharField
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
+
+from vitrina.helpers import validate_file
 
 
 class MultipleValueWidget(TextInput):
@@ -67,7 +69,11 @@ class FilerFieldMixin:
         # and it points to filer's object id
         elif isinstance(file, int):
             file = self.filer_model.objects.get(pk=file)
+            validate_file(file.file)
+
         elif isinstance(file, UploadedFile):
+            validate_file(file)
+
             # if file was changed, clear the previous one
             if initial and isinstance(initial, int):
                 self.filer_model.objects.get(pk=initial).delete()
@@ -75,9 +81,8 @@ class FilerFieldMixin:
             current_folder = None
             if self.upload_to:
                 folders = self.upload_to.split('/')
-                for level, folder_name in enumerate(folders):
+                for folder_name in folders:
                     current_folder, created = Folder.objects.get_or_create(
-                        level=level,
                         name=folder_name,
                         parent=current_folder
                     )
@@ -124,19 +129,21 @@ class MultipleFileInput(ClearableFileInput):
         res = []
         if value:
             for val in value:
-                file = File.objects.get(pk=val)
-                res.append({
-                    'value_text': pathlib.Path(file.file.name).name if file.file else "",
-                    'url': file.file.url
-                })
+                if isinstance(val, int):
+                    file = File.objects.get(pk=val)
+                    res.append({
+                        'value_text': pathlib.Path(file.file.name).name if file.file else "",
+                        'url': file.file.url
+                    })
         return res
 
     def is_initial(self, value):
         files = []
         if value:
             for val in value:
-                file = File.objects.get(pk=val)
-                files.append(file)
+                if isinstance(val, int):
+                    file = File.objects.get(pk=val)
+                    files.append(file)
         return all(
             [super(MultipleFileInput, self).is_initial(file) for file in files]
         ) if files else False
@@ -151,7 +158,13 @@ class MultipleFilerField(FileField):
 
     def clean(self, data, initial=None):
         if isinstance(data, (list, tuple)):
-            result = [self._clean(d, initial) for d in data]
+            if initial is None:
+                initial = []
+            data.extend(initial)
+            if data:
+                result = [self._clean(d, initial) for d in data]
+            else:
+                result = []
         else:
             result = [self._clean(data, initial)]
         return [file for file in result if file]
@@ -164,15 +177,16 @@ class MultipleFilerField(FileField):
                     if isinstance(obj, int):
                         File.objects.get(pk=obj).delete()
             return None
-        elif isinstance(file, int):
-            file = initial
+        elif isinstance(file, File):
+            validate_file(file.file)
         elif isinstance(file, UploadedFile):
+            validate_file(file)
+
             current_folder = None
             if self.upload_to:
                 folders = self.upload_to.split('/')
-                for level, folder_name in enumerate(folders):
+                for folder_name in folders:
                     current_folder, created = Folder.objects.get_or_create(
-                        level=level,
                         name=folder_name,
                         parent=current_folder
                     )
@@ -182,6 +196,13 @@ class MultipleFilerField(FileField):
                 folder=current_folder
             )
         return file
+
+    def to_python(self, data):
+        if isinstance(data, int):
+            data = File.objects.get(pk=data)
+            data.name = data.original_filename
+            return super().to_python(data)
+        return super().to_python(data)
 
 
 class TranslatedFileInput(ClearableFileInput):

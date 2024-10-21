@@ -1085,6 +1085,22 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_dataset_structure_import_not_allowed_file(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+
+    app.set_user(user)
+    resp = app.get(reverse('dataset-structure-import', args=[dataset.pk]))
+    form = resp.forms['dataset-structure-form']
+    form['file'] = Upload('manifest.exe', b'Column\nValue')
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Failas \"manifest.exe\": įkėlimas atmestas dėl puslapio saugumo nuostatų'
+    ]]
+
+
+@pytest.mark.django_db
 def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     dataset = DatasetFactory()
@@ -2257,3 +2273,21 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('dataset-requests', args=[dataset.pk]))
     assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_dataset_create_with_not_allowed_file(app: DjangoTestApp):
+    LicenceFactory(is_default=True)
+    FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
+    form['title'] = 'Test dataset'
+    form['description'] = 'Test dataset description'
+    form['files'] = [Upload('manifest.exe', b'Column\nValue')]
+    resp = form.submit()
+
+    assert list(resp.context['form'].errors.values()) == [[
+        'Failas \"manifest.exe\": įkėlimas atmestas dėl puslapio saugumo nuostatų'
+    ]]

@@ -97,7 +97,6 @@ INSTALLED_APPS = [
     'treebeard',
     'filer',
     'easy_thumbnails',
-    'mptt',
     'djangocms_text_ckeditor',
     'aldryn_apphooks_config',
     'parler',
@@ -304,6 +303,12 @@ THUMBNAIL_ALIASES = {
     '': {
         'list': {'size': (480, 320)},
     },
+}
+
+FILER_ADD_FILE_VALIDATORS = {
+    "text/html": ["filer.validation.deny_html"],
+    "image/svg+xml": ["filer.validation.deny"],
+    "application/x-msdownload": ["filer.validation.deny"],
 }
 
 META_USE_OG_PROPERTIES = True

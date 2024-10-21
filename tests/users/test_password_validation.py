@@ -7,6 +7,7 @@ from django_webtest import DjangoTestApp
 
 from vitrina.users.models import User, OldPassword
 
+
 @pytest.fixture
 def user():
     user = User.objects.create_user(email="test@test.com", password="test123")
@@ -14,10 +15,10 @@ def user():
 
 
 @pytest.mark.django_db
-def test_register_minimum_length(csrf_exempt_django_app: DjangoTestApp):
+def test_register_minimum_length(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test@test.com",
@@ -31,10 +32,10 @@ def test_register_minimum_length(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_uppercase(csrf_exempt_django_app: DjangoTestApp):
+def test_register_uppercase(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test@test.com",
@@ -48,10 +49,10 @@ def test_register_uppercase(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_lowercase(csrf_exempt_django_app: DjangoTestApp):
+def test_register_lowercase(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test@test.com",
@@ -65,10 +66,10 @@ def test_register_lowercase(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_digit(csrf_exempt_django_app: DjangoTestApp):
+def test_register_digit(app: DjangoTestApp):
     with (patch('django_recaptcha.fields.client.submit') as mocked_submit):
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test@test.com",
@@ -82,10 +83,10 @@ def test_register_digit(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_register_special_character(csrf_exempt_django_app: DjangoTestApp):
+def test_register_special_character(app: DjangoTestApp):
     with (patch('django_recaptcha.fields.client.submit') as mocked_submit):
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = csrf_exempt_django_app.post(reverse('register'), {
+        resp = app.post(reverse('register'), {
             'first_name': "Test",
             'last_name': "User",
             'email': "test@test.com",

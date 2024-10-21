@@ -28,7 +28,8 @@ def test_register_minimum_length(app: DjangoTestApp):
             "g-recaptcha-response": "PASSED",
         })
         assert resp.status_code == 200
-        assert list(resp.context['form'].errors.values()) == [["Šis slaptažodis yra per trumpas. Jį turi sudaryti bent 12 simbolių."]]
+        assert list(resp.context['form'].errors.values()) == [['Šis slaptažodis yra per trumpas. Jį turi sudaryti bent 12 simbolių.',
+                                                               'Slaptažodis per silpnas. Bandykite naudoti daugiau simbolių, didžiųjų raidžių, skaitmenų ir specialiųjų simbolių.']]
 
 
 @pytest.mark.django_db
@@ -110,7 +111,8 @@ def test_password_change_minimum_length(app: DjangoTestApp, user: User):
     form['new_password2'] = "Short1!"
     resp = form.submit()
     assert resp.status_code == 200
-    assert list(resp.context['form'].errors.values()) == [["Šis slaptažodis yra per trumpas. Jį turi sudaryti bent 12 simbolių."]]
+    assert list(resp.context['form'].errors.values()) == [["Šis slaptažodis yra per trumpas. Jį turi sudaryti bent 12 simbolių.",
+                                                               'Slaptažodis per silpnas. Bandykite naudoti daugiau simbolių, didžiųjų raidžių, skaitmenų ir specialiųjų simbolių.']]
 
 
 @pytest.mark.django_db
@@ -176,13 +178,13 @@ def test_password_change_not_unique(app: DjangoTestApp):
 
     form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
     form['old_password'] = "InitialPassword1!"
-    form['new_password1'] = "OldPassword1!"
-    form['new_password2'] = "OldPassword1!"
+    form['new_password1'] = "AgadeBkghf91!"
+    form['new_password2'] = "AgadeBkghf91!"
     form.submit()
     user1.refresh_from_db()
     OldPassword.objects.create(user=user1, password=user1.password, version=1)
 
-    for old_password, new_password in [("OldPassword1!", "OldPassword2!"), ("OldPassword2!", "OldPassword3!")]:
+    for old_password, new_password in [("AgadeBkghf91!", "AgadeBkghf92!"), ("AgadeBkghf92!", "AgadeBkghf93!")]:
         form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
         form['old_password'] = old_password
         form['new_password1'] = new_password
@@ -192,9 +194,9 @@ def test_password_change_not_unique(app: DjangoTestApp):
         OldPassword.objects.create(user=user1, password=user1.password, version=1)
 
     form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
-    form['old_password'] = "OldPassword3!"
-    form['new_password1'] = "OldPassword2!"
-    form['new_password2'] = "OldPassword2!"
+    form['old_password'] = "AgadeBkghf93!"
+    form['new_password1'] = "AgadeBkghf92!"
+    form['new_password2'] = "AgadeBkghf92!"
     resp = form.submit()
 
     assert resp.status_code == 200

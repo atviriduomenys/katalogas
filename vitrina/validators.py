@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from vitrina.users.models import OldPassword
 from django.contrib.auth.hashers import check_password
+from zxcvbn import zxcvbn
 import re
 
 class UppercaseValidator:
@@ -65,3 +66,14 @@ class UniquePasswordValidator:
 
     def get_help_text(self):
         return _("Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai.")
+
+class ZxcvbnPasswordValidator:
+    def validate(self, password, user=None):
+        result = zxcvbn(password)
+        if result['score'] < 3:
+            raise ValidationError(
+                _("Slaptažodis per silpnas. Bandykite naudoti daugiau simbolių, didžiųjų raidžių, skaitmenų ir specialiųjų simbolių."),
+                code='password_too_weak',
+            )
+    def get_help_text(self):
+        return

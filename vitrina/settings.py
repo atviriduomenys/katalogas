@@ -235,6 +235,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'vitrina.validators.UniquePasswordValidator',
     },
+    {
+        'NAME': 'vitrina.validators.ZxcvbnPasswordValidator',
+    },
 ]
 
 

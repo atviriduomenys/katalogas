@@ -309,6 +309,7 @@ FILER_ADD_FILE_VALIDATORS = {
     "text/html": ["filer.validation.deny_html"],
     "image/svg+xml": ["filer.validation.deny"],
     "application/x-msdownload": ["filer.validation.deny"],
+    "application/x-sh": ["filer.validation.deny"],
 }
 
 META_USE_OG_PROPERTIES = True

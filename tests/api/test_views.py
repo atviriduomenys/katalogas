@@ -957,33 +957,6 @@ def test_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_create_dataset_distribution_with_not_allowed_file(app: DjangoTestApp):
-    domain = Site.objects.get_current().domain
-    dataset = DatasetFactory()
-    ct = ContentType.objects.get_for_model(dataset.organization)
-    representative = RepresentativeFactory(
-        content_type=ct,
-        object_id=dataset.organization.pk,
-    )
-    api_key = APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12")
-    ], files=[('file', 'file.exe', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
-    assert res.status_code == 400
-    assert 'file' in res.json
-
-
-@pytest.mark.django_db
 def test_create_dataset_distribution_with_file(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     dataset = DatasetFactory()

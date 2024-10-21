@@ -360,8 +360,8 @@ def test_register_after_adding_representative(csrf_exempt_django_app: DjangoTest
             'first_name': "New",
             'last_name': "User",
             'email': "new@gmail.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestTestTest123?",
+            'password2': "TestTestTest123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })

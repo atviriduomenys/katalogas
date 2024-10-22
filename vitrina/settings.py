@@ -99,7 +99,6 @@ INSTALLED_APPS = [
     'treebeard',
     'filer',
     'easy_thumbnails',
-    'mptt',
     'djangocms_text_ckeditor',
     'aldryn_apphooks_config',
     'parler',
@@ -309,6 +308,17 @@ THUMBNAIL_ALIASES = {
     },
 }
 
+FILER_ADD_FILE_VALIDATORS = {
+    "text/html": ["filer.validation.deny_html"],
+    "image/svg+xml": ["filer.validation.deny"],
+    "text/javascript": ["filer.validation.deny"],
+    "application/javascript": ["filer.validation.deny"],
+    "application/x-msdownload": ["filer.validation.deny"],
+    "application/x-sh": ["filer.validation.deny"],
+    "application/x-httpd-php": ["filer.validation.deny"],
+    "application/octet-stream": ["filer.validation.deny"],
+}
+
 META_USE_OG_PROPERTIES = True
 META_USE_TWITTER_PROPERTIES = True
 META_USE_SCHEMAORG_PROPERTIES = True
@@ -446,3 +456,7 @@ CACHES = {
 }
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = None
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+LANGUAGE_COOKIE_SECURE = True

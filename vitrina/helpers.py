@@ -2,6 +2,7 @@
 import math
 import datetime
 import calendar
+import mimetypes
 from typing import Optional, List, Any
 from typing import Type
 from typing import Tuple
@@ -22,6 +23,7 @@ from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string, get_template
 from django.template import engines, Template, Context
+from filer.validation import validate_upload
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -677,3 +679,13 @@ def get_encoding(file_path):
             return 'utf-8-sig'
         else:
             return 'utf-8'
+
+
+def validate_file(file):
+    mime_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+    validate_upload(
+        file_name=file.name,
+        file=file.file,
+        owner=None,
+        mime_type=mime_type,
+    )

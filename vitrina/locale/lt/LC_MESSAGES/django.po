@@ -504,7 +504,8 @@ msgstr[3] ""
 msgid ""
 "File extension “%(extension)s” is not allowed. Allowed extensions are: "
 "%(allowed_extensions)s."
-msgstr ""
+msgstr "Failo formatas “%(extension)s” yra negalimas. Galimi formatai yra: "
+"%(allowed_extensions)s."
 
 #: .\venv\Lib\site-packages\django\core\validators.py:559
 msgid "Null characters are not allowed."
@@ -3311,3 +3312,14 @@ msgstr ""
 
 msgid "The {name} “{obj}” was added successfully."
 msgstr "{name} “{obj}” pridėtas sėkmingai."
+
+msgid "File \"{file_name}\": Upload denied by site security policy"
+msgstr "Failas \"{file_name}\": įkėlimas atmestas dėl puslapio saugumo nuostatų"
+
+msgid "File \"{file_name}\": HTML upload denied by site security policy"
+msgstr "Failas \"{file_name}\": įkėlimas atmestas dėl puslapio saugumo nuostatų"
+
+msgid "File \"{file_name}\": {file_type} upload denied by site security policy"
+msgstr "Failas \"{file_name}\": įkėlimas atmestas dėl puslapio saugumo nuostatų"
+
+

@@ -22,7 +22,7 @@ from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
-    PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory
+    PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
 from vitrina.structure.models import Metadata, Enum, EnumItem, Param
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
@@ -30,7 +30,7 @@ from vitrina.structure.models import Version as _Version
 
 
 @pytest.mark.django_db
-def test_model_data(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -75,7 +75,7 @@ def test_model_data(csrf_exempt_django_app: DjangoTestApp):
             }
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse('model-data-table', args=[dataset.pk, model.name]), {
+    resp = app.post(reverse('model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data)
     })
     assert resp.context['headers'] == ['_id', 'prop_1', 'prop_2']
@@ -89,7 +89,7 @@ def test_model_data(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data_select(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -127,7 +127,7 @@ def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
             {'prop_1': 'test 2'}
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': "?select(prop_1)",
@@ -139,7 +139,7 @@ def test_model_data_select(csrf_exempt_django_app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
+def test_model_data_sort(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -177,7 +177,7 @@ def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
             {'prop_1': 'test 1'},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': "?select(prop_1)&sort(-prop_1)",
@@ -190,7 +190,7 @@ def test_model_data_sort(csrf_exempt_django_app: DjangoTestApp):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("operator", ['=', '<' '>' '<=', '>='])
-def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp, operator: str):
+def test_model_data_with_compare_operators(app: DjangoTestApp, operator: str):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -227,7 +227,7 @@ def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp
             {'prop_2': 2},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': f"?select(prop_2)&prop_2{operator}2",
@@ -240,7 +240,7 @@ def test_model_data_with_compare_operators(csrf_exempt_django_app: DjangoTestApp
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("operator", ['contains', 'startswith', 'endswith'])
-def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp, operator: str):
+def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -277,7 +277,7 @@ def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp,
             {'prop_1': 'test 1'},
         ]
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'model-data-table', args=[dataset.pk, model.name]), {
         'data': json.dumps(data),
         'query': f"?select(prop_1)&{operator}('test')",
@@ -289,7 +289,7 @@ def test_model_data_with_string_operators(csrf_exempt_django_app: DjangoTestApp,
 
 
 @pytest.mark.django_db
-def test_object_data(csrf_exempt_django_app: DjangoTestApp):
+def test_object_data(app: DjangoTestApp):
     model = ModelFactory()
     dataset = model.dataset
     MetadataFactory(
@@ -326,7 +326,7 @@ def test_object_data(csrf_exempt_django_app: DjangoTestApp):
         'prop_1': "test 1",
         'prop_2': 1
     }
-    resp = csrf_exempt_django_app.post(reverse(
+    resp = app.post(reverse(
         'object-data-table', args=[
             dataset.pk,
             model.name,
@@ -2784,3 +2784,401 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
     assert new_version.metadataversion_set.count() == 1
     assert new_version.metadataversion_set.first().metadata.object == enum_item
     assert new_version.metadataversion_set.first().source == 'TEST1'
+
+
+@pytest.mark.django_db
+def test_structure_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('dataset-structure', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('dataset-structure', args=[dataset.pk]))
+    assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_version_list_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    VersionFactory(dataset=dataset)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('version-list', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    version = VersionFactory(dataset=dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('version-list', args=[dataset.pk]))
+    assert list(response.context['versions']) == [version]
+
+
+@pytest.mark.django_db
+def test_version_detail_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    version = VersionFactory(dataset=dataset)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    version = VersionFactory(dataset=dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]))
+    assert response.context['version'] == version
+
+
+@pytest.mark.django_db
+def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('model-structure', args=[dataset.pk, model.name]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('model-structure', args=[dataset.pk, model.name]))
+    assert response.context['model'] == model
+
+
+@pytest.mark.django_db
+def test_property_structure_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('property-structure', args=[dataset.pk, model.name, prop.name]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('property-structure', args=[dataset.pk, model.name, prop.name]))
+    assert response.context['prop'] == prop
+
+
+@pytest.mark.django_db
+def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('model-data', args=[dataset.pk, model.name]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('model-data', args=[dataset.pk, model.name]))
+    assert response.context['model'] == model
+
+
+@pytest.mark.django_db
+def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('object-data', args=[dataset.pk, model.name, "123456789"]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('object-data', args=[dataset.pk, model.name, "123456789"]))
+    assert response.context['model'] == model
+
+
+@pytest.mark.django_db
+def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('getall-api', args=[dataset.pk, model.name]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel"
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset"
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+    )
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
+    assert response.context['model'] == model

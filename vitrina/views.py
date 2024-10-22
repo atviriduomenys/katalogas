@@ -55,6 +55,7 @@ def home(request):
             Project.public.
             filter(
                 image__isnull=False,
+                status='APPROVED'
             ).
             order_by('-created')[:3]
         ),

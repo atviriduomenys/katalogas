@@ -70,10 +70,12 @@
         </div>
     </div>
     <br/>
-    {% if not task.COMPLETED %}
+    {% if task.status != task.COMPLETED and has_perm %}
         <div class="columns">
             <div class="column is-three-quarters has-text-right">
-                <a href="{% url 'user-task-assign' user.pk task.pk %}" class="is-primary button">Priskirti sau</a>
+                {% if request.user != task.user %}
+                    <a href="{% url 'user-task-assign' user.pk task.pk %}" class="is-primary button">Priskirti sau</a>
+                {% endif %}
                 <a href="{% url 'user-task-close' user.pk task.pk %}" class="is-link button">Uždaryti</a>
             </div>
         </div>

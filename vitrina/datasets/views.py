@@ -83,7 +83,7 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 
 
-class DatasetListView(PlanMixin, FacetedSearchView):
+class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
         'status',
@@ -110,6 +110,15 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def has_permission(self):
+        if is_org_dataset_list(self.request):
+            organization = get_object_or_404(Organization,pk=self.kwargs['pk'])
+            if organization.is_public:
+                return True
+            else:
+                return has_perm(self.request.user, Action.VIEW, organization)
+        return True
 
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get('organization_id')
@@ -639,13 +648,6 @@ class DatasetUpdateView(
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
         return has_perm(self.request.user, Action.UPDATE, dataset)
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-            return redirect(dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1284,6 +1286,7 @@ class DeleteMemberView(
 
 class DatasetProjectsView(
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     HistoryMixin,
     PlanMixin,
     ListView
@@ -1302,6 +1305,12 @@ class DatasetProjectsView(
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         return get_projects(self.request.user, self.object, order_value='-created')
@@ -1329,7 +1338,7 @@ class DatasetProjectsView(
         return context
 
 
-class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
+class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
     model = RequestObject
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
@@ -1344,6 +1353,12 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         model_ids = Model.objects.filter(dataset=self.object).values_list('pk', flat=True)
@@ -1392,7 +1407,13 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return get_requests(self.request.user, self.dataset)
+        if self.dataset.is_public:
+            return get_requests(self.request.user, self.dataset)
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.dataset) and
+                get_requests(self.request.user, self.dataset)
+            )
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -2616,6 +2637,7 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 class DatasetPlanView(
     HistoryMixin,
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     PlanMixin,
     TemplateView
 ):
@@ -2624,6 +2646,12 @@ class DatasetPlanView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-plans-history'
     plan_url_name = 'dataset-plans'
+
+    def has_permission(self):
+        if self.dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -31,4 +31,9 @@ class Migration(migrations.Migration):
                                             ('locked', 'Užrakintas')], default='awaiting_confirmation', max_length=255,
                                    null=True),
         ),
+        migrations.AddField(
+            model_name='user',
+            name='password_last_updated',
+            field=models.DateTimeField(default=django.utils.timezone.now),
+        ),
     ]

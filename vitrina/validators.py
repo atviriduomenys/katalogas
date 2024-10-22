@@ -76,4 +76,4 @@ class ZxcvbnPasswordValidator:
                 code='password_too_weak',
             )
     def get_help_text(self):
-        return
+        return ""

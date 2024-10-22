@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytz
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
@@ -12,6 +14,7 @@ from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceF
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import now
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -48,10 +51,15 @@ class LoginForm(Form):
             self.user_cache = authenticate(self.request, email=email, password=password)
             user = User.objects.get(email=email)
 
-            if user.failed_login_attempts >= 5 or user.status == user.LOCKED:
+            if user.failed_login_attempts >= 5:
                 if user.status != User.LOCKED:
                     user.lock_user()
                 raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. Po 5 nesėkmingų bandymų jūsų paskyra buvo užblokuota dėl saugumo priežasčių. Norėdami vėl prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį".'))
+
+            if user.password_last_updated < now() - timedelta(days=90):
+                if user.status != User.LOCKED:
+                    user.lock_user()
+                raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį". '))
 
             if self.user_cache is None:
                 user.failed_login_attempts += 1
@@ -239,7 +247,7 @@ class UserChangeAdminForm(UserChangeForm):
         self.fields["last_login_date"].widget.attrs['style'] = "background-color: #f2f2f2;"
 
         if instance:
-            if instance.status != User.ACTIVE:
+            if instance.status != User.ACTIVE and instance.status != User.LOCKED:
                 if 'password1' in self.fields:
                     self.fields['password1'].widget = HiddenInput()
                 if 'password' in self.fields:
@@ -343,6 +351,8 @@ class UserChangeAdminForm(UserChangeForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         if self.cleaned_data.get('password1'):
+            user.reset_failed_attempts()
+            user.reset_password_last_updated()
             user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()

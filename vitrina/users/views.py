@@ -18,6 +18,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, make_aware
+from django.db.models.signals import post_save
 from allauth.socialaccount.models import SocialAccount
 from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
 from django.http import HttpResponseRedirect
@@ -34,6 +35,7 @@ from vitrina.users.forms import (
     UserProfileEditForm, CustomPasswordChangeForm
 )
 from vitrina.users.models import User
+from vitrina.users.signals import update_old_passwords
 
 
 class LoginView(BaseLoginView):
@@ -186,8 +188,11 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
+        post_save.disconnect(update_old_passwords, sender=User)
         user_obj = form.save()
         user_obj.reset_failed_attempts()
+        user_obj.reset_password_last_updated()
+        post_save.connect(update_old_passwords, sender=User)
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
 
@@ -321,6 +326,10 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
         return context
 
     def form_valid(self, form):
+        post_save.disconnect(update_old_passwords, sender=User)
+        user_obj = form.save()
+        user_obj.reset_password_last_updated()
+        post_save.connect(update_old_passwords, sender=User)
         messages.success(self.request, _("Slaptažodžio keitimas sėkmingas"))
         return super().form_valid(form)
 

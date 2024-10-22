@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.timezone import now
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
@@ -39,6 +42,7 @@ class User(AbstractUser):
     year_of_birth = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
     failed_login_attempts = models.IntegerField(default=0)
+    password_last_updated = models.DateTimeField(default=now)
 
     # Deprecated fields bellow
     disabled = models.BooleanField(default=False)
@@ -84,7 +88,13 @@ class User(AbstractUser):
 
     def reset_failed_attempts(self):
         self.failed_login_attempts = 0
-        if self.status == User.LOCKED:
+        if self.status == User.LOCKED and self.password_last_updated < now() - timedelta(days=90):
+            self.status = User.ACTIVE
+        self.save()
+
+    def reset_password_last_updated(self):
+        self.password_last_updated = now()
+        if self.failed_login_attempts < 5 and self.status == User.LOCKED:
             self.status = User.ACTIVE
         self.save()
 

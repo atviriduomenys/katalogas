@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
+from allauth.account.models import EmailAddress
 
 from vitrina.users.models import User, OldPassword
 
@@ -201,3 +202,64 @@ def test_password_change_not_unique(app: DjangoTestApp):
 
     assert resp.status_code == 200
     assert list(resp.context['form'].errors.values()) == [["Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai."]]
+
+@pytest.mark.django_db
+def test_successful_login_before_limit(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
+    app.set_user(user1)
+    # simulate 4 unsuccessful login attempts
+    for _ in range(4):
+        form = app.get(reverse('login')).forms['login-form']
+        form['email'] = user1.email,
+        form['password'] = "WrongPassword!"
+        resp = form.submit()
+        assert resp.status_code == 200
+
+    user1.refresh_from_db()
+    assert user1.failed_login_attempts == 4
+
+    # simulate successful login
+    form = app.get(reverse('login')).forms['login-form']
+    form['email'] = user1.email,
+    form['password'] = "InitialPassword1!"
+    resp = form.submit()
+    assert resp.status_code == 302
+
+    user1.refresh_from_db()
+    assert user1.failed_login_attempts == 0
+
+
+@pytest.mark.django_db
+def test_5_incorrect_attempts(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
+    app.set_user(user1)
+    # simulate 5 unsuccessful login attempts
+    for _ in range(5):
+        form = app.get(reverse('login')).forms['login-form']
+        form['email'] = user1.email,
+        form['password'] = "WrongPassword!"
+        resp = form.submit()
+        assert resp.status_code == 200
+
+    user1.refresh_from_db()
+    assert user1.failed_login_attempts == 5
+
+
+@pytest.mark.django_db
+def test_6_incorrect_attempts(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
+    app.set_user(user1)
+    # simulate 6 unsuccessful login attempts
+    for _ in range(6):
+        form = app.get(reverse('login')).forms['login-form']
+        form['email'] = user1.email,
+        form['password'] = "WrongPassword!"
+        resp = form.submit()
+        assert resp.status_code == 200
+
+    user1.refresh_from_db()
+    assert user1.failed_login_attempts == 5
+    assert "Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių" in resp.content.decode()

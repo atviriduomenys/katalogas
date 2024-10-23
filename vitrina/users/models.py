@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.timezone import now
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
@@ -12,12 +15,14 @@ class User(AbstractUser):
     AWAITING_CONFIRMATION = 'awaiting_confirmation'
     SUSPENDED = 'suspended'
     DELETED = 'deleted'
+    LOCKED = 'locked'
 
     STATUSES = (
         (ACTIVE, _("Aktyvus")),
         (AWAITING_CONFIRMATION, _("Laukiama patvirtinimo")),
         (SUSPENDED, _("Suspenduotas")),
         (DELETED, _("Pašalintas")),
+        (LOCKED, _("Užrakintas")),
     )
 
     username = None
@@ -36,6 +41,8 @@ class User(AbstractUser):
     needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
+    failed_login_attempts = models.IntegerField(default=0)
+    password_last_updated = models.DateTimeField(default=now)
 
     # Deprecated fields bellow
     disabled = models.BooleanField(default=False)
@@ -79,6 +86,15 @@ class User(AbstractUser):
                 if Dataset.objects.filter(organization=org_id):
                     return True
 
+    def unlock_user(self):
+        self.failed_login_attempts = 0
+        self.password_last_updated = now()
+        self.status = User.ACTIVE
+        self.save()
+
+    def lock_user(self):
+        self.status = User.LOCKED
+        self.save()
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -101,7 +117,7 @@ class OldPassword(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    password = models.CharField(max_length=60, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
 
     class Meta:

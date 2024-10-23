@@ -53,8 +53,8 @@ def test_register_with_short_name(app: DjangoTestApp):
             'first_name': "T",
             'last_name': "User",
             'email': "test_@test.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })
@@ -70,8 +70,8 @@ def test_register_with_name_with_numbers(app: DjangoTestApp):
             'first_name': "T3st",
             'last_name': "User",
             'email': "test_@test.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })
@@ -87,8 +87,8 @@ def test_register_without_agreeing_to_terms(app: DjangoTestApp):
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': False,
             "g-recaptcha-response": "PASSED",
         })
@@ -104,8 +104,8 @@ def test_register_with_correct_data(app: DjangoTestApp):
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })
@@ -129,8 +129,8 @@ def test_register_with_representative(app: DjangoTestApp):
             'first_name': "Test",
             'last_name': "User",
             'email': "test_@test.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })
@@ -185,14 +185,14 @@ def test_change_password_with_correct_user(app: DjangoTestApp, user: User):
 
     form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
     form['old_password'] = "testas123"
-    form['new_password1'] = "testavicius1234"
-    form['new_password2'] = "testavicius1234"
+    form['new_password1'] = "TestPassword123?"
+    form['new_password2'] = "TestPassword123?"
     resp = form.submit()
     assert resp.url == reverse('user-profile', kwargs={'pk': user1.id})
 
     form = app.get(reverse('login')).forms['login-form']
     form['email'] = "testas1@testas.com"
-    form['password'] = "testavicius1234"
+    form['password'] = "TestPassword123?"
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
@@ -272,8 +272,8 @@ def test_email_confirmation_after_sign_up(app: DjangoTestApp):
             'first_name': "Test",
             'last_name': "User",
             'email': "test123@test.com",
-            'password1': "somethingverydifficult?",
-            'password2': "somethingverydifficult?",
+            'password1': "TestPassword123?",
+            'password2': "TestPassword123?",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })

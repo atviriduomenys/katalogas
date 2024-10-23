@@ -86,16 +86,10 @@ class User(AbstractUser):
                 if Dataset.objects.filter(organization=org_id):
                     return True
 
-    def reset_failed_attempts(self):
+    def unlock_user(self):
         self.failed_login_attempts = 0
-        if self.status == User.LOCKED and self.password_last_updated < now() - timedelta(days=90):
-            self.status = User.ACTIVE
-        self.save()
-
-    def reset_password_last_updated(self):
         self.password_last_updated = now()
-        if self.failed_login_attempts < 5 and self.status == User.LOCKED:
-            self.status = User.ACTIVE
+        self.status = User.ACTIVE
         self.save()
 
     def lock_user(self):

@@ -1,7 +1,9 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
 from allauth.account.models import EmailAddress
@@ -209,12 +211,14 @@ def test_successful_login_before_limit(app: DjangoTestApp):
     EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
     app.set_user(user1)
     # simulate 4 unsuccessful login attempts
-    for _ in range(4):
+    for index in range(4):
         form = app.get(reverse('login')).forms['login-form']
         form['email'] = user1.email,
         form['password'] = "WrongPassword!"
         resp = form.submit()
         assert resp.status_code == 200
+        user1.refresh_from_db()
+        assert user1.failed_login_attempts == index + 1
 
     user1.refresh_from_db()
     assert user1.failed_login_attempts == 4
@@ -252,6 +256,7 @@ def test_6_incorrect_attempts(app: DjangoTestApp):
     user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
     EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
     app.set_user(user1)
+
     # simulate 6 unsuccessful login attempts
     for _ in range(6):
         form = app.get(reverse('login')).forms['login-form']
@@ -263,3 +268,91 @@ def test_6_incorrect_attempts(app: DjangoTestApp):
     user1.refresh_from_db()
     assert user1.failed_login_attempts == 5
     assert "Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_password_change_after_lock(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
+    app.set_user(user1)
+
+    # simulate 6 unsuccessful login attempts
+    for _ in range(6):
+        form = app.get(reverse('login')).forms['login-form']
+        form['email'] = user1.email,
+        form['password'] = "WrongPassword!"
+        resp = form.submit()
+        assert resp.status_code == 200
+
+    user1.refresh_from_db()
+    assert user1.failed_login_attempts == 5
+    assert user1.status == User.LOCKED
+
+    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form['old_password'] = "InitialPassword1!"
+    form['new_password1'] = "NewPassword123456!"
+    form['new_password2'] = "NewPassword123456!"
+    resp = form.submit()
+    user1.refresh_from_db()
+    assert resp.status_code == 302
+    assert user1.status == User.ACTIVE
+    assert user1.failed_login_attempts == 0
+
+
+@pytest.mark.django_db
+def test_password_older_than_90_days(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
+
+    # Set password_last_updated to a date older than 90 days
+    user1.password_last_updated = timezone.now() - timedelta(days=91)
+    user1.save()
+
+    app.set_user(user1)
+
+    form = app.get(reverse('login')).forms['login-form']
+    form['email'] = user1.email
+    form['password'] = "InitialPassword1!"
+    resp = form.submit()
+    user1.refresh_from_db()
+    assert resp.status_code == 200
+    assert user1.status == User.LOCKED
+    assert "Jūsų slaptažodžio galiojimas baigėsi" in resp.content.decode()
+
+    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form['old_password'] = "InitialPassword1!"
+    form['new_password1'] = "NewPassword123456!"
+    form['new_password2'] = "NewPassword123456!"
+    resp = form.submit()
+    user1.refresh_from_db()
+    assert resp.status_code == 302
+    assert user1.status == User.ACTIVE
+
+
+@pytest.mark.django_db
+def test_old_password_entries_on_password_change(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    app.set_user(user1)
+
+    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form['old_password'] = "InitialPassword1!"
+    form['new_password1'] = "NewPassword123456!"
+    form['new_password2'] = "NewPassword123456!"
+    resp = form.submit()
+    assert resp.status_code == 302
+
+    old_passwords_count = OldPassword.objects.filter(user=user1).count()
+    # The initial password should be stored as an old password with the new password
+    assert old_passwords_count == 2
+
+    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form['old_password'] = "NewPassword123456!"
+    form['new_password1'] = "AnotherNewPassword123!"
+    form['new_password2'] = "AnotherNewPassword123!"
+    resp = form.submit()
+    assert resp.status_code == 302
+
+    old_passwords_count = OldPassword.objects.filter(user=user1).count()
+    # Just the new password should be added
+    assert old_passwords_count == 3
+

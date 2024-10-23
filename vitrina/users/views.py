@@ -50,8 +50,10 @@ class LoginView(BaseLoginView):
                 if user[0].verified is True:
                     login(self.request, form.get_user(),
                           backend='django.contrib.auth.backends.ModelBackend')
+
                     user_obj = User.objects.get(pk=self.request.user.id)
-                    user_obj.reset_failed_attempts()
+                    user_obj.unlock_user()
+
                     return HttpResponseRedirect(self.get_success_url())
                 else:
                     messages.error(self.request, _("El. pašto adresas nepatvirtintas. "
@@ -146,6 +148,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         user = self.get_object()
         password = form.cleaned_data.get('password')
         user.set_password(password)
+        user.unlock_user()
         user.save()
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         soc_acc.extra_data['password_not_set'] = False
@@ -188,11 +191,8 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
-        post_save.disconnect(update_old_passwords, sender=User)
-        user_obj = form.save()
-        user_obj.reset_failed_attempts()
-        user_obj.reset_password_last_updated()
-        post_save.connect(update_old_passwords, sender=User)
+        self.user.unlock_user()
+
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
 
@@ -328,8 +328,9 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
     def form_valid(self, form):
         post_save.disconnect(update_old_passwords, sender=User)
         user_obj = form.save()
-        user_obj.reset_password_last_updated()
+        user_obj.unlock_user()
         post_save.connect(update_old_passwords, sender=User)
+
         messages.success(self.request, _("Slaptažodžio keitimas sėkmingas"))
         return super().form_valid(form)
 

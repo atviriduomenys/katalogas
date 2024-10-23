@@ -67,6 +67,7 @@ class UniquePasswordValidator:
     def get_help_text(self):
         return _("Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai.")
 
+
 class ZxcvbnPasswordValidator:
     def validate(self, password, user=None):
         result = zxcvbn(password)

@@ -354,8 +354,7 @@ class UserChangeAdminForm(UserChangeForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         if self.cleaned_data.get('password1'):
-            user.reset_failed_attempts()
-            user.reset_password_last_updated()
+            user.unlock_user()
             user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()

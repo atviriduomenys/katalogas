@@ -11,7 +11,7 @@ from vitrina.users.views import (
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
-    path('admin/login/', AdminLoginView.as_view(), name='admin:login'),
+    path('admin/login/', AdminLoginView.as_view(), name='admin-login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('password-set/', PasswordSetView.as_view(), name='password-set'),

@@ -904,6 +904,20 @@ files = [
 django-etc = ">=1.2.0"
 
 [[package]]
+name = "django-ipware"
+version = "7.0.1"
+description = "A Django application to retrieve user's IP address"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django-ipware-7.0.1.tar.gz", hash = "sha256:d9ec43d2bf7cdf216fed8d494a084deb5761a54860a53b2e74346a4f384cff47"},
+    {file = "django_ipware-7.0.1-py2.py3-none-any.whl", hash = "sha256:db16bbee920f661ae7f678e4270460c85850f03c6761a4eaeb489bdc91f64709"},
+]
+
+[package.dependencies]
+python-ipware = ">=2.0.3"
+
+[[package]]
 name = "django-libsass"
 version = "0.9"
 description = "A django-compressor filter to compile SASS files using libsass"
@@ -2539,6 +2553,20 @@ PyYAML = "*"
 six = "*"
 
 [[package]]
+name = "python-ipware"
+version = "3.0.0"
+description = "A Python package to retrieve user's IP address"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "python_ipware-3.0.0-py3-none-any.whl", hash = "sha256:fc936e6e7ec9fcc107f9315df40658f468ac72f739482a707181742882e36b60"},
+    {file = "python_ipware-3.0.0.tar.gz", hash = "sha256:9117b1c4dddcb5d5ca49e6a9617de2fc66aec2ef35394563ac4eecabdf58c062"},
+]
+
+[package.extras]
+dev = ["coverage[toml]", "coveralls (>=3.3,<4.0)", "ruff", "twine"]
+
+[[package]]
 name = "python-slugify"
 version = "6.1.2"
 description = "A Python slugify application that also handles Unicode"
@@ -3401,4 +3429,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "aa957135fcddcf18620fa938ab787e12e44d4bdae72642e09526807482c84413"
+content-hash = "821d6ea12fb0451257807503bd39df136a67695a2efaa0616388fed85caaefd6"

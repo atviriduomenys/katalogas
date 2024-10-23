@@ -40,7 +40,7 @@ from vitrina.users.models import User
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     account_inactive_template = 'vitrina/users/account_inactive.html'
-    otp_authentication_form = LoginForm
+    authentication_form = LoginForm
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -57,7 +57,7 @@ class LoginView(BaseLoginView):
 
 class AdminLoginView(BaseLoginView):
     template_name = 'vitrina/users/admin/login.html'
-    otp_authentication_form = LoginForm
+    authentication_form = LoginForm
 
     def get_success_url(self):
         redirect_url = self.request.GET.get('next')

@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from django_otp.forms import OTPAuthenticationForm
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
+from ipware import get_client_ip
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -61,12 +62,18 @@ class LoginForm(OTPAuthenticationForm):
         self.fields['otp_device'].widget = HiddenInput()
 
     def _chosen_device(self, user):
-        if device := UserEmailDevice.objects.filter(user=user.pk).select_for_update():
-            device = device.first()
-        else:
+        client_ip, _ = get_client_ip(self.request)
+
+        device = UserEmailDevice.objects.filter(
+            user=user.pk,
+            ip_address=client_ip
+        ).first()
+
+        if not device:
             device = UserEmailDevice.objects.create(
                 user=user,
-                name=str(user)
+                name=str(user),
+                ip_address=client_ip
             )
         return device
 
@@ -93,7 +100,13 @@ class LoginForm(OTPAuthenticationForm):
                     self.add_error(None, _("El. pašto adresas nepatvirtintas. "
                                            "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
         if email_verified:
-            self.clean_otp(user)
+            device = self._chosen_device(user)
+
+            if device and device.last_used_at:
+                # if device exists and has been used, we allow login without otp validation
+                pass
+            else:
+                self.clean_otp(user)
         return self.cleaned_data
 
 

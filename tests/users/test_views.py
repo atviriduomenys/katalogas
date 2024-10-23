@@ -11,10 +11,10 @@ from django_webtest import DjangoTestApp
 
 from vitrina import settings
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
-from vitrina.users.models import User
+from vitrina.users.models import User, UserEmailDevice
 
-
-credentials_error = "Neteisingi prisijungimo duomenys"
+credentials_error = "Įveskite teisingą Elektroninis paštas ir slaptažodį. " \
+                    "Abiejuose laukuose didžiosios mažosios raidės skiriasi."
 name_error = "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
 terms_error = "Turite sutikti su naudojimo sąlygomis"
 reset_error = "Naudotojas su tokiu el. pašto adresu neegzistuoja"
@@ -29,7 +29,7 @@ def user():
 @pytest.mark.django_db
 def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = "test@test.com"
+    form['username'] = "test@test.com"
     form['password'] = "wrongpassword"
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[credentials_error]]
@@ -38,8 +38,11 @@ def test_login_with_wrong_credentials(app: DjangoTestApp, user: User):
 @pytest.mark.django_db
 def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = "test@test.com"
+    form['username'] = "test@test.com"
     form['password'] = "test123"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user).first().token
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
@@ -179,20 +182,23 @@ def test_change_password_with_wrong_user(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
-def test_change_password_with_correct_user(app: DjangoTestApp, user: User):
-    user1 = User.objects.create_user(email="testas1@testas.com", password="testas123")
-    app.set_user(user1)
+def test_change_password_with_correct_user(app: DjangoTestApp):
+    user = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    app.set_user(user)
 
-    form = app.get(reverse('users-password-change', kwargs={'pk': user1.id})).forms['password-change-form']
+    form = app.get(reverse('users-password-change', kwargs={'pk': user.id})).forms['password-change-form']
     form['old_password'] = "testas123"
     form['new_password1'] = "testavicius1234"
     form['new_password2'] = "testavicius1234"
     resp = form.submit()
-    assert resp.url == reverse('user-profile', kwargs={'pk': user1.id})
+    assert resp.url == reverse('user-profile', kwargs={'pk': user.id})
 
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = "testas1@testas.com"
+    form['username'] = "testas1@testas.com"
     form['password'] = "testavicius1234"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user).first().token
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
@@ -289,3 +295,27 @@ def test_email_confirmation_after_sign_up(app: DjangoTestApp):
         form.submit()
         assert EmailConfirmation.objects.first().email_address.verified is True
 
+
+@pytest.mark.django_db
+def test_login_second_time(app: DjangoTestApp):
+    user = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    app.set_user(user)
+
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "testas1@testas.com"
+    form['password'] = "testas123"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user).first().token
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('home')
+
+    app.get(reverse('logout'))
+
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "testas1@testas.com"
+    form['password'] = "testas123"
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('home')

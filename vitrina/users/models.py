@@ -142,6 +142,7 @@ class SsoToken(models.Model):
 
 
 class UserEmailDevice(EmailDevice):
+    ip_address = models.GenericIPAddressField(_("IP adresas"), blank=True, null=True)
 
     class Meta:
         managed = True
@@ -150,8 +151,7 @@ class UserEmailDevice(EmailDevice):
     def send_mail(self, body, **kwargs):
         from vitrina.helpers import email
 
-        token = body.strip("\n")
         email([self.email or self.user.email], 'confirm-login', 'vitrina/email/confirm_login.md', {
             'full_name': str(self.user),
-            'token': token,
+            'token': self.token,
         })

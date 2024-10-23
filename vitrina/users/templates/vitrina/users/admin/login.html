@@ -50,7 +50,7 @@
 </p>
 {% endif %}
 
-<form method="POST">
+<form method="POST" id="login-form">
     {% csrf_token %}
     {% if form.get_user %}
         <div class="hidden-fields">

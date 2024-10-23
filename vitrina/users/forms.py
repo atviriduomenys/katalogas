@@ -51,6 +51,9 @@ class LoginForm(Form):
             self.user_cache = authenticate(self.request, email=email, password=password)
             user = User.objects.get(email=email)
 
+            if user.status == User.LOCKED and user.failed_login_attempts < 5 and user.password_last_updated > now() - timedelta(days=90):
+                raise ValidationError(_('Jūsų paskyra užblokuota. Norėdami prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį".'))
+
             if user.failed_login_attempts >= 5:
                 if user.status != User.LOCKED:
                     user.lock_user()

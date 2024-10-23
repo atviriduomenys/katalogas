@@ -205,6 +205,7 @@ def test_password_change_not_unique(app: DjangoTestApp):
     assert resp.status_code == 200
     assert list(resp.context['form'].errors.values()) == [["Slaptažotis neturi būti toks pat kaip prieš tai 3 buvusieji slaptažodžiai."]]
 
+
 @pytest.mark.django_db
 def test_successful_login_before_limit(app: DjangoTestApp):
     user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
@@ -356,3 +357,16 @@ def test_old_password_entries_on_password_change(app: DjangoTestApp):
     # Just the new password should be added
     assert old_passwords_count == 3
 
+
+@pytest.mark.django_db
+def test_login_locked_user(app: DjangoTestApp):
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!", status = User.LOCKED)
+    app.set_user(user1)
+    assert user1.status == User.LOCKED
+
+    form = app.get(reverse('login')).forms['login-form']
+    form['email'] = user1.email,
+    form['password'] = "InitialPassword1!"
+    resp = form.submit()
+    assert resp.status_code == 200
+    assert "Jūsų paskyra užblokuota." in resp.content.decode()

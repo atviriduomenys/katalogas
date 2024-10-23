@@ -60,6 +60,7 @@ shapely = "^2.0.1"
 resource = "^0.2.1"
 django-recaptcha = "^4.0.0"
 numpy = "1.26.4"
+zxcvbn = "^4.4.28"
 django-otp = "^1.5.4"
 django-ipware = "^7.0.1"
 [tool.poetry.group.dev.dependencies]

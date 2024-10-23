@@ -217,16 +217,28 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        }
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'vitrina.validators.UppercaseValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'vitrina.validators.LowercaseValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.DigitValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.SpecialCharacterValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.UniquePasswordValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.ZxcvbnPasswordValidator',
     },
 ]
 

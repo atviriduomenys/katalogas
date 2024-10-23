@@ -19,6 +19,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, make_aware
+from django.db.models.signals import post_save
 from allauth.socialaccount.models import SocialAccount
 from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
 from django.http import HttpResponseRedirect
@@ -35,12 +36,19 @@ from vitrina.users.forms import (
     UserProfileEditForm, CustomPasswordChangeForm
 )
 from vitrina.users.models import User
+from vitrina.users.signals import update_old_passwords
 
 
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     account_inactive_template = 'vitrina/users/account_inactive.html'
     authentication_form = LoginForm
+
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+        if user := form.get_user():
+            user.unlock_user()
+        return resp
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -62,6 +70,12 @@ class AdminLoginView(BaseLoginView):
     def get_success_url(self):
         redirect_url = self.request.GET.get('next')
         return redirect_url or reverse('admin:index')
+
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+        if user := form.get_user():
+            user.unlock_user()
+        return resp
 
 
 class RegisterView(CreateView):
@@ -131,6 +145,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         user = self.get_object()
         password = form.cleaned_data.get('password')
         user.set_password(password)
+        user.unlock_user()
         user.save()
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         soc_acc.extra_data['password_not_set'] = False
@@ -173,6 +188,8 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
+        self.user.unlock_user()
+
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
 
@@ -306,6 +323,11 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
         return context
 
     def form_valid(self, form):
+        post_save.disconnect(update_old_passwords, sender=User)
+        user_obj = form.save()
+        user_obj.unlock_user()
+        post_save.connect(update_old_passwords, sender=User)
+
         messages.success(self.request, _("Slaptažodžio keitimas sėkmingas"))
         return super().form_valid(form)
 

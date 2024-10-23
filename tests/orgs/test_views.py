@@ -360,8 +360,8 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
             'first_name': "New",
             'last_name': "User",
             'email': "new@gmail.com",
-            'password1': "test123?",
-            'password2': "test123?",
+            'password1': "v)Yxu*DF8}rj~(Sz!-X:Ws",
+            'password2': "v)Yxu*DF8}rj~(Sz!-X:Ws",
             'agree_to_terms': True,
             "g-recaptcha-response": "PASSED",
         })

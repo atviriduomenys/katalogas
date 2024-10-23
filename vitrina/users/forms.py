@@ -1,17 +1,19 @@
 import pytz
+from allauth.account.models import EmailAddress
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
 from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm, \
-    PasswordChangeForm, UserChangeForm
+    PasswordChangeForm, UserChangeForm, UsernameField
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput, \
-    HiddenInput
+    HiddenInput, TextInput
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from django_otp.forms import OTPAuthenticationForm
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -20,39 +22,79 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import DisabledCharField
 from vitrina.helpers import email
 from vitrina.orgs.models import Organization
-from vitrina.users.models import User
+from vitrina.users.models import User, UserEmailDevice
 
 
-class LoginForm(Form):
-    email = EmailField(label=_("El. paštas"), required=True)
-    password = CharField(widget=PasswordInput, label=_("Slaptažodis"), required=True)
+class LoginForm(OTPAuthenticationForm):
+    username = UsernameField(widget=TextInput(attrs={'autofocus': True}), label=_("El. paštas"))
+    otp_token = CharField(
+        required=False, widget=TextInput(attrs={'autocomplete': 'off'}),
+        label=_("Vienkartinis prisijungimo kodas")
+    )
+
+    otp_error_messages = {
+        'token_required': _('Įveskite prisijungimo kodą.'),
+        'challenge_exception': _('Klaida generuojant vienkartinį kodą.'),
+        'not_interactive': _('Pasirinktas prisijungimo patvirtinimo metodas neinteraktyvus.'),
+        'challenge_message': _('Dėmesio. Kadangi jūsų įrenginys nebuvo atpažintas, reikalingas papildomas '
+                               'patvirtinimas. Prašome įrašyti vienkartinį kodą, išsiųstą el. paštu.'),
+        'invalid_token': _('Neteisingas kodas. Įsitikinkite, kad įvedėtę teisingą kodą.'),
+        'n_failed_attempts': _("Prisijungimo patvirtinimas laikimai negalimas dėl %(failure_count)d "
+                               "nesėkmingų bandymų prisijungti."),
+        'verification_not_allowed': _("Prisijungimo patvirtinimas laikimai negalimas."),
+    }
 
     def __init__(self, request=None, *args, **kwargs):
-        self.request = request
-        self.user_cache = None
-        super().__init__(*args, **kwargs)
+        super().__init__(request, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "login-form"
+        self.helper.form_action = '.'
         self.helper.layout = Layout(
-            Field('email', placeholder=_("El. paštas")),
+            Field('username', placeholder=_("El. paštas")),
             Field('password', placeholder=_("Slaptažodis")),
+            Field('otp_token'),
+            Field('otp_challenge'),
             Submit('submit', _("Prisijungti"), css_class='button is-primary'),
         )
 
+        self.fields['otp_device'].widget = HiddenInput()
+
+    def _chosen_device(self, user):
+        if device := UserEmailDevice.objects.filter(user=user.pk).select_for_update():
+            device = device.first()
+        else:
+            device = UserEmailDevice.objects.create(
+                user=user,
+                name=str(user)
+            )
+        return device
+
     def clean(self):
-        email = self.cleaned_data.get('email')
+        username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')
 
-        if email is not None and password:
-            self.user_cache = authenticate(self.request, email=email, password=password)
+        if username is not None and password:
+            self.user_cache = authenticate(self.request, username=username, password=password)
             if self.user_cache is None:
-                raise ValidationError(_("Neteisingi prisijungimo duomenys"))
+                raise self.get_invalid_login_error()
+            else:
+                self.confirm_login_allowed(self.user_cache)
 
+        user = self.user_cache
+        email_address = self.cleaned_data.get('username')
+        email_verified = True
+        if user and email_address:
+            user_email = EmailAddress.objects.filter(email=email_address).first()
+            if user_email:
+                if not user_email.verified:
+                    email_verified = False
+                    self.user_cache = None
+                    self.add_error(None, _("El. pašto adresas nepatvirtintas. "
+                                           "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
+        if email_verified:
+            self.clean_otp(user)
         return self.cleaned_data
-
-    def get_user(self):
-        return self.user_cache
 
 
 class RegisterForm(UserCreationForm):

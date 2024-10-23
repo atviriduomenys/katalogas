@@ -1,7 +1,17 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
+{% load crispy_forms_tags %}
+
 {% block current_title %}{% translate "Prisijungimas" %}{% endblock %}
+
+{% block head %}
+    <style>
+        .hidden-fields {
+            display: none;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
 <div class="columns is-centered">
@@ -34,7 +44,37 @@
                 <a href="mailto:atviriduomenys@vssa.lt">atviriduomenys@vssa.lt</a>.
             </p>
         </div>
-        {% include "component/form.html" %}
+
+        <form method="POST">
+            {% if form.non_field_errors %}
+                <div class="has-text-danger py-3">
+                    {% if form_error_title %}<div class="has-text-weight-bold">{{ form_error_title }}</div>{% endif %}
+                    <ul>
+                        {{ form.non_field_errors|unordered_list }}
+                    </ul>
+                </div>
+            {% endif %}
+            {% csrf_token %}
+            {% if form.get_user %}
+                <div class="hidden-fields">
+                    {{ form.username|as_crispy_field }}
+                    {{ form.password|as_crispy_field }}
+                </div>
+            {% else %}
+                {{ form.username|as_crispy_field }}
+                {{ form.password|as_crispy_field }}
+            {% endif %}
+            {% if form.get_user %}
+                {{ form.otp_token|as_crispy_field }}
+            {% endif %}
+            <div class="is-inline-block mt-3">
+                {% if form.get_user %}
+                    <input type="submit" value="{% translate 'Prisijungti' %}" class="button is-primary"/>
+                {% else %}
+                    <input type="submit" name="otp_challenge" value="{% translate 'Prisijungti' %}" class="button is-primary"/>
+                {% endif %}
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

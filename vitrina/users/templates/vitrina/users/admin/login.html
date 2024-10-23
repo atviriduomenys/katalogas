@@ -1,0 +1,77 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/login.css" %}">
+{{ form.media }}
+    <style>
+        .hidden-fields {
+            display: none;
+        }
+        #id_password {
+            margin: 0px !important;
+            background-color: #FFFFFF !important;
+        }
+        #div_id_password {
+            margin-top: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block usertools %}{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+{% if form.non_field_errors %}
+{% for error in form.non_field_errors %}
+<p class="errornote">
+    {{ error }}
+</p>
+{% endfor %}
+{% endif %}
+
+<div id="content-main">
+
+{% if user.is_authenticated and not form.get_user %}
+<p class="errornote">
+{% blocktranslate trimmed %}
+    Jūs esate prisijungęs kaip {{ user }}, bet neturite teisių patekti į šį puslapį.
+    Ar norėtumete prisijungti su kitu vartotoju?
+{% endblocktranslate %}
+</p>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    {% if form.get_user %}
+        <div class="hidden-fields">
+            {{ form.username|as_crispy_field }}
+            {{ form.password|as_crispy_field }}
+        </div>
+    {% else %}
+        {{ form.username|as_crispy_field }}
+        {{ form.password|as_crispy_field }}
+    {% endif %}
+    {% if form.get_user %}
+        {{ form.otp_token|as_crispy_field }}
+    {% endif %}
+    <div class="submit-row">
+        {% if form.get_user %}
+            <input type="submit" value="{% translate 'Prisijungti' %}" />
+        {% else %}
+            <input type="submit" name="otp_challenge" value="{% translate 'Prisijungti' %}"/>
+        {% endif %}
+    </div>
+</form>
+
+</div>
+{% endblock %}

@@ -5,12 +5,12 @@ from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from allauth.utils import build_absolute_uri
 from django.contrib.sites.models import Site
 from django_otp.forms import OTPAuthenticationForm
+from django_otp.views import LoginView as BaseLoginView
 from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import (
-    LoginView as BaseLoginView,
     PasswordResetView as BasePasswordResetView,
     PasswordResetConfirmView as BasePasswordResetConfirmView, PasswordChangeView
 )
@@ -40,30 +40,7 @@ from vitrina.users.models import User
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     account_inactive_template = 'vitrina/users/account_inactive.html'
-    # form_class = LoginForm
-    form_class = OTPAuthenticationForm
-
-    def form_valid(self, form):
-        if settings.ACCOUNT_EMAIL_VERIFICATION == 'mandatory':
-            # user = EmailAddress.objects.filter(email=form.cleaned_data.get('email'))
-            user = EmailAddress.objects.filter(email=form.cleaned_data.get('username'))
-            if user:
-                if user[0].verified is True:
-                    login(self.request, form.get_user(),
-                          backend='django.contrib.auth.backends.ModelBackend')
-                    return HttpResponseRedirect(self.get_success_url())
-                else:
-                    messages.error(self.request, _("El. pašto adresas nepatvirtintas. "
-                                                   "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
-                    return HttpResponseRedirect(reverse("login"))
-            else:
-                login(self.request, form.get_user(),
-                      backend='django.contrib.auth.backends.ModelBackend')
-                return HttpResponseRedirect(self.get_success_url())
-        else:
-            login(self.request, form.get_user(),
-                  backend='django.contrib.auth.backends.ModelBackend')
-            return HttpResponseRedirect(self.get_success_url())
+    otp_authentication_form = LoginForm
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -76,6 +53,15 @@ class LoginView(BaseLoginView):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Prisijungimas')
         return context
+
+
+class AdminLoginView(BaseLoginView):
+    template_name = 'vitrina/users/admin/login.html'
+    otp_authentication_form = LoginForm
+
+    def get_success_url(self):
+        redirect_url = self.request.GET.get('next')
+        return redirect_url or reverse('admin:index')
 
 
 class RegisterView(CreateView):

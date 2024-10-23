@@ -3414,13 +3414,13 @@ tests = ["PasteDeploy", "WSGIProxy2", "coverage", "pyquery", "pytest", "pytest-c
 
 [[package]]
 name = "xdg-base-dirs"
-version = "6.0.1"
+version = "6.0.2"
 description = "Variables defined by the XDG Base Directory Specification"
 optional = false
-python-versions = ">=3.10,<4.0"
+python-versions = "<4.0,>=3.10"
 files = [
-    {file = "xdg_base_dirs-6.0.1-py3-none-any.whl", hash = "sha256:63f6ebc1721ced2e86c340856e004ef829501a30a37e17079c52cfaf0e1741b9"},
-    {file = "xdg_base_dirs-6.0.1.tar.gz", hash = "sha256:b4c8f4ba72d1286018b25eea374ec6fbf4fddda3d4137edf50de95de53e195a6"},
+    {file = "xdg_base_dirs-6.0.2-py3-none-any.whl", hash = "sha256:3c01d1b758ed4ace150ac960ac0bd13ce4542b9e2cdf01312dcda5012cfebabe"},
+    {file = "xdg_base_dirs-6.0.2.tar.gz", hash = "sha256:950504e14d27cf3c9cb37744680a43bf0ac42efefc4ef4acf98dc736cab2bced"},
 ]
 
 [[package]]
@@ -3447,4 +3447,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "db0fc360ef0ad9356fb574f8ddf2045b9de53e662b9b78ee8ce58bcfae68c0c8"
+content-hash = "03e572e0fb82a7522bb71db68511a986ab511e8a936e952dfb9215544a2f03fc"

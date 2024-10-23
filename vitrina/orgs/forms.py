@@ -19,6 +19,7 @@ from django_select2.forms import ModelSelect2Widget
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
+from vitrina.helpers import validate_file
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
 from vitrina.orgs.services import get_coordinators_count
@@ -478,6 +479,12 @@ class PartnerRegisterForm(ModelForm):
                     raise ValidationError(_("Neteisingas telefono numerio formatas."))
         return phone
 
+    def clean_request_form(self):
+        request_form = self.cleaned_data.get('request_form')
+        if request_form:
+            validate_file(request_form)
+        return request_form
+
 
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
@@ -831,3 +838,9 @@ class TemplateForm(ModelForm):
     class Meta:
         model = Template
         fields = ('text', 'document',)
+
+    def clean_document(self):
+        document = self.cleaned_data.get('document')
+        if document:
+            validate_file(document)
+        return document

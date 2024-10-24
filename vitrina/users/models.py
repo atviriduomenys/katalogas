@@ -88,10 +88,11 @@ class User(AbstractUser):
                     return True
 
     def unlock_user(self):
-        self.failed_login_attempts = 0
-        self.password_last_updated = now()
-        self.status = User.ACTIVE
-        self.save()
+        if self.status == User.LOCKED or self.status == User.ACTIVE:
+            self.failed_login_attempts = 0
+            self.password_last_updated = now()
+            self.status = User.ACTIVE
+            self.save()
 
     def lock_user(self):
         self.status = User.LOCKED

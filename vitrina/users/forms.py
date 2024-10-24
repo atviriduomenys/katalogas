@@ -10,6 +10,7 @@ from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput, \
     HiddenInput, TextInput
 from django.urls import reverse
@@ -46,6 +47,11 @@ class LoginForm(OTPAuthenticationForm):
         'n_failed_attempts': _("Prisijungimo patvirtinimas laikimai negalimas dėl %(failure_count)d "
                                "nesėkmingų bandymų prisijungti."),
         'verification_not_allowed': _("Prisijungimo patvirtinimas laikimai negalimas."),
+    }
+
+    error_messages = {
+        'invalid_login': _("Neteisingi prisijungimo duomenys"),
+        'inactive': _("Ši paskyra neaktyvi."),
     }
 
     def __init__(self, request=None, *args, **kwargs):
@@ -89,8 +95,15 @@ class LoginForm(OTPAuthenticationForm):
 
         if username is not None and password:
             self.user_cache = authenticate(self.request, username=username, password=password)
-            user = User.objects.filter(email=username).first()
 
+            if self.user_cache and username:
+                user_email = EmailAddress.objects.filter(email=username).first()
+                if (user_email and not user_email.verified) or self.user_cache.status == User.AWAITING_CONFIRMATION:
+                    self.user_cache = None
+                    raise ValidationError(_("El. pašto adresas nepatvirtintas. "
+                                            "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
+
+            user = User.objects.filter(email=username).first()
             if user:
                 if (
                     user.status == User.LOCKED and
@@ -98,10 +111,12 @@ class LoginForm(OTPAuthenticationForm):
                         (user.password_last_updated is None or
                          user.password_last_updated > now() - timedelta(days=90))
                 ):
+                    self.user_cache = None
                     raise ValidationError(_('Jūsų paskyra užblokuota. Norėdami prisijungti, turite atkurti '
                                             'slaptažodį per "Atstatyti slaptažodį".'))
 
                 if user.failed_login_attempts >= 5:
+                    self.user_cache = None
                     if user.status != User.LOCKED:
                         user.lock_user()
                     raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. '
@@ -110,10 +125,12 @@ class LoginForm(OTPAuthenticationForm):
                                             'per "Atstatyti slaptažodį".'))
 
                 if user.password_last_updated is None or user.password_last_updated < now() - timedelta(days=90):
+                    self.user_cache = None
                     if user.status != User.LOCKED:
                         user.lock_user()
                     raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, '
                                             'turite atkurti slaptažodį per "Atstatyti slaptažodį". '))
+
             if self.user_cache is None:
                 if user:
                     user.failed_login_attempts += 1
@@ -123,23 +140,13 @@ class LoginForm(OTPAuthenticationForm):
                 self.confirm_login_allowed(self.user_cache)
 
         user = self.user_cache
-        email_verified = True
-        if user and username:
-            user_email = EmailAddress.objects.filter(email=username).first()
-            if user_email:
-                if not user_email.verified:
-                    email_verified = False
-                    self.user_cache = None
-                    self.add_error(None, _("El. pašto adresas nepatvirtintas. "
-                                           "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
-        if email_verified:
-            device = self._chosen_device(user)
+        device = self._chosen_device(user)
 
-            if device and device.last_used_at:
-                # if device exists and has been used, we allow login without otp validation
-                pass
-            else:
-                self.clean_otp(user)
+        if device and device.last_used_at:
+            # if device exists and has been used, we allow login without otp validation
+            pass
+        else:
+            self.clean_otp(user)
         return self.cleaned_data
 
 
@@ -472,8 +479,11 @@ class PasswordResetForm(BasePasswordResetForm):
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get('email', "")
-        if email and not User.objects.filter(email=email).exists():
-            raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja"))
+        if (
+            email and
+            not User.objects.filter(Q(email=email) & Q(Q(status=User.LOCKED) | Q(status=User.ACTIVE))).exists()
+        ):
+            raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"))
         return cleaned_data
 
     def send_mail(self, subject_template_name, email_template_name,

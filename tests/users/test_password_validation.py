@@ -208,7 +208,7 @@ def test_password_change_not_unique(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_successful_login_before_limit(app: DjangoTestApp):
-    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!", status=User.ACTIVE)
     EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
     app.set_user(user1)
     # simulate 4 unsuccessful login attempts

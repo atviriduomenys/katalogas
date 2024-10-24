@@ -92,7 +92,8 @@ class LoginForm(OTPAuthenticationForm):
                 if (
                     user.status == User.LOCKED and
                     user.failed_login_attempts < 5 and
-                    user.password_last_updated > now() - timedelta(days=90)
+                        (user.password_last_updated is None or
+                         user.password_last_updated > now() - timedelta(days=90))
                 ):
                     raise ValidationError(_('Jūsų paskyra užblokuota. Norėdami prisijungti, turite atkurti '
                                             'slaptažodį per "Atstatyti slaptažodį".'))
@@ -105,7 +106,7 @@ class LoginForm(OTPAuthenticationForm):
                                             'saugumo priežasčių. Norėdami vėl prisijungti, turite atkurti slaptažodį '
                                             'per "Atstatyti slaptažodį".'))
 
-                if user.password_last_updated < now() - timedelta(days=90):
+                if user.password_last_updated is None or user.password_last_updated < now() - timedelta(days=90):
                     if user.status != User.LOCKED:
                         user.lock_user()
                     raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, '

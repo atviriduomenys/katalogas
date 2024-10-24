@@ -88,7 +88,7 @@ class User(AbstractUser):
                     return True
 
     def unlock_user(self):
-        if self.status != User.SUSPENDED and self.status != User.DELETED and self.status != User.AWAITING_CONFIRMATION:
+        if self.status == User.LOCKED or self.status == User.ACTIVE:
             self.failed_login_attempts = 0
             self.password_last_updated = now()
             self.status = User.ACTIVE

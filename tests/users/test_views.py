@@ -13,11 +13,11 @@ from vitrina import settings
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.users.models import User, UserEmailDevice
 
-credentials_error = "Įveskite teisingą Elektroninis paštas ir slaptažodį. " \
-                    "Abiejuose laukuose didžiosios mažosios raidės skiriasi."
+credentials_error = "Neteisingi prisijungimo duomenys"
 name_error = "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
 terms_error = "Turite sutikti su naudojimo sąlygomis"
-reset_error = "Naudotojas su tokiu el. pašto adresu neegzistuoja"
+reset_error = "Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"
+awaiting_confirmation_error = "El. pašto adresas nepatvirtintas. Patvirtinti galite sekdami nuoroda išsiųstame laiške."
 
 
 @pytest.fixture
@@ -319,3 +319,46 @@ def test_login_second_time(app: DjangoTestApp):
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')
+
+
+@pytest.mark.django_db
+def test_login_with_deleted_user(app: DjangoTestApp):
+    User.objects.create_user(
+        email="test@test.com",
+        password="test123",
+        status=User.DELETED
+    )
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "test@test.com"
+    form['password'] = "test123"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[credentials_error]]
+
+
+@pytest.mark.django_db
+def test_login_with_suspended_user(app: DjangoTestApp):
+    User.objects.create_user(
+        email="test@test.com",
+        password="test123",
+        status=User.SUSPENDED,
+        is_active=False,
+    )
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "test@test.com"
+    form['password'] = "test123"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[credentials_error]]
+
+
+@pytest.mark.django_db
+def test_login_with_not_confirmed_user(app: DjangoTestApp):
+    User.objects.create_user(
+        email="test@test.com",
+        password="test123",
+        status=User.AWAITING_CONFIRMATION
+    )
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "test@test.com"
+    form['password'] = "test123"
+    resp = form.submit()
+    assert list(resp.context['form'].errors.values()) == [[awaiting_confirmation_error]]

@@ -91,7 +91,14 @@ class User(AbstractUser):
         if self.status == User.LOCKED or self.status == User.ACTIVE:
             self.failed_login_attempts = 0
             self.password_last_updated = now()
-            self.status = User.ACTIVE
+            if self.deleted:
+                self.status = User.DELETED
+            elif not self.is_active:
+                self.status = User.SUSPENDED
+            elif self.emailaddress_set.first() and not self.emailaddress_set.first().verified:
+                self.status = User.AWAITING_CONFIRMATION
+            else:
+                self.status = User.ACTIVE
             self.save()
 
     def lock_user(self):

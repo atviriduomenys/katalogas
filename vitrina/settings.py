@@ -90,6 +90,8 @@ INSTALLED_APPS = [
     'vitrina.users',
 
     # Django CMS
+    'django_otp',
+    'django_otp.plugins.otp_email',
     'sass_processor',
     'sekizai',
     'cms',
@@ -148,6 +150,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -469,3 +472,5 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = None
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 LANGUAGE_COOKIE_SECURE = True
+
+OTP_EMAIL_TOKEN_VALIDITY = 600

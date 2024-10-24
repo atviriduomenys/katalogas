@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.timezone import now
+from django_otp.plugins.otp_email.models import EmailDevice
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
@@ -96,6 +97,7 @@ class User(AbstractUser):
         self.status = User.LOCKED
         self.save()
 
+
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
@@ -154,3 +156,20 @@ class SsoToken(models.Model):
     class Meta:
         managed = True
         db_table = 'sso_token'
+
+
+class UserEmailDevice(EmailDevice):
+    ip_address = models.CharField(_("IP adresas"), max_length=40, editable=False, db_index=True, null=True, blank=True)
+    user_agent = models.TextField(editable=False, null=True, blank=True)
+
+    class Meta:
+        managed = True
+        db_table = 'user_email_device'
+
+    def send_mail(self, body, **kwargs):
+        from vitrina.helpers import email
+
+        email([self.email or self.user.email], 'confirm-login', 'vitrina/email/confirm_login.md', {
+            'full_name': str(self.user),
+            'token': self.token,
+        })

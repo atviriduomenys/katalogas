@@ -8,7 +8,7 @@ from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
 from allauth.account.models import EmailAddress
 
-from vitrina.users.models import User, OldPassword
+from vitrina.users.models import User, OldPassword, UserEmailDevice
 
 
 @pytest.fixture
@@ -214,7 +214,7 @@ def test_successful_login_before_limit(app: DjangoTestApp):
     # simulate 4 unsuccessful login attempts
     for index in range(4):
         form = app.get(reverse('login')).forms['login-form']
-        form['email'] = user1.email,
+        form['username'] = user1.email,
         form['password'] = "WrongPassword!"
         resp = form.submit()
         assert resp.status_code == 200
@@ -226,8 +226,11 @@ def test_successful_login_before_limit(app: DjangoTestApp):
 
     # simulate successful login
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = user1.email,
+    form['username'] = user1.email,
     form['password'] = "InitialPassword1!"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user1).first().token
     resp = form.submit()
     assert resp.status_code == 302
 
@@ -243,7 +246,7 @@ def test_5_incorrect_attempts(app: DjangoTestApp):
     # simulate 5 unsuccessful login attempts
     for _ in range(5):
         form = app.get(reverse('login')).forms['login-form']
-        form['email'] = user1.email,
+        form['username'] = user1.email,
         form['password'] = "WrongPassword!"
         resp = form.submit()
         assert resp.status_code == 200
@@ -261,7 +264,7 @@ def test_6_incorrect_attempts(app: DjangoTestApp):
     # simulate 6 unsuccessful login attempts
     for _ in range(6):
         form = app.get(reverse('login')).forms['login-form']
-        form['email'] = user1.email,
+        form['username'] = user1.email,
         form['password'] = "WrongPassword!"
         resp = form.submit()
         assert resp.status_code == 200
@@ -280,7 +283,7 @@ def test_password_change_after_lock(app: DjangoTestApp):
     # simulate 6 unsuccessful login attempts
     for _ in range(6):
         form = app.get(reverse('login')).forms['login-form']
-        form['email'] = user1.email,
+        form['username'] = user1.email,
         form['password'] = "WrongPassword!"
         resp = form.submit()
         assert resp.status_code == 200
@@ -312,7 +315,7 @@ def test_password_older_than_90_days(app: DjangoTestApp):
     app.set_user(user1)
 
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = user1.email
+    form['username'] = user1.email
     form['password'] = "InitialPassword1!"
     resp = form.submit()
     user1.refresh_from_db()
@@ -360,12 +363,12 @@ def test_old_password_entries_on_password_change(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_login_locked_user(app: DjangoTestApp):
-    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!", status = User.LOCKED)
+    user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!", status=User.LOCKED)
     app.set_user(user1)
     assert user1.status == User.LOCKED
 
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = user1.email,
+    form['username'] = user1.email,
     form['password'] = "InitialPassword1!"
     resp = form.submit()
     assert resp.status_code == 200

@@ -1,78 +1,145 @@
 from datetime import timedelta
 
 import pytz
+from allauth.account.models import EmailAddress
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, Field, Layout, Submit
 from django.contrib.auth import authenticate, password_validation
 from django.contrib.auth.forms import PasswordResetForm as BasePasswordResetForm, UserCreationForm, SetPasswordForm, \
-    PasswordChangeForm, UserChangeForm
+    PasswordChangeForm, UserChangeForm, UsernameField
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.forms import BooleanField, CharField, EmailField, Form, ModelChoiceField, ModelForm, PasswordInput, \
-    HiddenInput
+    HiddenInput, TextInput
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now
+from django_otp.forms import OTPAuthenticationForm
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
+from ipware import get_client_ip
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.fields import DisabledCharField
 from vitrina.helpers import email
 from vitrina.orgs.models import Organization
-from vitrina.users.models import User
+from vitrina.users.models import User, UserEmailDevice
 
 
-class LoginForm(Form):
-    email = EmailField(label=_("El. paštas"), required=True)
-    password = CharField(widget=PasswordInput, label=_("Slaptažodis"), required=True)
+class LoginForm(OTPAuthenticationForm):
+    username = UsernameField(widget=TextInput(attrs={'autofocus': True}), label=_("El. paštas"))
+    otp_token = CharField(
+        required=False, widget=TextInput(attrs={'autocomplete': 'off'}),
+        label=_("Vienkartinis prisijungimo kodas")
+    )
+
+    otp_error_messages = {
+        'token_required': _('Įveskite prisijungimo kodą.'),
+        'challenge_exception': _('Klaida generuojant vienkartinį kodą.'),
+        'not_interactive': _('Pasirinktas prisijungimo patvirtinimo metodas neinteraktyvus.'),
+        'challenge_message': _('Dėmesio. Kadangi jūsų įrenginys nebuvo atpažintas, reikalingas papildomas '
+                               'patvirtinimas. Prašome įrašyti vienkartinį kodą, išsiųstą el. paštu.'),
+        'invalid_token': _('Neteisingas kodas. Įsitikinkite, kad įvedėtę teisingą kodą.'),
+        'n_failed_attempts': _("Prisijungimo patvirtinimas laikimai negalimas dėl %(failure_count)d "
+                               "nesėkmingų bandymų prisijungti."),
+        'verification_not_allowed': _("Prisijungimo patvirtinimas laikimai negalimas."),
+    }
 
     def __init__(self, request=None, *args, **kwargs):
-        self.request = request
-        self.user_cache = None
-        super().__init__(*args, **kwargs)
+        super().__init__(request, *args, **kwargs)
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "login-form"
+        self.helper.form_action = '.'
         self.helper.layout = Layout(
-            Field('email', placeholder=_("El. paštas")),
+            Field('username', placeholder=_("El. paštas")),
             Field('password', placeholder=_("Slaptažodis")),
+            Field('otp_token'),
+            Field('otp_challenge'),
             Submit('submit', _("Prisijungti"), css_class='button is-primary'),
         )
 
+        self.fields['otp_device'].widget = HiddenInput()
+
+    def _chosen_device(self, user):
+        client_ip, _ = get_client_ip(self.request)
+        user_agent = self.request.headers.get('User-Agent', '')
+
+        device = UserEmailDevice.objects.filter(
+            user=user.pk,
+            ip_address=client_ip,
+            user_agent=user_agent
+        ).first()
+
+        if not device:
+            device = UserEmailDevice.objects.create(
+                user=user,
+                name=str(user),
+                ip_address=client_ip,
+                user_agent=user_agent
+            )
+        return device
+
     def clean(self):
-        email = self.cleaned_data.get('email')
+        username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')
 
-        if email is not None and password:
-            self.user_cache = authenticate(self.request, email=email, password=password)
-            user = User.objects.get(email=email)
+        if username is not None and password:
+            self.user_cache = authenticate(self.request, username=username, password=password)
+            user = User.objects.filter(email=username).first()
 
-            if user.status == User.LOCKED and user.failed_login_attempts < 5 and user.password_last_updated > now() - timedelta(days=90):
-                raise ValidationError(_('Jūsų paskyra užblokuota. Norėdami prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį".'))
+            if user:
+                if (
+                    user.status == User.LOCKED and
+                    user.failed_login_attempts < 5 and
+                    user.password_last_updated > now() - timedelta(days=90)
+                ):
+                    raise ValidationError(_('Jūsų paskyra užblokuota. Norėdami prisijungti, turite atkurti '
+                                            'slaptažodį per "Atstatyti slaptažodį".'))
 
-            if user.failed_login_attempts >= 5:
-                if user.status != User.LOCKED:
-                    user.lock_user()
-                raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. Po 5 nesėkmingų bandymų jūsų paskyra buvo užblokuota dėl saugumo priežasčių. Norėdami vėl prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį".'))
+                if user.failed_login_attempts >= 5:
+                    if user.status != User.LOCKED:
+                        user.lock_user()
+                    raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. '
+                                            'Po 5 nesėkmingų bandymų jūsų paskyra buvo užblokuota dėl '
+                                            'saugumo priežasčių. Norėdami vėl prisijungti, turite atkurti slaptažodį '
+                                            'per "Atstatyti slaptažodį".'))
 
-            if user.password_last_updated < now() - timedelta(days=90):
-                if user.status != User.LOCKED:
-                    user.lock_user()
-                raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, turite atkurti slaptažodį per "Atstatyti slaptažodį". '))
-
+                if user.password_last_updated < now() - timedelta(days=90):
+                    if user.status != User.LOCKED:
+                        user.lock_user()
+                    raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, '
+                                            'turite atkurti slaptažodį per "Atstatyti slaptažodį". '))
             if self.user_cache is None:
-                user.failed_login_attempts += 1
-                user.save()
-                raise ValidationError(_("Neteisingi prisijungimo duomenys"))
+                if user:
+                    user.failed_login_attempts += 1
+                    user.save()
+                raise self.get_invalid_login_error()
+            else:
+                self.confirm_login_allowed(self.user_cache)
 
+        user = self.user_cache
+        email_verified = True
+        if user and username:
+            user_email = EmailAddress.objects.filter(email=username).first()
+            if user_email:
+                if not user_email.verified:
+                    email_verified = False
+                    self.user_cache = None
+                    self.add_error(None, _("El. pašto adresas nepatvirtintas. "
+                                           "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
+        if email_verified:
+            device = self._chosen_device(user)
+
+            if device and device.last_used_at:
+                # if device exists and has been used, we allow login without otp validation
+                pass
+            else:
+                self.clean_otp(user)
         return self.cleaned_data
-
-    def get_user(self):
-        return self.user_cache
 
 
 class RegisterForm(UserCreationForm):

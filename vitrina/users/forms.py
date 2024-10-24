@@ -125,12 +125,11 @@ class LoginForm(OTPAuthenticationForm):
         email_verified = True
         if user and username:
             user_email = EmailAddress.objects.filter(email=username).first()
-            if user_email:
-                if not user_email.verified:
-                    email_verified = False
-                    self.user_cache = None
-                    self.add_error(None, _("El. pašto adresas nepatvirtintas. "
-                                           "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
+            if (user_email and not user_email.verified) or user.status == User.AWAITING_CONFIRMATION:
+                email_verified = False
+                self.user_cache = None
+                self.add_error(None, _("El. pašto adresas nepatvirtintas. "
+                                       "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
         if email_verified:
             device = self._chosen_device(user)
 

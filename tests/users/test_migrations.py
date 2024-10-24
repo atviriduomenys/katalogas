@@ -15,7 +15,8 @@ data_migration = import_module('vitrina.users.migrations.0004_auto_20220909_1301
 def test_fix_user_passwords(app: DjangoTestApp):
     user = User.objects.create(
         email="user@test.com",
-        password="$2a$12$k8fGchaf72fh8PO1g/HOI.EMw29jC8pPJoSfFXq1v2nJRo9ELSvPm"
+        password="$2a$12$k8fGchaf72fh8PO1g/HOI.EMw29jC8pPJoSfFXq1v2nJRo9ELSvPm",
+        status=User.ACTIVE
     )
 
     # try to log in with unchanged password

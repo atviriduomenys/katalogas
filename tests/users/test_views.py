@@ -22,7 +22,7 @@ reset_error = "Naudotojas su tokiu el. pašto adresu neegzistuoja"
 
 @pytest.fixture
 def user():
-    user = User.objects.create_user(email="test@test.com", password="test123")
+    user = User.objects.create_user(email="test@test.com", password="test123", status=User.ACTIVE)
     return user
 
 
@@ -298,7 +298,7 @@ def test_email_confirmation_after_sign_up(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_login_second_time(app: DjangoTestApp):
-    user = User.objects.create_user(email="testas1@testas.com", password="testas123")
+    user = User.objects.create_user(email="testas1@testas.com", password="testas123", status=User.ACTIVE)
     app.set_user(user)
 
     form = app.get(reverse('login')).forms['login-form']

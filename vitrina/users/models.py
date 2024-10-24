@@ -159,7 +159,8 @@ class SsoToken(models.Model):
 
 
 class UserEmailDevice(EmailDevice):
-    ip_address = models.GenericIPAddressField(_("IP adresas"), blank=True, null=True)
+    ip_address = models.CharField(_("IP adresas"), max_length=40, editable=False, db_index=True, null=True, blank=True)
+    user_agent = models.TextField(editable=False, null=True, blank=True)
 
     class Meta:
         managed = True

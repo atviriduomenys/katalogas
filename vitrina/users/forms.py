@@ -66,17 +66,20 @@ class LoginForm(OTPAuthenticationForm):
 
     def _chosen_device(self, user):
         client_ip, _ = get_client_ip(self.request)
+        user_agent = self.request.headers.get('User-Agent', '')
 
         device = UserEmailDevice.objects.filter(
             user=user.pk,
-            ip_address=client_ip
+            ip_address=client_ip,
+            user_agent=user_agent
         ).first()
 
         if not device:
             device = UserEmailDevice.objects.create(
                 user=user,
                 name=str(user),
-                ip_address=client_ip
+                ip_address=client_ip,
+                user_agent=user_agent
             )
         return device
 

@@ -43,7 +43,7 @@ class User(AbstractUser):
     year_of_birth = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
     failed_login_attempts = models.IntegerField(default=0)
-    password_last_updated = models.DateTimeField(default=now)
+    password_last_updated = models.DateTimeField(default=now, null=True)
 
     # Deprecated fields bellow
     disabled = models.BooleanField(default=False)

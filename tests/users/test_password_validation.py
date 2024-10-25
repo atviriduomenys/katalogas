@@ -8,6 +8,7 @@ from django_recaptcha.client import RecaptchaResponse
 from django_webtest import DjangoTestApp
 from allauth.account.models import EmailAddress
 
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User, OldPassword, UserEmailDevice
 
 
@@ -305,6 +306,7 @@ def test_password_change_after_lock(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_password_older_than_90_days(app: DjangoTestApp):
+    admin = UserFactory(is_superuser=True)
     user1 = User.objects.create_user(email="test@test.com", password="InitialPassword1!")
     EmailAddress.objects.create(user=user1, email=user1.email, verified=True, primary=True)
 
@@ -312,7 +314,7 @@ def test_password_older_than_90_days(app: DjangoTestApp):
     user1.password_last_updated = timezone.now() - timedelta(days=91)
     user1.save()
 
-    app.set_user(user1)
+    app.set_user(admin)
 
     form = app.get(reverse('login')).forms['login-form']
     form['username'] = user1.email

@@ -156,6 +156,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'vitrina.middleware.LogoutMiddleware',
 
     # Django CMS
     'cms.middleware.user.CurrentUserMiddleware',

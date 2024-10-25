@@ -307,15 +307,25 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
     form_class = CustomPasswordChangeForm
     template_name = 'base_form.html'
 
+    user: User
+
+    def dispatch(self, request, *args, **kwargs):
+        self.user = get_object_or_404(User, id=self.kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        user = get_object_or_404(User, id=self.kwargs['pk'])
-        return has_perm(self.request.user, Action.UPDATE, user)
+        return has_perm(self.request.user, Action.UPDATE, self.user)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
             return redirect('user-profile', pk=self.request.user.id)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

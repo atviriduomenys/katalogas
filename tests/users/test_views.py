@@ -18,6 +18,7 @@ name_error = "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti ska
 terms_error = "Turite sutikti su naudojimo sąlygomis"
 reset_error = "Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"
 awaiting_confirmation_error = "El. pašto adresas nepatvirtintas. Patvirtinti galite sekdami nuoroda išsiųstame laiške."
+inactive_error = "Jūsų paskyra yra neaktyvi. Norėdami sužinoti daugiau, susisiekite su administracija."
 
 
 @pytest.fixture
@@ -347,7 +348,7 @@ def test_login_with_suspended_user(app: DjangoTestApp):
     form['username'] = "test@test.com"
     form['password'] = "test123"
     resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[credentials_error]]
+    assert list(resp.context['form'].errors.values()) == [[inactive_error]]
 
 
 @pytest.mark.django_db

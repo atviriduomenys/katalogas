@@ -105,6 +105,11 @@ class LoginForm(OTPAuthenticationForm):
 
             user = User.objects.filter(email=username).first()
             if user:
+                if user.status == User.SUSPENDED or user.status == User.DELETED:
+                    self.user_cache = None
+                    raise ValidationError(_('Jūsų paskyra yra neaktyvi. '
+                                            'Norėdami sužinoti daugiau, susisiekite su administracija.'))
+
                 if (
                     user.status == User.LOCKED and
                     user.failed_login_attempts < 5 and
@@ -117,7 +122,7 @@ class LoginForm(OTPAuthenticationForm):
 
                 if user.failed_login_attempts >= 5:
                     self.user_cache = None
-                    if user.status != User.LOCKED:
+                    if user.status == User.ACTIVE:
                         user.lock_user()
                     raise ValidationError(_('Jūs viršijote leistinų slaptažodžio įvedimo bandymų skaičių. '
                                             'Po 5 nesėkmingų bandymų jūsų paskyra buvo užblokuota dėl '
@@ -126,7 +131,7 @@ class LoginForm(OTPAuthenticationForm):
 
                 if user.password_last_updated is None or user.password_last_updated < now() - timedelta(days=90):
                     self.user_cache = None
-                    if user.status != User.LOCKED:
+                    if user.status == User.ACTIVE:
                         user.lock_user()
                     raise ValidationError(_('Jūsų slaptažodžio galiojimas baigėsi. Norėdami prisijungti, '
                                             'turite atkurti slaptažodį per "Atstatyti slaptažodį". '))

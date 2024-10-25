@@ -110,7 +110,6 @@ class LoginForm(OTPAuthenticationForm):
                     raise ValidationError(_('Jūsų paskyra yra neaktyvi. '
                                             'Norėdami sužinoti daugiau, susisiekite su administracija.'))
 
-
                 if (
                     user.status == User.LOCKED and
                     user.failed_login_attempts < 5 and

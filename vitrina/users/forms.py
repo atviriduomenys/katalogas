@@ -302,13 +302,13 @@ class UserChangeAdminForm(UserChangeForm):
     password1 = CharField(
         label=_("Atnaujinti slaptažodį"),
         strip=False,
-        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        widget=PasswordInput(attrs={'autocomplete': 'off'}),
         required=False
     )
     password2 = CharField(
         label=_("Pakartoti slatažodį"),
         strip=False,
-        widget=PasswordInput(attrs={'autocomplete': 'new-password'}),
+        widget=PasswordInput(attrs={'autocomplete': 'off'}),
         required=False
     )
 
@@ -328,6 +328,15 @@ class UserChangeAdminForm(UserChangeForm):
         self.fields["created_date"].widget.attrs['style'] = "background-color: #f2f2f2;"
         self.fields["last_login_date"].disabled = True
         self.fields["last_login_date"].widget.attrs['style'] = "background-color: #f2f2f2;"
+
+        # Readonly blocks browser autocomplete
+        # On user interation, readonly attribute is removed
+        self.fields["first_name"].widget.attrs['readonly'] = True
+        self.fields["first_name"].widget.attrs['onfocus'] = "this.removeAttribute('readonly');"
+        self.fields["password1"].widget.attrs['readonly'] = True
+        self.fields["password1"].widget.attrs['onfocus'] = "this.removeAttribute('readonly');"
+        self.fields["password2"].widget.attrs['readonly'] = True
+        self.fields["password2"].widget.attrs['onfocus'] = "this.removeAttribute('readonly');"
 
         if instance:
             if instance.status != User.ACTIVE and instance.status != User.LOCKED:

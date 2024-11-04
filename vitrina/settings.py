@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.redirects',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',
     'extra_settings',
     'rest_framework',
     'drf_yasg',

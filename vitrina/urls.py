@@ -18,12 +18,22 @@ from django.contrib import admin
 from django.urls import include
 from django.urls import path
 from django.views.i18n import JavaScriptCatalog
+from django.contrib.sitemaps import views
 
 
 from vitrina import settings
 from vitrina.views import home
 from vitrina.orgs.admin import site
 from django.views.generic import TemplateView
+from vitrina.sitemaps import DatasetSitemap, OrganizationSitemap, ModelSitemap, RootSitemap, MoreViewSitemap
+
+sitemaps = {
+    'root': RootSitemap,
+    'datasets': DatasetSitemap,
+    'organizations': OrganizationSitemap,
+    'models': ModelSitemap,
+    'more': MoreViewSitemap,
+}
 
 urlpatterns = [
     path('', home, name="home"),
@@ -54,6 +64,8 @@ urlpatterns = [
     path('accounts/', include('vitrina.viisp.urls')),
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
     path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    path("sitemap.xml", views.index, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.index"),
+    path("sitemap-<section>.xml", views.sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

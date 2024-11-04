@@ -252,6 +252,8 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 stream = self._export_dataset_report(change_list.queryset, request)
                 result = StreamingHttpResponse(stream, content_type='text/csv')
                 result['Content-Disposition'] = 'attachment; filename=Ataskaita.csv'
+                result["Cache-Control"] = "no-cache"
+                result["X-Accel-Buffering"] = "no"
         return result
 
     def _export_dataset_report(self, queryset, request):

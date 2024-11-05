@@ -2073,8 +2073,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Atviras duomenų šaltinis.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
-                <dcat:downloadURL rdf:resource="{dist1.file.url}"/>
+                <dcat:accessURL rdf:resource="http://example.com{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
@@ -2096,8 +2095,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Universali duomenų teikimo paslauga.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
-                <dcat:downloadURL rdf:resource="{dist2.file.url}"/>
+                <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>

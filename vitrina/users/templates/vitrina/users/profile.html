@@ -114,6 +114,7 @@
             <div class="tab-content" style="display: none;" id="sub_id">
                 <div class="column">
                     {% for sub in subscriptions %}
+                        {% if sub.content_type.id and sub.object_id and sub.user.pk %}
                         <article class="box media is-expanded">
                         <div class="media-content">
                             <div class="content">
@@ -146,6 +147,7 @@
                             </div>
                         </div>
                         </article>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>

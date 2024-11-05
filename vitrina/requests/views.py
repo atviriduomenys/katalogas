@@ -131,6 +131,7 @@ class RequestListView(FacetedSearchView):
                     choices=Request.FILTER_STATUSES,
                     multiple=False,
                     is_int=False,
+                    order=Request.statuses_ordered
                 ),
                 Filter(
                     *filter_args,
@@ -1345,7 +1346,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
             args += [Q(model__model_properties__pk__in=property_ids)]
         if args:
             query = functools.reduce(operator.or_, args)
-            datasets = Dataset.objects.filter(query).order_by('-created')
+            datasets = Dataset.public.filter(query).order_by('-created')
         return datasets
 
     def get_context_data(self, **kwargs):

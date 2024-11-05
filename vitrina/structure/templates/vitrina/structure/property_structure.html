@@ -135,32 +135,12 @@
         </div>
         {% endif %}
 
-        {% if data %}
-            {% if graph_type == 'vertical' %}
-                <canvas id="chart" class="mb-5"></canvas>
-            {% elif graph_type == 'horizontal' %}
-                <div class="tab-content mb-6">
-                    {% for item in data %}
-                        <div class="is-flex">
-                            <strong class="has-text-black">{{ item.bin }}</strong>
-                            <div class="stays-right">{{ item.count }}</div>
-                        </div>
-                        <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div id="map" style="height: 400px;"></div>
-            {% endif %}
-        {% elif errors %}
-            <div class="message is-danger">
-                <div class="message-body">
-                    {% for error in errors %}
-                        {% if error.message %}
-                            <p>{{ error.message }}</p>
-                        {% else %}
-                            <p>{{ error }}</p>
-                        {% endif %}
-                    {% endfor %}
+        {% if has_graph %}
+            <div id="property-summary" class="mt-6 mb-6">
+                <div class="columns no-margin-bottom">
+                    <div class="column is-4"></div>
+                    <div class="column is-3"><progress class="progress is-small is-primary" max="100"></progress></div>
+                    <div class="column is-5"></div>
                 </div>
             </div>
         {% endif %}
@@ -247,114 +227,133 @@
 
 
 {% block scripts %}
-    {{ x_values|json_script:"xValues" }}
-    {{ y_values|json_script:"yValues" }}
-    {{ x_title|json_script:"xTitle" }}
-    {{ y_title|json_script:"yTitle" }}
-    {{ data|json_script:"clusters" }}
-    {{ prop.name|json_script:"property" }}
-    {{ model.full_name|json_script:"model" }}
-    {{ source_srid|json_script:"sourceSrid" }}
-    {{ target_srid|json_script:"targetSrid" }}
     <script type="text/javascript">
         $(function () {
-            let ctx = document.getElementById("chart");
-            if (ctx != null) {
-                ctx = ctx.getContext("2d");
-                var xValues = JSON.parse(document.getElementById('xValues').textContent);
-                var yValues = JSON.parse(document.getElementById('yValues').textContent).map((y) => parseInt(y));
-                var xTitle = JSON.parse(document.getElementById('xTitle').textContent);
-                var yTitle = JSON.parse(document.getElementById('yTitle').textContent);
+            let datasetId = {{ dataset.pk }};
+            let model = "{{model.name}}";
+            let modelFullName = "{{model.full_name}}";
+            modelFullName = modelFullName.replaceAll('/', '-')
+            let prop = "{{prop}}";
 
-                const char = new Chart(ctx, {
-                  type: "bar",
-                  data: {
-                    labels: xValues,
-                    datasets: [{
-                      data: yValues
-                    }]
-                  },
-                  options: {
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: yTitle
+            $.ajax({
+                url: `/datasets/${datasetId}/models/${modelFullName}/${prop}/data/`,
+            }).then(response => {
+                $.ajax({
+                    url: `/datasets/${datasetId}/models/${model}/${prop}/graph/`,
+                    type: "POST",
+                    data: {
+                        'csrfmiddlewaretoken': '{{csrf_token }}',
+                        'data': JSON.stringify(response)
+                    }
+                }).then(response => {
+                    $('#property-summary')[0].innerHTML = response['rendered_template'];
+
+                    let ctx = document.getElementById("chart");
+                    if (ctx != null) {
+                        ctx = ctx.getContext("2d");
+                        var xValues = JSON.parse(document.getElementById('xValues').textContent);
+                        var yValues = JSON.parse(document.getElementById('yValues').textContent).map((y) => parseInt(y));
+                        var xTitle = JSON.parse(document.getElementById('xTitle').textContent);
+                        var yTitle = JSON.parse(document.getElementById('yTitle').textContent);
+
+                        const char = new Chart(ctx, {
+                          type: "bar",
+                          data: {
+                            labels: xValues,
+                            datasets: [{
+                              data: yValues
+                            }]
+                          },
+                          options: {
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
                             },
-                            stacked: true
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: xTitle
-                            },
-                        }
+                            scales: {
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: yTitle
+                                    },
+                                    stacked: true
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: xTitle
+                                    },
+                                }
+                            }
+                          }
+                        });
                     }
-                  }
-                });
-            }
-            else if (document.getElementById("map") != null){
-                let map = L.map('map');
-                let clusters = JSON.parse(document.getElementById('clusters').textContent);
-                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    else if (document.getElementById("map") != null){
+                        let map = L.map('map');
+                        let clusters = JSON.parse(document.getElementById('clusters').textContent);
+                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-                let layerGroup = L.layerGroup().addTo(map);
-                let bounds = [];
-                clusters.forEach(item => {
-                    let cluster = item.cluster;
-                    let centroidX = item.centroid[0];
-                    let centroidY = item.centroid[1];
-                    bounds.push([centroidX, centroidY]);
+                        let layerGroup = L.layerGroup().addTo(map);
+                        let bounds = [];
+                        clusters.forEach(item => {
+                            let cluster = item.cluster;
+                            let centroidX = item.centroid[0];
+                            let centroidY = item.centroid[1];
+                            bounds.push([centroidX, centroidY]);
 
-                    if("_id" in item){
-                        var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
+                            if("_id" in item){
+                                var marker = L.marker([centroidX, centroidY]).addTo(layerGroup);
+                            }
+                            else {
+                                var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
+                                var text = L.tooltip({
+                                    permanent: true,
+                                    direction: 'center',
+                                    className: 'text'
+                                })
+                                .setContent(cluster.toString())
+                                .setLatLng(marker.getLatLng());
+                                text.addTo(layerGroup);
+                            }
+                        });
+                        map.fitBounds(bounds);
+
+                        var sourceSrid = JSON.parse(document.getElementById('sourceSrid').textContent);
+                        var targetSrid = JSON.parse(document.getElementById('targetSrid').textContent);
+                        map.on("zoomend", function () {
+                            update_map(map, layerGroup, sourceSrid, targetSrid);
+                        });
+                        map.on("dragend", function () {
+                            update_map(map, layerGroup, sourceSrid, targetSrid);
+                        });
                     }
-                    else {
-                        var marker = L.circleMarker([centroidX, centroidY], {radius: 20, color: 'orange'}).addTo(layerGroup);
-                        var text = L.tooltip({
-                            permanent: true,
-                            direction: 'center',
-                            className: 'text'
-                        })
-                        .setContent(cluster.toString())
-                        .setLatLng(marker.getLatLng());
-                        text.addTo(layerGroup);
-                    }
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#property-summary')[0].innerHTML = errorHtml;
                 });
-                map.fitBounds(bounds);
-
-                var sourceSrid = JSON.parse(document.getElementById('sourceSrid').textContent);
-                var targetSrid = JSON.parse(document.getElementById('targetSrid').textContent);
-                map.on("zoomend", function () {
-                    update_map(map, layerGroup, sourceSrid, targetSrid);
-                });
-                map.on("dragend", function () {
-                    update_map(map, layerGroup, sourceSrid, targetSrid);
-                });
-
-            }
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#property-summary')[0].innerHTML = errorHtml;
+            });
         });
 
         function update_map(map, layerGroup, sourceSrid, targetSrid) {
+            let model = "{{model.full_name}}";
+            let prop = "{{prop}}";
+
             let map_bounds = map.getBounds();
             let minLng = map_bounds.getSouthEast().lng;
             let minLat = map_bounds.getSouthEast().lat;
             let maxLng = map_bounds.getNorthWest().lng;
             let maxLat = map_bounds.getNorthWest().lat;
 
-            var model = JSON.parse(document.getElementById('model').textContent);
-            var property = JSON.parse(document.getElementById('property').textContent);
-
              $.ajax({
                  url: `/get_updated_summary/`,
                  data: {
                     model: model,
-                    property: property,
+                    property: prop,
                     source_srid: sourceSrid,
                     target_srid: targetSrid,
                     min_lng: minLng,

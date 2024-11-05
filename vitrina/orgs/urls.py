@@ -18,6 +18,8 @@ from vitrina.orgs.views import OrganizationMergeView
 from vitrina.orgs.views import ConfirmOrganizationMergeView
 from vitrina.orgs.views import RepresentativeApiKeyView
 from vitrina.orgs.views import RepresentativeExistsView
+from vitrina.orgs.views import RepresentativeRequestExistsView
+from vitrina.orgs.views import RepresentativeRegisterExpiredView
 from vitrina.orgs.views import OrganizationCreateSearchView, OrganizationCreateView, OrganizationCreateSearchUpdateView
 
 
@@ -40,6 +42,7 @@ urlpatterns = [
     path('orgs/<int:organization_id>/members/<int:pk>/delete/', RepresentativeDeleteView.as_view(),
          name='representative-delete'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
+    path('register/link-expired', RepresentativeRegisterExpiredView.as_view(), name='register-link-expired'),
     path('partner/register-info/', PartnerRegisterInfoView.as_view(), name='partner-register-info'),
     path('partner/register/', PartnerRegisterView.as_view(), name='partner-register'),
     path('partner/register-complete/', PartnerRegisterCompleteView.as_view(), name='partner-register-complete'),
@@ -47,7 +50,9 @@ urlpatterns = [
     path('partner/deny/<int:pk>/', RepresentativeRequestDenyView.as_view(), name='partner-register-deny'),
     path('partner/suspend/<int:pk>/', RepresentativeRequestSuspendView.as_view(), name='partner-register-suspend'),
     path('partner/download/<int:pk>/', RepresentativeRequestDownloadView.as_view(), name='partner-register-download'),
-    path('partner/exists/', RepresentativeExistsView.as_view(), name='representative-exists'),
+    path('partner/representative/exists/', RepresentativeExistsView.as_view(), name='representative-exists'),
+    path('partner/representative-request/exists/', RepresentativeRequestExistsView.as_view(),
+         name='representative-request-exists'),
     path('orgs/<int:pk>/plans/', OrganizationPlanView.as_view(), name='organization-plans'),
     path('orgs/<int:pk>/plans/add/', OrganizationPlanCreateView.as_view(), name='organization-plans-create'),
     path('orgs/<int:pk>/apikeys/', OrganizationApiKeysView.as_view(), name='organization-apikeys'),

@@ -24,10 +24,16 @@ from vitrina.structure.views import ParamDeleteView
 from vitrina.structure.views import DatasetStructureHistoryView
 from vitrina.structure.views import ModelHistoryView
 from vitrina.structure.views import PropertyHistoryView
-from vitrina.structure.views import GetUpdatedSummaryView
+from vitrina.structure.views import get_updated_summary
 from vitrina.structure.views import VersionListView
 from vitrina.structure.views import VersionDetailView
-from vitrina.structure.views import ModelDataCountView
+from vitrina.structure.views import get_model_data_count
+from vitrina.structure.views import get_model_data
+from vitrina.structure.views import ModelDataTableView
+from vitrina.structure.views import ObjectDataTableView
+from vitrina.structure.views import get_object_data
+from vitrina.structure.views import get_property_data
+from vitrina.structure.views import PropertyGraphView
 
 urlpatterns = [
     path('datasets/<int:pk>/models/', DatasetStructureView.as_view(), name='dataset-structure'),
@@ -40,13 +46,21 @@ urlpatterns = [
     path('datasets/<int:pk>/models/<str:model>/history/', ModelHistoryView.as_view(), name='model-history'),
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/',
          PropertyStructureView.as_view(), name='property-structure'),
+    path('datasets/<int:pk>/models/<str:model>/<str:prop>/data/',
+         get_property_data, name='property-data'),
+    path('datasets/<int:pk>/models/<str:model>/<str:prop>/graph/',
+         PropertyGraphView.as_view(), name='property-graph'),
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/history/',
          PropertyHistoryView.as_view(), name='property-history'),
     path('datasets/<int:pk>/models/<str:model>/<str:prop>/change/',
          PropertyUpdateView.as_view(), name='property-update'),
     path('datasets/<int:pk>/data/<str:model>/', ModelDataView.as_view(), name='model-data'),
-    path('datasets/<int:pk>/data/<str:model>/count/', ModelDataCountView.as_view(), name='model-data-count'),
+    path('datasets/<int:pk>/data/<str:model>/count/', get_model_data_count, name='model-data-count'),
+    path('datasets/<int:pk>/data/<str:model>/table/', ModelDataTableView.as_view(), name='model-data-table'),
+    path('datasets/<int:pk>/data/<str:model>/table-data/', get_model_data, name='model-data-table-data'),
     path('datasets/<int:pk>/data/<str:model>/<str:uuid>/', ObjectDataView.as_view(), name='object-data'),
+    path('datasets/<int:pk>/data/<str:model>/<str:uuid>/table/', ObjectDataTableView.as_view(), name='object-data-table'),
+    path('datasets/<int:pk>/data/<str:model>/<str:uuid>/table-data/', get_object_data, name='object-data-table-data'),
     path('datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/',
          ParamCreateView.as_view(), name='param-create'),
     path('datasets/<int:pk>/params/<int:param_id>/change/', ParamUpdateView.as_view(), name='param-update'),
@@ -64,7 +78,7 @@ urlpatterns = [
          EnumUpdateView.as_view(), name='enum-update'),
     path('datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/',
          EnumDeleteView.as_view(), name='enum-delete'),
-    path('get_updated_summary/', GetUpdatedSummaryView.as_view(), name='get_updated_summary'),
+    path('get_updated_summary/', get_updated_summary, name='get_updated_summary'),
     path('datasets/<int:pk>/version/', VersionListView.as_view(), name='version-list'),
     path('datasets/<int:pk>/version/add/', VersionCreateView.as_view(), name='version-create'),
     path('datasets/<int:pk>/version/<int:version_id>/', VersionDetailView.as_view(), name='version-detail'),

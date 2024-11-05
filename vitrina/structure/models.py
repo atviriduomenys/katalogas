@@ -81,7 +81,7 @@ class Metadata(models.Model):
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
     type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
-    metadata_version = models.ForeignKey('Version', verbose_name=_("Versija"), on_delete=models.PROTECT, null=True)
+    metadata_version = models.ForeignKey('Version', verbose_name=_("Versija"), on_delete=models.CASCADE, null=True)
     draft = models.BooleanField(_("Priskirta versijai"), default=True,)
 
     objects = MetadataManager()
@@ -439,7 +439,7 @@ class Version(models.Model):
     dataset = models.ForeignKey(
         'vitrina_datasets.Dataset',
         verbose_name=_("Duomenų rinkinys"),
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name='dataset_version'
     )
     version = models.IntegerField(_("Versija"), null=True, blank=True)

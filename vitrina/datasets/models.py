@@ -121,7 +121,7 @@ class Dataset(TranslatableModel):
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'))
+    category = models.ManyToManyField(Category, verbose_name=_('Kategorija'), blank=True)
     category_old = models.CharField(max_length=255, blank=True, null=True)
 
     catalog = models.ForeignKey(Catalog, models.SET_NULL, db_column='catalog', blank=True, null=True)
@@ -165,9 +165,10 @@ class Dataset(TranslatableModel):
     part_of = models.ManyToManyField(
         'DatasetRelation',
         related_name="related_datasets",
-        verbose_name=_("Duomenų rinkinio ryšiai")
+        verbose_name=_("Duomenų rinkinio ryšiai"),
+        blank=True
     )
-    type = models.ManyToManyField('Type', verbose_name=_("Tipas"))
+    type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True)
     endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
     endpoint_type = models.ForeignKey(
         'DataServiceType',
@@ -689,15 +690,18 @@ class Dataset(TranslatableModel):
                                 meta_objects.append((metadata.pk, label))
         return meta_objects
 
-    def save_translation(self, translation, *args, **kwargs):
-        if translation.language_code == 'lt':
+    def save_translations(self, *args, **kwargs):
+        super(Dataset, self).save_translations(*args, **kwargs)
+
+        if not self.has_translation(language_code='en') or not self.en_title() or not self.en_description():
+            lt_title = self.lt_title()
+            lt_description = self.lt_description()
+
             if not self.has_translation(language_code='en'):
-                lt_title = self.lt_title()
-                lt_description = self.lt_description()
-
                 self.create_translation(language_code='en')
-                self.set_current_language('en')
+            self.set_current_language('en')
 
+            if lt_title and not self.en_title():
                 response_title = requests.post(
                     "https://vertimas.vu.lt/ws/service.svc/json/Translate",
                     json={
@@ -714,6 +718,7 @@ class Dataset(TranslatableModel):
                 en_title = response_title.json()
                 self.title = en_title
 
+            if lt_description and not self.en_description():
                 response_desc = requests.post(
                     "https://vertimas.vu.lt/ws/service.svc/json/Translate",
                     json={
@@ -730,8 +735,6 @@ class Dataset(TranslatableModel):
                 en_description = response_desc.json()
                 self.description = en_description
 
-        super(Dataset, self).save_translation(translation, *args, **kwargs)
-
     def is_opened(self):
         return self.status == self.HAS_DATA
 
@@ -739,8 +742,8 @@ class Dataset(TranslatableModel):
 class DatasetReport(Dataset):
     class Meta:
         proxy = True
-        verbose_name = _("Duomenų rinkinių ataskaita")
-        verbose_name_plural = _("Duomenų rinkinių ataskaita")
+        verbose_name = _("Duomenų rinkinių atnaujinimo ataskaita")
+        verbose_name_plural = _("Duomenų rinkinių atnaujinimo ataskaita")
 
 
 # TODO: To be merged into Dataset:
@@ -992,7 +995,7 @@ class DatasetStructure(models.Model):
         db_table = 'dataset_structure'
 
     def __str__(self):
-        if self.dataset.metadata.first():
+        if self.dataset and self.dataset.metadata.first():
             if self.dataset.metadata.first().title:
                 return self.dataset.metadata.first().title
             else:
@@ -1088,7 +1091,7 @@ class Attribution(models.Model):
 
 
 class DatasetAttribution(models.Model):
-    dataset = models.ForeignKey(Dataset, on_delete=models.PROTECT, verbose_name=_("Duomenų rinkinys"))
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
     organization = models.ForeignKey(
         Organization,
@@ -1155,13 +1158,13 @@ class DatasetRelation(models.Model):
     dataset = models.ForeignKey(
         Dataset,
         verbose_name=_("Duomenų rinkinys"),
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="dataset_relations"
     )
     part_of = models.ForeignKey(
         Dataset,
         verbose_name=_("Priklauso rinkiniui"),
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="related_datasets"
     )
 

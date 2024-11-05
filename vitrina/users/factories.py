@@ -14,6 +14,7 @@ class UserFactory(DjangoModelFactory):
     email = factory.LazyAttributeSequence(lambda o, n: '%s.%s%d@example.com' % (o.first_name, o.last_name, n))
     phone = factory.Sequence(lambda n: '+3706%07d' % n)
     version = 1
+    status = User.ACTIVE
 
 
 class ManagerFactory(DjangoModelFactory):

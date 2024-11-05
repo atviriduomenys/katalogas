@@ -84,9 +84,14 @@ INSTALLED_APPS = [
     'extra_settings',
     'rest_framework',
     'drf_yasg',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'vitrina.users',
 
     # Django CMS
+    'django_otp',
+    'django_otp.plugins.otp_email',
     'sass_processor',
     'sekizai',
     'cms',
@@ -94,7 +99,6 @@ INSTALLED_APPS = [
     'treebeard',
     'filer',
     'easy_thumbnails',
-    'mptt',
     'djangocms_text_ckeditor',
     'aldryn_apphooks_config',
     'parler',
@@ -109,9 +113,6 @@ INSTALLED_APPS = [
     'tagulous',
     'haystack',
     'crispy_bulma',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
     'django_select2',
     'django_recaptcha',
     'vitrina',
@@ -149,11 +150,13 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.redirects.middleware.RedirectFallbackMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'vitrina.middleware.NoAutoLocaleMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'vitrina.middleware.LogoutMiddleware',
 
     # Django CMS
     'cms.middleware.user.CurrentUserMiddleware',
@@ -215,16 +218,28 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,
+        }
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'vitrina.validators.UppercaseValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'vitrina.validators.LowercaseValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.DigitValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.SpecialCharacterValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.UniquePasswordValidator',
+    },
+    {
+        'NAME': 'vitrina.validators.ZxcvbnPasswordValidator',
     },
 ]
 
@@ -304,6 +319,17 @@ THUMBNAIL_ALIASES = {
     '': {
         'list': {'size': (480, 320)},
     },
+}
+
+FILER_ADD_FILE_VALIDATORS = {
+    "text/html": ["filer.validation.deny_html"],
+    "image/svg+xml": ["filer.validation.deny"],
+    "text/javascript": ["filer.validation.deny"],
+    "application/javascript": ["filer.validation.deny"],
+    "application/x-msdownload": ["filer.validation.deny"],
+    "application/x-sh": ["filer.validation.deny"],
+    "application/x-httpd-php": ["filer.validation.deny"],
+    "application/octet-stream": ["filer.validation.deny"],
 }
 
 META_USE_OG_PROPERTIES = True
@@ -441,3 +467,11 @@ CACHES = {
         "LOCATION": "unique-snowflake",
     }
 }
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+LANGUAGE_COOKIE_SECURE = True
+
+OTP_EMAIL_TOKEN_VALIDITY = 600

@@ -20,25 +20,16 @@
 {% endblock %}
 
 {% block content %}
-{% if perms_lacking %}
-    <p>{% blocktranslate with escaped_object=object %}Deleting the {{ object_name }} '{{ escaped_object }}' would result in deleting related objects, but your account doesn't have permission to delete the following types of objects:{% endblocktranslate %}</p>
-    <ul>
-    {% for obj in perms_lacking %}
-        <li>{{ obj }}</li>
-    {% endfor %}
-    </ul>
-{% elif protected %}
+{% if protected %}
     <p>{% blocktranslate with escaped_object=object %}Naudotoją galima pašalinti tik panaikinus visus su naudotoju susijusius objektus arba pasirinkus naudotojo suspendavimą{% endblocktranslate %}</p>
     <ul>
     {% for obj in protected %}
         <li>{{ obj }}</li>
     {% endfor %}
     </ul>
+    <div><a href="#" class="button cancel-link">{% translate "Grįžti atgal" %}</a></div>
 {% else %}
-    <p>{% blocktranslate with escaped_object=object %}Naudotoją galima pašalinti tik panaikinus visus su naudotoju susijusius objektus arba pasirinkus naudotojo suspendavimą{% endblocktranslate %}</p>
-    {% include "admin/includes/object_delete_summary.html" %}
-    <h2>{% translate "Objektai" %}</h2>
-    <ul>{{ deleted_objects|unordered_list }}</ul>
+    <p>{% blocktranslate with escaped_object=object %}Ar tikrai norite pašalinti naudotoją?{% endblocktranslate %}</p>
     <form method="post">{% csrf_token %}
     <div>
     <input type="hidden" name="post" value="yes">

@@ -10,7 +10,7 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
 from vitrina.projects.factories import ProjectFactory
@@ -528,3 +528,93 @@ def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
     assert len(mail.outbox) == 3
+
+
+@pytest.mark.django_db
+def test_subscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    ct = ContentType.objects.get_for_model(dataset)
+    response = app.get(reverse('subscribe-form', args=[ct.pk, dataset.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('subscribe-form', args=[ct.pk, dataset.pk, user.pk]))
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_unsubscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    app.set_user(user)
+    ct = ContentType.objects.get_for_model(dataset)
+    response = app.post(reverse('unsubscribe', args=[ct.pk, dataset.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_unsubscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.post(reverse('unsubscribe', args=[ct.pk, dataset.pk, user.pk]))
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
+def test_subscribe_with_not_approved_project_without_access(app: DjangoTestApp):
+    project = ProjectFactory(status=Project.CREATED)
+    user = UserFactory()
+    app.set_user(user)
+    ct = ContentType.objects.get_for_model(project)
+    response = app.get(reverse('subscribe-form', args=[ct.pk, project.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_subscribe_with_not_approved_project_with_access(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(status=Project.CREATED, user=user)
+    ct = ContentType.objects.get_for_model(project)
+    app.set_user(user)
+    response = app.get(reverse('subscribe-form', args=[ct.pk, project.pk, user.pk]))
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_unsubscribe_with_not_approved_project_without_access(app: DjangoTestApp):
+    project = ProjectFactory(status=Project.CREATED)
+    user = UserFactory()
+    app.set_user(user)
+    ct = ContentType.objects.get_for_model(project)
+    response = app.post(reverse('unsubscribe', args=[ct.pk, project.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_unsubscribe_with_not_approved_project_with_access(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(status=Project.CREATED, user=user)
+    ct = ContentType.objects.get_for_model(project)
+    app.set_user(user)
+    response = app.post(reverse('unsubscribe', args=[ct.pk, project.pk, user.pk]))
+    assert response.status_code == 302

@@ -6,7 +6,7 @@ from django.db import connection
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
-from vitrina.users.models import User
+from vitrina.users.models import User, UserEmailDevice
 
 data_migration = import_module('vitrina.users.migrations.0004_auto_20220909_1301')
 
@@ -15,12 +15,13 @@ data_migration = import_module('vitrina.users.migrations.0004_auto_20220909_1301
 def test_fix_user_passwords(app: DjangoTestApp):
     user = User.objects.create(
         email="user@test.com",
-        password="$2a$12$k8fGchaf72fh8PO1g/HOI.EMw29jC8pPJoSfFXq1v2nJRo9ELSvPm"
+        password="$2a$12$k8fGchaf72fh8PO1g/HOI.EMw29jC8pPJoSfFXq1v2nJRo9ELSvPm",
+        status=User.ACTIVE
     )
 
     # try to log in with unchanged password
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = "user@test.com"
+    form['username'] = "user@test.com"
     form['password'] = "test"
     resp = form.submit()
     assert len(resp.context['form'].errors) == 1
@@ -32,8 +33,11 @@ def test_fix_user_passwords(app: DjangoTestApp):
 
     # try to log in again
     form = app.get(reverse('login')).forms['login-form']
-    form['email'] = "user@test.com"
+    form['username'] = "user@test.com"
     form['password'] = "test"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user).first().token
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('home')

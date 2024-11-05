@@ -47,7 +47,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple
     )
-    description = TranslatedField(label=_('Aprašymas'))
+    description = TranslatedField(label=_('Aprašymas'), required=True)
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
@@ -62,7 +62,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "nuskaitoma mašininiu būdu"
         )
     )
-    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
+    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO, allow_empty_file=True)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
             RegexValidator(
                 '([a-z]+\/?)+',
@@ -127,6 +127,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Submit('submit', button, css_class='button is-primary')
         )
 
+        if self.language_code == 'en':
+            self.fields['description'].required = False
+
         if not instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
@@ -173,6 +176,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         return name
 
 
+class DatasetAdminForm(forms.ModelForm):
+    class Meta:
+        model = Dataset
+        exclude = ('slug', 'current_structure')
+
+
 class DatasetSearchForm(FacetedSearchForm):
     date_from = DateField(required=False)
     date_to = DateField(required=False)
@@ -189,9 +198,14 @@ class DatasetSearchForm(FacetedSearchForm):
             else:
                 sqs = sqs.autocomplete(text__icontains=keyword)
 
-            datasets_with_name = self.searchqueryset.models(Dataset).filter(name__icontains=keyword)
-            datasets_with_model_name = self.searchqueryset.models(Dataset).filter(model_names__icontains=keyword)
-            sqs = sqs | datasets_with_name | datasets_with_model_name
+            dataset_with_name_ids = self.searchqueryset.models(Dataset).filter(name__icontains=keyword) \
+                .values_list('pk', flat=True)
+            dataset_with_model_name_ids = self.searchqueryset.models(Dataset).filter(model_names__icontains=keyword) \
+                .values_list('pk', flat=True)
+            sqs_ids = sqs.values_list('pk', flat=True)
+            ids = list(dataset_with_model_name_ids) + list(dataset_with_name_ids) + list(sqs_ids)
+
+            sqs = self.searchqueryset.models(Dataset).filter(id__in=ids)
 
         if self.cleaned_data.get('date_from'):
             sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])

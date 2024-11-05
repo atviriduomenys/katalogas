@@ -51,7 +51,8 @@ def get_holidays(
 def get_active_tasks(
     user: User,
     queryset: Optional[QuerySet] = None,
-    now: datetime.date = None
+    now: datetime.date = None,
+    all_tasks: bool = False
 ) -> QuerySet:
     queryset = queryset or Task.objects.all()
     now = now or timezone.now().date()
@@ -103,6 +104,9 @@ def get_active_tasks(
         ]
     query = functools.reduce(operator.or_, args)
 
-    # By default, we are only interested in open tasks.
-    query = functools.reduce(operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])])
+    if all_tasks:
+        query = functools.reduce(operator.and_, [query])
+    else:
+        # By default, we are only interested in open tasks.
+        query = functools.reduce(operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])])
     return queryset.filter(query)

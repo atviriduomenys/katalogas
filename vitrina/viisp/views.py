@@ -10,6 +10,8 @@ from allauth.socialaccount.providers.oauth2.views import (
 from allauth.socialaccount.helpers import (
     complete_social_login
 )
+
+from vitrina.orgs.models import Representative
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider
@@ -117,7 +119,14 @@ class VIISPCompleteLoginView(View):
                 )
                 return redirect('confirm-email')
         login = provider.sociallogin_from_response(request, user_data)
-        return complete_social_login(request, login)
+        response = complete_social_login(request, login)
+
+        # update related representatives
+        if login.user:
+            if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
+                reps.update(user=login.user)
+
+        return response
 
 
 def _confirm_viisp_email(
@@ -146,6 +155,10 @@ class LoginFirstView(TemplateView):
 
 class ConfirmEmailView(TemplateView):
     template_name = 'vitrina/viisp/confirm_email.html'
+
+
+class AccoutnInactiveView(TemplateView):
+    template_name = 'vitrina/viisp/account_inactive.html'
 
 
 @method_decorator(csrf_exempt, name='dispatch')

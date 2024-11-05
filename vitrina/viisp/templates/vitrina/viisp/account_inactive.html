@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Prisijungti nepavyko" %}{% endblock %}
+
+{% block content %}
+  <p>{% translate "Jūsų paskyra yra neaktyvi." %}</p>
+  <br>
+  <p>
+    <a href="{% url 'home' %}" class="button is-small is-primary">{% translate "Į pradžią" %}</a>
+  </p>
+{% endblock %}

@@ -1,18 +1,36 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.timezone import now
+from django_otp.plugins.otp_email.models import EmailDevice
 
 from vitrina.orgs.models import Organization, Representative
-from vitrina.users.managers import UserManager
+from vitrina.users.managers import UserManager, DeletedUserManager
 
 from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
+    ACTIVE = 'active'
+    AWAITING_CONFIRMATION = 'awaiting_confirmation'
+    SUSPENDED = 'suspended'
+    DELETED = 'deleted'
+    LOCKED = 'locked'
+
+    STATUSES = (
+        (ACTIVE, _("Aktyvus")),
+        (AWAITING_CONFIRMATION, _("Laukiama patvirtinimo")),
+        (SUSPENDED, _("Suspenduotas")),
+        (DELETED, _("Pašalintas")),
+        (LOCKED, _("Užrakintas")),
+    )
+
     username = None
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(unique=True, max_length=255, blank=True, null=True)
+    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
@@ -23,6 +41,11 @@ class User(AbstractUser):
     phone = models.CharField(max_length=255, blank=True, null=True)
     needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
+    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
+    failed_login_attempts = models.IntegerField(default=0)
+    password_last_updated = models.DateTimeField(default=now, null=True)
+
+    # Deprecated fields bellow
     disabled = models.BooleanField(default=False)
     suspended = models.BooleanField(default=False)
 
@@ -30,11 +53,12 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+    objects_with_deleted = DeletedUserManager()
 
     class Meta:
         db_table = 'user'
         verbose_name = _("Naudotojas")
-        verbose_name_plural = _("Naudotojai")
+        verbose_name_plural = _("Visi naudotojai")
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
@@ -63,6 +87,24 @@ class User(AbstractUser):
                 if Dataset.objects.filter(organization=org_id):
                     return True
 
+    def unlock_user(self):
+        if self.status == User.LOCKED or self.status == User.ACTIVE:
+            self.failed_login_attempts = 0
+            self.password_last_updated = now()
+            if self.deleted:
+                self.status = User.DELETED
+            elif not self.is_active:
+                self.status = User.SUSPENDED
+            elif self.emailaddress_set.first() and not self.emailaddress_set.first().verified:
+                self.status = User.AWAITING_CONFIRMATION
+            else:
+                self.status = User.ACTIVE
+            self.save()
+
+    def lock_user(self):
+        self.status = User.LOCKED
+        self.save()
+
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -85,7 +127,7 @@ class OldPassword(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    password = models.CharField(max_length=60, blank=True, null=True)
+    password = models.CharField(max_length=128, blank=True, null=True)
     user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
 
     class Meta:
@@ -122,3 +164,20 @@ class SsoToken(models.Model):
     class Meta:
         managed = True
         db_table = 'sso_token'
+
+
+class UserEmailDevice(EmailDevice):
+    ip_address = models.CharField(_("IP adresas"), max_length=40, editable=False, db_index=True, null=True, blank=True)
+    user_agent = models.TextField(editable=False, null=True, blank=True)
+
+    class Meta:
+        managed = True
+        db_table = 'user_email_device'
+
+    def send_mail(self, body, **kwargs):
+        from vitrina.helpers import email
+
+        email([self.email or self.user.email], 'confirm-login', 'vitrina/email/confirm_login.md', {
+            'full_name': str(self.user),
+            'token': self.token,
+        })

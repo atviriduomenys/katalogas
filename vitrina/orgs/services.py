@@ -150,9 +150,6 @@ def has_perm(
                     elif role == Role.SUPERVISOR:
                         if is_supervisor(user, node):
                             return True
-                    elif role == Role.MANAGER:
-                        if is_manager(user, node):
-                            return True
                     else:
                         ct = ContentType.objects.get_for_model(node)
                         where.append(Q(
@@ -239,8 +236,9 @@ def pre_representative_delete(rep: Representative):
         ).values_list('object_id', flat=True)
 
         if (
-                org_repr.count() == 1 and
-                not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
+            org_repr.count() == 1 and
+            not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
         ):
             rep.user.is_active = False
+            rep.user.status = User.SUSPENDED
             rep.user.save()

@@ -1,6 +1,7 @@
 import pytz
 from django.contrib import admin, messages
 from django.shortcuts import redirect
+from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
@@ -147,6 +148,15 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
         return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
+
+    def response_change(self, request, obj):
+        msg = mark_safe(_(
+            f'Duomenų tiekėjo "'
+            f'<a href="{reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk])}">'
+            f'{str(obj)}</a>" prašymas pakeistas sėkmingai.')
+        )
+        self.message_user(request, msg, messages.SUCCESS)
+        return self.response_post_save_change(request, obj)
 
 
 class TemplateAdmin(admin.ModelAdmin):

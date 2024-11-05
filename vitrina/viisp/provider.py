@@ -49,6 +49,7 @@ class VIISPProvider(OAuth2Provider):
         # NOTE: Avoid loading models at top due to registry boot...
         from allauth.socialaccount.models import SocialAccount, SocialLogin
         from vitrina.users.models import User
+        from vitrina.orgs.models import Representative
         adapter = get_adapter(request)
         uid = self.extract_uid(response)
         extra_data = self.extract_extra_data(response)
@@ -74,9 +75,17 @@ class VIISPProvider(OAuth2Provider):
             )
         else:
             user = sociallogin.user = adapter.new_user(request, sociallogin)
+            user.status = User.ACTIVE
             user.set_unusable_password()
             adapter.populate_user(request, sociallogin, common_fields)
+
+        # update related representatives
+        if user := User.objects.filter(email=extra_data.get('coordinator_email')).first():
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
+                reps.update(user=user)
+
         return sociallogin
-    
+
+
 provider_classes = [VIISPProvider]
 providers.registry.register(VIISPProvider)

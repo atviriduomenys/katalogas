@@ -33,125 +33,18 @@
     </div>
 
     <div class="column is-three-quarters">
-        {% if errors %}
-            <div class="message is-danger">
-                <div class="message-body">
-                    {% for error in errors %}
-                        {% if error.message %}
-                            <p>{{ error.message }}</p>
-                        {% else %}
-                            <p>{{ error }}</p>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+        <div id="object-data-table">
+            <div class="columns no-margin-bottom">
+                <div class="column is-4"></div>
+                <div class="column is-3 mt-6"><progress class="progress is-small is-primary" max="100"></progress></div>
+                <div class="column is-5"></div>
             </div>
-        {% else %}
-            <div class="table-container">
-                <table class="table is-bordered">
-                    <tbody>
-                        {% for col in headers %}
-                            {% get_value_by_key properties col as prop %}
-                            {% get_value_by_key data col as value %}
+        </div>
 
-                            {% if col not in excluded_cols %}
-                                <tr>
-                                    <th>
-                                        <div>
-                                            <span>
-                                                {% if prop %}
-                                                    <a href="{{ prop.get_absolute_url }}">{{ col }}</a>
-                                                {% else %}
-                                                    {{ col }}
-                                                {% endif %}
-                                                {% if col == '_id' or prop.metadata.first.unique %}
-                                                    <span class="icon has-text-warning"><i class="fas fa-key"></i></span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <small class="has-text-weight-normal is-italic">
-                                                {% if prop.ref_model %}
-                                                    <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
-                                                {% else %}
-                                                    {{ prop.metadata.first.type }}
-                                                {% endif %}
-                                            </small>
-                                        </div>
-                                    </th>
-                                    {% if col == '_id' %}
-                                        <td>
-                                            {% if model.name %}
-                                                <a href="{% url 'object-data' dataset.pk model.name value %}">{{ value|slice:":8" }}</a>
-                                            {% else %}
-                                                {{ value|slice:":8" }}
-                                            {% endif %}
-                                        </td>
-                                    {% elif value|is_dict %}
-                                        {% if prop.ref_model %}
-                                            {% get_value_by_key value '_id' as value %}
-                                            {% if value != None %}
-                                                <td id="{{ col }}_col_id">
-                                                    {% if prop.ref_model.name %}
-                                                        <a href="{% url 'object-data' dataset.pk prop.ref_model.name value %}">{{ value|slice:":8" }}</a>
-                                                    {% else %}
-                                                        {{ value|slice:":8" }}
-                                                    {% endif %}
-                                                </td>
-                                            {% else %}
-                                                <td class="has-background-white-ter"></td>
-                                            {% endif %}
-                                        {% else %}
-                                            {% if value != None %}
-                                                {% for k, v in value.items %}
-                                                    {% if k == '_id' %}
-                                                        {% if v != None %}
-                                                            <td id="{{ col }}_col_id">{{ v|slice:":8" }}</td>
-                                                        {% else %}
-                                                            <td class="has-background-white-ter"></td>
-                                                        {% endif %}
-                                                    {% else %}
-                                                        {% if v != None %}
-                                                            <td id="{{ col }}_col_id">{{ v }}</td>
-                                                        {% else %}
-                                                            <td class="has-background-white-ter"></td>
-                                                        {% endif %}
-                                                    {% endif %}
-                                                    {% if not forloop.last %}
-                                                        <br/>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                <td class="has-background-white-ter"></td>
-                                            {% endif %}
-                                        {% endif %}
-                                    {% elif prop.metadata.first.type == 'geometry' and value != None %}
-                                        <td>
-                                            <span>{{ value }}</span>
-                                            {% get_geometry_srid prop.metadata.first.type_args as srid %}
-                                            {% if srid %}
-                                                {% convert_coordinates value srid as value %}
-                                                <div id="map_{{ prop.name }}" style="height: 300px;" data-geometry="{{ value }}"></div>
-                                            {% endif %}
-                                        </td>
-                                    {% else %}
-                                        {% if value != None %}
-                                            <td>{{ value }}</td>
-                                        {% else %}
-                                            <td class="has-background-white-ter"></td>
-                                        {% endif %}
-                                    {% endif %}
-                                </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {% if model.name %}
+            <div class="mt-6">
+                {% external_comments content_type=model.name object_id=object_id user=request.user dataset=dataset %}
             </div>
-            {% if model.name %}
-                <div class="mt-6">
-                    {% get_value_by_key data '_id' as id %}
-                    {% external_comments content_type=model.name object_id=id user=request.user dataset=dataset %}
-                </div>
-            {% endif %}
         {% endif %}
     </div>
 </div>
@@ -162,27 +55,55 @@
 {% block scripts %}
     <script type="text/javascript">
         $(function () {
-            $('div[id^="map_"]').each( function () {
-                let id = $(this)[0].id;
-                let map = L.map(id);
-                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            let datasetId = {{ dataset.pk }};
+            let model = "{{model.name}}";
+            let modelFullName = "{{model.full_name}}";
+            modelFullName = modelFullName.replaceAll('/', '-')
+            let uuid = "{{ object_id }}";
 
-                let layerGroup = L.layerGroup().addTo(map);
-
-                let geometry = $(this)[0].dataset.geometry;
-                let wkt = new Wkt.Wkt();
-                wkt.read(geometry);
-
-                let feature = { "type": "Feature", 'properties': {}, "geometry": wkt.toJson() };
-                let geoObj = L.geoJSON(feature, {
-                    coordsToLatLng: function (coords) {
-                        return new L.LatLng(coords[0], coords[1], coords[2]);
+            $.ajax({
+                url: `/datasets/${datasetId}/data/${modelFullName}/${uuid}/table-data/`,
+            }).then(response => {
+                $.ajax({
+                    url: `/datasets/${datasetId}/data/${model}/${uuid}/table/`,
+                    type: "POST",
+                    data: {
+                        'csrfmiddlewaretoken': '{{csrf_token }}',
+                        'data': JSON.stringify(response),
                     }
-                }).addTo(layerGroup);
+                }).then(response => {
+                    $('#object-data-table')[0].innerHTML = response['rendered_template'];
 
-                map.fitBounds(geoObj.getBounds());
-            })
+                    $('div[id^="map_"]').each( function () {
+                        let id = $(this)[0].id;
+                        let map = L.map(id);
+                        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+                        let layerGroup = L.layerGroup().addTo(map);
+
+                        let geometry = $(this)[0].dataset.geometry;
+                        let wkt = new Wkt.Wkt();
+                        wkt.read(geometry);
+
+                        let feature = { "type": "Feature", 'properties': {}, "geometry": wkt.toJson() };
+                        let geoObj = L.geoJSON(feature, {
+                            coordsToLatLng: function (coords) {
+                                return new L.LatLng(coords[0], coords[1], coords[2]);
+                            }
+                        }).addTo(layerGroup);
+
+                        map.fitBounds(geoObj.getBounds());
+                    });
+                }).fail(function () {
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    $('#object-data-table')[0].innerHTML = errorHtml;
+                });
+            }).fail(function () {
+                let errorMsg = gettext("Atsiprašome, įvyko klaida.");
+                let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                $('#object-data-table')[0].innerHTML = errorHtml;
+            });
         });
-
     </script>
 {% endblock %}

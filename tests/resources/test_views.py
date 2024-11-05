@@ -6,6 +6,7 @@ from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.factories import MetadataFactory
@@ -264,3 +265,28 @@ def test_create_resource_with_existing_download_url(app: DjangoTestApp):
     assert list(resp.context['form'].errors.values()) == [[
         'Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja.'
     ]]
+
+
+@pytest.mark.django_db
+def test_distribution_detail_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    resource = DatasetDistributionFactory(dataset=dataset)
+    user = UserFactory()
+    app.set_user(user)
+    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]), expect_errors=True)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    resource = DatasetDistributionFactory(dataset=dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user
+    )
+    app.set_user(user)
+    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]))
+    assert response.context['object'] == resource

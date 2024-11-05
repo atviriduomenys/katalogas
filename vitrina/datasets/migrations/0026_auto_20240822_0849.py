@@ -16,8 +16,8 @@ class Migration(migrations.Migration):
             fields=[
             ],
             options={
-                'verbose_name': 'Duomenų rinkinių ataskaita',
-                'verbose_name_plural': 'Duomenų rinkinių ataskaita',
+                'verbose_name': 'Duomenų rinkinių atnaujinimo ataskaita',
+                'verbose_name_plural': 'Duomenų rinkinių atnaujinimo ataskaita',
                 'proxy': True,
                 'indexes': [],
                 'constraints': [],

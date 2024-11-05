@@ -6,6 +6,7 @@ from typing import List
 
 import pandas as pd
 import requests
+from allauth.account.models import EmailAddress
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -20,9 +21,11 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from django.views.generic.edit import FormView
-from itsdangerous import URLSafeSerializer
+from itsdangerous import URLSafeSerializer, BadSignature
 from reversion import set_comment
 from reversion.models import Version
+
+from vitrina.messages.models import SentMail
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
@@ -51,6 +54,7 @@ from vitrina.projects.models import Project
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
+from vitrina.users.forms import RepresentativeRegisterForm
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
@@ -78,21 +82,26 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         org = self.representative_request.organization
-        user = User.objects.get(email=self.representative_request.email)
+        user = self.representative_request.user
         if not user.organization:
             user.organization = org
         user.save()
-        rep = Representative.objects.create(
-            email=self.representative_request.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            phone=self.representative_request.phone,
-            object_id=org.id,
-            role=Representative.COORDINATOR,
+        if not Representative.objects.filter(
             user=user,
-            content_type=ContentType.objects.get_for_model(org)
-        )
-        rep.save()
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=org.id
+        ):
+            rep = Representative.objects.create(
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                phone=self.representative_request.phone,
+                object_id=org.id,
+                role=Representative.COORDINATOR,
+                user=user,
+                content_type=ContentType.objects.get_for_model(org)
+            )
+            rep.save()
 
         self.representative_request.status = RepresentativeRequest.APPROVED
         self.representative_request.save()
@@ -107,7 +116,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
         )
         task.save()
 
-        sub_email_list = [self.representative_request.email]
+        sub_email_list = [user.email]
         organization_url = "%s%s" % (
             get_current_domain(self.request),
             reverse('organization-detail', args=[org.pk])
@@ -229,7 +238,6 @@ class OrganizationListView(ListView):
         query = self.request.GET.get('q')
         jurisdiction = self.request.GET.get('jurisdiction')
         orgs = Organization.public.all()
-        orgs = orgs.exclude(Q(title__isnull=True) | Q(title=""))
 
         if query:
             orgs = orgs.filter(title__icontains=query)
@@ -366,10 +374,22 @@ class OrganizationManagementsView(OrganizationListView):
         return context
 
 
-class OrganizationDetailView(PlanMixin, DetailView):
+class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, DetailView):
     model = Organization
     template_name = 'vitrina/orgs/detail.html'
     plan_url_name = 'organization-plans'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.organization.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -600,6 +620,10 @@ class OrganizationCreateView(
         return reverse('organization-detail', kwargs={'pk': organization.pk})
 
 
+DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = 'auth-org-representative-without-credentials'
+ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = "organization-member-add"
+
+
 class RepresentativeCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -608,7 +632,6 @@ class RepresentativeCreateView(
     model = Representative
     form_class = RepresentativeCreateForm
     template_name = 'base_form.html'
-    email_identifier = "organization-member-add"
 
     organization: Organization
 
@@ -671,24 +694,31 @@ class RepresentativeCreateView(
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         else:
-            self.object.save()
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({
-                "representative_id": self.object.pk,
-                "subscribe": subscribe
-            })
-            url = "%s%s" % (
-                get_current_domain(self.request),
-                reverse('representative-register', kwargs={'token': token})
-            )
-
-            email(
-                [self.object.email], self.email_identifier, 'vitrina/emails/request_for_organization_member_add.md', {
-                    'organization': self.organization.title,
-                    'link': url
+            if not SentMail.objects.filter(
+                Q(
+                    Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER) |
+                    Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
+                ) & Q(recipient=f"['{self.object.email}']")
+            ):
+                self.object.save()
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                token = serializer.dumps({
+                    "representative_id": self.object.pk,
+                    "subscribe": subscribe
                 })
+                url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('representative-register', kwargs={'token': token})
+                )
 
-            messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
+                email(
+                    [self.object.email], ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+                    'vitrina/emails/request_for_organization_member_add.md', {
+                        'organization': self.organization.title,
+                        'link': url
+                    })
+
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
         if self.object.has_api_access:
@@ -755,7 +785,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         self.object: Representative = form.save()
         subscribe = form.cleaned_data.get('subscribe')
 
-        if not self.object.user.organization:
+        if self.object.user and not self.object.user.organization:
             self.object.user.organization = self.organization
             self.object.user.save()
         link = "%s%s" % (
@@ -807,6 +837,15 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
         return has_perm(self.request.user, Action.DELETE, representative)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.role == Representative.COORDINATOR:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
+        else:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        return context
+
     def get_success_url(self):
         return reverse('organization-members', kwargs={'pk': self.kwargs.get('organization_id')})
 
@@ -817,16 +856,40 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
 
 class RepresentativeRegisterView(RegisterView):
+    form_class = RepresentativeRegisterForm
+    data: dict
+    representative: Representative
+
+    def dispatch(self, request, *args, **kwargs):
+        token = self.kwargs.get('token')
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        try:
+            self.data = serializer.loads(token)
+        except BadSignature:
+            return redirect('register-link-expired')
+
+        self.representative = Representative.objects.filter(pk=self.data.get('representative_id')).first()
+        if not self.representative or self.representative.user:
+            return redirect('register-link-expired')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['representative'] = self.representative
+        return kwargs
+
     def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
+        form = self.form_class(self.representative, request.POST)
         if form.is_valid():
             user = form.save()
-            token = self.kwargs.get('token')
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            data = serializer.loads(token)
-            subscribe = data.get('subscribe')
+
+            EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=True)
+            user.status = User.ACTIVE
+            user.save()
+
+            subscribe = self.data.get('subscribe')
             try:
-                representative = Representative.objects.get(pk=data.get('representative_id'))
+                representative = Representative.objects.get(pk=self.data.get('representative_id'))
             except ObjectDoesNotExist:
                 representative = None
             if representative:
@@ -853,9 +916,17 @@ class RepresentativeRegisterView(RegisterView):
                     )
                     manage_dataset_subscriptions(subscribe, user, representative.content_object, link)
 
+            # update related representatives
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
+                reps.update(user=user)
+
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
+
+
+class RepresentativeRegisterExpiredView(TemplateView):
+    template_name = 'vitrina/orgs/register_link_expired.html'
 
 
 class PartnerRegisterInfoView(TemplateView):
@@ -882,8 +953,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         org = form.cleaned_data.get('organization')
-        org_is_registered = Organization.objects.filter(id=org).first()
-        if not org_is_registered:
+        if org and not isinstance(org, Organization):
             org_data = get_data_from_spinta(
                 model=self.jar_model_uri,
                 query=self.jar_query_uri.format(org)
@@ -895,16 +965,21 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
                 provider=True,
                 is_public=True
             )
-        else:
-            org = org_is_registered
 
         representative_already_exists = Representative.objects.filter(
             user=self.request.user,
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.id
         ).first()
+        representative_request_already_exists = RepresentativeRequest.objects.filter(
+            user=self.request.user,
+            organization=org,
+            status=RepresentativeRequest.CREATED
+        )
         if representative_already_exists:
             return redirect('representative-exists')
+        elif representative_request_already_exists:
+            return redirect('representative-request-exists')
         else:
             representative_request = RepresentativeRequest(
                 user=self.request.user,
@@ -942,7 +1017,7 @@ class PartnerRegisterCompleteView(TemplateView):
     template_name = 'vitrina/orgs/partners/register_complete.html'
 
 
-class OrganizationPlanView(PlanMixin, TemplateView):
+class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, TemplateView):
     template_name = 'vitrina/orgs/plans.html'
     plan_url_name = 'organization-plans'
 
@@ -951,6 +1026,12 @@ class OrganizationPlanView(PlanMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=kwargs.get('pk'))
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.organization.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2466,3 +2547,7 @@ class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
 
 class RepresentativeExistsView(TemplateView):
     template_name = 'vitrina/orgs/partners/representative_exists.html'
+
+
+class RepresentativeRequestExistsView(TemplateView):
+    template_name = 'vitrina/orgs/partners/representative_request_exists.html'

@@ -2,6 +2,7 @@
 import math
 import datetime
 import calendar
+import mimetypes
 from typing import Optional, List, Any
 from typing import Type
 from typing import Tuple
@@ -22,6 +23,7 @@ from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import render_to_string, get_template
 from django.template import engines, Template, Context
+from filer.validation import validate_upload
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
@@ -70,6 +72,7 @@ class Filter:
         display_method: str = None,
         use_str: bool = False,
         remove_search_query: bool = False,
+        order: classmethod = None,
     ):
         self.name = name
         self.title = title
@@ -85,6 +88,7 @@ class Filter:
         self.display_method = display_method
         self.use_str = use_str
         self.remove_search_query = remove_search_query
+        self.order = order
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -122,6 +126,9 @@ class Filter:
         else:
             facet = fields[self.name]
             facet = facet
+
+        if self.order:
+            facet = self.order(facet)
 
         show_count = 0
         for value, count in facet:
@@ -570,7 +577,8 @@ def email(
         recipient=list(recipients),
         email_subject=subject,
         email_content=content,
-        email_sent=email_send
+        email_sent=email_send,
+        identifier=email_identifier,
     )
 
 
@@ -671,3 +679,13 @@ def get_encoding(file_path):
             return 'utf-8-sig'
         else:
             return 'utf-8'
+
+
+def validate_file(file):
+    mime_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+    validate_upload(
+        file_name=file.name,
+        file=file.file,
+        owner=None,
+        mime_type=mime_type,
+    )

@@ -221,6 +221,21 @@ class Request(models.Model):
     def get_organization_titles(self):
         return list(self.requestassignment_set.values_list('organization__title', flat=True))
 
+    @staticmethod
+    def statuses_ordered(facet):
+        order = {
+            Request.CREATED: 1,
+            Request.APPROVED: 2,
+            Request.ANSWERED: 3,
+            Request.REJECTED: 4,
+            Request.PLANNED: 5,
+            Request.OPENED: 6
+        }
+        if facet:
+            facet = sorted(facet, key=lambda item: order.get(item[0], 0))
+        return facet
+
+
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
 class RequestEvent(models.Model):

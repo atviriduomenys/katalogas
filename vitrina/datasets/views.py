@@ -48,7 +48,9 @@ from parler.views import TranslatableUpdateView, TranslatableCreateView, Languag
 
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, SentMail
+from vitrina.orgs.views import ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER, \
+    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
@@ -81,7 +83,7 @@ from vitrina.users.models import User
 from vitrina.helpers import get_current_domain
 
 
-class DatasetListView(PlanMixin, FacetedSearchView):
+class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     template_name = 'vitrina/datasets/list.html'
     facet_fields = [
         'status',
@@ -108,6 +110,15 @@ class DatasetListView(PlanMixin, FacetedSearchView):
             'gap_by': 'month',
         },
     ]
+
+    def has_permission(self):
+        if is_org_dataset_list(self.request):
+            organization = get_object_or_404(Organization,pk=self.kwargs['pk'])
+            if organization.is_public:
+                return True
+            else:
+                return has_perm(self.request.user, Action.VIEW, organization)
+        return True
 
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get('organization_id')
@@ -638,13 +649,6 @@ class DatasetUpdateView(
         dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
         return has_perm(self.request.user, Action.UPDATE, dataset)
 
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
-            return redirect(dataset)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Duomenų rinkinio redagavimas')
@@ -997,7 +1001,6 @@ class CreateMemberView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-history'
 
-
     def has_permission(self):
         return has_perm(
             self.request.user,
@@ -1059,24 +1062,30 @@ class CreateMemberView(
                                                     self.dataset, link)
         else:
             self.object.save()
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            token = serializer.dumps({
-                "representative_id": self.object.pk,
-                "subscribe": form.cleaned_data.get('subscribe')
-            })
-            url = "%s%s" % (
-                get_current_domain(self.request),
-                reverse('representative-register', kwargs={'token': token})
-            )
+            if not SentMail.objects.filter(
+                Q(
+                    Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER) |
+                    Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
+                ) & Q(recipient=f"['{self.object.email}']")
+            ):
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                token = serializer.dumps({
+                    "representative_id": self.object.pk,
+                    "subscribe": form.cleaned_data.get('subscribe')
+                })
+                url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('representative-register', kwargs={'token': token})
+                )
 
-            email([self.object.email], 'auth-org-representative-without-credentials',
-                  "vitrina/email/offer_to_join_portal.md", {
-                      'dataset': self.dataset,
-                      'link': url
-                  })
-            messages.info(self.request, _(
-                "Naudotojui išsiųstas laiškas dėl registracijos"
-            ))
+                email([self.object.email], DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+                      "vitrina/email/offer_to_join_portal.md", {
+                          'dataset': self.dataset,
+                          'link': url
+                      })
+                messages.info(self.request, _(
+                    "Naudotojui išsiųstas laiškas dėl registracijos"
+                ))
         self.dataset.save()
 
         if self.object.has_api_access:
@@ -1253,6 +1262,15 @@ class DeleteMemberView(
         )
         return has_perm(self.request.user, Action.DELETE, representative)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.role == Representative.COORDINATOR:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
+        else:
+            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        return context
+
     def get_success_url(self):
         return reverse('dataset-members', kwargs={
             'pk': self.kwargs.get('dataset_id'),
@@ -1268,6 +1286,7 @@ class DeleteMemberView(
 
 class DatasetProjectsView(
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     HistoryMixin,
     PlanMixin,
     ListView
@@ -1286,6 +1305,12 @@ class DatasetProjectsView(
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         return get_projects(self.request.user, self.object, order_value='-created')
@@ -1313,7 +1338,7 @@ class DatasetProjectsView(
         return context
 
 
-class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListView):
+class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
     model = RequestObject
     template_name = 'vitrina/datasets/request_list.html'
     context_object_name = 'requests'
@@ -1328,6 +1353,12 @@ class DatasetRequestsView(DatasetStructureMixin, HistoryMixin, PlanMixin, ListVi
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         model_ids = Model.objects.filter(dataset=self.object).values_list('pk', flat=True)
@@ -1376,7 +1407,13 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return get_requests(self.request.user, self.dataset)
+        if self.dataset.is_public:
+            return get_requests(self.request.user, self.dataset)
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.dataset) and
+                get_requests(self.request.user, self.dataset)
+            )
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -1787,7 +1824,7 @@ class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
             return _(f'{self.get_title_for_indicator(indicator)} '
                      f'pagal rinkinio brandos lygį rinkinio įkėlimo datai')
         else:
-            return _(f'{Y_TITLES[indicator]} pagal rinkinio brandos lygį laike')
+            return _(f'{Y_TITLES.get(indicator, "")} pagal rinkinio brandos lygį laike')
 
 
 class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
@@ -2600,6 +2637,7 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 class DatasetPlanView(
     HistoryMixin,
     DatasetStructureMixin,
+    PermissionRequiredMixin,
     PlanMixin,
     TemplateView
 ):
@@ -2608,6 +2646,12 @@ class DatasetPlanView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-plans-history'
     plan_url_name = 'dataset-plans'
+
+    def has_permission(self):
+        if self.dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

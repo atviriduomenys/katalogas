@@ -1,0 +1,39 @@
+{% if data %}
+    {% if graph_type == 'vertical' %}
+        <canvas id="chart" class="mb-5"></canvas>
+    {% elif graph_type == 'horizontal' %}
+        <div class="tab-content mb-6">
+            {% for item in data %}
+                <div class="is-flex">
+                    <strong class="has-text-black">{{ item.bin }}</strong>
+                    <div class="stays-right">{{ item.count }}</div>
+                </div>
+                <progress class="progress is-info" value="{{ item.count }}" max="{{ max_count }}"></progress>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div id="map" style="height: 400px;"></div>
+    {% endif %}
+{% elif errors %}
+    <div class="message is-danger">
+        <div class="message-body">
+            {% for error in errors %}
+                {% if error.message %}
+                    <p>{{ error.message }}</p>
+                {% else %}
+                    <p>{{ error }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+{{ x_values|json_script:"xValues" }}
+{{ y_values|json_script:"yValues" }}
+{{ x_title|json_script:"xTitle" }}
+{{ y_title|json_script:"yTitle" }}
+{{ data|json_script:"clusters" }}
+{{ prop.name|json_script:"property" }}
+{{ model.full_name|json_script:"model" }}
+{{ source_srid|json_script:"sourceSrid" }}
+{{ target_srid|json_script:"targetSrid" }}

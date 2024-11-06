@@ -23,7 +23,7 @@ class DatasetSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Dataset.objects.filter(is_public=True).order_by('id')
+        return Dataset.public.all()
 
     def lastmod(self, obj):
         return obj.modified
@@ -44,7 +44,7 @@ class OrganizationSitemap(Sitemap):
 
     # Only public organizations
     def items(self):
-        return Organization.objects.filter(is_public=True).order_by('id')
+        return Organization.public.all()
 
     def lastmod(self, obj):
         return obj.modified

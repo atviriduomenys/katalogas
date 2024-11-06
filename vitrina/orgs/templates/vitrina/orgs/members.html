@@ -9,7 +9,7 @@
     </ul>
 {% endblock %}
 {% block current_title %}
-{% translate "Organizacijos narių sąrašas" %}
+{% translate "Organizacijos atstovų sąrašas" %}
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
         <div class="buttons is-right">
             <a class="button is-primary m-t-xs m-b-lg"
                href="{% url 'representative-create' request.resolver_match.kwargs.pk %}">
-                {% translate "Pridėti narį" %}
+                {% translate "Pridėti tvarkytoją" %}
             </a>
         </div>
     {% endif %}
@@ -33,6 +33,7 @@
                 <th>{% translate "Telefonas" %}</th>
                 <th>{% translate "Rolė" %}</th>
                 {% if has_permission %}
+                    <td></td>
                     <td></td>
                     <td></td>
                 {% endif %}
@@ -61,6 +62,11 @@
                         <td>
                             <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'transfer-functions' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
+                                {% translate "Perduoti funkcijas" %}
                             </a>
                         </td>
                         <td>

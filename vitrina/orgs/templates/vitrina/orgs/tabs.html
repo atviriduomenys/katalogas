@@ -9,7 +9,7 @@
         {% if can_view_members %}
         <li class="{%if request.resolver_match.url_name == 'organization-members' or request.resolver_match.url_name == 'representative-create' or request.resolver_match.url_name == 'representative-update' %} is-active {% endif %}">
             <a href="{% url 'organization-members' organization_id %}">
-                {% translate "Tvarkytojai" %}
+                {% translate "Organizacijos atstovai" %}
             </a>
         </li>
         {% endif %}

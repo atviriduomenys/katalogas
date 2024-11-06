@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}{% translate "Funkcijų perdavimo patvirtinimas" %}{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column is-half">
+            <form id="transfer-form" method="post">
+                {% csrf_token %}
+                <strong>
+                    <p>{{ confirm_text }}</p>
+                    <br/>
+                </strong>
+
+                <a href="{% url 'organization-members' organization.pk %}" class="button is-link">{% translate 'Atšaukti' %}</a>
+                <input class="button is-primary" type="submit" value="{% translate 'Patvirtinti' %}">
+            </form>
+        </div>
+    </div>
+    <br/>
+{% endblock %}

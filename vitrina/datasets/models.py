@@ -366,7 +366,7 @@ class Dataset(TranslatableModel):
     def get_managers(self):
         ct = ContentType.objects.get_for_model(Dataset)
         return list(Representative.objects.filter(
-            content_type=ct, object_id=self.id
+            content_type=ct, object_id=self.id, user__isnull=False
         ).values_list('user_id', flat=True))
 
     @property

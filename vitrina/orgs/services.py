@@ -32,6 +32,7 @@ class Action(Enum):
     PLAN = 'plan'
     MANAGE_KEYS = 'manage_keys'
     MANAGE_PROJECT_KEYS = 'manage_project_keys'
+    TRANSFER = 'transfer'
 
 
 class Role(Enum):
@@ -50,6 +51,7 @@ acl = {
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
     (Representative, Action.VIEW): [Role.COORDINATOR],
+    (Representative, Action.TRANSFER): [Role.COORDINATOR],
     (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],

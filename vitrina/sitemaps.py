@@ -55,9 +55,7 @@ class MoreViewSitemap(sitemaps.Sitemap):
     changefreq = "yearly"
 
     def items(self):
-        return ["/more/about/", "/more/regulation/", "/more/regulation/regulation_legal/", "/more/regulation/regulation_strat/",
-                "/projects/", "/more/nuorodos/", "/more/savokos/", "/more/contacts/", "/more/other/", "/sparql/",
-                "/more/reports/", "/more/templates/"]
+        return ["/more/about/", "/more/regulation/regulation_legal/", "/more/regulation/regulation_strat/",]
 
     def location(self, item):
         return item

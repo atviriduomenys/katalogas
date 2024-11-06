@@ -25,13 +25,11 @@ from vitrina import settings
 from vitrina.views import home
 from vitrina.orgs.admin import site
 from django.views.generic import TemplateView
-from vitrina.sitemaps import DatasetSitemap, OrganizationSitemap, ModelSitemap, RootSitemap, MoreViewSitemap
+from vitrina.sitemaps import DatasetSitemap, RootSitemap, MoreViewSitemap
 
 sitemaps = {
     'root': RootSitemap,
     'datasets': DatasetSitemap,
-    'organizations': OrganizationSitemap,
-    'models': ModelSitemap,
     'more': MoreViewSitemap,
 }
 

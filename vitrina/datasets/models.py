@@ -1,3 +1,4 @@
+import json
 import pathlib
 import tagulous
 import requests
@@ -737,6 +738,33 @@ class Dataset(TranslatableModel):
 
     def is_opened(self):
         return self.status == self.HAS_DATA
+
+    def get_license_url(self):
+        url = Licence.objects.filter(title=self.licence).values_list('url', flat=True).first()
+        return url
+
+    def get_json_ld(self, model_url: str = None):
+        formats: list = ["CSV", "JSON", "JSONL", "ASCII", "RDF"]
+        json_ld = {
+            "@context": "https://schema.org/",
+            "@type": "Dataset",
+            "name": self.title or None,
+            "description": self.description or None,
+            "url": self.get_absolute_url() or None,
+            "license": self.get_license_url() or None,
+            "creator": {
+                "@type": "Organization",
+                "name": str(self.organization) if self.organization else None
+            },
+            "keywords": [tag['name'].strip() for tag in self.get_tag_object_list()] or None,
+            "distribution": [
+                {"@type": "DataDownload", "encodingFormat": fmt, "contentUrl": f"{model_url}?format({fmt.lower()})"}
+                for fmt in formats
+            ] if model_url else None,
+            "datePublished": str(self.published) if self.published else None,
+            "isAccessibleForFree": self.is_public if self.is_public else None,
+        }
+        return json.dumps(json_ld, ensure_ascii=False)
 
 
 class DatasetReport(Dataset):

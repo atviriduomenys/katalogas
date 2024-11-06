@@ -186,7 +186,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
                 '<span style="color: red;">({})</span>',
                 _("pakvietimas išsiųstas"),
             )
-
+    
     name_display.short_description = _('Vardas ir pavardė')
     name_display.admin_order_field = 'name'
 

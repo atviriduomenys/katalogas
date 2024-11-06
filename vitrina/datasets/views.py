@@ -21,6 +21,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
+from django.db.models import Func, F, Value, TextField, Max
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy, resolve
@@ -55,7 +56,7 @@ from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.requests.models import RequestObject, RequestAssignment
-from vitrina.settings import ELASTIC_FACET_SIZE
+from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
@@ -395,7 +396,8 @@ class DatasetDetailView(
             'resources': dataset.datasetdistribution_set.all().order_by('-period_start'),
             'org_logo': organization.image,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
-            'data_maturity': dataset.metadata_set.average_level()
+            'data_maturity': dataset.metadata_set.average_level(),
+            'json_ld': self.get_json_ld_from_dataset(dataset)
         }
         part_of = dataset.part_of.order_by('relation')
         part_of = itertools.groupby(part_of, lambda x: x.relation)
@@ -406,6 +408,33 @@ class DatasetDetailView(
 
         context_data.update(extra_context_data)
         return context_data
+
+    def get_json_ld_from_dataset(self, dataset):
+        data_url = self.get_data_url()
+        if not data_url:
+            return dataset.get_json_ld(None)
+
+        model_name = data_url.rstrip('/').split('/')[-1]
+        model_exists = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=dataset).exists()
+
+        if not model_exists:
+            return dataset.get_json_ld(None)
+
+        model = Model.objects.annotate(model_name=Func(
+            F('metadata__name'),
+            Value("/"),
+            Value(-1),
+            function='split_part',
+            output_field=TextField())
+        ).filter(model_name=model_name, dataset=dataset).first()
+
+        return dataset.get_json_ld(f'{SPINTA_SERVER_URL}/{model}')
 
 
 class DatasetDeleteView(

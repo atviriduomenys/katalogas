@@ -18,7 +18,7 @@ def test_home(app: DjangoTestApp):
     assert resp.context['counts'] == {
         'dataset': 1,
         'organization': 1,
-        'project': 0,
+        'project': 1,
         'coordinators': 0,
         'managers': 0,
         'users': 0
@@ -30,7 +30,7 @@ def test_home(app: DjangoTestApp):
     ] == [
         ['1', 'Organizacijos'],
         ['1', 'Duomenų rinkiniai'],
-        ['0', 'Panaudojimo atvejai'],
+        ['1', 'Panaudojimo atvejai'],
         # ['0', 'Koordinatoriai'],
         # ['0', 'Tvarkytojai'],
         # ['0', 'Naudotojai'],

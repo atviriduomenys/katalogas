@@ -4,12 +4,13 @@ from datetime import datetime
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from allauth.utils import build_absolute_uri
 from django.contrib.sites.models import Site
+from django_otp.forms import OTPAuthenticationForm
+from django_otp.views import LoginView as BaseLoginView
 from pandas import period_range
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import (
-    LoginView as BaseLoginView,
     PasswordResetView as BasePasswordResetView,
     PasswordResetConfirmView as BasePasswordResetConfirmView, PasswordChangeView
 )
@@ -18,6 +19,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, UpdateView, TemplateView
 from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, make_aware
+from django.db.models.signals import post_save
 from allauth.socialaccount.models import SocialAccount
 from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
 from django.http import HttpResponseRedirect
@@ -34,33 +36,19 @@ from vitrina.users.forms import (
     UserProfileEditForm, CustomPasswordChangeForm
 )
 from vitrina.users.models import User
+from vitrina.users.signals import update_old_passwords
 
 
 class LoginView(BaseLoginView):
     template_name = 'vitrina/users/login.html'
     account_inactive_template = 'vitrina/users/account_inactive.html'
-    form_class = LoginForm
+    authentication_form = LoginForm
 
     def form_valid(self, form):
-        if settings.ACCOUNT_EMAIL_VERIFICATION == 'mandatory':
-            user = EmailAddress.objects.filter(email=self.request.POST['email'])
-            if user:
-                if user[0].verified is True:
-                    login(self.request, form.get_user(),
-                          backend='django.contrib.auth.backends.ModelBackend')
-                    return HttpResponseRedirect(self.get_success_url())
-                else:
-                    messages.error(self.request, _("El. pašto adresas nepatvirtintas. "
-                                                   "Patvirtinti galite sekdami nuoroda išsiųstame laiške."))
-                    return HttpResponseRedirect(reverse("login"))
-            else:
-                login(self.request, form.get_user(),
-                      backend='django.contrib.auth.backends.ModelBackend')
-                return HttpResponseRedirect(self.get_success_url())
-        else:
-            login(self.request, form.get_user(),
-                  backend='django.contrib.auth.backends.ModelBackend')
-            return HttpResponseRedirect(self.get_success_url())
+        resp = super().form_valid(form)
+        if user := form.get_user():
+            user.unlock_user()
+        return resp
 
     def get_success_url(self):
         tasks = get_active_tasks(self.request.user)
@@ -73,6 +61,21 @@ class LoginView(BaseLoginView):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Prisijungimas')
         return context
+
+
+class AdminLoginView(BaseLoginView):
+    template_name = 'vitrina/users/admin/login.html'
+    authentication_form = LoginForm
+
+    def get_success_url(self):
+        redirect_url = self.request.GET.get('next')
+        return redirect_url or reverse('admin:index')
+
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+        if user := form.get_user():
+            user.unlock_user()
+        return resp
 
 
 class RegisterView(CreateView):
@@ -142,6 +145,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         user = self.get_object()
         password = form.cleaned_data.get('password')
         user.set_password(password)
+        user.unlock_user()
         user.save()
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         soc_acc.extra_data['password_not_set'] = False
@@ -184,6 +188,8 @@ class PasswordResetConfirmView(BasePasswordResetConfirmView):
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
+        self.user.unlock_user()
+
         messages.info(self.request, _("Slaptažodis sėkmingai atnaujintas"))
         return super().form_valid(form)
 
@@ -301,9 +307,14 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
     form_class = CustomPasswordChangeForm
     template_name = 'base_form.html'
 
+    user: User
+
+    def dispatch(self, request, *args, **kwargs):
+        self.user = get_object_or_404(User, id=self.kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        user = get_object_or_404(User, id=self.kwargs['pk'])
-        return has_perm(self.request.user, Action.UPDATE, user)
+        return has_perm(self.request.user, Action.UPDATE, self.user)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -311,12 +322,22 @@ class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, Pass
         else:
             return redirect('user-profile', pk=self.request.user.id)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_title'] = _('Naudotojo slaptažodžio keitimas')
         return context
 
     def form_valid(self, form):
+        post_save.disconnect(update_old_passwords, sender=User)
+        user_obj = form.save()
+        user_obj.unlock_user()
+        post_save.connect(update_old_passwords, sender=User)
+
         messages.success(self.request, _("Slaptažodžio keitimas sėkmingas"))
         return super().form_valid(form)
 

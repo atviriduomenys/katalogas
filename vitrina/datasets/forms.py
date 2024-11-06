@@ -62,7 +62,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "nuskaitoma mašininiu būdu"
         )
     )
-    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO)
+    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO, allow_empty_file=True)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
             RegexValidator(
                 '([a-z]+\/?)+',

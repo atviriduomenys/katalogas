@@ -101,8 +101,11 @@
                 {% if dist.modified %}
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
                 {% endif %}
+                {% if dist.access_url|first in '/' %}
                 <dcat:accessURL rdf:resource="{{ current_domain_full }}{{ dist.access_url|cut:' ' }}"/>
-                <dcat:downloadURL rdf:resource="{{ dist.download_url|cut:' ' }}"/>
+                {% else %}
+                <dcat:accessURL rdf:resource="{{ dist.access_url|cut:' ' }}"/>
+                {% endif %}
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>

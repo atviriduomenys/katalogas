@@ -3,10 +3,11 @@
 
 <section class="hero is-small">
     <div class="hero-body">
-        <div class="container landing-page-image">
+        <div class="container landing-page-image" style="margin-top: 20px;">
+                <img src="{% static 'img/landing/bg.webp' %}" alt="Background Image"  style="position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: -1;">
             <div class="columns">
                 <div id="adp-landing-logo" class="column is-6">
-                    <img src="{% static 'img/landing/ladp.svg' %}" alt="header"/>
+                    <img src="{% static 'img/landing/ladp.svg' %}" alt="header" fetchpriority="high"/>
                 </div>
                 <div class="column">
                     <div id="adp-landing-numbers" class="columns is-gappless">

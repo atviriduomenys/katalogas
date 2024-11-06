@@ -116,6 +116,7 @@ class DatasetStructureMixin(StructureMixin):
 
 
 class DatasetStructureView(
+    PermissionRequiredMixin,
     HistoryMixin,
     StructureMixin,
     PlanMixin,
@@ -146,6 +147,12 @@ class DatasetStructureView(
                 filter(dataset=self.object, access__gte=Metadata.PUBLIC). \
                 order_by('metadata__name')
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.object.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -200,7 +207,13 @@ class ModelStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -424,7 +437,13 @@ class PropertyStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.property in self.props
+        if self.object.is_public:
+            return self.property in self.props
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.property in self.props
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -552,7 +571,13 @@ class ModelDataTableView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -707,7 +732,13 @@ class ModelDataView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -826,7 +857,13 @@ class ObjectDataTableView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -907,7 +944,13 @@ class ObjectDataView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -1007,7 +1050,13 @@ class ApiView(
     can_manage_structure: bool
 
     def has_permission(self):
-        return self.model in self.models
+        if self.object.is_public:
+            return self.model in self.models
+        else:
+            return (
+                has_perm(self.request.user, Action.VIEW, self.object) and
+                self.model in self.models
+            )
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get('pk'))
@@ -2549,7 +2598,7 @@ async def get_updated_summary(request, *args, **kwargs):
     return JsonResponse({'data': transformed_data})
 
 
-class VersionCreateView(CreateView, PermissionRequiredMixin):
+class VersionCreateView(PermissionRequiredMixin, CreateView):
     model = _Version
     form_class = VersionForm
     template_name = 'vitrina/structure/version_form.html'
@@ -2647,6 +2696,7 @@ class VersionCreateView(CreateView, PermissionRequiredMixin):
 
 
 class VersionListView(
+    PermissionRequiredMixin,
     HistoryMixin,
     DatasetStructureMixin,
     PlanMixin,
@@ -2657,6 +2707,13 @@ class VersionListView(
     detail_url_name = 'dataset-detail'
     history_url_name = 'dataset-plans-history'
     plan_url_name = 'dataset-plans'
+
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        if dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2686,6 +2743,7 @@ class VersionListView(
 
 
 class VersionDetailView(
+    PermissionRequiredMixin,
     HistoryMixin,
     DatasetStructureMixin,
     PlanMixin,
@@ -2702,6 +2760,12 @@ class VersionDetailView(
     def dispatch(self, request, *args, **kwargs):
         self.version = get_object_or_404(_Version, pk=kwargs.get('version_id'))
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if self.version.dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.version.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

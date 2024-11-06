@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
@@ -8,33 +8,61 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView
 from django.urls import reverse
+
+from vitrina.datasets.models import Dataset
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription
+from vitrina.orgs.models import Organization
+from vitrina.orgs.services import has_perm, Action
+from vitrina.projects.models import Project
 from vitrina.users.models import User
 from vitrina.helpers import email, get_current_domain
 from django.utils.translation import gettext_lazy as _
 
 
-class UnsubscribeView(LoginRequiredMixin, View):
-    def post(self, request, content_type_id, obj_id, user_id):
-        content_type = get_object_or_404(ContentType, pk=content_type_id)
-        obj = get_object_or_404(content_type.model_class(), pk=obj_id)
-        # FIXME: Should get user from request.user.
-        user = get_object_or_404(User, pk=user_id)
+class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    ct: ContentType | None = None
+    obj: None
+    user: User
 
-        # FIXME: Just use request.user
-        if request.user.is_authenticated and request.user.pk != user.pk:
+    def has_permission(self):
+        if isinstance(self.obj, Dataset):
+            if self.obj.is_public:
+                return True
+            else:
+                return has_perm(self.request.user, Action.VIEW, self.obj)
+        elif isinstance(self.obj, Project):
+            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+                return True
+            else:
+                return has_perm(
+                    self.request.user,
+                    Action.UPDATE,
+                    self.obj,
+                )
+        return True
+
+    def dispatch(self, request, *args, **kwargs):
+        self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])
+        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs['obj_id'])
+        # FIXME: take user from request.user
+        self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
+
+        # FIXME: take userFrom request user
+        if request.user.is_authenticated and request.user.pk != self.user.pk:
             messages.error(request, _(
-                "Jūs neturite teisės panaikinti prenumeratos kitam vartotojui."
+                "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
             ))
-            return redirect(obj)
+            return redirect(self.obj)
+        return super().dispatch(request, *args, **kwargs)
 
+    def post(self, request, content_type_id, obj_id, user_id):
         qs = (
             Subscription.objects.
             filter(
-                content_type=content_type,
-                object_id=obj.pk,
-                user=user,
+                content_type=self.ct,
+                object_id=self.obj.pk,
+                user=self.user,
             )
         )
         if qs.exists():
@@ -43,7 +71,7 @@ class UnsubscribeView(LoginRequiredMixin, View):
 
         unsubscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            obj.get_absolute_url()
+            self.obj.get_absolute_url()
         )
 
         subscribe_url = "%s%s" % (
@@ -53,17 +81,18 @@ class UnsubscribeView(LoginRequiredMixin, View):
                                            'user_id': user_id})
         )
 
-        email([user.email], 'newsletter-unsubscribed', 'vitrina/messages/emails/sub/deleted.md', {
-            'obj': obj,
+        email([self.user.email], 'newsletter-unsubscribed', 'vitrina/messages/emails/sub/deleted.md', {
+            'obj': self.obj,
             'subscribe_url': subscribe_url,
             'unsubscribe_url': unsubscribe_url
         })
 
-        return HttpResponseRedirect(reverse('user-profile', args=[user.pk]) + "#sub")
+        return HttpResponseRedirect(reverse('user-profile', args=[self.user.pk]) + "#sub")
 
 
 class SubscribeFormView(
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     CreateView
 ):
     model = Subscription
@@ -73,6 +102,23 @@ class SubscribeFormView(
     ct: ContentType | None = None
     obj: None
     user: User
+
+    def has_permission(self):
+        if isinstance(self.obj, (Dataset, Organization)):
+            if self.obj.is_public:
+                return True
+            else:
+                return has_perm(self.request.user, Action.VIEW, self.obj)
+        elif isinstance(self.obj, Project):
+            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+                return True
+            else:
+                return has_perm(
+                    self.request.user,
+                    Action.UPDATE,
+                    self.obj,
+                )
+        return True
 
     def dispatch(self, request, *args, **kwargs):
         self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])

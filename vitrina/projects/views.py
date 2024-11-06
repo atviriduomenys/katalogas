@@ -60,11 +60,28 @@ class ProjectListView(ListView):
         return context
 
 
-class ProjectDetailView(HistoryMixin, DetailView):
+class ProjectDetailView(PermissionRequiredMixin, HistoryMixin, DetailView):
     model = Project
     template_name = 'vitrina/projects/detail.html'
     detail_url_name = 'project-detail'
     history_url_name = 'project-history'
+
+    def has_permission(self):
+        project = get_object_or_404(Project, pk=self.kwargs.get('pk'))
+        has_update_perm = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            project,
+        )
+        if not has_update_perm:
+            if self.request.user.is_authenticated:
+                return (
+                    project.status == Project.APPROVED or
+                    project.user == self.request.user
+                )
+            else:
+                return project.status == Project.APPROVED
+        return True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -198,7 +215,7 @@ class ProjectHistoryView(HistoryView):
         return context
 
 
-class ProjectDatasetsView(HistoryMixin, ListView):
+class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
     model = Dataset
     template_name = 'vitrina/projects/datasets.html'
     paginate_by = 20
@@ -210,6 +227,17 @@ class ProjectDatasetsView(HistoryMixin, ListView):
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Project, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        if not has_perm(self.request.user, Action.UPDATE, self.object):
+            if self.request.user.is_authenticated:
+                return (
+                    self.object.status == Project.APPROVED or
+                    self.object.user == self.request.user
+                )
+            else:
+                return self.object.status == Project.APPROVED
+        return True
 
     def get_queryset(self):
         return Dataset.public.filter(project=self.object).select_related('organization')

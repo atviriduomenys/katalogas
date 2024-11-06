@@ -125,6 +125,7 @@ class UserAdmin(BaseUserAdmin):
             When(status=User.AWAITING_CONFIRMATION, then=Value("Laukiama patvirtinimo")),
             When(status=User.SUSPENDED, then=Value("Suspenduotas")),
             When(status=User.DELETED, then=Value("Pašalintas")),
+            When(status=User.LOCKED, then=Value("Užrakintas")),
             output_field=CharField(),
         ))
         queryset = queryset.annotate(organization_rep_count=Count(
@@ -202,6 +203,11 @@ class UserAdmin(BaseUserAdmin):
             elif obj.status == User.DELETED:
                 return format_html(
                     '<span style="color: red;">{}</span>',
+                    obj.get_status_display(),
+                )
+            elif obj.status == User.LOCKED:
+                return format_html(
+                    '<span style="color: grey;">{}</span>',
                     obj.get_status_display(),
                 )
         return "-"

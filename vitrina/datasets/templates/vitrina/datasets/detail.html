@@ -372,4 +372,9 @@
             });
         });
     </script>
+    {% if public_status %}
+    <script type="application/ld+json" async>
+        {{ json_ld|safe }}
+    </script>
+    {% endif %}
 {% endblock %}

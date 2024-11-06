@@ -8,7 +8,7 @@
 <div class="container">
         <div class="navbar-brand">
             <a class="navbar-item" href="/">
-                <img src="{% static 'img/logo.png' %}" alt="herbas" height="36">
+                <img src="{% static 'img/logo.webp' %}" alt="herbas" height="36">
                 &nbsp;&nbsp;
                 <b><span class="navbar-title is-uppercase">data.gov.lt</span></b>
             </a>
@@ -95,7 +95,7 @@
                     {% endif %}
                 </div>
                     <div class="navbar-item has-dropdown is-hoverable">
-                        <a class="navbar-link">
+                        <a href="#" rel="nofollow" class="navbar-link">
                             {% get_current_language as LANGUAGE_CODE %}
                             {{ LANGUAGE_CODE|upper }}
                         </a>
@@ -109,7 +109,7 @@
                                     <input name="next" type="hidden" value="{{ redirect_to }}">
                                     <input name="language" type="hidden" value="{{ language.code }}">
                                 </form>
-                                <a class="navbar-item" onclick="document.getElementById('languageChange{{ language.code }}').submit();">
+                                <a href="#" rel="nofollow" class="navbar-item" onclick="document.getElementById('languageChange{{ language.code }}').submit();">
                                     {{ language.code|upper }}
                                 </a>
                             {% endfor %}

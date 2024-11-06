@@ -10,7 +10,7 @@ from reversion import set_comment, set_user
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Licence, Category, Frequency
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, validate_file
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.tasks.models import Task
@@ -436,6 +436,11 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
     def validate(self, data):
         file = data.get('file')
         url = data.get('url')
+        if file:
+            try:
+                validate_file(file)
+            except ValidationError as e:
+                raise serializers.ValidationError({'file': e})
         if not file and not url:
             raise serializers.ValidationError({
                 'file': _("file' arba 'url' laukui turi būti priskirta reikšmė"),
@@ -468,9 +473,8 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         upload_to = DatasetDistribution.UPLOAD_TO
         upload_folder = None
         folders = upload_to.split('/')
-        for level, folder_name in enumerate(folders):
+        for folder_name in folders:
             upload_folder, created = Folder.objects.get_or_create(
-                level=level,
                 name=folder_name,
                 parent=upload_folder
             )
@@ -551,6 +555,11 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
     def validate(self, data):
         file = data.get('file')
         url = data.get('url')
+        if file:
+            try:
+                validate_file(file)
+            except ValidationError as e:
+                raise serializers.ValidationError({'file': e})
         if file and url:
             raise serializers.ValidationError({
                 'file': _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
@@ -575,9 +584,8 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
             upload_to = DatasetDistribution.UPLOAD_TO
             upload_folder = None
             folders = upload_to.split('/')
-            for level, folder_name in enumerate(folders):
+            for folder_name in folders:
                 upload_folder, created = Folder.objects.get_or_create(
-                    level=level,
                     name=folder_name,
                     parent=upload_folder
                 )
@@ -630,6 +638,15 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             'title'
         ]
 
+    def validate(self, data):
+        file = data.get('file')
+        if file:
+            try:
+                validate_file(file)
+            except ValidationError as e:
+                raise serializers.ValidationError({'file': e})
+        return data
+
     def create(self, validated_data):
         file = validated_data.pop('file', None)
         dataset = self.context.get('dataset')
@@ -641,9 +658,8 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             upload_to = DatasetStructure.UPLOAD_TO
             upload_folder = None
             folders = upload_to.split('/')
-            for level, folder_name in enumerate(folders):
+            for folder_name in folders:
                 upload_folder, created = Folder.objects.get_or_create(
-                    level=level,
                     name=folder_name,
                     parent=upload_folder
                 )

@@ -1427,6 +1427,33 @@ def test_update_dataset_distribution_with_empty_file(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_update_dataset_distribution_with_not_allowed_file(app: DjangoTestApp):
+    domain = Site.objects.get_current().domain
+    distribution = DatasetDistributionFactory()
+    ct = ContentType.objects.get_for_model(distribution.dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=distribution.dataset.organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    content_type, params = app.encode_multipart(params=[
+        ('title', "Updated title"),
+        ('description', "Updated description"),
+        ('region', 'Geo'),
+        ('municipality', 'Location'),
+    ], files=[('file', 'updated_file.html', b'test')])
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test',
+        'CONTENT_TYPE': content_type
+    })
+    res = app.patch(reverse('api-single-distribution', kwargs={
+        'datasetId': distribution.dataset.pk,
+        'distributionId': distribution.pk
+    }), params, expect_errors=True)
+    assert 'file' in res.json
+
+
+@pytest.mark.django_db
 def test_update_dataset_distribution_with_file(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     distribution = DatasetDistributionFactory()
@@ -1729,6 +1756,28 @@ def test_create_dataset_structure_with_errors(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_create_dataset_structure_with_not_allowed_file(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    api_key = APIKeyFactory(representative=representative)
+    content_type, params = app.encode_multipart(params=[
+        ('title', "Test structure")
+    ], files=[('file', 'file.svg', b'test')])
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test',
+        'CONTENT_TYPE': content_type
+    })
+    res = app.post(reverse('api-structure', kwargs={
+        'datasetId': dataset.pk
+    }), params, expect_errors=True)
+    assert 'file' in res.json
+
+
+@pytest.mark.django_db
 def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
@@ -2024,8 +2073,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Atviras duomenų šaltinis.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
-                <dcat:downloadURL rdf:resource="{dist1.file.url}"/>
+                <dcat:accessURL rdf:resource="http://example.com{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
@@ -2047,8 +2095,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Universali duomenų teikimo paslauga.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com/datasets/{dataset.id}/"/>
-                <dcat:downloadURL rdf:resource="{dist2.file.url}"/>
+                <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>

@@ -5,6 +5,7 @@ import pytest
 from datetime import datetime
 
 from PIL import Image
+from allauth.account.models import EmailConfirmationHMAC, EmailConfirmation
 from django_recaptcha.client import RecaptchaResponse
 from freezegun import freeze_time
 import pytz
@@ -221,16 +222,17 @@ def representative_data():
     )
     organization = OrganizationFactory()
     content_type = ContentType.objects.get_for_model(Organization)
-    representative_manager = RepresentativeFactory(
-        role="manager",
-        content_type=content_type,
-        object_id=organization.pk
-    )
     representative_coordinator = RepresentativeFactory(
         role="coordinator",
         content_type=content_type,
         object_id=organization.pk,
         user=coordinator
+    )
+    representative_manager = RepresentativeFactory(
+        role="manager",
+        content_type=content_type,
+        object_id=organization.pk,
+        parent_coordinator=representative_coordinator
     )
     return {
         'manager': manager,
@@ -268,6 +270,7 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
     assert Representative.objects.filter(
         email="manager@gmail.com"
     ).first().user.organization == representative_data['organization']
+    assert Representative.objects.filter(email="manager@gmail.com").first().status == Representative.ACTIVE
 
 
 @pytest.mark.django_db
@@ -285,6 +288,8 @@ def test_representative_create_without_user(app: DjangoTestApp, representative_d
     assert Representative.objects.filter(email="new@gmail.com").first().content_object == \
            representative_data['organization']
     assert Representative.objects.filter(email="new@gmail.com").first().user is None
+    assert Representative.objects.filter(email="new@gmail.com").first().status == \
+           Representative.AWAITING_CONFIRMATION
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["new@gmail.com"]
 
@@ -376,10 +381,11 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
         email="new@gmail.com",
         content_type=ContentType.objects.get_for_model(Organization),
         object_id=representative_data['organization'].pk,
-        user=None
+        user=None,
+        status=Representative.AWAITING_CONFIRMATION
     )
     serializer = URLSafeSerializer(settings.SECRET_KEY)
-    token = serializer.dumps({"representative_id": new_representative.pk})
+    token = serializer.dumps({"representative_id": new_representative.pk, "email": new_representative.email})
 
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
@@ -398,6 +404,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
         assert User.objects.filter(email='new@gmail.com').count() == 1
         assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
         assert new_representative.user.organization == representative_data['organization']
+        assert new_representative.status == Representative.ACTIVE
 
 
 @pytest.mark.django_db
@@ -410,18 +417,6 @@ def test_representative_update_without_permission(app: DjangoTestApp, representa
 
 
 @pytest.mark.django_db
-def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
-    form = app.get(reverse('representative-update', kwargs={
-        'organization_id': representative_data['organization'].pk,
-        'pk': representative_data['representative_coordinator'].pk
-    })).forms['representative-form']
-    form['role'] = "manager"
-    resp = form.submit()
-    assert len(resp.context['form'].errors) == 1
-
-
-@pytest.mark.django_db
 def test_representative_update_with_correct_data(app: DjangoTestApp, representative_data):
     representative_data['representative_manager'].user = representative_data['manager']
     representative_data['representative_manager'].save()
@@ -430,12 +425,12 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
         'organization_id': representative_data['organization'].pk,
         'pk': representative_data['representative_manager'].pk
     })).forms['representative-form']
-    form['role'] = "coordinator"
+    form['phone'] = "+37065823695"
     resp = form.submit()
     representative_data['representative_manager'].refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
-    assert representative_data['representative_manager'].role == "coordinator"
+    assert representative_data['representative_manager'].phone == "+37065823695"
     assert representative_data['representative_manager'].user.organization == representative_data['organization']
 
 
@@ -655,3 +650,208 @@ def test_click_edit_button(app: DjangoTestApp):
     response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
     response.click(linkid='change_organization')
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_representative_edit_with_changed_email_without_user(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=None,
+        email="test@example.com",
+        status=Representative.AWAITING_CONFIRMATION
+    )
+
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    # change representative email
+    form = app.get(reverse(
+        "representative-update",
+        args=[organization.pk, representative.pk]
+    )).forms['representative-form']
+
+    form['email'] = "test2@example.com"
+    resp = form.submit()
+
+    representative.refresh_from_db()
+
+    assert representative.email == "test2@example.com"
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': organization.pk})
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["test2@example.com"]
+
+    serializer = URLSafeSerializer(settings.SECRET_KEY)
+    token = serializer.dumps({"representative_id": representative.pk, "email": representative.email})
+
+    # open representative register form
+    resp = app.get(reverse('representative-register', kwargs={'token': token}))
+    assert resp.status_code == 200
+
+    # change email again
+    form = app.get(reverse(
+        "representative-update",
+        args=[organization.pk, representative.pk]
+    )).forms['representative-form']
+
+    form['email'] = "test3@example.com"
+    resp = form.submit()
+
+    representative.refresh_from_db()
+
+    assert representative.email == "test3@example.com"
+    assert resp.url == reverse('organization-members', kwargs={'pk': organization.pk})
+    assert len(mail.outbox) == 2
+    assert sorted([mail.outbox[0].to[0], mail.outbox[1].to[0]]) == sorted(["test2@example.com", "test3@example.com"])
+
+    # open representative register form with old link
+    resp = app.get(reverse('representative-register', kwargs={'token': token}))
+    assert resp.status_code == 302
+    assert resp.url == reverse('register-link-expired')
+
+    # register with new link
+    token = serializer.dumps({"representative_id": representative.pk, "email": representative.email})
+    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+        resp = app.post(reverse('representative-register', kwargs={'token': token}), {
+            'first_name': "New",
+            'last_name': "User",
+            'email': "test3@example.com",
+            'password1': "v)Yxu*DF8}rj~(Sz!-X:Ws",
+            'password2': "v)Yxu*DF8}rj~(Sz!-X:Ws",
+            'agree_to_terms': True,
+            "g-recaptcha-response": "PASSED",
+        })
+        representative.refresh_from_db()
+        assert resp.status_code == 302
+        assert resp.url == reverse('home')
+        assert User.objects.filter(email='test3@example.com').count() == 1
+        assert representative.user == User.objects.filter(email='test3@example.com').first()
+        assert representative.status == Representative.ACTIVE
+
+
+@pytest.mark.django_db
+def test_representative_edit_with_changed_email_with_user(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        email="test@example.com",
+        status=Representative.ACTIVE
+    )
+    representative2 = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization2),
+        object_id=organization2.pk,
+        email="test@example.com",
+        status=Representative.ACTIVE,
+        user=representative.user
+    )
+
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    # change representative email
+    form = app.get(reverse(
+        "representative-update",
+        args=[organization.pk, representative.pk]
+    )).forms['representative-form']
+
+    form['email'] = "test2@example.com"
+    resp = form.submit()
+
+    representative.refresh_from_db()
+    representative2.refresh_from_db()
+
+    assert representative.email == "test2@example.com"
+    assert representative.status == Representative.AWAITING_CONFIRMATION
+    assert representative.user.status == User.AWAITING_CONFIRMATION
+    assert representative2.email == "test2@example.com"
+    assert representative2.status == Representative.AWAITING_CONFIRMATION
+    assert representative2.user.status == User.AWAITING_CONFIRMATION
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': organization.pk})
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["test2@example.com"]
+
+    # open representative email confirm form
+    confirmation = EmailConfirmationHMAC(EmailConfirmation.objects.first().email_address)
+    url = reverse("account_confirm_email", args=[confirmation.key])
+    resp = app.get(url)
+    assert resp.status_code == 200
+
+    # change email again
+    form = app.get(reverse(
+        "representative-update",
+        args=[organization.pk, representative.pk]
+    )).forms['representative-form']
+
+    form['email'] = "test3@example.com"
+    resp = form.submit()
+
+    representative.refresh_from_db()
+    representative2.refresh_from_db()
+
+    assert representative.email == "test3@example.com"
+    assert representative2.email == "test3@example.com"
+    assert resp.url == reverse('organization-members', kwargs={'pk': organization.pk})
+    assert len(mail.outbox) == 2
+    assert sorted([mail.outbox[0].to[0], mail.outbox[1].to[0]]) == sorted(["test2@example.com", "test3@example.com"])
+
+    # open email confirm form with old link
+    url = reverse("account_confirm_email", args=[confirmation.key])
+    resp = app.get(url)
+    assert "confirm_email_form" not in resp.forms
+
+    # confirm with new link
+    confirmation = EmailConfirmationHMAC(EmailConfirmation.objects.first().email_address)
+    url = reverse("account_confirm_email", args=[confirmation.key])
+    form = app.get(url).forms['confirm_email_form']
+    form.submit()
+
+    representative.refresh_from_db()
+    representative2.refresh_from_db()
+
+    assert representative.status == Representative.ACTIVE
+    assert representative2.status == Representative.ACTIVE
+    assert representative.user.status == User.ACTIVE
+    assert representative2.user.status == User.ACTIVE
+
+
+@pytest.mark.django_db
+def test_representative_edit_with_phone_number(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        email="test@example.com",
+        status=Representative.ACTIVE
+    )
+
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    form = app.get(reverse(
+        "representative-update",
+        args=[organization.pk, representative.pk]
+    )).forms['representative-form']
+
+    form['phone'] = "123"
+    resp = form.submit()
+    assert 'phone' in resp.context['form'].errors
+
+    form['phone'] = "+37065698"
+    resp = form.submit()
+    assert 'phone' in resp.context['form'].errors
+
+    form['phone'] = "023658"
+    resp = form.submit()
+    assert 'phone' in resp.context['form'].errors
+
+    form['phone'] = "064589236"
+    form.submit()
+
+    representative.refresh_from_db()
+    assert representative.phone == "064589236"

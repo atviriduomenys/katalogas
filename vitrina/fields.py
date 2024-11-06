@@ -239,3 +239,11 @@ class DisabledTextInput(TextInput):
 
 class DisabledCharField(CharField):
     widget = DisabledTextInput
+
+
+class InfoTextInput(TextInput):
+    template_name = 'component/info_text.html'
+
+
+class InfoField(CharField):
+    widget = InfoTextInput

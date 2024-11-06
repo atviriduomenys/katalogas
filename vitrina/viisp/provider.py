@@ -82,7 +82,7 @@ class VIISPProvider(OAuth2Provider):
         # update related representatives
         if user := User.objects.filter(email=extra_data.get('coordinator_email')).first():
             if reps := Representative.objects.filter(email=user.email, user__isnull=True):
-                reps.update(user=user)
+                reps.update(user=user, status=Representative.ACTIVE)
 
         return sociallogin
 

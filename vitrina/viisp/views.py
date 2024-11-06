@@ -124,7 +124,7 @@ class VIISPCompleteLoginView(View):
         # update related representatives
         if login.user:
             if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
-                reps.update(user=login.user)
+                reps.update(user=login.user, status=Representative.ACTIVE)
 
         return response
 

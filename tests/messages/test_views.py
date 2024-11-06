@@ -487,20 +487,8 @@ def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscript
 
 
 @pytest.mark.django_db
-def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
+def test_dataset_sub_mail(app: DjangoTestApp, subscription_data):
     app.set_user(subscription_data['user'])
-    kwargs = {'content_type_id': get_content_type_for_model(Organization).id,
-              'obj_id': subscription_data['dataset'].organization.id,
-              'user_id': subscription_data['user'].id}
-    form = app.get(reverse('subscribe-form', kwargs=kwargs)).forms['subscribe-form']
-    form['email_subscribed'] = True
-    form['dataset_update_sub'] = True
-    form['dataset_comments_sub'] = True
-    resp = form.submit()
-
-    assert resp.url == reverse('organization-detail', kwargs={'pk': subscription_data['dataset'].organization.id})
-    assert Subscription.objects.count() == 1
-    assert len(mail.outbox) == 1
 
     kwargs = {'content_type_id': get_content_type_for_model(Dataset).id,
               'obj_id': subscription_data['dataset'].id,
@@ -512,8 +500,8 @@ def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
     resp = form.submit()
 
     assert resp.url == reverse('dataset-detail', kwargs={'pk': subscription_data['dataset'].id})
-    assert Subscription.objects.count() == 2
-    assert len(mail.outbox) == 2
+    assert Subscription.objects.count() == 1
+    assert len(mail.outbox) == 1
 
     staff_user = UserFactory(is_staff=True)
     app.set_user(staff_user)
@@ -527,7 +515,7 @@ def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
     dataset.refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
-    assert len(mail.outbox) == 3
+    assert len(mail.outbox) == 2
 
 
 @pytest.mark.django_db

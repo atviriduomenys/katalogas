@@ -1223,7 +1223,6 @@ def test_dataset_members_add_member(app: DjangoTestApp):
         email='test@example.com',
     )
     assert rep.user == user
-    assert rep.user.organization == dataset.organization
     assert rep.role == Representative.MANAGER
     assert rep.has_api_access is False
     assert rep.apikey_set.count() == 0
@@ -1266,7 +1265,6 @@ def test_member_subscription(app: DjangoTestApp):
         email='test@example.com',
     )
     assert rep.user == user
-    assert rep.user.organization == dataset.organization
     assert rep.role == Representative.MANAGER
     assert rep.has_api_access is False
     assert rep.apikey_set.count() == 0

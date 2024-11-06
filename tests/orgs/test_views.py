@@ -308,6 +308,33 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
     form['role'] = "manager"
+    resp = form.submit()
+
+    assert len(resp.context['form'].errors) == 1
+    assert Representative.objects.filter(email="new@gmail.com").count() == 1
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["new@gmail.com"]
+
+
+@pytest.mark.django_db
+def test_representative_create_without_user_for_two_objects(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    organization = OrganizationFactory()
+    dataset = DatasetFactory()
+    app.set_user(user)
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': organization.pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form.submit()
+
+    form = app.get(reverse('dataset-representative-create', kwargs={
+        'pk': dataset.pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
     form.submit()
 
     assert Representative.objects.filter(email="new@gmail.com").count() == 2

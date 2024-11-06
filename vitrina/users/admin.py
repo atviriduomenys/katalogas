@@ -246,7 +246,7 @@ class UserAdmin(BaseUserAdmin):
 
         # update related representatives
         if reps := Representative.objects.filter(email=obj.email, user__isnull=True):
-            reps.update(user=obj)
+            reps.update(user=obj, status=Representative.ACTIVE)
 
         return super().response_add(request, obj, post_url_continue)
 
@@ -347,7 +347,7 @@ class UserAdmin(BaseUserAdmin):
                     }
                 )
                 obj.status = User.AWAITING_CONFIRMATION
-                obj.representative_set.update(email=obj.email)
+                obj.representative_set.update(email=obj.email, status=Representative.AWAITING_CONFIRMATION)
 
             elif 'email_confirmed' in form.changed_data:
                 email_confirmed = form.cleaned_data.get('email_confirmed', False)
@@ -359,6 +359,13 @@ class UserAdmin(BaseUserAdmin):
                     email_address.save()
                 else:
                     EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
+
+                # update related representatives
+                if reps := Representative.objects.filter(email=obj.email):
+                    if email_confirmed:
+                        reps.update(status=Representative.ACTIVE)
+                    else:
+                        reps.update(status=Representative.AWAITING_CONFIRMATION)
 
             if 'is_active' in form.changed_data:
                 is_active = form.cleaned_data.get('is_active', False)

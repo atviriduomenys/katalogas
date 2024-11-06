@@ -18,7 +18,7 @@ from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
+from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput, InfoField
 from vitrina.helpers import validate_file
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
@@ -316,29 +316,66 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
-
-    object_model = Organization
+    email = EmailField(label=_('El. paštas'), required=True)
+    phone = CharField(label=_("Telefono numeris"), required=False)
+    related_managers = InfoField(label=_("Susiję tvarkytojai"), required=False)
+    parent_coordinator = ModelChoiceField(
+        label=_("Susijęs koordinatorius"),
+        queryset=Representative.objects.filter(content_type=ContentType.objects.get_for_model(Organization)),
+    )
 
     class Meta:
         model = Representative
-        fields = ('role', 'has_api_access', 'regenerate_api_key',)
+        fields = ('role', 'has_api_access', 'regenerate_api_key', 'parent_coordinator', 'phone', 'email',)
 
     def __init__(self, *args, **kwargs):
         self.object = kwargs.pop('object', None)
         super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('role'),
+            Field('related_managers'),
+            Field('parent_coordinator'),
+            Field('email'),
+            Field('phone'),
             Field('has_api_access'),
             Field('regenerate_api_key'),
             Field('subscribe'),
             Submit('submit', _("Redaguoti"), css_class='button is-primary'),
         )
 
+        self.fields["role"].disabled = True
+
+        if instance:
+            if instance.role == Representative.COORDINATOR:
+                self.fields['parent_coordinator'].widget = HiddenInput()
+                self.fields['parent_coordinator'].required = False
+
+                if reps := Representative.objects.filter(parent_coordinator=instance):
+                    related_managers = ""
+                    for rep in reps:
+                        related_managers += (
+                            f"<li><a href={reverse('representative-update', args=[self.object.pk, rep.pk])}>"
+                            f"{rep.email}"
+                            f"</a></li>"
+                        )
+
+                    self.initial['related_managers'] = mark_safe(related_managers)
+                else:
+                    self.fields['related_managers'].widget = HiddenInput()
+            else:
+                self.fields['related_managers'].widget = HiddenInput()
+                self.fields['parent_coordinator'].queryset = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=self.object.pk,
+                    role=Representative.COORDINATOR
+                )
+
         try:
-            content_type = ContentType.objects.get_for_model(self.object_model)
+            content_type = ContentType.objects.get_for_model(Organization)
             subscription = Subscription.objects.get(user=self.instance.user,
                                                     content_type=content_type,
                                                     object_id=self.object.id)
@@ -353,7 +390,7 @@ class RepresentativeUpdateForm(ModelForm):
             self.instance.role == Representative.COORDINATOR and
             role != Representative.COORDINATOR and
             get_coordinators_count(
-                self.object_model,
+                Organization,
                 self.instance.object_id,
             ) == 1
         ):
@@ -362,6 +399,27 @@ class RepresentativeUpdateForm(ModelForm):
                 "jei tai yra vienintelis koordinatoriaus rolės atstovas."
             ))
         return self.cleaned_data
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if phone:
+            if (
+                not phone.startswith("0") and
+                not phone.startswith("+370")
+            ):
+                raise ValidationError(_("Neteisingas telefono numerio formatas."))
+            else:
+                if phone.startswith("0"):
+                    phone_end = phone.replace("0", "", 1)
+                else:
+                    phone_end = phone.replace("+370", "", 1)
+
+                if (
+                    len(phone_end) != 8 or
+                    not all([c in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] for c in phone_end])
+                ):
+                    raise ValidationError(_("Neteisingas telefono numerio formatas."))
+        return phone
 
 
 class RepresentativeCreateForm(ModelForm):

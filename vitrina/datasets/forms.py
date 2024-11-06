@@ -23,10 +23,12 @@ from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Licence, Category
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
+from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
 from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 
@@ -362,8 +364,55 @@ class AddRequestForm(forms.ModelForm):
     )
 
 
-class DatasetMemberUpdateForm(RepresentativeUpdateForm):
-    object_model = Dataset
+class DatasetMemberUpdateForm(forms.ModelForm):
+    role = forms.ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
+    has_api_access = forms.BooleanField(label=_("Suteikti API prieigą"), required=False)
+    regenerate_api_key = forms.BooleanField(label=_("Pergeneruoti raktą"), required=False)
+    subscribe = forms.BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
+
+    class Meta:
+        model = Representative
+        fields = ('role', 'has_api_access', 'regenerate_api_key',)
+
+    def __init__(self, *args, **kwargs):
+        self.object = kwargs.pop('object', None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs['novalidate'] = ''
+        self.helper.form_id = "representative-form"
+        self.helper.layout = Layout(
+            Field('role'),
+            Field('has_api_access'),
+            Field('regenerate_api_key'),
+            Field('subscribe'),
+            Submit('submit', _("Redaguoti"), css_class='button is-primary'),
+        )
+
+        try:
+            content_type = ContentType.objects.get_for_model(Dataset)
+            subscription = Subscription.objects.get(user=self.instance.user,
+                                                    content_type=content_type,
+                                                    object_id=self.object.id)
+            if subscription:
+                self.fields['subscribe'].initial = True
+        except ObjectDoesNotExist:
+            self.fields['subscribe'].initial = False
+
+    def clean(self):
+        role = self.cleaned_data.get('role')
+        if (
+            self.instance.role == Representative.COORDINATOR and
+            role != Representative.COORDINATOR and
+            get_coordinators_count(
+                Dataset,
+                self.instance.object_id,
+            ) == 1
+        ):
+            raise ValidationError(_(
+                "Negalima panaikinti koordinatoriaus rolės naudotojui, "
+                "jei tai yra vienintelis koordinatoriaus rolės atstovas."
+            ))
+        return self.cleaned_data
 
 
 class DatasetMemberCreateForm(RepresentativeCreateForm):

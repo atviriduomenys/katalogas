@@ -6,11 +6,13 @@ from typing import List
 
 import pandas as pd
 import requests
-from allauth.account.models import EmailAddress
+from allauth.account.models import EmailAddress, EmailConfirmation, EmailConfirmationHMAC
+from allauth.utils import build_absolute_uri
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
@@ -685,6 +687,7 @@ class RepresentativeCreateView(
             user = None
         if user:
             self.object.user = user
+            self.object.status = Representative.ACTIVE
             self.object.save()
             if not user.organization:
                 user.organization = self.organization
@@ -695,16 +698,19 @@ class RepresentativeCreateView(
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         else:
+            self.object.status = Representative.AWAITING_CONFIRMATION
+            self.object.save()
+
             if not SentMail.objects.filter(
                 Q(
                     Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER) |
                     Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
                 ) & Q(recipient=f"['{self.object.email}']")
             ):
-                self.object.save()
                 serializer = URLSafeSerializer(settings.SECRET_KEY)
                 token = serializer.dumps({
                     "representative_id": self.object.pk,
+                    "email": self.object.email,
                     "subscribe": subscribe
                 })
                 url = "%s%s" % (
@@ -773,7 +779,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
             self.organization,
         )
         context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
-        context['current_title'] = _("Tvarkytojo redagavimas")
+        context['current_title'] = _("Organizacijos atstovo redagavimas")
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
             reverse('organization-list'): _('Organizacijos'),
@@ -785,6 +791,64 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
     def form_valid(self, form):
         self.object: Representative = form.save()
         subscribe = form.cleaned_data.get('subscribe')
+
+        if 'email' in form.changed_data:
+            if self.object.user:
+                if existing_email_address := EmailAddress.objects.filter(user=self.object.user):
+                    existing_email_address.delete()
+                email_address = EmailAddress.objects.create(
+                    user=self.object.user,
+                    email=self.object.email,
+                    primary=True,
+                    verified=False
+                )
+                EmailConfirmation.objects.create(
+                    created=datetime.now(),
+                    sent=datetime.now(),
+                    key=secrets.token_urlsafe(),
+                    email_address=email_address
+                )
+                confirmation = EmailConfirmationHMAC(email_address)
+                url = reverse("account_confirm_email", args=[confirmation.key])
+                activate_url = build_absolute_uri(self.request, url)
+                email(
+                    [email_address.email], 'confirm_updated_email', 'vitrina/email/confirm_updated_email.md',
+                    {
+                        'site': Site.objects.get_current().domain,
+                        'user': str(self.object.user),
+                        'activate_url': activate_url
+                    }
+                )
+                self.object.user.status = User.AWAITING_CONFIRMATION
+                self.object.user.email = self.object.email
+                self.object.user.representative_set.update(
+                    email=self.object.email,
+                    status=Representative.AWAITING_CONFIRMATION
+                )
+                self.object.user.save()
+
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl el. pašto patvirtinimo"))
+            else:
+                self.object.save()
+                serializer = URLSafeSerializer(settings.SECRET_KEY)
+                token = serializer.dumps({
+                    "representative_id": self.object.pk,
+                    "email": self.object.email,
+                    "subscribe": subscribe
+                })
+                url = "%s%s" % (
+                    get_current_domain(self.request),
+                    reverse('representative-register', kwargs={'token': token})
+                )
+
+                email(
+                    [self.object.email], ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+                    'vitrina/emails/request_for_organization_member_add.md', {
+                        'organization': self.organization.title,
+                        'link': url
+                    })
+
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
 
         if self.object.user and not self.object.user.organization:
             self.object.user.organization = self.organization
@@ -1098,8 +1162,13 @@ class RepresentativeRegisterView(RegisterView):
         except BadSignature:
             return redirect('register-link-expired')
 
+        email_address = self.data.get('email')
         self.representative = Representative.objects.filter(pk=self.data.get('representative_id')).first()
-        if not self.representative or self.representative.user:
+        if (
+            not self.representative or
+            self.representative.user or
+            (email_address and email_address != self.representative.email)
+        ):
             return redirect('register-link-expired')
         return super().dispatch(request, *args, **kwargs)
 
@@ -1118,12 +1187,11 @@ class RepresentativeRegisterView(RegisterView):
             user.save()
 
             subscribe = self.data.get('subscribe')
-            try:
-                representative = Representative.objects.get(pk=self.data.get('representative_id'))
-            except ObjectDoesNotExist:
-                representative = None
+            representative = self.representative
+
             if representative:
                 representative.user = user
+                representative.status = Representative.ACTIVE
                 representative.save()
 
                 if isinstance(representative.content_object, Organization):
@@ -1148,7 +1216,7 @@ class RepresentativeRegisterView(RegisterView):
 
             # update related representatives
             if reps := Representative.objects.filter(email=user.email, user__isnull=True):
-                reps.update(user=user)
+                reps.update(user=user, status=Representative.ACTIVE)
 
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')

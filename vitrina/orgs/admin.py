@@ -89,7 +89,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
     list_display = (
         'parent_organization_display',
         'organization_display',
-        'full_name_display',
+        'name_display',
         'email',
         'role',
         'created_display',
@@ -100,7 +100,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
     search_fields = (
         'parent_organization_title',
         'organization_title',
-        'full_name',
+        'name',
         'email',
         'role_title',
         'created_formatted',
@@ -125,7 +125,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
         ).annotate(parent_organization_title=Subquery(
             Organization.objects.filter(path=OuterRef('parent_path')).values_list('title', flat=True)
         ))
-        queryset = queryset.annotate(full_name=Concat('user__first_name', Value(' '), 'user__last_name'))
+        queryset = queryset.annotate(name=Concat('user__first_name', Value(' '), 'user__last_name'))
         queryset = queryset.annotate(created_with_tz=AtTimeZone(F('created')))
         queryset = queryset.annotate(created_formatted=Func(
             F('created_with_tz'),
@@ -174,7 +174,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
     organization_display.short_description = _('Organizacija')
     organization_display.admin_order_field = 'organization_title'
 
-    def full_name_display(self, obj):
+    def name_display(self, obj):
         if obj.user:
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
@@ -187,8 +187,8 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
                 _("pakvietimas išsiųstas"),
             )
 
-    full_name_display.short_description = _('Vardas ir pavardė')
-    full_name_display.admin_order_field = 'full_name'
+    name_display.short_description = _('Vardas ir pavardė')
+    name_display.admin_order_field = 'name'
 
     def created_display(self, obj):
         if obj.created:
@@ -259,7 +259,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
         cols = {
             'parent_organization': _("Tėvinė organizacija"),
             'organization': _("Organizacija"),
-            'full_name': _("Vardas ir pavardė"),
+            'name': _("Vardas ir pavardė"),
             'email': _("Elektroninis paštas"),
             'role': _("Rolė"),
             'created': _("Sukurtas"),
@@ -284,7 +284,7 @@ class OrganizationRepresentativeAdmin(admin.ModelAdmin):
             yield to_row(cols.keys(), {
                 'parent_organization': parent_organization.title if parent_organization else "-",
                 'organization': item.content_object.title if item.content_object else "-",
-                'full_name': f'{item.user.first_name} {item.user.last_name}' if item.user else "-",
+                'name': f'{item.user.first_name} {item.user.last_name}' if item.user else "-",
                 'email': item.email,
                 'role': item.get_role_display(),
                 'created': self.created_display(item),

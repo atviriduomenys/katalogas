@@ -549,14 +549,36 @@ class DatasetCreateView(
         self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
-        Representative.objects.create(
-            content_type=ContentType.objects.get_for_model(self.object),
-            object_id=self.object.pk,
-            user=self.request.user,
-            email=self.request.user.email,
-            role=Representative.COORDINATOR if self.request.user.is_coordinator \
-                else Representative.MANAGER
-        )
+
+        if rep := Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.object.organization),
+            object_id=self.object.organization.pk,
+            user=self.request.user
+        ).first():
+            if rep.role == Representative.COORDINATOR:
+                Representative.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    user=self.request.user,
+                    email=self.request.user.email,
+                    role=Representative.COORDINATOR
+                )
+            else:
+                Representative.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    user=self.request.user,
+                    email=self.request.user.email,
+                    role=Representative.MANAGER
+                )
+                if rep.parent_coordinator:
+                    Representative.objects.create(
+                        content_type=ContentType.objects.get_for_model(self.object),
+                        object_id=self.object.pk,
+                        user=rep.parent_coordinator.user,
+                        email=rep.parent_coordinator.email,
+                        role=Representative.COORDINATOR
+                    )
 
         for file in form.cleaned_data.get('files', []):
             DatasetFile.objects.get_or_create(
@@ -1068,6 +1090,7 @@ class CreateMemberView(
                 serializer = URLSafeSerializer(settings.SECRET_KEY)
                 token = serializer.dumps({
                     "representative_id": self.object.pk,
+                    "email": self.object.email,
                     "subscribe": form.cleaned_data.get('subscribe')
                 })
                 url = "%s%s" % (

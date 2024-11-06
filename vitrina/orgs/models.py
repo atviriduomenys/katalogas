@@ -171,6 +171,7 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
     status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
+    parent_coordinator = models.ForeignKey("Representative", on_delete=models.PROTECT, null=True, blank=True)
 
     objects = RepresentativeManager()
     objects_with_deleted = RepresentativeWithDeletedManager()

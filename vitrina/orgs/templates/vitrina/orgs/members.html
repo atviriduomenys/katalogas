@@ -41,7 +41,11 @@
             {% for m in members %}
                 <tr>
                     {% if m.user %}
-                    <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
+                    {% if m.status == m.AWAITING_CONFIRMATION %}
+                        <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
+                    {% else %}
+                        <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
+                    {% endif %}
                     <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
                     <td>
                         {% if m.phone %}

@@ -111,7 +111,7 @@ class RegisterView(CreateView):
 
             # update related representatives
             if reps := Representative.objects.filter(email=user.email, user__isnull=True):
-                reps.update(user=user)
+                reps.update(user=user, status=Representative.ACTIVE)
 
             return redirect('home')
         return render(request=request, template_name=self.template_name, context={"form": form})
@@ -298,7 +298,7 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             )
             obj.status = User.AWAITING_CONFIRMATION
             obj.save()
-            obj.representative_set.update(email=obj.email)
+            obj.representative_set.update(email=obj.email, status=Representative.AWAITING_CONFIRMATION)
             messages.success(self.request, _("Išsiuntėme jums laišką el. pašto patvirtinimui."))
         return redirect('user-profile', pk=self.request.user.id)
 
@@ -444,4 +444,5 @@ class ConfirmEmailView(BaseConfirmEmailView):
         if self.object and self.object.email_address:
             self.object.email_address.user.status = User.ACTIVE
             self.object.email_address.user.save()
+            self.object.email_address.user.representative_set.update(status=Representative.ACTIVE)
         return result

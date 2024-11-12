@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.classifiers.models import Category, Frequency, Licence
+from vitrina.classifiers.models import Category, Frequency, Licence, AreaOfManagement
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -35,3 +35,13 @@ class LicenceFactory(DjangoModelFactory):
     identifier = factory.Sequence(lambda n: f'id{n}')
     title = factory.Faker('word')
     description = factory.Faker('catch_phrase')
+
+
+class AreaOfManagementFactory(DjangoModelFactory):
+    class Meta:
+        model = AreaOfManagement
+        django_get_or_create = ('name_lt', 'name_en')
+
+    id = factory.Sequence(lambda n: n + 2)
+    name_lt = factory.LazyAttribute(lambda obj: f'Jurisdiction{obj.id}')
+    name_en = factory.LazyAttribute(lambda obj: f'Jurisdikcija{obj.id}')

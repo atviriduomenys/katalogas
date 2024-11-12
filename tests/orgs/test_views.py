@@ -17,6 +17,8 @@ from itsdangerous import URLSafeSerializer
 from webtest import Upload
 
 from vitrina import settings
+from vitrina.classifiers.factories import AreaOfManagementFactory
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -78,19 +80,20 @@ def organizations():
         organization1 = OrganizationFactory(
             slug="org1",
             title="Organization 1",
-            jurisdiction="Jurisdiction1"
+            jurisdiction=AreaOfManagement.objects.get(id=1),
         )
     with freeze_time(timezone.localize(datetime(2022, 10, 22, 10, 30))):
+        jurisdiction2 = AreaOfManagementFactory(id=2)
         organization2 = OrganizationFactory(
             slug="org2",
             title="Organization 2",
-            jurisdiction="Jurisdiction2"
+            jurisdiction=jurisdiction2
         )
     with freeze_time(datetime(2022, 9, 22, 10, 30)):
         organization3 = OrganizationFactory(
             slug="org3",
             title="Organization 3",
-            jurisdiction="Jurisdiction2"
+            jurisdiction=jurisdiction2,
         )
     return [organization1, organization2, organization3]
 
@@ -122,17 +125,20 @@ def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
 @pytest.mark.django_db
 def test_filter_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
+    print(f'jurisdictions: {list(resp.context["jurisdictions"])}')
     assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
         {
+            'id': 2,
             'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
+            'query': "?jurisdiction=2",
             'count': 2
         },
         {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
+            'id': 1,
+            'title': 'Nepriskirta',
+            'query': "?jurisdiction=1",
             'count': 1
         },
     ]
@@ -140,13 +146,14 @@ def test_filter_without_query(app: DjangoTestApp, organizations):
 
 @pytest.mark.django_db
 def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=Jurisdiction1" % reverse('organization-list'))
+    resp = app.get("%s?jurisdiction=1" % reverse('organization-list'))
     assert list(resp.context['object_list']) == [organizations[0]]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction1"
+    assert resp.context['selected_jurisdiction'] == "Nepriskirta"
     assert resp.context['jurisdictions'] == [
         {
-            'title': 'Jurisdiction1',
-            'query': "?jurisdiction=Jurisdiction1",
+            'id': 1,
+            'title': 'Nepriskirta',
+            'query': "?jurisdiction=1",
             'count': 1
         }
     ]
@@ -154,13 +161,14 @@ def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
 
 @pytest.mark.django_db
 def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=Jurisdiction2" % reverse('organization-list'))
+    resp = app.get("%s?jurisdiction=2" % reverse('organization-list'))
     assert list(resp.context['object_list']) == [organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
         {
+            'id': 2,
             'title': 'Jurisdiction2',
-            'query': "?jurisdiction=Jurisdiction2",
+            'query': "?jurisdiction=2",
             'count': 2
         }
     ]
@@ -170,19 +178,20 @@ def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
 def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
     resp = app.get("%s?jurisdiction=doesnotexist" % reverse('organization-list'))
     assert len(resp.context['object_list']) == 0
-    assert resp.context['selected_jurisdiction'] == "doesnotexist"
+    assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == []
 
 
 @pytest.mark.django_db
 def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=1&jurisdiction=Jurisdiction1" % reverse('organization-list'))
-    assert list(resp.context['object_list']) == [organizations[0]]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction1"
+    resp = app.get("%s?q=2&jurisdiction=2" % reverse('organization-list'))
+    assert list(resp.context['object_list']) == [organizations[1]]
+    assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
     assert resp.context['jurisdictions'] == [
         {
-            'title': 'Jurisdiction1',
-            'query': "?q=1&jurisdiction=Jurisdiction1",
+            'id': 2,
+            'title': 'Jurisdiction2',
+            'query': "?q=2&jurisdiction=2",
             'count': 1
         },
     ]
@@ -190,14 +199,16 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
 
 @pytest.mark.django_db
 def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
-    organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction="Jurisdiction\"<'>\\")
-    resp = app.get("%s?q=\"<'>\\&jurisdiction=Jurisdiction\"<'>\\" % reverse('organization-list'))
+    jurisdiction = AreaOfManagementFactory(id=3, name_lt="Jurisdiction\"<'>\\", name_en="Jurisdiction\"<'>\\")
+    organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction=jurisdiction)
+    resp = app.get("%s?q=\"<'>\\&jurisdiction=3" % reverse('organization-list'))
     assert list(resp.context['object_list']) == [organization]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction\"<'>\\"
     assert resp.context['jurisdictions'] == [
         {
+            'id' : 3,
             'title': "Jurisdiction\"<'>\\",
-            'query': "?q=\"<'>\\&jurisdiction=Jurisdiction\"<'>\\",
+            'query': "?q=\"<'>\\&jurisdiction=3",
             'count': 1
         },
     ]
@@ -599,7 +610,7 @@ def generate_photo_file(height, length) -> bytes:
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
     org = OrganizationFactory()
-    jurisdiction = OrganizationFactory(role='test')
+    jurisdiction = AreaOfManagementFactory(id=2, name_lt="Jurisdiction2", name_en="Jurisdiction2")
 
     user = UserFactory(is_staff=True)
     app.set_user(user)

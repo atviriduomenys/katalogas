@@ -99,3 +99,19 @@ class Frequency(models.Model):
         if lang == 'en' and self.title_en:
             return self.title_en
         return self.title
+
+
+class AreaOfManagement(models.Model):
+    name_lt = models.CharField(max_length=255, verbose_name=_("Name LT"), default="Nepriskirta")
+    name_en = models.CharField(max_length=255, verbose_name=_("Name EN"), default="Unassigned")
+
+    class Meta:
+        db_table = 'area_of_management'
+        verbose_name = _("Area of Management")
+        verbose_name_plural = _("Areas of Management")
+
+    def __str__(self):
+        lang = get_language()
+        if lang == 'en' and self.name_en:
+            return self.name_en
+        return self.name_lt

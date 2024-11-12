@@ -17,6 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.helpers import validate_file
@@ -155,8 +156,8 @@ class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
     title = CharField(label=_('Pavadinimas'), required=True)
     name = CharField(label=_('Kodinis pavadinimas'), required=True)
-    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
-                                    label=_('Jurisdikcija'),
+    jurisdiction = ModelChoiceField(queryset=AreaOfManagement.objects.all(),
+                                    label=_('Valdymo sritis'),
                                     required=True)
     image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_('Elektroninis paštas'), required=True)
@@ -232,8 +233,8 @@ class OrganizationCreateForm(ModelForm):
     title = CharField(label=_('Pavadinimas'), required=True)
     company_code = CharField(label=_('Registracijos numeris'), required=True)
     name = CharField(label=_('Kodinis pavadinimas'), required=True)
-    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
-                                    label=_('Jurisdikcija'),
+    jurisdiction = ModelChoiceField(queryset=AreaOfManagement.objects.all(),
+                                    label=_('Valdymo sritis'),
                                     required=True)
     image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_('Elektroninis paštas'), required=True)

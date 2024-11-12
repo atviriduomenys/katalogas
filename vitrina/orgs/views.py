@@ -25,6 +25,7 @@ from itsdangerous import URLSafeSerializer, BadSignature
 from reversion import set_comment
 from reversion.models import Version
 
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.messages.models import SentMail
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
@@ -236,13 +237,15 @@ class OrganizationListView(ListView):
 
     def get_queryset(self):
         query = self.request.GET.get('q')
-        jurisdiction = self.request.GET.get('jurisdiction')
+        jurisdiction_id = self.request.GET.get('jurisdiction')
         orgs = Organization.public.all()
 
         if query:
             orgs = orgs.filter(title__icontains=query)
-        if jurisdiction:
-            orgs = orgs.filter(jurisdiction=jurisdiction)
+        if jurisdiction_id:
+            if not jurisdiction_id.isdigit():
+                jurisdiction_id = None
+            orgs = orgs.filter(jurisdiction=jurisdiction_id)
         return orgs.order_by("title")
 
     def get_context_data(self, **kwargs):
@@ -250,23 +253,29 @@ class OrganizationListView(ListView):
         filtered_queryset = self.get_queryset()
         query = self.request.GET.get("q", "")
         context['q'] = query
+
+        jurisdictions = Organization.public.values_list(
+            'jurisdiction_id', flat=True
+        ).distinct()
+
         context['jurisdictions'] = [
             {
-                'title': jurisdiction,
-                'query': "?%s%sjurisdiction=%s" % ("q=%s" % query if query else "", "&" if query else "", jurisdiction),
+                'id' : jurisdiction.id,
+                'title': str(jurisdiction) if jurisdiction else None,
+                'query': "?%s%sjurisdiction=%s" % (
+                "q=%s" % query if query else "", "&" if query else "", jurisdiction.id),
                 'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
-            } for jurisdiction in (
-                Organization.public.values_list(
-                    'jurisdiction', flat="True"
-                ).distinct().order_by(
-                    'jurisdiction'
-                ).exclude(
-                    jurisdiction__isnull=True
-                )
-            ) if filtered_queryset.filter(jurisdiction=jurisdiction)
+            } for jurisdiction in AreaOfManagement.objects.filter(id__in=jurisdictions)
+                if filtered_queryset.filter(jurisdiction=jurisdiction)
         ]
         context['jurisdictions'] = sorted(context['jurisdictions'], key=lambda x: x['count'], reverse=True)
-        context['selected_jurisdiction'] = self.request.GET.get('jurisdiction')
+
+        selected_jurisdiction_id = self.request.GET.get('jurisdiction')
+        if selected_jurisdiction_id is None or not selected_jurisdiction_id.isdigit():
+            selected_jurisdiction_id = None
+        selected_jurisdiction = AreaOfManagement.objects.filter(id=selected_jurisdiction_id).first()
+        context['selected_jurisdiction'] = str(selected_jurisdiction) if selected_jurisdiction else None
+
         context['jurisdiction_query'] = self.request.GET.get("jurisdiction", "")
         return context
 
@@ -307,7 +316,7 @@ class OrganizationManagementsView(OrganizationListView):
             count = 0
             data = []
 
-            jurisdiction_orgs = orgs.filter(jurisdiction=jur.get('title')).order_by()
+            jurisdiction_orgs = orgs.filter(jurisdiction=jur['id']).order_by()
 
             if indicator == 'organization-count':
                 items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
@@ -341,7 +350,7 @@ class OrganizationManagementsView(OrganizationListView):
                     data.append({'x': _date(label, ff), 'y': count})
 
             dt = {
-                'label': jur.get('title'),
+                'label':jur.get('title'),
                 'data': data,
                 'borderWidth': 1,
                 'fill': True,
@@ -510,8 +519,18 @@ class OrganizationUpdateView(
         self.object.save()
         if self.object.get_parent() != form.cleaned_data.get('jurisdiction'):
             Organization.fix_tree(fix_paths=True)
-            if form.cleaned_data.get('jurisdiction'):
-                self.object.move(form.cleaned_data['jurisdiction'], 'sorted-child')
+            if jurisdiction := form.cleaned_data.get('jurisdiction'):
+                parent_org = Organization.objects.filter(title=jurisdiction.name_lt).first()
+                if not parent_org:
+                    parent_org = Organization.add_root(
+                        title=jurisdiction.name_lt,
+                        name=jurisdiction.name_lt.lower(),
+                        provider=True,
+                        is_public=True,
+                        jurisdiction=jurisdiction,
+                    )
+                    parent_org.save()
+                self.object.move(parent_org, 'sorted-child')
                 # this is needed to update organization parent
                 node = Organization.objects.get(pk=self.object.pk)
                 node.save()
@@ -589,7 +608,16 @@ class OrganizationCreateView(
 
     def form_valid(self, form):
         if jurisdiction := form.cleaned_data.get('jurisdiction'):
-            org = jurisdiction.add_child(
+            parent_org = Organization.objects.filter(title=jurisdiction.name_lt).first()
+            if not parent_org:
+                parent_org = Organization.add_root(
+                    title=jurisdiction.name_lt,
+                    name=jurisdiction.name_lt.lower(),
+                    provider=True,
+                    is_public=True,
+                    jurisdiction=jurisdiction,
+                )
+            org = parent_org.add_child(
                 title=form.cleaned_data.get('title'),
                 name=form.cleaned_data.get('name'),
                 image=form.cleaned_data.get('image'),
@@ -600,7 +628,11 @@ class OrganizationCreateView(
                 description=form.cleaned_data.get('description'),
                 provider=True,
                 is_public=True,
+                jurisdiction=jurisdiction,
             )
+            # this is needed to update organization parent
+            node = Organization.objects.get(pk=org.pk)
+            node.save()
         else:
             org = Organization.add_root(
                 title=form.cleaned_data.get('title'),

@@ -102,13 +102,17 @@ class Frequency(models.Model):
 
 
 class AreaOfManagement(models.Model):
-    name_lt = models.CharField(max_length=255, verbose_name=_("Name LT"), default="Nepriskirta")
-    name_en = models.CharField(max_length=255, verbose_name=_("Name EN"), default="Unassigned")
+    name_lt = models.CharField(max_length=255, verbose_name=_("Pavadinimas lietuviškai"), default="Nepriskirta")
+    name_en = models.CharField(max_length=255, verbose_name=_("Pavadinimas angliškai"), default="Unassigned")
+    organizations = models.ManyToManyField('vitrina_orgs.Organization',
+                                           related_name='areas_of_management',
+                                           verbose_name=_("Organizacijos"),
+                                           blank=True)
 
     class Meta:
         db_table = 'area_of_management'
-        verbose_name = _("Area of Management")
-        verbose_name_plural = _("Areas of Management")
+        verbose_name = _("Valdymo sritis")
+        verbose_name_plural = _("Valdymo sritys")
 
     def __str__(self):
         lang = get_language()

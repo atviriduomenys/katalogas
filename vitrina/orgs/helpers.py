@@ -1,5 +1,29 @@
 from django.http import HttpRequest
 
+from vitrina.classifiers.models import AreaOfManagement
+from vitrina.orgs.models import Organization
 
 def is_org_dataset_list(request: HttpRequest):
     return request.resolver_match.url_name == 'organization-datasets'
+
+
+def get_or_create_parent_org(jurisdiction: AreaOfManagement) -> Organization:
+    parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
+    if not parent_org:
+        parent_org = Organization.add_root(
+            title=jurisdiction.name_lt,
+            name=jurisdiction.name_lt.lower(),
+            provider=True,
+            is_public=True,
+            jurisdiction=jurisdiction,
+        )
+        parent_org.save()
+    return parent_org
+
+
+def update_area_of_management_organization(organization: Organization, jurisdiction: AreaOfManagement):
+    aom_organizations = AreaOfManagement.organizations.through.objects
+    if aom_organizations.filter(organization_id=organization.pk).exists():
+        aom_organizations.filter(organization_id=organization.pk).update(areaofmanagement_id=jurisdiction.pk)
+    else:
+        aom_organizations.create(areaofmanagement_id=jurisdiction.pk, organization_id=organization.pk)

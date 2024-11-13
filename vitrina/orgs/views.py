@@ -27,6 +27,7 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.messages.models import SentMail
+from vitrina.orgs.helpers import get_or_create_parent_org, update_area_of_management_organization
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
@@ -505,9 +506,8 @@ class OrganizationUpdateView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         organization = self.get_object()
-        parent = organization.get_parent()
-        if parent:
-            kwargs['initial'] = {'jurisdiction': parent}
+        if organization.jurisdiction_id:
+            kwargs['initial'] = {'jurisdiction': organization.jurisdiction_id}
         return kwargs
 
     def get(self, request, *args, **kwargs):
@@ -520,20 +520,13 @@ class OrganizationUpdateView(
         if self.object.get_parent() != form.cleaned_data.get('jurisdiction'):
             Organization.fix_tree(fix_paths=True)
             if jurisdiction := form.cleaned_data.get('jurisdiction'):
-                parent_org = Organization.objects.filter(title=jurisdiction.name_lt).first()
-                if not parent_org:
-                    parent_org = Organization.add_root(
-                        title=jurisdiction.name_lt,
-                        name=jurisdiction.name_lt.lower(),
-                        provider=True,
-                        is_public=True,
-                        jurisdiction=jurisdiction,
-                    )
-                    parent_org.save()
+                parent_org = get_or_create_parent_org(jurisdiction)
                 self.object.move(parent_org, 'sorted-child')
                 # this is needed to update organization parent
                 node = Organization.objects.get(pk=self.object.pk)
                 node.save()
+                # Update area_of_management.organizations entry
+                update_area_of_management_organization(node, jurisdiction)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -608,16 +601,8 @@ class OrganizationCreateView(
 
     def form_valid(self, form):
         if jurisdiction := form.cleaned_data.get('jurisdiction'):
-            parent_org = Organization.objects.filter(title=jurisdiction.name_lt).first()
-            if not parent_org:
-                parent_org = Organization.add_root(
-                    title=jurisdiction.name_lt,
-                    name=jurisdiction.name_lt.lower(),
-                    provider=True,
-                    is_public=True,
-                    jurisdiction=jurisdiction,
-                )
-            org = parent_org.add_child(
+            parent_org: Organization = get_or_create_parent_org(jurisdiction)
+            org: Organization = parent_org.add_child(
                 title=form.cleaned_data.get('title'),
                 name=form.cleaned_data.get('name'),
                 image=form.cleaned_data.get('image'),
@@ -631,10 +616,12 @@ class OrganizationCreateView(
                 jurisdiction=jurisdiction,
             )
             # this is needed to update organization parent
-            node = Organization.objects.get(pk=org.pk)
+            node: Organization = Organization.objects.get(pk=org.pk)
             node.save()
+            # Update area_of_management_organization
+            update_area_of_management_organization(node, jurisdiction)
         else:
-            org = Organization.add_root(
+            org: Organization = Organization.add_root(
                 title=form.cleaned_data.get('title'),
                 name=form.cleaned_data.get('name'),
                 image=form.cleaned_data.get('image'),

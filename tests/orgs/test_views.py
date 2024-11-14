@@ -125,7 +125,6 @@ def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
 @pytest.mark.django_db
 def test_filter_without_query(app: DjangoTestApp, organizations):
     resp = app.get(reverse('organization-list'))
-    print(f'jurisdictions: {list(resp.context["jurisdictions"])}')
     assert list(resp.context['object_list']) == [organizations[0], organizations[1], organizations[2]]
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [

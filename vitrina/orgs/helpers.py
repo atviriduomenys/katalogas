@@ -7,7 +7,14 @@ def is_org_dataset_list(request: HttpRequest):
     return request.resolver_match.url_name == 'organization-datasets'
 
 
-def get_or_create_parent_org(jurisdiction: AreaOfManagement) -> Organization:
+def get_or_create_parent_org(obj: any) -> Organization:
+    if isinstance(obj, int):
+        jurisdiction = AreaOfManagement.objects.get(pk=obj)
+    elif isinstance(obj, AreaOfManagement):
+        jurisdiction = obj
+    else:
+        raise ValueError("Invalid type for obj. Expected int or AreaOfManagement instance.")
+
     parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
     if not parent_org:
         parent_org = Organization.add_root(

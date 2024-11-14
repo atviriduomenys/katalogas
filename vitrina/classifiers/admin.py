@@ -98,7 +98,7 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
         if orgs_to_remove:
             self._remove_organizations(orgs_to_remove)
         if orgs_to_add:
-            self._add_organizations(orgs_to_add, obj)
+            self._add_organizations(orgs_to_add, obj.pk)
 
         # Update organization name if area of management name is changed
         if ('name_lt' in form.changed_data and

@@ -26,6 +26,7 @@ from django.template import engines, Template, Context
 from filer.validation import validate_upload
 
 from vitrina import settings
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
@@ -130,7 +131,7 @@ class Filter:
         if self.order:
             facet = self.order(facet)
 
-        show_count = 0
+        show_count = 1
         for value, count in facet:
 
             title = value
@@ -140,7 +141,9 @@ class Filter:
             elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
-                    if self.use_str:
+                    if isinstance(obj, AreaOfManagement):
+                        title = obj.__str__()
+                    elif self.use_str:
                         title = str(obj)
                     else:
                         title = obj.title
@@ -166,6 +169,11 @@ class Filter:
                 hidden=show_count > self.limit
             )
             show_count += 1
+
+    def length(self):
+        fields = self.fields
+        facet = fields[self.name]
+        return len(facet)
 
 
 DateFacetItem = Tuple[

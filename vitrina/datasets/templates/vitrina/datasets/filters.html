@@ -83,7 +83,7 @@
   {% endif %}
 
   {% for item in filter.items %}
-      <div class="columns is-gapless {% if item.hidden %} is-hidden {% endif %} m-0 mt-1">
+      <div class="columns is-gapless m-0 mt-1 {% if forloop.counter > 10 %}is-hidden filter-hidden-{{ forloop.parentloop.counter }}{% endif %}">
       <div class="column is-10">
             <a href="{{ item.url }}"
                class="category-panel-block
@@ -127,5 +127,22 @@
       </div>
       </div>
   {% endfor %}
+    {% if filter.length > 10 %}
+    <div>
+       <a class="filters-more" id="filter-hidden-{{ forloop.counter }}">{% translate "Išskleisti" %}</a>
+    </div>
+    {% endif %}
 </nav>
 {% endfor %}
+
+<script type="text/javascript">
+    $(function () {
+        $('.filters-more').click(function () {
+            let targetClass = 'filter-hidden-' + $(this).attr('id').split('-').pop();
+            $('.' + targetClass).toggleClass('is-hidden');
+            $(this).text(function (i, text) {
+                return text === "{% translate 'Išskleisti' %}" ? "{% translate 'Suskleisti' %}" : "{% translate 'Išskleisti' %}";
+            });
+        });
+    });
+</script>

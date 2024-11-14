@@ -18,8 +18,10 @@ class LogoutMiddleware:
     def __call__(self, request):
         if request.user and request.user.is_authenticated:
             if (
-                request.user.password_last_updated is None or
-                request.user.password_last_updated < (now() - timedelta(days=90))
+                not request.user.is_viisp_login and (
+                    request.user.password_last_updated is None or
+                    request.user.password_last_updated < (now() - timedelta(days=90))
+                )
             ):
                 logout(request)
         response = self.get_response(request)

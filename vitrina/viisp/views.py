@@ -81,6 +81,8 @@ class VIISPCompleteLoginView(View):
 
         user = User.objects.filter(email=user_data.get('email')).first()
         if user:
+            user.is_viisp_login = True
+            user.save()
             user_social_account = SocialAccount.objects.filter(user__email=user.email).first()
             if token:
                 login = provider.sociallogin_from_response(request, user_data)
@@ -125,6 +127,8 @@ class VIISPCompleteLoginView(View):
         if login.user:
             if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
                 reps.update(user=login.user)
+            login.user.is_viisp_login = True
+            login.user.save()
 
         return response
 

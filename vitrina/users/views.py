@@ -48,6 +48,8 @@ class LoginView(BaseLoginView):
         resp = super().form_valid(form)
         if user := form.get_user():
             user.unlock_user()
+            user.is_viisp_login = False
+            user.save()
         return resp
 
     def get_success_url(self):

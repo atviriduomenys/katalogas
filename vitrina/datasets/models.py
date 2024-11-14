@@ -385,10 +385,8 @@ class Dataset(TranslatableModel):
         return self.category.values_list('title', flat=True)
 
     def jurisdiction(self) -> int | None:
-        if self.organization:
-            root_org = self.organization.get_root()
-            if root_org.get_children_count() > 0:
-                return root_org.pk
+        if self.organization and self.organization.jurisdiction:
+            return self.organization.jurisdiction.pk
         return None
 
     def update_level(self):

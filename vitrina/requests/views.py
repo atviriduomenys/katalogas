@@ -14,6 +14,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.settings import ELASTIC_FACET_SIZE
 from vitrina.requests.forms import RequestDatasetsEditForm
 from django.db.models import Count, Q, Case, When
@@ -153,7 +154,7 @@ class RequestListView(FacetedSearchView):
                     *filter_args,
                     'jurisdiction',
                     _("Valdymo sritis"),
-                    Organization,
+                    AreaOfManagement,
                     multiple=True,
                     is_int=False,
                 ),
@@ -1483,7 +1484,7 @@ class RequestJurisdictionFiltersUpdate(FacetedSearchView):
                 *filter_args,
                 'jurisdiction',
                 _("Valdymo sritis"),
-                Organization,
+                AreaOfManagement,
                 multiple=True,
                 is_int=False,
                 remove_search_query=True

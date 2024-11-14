@@ -10,6 +10,7 @@ from django.core.handlers.wsgi import HttpRequest
 from django.db.models import Q
 from haystack.backends import SQ
 
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
@@ -39,7 +40,10 @@ def update_facet_data(
                     if use_str:
                         display_value = str(obj)
                     else:
-                        display_value = obj.title
+                        if isinstance(obj, AreaOfManagement):
+                            display_value = obj.__str__()
+                        else:
+                            display_value = obj.title
                 except ObjectDoesNotExist:
                     continue
             elif choices:

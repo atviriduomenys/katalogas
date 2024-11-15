@@ -3046,6 +3046,7 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
                     AreaOfManagement,
                     multiple=True,
                     is_int=False,
+                    use_str=True,
                     remove_search_query=True
             ),
             items = []

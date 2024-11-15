@@ -141,9 +141,7 @@ class Filter:
             elif self.model:
                 try:
                     obj = self.model.objects.get(pk=value)
-                    if isinstance(obj, AreaOfManagement):
-                        title = obj.__str__()
-                    elif self.use_str:
+                    if self.use_str:
                         title = str(obj)
                     else:
                         title = obj.title

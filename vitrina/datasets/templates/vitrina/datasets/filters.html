@@ -127,7 +127,7 @@
       </div>
       </div>
   {% endfor %}
-    {% if filter.length > 10 %}
+    {% if filter.length > 10 and filter.name != 'published' %}
     <div>
        <a class="filters-more" id="filter-hidden-{{ forloop.counter }}">{% translate "Išskleisti" %}</a>
     </div>

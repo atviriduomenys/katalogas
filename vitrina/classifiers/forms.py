@@ -12,6 +12,11 @@ class AreaOfManagementAdminForm(forms.ModelForm):
         required=False
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['organizations'].initial = self.instance.organization_set.all()
+
     class Meta:
         model = AreaOfManagement
         fields = '__all__'

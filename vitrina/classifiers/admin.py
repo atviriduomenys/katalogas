@@ -76,79 +76,58 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
     get_organizations.short_description = _('organizacijos')
 
     def organization_count(self, obj):
-        return obj.organizations.count()
+        return obj.organization_set.count()
     organization_count.short_description = _('Priskirtų organizacijų kiekis')
 
     def name_lt_verbose(self, obj):
         return obj.name_lt
     name_lt_verbose.short_description = _('Pavadinimas')
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        return form
-
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        current_orgs = set(obj.organizations.all())
+        current_orgs = set(obj.organization_set.all())
         new_orgs = set(form.cleaned_data.get('organizations', []))
 
         orgs_to_remove = current_orgs - new_orgs
         orgs_to_add = new_orgs - current_orgs
 
         if orgs_to_remove:
-            self._remove_organizations(orgs_to_remove)
+            for org in orgs_to_remove:
+                org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+                org.save()
+                # Move node to unassigned (1)
+                org.move(Organization.objects.get(title='Nepriskirta'), 'sorted-child')
+                node = Organization.objects.get(pk=org.pk)
+                node.save()
+
         if orgs_to_add:
-            self._add_organizations(orgs_to_add, obj.pk)
+            for org in orgs_to_add:
+                org.jurisdiction = obj
+                org.save()
+                # Update hierarchy tree
+                if org.jurisdiction_id != 1:
+                    parent_org = get_or_create_parent_org(obj)
+                    org.move(parent_org, 'sorted-child')
+                    node = Organization.objects.get(pk=org.pk)
+                    node.save()
+                Organization.fix_tree(fix_paths=True)
 
         # Update organization name if area of management name is changed
         if ('name_lt' in form.changed_data and
                 'name_lt' in form.initial and
                 Organization.objects.filter(title=form.initial['name_lt']).exists()):
-            organization = Organization.objects.get(title=form.initial['name_lt'])
-            organization.title = obj.name_lt
-            organization.save()
-
-    def _remove_organizations(self, orgs_to_remove):
-        for org in orgs_to_remove:
-            org.jurisdiction_id = 1
+            org = Organization.objects.get(title=form.initial['name_lt'])
+            org.title = obj.name_lt
             org.save()
-            # Move node to unassigned (1)
-            unassigned_area = AreaOfManagement.objects.get(id=1)
-            org.move(Organization.objects.get(title=unassigned_area.name_lt), 'sorted-child')
-            node = Organization.objects.get(pk=org.pk)
-            node.save()
-            # Update area of management organizations to unassigned (1)
-            if not AreaOfManagement.organizations.through.objects.filter(
-                    areaofmanagement_id=1,
-                    organization_id=org.id
-            ).exists():
-                AreaOfManagement.organizations.through.objects.create(
-                    areaofmanagement_id=1,
-                    organization_id=org.id
-                )
-        Organization.fix_tree(fix_paths=True)
-
-    def _add_organizations(self, orgs_to_add, obj):
-        for org in orgs_to_add:
-            # Unassign all organizations from this jurisdiction
-            AreaOfManagement.organizations.through.objects.filter(organization_id=org.id).delete()
-            # Update organization jurisdiction
-            org.jurisdiction_id = obj
-            org.save()
-            # update hierarchy tree
-            if org.jurisdiction_id != 1:
-                parent_org = get_or_create_parent_org(obj)
-                org.move(parent_org, 'sorted-child')
-                node = Organization.objects.get(pk=org.pk)
-                node.save()
-        Organization.fix_tree(fix_paths=True)
 
     def delete_model(self, request, obj):
-        self._remove_organizations(obj.organizations.all())
+        for org in obj.organization_set.all():
+            org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+            org.save()
         super().delete_model(request, obj)
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('organizations')
+        return super().get_queryset(request).prefetch_related('organization_set')
 
     def history_view(self, request, object_id, extra_context=None):
         extra_context = extra_context or {}

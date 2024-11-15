@@ -27,7 +27,7 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.messages.models import SentMail
-from vitrina.orgs.helpers import get_or_create_parent_org, update_area_of_management_organization
+from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model
@@ -525,8 +525,6 @@ class OrganizationUpdateView(
                 # this is needed to update organization parent
                 node = Organization.objects.get(pk=self.object.pk)
                 node.save()
-                # Update area_of_management.organizations entry
-                update_area_of_management_organization(node, jurisdiction)
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -618,8 +616,6 @@ class OrganizationCreateView(
             # this is needed to update organization parent
             node: Organization = Organization.objects.get(pk=org.pk)
             node.save()
-            # Update area_of_management_organization
-            update_area_of_management_organization(node, jurisdiction)
         else:
             org: Organization = Organization.add_root(
                 title=form.cleaned_data.get('title'),

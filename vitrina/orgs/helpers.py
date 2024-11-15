@@ -30,11 +30,3 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
         )
         parent_org.save()
     return parent_org
-
-
-def update_area_of_management_organization(organization: Organization, jurisdiction: AreaOfManagement):
-    aom_organizations = AreaOfManagement.organizations.through.objects
-    if aom_organizations.filter(organization_id=organization.pk).exists():
-        aom_organizations.filter(organization_id=organization.pk).update(areaofmanagement_id=jurisdiction.pk)
-    else:
-        aom_organizations.create(areaofmanagement_id=jurisdiction.pk, organization_id=organization.pk)

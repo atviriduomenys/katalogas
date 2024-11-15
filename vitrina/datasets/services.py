@@ -40,10 +40,7 @@ def update_facet_data(
                     if use_str:
                         display_value = str(obj)
                     else:
-                        if isinstance(obj, AreaOfManagement):
-                            display_value = obj.__str__()
-                        else:
-                            display_value = obj.title
+                        display_value = obj.title
                 except ObjectDoesNotExist:
                     continue
             elif choices:

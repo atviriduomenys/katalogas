@@ -2,6 +2,8 @@ import secrets
 from urllib.parse import urlparse
 import re
 
+from haystack.forms import FacetedSearchForm
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
@@ -309,6 +311,31 @@ class OrganizationCreateForm(ModelForm):
             if image.width < 256 or image.height < 256:
                 raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
+
+
+class OrganizationSearchForm(FacetedSearchForm):
+    def search(self):
+        sqs = super().search()
+        sqs = sqs.models(Organization)
+        if not self.is_valid():
+            return self.no_query_found()
+        if self.cleaned_data.get('q'):
+            keyword = self.cleaned_data.get('q')
+            if len(keyword) < 5:
+                sqs = sqs.autocomplete(text__startswith=keyword)
+            else:
+                sqs = sqs.autocomplete(text__icontains=keyword)
+
+            organization_with_name_ids = self.searchqueryset.models(Organization).filter(title__icontains=keyword) \
+                .values_list('pk', flat=True)
+            sqs_ids = sqs.values_list('pk', flat=True)
+            ids = list(organization_with_name_ids) + list(sqs_ids)
+            sqs = self.searchqueryset.models(Organization).filter(id__in=ids)
+
+        return sqs
+
+    def no_query_found(self):
+        return self.searchqueryset.all()
 
 
 class RepresentativeUpdateForm(ModelForm):

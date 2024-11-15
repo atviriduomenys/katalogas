@@ -21,6 +21,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from django.views.generic import DetailView, View
 from django.utils.text import slugify
 from django.views.generic.edit import FormView
+from haystack.generic_views import SearchView
 from itsdangerous import URLSafeSerializer, BadSignature
 from reversion import set_comment
 from reversion.models import Version
@@ -46,7 +47,7 @@ from vitrina.datasets.services import manage_subscriptions_for_representative as
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, \
     OrganizationCreateForm, ApiKeyForm, \
-    ApiScopeForm, ApiKeyRegenerateForm
+    ApiScopeForm, ApiKeyRegenerateForm, OrganizationSearchForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative, \
@@ -231,26 +232,25 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
         return redirect('/coordinator-admin/vitrina_orgs/representativerequest/')
 
 
-class OrganizationListView(ListView):
-    model = Organization
+class OrganizationListView(SearchView):
     template_name = 'vitrina/orgs/list.html'
+    form_class = OrganizationSearchForm
     paginate_by = 20
 
     def get_queryset(self):
-        query = self.request.GET.get('q')
+        organizations = super().get_queryset()
         jurisdiction_id = self.request.GET.get('jurisdiction')
-        orgs = Organization.public.all()
+        organizations = organizations.models(Organization)
 
-        if query:
-            orgs = orgs.filter(title__icontains=query)
         if jurisdiction_id:
             if not jurisdiction_id.isdigit():
-                jurisdiction_id = None
-            orgs = orgs.filter(jurisdiction=jurisdiction_id)
-        return orgs.order_by("title")
+                jurisdiction_id = 1 # unassigned
+
+            organizations = organizations.filter(jurisdiction=jurisdiction_id)
+        return organizations.order_by("title_s")
 
     def get_context_data(self, **kwargs):
-        context = super(OrganizationListView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         filtered_queryset = self.get_queryset()
         query = self.request.GET.get("q", "")
         context['q'] = query
@@ -258,16 +258,17 @@ class OrganizationListView(ListView):
         jurisdictions = Organization.public.values_list(
             'jurisdiction_id', flat=True
         ).distinct()
+        jurisdictions_objects = {jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first() for jurisdiction in jurisdictions}
 
         context['jurisdictions'] = [
             {
-                'id' : jurisdiction.id,
-                'title': str(jurisdiction) if jurisdiction else None,
+                'id' : aom_object.id,
+                'title': str(aom_object) ,
                 'query': "?%s%sjurisdiction=%s" % (
-                "q=%s" % query if query else "", "&" if query else "", jurisdiction.id),
-                'count': filtered_queryset.filter(jurisdiction=jurisdiction).count(),
-            } for jurisdiction in AreaOfManagement.objects.filter(id__in=jurisdictions)
-                if filtered_queryset.filter(jurisdiction=jurisdiction)
+                "q=%s" % query if query else "", "&" if query else "", aom_object.id),
+                'count': filtered_queryset.filter(jurisdiction=aom_id).count(),
+            } for aom_id, aom_object in jurisdictions_objects.items()
+                if filtered_queryset.filter(jurisdiction=aom_id)
         ]
         context['jurisdictions'] = sorted(context['jurisdictions'], key=lambda x: x['count'], reverse=True)
 
@@ -317,7 +318,7 @@ class OrganizationManagementsView(OrganizationListView):
             count = 0
             data = []
 
-            jurisdiction_orgs = orgs.filter(jurisdiction=jur['id']).order_by()
+            jurisdiction_orgs = Organization.objects.filter(jurisdiction=jur['id']).order_by()
 
             if indicator == 'organization-count':
                 items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))

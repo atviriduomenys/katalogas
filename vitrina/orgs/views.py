@@ -317,11 +317,11 @@ class OrganizationManagementsView(OrganizationListView):
         for jur in jurisdictions:
             count = 0
             data = []
-
-            jurisdiction_orgs = Organization.objects.filter(jurisdiction=jur['id']).order_by()
+            jurisdiction_orgs = orgs.filter(jurisdiction=jur['id']).order_by()
 
             if indicator == 'organization-count':
-                items = jurisdiction_orgs.values(*values).annotate(count=Count('pk'))
+                items = Organization.objects.filter(pk__in = jurisdiction_orgs.values_list('pk', flat=True)) \
+                    .values(*values).annotate(count=Count('pk'))
                 chart_title = _('Organizacijų skaičius pagal valdymo sritį laike')
                 yAxis_title = _('Organizacijų skaičius')
             elif indicator == 'coordinator-count':
@@ -344,7 +344,7 @@ class OrganizationManagementsView(OrganizationListView):
                 label_count_data = items.filter(**label_query)
 
                 if label_count_data:
-                    count += label_count_data[0].get('count') or 0
+                    count += sum(item.get('count', 0) for item in label_count_data)
 
                 if frequency == 'W':
                     data.append({'x': _date(label.start_time, ff), 'y': count})
@@ -352,7 +352,7 @@ class OrganizationManagementsView(OrganizationListView):
                     data.append({'x': _date(label, ff), 'y': count})
 
             dt = {
-                'label':jur.get('title'),
+                'label': jur.get('title'),
                 'data': data,
                 'borderWidth': 1,
                 'fill': True,

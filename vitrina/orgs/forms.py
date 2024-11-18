@@ -326,11 +326,12 @@ class OrganizationSearchForm(FacetedSearchForm):
             else:
                 sqs = sqs.autocomplete(text__icontains=keyword)
 
-            organization_with_name_ids = self.searchqueryset.models(Organization).filter(title__icontains=keyword) \
-                .values_list('pk', flat=True)
             sqs_ids = sqs.values_list('pk', flat=True)
-            ids = list(organization_with_name_ids) + list(sqs_ids)
-            sqs = self.searchqueryset.models(Organization).filter(id__in=ids)
+            if not sqs_ids:
+                sqs_ids = self.searchqueryset.models(Organization).filter(title__icontains=keyword) \
+                .values_list('pk', flat=True)
+
+            sqs = self.searchqueryset.models(Organization).filter(id__in=list(sqs_ids))
 
         return sqs
 

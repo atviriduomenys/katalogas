@@ -6,6 +6,7 @@ from django.urls import reverse
 from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
@@ -80,7 +81,7 @@ class Organization(MP_Node):
     email = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Elektroninis paštas'))
     is_public = models.BooleanField(blank=True, null=True, verbose_name=_('Organizacija viešinama'))
     phone = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Telefono numeris'))
-    jurisdiction = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Jurisdikcija'))
+    jurisdiction = models.ForeignKey(AreaOfManagement, related_name='organization_set', on_delete=models.SET_DEFAULT, default=1, verbose_name=_('Valdymo sritis'))
     website = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Tinklalapis'))
     kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG, verbose_name=_('Tipas'))
     role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True, verbose_name=_('Vaidmuo'))

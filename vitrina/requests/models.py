@@ -135,9 +135,7 @@ class Request(models.Model):
     def jurisdiction(self):
         jurisdictions = []
         for item in self.requestassignment_set.all():
-            root_org = item.organization.get_root()
-            if root_org.get_children_count() > 0:
-                jurisdictions.append(root_org.pk)
+            jurisdictions.append(item.organization.jurisdiction.pk)
         return jurisdictions
 
     def dataset_statuses(self):

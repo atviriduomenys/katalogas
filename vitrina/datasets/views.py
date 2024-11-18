@@ -73,7 +73,7 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
     manage_subscriptions_for_representative
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
-from vitrina.classifiers.models import Category, Frequency
+from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.helpers import get_selected_value, Filter, DateFilter, send_email_with_logging, \
     get_stats_filter_options_based_on_model
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -192,19 +192,20 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 ),
                 Filter(
                     *filter_args,
-                    'jurisdiction',
-                    _("Valdymo sritis"),
+                    'organization',
+                    _("Organizacija"),
                     Organization,
                     multiple=True,
                     is_int=False,
                 ),
                 Filter(
                     *filter_args,
-                    'organization',
-                    _("Organizacija"),
-                    Organization,
+                    'jurisdiction',
+                    _("Valdymo sritis"),
+                    AreaOfManagement,
                     multiple=True,
                     is_int=False,
+                    use_str=True,
                 ),
                 Filter(
                     *filter_args,
@@ -1830,7 +1831,7 @@ class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
     title = _("Valdymo sritis")
     current_title = _("Duomenų rinkinių valdymo sritys")
     filter = 'jurisdiction'
-    filter_model = Organization
+    filter_model = AreaOfManagement
 
     def get_graph_title(self, indicator):
         if indicator == 'level-average' or indicator == 'object-count':
@@ -3042,9 +3043,10 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
                     *filter_args,
                     'jurisdiction',
                     _("Valdymo sritis"),
-                    Organization,
+                    AreaOfManagement,
                     multiple=True,
                     is_int=False,
+                    use_str=True,
                     remove_search_query=True
             ),
             items = []

@@ -10,6 +10,7 @@ from django.core.handlers.wsgi import HttpRequest
 from django.db.models import Q
 from haystack.backends import SQ
 
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email

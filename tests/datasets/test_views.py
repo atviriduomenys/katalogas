@@ -15,7 +15,7 @@ from webtest import Upload
 
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
 from vitrina.classifiers.factories import LicenceFactory
-from vitrina.classifiers.models import Category
+from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
@@ -971,7 +971,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
         created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
-        jurisdiction="Jurisdiction1",
+        jurisdiction=AreaOfManagement.objects.get(id=1),
         slug='test-org-slug',
         kind='test_org_kind'
     )
@@ -995,7 +995,7 @@ def test_click_add_button(app: DjangoTestApp):
     org = OrganizationFactory(
         title="Org_title",
         created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
-        jurisdiction="Jurisdiction1",
+        jurisdiction=AreaOfManagement.objects.get(id=1),
         slug='test-org-slug',
         kind='test_org_kind'
     )

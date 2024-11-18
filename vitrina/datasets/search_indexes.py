@@ -71,7 +71,7 @@ class DatasetIndex(SearchIndex, Indexable):
 
     def prepare_organization(self, obj):
         if obj.organization:
-            if obj.organization.pk != obj.jurisdiction:
+            if obj.organization.title != obj.organization.jurisdiction.name_lt :
                 return obj.organization.pk
 
 

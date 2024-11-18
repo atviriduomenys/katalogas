@@ -4,9 +4,12 @@ from django.utils.translation import gettext_lazy as _
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
-from vitrina.classifiers.models import Category
+from vitrina.classifiers.forms import AreaOfManagementAdminForm
+from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
+from vitrina.orgs.helpers import get_or_create_parent_org
+from vitrina.orgs.models import Organization
 
 
 class RootCategoryFilter(admin.SimpleListFilter):
@@ -62,6 +65,87 @@ class FrequencyAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class AreaOfManagementAdmin(admin.ModelAdmin):
+    form = AreaOfManagementAdminForm
+    list_display = ('name_lt_verbose', 'organization_count')
+    fields = ('name_lt', 'name_en', 'organizations')
+    search_fields = ('name_lt', 'name_en')
+
+    def get_organizations(self, obj):
+        return ", ".join([org.name for org in obj.organization_set.all()])
+    get_organizations.short_description = _('organizacijos')
+
+    def organization_count(self, obj):
+        return obj.organization_set.count()
+    organization_count.short_description = _('Priskirtų organizacijų kiekis')
+
+    def name_lt_verbose(self, obj):
+        return obj.name_lt
+    name_lt_verbose.short_description = _('Pavadinimas')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        current_orgs = set(obj.organization_set.all())
+        new_orgs = set(form.cleaned_data.get('organizations', []))
+
+        orgs_to_remove = current_orgs - new_orgs
+        orgs_to_add = new_orgs - current_orgs
+
+        if orgs_to_remove:
+            for org in orgs_to_remove:
+                org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+                org.save()
+                # Move node to unassigned (1)
+                org.move(Organization.objects.get(title='Nepriskirta'), 'sorted-child')
+                node = Organization.objects.get(pk=org.pk)
+                node.save()
+
+        if orgs_to_add:
+            for org in orgs_to_add:
+                org.jurisdiction = obj
+                org.save()
+                # Update hierarchy tree
+                if org.jurisdiction_id != 1:
+                    parent_org = get_or_create_parent_org(obj)
+                    org.move(parent_org, 'sorted-child')
+                    node = Organization.objects.get(pk=org.pk)
+                    node.save()
+                Organization.fix_tree(fix_paths=True)
+
+        # Update organization name if area of management name is changed
+        if ('name_lt' in form.changed_data and
+                'name_lt' in form.initial and
+                Organization.objects.filter(title=form.initial['name_lt']).exists()):
+            org = Organization.objects.get(title=form.initial['name_lt'])
+            org.title = obj.name_lt
+            org.save()
+
+    def delete_model(self, request, obj):
+        for org in obj.organization_set.all():
+            org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+            org.save()
+        super().delete_model(request, obj)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('organization_set')
+
+    def history_view(self, request, object_id, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = _("Valdymo srities koregavimo istorija")
+        return super().history_view(request, object_id, extra_context=extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+
+        extra_context.update({
+            'title': _("Pridėti valdymo sritį"),
+            'show_save_and_add_another': False,
+            'show_save_and_continue': False
+        })
+        return super().add_view(request, form_url, extra_context)
+
+
+admin.site.register(AreaOfManagement, AreaOfManagementAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Licence, LicenceAdmin)
 admin.site.register(Frequency, FrequencyAdmin)

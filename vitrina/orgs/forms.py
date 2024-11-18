@@ -2,6 +2,8 @@ import secrets
 from urllib.parse import urlparse
 import re
 
+from haystack.forms import FacetedSearchForm
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
@@ -17,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from django_select2.forms import ModelSelect2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.helpers import validate_file
@@ -155,8 +158,8 @@ class OrganizationUpdateForm(ModelForm):
     company_code = CharField(label=_('Registracijos numeris'), required=True)
     title = CharField(label=_('Pavadinimas'), required=True)
     name = CharField(label=_('Kodinis pavadinimas'), required=True)
-    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
-                                    label=_('Jurisdikcija'),
+    jurisdiction = ModelChoiceField(queryset=AreaOfManagement.objects.all(),
+                                    label=_('Valdymo sritis'),
                                     required=True)
     image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_('Elektroninis paštas'), required=True)
@@ -232,8 +235,8 @@ class OrganizationCreateForm(ModelForm):
     title = CharField(label=_('Pavadinimas'), required=True)
     company_code = CharField(label=_('Registracijos numeris'), required=True)
     name = CharField(label=_('Kodinis pavadinimas'), required=True)
-    jurisdiction = ModelChoiceField(queryset=Organization.objects.filter(role__isnull=False),
-                                    label=_('Jurisdikcija'),
+    jurisdiction = ModelChoiceField(queryset=AreaOfManagement.objects.all(),
+                                    label=_('Valdymo sritis'),
                                     required=True)
     image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_('Elektroninis paštas'), required=True)
@@ -308,6 +311,32 @@ class OrganizationCreateForm(ModelForm):
             if image.width < 256 or image.height < 256:
                 raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
+
+
+class OrganizationSearchForm(FacetedSearchForm):
+    def search(self):
+        sqs = super().search()
+        sqs = sqs.models(Organization)
+        if not self.is_valid():
+            return self.no_query_found()
+        if self.cleaned_data.get('q'):
+            keyword = self.cleaned_data.get('q')
+            if len(keyword) < 5:
+                sqs = sqs.autocomplete(text__startswith=keyword)
+            else:
+                sqs = sqs.autocomplete(text__icontains=keyword)
+
+            sqs_ids = sqs.values_list('pk', flat=True)
+            if not sqs_ids:
+                sqs_ids = self.searchqueryset.models(Organization).filter(title__icontains=keyword) \
+                .values_list('pk', flat=True)
+
+            sqs = self.searchqueryset.models(Organization).filter(id__in=list(sqs_ids))
+
+        return sqs
+
+    def no_query_found(self):
+        return self.searchqueryset.all()
 
 
 class RepresentativeUpdateForm(ModelForm):

@@ -1,2 +1,7 @@
 User-agent: *
+Crawl-delay: 5
+Disallow: /login
 Disallow: /admin
+Disallow: /datasets/stats
+Disallow: /dataset/stats
+Disallow: /organization/stats

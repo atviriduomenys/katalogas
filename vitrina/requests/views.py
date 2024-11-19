@@ -635,7 +635,7 @@ class RequestCreateView(
 ):
     model = Request
     form_class = RequestForm
-    template_name = 'base_form.html'
+    template_name = 'vitrina/requests/request_create_form.html'
 
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Request)

@@ -128,30 +128,26 @@
                        href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
                        title="Facebook"
                        aria-label="Facebook"
+                       class="is-inline-block"
                     >
-                        <span class="icon is-gray">
-                            <i class="fab fa-facebook-square fa-2x" aria-label="Facebook"></i>
-                        </span>
+                        <img class="image is-32x32" alt="Facebook" src="{% static 'img/facebook-icon.svg' %}"/>
                     </a>
+
                     <a target="_blank"
                        href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="ml-1"
+                       class="is-inline-block"
                        title="LinkedIn"
-                       aria-label="LinkenIn"
+                       aria-label="LinkedIn"
                     >
-                        <span class="icon is-gray">
-                            <i class="fab fa-linkedin fa-2x" aria-label="LinkenIn"></i>
-                        </span>
+                        <img class="image is-32x32" alt="LinkedIn" src="{% static 'img/linkedin-icon.svg' %}"/>
                     </a>
                     <a target="_blank"
                        href="http://twitter.com/share?text={{ dataset.title }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="ml-1"
+                       class="is-inline-block"
                        title="Twitter"
                        aria-label="Twitter"
                     >
-                        <span class="icon is-gray">
-                            <i class="fab fa-twitter-square fa-2x" aria-label="Twitter"></i>
-                        </span>
+                         <img class="image is-32x32" alt="Twitter" src="{% static 'img/twitter-icon.svg' %}"/>
                     </a>
                 </p>
                 <div class="has-text-dark" id="dataset_subscription">

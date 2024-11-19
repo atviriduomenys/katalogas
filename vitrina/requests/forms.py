@@ -60,21 +60,22 @@ class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
             return queryset.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
 
 
-
 class RequestForm(ModelForm):
     title = CharField(label=_("Pavadinimas"))
     description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
         label=_("Organizacija"),
-        widget=ProviderWidget,
-        queryset=Organization.objects.filter(),
-        to_field_name="pk",
-        required=False
+        queryset=Organization.public.annotate(dataset_count=Count('dataset')).order_by('-dataset_count'),
+        required=False,
     )
 
     class Meta:
         model = Request
         fields = ['title', 'description']
+
+    class Media:
+        css = ModelSelect2MultipleWidget().media._css
+        js = ModelSelect2MultipleWidget().media._js
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,7 +94,7 @@ class RequestForm(ModelForm):
             self.helper.layout = Layout(
                 Field('title', placeholder=_('Pavadinimas')),
                 Field('description', placeholder=_('Aprašymas')),
-                Field('organizations', placeholder=_('Organizacijos'), id="organization_select_field"),
+                Field('organizations', placeholder=_('Organizacijos')),
                 Submit('submit', button, css_class='button is-primary')
             )
 
@@ -129,6 +130,7 @@ class IconChoiceField(ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         return format_html('{} <a href="{}" target="_blank"><i class="fas fa-solid fa-chevron-right"></i></a>',
                            obj.title, obj.get_absolute_url())
+
 
 class RequestDatasetsEditForm(ModelForm):
     datasets = IconChoiceField(
@@ -225,6 +227,7 @@ class RequestIncludePlanForm(ModelForm):
         ):
             raise ValidationError(_("Poreikis jau priskirtas šiam planui."))
         return plan
+
 
 class RequestPlanForm(OrganizationPlanForm):
     form_type = CharField(widget=HiddenInput(), initial="create_form")

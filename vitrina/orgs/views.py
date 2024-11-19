@@ -315,7 +315,6 @@ class OrganizationManagementsView(OrganizationListView):
         values = get_values_for_frequency(frequency, 'created')
 
         for jur in jurisdictions:
-            count = 0
             data = []
             jurisdiction_orgs = orgs.filter(jurisdiction=jur['id']).order_by()
 
@@ -340,6 +339,7 @@ class OrganizationManagementsView(OrganizationListView):
                 yAxis_title = _('Tvarkytojų skaičius')
 
             for label in labels:
+                count = 0
                 label_query = get_query_for_frequency(frequency, 'created', label)
                 label_count_data = items.filter(**label_query)
 
@@ -381,7 +381,7 @@ class OrganizationManagementsView(OrganizationListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
-        context['options'] = get_stats_filter_options_based_on_model(Organization, duration, sorting, indicator)
+        context['options'] = get_stats_filter_options_based_on_model(Organization, duration, indicator)
         return context
 
 

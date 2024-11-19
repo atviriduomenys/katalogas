@@ -59,7 +59,6 @@ class StatsMixin:
         context['options'] = get_stats_filter_options_based_on_model(
             self.model,
             duration,
-            sorting,
             indicator,
             filter=self.filter
         )
@@ -73,8 +72,8 @@ class StatsMixin:
         time_chart_data = []
 
         for item in filter_data:
-            count = 0
-            data = []
+            time_data = []
+            bar_data = []
 
             query = {self.filter: item['filter_value']}
             filter_queryset_ids = queryset.filter(**query).values_list('pk', flat=True)
@@ -82,26 +81,31 @@ class StatsMixin:
 
             count_data = self.get_data_for_indicator(indicator, values, filter_queryset)
 
+            bar_count = 0
             for label in labels:
+                time_count = 0
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 label_count_data = count_data.filter(**label_query)
-                count = self.get_count(label, indicator, frequency, label_count_data, count)
+                time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+                bar_count += time_count
 
                 if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                    time_data.append({'x': _date(label.start_time, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label.start_time, ff), 'y': bar_count})
                 else:
-                    data.append({'x': _date(label, ff), 'y': count})
+                    time_data.append({'x': _date(label, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label, ff), 'y': bar_count})
 
             display_value = self.get_display_value(item)
             dt = {
                 'label': display_value,
-                'data': data,
+                'data': time_data,
                 'borderWidth': 1,
                 'fill': True,
             }
             time_chart_data.append(dt)
 
-            item['count'] = self.get_item_count(data, indicator)
+            item['count'] = self.get_item_count(bar_data, indicator)
             item['display_value'] = display_value
             item = self.update_item_data(item)
             bar_chart_data.append(item)

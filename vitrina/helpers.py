@@ -602,7 +602,7 @@ def send_email_with_logging(email_data, email_list):
                         email_data['email_content'], email_list, e)
 
 
-def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
+def get_stats_filter_options_based_on_model(model, duration, indicator, filter=None):
     duration = {
         'selected': duration,
         'label': _("Laikotarpis"),
@@ -614,17 +614,6 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
             {'value': 'duration-daily', 'label': _("Kas dieną")}
         ],
     }
-    sort = {
-            'selected': sorting,
-            'label': _("Rūšiuoti"),
-            'fields': [
-                {'value': 'sort-year-desc', 'label': _("Naujausi")},
-                {'value': 'sort-year-asc', 'label': _("Seniausi")},
-            ] if indicator == 'publication' else [
-                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
-                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
-            ]
-        }
     active_indicator = {
         'selected': indicator,
         'label': _("Rodiklis"),
@@ -661,7 +650,6 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
         })
     return {
         'duration': duration,
-        'sort': sort,
         'indicator': active_indicator
     }
 

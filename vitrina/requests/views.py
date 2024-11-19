@@ -271,43 +271,50 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         values = get_values_for_frequency(frequency, date_field)
 
         for status in statuses:
-            count = 0
-            data = []
+            time_data = []
+            bar_count = 0
+            bar_data = []
+
             status_request_ids = requests.filter(status=status['filter_value']).values_list('pk', flat=True)
             status_requests = Request.objects.filter(pk__in=status_request_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, status_requests)
 
             for label in labels:
+                time_count = 0
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 if (
                     indicator == 'request-count'
                 ):
                     label_count_data = count_data.filter(**label_query)
-                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                 elif (
                     indicator == 'request-count-open'
                 ):
                     label_count_data = count_data.filter(**label_query)
-                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                 else:
                     label_count_data = count_data.filter(**label_query)
-                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+
+                bar_count += time_count
 
                 if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                    time_data.append({'x': _date(label.start_time, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label.start_time, ff), 'y': bar_count})
                 else:
-                    data.append({'x': _date(label, ff), 'y': count})
+                    time_data.append({'x': _date(label, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label, ff), 'y': bar_count})
 
             dt = {
                 'label': str(status['display_value']),
-                'data': data,
+                'data': time_data,
                 'borderWidth': 1,
                 'fill': True,
             }
             time_chart_data.append(dt)
 
-            status['count'] = self.get_item_count(data, indicator)
+            status['count'] = self.get_item_count(bar_data, indicator)
             bar_chart_data.append(status)
 
         if sorting == 'sort-desc':
@@ -337,7 +344,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
-        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, indicator)
 
         return context
 

@@ -1717,7 +1717,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = self.get_start_date()
+
 
         time_chart_data = []
         bar_chart_data = []

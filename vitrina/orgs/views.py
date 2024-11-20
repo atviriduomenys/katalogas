@@ -298,7 +298,7 @@ class OrganizationManagementsView(OrganizationListView):
         indicator = self.request.GET.get('indicator', None) or 'organization-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = Organization.objects.order_by('created').first().created
+
         chart_title = ''
         yAxis_title = ''
 

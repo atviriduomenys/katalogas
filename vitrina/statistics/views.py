@@ -53,7 +53,7 @@ class StatsMixin:
         filter_data = self.get_filter_data(facet_fields)
         queryset = context['object_list']
 
-        start_date = self.get_start_date()
+
         indicator = self.request.GET.get('indicator', None) or self.default_indicator
         sorting = self.request.GET.get('sort', None) or self.default_sort
         duration = self.request.GET.get('duration', None) or self.default_duration

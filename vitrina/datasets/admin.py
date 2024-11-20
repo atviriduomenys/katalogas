@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import pytz
 from django.contrib import admin
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -21,6 +22,7 @@ from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServ
     Relation, DatasetReport
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
+from vitrina.orgs.models import Representative
 from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
 
@@ -89,6 +91,8 @@ class DatasetReportAdmin(admin.ModelAdmin):
         'root_organization_display',
         'organization_display',
         'title_display',
+        'coordinators_display',
+        'managers_display',
         'distribution_published_display',
         'frequency_display',
         'spinta_modified_display',
@@ -96,7 +100,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         'late_display'
     )
     list_display_links = None
-    search_fields = ('translations__title', 'organization__title',)
+    search_fields = ('translations__title', 'organization__title', 'representative_emails',)
     list_filter = (FormatFilter, DatasetLateFilter, 'organization',)
     change_list_template = 'vitrina/datasets/admin/dataset_report_change_list.html'
 
@@ -108,6 +112,20 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.filter(
+            deleted__isnull=True,
+            deleted_on__isnull=True,
+            organization_id__isnull=False,
+            translations__title__isnull=False,
+            status=Dataset.HAS_DATA
+        ).distinct()
+        queryset = queryset.annotate(
+            representative_emails=ArrayAgg("representatives__email")
+        )
+        return queryset
 
     def organization_display(self, obj):
         if len(obj.organization.title) >= 40:
@@ -138,6 +156,22 @@ class DatasetReportAdmin(admin.ModelAdmin):
         return format_html('<a href="{}" target="_blank">{}</a>', obj.get_absolute_url(), title)
     title_display.short_description = _('Duomenų rinkinys')
     title_display.allow_tags = True
+
+    def coordinators_display(self, obj):
+        coordinators = obj.representatives.filter(role=Representative.COORDINATOR).values_list('email', flat=True)
+        if coordinators:
+            return mark_safe("<br/>".join(coordinators))
+        return "-"
+    coordinators_display.short_description = _('Koordinatoriai')
+    coordinators_display.allow_tags = True
+
+    def managers_display(self, obj):
+        managers = obj.representatives.filter(role=Representative.MANAGER).values_list('email', flat=True)
+        if managers:
+            return mark_safe("<br/>".join(managers))
+        return "-"
+    managers_display.short_description = _('Tvarkytojai')
+    managers_display.allow_tags = True
 
     def distribution_published_display(self, obj):
         if distribution := obj.datasetdistribution_set.order_by('created').first():
@@ -255,6 +289,8 @@ class DatasetReportAdmin(admin.ModelAdmin):
             'root_organization': _("Tėvinė institucija"),
             'organization': _("Institucija"),
             'dataset_title': _("Duomenų rinkinio pavadinimas"),
+            'coordinators': _("Koodinatoriai"),
+            'managers': _("Tvarkytojai"),
             'dataset_url': _("Duomenų rinkinio nuoroda"),
             'created': _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
             'frequency': _("Duomenų atnaujinimo periodiškumas"),
@@ -275,10 +311,24 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     def _get_dataset_report(self, cols, queryset, request):
         for item in queryset:
+            coordinators = item.representatives.filter(role=Representative.COORDINATOR).values_list('email', flat=True)
+            if coordinators:
+                coordinators = "\n".join(coordinators)
+            else:
+                coordinators = "-"
+
+            managers = item.representatives.filter(role=Representative.MANAGER).values_list('email', flat=True)
+            if managers:
+                managers = "\n".join(managers)
+            else:
+                managers = "-"
+
             yield to_row(cols.keys(), {
                 'organization': item.organization.title,
                 'root_organization': item.organization.get_root().title if item.organization.get_root() else '-',
                 'dataset_title': item.title,
+                'coordinators': coordinators,
+                'managers': managers,
                 'dataset_url': "%s%s" % (get_current_domain(request), item.get_absolute_url()),
                 'created': self.distribution_published_display(item),
                 'frequency': self.frequency_display(item),

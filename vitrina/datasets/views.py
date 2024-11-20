@@ -57,6 +57,7 @@ from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.requests.models import RequestObject, RequestAssignment
 from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
@@ -1745,24 +1746,11 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
-        if frequency == 'Y':
-            start_date = datetime(2019, 1, 1)
-        elif frequency == 'Q':
-            start_date = end_date - pd.DateOffset(years=2)  # last 2 years if quarterly
-        elif frequency == 'M':
-            start_date = end_date - pd.DateOffset(years=1)  # last year if monthly
-        elif frequency == 'W':
-            start_date = end_date - pd.DateOffset(months=6)  # last 6 months if weekly
-        elif frequency == 'D':
-            start_date = end_date - pd.DateOffset(months=1)  # last month if daily
-        else:
-            # default to yearly
-            start_date = datetime(2019, 1, 1)
-
+        start_date = get_start_date_based_on_frequency(frequency, end_date)
         labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
-        values = get_values_for_frequency(frequency, 'created')
 
         date_field = self.get_date_field()
+        values = get_values_for_frequency(frequency, date_field)
 
         for status in statuses:
             bar_count = 0

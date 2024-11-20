@@ -27,6 +27,7 @@ from reversion import set_comment
 from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
+from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.requests.models import RequestAssignment
@@ -305,20 +306,7 @@ class OrganizationManagementsView(OrganizationListView):
 
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
-        if frequency == 'Y':
-            start_date = datetime(2019, 1, 1)
-        elif frequency == 'Q':
-            start_date = end_date - pd.DateOffset(years=2) # last 2 years if quarterly
-        elif frequency == 'M':
-            start_date = end_date - pd.DateOffset(years=1) # last year if monthly
-        elif frequency == 'W':
-            start_date = end_date - pd.DateOffset(months=6) # last 6 months if weekly
-        elif frequency == 'D':
-            start_date = end_date - pd.DateOffset(months=1) # last month if daily
-        else:
-            # default to yearly
-            start_date = datetime(2019, 1, 1)
-
+        start_date = get_start_date_based_on_frequency(frequency, end_date)
         labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
         values = get_values_for_frequency(frequency, 'created')
 

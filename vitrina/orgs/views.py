@@ -381,7 +381,7 @@ class OrganizationManagementsView(OrganizationListView):
         context['duration'] = duration
 
         context['has_time_graph'] = True
-        context['options'] = get_stats_filter_options_based_on_model(Organization, duration, indicator)
+        context['options'] = get_stats_filter_options_based_on_model(Organization, duration, sorting, indicator)
         return context
 
 

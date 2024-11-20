@@ -1828,7 +1828,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
-        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, indicator, filter=self.filter)
+        context['options'] = get_stats_filter_options_based_on_model(Dataset, duration, sorting, indicator, filter=self.filter)
         return context
 
 

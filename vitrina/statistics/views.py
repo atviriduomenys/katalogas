@@ -59,6 +59,7 @@ class StatsMixin:
         context['options'] = get_stats_filter_options_based_on_model(
             self.model,
             duration,
+            sorting,
             indicator,
             filter=self.filter
         )

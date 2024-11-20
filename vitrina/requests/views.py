@@ -344,7 +344,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context['bar_chart_data'] = bar_chart_data
         context['max_count'] = max_count
 
-        context['options'] = get_stats_filter_options_based_on_model(Request, duration, indicator)
+        context['options'] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
 
         return context
 

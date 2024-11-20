@@ -57,6 +57,7 @@ from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
 from vitrina.requests.models import RequestObject, RequestAssignment
 from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
@@ -1716,7 +1717,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         indicator = self.request.GET.get('indicator', None) or 'dataset-count'
         sorting = self.request.GET.get('sort', None) or 'sort-desc'
         duration = self.request.GET.get('duration', None) or 'duration-yearly'
-        start_date = self.get_start_date()
+
 
         time_chart_data = []
         bar_chart_data = []
@@ -1744,26 +1745,32 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         )
 
         frequency, ff = get_frequency_and_format(duration)
-        labels = self.get_time_labels(start_date, frequency)
+        end_date = datetime.now()
+        start_date = get_start_date_based_on_frequency(frequency, end_date)
+        labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
+
         date_field = self.get_date_field()
         values = get_values_for_frequency(frequency, date_field)
 
         for status in statuses:
-            count = 0
-            data = []
+            bar_count = 0
+            time_data = []
+            bar_data = []
             status_dataset_ids = datasets.filter(status=status['filter_value']).values_list('pk', flat=True)
             status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, status_datasets)
 
             for label in labels:
+                time_count = 0
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 if (
                     status['filter_value'] == Dataset.UNASSIGNED or
                     indicator != 'dataset-count'
                 ):
                     label_count_data = count_data.filter(**label_query)
-                    count = self.get_count(label, indicator, frequency, label_count_data, count)
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
+                    bar_count+=time_count
                 else:
                     if status['filter_value'] == 'HAS_DATA':
                         comm_val = 'OPENED'
@@ -1772,25 +1779,28 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
                     else:
                         comm_val = status['filter_value']
 
-                    count += dataset_status.filter(
+                    time_count += dataset_status.filter(
                         status=comm_val,
                         **label_query
                     ).count()
+                    bar_count += time_count
 
                 if frequency == 'W':
-                    data.append({'x': _date(label.start_time, ff), 'y': count})
+                    time_data.append({'x': _date(label.start_time, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label.start_time, ff), 'y': bar_count})
                 else:
-                    data.append({'x': _date(label, ff), 'y': count})
+                    time_data.append({'x': _date(label, ff), 'y': time_count})
+                    bar_data.append({'x': _date(label, ff), 'y': bar_count})
 
             dt = {
                 'label': str(status['display_value']),
-                'data': data,
+                'data': time_data,
                 'borderWidth': 1,
                 'fill': True,
             }
             time_chart_data.append(dt)
 
-            status['count'] = self.get_item_count(data, indicator)
+            status['count'] = self.get_item_count(bar_data, indicator)
             bar_chart_data.append(status)
 
         if sorting == 'sort-desc':
@@ -1812,7 +1822,6 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
         context['active_filter'] = self.filter
         context['active_indicator'] = indicator
-        context['sort'] = sorting
         context['duration'] = duration
 
         context['graph_title'] = self.get_graph_title(indicator)
@@ -1832,6 +1841,7 @@ class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
     current_title = _("Duomenų rinkinių valdymo sritys")
     filter = 'jurisdiction'
     filter_model = AreaOfManagement
+    use_str = True
 
     def get_graph_title(self, indicator):
         if indicator == 'level-average' or indicator == 'object-count':

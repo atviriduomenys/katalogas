@@ -275,10 +275,16 @@
                 $('form#duration_select_id').each(function() {
                     this.style.display = 'none';
                 });
+                $('form#sort_select_id').each(function() {
+                    this.style.display = 'block';
+                });
             }
             else {
                 $('form#duration_select_id').each(function() {
                     this.style.display = 'block';
+                });
+                $('form#sort_select_id').each(function() {
+                    this.style.display = 'none';
                 });
             }
         }

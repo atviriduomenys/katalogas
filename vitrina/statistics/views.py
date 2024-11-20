@@ -65,9 +65,25 @@ class StatsMixin:
         )
 
         frequency, ff = get_frequency_and_format(duration)
-        labels = self.get_time_labels(start_date, frequency)
+        end_date = datetime.now()
+        if frequency == 'Y':
+            start_date = datetime(2019, 1, 1)
+        elif frequency == 'Q':
+            start_date = end_date - pd.DateOffset(years=2)  # last 2 years if quarterly
+        elif frequency == 'M':
+            start_date = end_date - pd.DateOffset(years=1)  # last year if monthly
+        elif frequency == 'W':
+            start_date = end_date - pd.DateOffset(months=6)  # last 6 months if weekly
+        elif frequency == 'D':
+            start_date = end_date - pd.DateOffset(months=1)  # last month if daily
+        else:
+            # default to yearly
+            start_date = datetime(2019, 1, 1)
+
+        labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
+        values = get_values_for_frequency(frequency, 'created')
+
         date_field = self.get_date_field()
-        values = get_values_for_frequency(frequency, date_field)
 
         bar_chart_data = []
         time_chart_data = []

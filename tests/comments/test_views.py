@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from reversion.models import Version
@@ -10,13 +11,13 @@ from reversion.models import Version
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
-from vitrina.requests.models import RequestAssignment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
 from vitrina.users.factories import UserFactory
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+
 
 @pytest.mark.django_db
 def test_comment_without_user(app: DjangoTestApp):
@@ -28,20 +29,6 @@ def test_comment_without_user(app: DjangoTestApp):
     resp = app.get(url)
     assert resp.status_code == 302
     assert resp.url == "%s?next=%s" % (reverse('login'), url)
-
-
-@pytest.mark.django_db
-def test_comment_is_not_public(app: DjangoTestApp):
-    user = UserFactory()
-    dataset = DatasetFactory()
-    ct = ContentType.objects.get_for_model(dataset)
-    app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms['comment-form']
-    form['is_public'] = False
-    form['body'] = "Test comment"
-    resp = form.submit().follow()
-    assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
-    assert list(resp.context['comments']) == []
 
 
 @pytest.mark.django_db
@@ -454,3 +441,282 @@ def test_object_data_reply_on_non_public_dataset_without_permission(app: DjangoT
     }, expect_errors=True)
 
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_view_author_comment_not_public(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    app.set_user(user)
+    form = app.get(dataset.get_absolute_url()).forms['comment-form']
+    form['is_public'] = False
+    form['body'] = "Test comment"
+    resp = form.submit().follow()
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
+    assert comments.count() == 1
+    assert [comment for comment, _, _ in resp.context['comments']] == list(comments)
+
+
+@pytest.mark.django_db
+def test_view_comment_not_public_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    user2 = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    app.set_user(user)
+    form = app.get(dataset.get_absolute_url()).forms['comment-form']
+    form['is_public'] = False
+    form['body'] = "Test comment"
+    form.submit()
+    app.set_user(user2)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
+    assert comments.count() == 1
+    assert [comment for comment, _, _ in resp.context['comments']] == []
+
+
+@pytest.mark.django_db
+def test_view_comment_not_public_with_permission(app: DjangoTestApp):
+    user = UserFactory()
+    user2 = UserFactory()
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        user=user2,
+        content_type=ct,
+        object_id=dataset.pk
+    )
+    app.set_user(user)
+    form = app.get(dataset.get_absolute_url()).forms['comment-form']
+    form['is_public'] = False
+    form['body'] = "Test comment"
+    form.submit()
+    app.set_user(user2)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
+    assert comments.count() == 1
+    assert [comment for comment, _, _ in resp.context['comments']] == list(comments)
+
+
+@pytest.mark.django_db
+def test_view_reply_to_author_comment_not_public(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    app.set_user(comment.user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 2
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == \
+           sorted(list(comments.values_list('pk', flat=True)))
+
+
+@pytest.mark.django_db
+def test_view_reply_to_comment_not_public_without_permission(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 2
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == []
+
+
+@pytest.mark.django_db
+def test_view_reply_to_comment_not_public_with_permission(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk
+    )
+    app.set_user(representative.user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 2
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == \
+           sorted(list(comments.values_list('pk', flat=True)))
+
+
+@pytest.mark.django_db
+def test_view_reply_to_author_reply_not_public(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=True
+    )
+    reply = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=reply
+    )
+    app.set_user(reply.user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 3
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == \
+           sorted(list(comments.values_list('pk', flat=True)))
+
+
+@pytest.mark.django_db
+def test_view_reply_to_author_not_public_without_permission(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=True
+    )
+    reply = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment,
+    )
+    app.set_user(reply.user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 3
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == sorted([comment.pk, reply.pk])
+
+
+@pytest.mark.django_db
+def test_view_reply_to_reply_not_public_without_permission(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=True
+    )
+    reply = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=reply
+    )
+    user = UserFactory()
+    app.set_user(user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 3
+    assert [comment for comment, _, _ in resp.context['comments']] == [comment]
+
+
+@pytest.mark.django_db
+def test_view_reply_to_reply_not_public_with_permission(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    comment = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=True
+    )
+    reply = CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=comment
+    )
+    CommentFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        is_public=False,
+        parent=reply
+    )
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(dataset.get_absolute_url())
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 3
+    assert sorted([comment.pk for comment, _, _ in resp.context['comments']]) == \
+           sorted(list(comments.values_list('pk', flat=True)))
+
+
+@pytest.mark.django_db
+def test_subscription_about_comment(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk
+    )
+    app.set_user(representative.user)
+    form = app.get(reverse('subscribe-form', kwargs={
+        'content_type_id': ct.pk,
+        'obj_id': dataset.pk,
+        'user_id': representative.user.pk
+    })).forms['subscribe-form']
+    form['email_subscribed'] = True
+    form['dataset_update_sub'] = True
+    form['dataset_comments_sub'] = True
+    form.submit()
+
+    user = UserFactory()
+    app.set_user(user)
+    form = app.get(dataset.get_absolute_url()).forms['comment-form']
+    form['is_public'] = False
+    form['body'] = "Test comment"
+    resp = form.submit().follow()
+    comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
+    assert comments.count() == 1
+    assert [comment for comment, _, _ in resp.context['comments']] == [comments.first()]
+    assert len(mail.outbox) == 2
+    assert mail.outbox[1].to == [representative.email]
+    assert "Test comment" in mail.outbox[1].body

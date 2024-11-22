@@ -147,7 +147,7 @@ class LoginForm(OTPAuthenticationForm):
         user = self.user_cache
         device = self._chosen_device(user)
 
-        if device and device.last_used_at:
+        if (device and device.last_used_at) or not settings.USE_OTP_VALIDATION:
             # if device exists and has been used, we allow login without otp validation
             pass
         else:

@@ -10,6 +10,7 @@ from vitrina.requests.models import Request
 from vitrina.structure.models import Metadata
 
 register = template.Library()
+assignment_tag = getattr(register, 'assignment_tag', register.simple_tag)
 
 
 @register.inclusion_tag('component/comments.html')
@@ -20,9 +21,6 @@ def comments(obj, user, is_structure=False):
         object_id=obj.pk,
         parent_id__isnull=True
     ).order_by('created')
-    perm = has_perm(user, Action.COMMENT, obj)
-    if not perm:
-        obj_comments = obj_comments.filter(is_public=True)
     if is_structure:
         can_manage_structure = has_perm(
             user,
@@ -40,11 +38,13 @@ def comments(obj, user, is_structure=False):
 
     comments_array = []
     for comment in obj_comments:
-        descendants = comment.descendants(include_self=True)
-        for reply in descendants:
-            reply_form = CommentForm(reply)
-            is_child = reply.parent is not None
-            comments_array.append((reply, reply_form, is_child))
+        if has_comment_view_perm(comment, obj, user):
+            descendants = comment.descendants(include_self=True, permission=True)
+            for reply in descendants:
+                if has_comment_view_perm(reply, obj, user):
+                    reply_form = CommentForm(reply)
+                    is_child = reply.parent is not None
+                    comments_array.append((reply, reply_form, is_child))
 
     return {
         'comments': comments_array,
@@ -63,19 +63,15 @@ def external_comments(content_type, object_id, user, dataset):
         external_object_id=object_id,
         parent_id__isnull=True
     ).order_by('created')
-    perm = has_perm(
-            user,
-            Action.STRUCTURE,
-            Dataset,
-            dataset.current_structure
-        )
-    if not perm:
-        obj_comments = obj_comments.filter(is_public=True)
     comments_array = []
     for comment in obj_comments:
-        children = comment.descendants(permission=perm)
-        reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id))
-        comments_array.append((comment, children, reply_form))
+        if has_comment_view_perm(comment, dataset, user):
+            descendants = comment.descendants(include_self=True, permission=True)
+            for reply in descendants:
+                if has_comment_view_perm(reply, dataset, user):
+                    reply_form = CommentForm(comment, auto_id='id_%s_' + str(comment.id))
+                    is_child = reply.parent is not None
+                    comments_array.append((reply, reply_form, is_child))
     comment_form_class = get_comment_form_class()
     return {
         'comments': comments_array,
@@ -86,4 +82,25 @@ def external_comments(content_type, object_id, user, dataset):
         'submit_button_id': "id_submit_button",
         'external': True,
         'dataset': dataset,
+        'object': dataset
     }
+
+
+def has_comment_view_perm(comment, obj, user):
+    parent_comments = comment.ancestors()
+    for c in reversed(parent_comments):
+        if c.user == user:
+            return True
+        if (
+            not c.is_public and
+            not has_perm(user, Action.COMMENT, obj)
+        ):
+            return False
+
+    if (
+        comment.is_public or
+        user == comment.user
+    ):
+        return True
+    else:
+        return has_perm(user, Action.COMMENT, obj)

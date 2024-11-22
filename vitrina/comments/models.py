@@ -101,6 +101,14 @@ class Comment(models.Model):
             descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
+    def ancestors(self, include_self=False):
+        ancestors = []
+        if include_self:
+            ancestors.append(self)
+        if self.parent:
+            ancestors.extend(self.parent.ancestors(include_self=True))
+        return ancestors
+
     def can_reply(self):
         if self.type == self.REQUEST:
             return False

@@ -226,7 +226,8 @@ class CommentView(
                 request.user,
                 link,
                 obj=obj,
-                excluded_emails=sub_email_list
+                excluded_emails=sub_email_list,
+                text=comment.body,
             )
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
@@ -270,8 +271,16 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
                         comment_object=comment, comment_ct=comment_ct)
             create_subscription(request.user, comment)
 
-            send_mail_and_create_tasks_for_subs(REPLY_COMMENT, comment_ct, parent_id,
-                                                request.user, link, obj=obj, comment_object=parent_comment)
+            send_mail_and_create_tasks_for_subs(
+                REPLY_COMMENT,
+                comment_ct,
+                parent_id,
+                request.user,
+                link,
+                obj=obj,
+                comment_object=parent_comment,
+                text=comment.body
+            )
             comment_task = Task.objects.filter(
                 comment_object=parent_comment
             ).first()

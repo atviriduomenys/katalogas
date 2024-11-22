@@ -25,14 +25,14 @@
                 <span aria-hidden="true"></span>
             </a>
         </div>
-        <div class="navbar-start">
-            <a class="navbar-item" href="#main-content">
-                {% translate "Į pagrindinį turinį" %}
-            </a>
-        </div>
-
         {# DYNAMIC CMS MENU #}
         <div id="navbarBasic" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="#main-content">
+                    {% translate "Į pagrindinį turinį" %}
+                </a>
+            </div>
+
             <div class="navbar-end">
                 {% show_menu %}
                 {% for m in menu %}

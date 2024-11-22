@@ -60,6 +60,7 @@ def send_mail_and_create_tasks_for_subs(
     obj=None,
     comment_object=None,
     excluded_emails=None,
+    text=""
 ):
     if excluded_emails is None:
         excluded_emails = []
@@ -118,7 +119,8 @@ def send_mail_and_create_tasks_for_subs(
         content_type,
         object_id,
         link,
-        comment_type
+        comment_type,
+        text=text
     )
     if len(org_subs) > 0:
         send_mail_to_object_subscribers(
@@ -127,7 +129,8 @@ def send_mail_and_create_tasks_for_subs(
             object_id,
             link,
             comment_type,
-            org=obj.organization
+            org=obj.organization,
+            text=text
         )
 
 
@@ -138,6 +141,7 @@ def send_mail_to_object_subscribers(
     link,
     comment_type,
     org=None,
+    text=""
 ):
     if org:
         sub_object = org
@@ -154,7 +158,8 @@ def send_mail_to_object_subscribers(
     if sub_object is not None:
         email(email_list, email_identifier, file, {
             'object': sub_object,
-            'link': link
+            'link': link,
+            'text': text
         })
 
 

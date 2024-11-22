@@ -15,7 +15,7 @@ PROJECT_STATUSES = (
 
 
 class CommentForm(forms.ModelForm):
-    body = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}))
+    body = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}), label=_("Komentaras"))
 
     is_opened: bool
 

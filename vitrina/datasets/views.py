@@ -577,6 +577,8 @@ class DatasetCreateView(
             self.object.series = False
 
         self.object.save()
+        tags = form.cleaned_data.get('tags')
+        self.object.tags.set(tags)
         self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)

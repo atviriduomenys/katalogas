@@ -980,9 +980,11 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
+    form['tags'] = ['test tag']
     resp = form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Added title")
     assert added_dataset.count() == 2
+    assert added_dataset[0].tags.all()[0].name == 'test tag'
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1

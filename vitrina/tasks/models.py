@@ -48,6 +48,14 @@ class Task(models.Model):
         (ERROR_FREQUENCY, _("Klaida atnaujinimo dažnume")),
         (ERROR_DISTRIBUTION, _("Klaida duomenų rinkinio duomenų šaltinyje")),
     )
+    FILTER_TYPES = {
+        APIKEY: _("Raktas"),
+        DATASET: _("Duomenų rinkinys"),
+        COMMENT: _("Komentaras"),
+        REQUEST: _("Prašymas"),
+        PROJECT: _("Projektas"),
+        ERROR: _("Klaida"),
+    }
 
     CREATED = "created"
     ASSIGNED = "assigned"
@@ -57,6 +65,11 @@ class Task(models.Model):
         (ASSIGNED, _("Priskirta")),
         (COMPLETED, _("Išspręsta"))
     )
+    FILTER_STATUSES = {
+        CREATED: _("Registruota"),
+        ASSIGNED: _("Priskirta"),
+        COMPLETED: _("Išspręsta")
+    }
 
     title = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
@@ -109,6 +122,16 @@ class Task(models.Model):
 
     def get_acl_parents(self):
         return [self]
+
+    def get_type(self):
+        if self.type in [Task.ERROR, Task.ERROR_DISTRIBUTION, Task.ERROR_FREQUENCY]:
+            return Task.ERROR
+        return self.type
+
+    def get_user_id(self):
+        if self.user:
+            return self.user.pk
+        return None
 
 
 class Holiday(models.Model):

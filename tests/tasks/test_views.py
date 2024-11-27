@@ -47,18 +47,18 @@ def set_up_data():
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.haystack
 def test_task_list_with_user(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data['user'])
-    resp = app.get('%s?filter=user' % reverse("user-task-list", kwargs={'pk': set_up_data['user'].pk}))
-    assert list(resp.context["object_list"]) == [set_up_data['task_for_user']]
+    resp = app.get('%s?owner=user' % reverse("user-task-list", kwargs={'pk': set_up_data['user'].pk}))
+    assert list([int(task.pk) for task in resp.context["object_list"]]) == [set_up_data['task_for_user'].pk]
 
 
-@pytest.mark.django_db
+@pytest.mark.haystack
 def test_task_list_with_organization(app: DjangoTestApp, set_up_data):
     app.set_user(set_up_data['user_with_organization'])
-    resp = app.get('%s?filter=all' % reverse("user-task-list", kwargs={'pk': set_up_data['user_with_organization'].pk}))
-    assert list(resp.context["object_list"]) == [set_up_data['task_for_organization']]
+    resp = app.get('%s?owner=all' % reverse("user-task-list", kwargs={'pk': set_up_data['user_with_organization'].pk}))
+    assert list([int(task.pk) for task in resp.context["object_list"]]) == [set_up_data['task_for_organization'].pk]
 
 
 @pytest.mark.django_db
@@ -181,3 +181,108 @@ def test_task_assign_with_user_with_access(app: DjangoTestApp):
     form.submit()
     task.refresh_from_db()
     assert task.status == Task.ASSIGNED
+
+
+@pytest.mark.haystack
+def test_task_search_with_title(app: DjangoTestApp):
+    user = UserFactory()
+    task1 = TaskFactory(user=user, title="Test: task")
+    task2 = TaskFactory(user=user, title="Test: task 2")
+    TaskFactory(user=user, title="Something else")
+    app.set_user(user)
+    resp = app.get('%s?q=Test:' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([
+        task1.pk, task2.pk
+    ])
+
+
+@pytest.mark.haystack
+def test_task_search_with_description(app: DjangoTestApp):
+    user = UserFactory()
+    task1 = TaskFactory(user=user, description="Test description")
+    task2 = TaskFactory(user=user, description="Test description 2")
+    TaskFactory(user=user, description="Something else")
+    app.set_user(user)
+    resp = app.get('%s?q=description' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([
+        task1.pk, task2.pk
+    ])
+
+
+@pytest.mark.haystack
+def test_task_search_with_user_name(app: DjangoTestApp):
+    user = UserFactory(first_name="Test", last_name="User")
+    task1 = TaskFactory(user=user)
+    task2 = TaskFactory(user=user)
+    TaskFactory()
+    app.set_user(user)
+    resp = app.get('%s?q=Test+User' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([
+        task1.pk, task2.pk
+    ])
+
+
+@pytest.mark.haystack
+def test_task_search_with_organization_name(app: DjangoTestApp):
+    organization = OrganizationFactory(title="Organization")
+    user = UserFactory(organization=organization)
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    task1 = TaskFactory(organization=organization)
+    task2 = TaskFactory(organization=organization)
+    TaskFactory()
+    app.set_user(user)
+    resp = app.get('%s?q=Organization' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([
+        task1.pk, task2.pk
+    ])
+
+
+@pytest.mark.haystack
+def test_task_search_with_filter(app: DjangoTestApp):
+    user = UserFactory()
+    task1 = TaskFactory(user=user, title="Test: task", status=Task.CREATED)
+    TaskFactory(user=user, title="Test: task 2", status=Task.COMPLETED)
+    TaskFactory(user=user, title="Something else", status=Task.CREATED)
+    app.set_user(user)
+    resp = app.get('%s?q=Test:&selected_facets=status_exact:created' %
+                   reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk])
+
+
+@pytest.mark.haystack
+def test_task_list_with_owner_filter__user(app: DjangoTestApp):
+    organization = OrganizationFactory(title="Organization")
+    user = UserFactory(organization=organization)
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    task1 = TaskFactory(user=user)
+    task2 = TaskFactory(user=user)
+    TaskFactory(organization=organization)
+    app.set_user(user)
+    resp = app.get('%s?owner=user' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk, task2.pk])
+
+
+@pytest.mark.haystack
+def test_task_list_with_owner_filter__all(app: DjangoTestApp):
+    organization = OrganizationFactory(title="Organization")
+    user = UserFactory(organization=organization)
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    task1 = TaskFactory(user=user)
+    task2 = TaskFactory(user=user)
+    task3 = TaskFactory(organization=organization)
+    app.set_user(user)
+    resp = app.get('%s?owner=all' % reverse("user-task-list", kwargs={'pk': user.pk}))
+    assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == \
+           sorted([task1.pk, task2.pk, task3.pk])

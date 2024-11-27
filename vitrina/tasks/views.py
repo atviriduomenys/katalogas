@@ -4,87 +4,107 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import ListView, DetailView, DeleteView, TemplateView
+from django.views.generic import DetailView, DeleteView, TemplateView
 from django.utils.translation import gettext_lazy as _
+from haystack.generic_views import FacetedSearchView
 
+from vitrina.helpers import Filter, get_filter_url
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import Action, has_perm
+from vitrina.tasks.forms import TaskSearchForm
 from vitrina.tasks.models import Task
 from vitrina.tasks.services import get_active_tasks
 
 
-class TaskListView(LoginRequiredMixin, ListView):
-    model = Task
+class TaskListView(LoginRequiredMixin, FacetedSearchView):
     template_name = 'vitrina/tasks/list.html'
     paginate_by = 20
 
+    facet_fields = [
+        'status',
+        'type',
+        'user',
+    ]
+    form_class = TaskSearchForm
+    max_num_facets = 20
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_queryset(self):
-        queryset = get_active_tasks(self.request.user, super().get_queryset())
-        task_filter = self.request.GET.get('filter')
-        if task_filter is None:
-            queryset = queryset
-        else:
-            if task_filter == 'user':
-                queryset = queryset.filter(user=self.request.user)
-            elif task_filter == 'all':
-                queryset = queryset
-            elif task_filter == Task.CREATED.lower():
-                queryset = queryset.filter(status=Task.CREATED)
-            elif task_filter == Task.ASSIGNED.lower():
-                queryset = queryset.filter(status=Task.ASSIGNED)
-            elif task_filter == Task.COMPLETED.lower():
-                queryset = queryset.filter(status=Task.COMPLETED)
-            elif task_filter == Task.COMMENT.lower():
-                queryset = queryset.filter(type=Task.COMMENT)
-            elif task_filter == Task.REQUEST.lower():
-                queryset = queryset.filter(type=Task.REQUEST)
-            else:
-                queryset = queryset.filter(type__in=[Task.ERROR, Task.ERROR_FREQUENCY, Task.ERROR_DISTRIBUTION])
+        queryset = super().get_queryset()
+        active_tasks = get_active_tasks(self.request.user, all_tasks=True).values_list('pk', flat=True)
+        queryset = queryset.filter(id_value__in=active_tasks)
+
+        owner = self.request.GET.get('owner', 'all')
+        if owner == 'user':
+            queryset = queryset.filter(user__pk=self.request.user.pk)
 
         return queryset.order_by('due_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        all_tasks = get_active_tasks(self.request.user)
-        active_user_tasks = all_tasks.filter(user=self.request.user)
-        closed_tasks = all_tasks.filter(status=Task.COMPLETED)
-        cats = [
-            {'title': 'Vykdytojas', 'types':
-                [
-                    {'subtype': 'Mano užduotys', 'count': active_user_tasks.count(), 'filter': 'user'},
-                    {'subtype': 'Visos užduotys', 'count': all_tasks.count(), 'filter': 'all'}
-                ]
-             },
-            {'title': 'Būsena', 'types':
-                [
-                    {'subtype': 'Registruota', 'count': all_tasks.filter(status=Task.CREATED).count(),
-                     'filter': Task.CREATED.lower()},
-                    {'subtype': 'Priskirta', 'count': all_tasks.filter(status=Task.ASSIGNED).count(),
-                     'filter': Task.ASSIGNED.lower()},
-                    {'subtype': 'Išspręsta', 'count': closed_tasks.count(),
-                     'filter': Task.COMPLETED.lower()}
-                ]
-             },
-            {'title': 'Tipas', 'types':
-                [
-                    {'subtype': 'Komentaras', 'count': all_tasks.filter(type=Task.COMMENT).count(),
-                     'filter': Task.COMMENT.lower()},
-                    {'subtype': 'Prašymas', 'count': all_tasks.filter(type=Task.REQUEST).count(),
-                     'filter': Task.REQUEST.lower()},
-                    {'subtype': 'Klaida', 'count': all_tasks.filter(type__in=[Task.ERROR, Task.ERROR_DISTRIBUTION,
-                                                                              Task.ERROR_FREQUENCY]).count(),
-                     'filter': Task.ERROR.lower()},
-                ]
-             }
-        ]
-        active_filter = self.request.GET.get('filter')
-        if active_filter is None:
-            active_filter = 'all'
-        context['cats'] = cats
-        context['active_filter'] = active_filter
         context['parent_links'] = {
             reverse('home'): _('Pradžia'),
         }
+
+        facet_fields = context.get('facets').get('fields')
+        form = context.get('form')
+        filter_args = (self.request, form, facet_fields)
+        context['filters'] = [
+            Filter(
+                *filter_args,
+                'status',
+                _("Būsena"),
+                choices=Task.FILTER_STATUSES,
+                multiple=False,
+                is_int=False
+            ),
+            Filter(
+                *filter_args,
+                'type',
+                _("Tipas"),
+                choices=Task.FILTER_TYPES,
+                multiple=False,
+                is_int=False
+            ),
+        ]
+
+        owner_selected_value = self.request.GET.get('owner', 'all')
+        queryset = self.get_queryset()
+        context['owner_filter'] = {
+            'title': _("Vykdytojas"),
+            'items': [
+                {
+                    'title': _('Mano užduotys'),
+                    'url': get_filter_url(
+                        self.request,
+                        "owner",
+                        "user",
+                        owner_selected_value == "user",
+                        facet_field=False
+                    ),
+                    "count": queryset.filter(user__pk=self.request.user.pk).count(),
+                    "selected": owner_selected_value == "user"
+                },
+                {
+                    'title': _('Visos užduotys'),
+                    'url': get_filter_url(
+                        self.request,
+                        "owner",
+                        "all",
+                        owner_selected_value == "all",
+                        facet_field=False
+                    ),
+                    "count": queryset.count(),
+                    "selected": owner_selected_value == "all"
+                }
+            ]
+        }
+        context['search_url'] = reverse('user-task-list', args=[self.request.user.pk])
+        context['search_query'] = dict(self.request.GET.copy())
+        context['q'] = form.cleaned_data.get('q', '')
         return context
 
 

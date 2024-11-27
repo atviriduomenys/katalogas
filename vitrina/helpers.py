@@ -389,22 +389,30 @@ def get_filter_url(
     key: str,
     value: str,
     selected: bool = False,
-    remove_search_query: bool = False
+    remove_search_query: bool = False,
+    facet_field: bool = True
 ) -> str:
     query_dict = dict(request.GET.copy())
     if 'page' in query_dict:
         query_dict.pop('page')
     if remove_search_query and 'q' in query_dict:
         query_dict.pop('q')
-    if selected:
-        val = '%s_exact:%s' % (key, value)
-        if val in query_dict.get('selected_facets', []):
-            query_dict['selected_facets'].remove(val)
-    else:
-        if "selected_facets" in query_dict:
-            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+
+    if facet_field:
+        if selected:
+            val = '%s_exact:%s' % (key, value)
+            if val in query_dict.get('selected_facets', []):
+                query_dict['selected_facets'].remove(val)
         else:
-            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+            if "selected_facets" in query_dict:
+                query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+            else:
+                query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+    else:
+        if selected and query_dict.get(key) == value:
+            query_dict.pop(key)
+        else:
+            query_dict[key] = value
     return "?" + urlencode(query_dict, True)
 
 

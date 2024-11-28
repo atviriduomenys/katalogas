@@ -1481,8 +1481,8 @@ def test_average_level(app: DjangoTestApp):
     create_structure_objects(structure)
     assert structure.dataset.metadata.first().average_level == 4
     assert Model.objects.get(metadata__uuid="1").metadata.first().average_level == 4
-    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 4.6
-    assert Model.objects.get(metadata__uuid="3").metadata.first().average_level == 3.25
+    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 5
+    assert Model.objects.get(metadata__uuid="3").metadata.first().average_level == 3
 
 
 @pytest.mark.django_db
@@ -1506,9 +1506,9 @@ def test_average_level_without_given_level(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert structure.dataset.metadata.first().average_level == 3.5
+    assert structure.dataset.metadata.first().average_level == 3
     assert Model.objects.get(metadata__uuid="1").metadata.first().average_level == 3
-    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 3.6
+    assert Model.objects.get(metadata__uuid="2").metadata.first().average_level == 4
 
 
 @pytest.mark.django_db

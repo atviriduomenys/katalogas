@@ -66,7 +66,7 @@ class Metadata(models.Model):
     prepare_ast = models.JSONField(_("Formulės AST"), blank=True, null=True)
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
-    average_level = models.FloatField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
+    average_level = models.IntegerField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
     access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
     prefix = models.ForeignKey(Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True)
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
@@ -213,7 +213,7 @@ class Model(models.Model):
             where = functools.reduce(operator.or_, where)
             levels = Metadata.objects.filter(where, level__isnull=False).values_list('level', flat=True)
             if levels:
-                metadata.average_level = sum(levels) / len(levels)
+                metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
 
     def get_absolute_url(self):

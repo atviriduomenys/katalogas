@@ -1980,3 +1980,133 @@ def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
     )
     assert comments.count() == 1
     assert 'kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.' in comments[0].body
+
+
+@pytest.mark.django_db
+def test_structure_resource__resource_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,resource,,,,,,http://www.example.com,,,,,Test resource,\n'
+        '2,,,,City,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '4,,,,,title,string,,,,5,open,dct:title,,\n'
+        '5,,,,Country,,,,,,,,,,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "Test resource"
+
+
+@pytest.mark.django_db
+def test_structure_with_resource__dataset_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,Test dataset,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '2,,,,City,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '4,,,,,title,string,,,,5,open,dct:title,,\n'
+        '5,,,,Country,,,,,,,,,,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "Test dataset"
+
+
+@pytest.mark.django_db
+def test_structure_with_resource__no_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        '1,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '2,,,,City,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '4,,,,,title,string,,,,5,open,dct:title,,\n'
+        '5,,,,Country,,,,,,,,,,\n'
+        '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "resource"
+
+
+@pytest.mark.django_db
+def test_structure_without_resource__dataset_title(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,Test dataset,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',,,,,,,,,,,,,,\n'
+        '1,,,,City,,,,,,,,,,\n'
+        '2,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '3,,,,,title,string,,,,5,open,dct:title,,\n'
+        '4,,,,Country,,,,,,,,,,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "Test dataset"
+
+
+@pytest.mark.django_db
+def test_structure_without_resource__dataset_name(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
+        ',,,,,,,,,,,,,,\n'
+        '1,,,,City,,,,,,,,,,\n'
+        '2,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        '3,,,,,title,string,,,,5,open,dct:title,,\n'
+        '4,,,,Country,,,,,,,,,,\n'
+        '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "adp"

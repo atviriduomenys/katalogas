@@ -572,6 +572,7 @@ def _link_distributions(
     if dataset_meta.resources:
         for i, resource_meta in enumerate(dataset_meta.resources.values()):
             if resource_meta.source:
+                title = resource_meta.title or dataset_meta.title or resource_meta.name
                 distribution = DatasetDistribution.objects.filter(
                     dataset=dataset,
                     download_url=resource_meta.source,
@@ -596,7 +597,7 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
-                distribution.title = resource_meta.name
+                distribution.title = title
                 distribution.save()
 
                 if md := distribution.metadata.first():
@@ -625,7 +626,8 @@ def _link_distributions(
 
                 _create_errors(resource_meta.errors, dataset.current_structure)
     else:
-        title = dataset_meta.name.split('/')[-1]
+        title = dataset_meta.title or dataset_meta.name.split('/')[-1]
+        name = dataset_meta.name.split('/')[-1]
         url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
         urls = [
             f"https://get.data.gov.lt/{dataset_meta.name}",
@@ -633,7 +635,7 @@ def _link_distributions(
             url
         ]
         resource_meta = struct.Resource(
-            name=title,
+            name=name,
             source=url
         )
         distribution = DatasetDistribution.objects.filter(

@@ -35,7 +35,7 @@ class TaskListView(LoginRequiredMixin, FacetedSearchView):
     def get_queryset(self):
         queryset = super().get_queryset()
         active_tasks = get_active_tasks(self.request.user, all_tasks=True).values_list('pk', flat=True)
-        queryset = queryset.filter(id_value__in=active_tasks)
+        queryset = queryset.filter(id__in=active_tasks)
 
         owner = self.request.GET.get('owner', 'all')
         if owner == 'user':

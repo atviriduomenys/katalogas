@@ -8,7 +8,6 @@ from vitrina.tasks.models import Task
 class TaskIndex(SearchIndex, Indexable):
     text = EdgeNgramField(document=True, use_template=True)
     due_date = DateTimeField(model_attr='due_date', null=True)
-    id_value = IntegerField(model_attr='pk', null=True)
     user = IntegerField(model_attr='get_user_id', null=True)
     type = CharField(model_attr='get_type', faceted=True)
     status = CharField(model_attr='status', faceted=True)

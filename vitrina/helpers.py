@@ -103,6 +103,8 @@ class Filter:
 
     def items(self):
         fields = self.fields
+        if not fields:
+            return
 
         selected = get_selected_value(
             self.form,

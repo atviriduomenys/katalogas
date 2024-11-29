@@ -326,13 +326,6 @@
                 </div>
                 <br>
             {% endif %}
-            {% if request_object.comment %}
-                <div class="organization-comment">
-                    <h3 class="organization-comment-title">{% translate "Organizacijos atsakymas" %}:</h3>
-                    <div class="content">{{ request_object.comment | escape }}</div>
-                </div>
-                <br>
-            {% endif %}
             {% if history %}
                 {% include 'request/history.twig' %}
             {% endif %}

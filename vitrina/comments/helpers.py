@@ -1,11 +1,15 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model
 from django.shortcuts import get_object_or_404
+
+from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
+from vitrina.requests.models import Request
 from vitrina.tasks.models import Task
 from vitrina.helpers import email
-
+from vitrina.users.models import User
 
 NEW_COMMENT = 'New'
 REPLY_COMMENT = 'Reply'
@@ -161,5 +165,35 @@ def send_mail_to_object_subscribers(
             'link': link,
             'text': text
         })
+
+def save_request_comment(obj: Model, status: str, body: str):
+    sys_user,_ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    content_type = ContentType.objects.get_for_model(Request)
+
+    existing_comment = Comment.objects.filter(
+        user=sys_user,
+        content_type=content_type,
+        object_id=obj.pk,
+        body=body,
+        type=Comment.STATUS,
+        status=status,
+        is_public=True,
+    ).first()
+    # If the comment already exists, update it
+    if existing_comment:
+        existing_comment.body = body
+        existing_comment.status = status
+        existing_comment.save()
+    else:
+        request_comment = Comment.objects.create(
+            user=sys_user,
+            content_type=content_type,
+            object_id=obj.pk,
+            body=body,
+            type=Comment.STATUS,
+            status=status,
+            is_public=True,
+        )
+        request_comment.save()
 
 

@@ -103,6 +103,20 @@ class Dataset(TranslatableModel):
         REQUEST_SET: _("Priskirta poreikiui")
     }
 
+    PUBLIC = "PUBLIC"
+    RESTRICTED = "RESTRICTED"
+    NON_PUBLIC = "NON_PUBLIC"
+    ACCESS_RIGHTS = (
+        (PUBLIC, _("Atviri duomenys")),
+        (RESTRICTED, _("Apsaugoti duomenys")),
+        (NON_PUBLIC, _("Uždari duomenys")),
+    )
+    FILTER_ACCESS_RIGHTS = {
+        PUBLIC:  _("Atviri duomenys"),
+        RESTRICTED:  _("Apsaugoti duomenys"),
+        NON_PUBLIC:  _("Uždari duomenys"),
+    }
+
     API_ORIGIN = "api"
 
     translations = TranslatedFields(
@@ -145,7 +159,7 @@ class Dataset(TranslatableModel):
     frequency = models.ForeignKey(Frequency, models.SET_NULL, blank=False, null=True, verbose_name=_('Atnaujinimo dažnumas'))
     last_update = models.DateTimeField(blank=True, null=True)
 
-    access_rights = models.TextField(blank=True, null=True, verbose_name=_('Prieigos teisės'))
+    access_rights = models.CharField(_('Prieigos teisės'), blank=True, null=True, choices=ACCESS_RIGHTS, max_length=255)
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
     tags = TagField(

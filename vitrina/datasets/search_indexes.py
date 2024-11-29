@@ -52,6 +52,7 @@ class DatasetIndex(SearchIndex, Indexable):
     type_order = IntegerField(model_attr='type_order')
     is_public = BooleanField(model_attr='is_public', faceted=True, null=False)
     managers = MultiValueField(model_attr='get_managers', faceted=True)
+    access_rights = CharField(model_attr='access_rights', faceted=True, null=True)
 
     def get_model(self):
         return Dataset

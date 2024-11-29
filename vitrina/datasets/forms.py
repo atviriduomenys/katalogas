@@ -120,8 +120,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('endpoint_type'),
             Field('endpoint_description'),
             Field('endpoint_description_type'),
-            Field('access_rights',
-                  placeholder=_('Pateikite visas prieigos teises kurios aktualios šiam duomenų rinkiniui')),
+            Field('access_rights'),
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
             Submit('submit', button, css_class='button is-primary')

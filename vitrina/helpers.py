@@ -74,6 +74,7 @@ class Filter:
         use_str: bool = False,
         remove_search_query: bool = False,
         order: classmethod = None,
+        expand: bool = True
     ):
         self.name = name
         self.title = title
@@ -90,6 +91,7 @@ class Filter:
         self.use_str = use_str
         self.remove_search_query = remove_search_query
         self.order = order
+        self.expand = expand
 
     def get_stats_url(self):
         path = reverse(f'dataset-stats-{self.name}')
@@ -152,6 +154,8 @@ class Filter:
                         continue
             elif self.choices:
                 title = self.choices.get(value)
+                if not title:
+                    continue
 
             is_selected = value in selected if self.multiple else value == selected
             yield FilterItem(

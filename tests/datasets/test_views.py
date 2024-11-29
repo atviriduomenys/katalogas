@@ -2259,3 +2259,21 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('dataset-requests', args=[dataset.pk]))
     assert response.context['dataset'] == dataset
+
+
+@pytest.mark.haystack
+def test_access_rights_filter(app: DjangoTestApp):
+    dataset1 = DatasetFactory(access_rights=Dataset.RESTRICTED)
+    dataset2 = DatasetFactory(access_rights=Dataset.RESTRICTED)
+    DatasetFactory(access_rights=Dataset.PUBLIC)
+    resp = app.get("%s?selected_facets=access_rights_exact:%s" % (
+        reverse('dataset-list'),
+        Dataset.RESTRICTED
+    ))
+
+    objects = sorted([int(obj.pk) for obj in resp.context['object_list']])
+    assert objects == sorted([dataset1.pk, dataset2.pk])
+
+    filters = {f.name: f for f in resp.context['filters']}
+    selected = [i.value for i in filters['access_rights'].items() if i.selected]
+    assert selected == [Dataset.RESTRICTED]

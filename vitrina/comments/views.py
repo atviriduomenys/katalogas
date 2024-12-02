@@ -13,7 +13,7 @@ from reversion.views import RevisionMixin
 
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import create_task, create_subscription, send_mail_and_create_tasks_for_subs, NEW_COMMENT, \
-    REPLY_COMMENT
+    REPLY_COMMENT, save_request_comment
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class, has_comment_permission
 from vitrina.datasets.models import Dataset
@@ -148,8 +148,8 @@ class CommentView(
                         organization=user_org,
                         request=obj
                     ).first()
+                    save_request_comment(obj, status, comment.body)
                     obj.status = status
-                    obj.comment = comment.body
                     obj.save()
                     set_comment(type(obj).STATUS_CHANGED)
                     if not request_assignment:
@@ -165,8 +165,8 @@ class CommentView(
                             messages.error(request, _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"))
                             return redirect(obj.get_absolute_url())
                     if status == Request.OPENED:
+                        save_request_comment(obj, status, comment.body)
                         obj.status = status
-                        obj.comment = comment.body
                         obj.save()
                         set_comment(type(obj).STATUS_CHANGED)
                         request_plans = Plan.objects.filter(planrequest__request=obj)
@@ -184,8 +184,8 @@ class CommentView(
                                 plan.is_closed = True
                                 plan.save()
                     if status == Request.APPROVED:
+                        save_request_comment(obj, status, comment.body)
                         obj.status = status
-                        obj.comment = comment.body
                         obj.save()
                         set_comment(type(obj).STATUS_CHANGED)
                     if status == Request.REJECTED:
@@ -198,8 +198,8 @@ class CommentView(
                             request=obj
                         )
                         if not approved_assignments_exists and not opened_assignments_exists:
+                            save_request_comment(obj, status, comment.body)
                             obj.status = status
-                            obj.comment = comment.body
                             obj.save()
                             set_comment(type(obj).STATUS_CHANGED)
                     ra_comment = form.save(commit=False)
@@ -210,8 +210,8 @@ class CommentView(
                     request_assignment.save()
                     ra_comment.save()
                 else:
+                    save_request_comment(obj, status, comment.body)
                     obj.status = status
-                    obj.comment = comment.body
                     obj.save()
                     set_comment(type(obj).STATUS_CHANGED)
             else:

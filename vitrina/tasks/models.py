@@ -123,16 +123,6 @@ class Task(models.Model):
     def get_acl_parents(self):
         return [self]
 
-    def get_type(self):
-        if self.type in [Task.ERROR, Task.ERROR_DISTRIBUTION, Task.ERROR_FREQUENCY]:
-            return Task.ERROR
-        return self.type
-
-    def get_user_id(self):
-        if self.user:
-            return self.user.pk
-        return None
-
 
 class Holiday(models.Model):
     title = models.CharField(max_length=255)

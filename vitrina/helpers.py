@@ -411,8 +411,8 @@ def get_filter_url(
             else:
                 query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
     else:
-        if selected and query_dict.get(key) == value:
-            query_dict.pop(key)
+        if selected and value in query_dict.get(key, []):
+            query_dict[key].remove(value)
         else:
             query_dict[key] = value
     return "?" + urlencode(query_dict, True)

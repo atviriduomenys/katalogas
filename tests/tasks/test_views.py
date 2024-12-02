@@ -248,7 +248,7 @@ def test_task_search_with_filter(app: DjangoTestApp):
     TaskFactory(user=user, title="Test: task 2", status=Task.COMPLETED)
     TaskFactory(user=user, title="Something else", status=Task.CREATED)
     app.set_user(user)
-    resp = app.get('%s?q=Test:&selected_facets=status_exact:created' %
+    resp = app.get('%s?q=Test:&status=created' %
                    reverse("user-task-list", kwargs={'pk': user.pk}))
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == sorted([task1.pk])
 

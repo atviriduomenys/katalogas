@@ -1,45 +1,54 @@
 import datetime
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Case, When, Value, CharField, F, Q
+from django.db.models.functions import Concat
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import DetailView, DeleteView, TemplateView
+from django.views.generic import DetailView, DeleteView, TemplateView, ListView
 from django.utils.translation import gettext_lazy as _
-from haystack.generic_views import FacetedSearchView
 
-from vitrina.helpers import Filter, get_filter_url
+from vitrina.helpers import get_filter_url
 from vitrina.orgs.models import Organization
-from vitrina.tasks.forms import TaskSearchForm
 from vitrina.tasks.models import Task
 from vitrina.tasks.services import get_active_tasks
 
 
-class TaskListView(LoginRequiredMixin, FacetedSearchView):
+class TaskListView(LoginRequiredMixin, ListView):
+    model = Task
     template_name = 'vitrina/tasks/list.html'
     paginate_by = 20
 
-    facet_fields = [
-        'status',
-        'type',
-        'user',
-    ]
-    form_class = TaskSearchForm
-    max_num_facets = 20
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
-
-    def get_queryset(self):
+    def get_queryset(self, filter_owner=True):
         queryset = super().get_queryset()
-        active_tasks = get_active_tasks(self.request.user, all_tasks=True).values_list('pk', flat=True)
-        queryset = queryset.filter(id__in=active_tasks)
+        queryset = get_active_tasks(self.request.user, queryset, all_tasks=True)
 
-        owner = self.request.GET.get('owner', 'all')
-        if owner == 'user':
+        owner_selected_value = self.request.GET.get('owner', 'all')
+        status_selected_value = self.request.GET.get('status', '')
+        type_selected_value = self.request.GET.get('type', '')
+        keyword = self.request.GET.get('q', '')
+
+        if filter_owner and owner_selected_value == 'user':
             queryset = queryset.filter(user__pk=self.request.user.pk)
+        if status_selected_value:
+            queryset = queryset.filter(status=status_selected_value)
+        if type_selected_value:
+            queryset = queryset.annotate(task_type=Case(
+                When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
+                When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
+                default=F('type'),
+                output_field=CharField(),
+            )).filter(task_type=type_selected_value)
+        if keyword:
+            queryset = queryset.annotate(
+                user_name=Concat('user__first_name', Value(' '), 'user__last_name')
+            ).filter(
+                Q(title__icontains=keyword) |
+                Q(description__icontains=keyword) |
+                Q(organization__title__icontains=keyword) |
+                Q(user_name__icontains=keyword)
+            )
 
         return queryset.order_by('due_date')
 
@@ -49,62 +58,87 @@ class TaskListView(LoginRequiredMixin, FacetedSearchView):
             reverse('home'): _('Pradžia'),
         }
 
-        facet_fields = context.get('facets').get('fields')
-        form = context.get('form')
-        filter_args = (self.request, form, facet_fields)
-        context['filters'] = [
-            Filter(
-                *filter_args,
-                'status',
-                _("Būsena"),
-                choices=Task.FILTER_STATUSES,
-                multiple=False,
-                is_int=False
-            ),
-            Filter(
-                *filter_args,
-                'type',
-                _("Tipas"),
-                choices=Task.FILTER_TYPES,
-                multiple=False,
-                is_int=False
-            ),
-        ]
-
         owner_selected_value = self.request.GET.get('owner', 'all')
+        status_selected_value = self.request.GET.get('status', '')
+        type_selected_value = self.request.GET.get('type', '')
+        keyword = self.request.GET.get('q', '')
         queryset = self.get_queryset()
-        context['owner_filter'] = {
-            'title': _("Vykdytojas"),
-            'items': [
-                {
-                    'title': _('Mano užduotys'),
-                    'url': get_filter_url(
-                        self.request,
-                        "owner",
-                        "user",
-                        owner_selected_value == "user",
-                        facet_field=False
-                    ),
-                    "count": queryset.filter(user__pk=self.request.user.pk).count(),
-                    "selected": owner_selected_value == "user"
-                },
-                {
-                    'title': _('Visos užduotys'),
-                    'url': get_filter_url(
-                        self.request,
-                        "owner",
-                        "all",
-                        owner_selected_value == "all",
-                        facet_field=False
-                    ),
-                    "count": queryset.count(),
-                    "selected": owner_selected_value == "all"
-                }
-            ]
-        }
+
+        context['filters'] = [
+            {
+                'title': _("Vykdytojas"),
+                'items': [
+                    {
+                        'title': _('Mano užduotys'),
+                        'url': get_filter_url(
+                            self.request,
+                            "owner",
+                            "user",
+                            owner_selected_value == "user",
+                            facet_field=False
+                        ),
+                        "count": queryset.filter(user__pk=self.request.user.pk).count(),
+                        "selected": owner_selected_value == "user",
+                        "always_show": True
+                    },
+                    {
+                        'title': _('Visos užduotys'),
+                        'url': get_filter_url(
+                            self.request,
+                            "owner",
+                            "all",
+                            owner_selected_value == "all",
+                            facet_field=False
+                        ),
+                        "count": self.get_queryset(filter_owner=False).count(),
+                        "selected": owner_selected_value == "all",
+                        "always_show": True
+                    }
+                ]
+            }, {
+                'title': _("Būsena"),
+                'items': [
+                    {
+                        'title': title,
+                        'url': get_filter_url(
+                            self.request,
+                            "status",
+                            value,
+                            status_selected_value == value,
+                            facet_field=False
+                        ),
+                        "count": queryset.filter(status=value).count(),
+                        "selected": status_selected_value == value
+                    } for value, title in Task.FILTER_STATUSES.items()
+                ]
+            }, {
+                'title': _("Tipas"),
+                'items': [
+                    {
+                        'title': title,
+                        'url': get_filter_url(
+                            self.request,
+                            "type",
+                            value,
+                            type_selected_value == value,
+                            facet_field=False
+                        ),
+                        "count": queryset.annotate(
+                            task_type=Case(
+                                When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
+                                When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
+                                default=F('type'),
+                                output_field=CharField(),
+                            )
+                        ).filter(task_type=value).count(),
+                        "selected": type_selected_value == value
+                    } for value, title in Task.FILTER_TYPES.items()
+                ]
+            }
+        ]
         context['search_url'] = reverse('user-task-list', args=[self.request.user.pk])
         context['search_query'] = dict(self.request.GET.copy())
-        context['q'] = form.cleaned_data.get('q', '')
+        context['q'] = keyword
         return context
 
 

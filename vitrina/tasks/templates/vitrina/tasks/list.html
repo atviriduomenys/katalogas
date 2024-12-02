@@ -40,39 +40,13 @@
 
     <div class="columns">
         <div class="column is-one-quarter is-hidden-mobile">
-            <nav class="box category-panel mb-5">
-                <p class="status-panel-heading" title="{{ owner_filter.title }}">
-                    <strong>{{ owner_filter.title }}</strong>
-                </p>
-                {% for item in owner_filter.items %}
-                        <div class="columns is-gapless m-0 mt-1">
-                            <div class="column is-1">
-                                <span class="icon glyphicon-list"></span>
-                            </div>
-                            <div class="column is-9">
-                                <a href="{{ item.url }}"
-                                   class="category-panel-block
-                                   {% if item.selected %}
-                                       has-text-weight-bold
-                                   {% else %}
-                                       has-text-dark
-                                   {% endif %}
-
-                                   ">{{ item.title }}</a>
-                            </div>
-                            <div class="column is-2 has-text-right">
-                                <span>({{ item.count }})</span>
-                            </div>
-                        </div>
-                {% endfor %}
-            </nav>
-
             {% for filter in filters %}
                 <nav class="box category-panel mb-5">
                         <p class="status-panel-heading" title="{{ filter.title }}">
                             <strong>{{ filter.title }}</strong>
                         </p>
                         {% for item in filter.items %}
+                            {% if item.count > 0 or item.always_show %}
                                 <div class="columns is-gapless m-0 mt-1">
                                     <div class="column is-1">
                                         <span class="icon glyphicon-list"></span>
@@ -92,6 +66,7 @@
                                         <span>({{ item.count }})</span>
                                     </div>
                                 </div>
+                            {% endif %}
                         {% endfor %}
                 </nav>
             {% endfor %}
@@ -106,47 +81,47 @@
                             <div class="columns">
                                 <div class="column is-12">
                                     <a href="{% url 'user-task-detail' user.pk i.pk %}">
-                                        <strong class="dataset-list-title">{{ i.object.title }}</strong>
+                                        <strong class="dataset-list-title">{{ i.title }}</strong>
                                     </a>
                                 </div>
                             </div>
                             <div class="columns">
                                 <div class="column is-2">
-                                    {{ i.object.created|date:"Y-m-d" }}
+                                    {{ i.created|date:"Y-m-d" }}
                                 </div>
                                 <div class="column">
-                                    {% translate i.object.status|title %}
+                                    {% translate i.status|title %}
                                 </div>
                                 <div class="column">
-                                    {% if i.object.user %}
-                                        {{ i.object.user }}
+                                    {% if i.user %}
+                                        {{ i.user }}
                                     {% endif %}
                                 </div>
                                 <div class="column">
-                                    {% if i.object.is_due_or_expiring|first == True %}
+                                    {% if i.is_due_or_expiring|first == True %}
                                         <span class="has-text-danger">
-                                        {% translate 'Vėluoja' %} {{ i.object.is_due_or_expiring|last }}
-                                        {% if i.object.is_due_or_expiring|last == 1 %}
+                                        {% translate 'Vėluoja' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
                                             {% translate 'dieną' %}
                                         {% else %}
                                             {% translate 'dienas' %}
                                         {% endif %}
                                         </span>
-                                    {% elif i.object.is_due_or_expiring|first == False %}
+                                    {% elif i.is_due_or_expiring|first == False %}
                                         <span class="has-text-warning">
-                                        {% translate 'Liko' %} {{ i.object.is_due_or_expiring|last }}
-                                        {% if i.object.is_due_or_expiring|last == 1 %}
+                                        {% translate 'Liko' %} {{ i.is_due_or_expiring|last }}
+                                        {% if i.is_due_or_expiring|last == 1 %}
                                             {% translate 'diena' %}
                                         {% else %}
                                             {% translate 'dienos' %}
                                         {% endif %}
                                         </span>
                                     {% else %}
-                                        {{ i.object.due_date|date:"Y-m-d" }}
+                                        {{ i.due_date|date:"Y-m-d" }}
                                     {% endif %}
                                 </div>
                                 <div class="column">
-                                    {% if i.object.status != i.object.COMPLETED %}
+                                    {% if i.status != i.COMPLETED %}
                                     <a href="{% url 'user-task-close' user.pk i.pk %}"
                                        class="button is-primary stays-right">
                                         {% translate "Uždaryti" %}
@@ -156,7 +131,7 @@
                             </div>
                             <div class="columns">
                                 <div class="column is-12">
-                                    <p>{{ i.object.description | safe }}</p>
+                                    <p>{{ i.description | safe }}</p>
                                 </div>
                             </div>
                         </div>

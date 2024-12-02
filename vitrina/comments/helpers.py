@@ -179,12 +179,8 @@ def save_request_comment(obj: Model, status: str, body: str):
         status=status,
         is_public=True,
     ).first()
-    # If the comment already exists, update it
-    if existing_comment:
-        existing_comment.body = body
-        existing_comment.status = status
-        existing_comment.save()
-    else:
+
+    if not existing_comment:
         request_comment = Comment.objects.create(
             user=sys_user,
             content_type=content_type,

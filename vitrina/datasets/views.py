@@ -100,6 +100,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         'published',
         'level',
         'type',
+        'access_rights',
     ]
     form_class = DatasetSearchForm
     max_num_facets = 20
@@ -225,6 +226,14 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                     DatasetGroup,
                     multiple=True,
                     is_int=False,
+                ),
+                Filter(
+                    *filter_args,
+                    'access_rights',
+                    _("Prieigos teisės"),
+                    choices=Dataset.FILTER_ACCESS_RIGHTS,
+                    is_int=False,
+                    expand=False
                 ),
                 Filter(
                     *filter_args,
@@ -1940,6 +1949,24 @@ class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
                      f'pagal rinkinio grupes rinkinio įkėlimo datai')
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike')
+
+
+class DatasetsAccessRightsView(DatasetStatsMixin, DatasetListView):
+    title = _("Prieigos teisės")
+    current_title = _("Duomenų rinkinių prieigos teisės")
+    filter = 'access_rights'
+    filter_choices = Dataset.FILTER_ACCESS_RIGHTS
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio prieigos teises rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises laike')
+
+    def get_display_value(self, item):
+        value = super().get_display_value(item)
+        return str(value)
 
 
 class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):

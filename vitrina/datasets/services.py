@@ -45,6 +45,8 @@ def update_facet_data(
                     continue
             elif choices:
                 display_value = choices.get(facet[0])
+                if not display_value:
+                    continue
             data = {
                 'filter_value': facet[0],
                 'display_value': display_value,

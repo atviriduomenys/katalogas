@@ -11,7 +11,7 @@ from vitrina.datasets.views import (
     DatasetRelationDeleteView, DatasetCategoryView, FilterCategoryView, DatasetPlanView, DatasetCreatePlanView,
     DatasetDeletePlanView, DatasetPlansHistoryView, DatasetDeletePlanDetailView, DatasetRepresentativeApiKeyView,
     UpdateDatasetOrgFilters, UpdateDatasetCategoryFilters, UpdateDatasetTagFilters, UpdateDatasetJurisdictionFilters,
-    OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView
+    OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView, DatasetsAccessRightsView
 )
 
 urlpatterns = [
@@ -32,6 +32,7 @@ urlpatterns = [
     path('datasets/stats/category/<int:pk>/', CategoryStatsView.as_view(), name='dataset-stats-category-children'),
     path('datasets/stats/tag/', DatasetsTagsView.as_view(), name='dataset-stats-tags'),
     path('datasets/stats/group/', DatasetsGroupView.as_view(), name='dataset-stats-groups'),
+    path('datasets/stats/access-rights/', DatasetsAccessRightsView.as_view(), name='dataset-stats-access_rights'),
     path('datasets/stats/format/', DatasetsFormatView.as_view(), name='dataset-stats-formats'),
     path('datasets/stats/frequency/', DatasetsFrequencyView.as_view(), name='dataset-stats-frequency'),
     path('datasets/stats/publication/', PublicationStatsView.as_view(), name='dataset-stats-published'),

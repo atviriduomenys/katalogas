@@ -1,3 +1,5 @@
+import contextlib
+import gzip
 import os
 import json
 import urllib.parse
@@ -38,6 +40,15 @@ def get_peak_memory():
         process = psutil.Process(os.getpid())
         return process.memory_info().peak_wset
 
+@contextlib.contextmanager
+def read_log_file(file_path):
+    if str(file_path).lower().endswith('.gz'):
+        with gzip.open(file_path, 'rt', encoding='utf-8') as f:
+            yield f
+    else:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            yield f
+
 
 def main(
         name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
@@ -61,9 +72,6 @@ def main(
     total_lines_read = 0
     lines_read = 0
     final_stats = {}
-    file_size = os.path.getsize(logfile)
-    existing_size = 0
-    existing_offset = 0
     temp = {}
 
     if not os.path.exists(os.path.dirname(state_file)):
@@ -76,10 +84,6 @@ def main(
     else:
         with open(state_file, 'r') as f:
             current_state = json.load(f)
-        state = current_state.get('files').get(logfile)
-        if state is not None:
-            existing_size = state.get('size')
-            existing_offset = state.get('offset')
 
     if not os.path.exists(os.path.dirname(bot_status_file)):
         os.makedirs(os.path.dirname(bot_status_file))
@@ -98,13 +102,7 @@ def main(
             bots.update(bot_list)
             apikey = data.get('apikey')
 
-    if not os.path.exists(logfile):
-        print(f'File {logfile} not found. Aborting.')
-        return
-
-    if file_size == existing_size:
-        # File did not change?
-        return
+    log_files = [logfile] + sorted(Path(logfile).parent.glob('accesslog.json-*.gz'))
 
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
@@ -113,33 +111,33 @@ def main(
     total_lines_in_file = 0
     d = deque([], maxlen=limit)
 
-    with open(logfile) as ff:
-        total_lines_in_file = sum(bl.count('\n') for bl in blocks(ff))
+    for log_file in log_files:
+        with read_log_file(log_file) as ff:
+            total_lines_in_file += sum(bl.count('\n') for bl in blocks(ff))
 
     pbar = tqdm("Parsing download stats", total=total_lines_in_file)
 
-    with open(logfile) as f:
-        bytesread = 0
-        if existing_offset > 0:
-            f.seek(existing_offset)
-        line = f.readline()
-        while line:
-            bytesread += len(str.encode(line))
-            d.append(line)
-            total_lines_read += 1
-            lines_read += 1
-            if lines_read == limit:
-                find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
-                lines_read = 0
-            state_entry = {
-                logfile: {
-                    'size': file_size,
-                    'offset': f.tell()
-                }
-            }
-            pbar.update(1)
+    for log_file in log_files:
+        with read_log_file(log_file) as f:
+            bytesread = 0
             line = f.readline()
-        find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+            while line:
+                bytesread += len(str.encode(line))
+                d.append(line)
+                total_lines_read += 1
+                lines_read += 1
+                if lines_read == limit:
+                    find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+                    lines_read = 0
+                state_entry = {
+                    logfile: {
+                        'size': os.path.getsize(log_file),
+                        'offset': f.tell()
+                    }
+                }
+                pbar.update(1)
+                line = f.readline()
+            find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
 
     post_data(temp, name, session, endpoint_url)
 

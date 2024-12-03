@@ -40,7 +40,7 @@ class Prefix(models.Model):
 
 class MetadataManager(models.Manager):
     def average_level(self):
-        return self.exclude(average_level__isnull=True).aggregate(Avg('average_level'))['average_level__avg']
+        return round(self.exclude(average_level__isnull=True).aggregate(Avg('average_level'))['average_level__avg'])
 
 
 class Metadata(models.Model):

@@ -50,7 +50,7 @@
                 <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
             {% endif %}
 
-            <span>{{ metadata.average_level|default:"0"|floatformat:"1" }}</span>
+            <span>{{ metadata.average_level|default:"0"|floatformat:"0" }}</span>
             <span class="icon has-text-warning pr-3"><i class="fas fa-star"></i></span>
 
             {% if metadata.metadata_version and metadata.draft %}

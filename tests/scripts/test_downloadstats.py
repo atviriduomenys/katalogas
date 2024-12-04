@@ -144,8 +144,9 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     # }
     state_file = tmp_path / 'state.json'
     assert json.loads(state_file.read_text()) == {
-        'global_line_offset': 10
-    }
+        'line_offset': 10,
+        'start_from': None,
+        'read_files': []}
 
     bot_stats_file = tmp_path / 'downloadstats.json'
     assert json.loads(bot_stats_file.read_text()) == {
@@ -249,7 +250,7 @@ def test_reading_archived_logs(patcher: MagicMock, tmp_path: Path):
 
     session = patcher.return_value
 
-    res = run(tmp_path, [log(day='4')])
+    res = run(tmp_path, [log(day='3')])
     assert res.exit_code == 0
 
     assert session.post.call_count == 2
@@ -264,7 +265,10 @@ def test_reading_archived_logs(patcher: MagicMock, tmp_path: Path):
 
     state_file = tmp_path / 'state.json'
     assert json.loads(state_file.read_text()) == {
-        'global_line_offset': 6
+        'line_offset': 2,
+        'read_files': ['accesslog.json-2000-01-01.gz',
+                       'accesslog.json-2000-01-02.gz'],
+        'start_from': None,
     }
 
     bot_stats_file = tmp_path / 'downloadstats.json'

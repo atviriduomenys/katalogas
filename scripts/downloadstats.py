@@ -61,10 +61,15 @@ def main(
         config_file: str = Option(os.path.expanduser('~/.config/vitrina/downloadstats.json')),
         state_file: str = Option(os.path.expanduser('~/.local/share/vitrina/state.json')),
         bot_status_file: str = Option(os.path.expanduser('~/.local/share/vitrina/downloadstats.json')),
+        start_from: str = Option(None, help="Start processing from this log file")
 ):
     transactions = {}
-    current_state = {'global_line_offset': 0}
+    current_state = {'line_offset': 0, 'start_from': start_from, 'read_files': []}
     state_entry = {}
+
+    start_from_update = None
+    if start_from:
+        start_from_update = start_from
 
     bots_found = {'agents': {}}
     apikey = ""
@@ -103,7 +108,15 @@ def main(
             bots.update(bot_list)
             apikey = data.get('apikey')
 
-    log_files = [logfile] + sorted(Path(logfile).parent.glob('accesslog.json-*.gz'))
+    log_files = [Path(logfile)] + sorted(Path(logfile).parent.glob('accesslog.json-*.gz'))
+
+    start_from = start_from or current_state.get('start_from')
+
+    if start_from:
+        log_files = [lf for lf in log_files if lf.name == 'accesslog.json' or lf.name >= start_from]
+
+    read_files = set(current_state.get('read_files', []))
+    log_files = sorted([lf for lf in log_files if lf.name not in read_files])
 
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
@@ -118,17 +131,23 @@ def main(
 
     pbar = tqdm("Parsing download stats", total=total_lines_in_file)
 
-    global_line_offset = current_state.get('global_line_offset', 0)
+    line_offset = current_state.get('line_offset', 0)
+    read_files_list = list(read_files)
 
     for log_file in log_files:
         with read_log_file(log_file) as f:
-            while global_line_offset > 0:
+            if log_file.name == 'accesslog.json':
+                total_lines_in_file = sum(1 for _ in f)
+                f.seek(0)
+            while line_offset > 0:
                 line = f.readline()
                 if not line:
                     break
-                global_line_offset -= 1
+                line_offset -= 1
 
             line = f.readline()
+            if log_file.name != 'accesslog.json':
+                read_files_list.append(log_file.name)
             while line:
                 d.append(line)
                 total_lines_read += 1
@@ -138,8 +157,11 @@ def main(
                     d.clear()
                     lines_read = 0
                 state_entry = {
-                    'global_line_offset': total_lines_read + current_state.get('global_line_offset', 0)
+                    'line_offset': total_lines_in_file,
+                    'read_files': sorted(read_files_list)
                 }
+                if start_from_update:
+                    state_entry['start_from'] = start_from_update
                 pbar.update(1)
                 line = f.readline()
             find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)

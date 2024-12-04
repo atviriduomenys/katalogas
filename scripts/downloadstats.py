@@ -63,7 +63,8 @@ def main(
         bot_status_file: str = Option(os.path.expanduser('~/.local/share/vitrina/downloadstats.json')),
 ):
     transactions = {}
-    current_state = {'files': {}}
+    current_state = {'global_line_offset': 0}
+    state_entry = {}
 
     bots_found = {'agents': {}}
     apikey = ""
@@ -117,31 +118,36 @@ def main(
 
     pbar = tqdm("Parsing download stats", total=total_lines_in_file)
 
+    global_line_offset = current_state.get('global_line_offset', 0)
+
     for log_file in log_files:
         with read_log_file(log_file) as f:
-            bytesread = 0
+            while global_line_offset > 0:
+                line = f.readline()
+                if not line:
+                    break
+                global_line_offset -= 1
+
             line = f.readline()
             while line:
-                bytesread += len(str.encode(line))
                 d.append(line)
                 total_lines_read += 1
                 lines_read += 1
                 if lines_read == limit:
                     find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+                    d.clear()
                     lines_read = 0
                 state_entry = {
-                    logfile: {
-                        'size': os.path.getsize(log_file),
-                        'offset': f.tell()
-                    }
+                    'global_line_offset': total_lines_read + current_state.get('global_line_offset', 0)
                 }
                 pbar.update(1)
                 line = f.readline()
             find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+            d.clear()
 
     post_data(temp, name, session, endpoint_url)
 
-    current_state.get('files', {}).update(state_entry)
+    current_state.update(state_entry)
 
     with open(state_file, "w") as outfile:
         outfile.write(json.dumps(current_state, indent=4))
@@ -269,7 +275,6 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                                 temp[model].append(
                                     {'source': name, 'model': model, 'time': dt, 'date': date, 'hour': hour,
                                      'format': frmt, 'requests': requests, 'objects': objects})
-
             with open(bot_status_file, "w+") as bot_file:
                 bot_file.write(json.dumps(bots_found, indent=4))
 

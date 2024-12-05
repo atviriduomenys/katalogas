@@ -261,6 +261,16 @@ class DatasetReportAdmin(admin.ModelAdmin):
                             text = _(f"Vėluoja {hours} valandas")
         return text
 
+    def _is_late_for_days(self, obj):
+        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+            if obj.frequency and obj.frequency.hours:
+                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                now = timezone.now()
+                if need_to_modify < now:
+                    late_for = now - need_to_modify
+                    return late_for.days
+        return 0
+
     def late_display(self, obj):
         late_for = self._is_late_for(obj)
         if late_for:
@@ -296,7 +306,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             'frequency': _("Duomenų atnaujinimo periodiškumas"),
             'spinta_modified': _("Duomenys atnaujinti saugykloje"),
             'modified': _("Metaduomenys atnaujinti kataloge"),
-            'late': _("Vėluoja"),
+            'late': _("Vėlavimas, dienomis"),
         }
         rows = self._get_dataset_report(cols, queryset, request)
         rows = ({v: row[k] for k, v in cols.items()} for row in rows)
@@ -334,7 +344,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 'frequency': self.frequency_display(item),
                 'spinta_modified': self.spinta_modified_display(item),
                 'modified': self.distribution_modified_display(item),
-                'late': self._is_late_for(item) or "-",
+                'late': self._is_late_for_days(item),
             })
 
 

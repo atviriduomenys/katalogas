@@ -148,7 +148,7 @@ class CommentView(
                         organization=user_org,
                         request=obj
                     ).first()
-                    save_request_comment(obj, status, comment.body)
+                    save_request_comment(obj, status, comment.body, request.user)
                     obj.status = status
                     obj.save()
                     set_comment(type(obj).STATUS_CHANGED)
@@ -165,7 +165,7 @@ class CommentView(
                             messages.error(request, _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"))
                             return redirect(obj.get_absolute_url())
                     if status == Request.OPENED:
-                        save_request_comment(obj, status, comment.body)
+                        save_request_comment(obj, status, comment.body, request.user)
                         obj.status = status
                         obj.save()
                         set_comment(type(obj).STATUS_CHANGED)
@@ -184,7 +184,7 @@ class CommentView(
                                 plan.is_closed = True
                                 plan.save()
                     if status == Request.APPROVED:
-                        save_request_comment(obj, status, comment.body)
+                        save_request_comment(obj, status, comment.body, request.user)
                         obj.status = status
                         obj.save()
                         set_comment(type(obj).STATUS_CHANGED)
@@ -198,7 +198,7 @@ class CommentView(
                             request=obj
                         )
                         if not approved_assignments_exists and not opened_assignments_exists:
-                            save_request_comment(obj, status, comment.body)
+                            save_request_comment(obj, status, comment.body, request.user)
                             obj.status = status
                             obj.save()
                             set_comment(type(obj).STATUS_CHANGED)
@@ -210,7 +210,7 @@ class CommentView(
                     request_assignment.save()
                     ra_comment.save()
                 else:
-                    save_request_comment(obj, status, comment.body)
+                    save_request_comment(obj, status, comment.body, request.user)
                     obj.status = status
                     obj.save()
                     set_comment(type(obj).STATUS_CHANGED)

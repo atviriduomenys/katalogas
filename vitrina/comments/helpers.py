@@ -166,12 +166,11 @@ def send_mail_to_object_subscribers(
             'text': text
         })
 
-def save_request_comment(obj: Model, status: str, body: str):
-    sys_user,_ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+def save_request_comment(obj: Model, status: str, body: str, user: User):
     content_type = ContentType.objects.get_for_model(Request)
 
     existing_comment = Comment.objects.filter(
-        user=sys_user,
+        user=user,
         content_type=content_type,
         object_id=obj.pk,
         body=body,
@@ -182,7 +181,7 @@ def save_request_comment(obj: Model, status: str, body: str):
 
     if not existing_comment:
         request_comment = Comment.objects.create(
-            user=sys_user,
+            user=user,
             content_type=content_type,
             object_id=obj.pk,
             body=body,

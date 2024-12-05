@@ -1,13 +1,17 @@
 from django import template
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
 from vitrina.comments.services import get_comment_form_class
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.projects.models import Project
+from vitrina.resources.models import DatasetDistribution
+from vitrina.orgs.models import Representative, Organization
 from vitrina.orgs.services import has_perm, Action
-from vitrina.requests.models import Request
-from vitrina.structure.models import Metadata
+from vitrina.requests.models import Request, RequestAssignment
+from vitrina.structure.models import Metadata, Model, Property
 
 register = template.Library()
 assignment_tag = getattr(register, 'assignment_tag', register.simple_tag)
@@ -104,3 +108,90 @@ def has_comment_view_perm(comment, obj, user):
         return True
     else:
         return has_perm(user, Action.COMMENT, obj)
+
+@register.simple_tag
+def get_author_name(comment, user):
+    if isinstance(user, AnonymousUser):
+        return "Sistemos naudotojas"
+
+    if user == comment.user or user.is_superuser:
+        return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_datasets
+    if comment.content_type.model == 'dataset' and Representative.objects.filter(
+        user=user,
+        role__in=[Representative.COORDINATOR, Representative.MANAGER],
+        content_type=comment.content_type,
+        object_id=comment.object_id
+    ).exists():
+        return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_datasets
+    if comment.content_type.model == 'datasetstructure':
+        dataset_id = DatasetStructure.objects.values_list('dataset_id', flat=True).get(pk=comment.object_id)
+        organization_id = Dataset.objects.values_list('organization_id', flat=True).get(pk=dataset_id)
+        if Representative.objects.filter(
+            user=user,
+            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization_id
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_resources
+    if comment.content_type.model == 'datasetdistribution':
+        dataset_id = DatasetDistribution.objects.values_list('dataset_id', flat=True).get(pk=comment.object_id)
+        organization_id = Dataset.objects.values_list('organization_id', flat=True).get(pk=dataset_id)
+        if Representative.objects.filter(
+            user=user,
+            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization_id
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_structure
+    if comment.content_type.model == 'model':
+        dataset_id = Model.objects.filter(pk=comment.object_id).values_list('dataset_id',
+                                                                                          flat=True).first()
+        organization_id = Dataset.objects.filter(pk=dataset_id).values_list('organization_id', flat=True).first()
+        if Representative.objects.filter(
+                user=user,
+                role__in=[Representative.COORDINATOR, Representative.MANAGER],
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id=organization_id
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_structure
+    if comment.content_type.model == 'property':
+        model_id = Property.objects.values_list('model_id', flat=True).get(pk=comment.object_id)
+        dataset_id = Model.objects.values_list('dataset_id', flat=True).get(pk=model_id)
+        organization_id = Dataset.objects.values_list('organization_id', flat=True).get(pk=dataset_id)
+        if Representative.objects.filter(
+            user=user,
+            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization_id
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_requests
+    if comment.content_type.model == 'request':
+        organization_ids = RequestAssignment.objects.filter(request=comment.object_id).values_list('organization_id', flat=True)
+        if user.representative_set.filter(
+                object_id__in=organization_ids,
+                content_type=ContentType.objects.get_for_model(Organization)
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    # vitrina_projects
+    if comment.content_type.model == 'project':
+        organization_id = Project.objects.filter(pk=comment.object_id).first().user.organization
+        if user.representative_set.filter(
+            object_id=organization_id.pk,
+            content_type=ContentType.objects.get_for_model(Organization)
+        ).exists():
+            return f'{comment.user.first_name} {comment.user.last_name}'
+
+    return "Sistemos naudotojas"

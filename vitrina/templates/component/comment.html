@@ -2,6 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load markdown_tags %}
+{% load comment_tags %}
 
 {% if comment.deleted %}
     {% if is_child %}
@@ -61,7 +62,7 @@
                                 </p>
                             {% endif %}
                             <p class="no-margin-bottom">
-                                <strong>{{ comment.user | escape }}</strong>
+                                <strong>{% get_author_name comment user %}</strong>
                                 <div>{{ comment.body_text | markdown | safe }}</div>
                                 <small>
                                     {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}

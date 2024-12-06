@@ -88,7 +88,7 @@ class Organization(MP_Node):
     image = FilerImageField(null=True, blank=True,
                             related_name="image_organization",
                             on_delete=models.SET_NULL, verbose_name=_('Logotipas'))
-    provider = models.BooleanField(default=False, verbose_name=_("Atvėrimo duomenų teikėjas"))
+    publisher = models.BooleanField(default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
 
     # Deprecated fields

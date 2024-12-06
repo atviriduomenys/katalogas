@@ -51,7 +51,7 @@ class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
         return value
 
 
-class ProviderWidget(ModelSelect2Widget):
+class PublisherWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     dependent_fields = {
@@ -65,8 +65,8 @@ class ProviderWidget(ModelSelect2Widget):
             ids.extend(organizations)
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
-        provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
-        ids.extend(provider_orgs)
+        publisher_orgs = queryset.filter(publisher=True).values_list('pk', flat=True)
+        ids.extend(publisher_orgs)
         queryset = queryset.filter(pk__in=ids)
         return queryset
 
@@ -180,7 +180,7 @@ class OrganizationUpdateForm(ModelForm):
             'email',
             'phone',
             'address',
-            'provider',
+            'publisher',
             'description',
         )
 
@@ -205,7 +205,7 @@ class OrganizationUpdateForm(ModelForm):
             Field('email', placeholder=_("Elektroninis paštas")),
             Field('phone', placeholder=_("Telefono numeris")),
             Field('address', placeholder=_("Adresas")),
-            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('publisher', placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field('description', placeholder=_("Aprašymas")),
             Submit('submit', button, css_class='button is-primary')
         )
@@ -257,7 +257,7 @@ class OrganizationCreateForm(ModelForm):
             'email',
             'phone',
             'address',
-            'provider',
+            'publisher',
             'description',
         )
 
@@ -283,7 +283,7 @@ class OrganizationCreateForm(ModelForm):
             Field('email', placeholder=_("Elektroninis paštas")),
             Field('phone', placeholder=_("Telefono numeris")),
             Field('address', placeholder=_("Adresas")),
-            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('publisher', placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field('description', placeholder=_("Aprašymas")),
             Submit('submit', button, css_class='button is-primary')
         )
@@ -518,11 +518,11 @@ class PartnerRegisterForm(ModelForm):
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
     user_id = IntegerField(widget=HiddenInput(), required=False)
-    provider = ModelChoiceField(
+    publisher = ModelChoiceField(
         label=_("Paslaugų teikėjas"),
         required=False,
         queryset=Organization.objects.all(),
-        widget=ProviderWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=PublisherWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
     )
     deadline = DateField(
         label=_("Įgyvendinimo terminas"),
@@ -532,8 +532,16 @@ class OrganizationPlanForm(ModelForm):
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
-                  'procurement', 'price', 'project', 'organizations', 'user_id')
+        fields = ('title',
+                  'description',
+                  'deadline',
+                  'publisher',
+                  'provider_title',
+                  'procurement',
+                  'price',
+                  'project',
+                  'organizations',
+                  'user_id')
 
     def __init__(self, organizations, user, *args, **kwargs):
         self.organizations = organizations
@@ -549,7 +557,7 @@ class OrganizationPlanForm(ModelForm):
             Field('title'),
             Field('description'),
             Field('deadline'),
-            Field('provider'),
+            Field('publisher'),
             Field('provider_title'),
             Field('procurement'),
             Field('price'),
@@ -562,26 +570,26 @@ class OrganizationPlanForm(ModelForm):
 
         if not instance:
             if len(self.organizations) == 1:
-                self.initial['provider'] = self.organizations[0]
+                self.initial['publisher'] = self.organizations[0]
             elif (
                     self.user.organization and
-                    self.user.organization.provider and
+                    self.user.organization.publisher and
                     self.user.organization in self.organizations
             ):
-                self.initial['provider'] = self.user.organization
+                self.initial['publisher'] = self.user.organization
 
     def clean(self):
-        provider = self.cleaned_data.get('provider')
+        publisher = self.cleaned_data.get('publisher')
         provider_title = self.cleaned_data.get('provider_title')
 
-        if provider and provider_title:
+        if publisher and provider_title:
             self.add_error(
-                'provider',
+                'publisher',
                 _('Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu.')
             )
-        elif not provider and not provider_title:
+        elif not publisher and not provider_title:
             self.add_error(
-                'provider',
+                'publisher',
                 _('Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas.')
             )
 

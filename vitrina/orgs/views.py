@@ -2438,7 +2438,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             _('Harvestinimo operacija'): self.organization.harvestingjob_set.all(),
             _('Finansavimo planai'): self.organization.financingplan_set.all(),
             _('Planai (organizacija paslaugų gavėjas)'): self.organization.receiver_plans.all(),
-            _('Planai (organizacija paslaugų teikėjas)'): self.organization.provider_plans.all(),
+            _('Planai (organizacija paslaugų teikėjas)'): self.organization.publisher_plans.all(),
         }
 
         return context
@@ -2500,7 +2500,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             obj.receiver = self.merge_organization
             obj.save()
 
-        for obj in self.organization.provider_plans.all():
+        for obj in self.organization.publisher_plans.all():
             obj.provider = self.merge_organization
             obj.save()
 

@@ -25,7 +25,7 @@ from vitrina.requests.models import RequestObject
 from django.contrib.contenttypes.models import ContentType
 
 
-class ProviderWidget(ModelSelect2MultipleWidget, SearchForm):
+class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
     empty_label = "Pasirinkite organizacijas"
     search_fields = ("title__icontains",)
     is_bound = False
@@ -102,7 +102,7 @@ class RequestForm(ModelForm):
 class RequestEditOrgForm(ModelForm):
     organizations = ModelMultipleChoiceField(
         label="Organizacija",
-        widget=ProviderWidget,
+        widget=PublisherWidget,
         queryset=Organization.objects.filter(),
         to_field_name="pk"
     )
@@ -240,7 +240,7 @@ class RequestPlanForm(OrganizationPlanForm):
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'provider', 'provider_title', 'receiver',)
+        fields = ('title', 'description', 'deadline', 'publisher', 'provider_title', 'receiver',)
     
     def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
@@ -256,7 +256,7 @@ class RequestPlanForm(OrganizationPlanForm):
             Field('description'),
             Field('deadline'),
             Field('receiver'),
-            Field('provider'),
+            Field('publisher'),
             Field('provider_title'),
             Field('datasets'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),

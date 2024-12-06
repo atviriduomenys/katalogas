@@ -24,7 +24,7 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
         parent_org = Organization.add_root(
             title=jurisdiction.name_lt,
             name=jurisdiction.name_lt.lower(),
-            provider=True,
+            publisher=True,
             is_public=True,
             jurisdiction=jurisdiction,
         )

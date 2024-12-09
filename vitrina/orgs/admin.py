@@ -12,10 +12,10 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from vitrina import settings
-from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm
+from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, PublisherOrganizationForm
 from vitrina.orgs.models import Representative, Template
 
-from vitrina.orgs.models import Organization, RepresentativeRequest
+from vitrina.orgs.models import Organization, RepresentativeRequest, PublisherOrganization
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.services import pre_representative_delete
@@ -58,7 +58,61 @@ class RepresentativeAdmin(admin.ModelAdmin):
         super().delete_queryset(request, queryset)
 
 
+class PublisherAdmin(admin.ModelAdmin):
+    list_display = ['title']
+    search_fields = ('title',)
+    actions = ['remove_publisher_status']
+    change_list_template = 'vitrina/orgs/admin/organization_publisher_change_list.html'
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(publisher=True)
+
+    def save_model(self, request, obj, form, change):
+        obj.publisher = True
+        obj.save()
+
+    def delete_model(self, request, obj):
+        obj.publisher = False
+        obj.save()
+
+    def remove_publisher_status(self, request, queryset):
+        queryset.update(publisher=False)
+        self.message_user(request, _("Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos tiekėjo rolė."), messages.SUCCESS)
+    remove_publisher_status.short_description = _("Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę")
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def save_related(self, request, form, formsets, change):
+        pass
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = _("Duomenų atvėrimo paslaugos tiekėjai")
+        extra_context['add_button_label'] = _("Priskirti duomenų atvėrimo paslaugos tiekėjo rolę")
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({
+            'title': _("Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"),
+            'show_save_and_add_another': False,
+            'show_save_and_continue': False,
+        })
+        return super().add_view(request, form_url, extra_context)
+
+    def get_form(self, request, obj=None, **kwargs):
+        if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
+            kwargs["form"] = PublisherOrganizationForm
+        return super().get_form(request, obj, **kwargs)
+
+
 admin.site.register(Organization, OrganizationAdmin)
+admin.site.register(PublisherOrganization, PublisherAdmin)
 admin.site.register(Representative, RepresentativeAdmin)
 
 

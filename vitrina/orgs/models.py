@@ -135,6 +135,13 @@ class Organization(MP_Node):
             request_assignment.request.save()
 
 
+class PublisherOrganization(Organization):
+    class Meta:
+        proxy = True
+        verbose_name = _("Duomenų atvėrimo paslaugų tiekėjas")
+        verbose_name_plural = _("Duomenų atvėrimo paslaugų tiekėjai")
+
+
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'

@@ -24,7 +24,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.helpers import validate_file
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template, PublisherOrganization
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
@@ -881,3 +881,17 @@ class TemplateForm(ModelForm):
         if document:
             validate_file(document)
         return document
+
+class PublisherOrganizationForm(ModelForm):
+    organization = ModelChoiceField(queryset=Organization.objects.filter(publisher=False), label=_("Organizacija"),
+                                    required=True)
+    class Meta:
+        model = Organization
+        fields = ['organization']
+
+    def save(self, commit=True):
+        organization = self.cleaned_data['organization']
+        organization.publisher = True
+        if commit:
+            organization.save()
+        return organization

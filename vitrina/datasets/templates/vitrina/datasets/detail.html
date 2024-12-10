@@ -101,6 +101,16 @@
                 <p class="has-text-black organization-title"><a
                             href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a></p>
 
+                <p class="has-text-dark">{% translate "Duomenų kūrėjas" %}</p>
+                <p class="has-text-black creator-title"><a
+                            href="{{ dataset.creator.get_absolute_url }}">{{ dataset.creator.title }}</a></p>
+
+                {% if dataset.publisher %}
+                    <p class="has-text-dark">{% translate "Duomenų atvėrimo paslaugų teikėjas" %}</p>
+                    <p class="has-text-black creator-title"><a
+                                href="{{ dataset.publisher.get_absolute_url }}">{{ dataset.publisher.title }}</a></p>
+                {% endif %}
+
                 <p class="has-text-dark">{% translate "El. paštas" %}</p>
                 <p class="has-text-black"><a href="mailto:{{ dataset.organization.email }}">{{ dataset.organization.email|default_if_none:"" }}</a></p>
 

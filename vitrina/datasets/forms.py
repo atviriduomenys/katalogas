@@ -42,15 +42,6 @@ class DatasetTypeField(forms.ModelMultipleChoiceField):
             return obj.title
 
 
-def get_company_names(query):
-    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
-    query_uri = 'ja_pavadinimas.contains("{}")'
-    data = get_data_from_spinta(model=model_uri, query=query_uri.format(query)).get('_data', [])
-    print(f'Model URI: {model_uri}, Query URI: {query_uri.format(query)}')
-    results = [{'id': data_item.get('id'), 'text': data_item.get('ja_pavadinimas')} for data_item in data]
-    return JsonResponse(results, safe=False)
-
-
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True, widget=TextInput())
     type = DatasetTypeField(
@@ -86,16 +77,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                                      label=_('Duomenų rinkinio kūrėjas'),required=False)
     publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
                                        label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
-    use_alternate_creator = forms.BooleanField(
-        label=_("Pasirinkti organizaciją iš registro"),
-        required=False,
-        initial=False
-    )
-    alternate_creator = forms.ChoiceField(
-        label=_("Duomenų rinkinio kūrėjas"),
-        required=False,
-        widget=Select2Widget(attrs={'data-minimum-input-length': 3, 'data-width': '200px',})
-    )
 
     class Meta:
         model = Dataset
@@ -116,8 +97,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'name',
             'creator',
             'publisher',
-            'use_alternate_creator',
-            'alternate_creator'
         )
         labels = {
             'tags': _("Žymės"),
@@ -133,9 +112,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         self.helper.form_id = "dataset-form"
 
         self.request = request
-        query = request.GET.get('q')
-        print(f'Query: {query}')
-        #self.fields['alternate_creator'].choices = get_company_names(self.request.GET.get('q'))
 
         if self.request and (
             self.request.user.organization.publisher or self.request.user.is_superuser

@@ -61,7 +61,7 @@ from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
-from vitrina.structure.services import create_structure_objects, get_model_name
+from vitrina.structure.services import create_structure_objects, get_model_name, get_data_from_spinta
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin

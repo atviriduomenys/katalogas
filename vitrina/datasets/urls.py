@@ -1,4 +1,6 @@
 from django.urls import path
+
+from vitrina.datasets.forms import get_company_names
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.views import (
     AddProjectView, RemoveRequestView, AddRequestView, DatasetRequestsView, QuarterStatsView, DatasetsTagsView,
@@ -108,4 +110,5 @@ urlpatterns = [
          name='dataset-representative-api-key'),
     path('dataset/<slug:slug>/', DatasetRedirectView.as_view(), name='dataset-redirect-detail'),
     path('datasets/<int:pk>/delete/', DatasetDeleteView.as_view(), name='dataset-delete'),
+    path('get_company_names/', get_company_names, name='get_company_names'),
 ]

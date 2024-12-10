@@ -5,8 +5,9 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
+from django.http import JsonResponse
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -21,6 +22,7 @@ from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Licence, Category
+
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
@@ -29,6 +31,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Dat
 from vitrina.orgs.models import Organization
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
+from vitrina.structure.services import get_data_from_spinta
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -37,6 +40,15 @@ class DatasetTypeField(forms.ModelMultipleChoiceField):
             return mark_safe(f'{obj.title}<br/><p class="help">{obj.description}</p>')
         else:
             return obj.title
+
+
+def get_company_names(query):
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = 'ja_pavadinimas.contains("{}")'
+    data = get_data_from_spinta(model=model_uri, query=query_uri.format(query)).get('_data', [])
+    print(f'Model URI: {model_uri}, Query URI: {query_uri.format(query)}')
+    results = [{'id': data_item.get('id'), 'text': data_item.get('ja_pavadinimas')} for data_item in data]
+    return JsonResponse(results, safe=False)
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -70,6 +82,21 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             )
         ])
 
+    creator = forms.ModelChoiceField(queryset=Organization.objects.all(),
+                                     label=_('Duomenų rinkinio kūrėjas'),required=False)
+    publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
+                                       label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
+    use_alternate_creator = forms.BooleanField(
+        label=_("Pasirinkti organizaciją iš registro"),
+        required=False,
+        initial=False
+    )
+    alternate_creator = forms.ChoiceField(
+        label=_("Duomenų rinkinio kūrėjas"),
+        required=False,
+        widget=Select2Widget(attrs={'data-minimum-input-length': 3, 'data-width': '200px',})
+    )
+
     class Meta:
         model = Dataset
         fields = (
@@ -87,19 +114,38 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_description_type',
             'files',
             'name',
+            'creator',
+            'publisher',
+            'use_alternate_creator',
+            'alternate_creator'
         )
         labels = {
             'tags': _("Žymės"),
             'catalog': _("Katalogas")
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, request=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
+
+        self.request = request
+        query = request.GET.get('q')
+        print(f'Query: {query}')
+        #self.fields['alternate_creator'].choices = get_company_names(self.request.GET.get('q'))
+
+        if self.request and (
+            self.request.user.organization.publisher or self.request.user.is_superuser
+        ):
+            print(f'Has permission')
+            self.fields['publisher'].widget.attrs['disabled'] = 'disabled'
+        else:
+            self.fields['creator'].widget.attrs['disabled'] = 'disabled'
+            self.fields['creator'].widget.attrs['style'] = 'background-color: #f2f2f2;'
+
         self.helper.layout = Layout(
             Field('is_public',
                   placeholder=_('Ar duomenys vieši')),
@@ -123,6 +169,11 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('access_rights'),
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
+
+            Field('creator'),
+            Field('alternate_creator'),
+            Field('use_alternate_creator'),
+            Field('publisher'),
             Submit('submit', button, css_class='button is-primary')
         )
 

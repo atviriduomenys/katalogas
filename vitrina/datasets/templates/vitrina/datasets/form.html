@@ -69,5 +69,40 @@
                 $('div#div_id_type input').trigger('change');
             }
         });
+        // This is the function that will be called when the user types in the search box
+        $(document).ready(function() {
+        $('#id_alternate_creator').select2({
+            ajax: {
+                url: "{% url 'get_company_names' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 2,
+            templateResult: formatCompany,
+            templateSelection: formatCompanySelection
+        });
+
+        function formatCompany(company) {
+            if (company.loading) {
+                return company.text;
+            }
+            return company.text;
+        }
+
+        function formatCompanySelection(company) {
+            return company.text;
+        }
+    });
     </script>
 {% endblock %}

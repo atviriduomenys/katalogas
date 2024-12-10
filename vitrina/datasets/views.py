@@ -553,6 +553,11 @@ class DatasetCreateView(
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
         return context
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
     def get(self, request, *args, **kwargs):
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
@@ -701,10 +706,16 @@ class DatasetUpdateView(
         }
         switch_language(self.object, get_language())
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
+        context['request_user'] = self.request.user
         return context
 
     def get(self, request, *args, **kwargs):
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
     def form_valid(self, form):
         self.object = form.save(commit=False)

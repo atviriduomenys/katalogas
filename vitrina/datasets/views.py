@@ -90,6 +90,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     facet_fields = [
         'status',
         'organization',
+        'publisher',
         'jurisdiction',
         'category',
         'parent_category',
@@ -200,6 +201,13 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                     multiple=True,
                     is_int=False,
                 ),
+                Filter(
+                    *filter_args,
+                    'publisher',
+                    _("Duomenų atvėrimo paslaugų teikėjas"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,),
                 Filter(
                     *filter_args,
                     'jurisdiction',
@@ -1902,6 +1910,19 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
         else:
             return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
 
+class DatasetsPublishersView(DatasetStatsMixin, DatasetListView):
+    title = _("Duomenų atvėrimo paslaugų teikėjas")
+    current_title = _("Duomenų atvėrimo paslaugų teikėjas")
+    filter = 'publisher'
+    filter_model = Organization
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio organizaciją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
+
 
 class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
     title = _("Žymė")
@@ -3098,6 +3119,43 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
                     is_int=False,
                     use_str=True,
                     remove_search_query=True
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+
+class UpdateDatasetPublisherFilters(FacetedSearchView):
+    template_name = 'vitrina/datasets/publisher_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'publisher',
+                _("Duomenų atvėrimo paslaugų teikėjas"),
+                Organization,
+                multiple=True,
+                is_int=False,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():

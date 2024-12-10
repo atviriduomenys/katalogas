@@ -63,7 +63,7 @@
     </p>
   {% if active_filter != filter.name %}
   </a>
-    {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' %}
+    {% if filter.name == 'jurisdiction' or filter.name == 'organization' or filter.name == 'category' or filter.name == 'tags' or filter.name == 'publisher' %}
         <input
             class="input"
             id="{{ filter.name }}-filter-input"
@@ -78,6 +78,8 @@
           {% include "vitrina/datasets/tag_filter_items.html" %}
         {% elif filter.name == 'jurisdiction' %}
           {% include "vitrina/datasets/jurisdiction_filter_items.html" %}
+        {% elif filter.name == 'publisher' %}
+          {% include "vitrina/datasets/publisher_filter_items.html" %}
         {% endif %}
     {% endif %}
   {% endif %}

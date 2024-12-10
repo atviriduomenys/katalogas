@@ -143,10 +143,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('access_rights'),
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
-
             Field('creator'),
-            Field('alternate_creator'),
-            Field('use_alternate_creator'),
             Field('publisher'),
             Submit('submit', button, css_class='button is-primary')
         )

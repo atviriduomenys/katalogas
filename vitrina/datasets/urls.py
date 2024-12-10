@@ -12,7 +12,8 @@ from vitrina.datasets.views import (
     DatasetRelationDeleteView, DatasetCategoryView, FilterCategoryView, DatasetPlanView, DatasetCreatePlanView,
     DatasetDeletePlanView, DatasetPlansHistoryView, DatasetDeletePlanDetailView, DatasetRepresentativeApiKeyView,
     UpdateDatasetOrgFilters, UpdateDatasetCategoryFilters, UpdateDatasetTagFilters, UpdateDatasetJurisdictionFilters,
-    OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView, DatasetsAccessRightsView
+    OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView, DatasetsAccessRightsView,
+    DatasetsPublishersView, UpdateDatasetPublisherFilters
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('update-dataset-tag-filters/', UpdateDatasetTagFilters.as_view(), name='update-dataset-tag-filters'),
     path('update-dataset-jurisdiction-filters/', UpdateDatasetJurisdictionFilters.as_view(),
          name='update-dataset-jurisdiction-filters'),
+    path('update-dataset-publishers-filters/', UpdateDatasetPublisherFilters.as_view(), name = 'update-dataset-publishers-filters'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/manager', DatasetListView.as_view(), name='manager-dataset-list'),
     path('datasets/stats/status/', DatasetStatsView.as_view(), name="dataset-stats-status"),
@@ -40,6 +42,7 @@ urlpatterns = [
     path('datasets/stats/publication/year/<int:year>/', YearStatsView.as_view(), name='dataset-stats-publication-year'),
     path('datasets/stats/publication/quarter/<str:quarter>/', QuarterStatsView.as_view(),
          name='dataset-stats-publication-quarter'),
+    path('datasets/stats/publisher/', DatasetsPublishersView.as_view(), name='dataset-stats-publisher'),
     path('datasets/<int:pk>/add/', DatasetCreateView.as_view(), name='dataset-add'),
     path('datasets/<int:pk>/update/', DatasetUpdateView.as_view(), name='dataset-change'),
     path('datasets/<int:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),

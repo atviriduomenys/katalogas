@@ -113,14 +113,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         self.request = request
 
-        if self.request and (
-            self.request.user.organization.publisher or self.request.user.is_superuser
-        ):
-            print(f'Has permission')
-            self.fields['publisher'].widget.attrs['disabled'] = 'disabled'
-        else:
-            self.fields['creator'].widget.attrs['disabled'] = 'disabled'
-            self.fields['creator'].widget.attrs['style'] = 'background-color: #f2f2f2;'
+        if self.request and self.request.user:
+            if getattr(self.request.user.organization, 'publisher', False) or self.request.user.is_superuser:
+                self.fields['publisher'].widget.attrs['disabled'] = 'disabled'
+            else:
+                self.fields['creator'].widget.attrs['disabled'] = 'disabled'
+                self.fields['creator'].widget.attrs['style'] = 'background-color: #f2f2f2;'
 
         self.helper.layout = Layout(
             Field('is_public',

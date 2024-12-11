@@ -564,6 +564,7 @@ class DatasetCreateView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['request'] = self.request
+        kwargs['organization'] = get_object_or_404(Organization, id=self.kwargs['pk'])
         return kwargs
 
     def get(self, request, *args, **kwargs):

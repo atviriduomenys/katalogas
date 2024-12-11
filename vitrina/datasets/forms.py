@@ -28,10 +28,9 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, PublisherAssignment
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
-from vitrina.structure.services import get_data_from_spinta
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -103,7 +102,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'catalog': _("Katalogas")
         }
 
-    def __init__(self, request=None, *args, **kwargs):
+    def __init__(self, request=None, organization = None , *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
@@ -112,13 +111,18 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         self.helper.form_id = "dataset-form"
 
         self.request = request
+        self.organization = organization
 
-        if self.request and self.request.user:
-            if getattr(self.request.user.organization, 'publisher', False) or self.request.user.is_superuser:
-                self.fields['publisher'].widget.attrs['disabled'] = 'disabled'
+        if self.request and self.organization and self.request.user:
+            if ((getattr(self.request.user.organization, 'publisher', False) and
+                    PublisherAssignment.objects.filter(publisher=self.request.user.organization, organization=self.organization).exists())
+                    or self.request.user.is_superuser):
+                self.fields['publisher'].widget = HiddenInput()
             else:
-                self.fields['creator'].widget.attrs['disabled'] = 'disabled'
-                self.fields['creator'].widget.attrs['style'] = 'background-color: #f2f2f2;'
+                self.fields['creator'].widget = HiddenInput()
+        else:
+            self.fields['creator'].widget = HiddenInput()
+            self.fields['publisher'].widget = HiddenInput()
 
         self.helper.layout = Layout(
             Field('is_public',

@@ -142,6 +142,20 @@ class PublisherOrganization(Organization):
         verbose_name_plural = _("Duomenų atvėrimo paslaugų tiekėjai")
 
 
+class PublisherAssignment(models.Model):
+    publisher = models.ForeignKey(Organization, related_name='assigned_organizations', on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, related_name='publishers', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('publisher', 'organization')
+
+    def get_assigned_organizations(self):
+        return Organization.objects.filter(publishers__publisher=self)
+
+    def has_access_to(self, organization):
+        return self.assigned_organizations.filter(pk=organization.pk).exists()
+
+
 class Representative(models.Model):
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'

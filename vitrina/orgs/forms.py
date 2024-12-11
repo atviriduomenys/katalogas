@@ -2,6 +2,7 @@ import secrets
 from urllib.parse import urlparse
 import re
 
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.helper import FormHelper
@@ -24,7 +25,8 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.helpers import validate_file
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template, PublisherOrganization
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template, PublisherOrganization, \
+    PublisherAssignment
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
@@ -882,7 +884,8 @@ class TemplateForm(ModelForm):
             validate_file(document)
         return document
 
-class PublisherOrganizationForm(ModelForm):
+
+class AdminPublisherOrganizationForm(ModelForm):
     organization = ModelChoiceField(queryset=Organization.objects.filter(publisher=False), label=_("Organizacija"),
                                     required=True)
     class Meta:
@@ -895,3 +898,23 @@ class PublisherOrganizationForm(ModelForm):
         if commit:
             organization.save()
         return organization
+
+
+class AdminPublisherAssignedOrganizationForm(ModelForm):
+    organizations = ModelMultipleChoiceField(
+        queryset=Organization.objects.filter(publisher=False),
+        label=_("Organizacijos"),
+        required=False,
+        widget=FilteredSelectMultiple(
+            verbose_name=_("Organizacijos"),
+            is_stacked=False
+        )
+    )
+    class Meta:
+        model = PublisherAssignment
+        fields = ['organizations']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['organizations'].initial = PublisherAssignment.objects.filter(publisher=self.instance).values_list('organization', flat=True)

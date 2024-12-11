@@ -12,8 +12,10 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from vitrina import settings
-from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, PublisherOrganizationForm
-from vitrina.orgs.models import Representative, Template
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, AdminPublisherOrganizationForm, \
+    AdminPublisherAssignedOrganizationForm
+from vitrina.orgs.models import Representative, Template, PublisherAssignment
 
 from vitrina.orgs.models import Organization, RepresentativeRequest, PublisherOrganization
 from django.utils.translation import gettext_lazy as _
@@ -63,14 +65,30 @@ class PublisherAdmin(admin.ModelAdmin):
     search_fields = ('title',)
     actions = ['remove_publisher_status']
     change_list_template = 'vitrina/orgs/admin/organization_publisher_change_list.html'
+    form = AdminPublisherAssignedOrganizationForm
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.filter(publisher=True)
 
     def save_model(self, request, obj, form, change):
-        obj.publisher = True
+        if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
+            obj.publisher = True
         obj.save()
+        if change:
+            current_assignments = set(
+                PublisherAssignment.objects.filter(publisher=obj).values_list('organization', flat=True))
+            new_assignments = set(form.cleaned_data['organizations'].values_list('id', flat=True))
+            # Remove orgs from publishers
+            for org_id in current_assignments - new_assignments:
+                PublisherAssignment.objects.filter(publisher=obj, organization_id=org_id).delete()
+                # Unassign  publisher from all related datasets
+                Dataset.objects.filter(organization_id=org_id).update(publisher=None)
+            # Add orgs to publishers
+            for org_id in new_assignments - current_assignments:
+                PublisherAssignment.objects.create(publisher=obj, organization_id=org_id)
+                # Assign publisher to all related datasets
+                Dataset.objects.filter(organization_id=org_id).update(publisher=obj)
 
     def delete_model(self, request, obj):
         obj.publisher = False
@@ -107,7 +125,7 @@ class PublisherAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
-            kwargs["form"] = PublisherOrganizationForm
+            kwargs["form"] = AdminPublisherOrganizationForm
         return super().get_form(request, obj, **kwargs)
 
 

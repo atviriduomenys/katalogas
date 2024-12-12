@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
 from django.db.models import Func, F, Value, TextField, Max
@@ -394,6 +395,12 @@ class DatasetDetailView(
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
         organization = get_object_or_404(Organization, id=dataset.organization.pk)
+
+        related_datasets = dataset.related_datasets.all()
+        paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
         extra_context_data = {
             'tags': dataset.get_tag_object_list(),
             'subscription': [],
@@ -408,12 +415,12 @@ class DatasetDetailView(
             'org_logo': organization.image,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
             'data_maturity': dataset.metadata_set.average_level(),
-            'json_ld': self.get_json_ld_from_dataset(dataset)
+            'json_ld': self.get_json_ld_from_dataset(dataset),
+            'page_obj': page_obj,
         }
         part_of = dataset.part_of.order_by('relation')
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data['part_of'] = [(relation, list(values)) for relation, values in part_of]
-        related_datasets = dataset.related_datasets.all()
         related_datasets = itertools.groupby(related_datasets, lambda x: x.relation)
         extra_context_data['related_datasets'] = [(relation, list(values)) for relation, values in related_datasets]
 

@@ -37,6 +37,7 @@ class TaskListView(LoginRequiredMixin, ListView):
             queryset = queryset.annotate(task_type=Case(
                 When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
                 When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
+                When(type=Task.ERROR_GEOPORTAL, then=Value(Task.ERROR)),
                 default=F('type'),
                 output_field=CharField(),
             )).filter(task_type=type_selected_value)
@@ -127,6 +128,7 @@ class TaskListView(LoginRequiredMixin, ListView):
                             task_type=Case(
                                 When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
                                 When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
+                                When(type=Task.ERROR_GEOPORTAL, then=Value(Task.ERROR)),
                                 default=F('type'),
                                 output_field=CharField(),
                             )

@@ -67,7 +67,7 @@ class DatasetResourceForm(forms.ModelForm):
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
         required=False,
-        queryset=Dataset.public.all()
+    queryset=Dataset.public.filter(service=True)
     )
 
     class Meta:
@@ -118,9 +118,6 @@ class DatasetResourceForm(forms.ModelForm):
             Field('file', placeholder=_("Šaltinio failas")),
             Submit('submit', button, css_class='button is-primary'),
         )
-
-        related_datasets = self.dataset.related_datasets.values_list('dataset__pk', flat=True)
-        self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
 
         if self.resource and self.resource.metadata.first():
             self.initial['access'] = self.resource.metadata.first().access

@@ -18,11 +18,13 @@ def assign_datasets_to_dataservice(apps, schema_editor):
     relation_type = relation.objects.get(pk=1)
 
     for dataset in datasets:
-        dataset_relation.objects.create(
-            dataset=dataset,
-            part_of=dataservice,
-            relation=relation_type
-        )
+        if not dataset_relation.objects.filter(dataset=dataset, part_of=dataservice, relation=relation_type).exists():
+            dataset_relation_instance = dataset_relation.objects.create(
+                dataset=dataset,
+                part_of=dataservice,
+                relation=relation_type
+            )
+            dataset.part_of.add(dataset_relation_instance)
 
 class Migration(migrations.Migration):
 

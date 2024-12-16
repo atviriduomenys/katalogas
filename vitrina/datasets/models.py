@@ -175,6 +175,15 @@ class Dataset(TranslatableModel):
     )
 
     notes = models.TextField(blank=True, null=True)
+    geoportal_id = models.CharField(_("Geoportalo id"), max_length=255, blank=True, null=True)
+    creator_text = models.CharField(max_length=255, blank=True, null=True)
+    publisher = models.ForeignKey(
+        Organization,
+        related_name='published_datasets',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_('"Duomenų atvėrimo paslaugų teikėjas"')
+    )
 
     # DCAT 3 fields
     part_of = models.ManyToManyField(

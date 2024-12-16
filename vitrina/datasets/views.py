@@ -393,7 +393,7 @@ class DatasetDetailView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
-        organization = get_object_or_404(Organization, id=dataset.organization.pk)
+        organization = dataset.organization
         extra_context_data = {
             'tags': dataset.get_tag_object_list(),
             'subscription': [],
@@ -405,7 +405,7 @@ class DatasetDetailView(
             'can_update_dataset': has_perm(self.request.user, Action.UPDATE, dataset),
             'can_view_members': has_perm(self.request.user, Action.VIEW, Representative, dataset),
             'resources': dataset.datasetdistribution_set.all().order_by('-period_start'),
-            'org_logo': organization.image,
+            'org_logo': organization.image if organization else None,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
             'data_maturity': dataset.metadata_set.average_level(),
             'json_ld': self.get_json_ld_from_dataset(dataset)
@@ -618,11 +618,6 @@ class DatasetCreateView(
         if self.object.organization:
             org_id = self.object.organization.id
             sub_ct = get_content_type_for_model(Organization)
-            subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
-                                               sub_type=Subscription.ORGANIZATION,
-                                               content_type=sub_ct,
-                                               dataset_update_sub=True)
-
             subs = Subscription.objects.filter(
                 (
                     Q(object_id=org_id) |

@@ -90,6 +90,7 @@ class Organization(MP_Node):
                             on_delete=models.SET_NULL, verbose_name=_('Logotipas'))
     provider = models.BooleanField(default=False, verbose_name=_("Atvėrimo duomenų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
+    alternative_titles = models.TextField(_('Alternatyvūs pavadinimai'), null=True, blank=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)

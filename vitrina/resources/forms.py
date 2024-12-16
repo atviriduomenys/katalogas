@@ -1,3 +1,4 @@
+import requests
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import DateField
@@ -155,15 +156,23 @@ class DatasetResourceForm(forms.ModelForm):
                     url_extension != fmt_extension and
                     fmt_extension not in ['URL', 'API', 'UAPI']
                 ):
-                    self.add_error('format', _(
-                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                    ))
-            elif not url and file:
-                file_extension = file.extension.upper().strip()
-                if fmt_extension != file_extension:
-                    self.add_error('format', _(
-                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                    ))
+                    try:
+                        response = requests.head(url)
+                        content_type = response.headers.get('Content-Type', '').upper().strip()
+                        if fmt_extension not in content_type:
+                            self.add_error('format', _(
+                                "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                            ))
+                    except requests.RequestException:
+                        self.add_error('download_url', _(
+                            "Pateikta nuoroda yra neteisinga."
+                        ))
+                elif not url and file:
+                    file_extension = file.extension.upper().strip()
+                    if fmt_extension != file_extension:
+                        self.add_error('format', _(
+                            "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                        ))
 
         if 'get.data.gov.lt' in url and not upload:
             self.cleaned_data['upload_to_storage'] = True

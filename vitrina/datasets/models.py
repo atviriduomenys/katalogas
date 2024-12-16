@@ -317,10 +317,12 @@ class Dataset(TranslatableModel):
         return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct())
 
     def get_parent_organization_title(self):
-        if self.organization.is_root():
-            return self.organization.title
-        else:
-            return self.organization.get_root().title
+        if self.organization:
+            if self.organization.is_root():
+                return self.organization.title
+            else:
+                return self.organization.get_root().title
+        return None
 
     def parent_category(self):
         parents = []

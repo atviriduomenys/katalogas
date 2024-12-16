@@ -337,7 +337,7 @@ def main():
                 status__isnull=False
             ).order_by('-created').first()
 
-            if not latest_status_comment or latest_status_comment.status != dataset.status:
+            if not latest_status_comment or latest_status_comment.status != comment_status:
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(dataset),
                     object_id=dataset.pk,

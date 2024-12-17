@@ -156,9 +156,17 @@ class DatasetResourceForm(forms.ModelForm):
                     url_extension != fmt_extension and
                     fmt_extension not in ['URL', 'API', 'UAPI']
                 ):
+                    content_type = ''
                     try:
-                        response = requests.head(url)
-                        content_type = response.headers.get('Content-Type', '').upper().strip()
+                        if not url.startswith(('http://', 'https://')):
+                            self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+                        else:
+                            try:
+                                response = requests.head(url)
+                                content_type = response.headers.get('Content-Type', '').upper().strip()
+                            except requests.RequestException:
+                                self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+
                         if fmt_extension not in content_type:
                             self.add_error('format', _(
                                 "Formatas nesutampa su įkelto failo ar nuorodos formatu."
@@ -167,12 +175,12 @@ class DatasetResourceForm(forms.ModelForm):
                         self.add_error('download_url', _(
                             "Pateikta nuoroda yra neteisinga."
                         ))
-                elif not url and file:
-                    file_extension = file.extension.upper().strip()
-                    if fmt_extension != file_extension:
-                        self.add_error('format', _(
-                            "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                        ))
+            elif not url and file:
+                file_extension = file.extension.upper().strip()
+                if fmt_extension != file_extension:
+                    self.add_error('format', _(
+                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                    ))
 
         if 'get.data.gov.lt' in url and not upload:
             self.cleaned_data['upload_to_storage'] = True

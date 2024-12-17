@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
 from django.db.models import Q
+from django.urls import reverse
 from haystack.backends import SQ
 
 from vitrina.classifiers.models import AreaOfManagement
@@ -20,6 +21,7 @@ from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
+from vitrina.settings import SPINTA_SERVER_URL
 
 
 def update_facet_data(
@@ -325,3 +327,116 @@ def manage_subscriptions_for_representative(subscribe, user, dataset, link):
     else:
         if subscription:
             subscription.delete()
+
+class DynamicResourceService:
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.dataset_service = Dataset.objects.filter(service=True).first()
+
+    def generate_resources(self, pf):
+        json_format = 'JSON'
+        jsonl_format = 'JSONL'
+        csv_format = 'CSV'
+
+        dynamic_resources = []
+        dataservice_found = self.check_dataservice_found(pf)
+
+        if dataservice_found:
+            models = self.dataset.model_set.all()
+            if not models:
+                return []
+
+            json_distribution = self.create_json_distribution(models, json_format)
+            dynamic_resources.append(json_distribution)
+
+            jsonl_distribution = self.create_jsonl_distribution(models, jsonl_format)
+            dynamic_resources.append(jsonl_distribution)
+
+            csv_distributions = self.create_csv_distributions(models, csv_format)
+            dynamic_resources.extend(csv_distributions)
+
+        return dynamic_resources
+
+    def check_dataservice_found(self, pf):
+        for rel, values in pf:
+            if any(value.part_of.service
+                   and value.part_of.endpoint_url == "https://get.data.gov.lt" for value in values):
+                return True
+        return False
+
+    def create_json_distribution(self, models, json_format):
+        full_name_parts = models[0].full_name.split('/')
+        base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
+        json_download_url = f"{base_url}/:all/:format/json"
+        distribution_name = models[0].full_name.split('/')[-2]
+        return {
+            'title': distribution_name,
+            'get_format': json_format,
+            'get_download_url': json_download_url,
+            'data_service_id': self.dataset_service.id,
+            'models': list(models),
+            'get_absolute_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, json_format.lower()])
+        }
+
+    def create_jsonl_distribution(self, models, jsonl_format):
+        full_name_parts = models[0].full_name.split('/')
+        base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
+        json_download_url = f"{base_url}/:all/:format/jsonl"
+        distribution_name = models[0].full_name.split('/')[-2]
+        return {
+            'title': distribution_name,
+            'get_format': jsonl_format,
+            'get_download_url': json_download_url,
+            'data_service_id': self.dataset_service.id,
+            'models': list(models),
+            'get_absolute_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, jsonl_format.lower()])
+        }
+
+    def create_csv_distributions(self, models, csv_format):
+        csv_distributions = []
+        if models.count() > 1:
+            for model in models:
+                if model:
+                    csv_distributions.append(self.create_csv_distribution(model, csv_format))
+        else:
+            if models[0]:
+                csv_distributions.append(self.create_csv_distribution(models[0], csv_format))
+        return csv_distributions
+
+    def create_csv_distribution(self, model, csv_format):
+        csv_download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
+        return {
+            'title': model.name,
+            'get_format': csv_format,
+            'get_download_url': csv_download_url,
+            'data_service_id': self.dataset_service.id,
+            'models': [model],
+            'get_absolute_url': reverse('dynamic-resource-detail', args=[model.dataset.pk, model.name, csv_format.lower()])
+        }
+
+    @staticmethod
+    def retrieve_data(dataset_pk, resource_name):
+        dataset = Dataset.objects.get(pk=dataset_pk)
+        models = dataset.model_set.all()
+
+        multi_model = any(model.full_name.split('/')[-2] == resource_name for model in models)
+        if multi_model:
+            full_name_parts = models[0].full_name.split('/')
+            base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
+            json_download_url = f"{base_url}/:all/:format/json"
+            data = {
+                'title': resource_name,
+                'dataset': dataset,
+                'models': models,
+                'get_download_url': json_download_url
+            }
+        else:
+            model = [model for model in models if model.name == resource_name][0]
+            csv_download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
+            data = {
+                'title': resource_name,
+                'models': [model],
+                'get_download_url': csv_download_url
+            }
+
+        return data

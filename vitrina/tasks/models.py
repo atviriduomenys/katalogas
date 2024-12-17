@@ -38,6 +38,7 @@ class Task(models.Model):
     ERROR = 'error'
     ERROR_FREQUENCY = 'error_frequency'
     ERROR_DISTRIBUTION = 'error_distribution'
+    ERROR_GEOPORTAL = 'error_geoportal'
     TYPES = (
         (APIKEY, _("Raktas")),
         (DATASET, _("Duomenų rinkinys")),
@@ -47,6 +48,7 @@ class Task(models.Model):
         (ERROR, _("Klaida")),
         (ERROR_FREQUENCY, _("Klaida atnaujinimo dažnume")),
         (ERROR_DISTRIBUTION, _("Klaida duomenų rinkinio duomenų šaltinyje")),
+        (ERROR_GEOPORTAL, _("Klaida importuojant duomenis iš Geoportal")),
     )
     FILTER_TYPES = {
         APIKEY: _("Raktas"),

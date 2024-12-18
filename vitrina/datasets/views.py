@@ -420,11 +420,10 @@ class DatasetDetailView(
         }
         part_of = dataset.part_of.order_by('relation')
         part_of = itertools.groupby(part_of, lambda x: x.relation)
-        part_of = [(relation, list(values)) for relation, values in part_of]
-        extra_context_data['part_of'] = part_of
+        extra_context_data['part_of'] = [(relation, list(values)) for relation, values in part_of]
 
         dynamic_resource = DynamicResourceService(dataset)
-        generated_resources = dynamic_resource.generate_resources(part_of)
+        generated_resources = dynamic_resource.generate_resources()
         extra_context_data['dynamic_resources'] = generated_resources
 
         related_datasets = itertools.groupby(related_datasets, lambda x: x.relation)

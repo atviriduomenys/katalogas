@@ -1,3 +1,4 @@
+import itertools
 from collections import OrderedDict
 from typing import List, Any, Dict, Type
 
@@ -21,6 +22,7 @@ from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.settings import SPINTA_SERVER_URL
 
 
@@ -329,90 +331,76 @@ def manage_subscriptions_for_representative(subscribe, user, dataset, link):
             subscription.delete()
 
 class DynamicResourceService:
+    JSON_FORMAT = 'JSON'
+    JSONL_FORMAT = 'JSONL'
+    CSV_FORMAT = 'CSV'
+
     def __init__(self, dataset):
         self.dataset = dataset
-        self.dataset_service = Dataset.objects.filter(service=True).first()
+        self.dataset_service = Dataset.objects.filter(service=True, endpoint_url = SPINTA_SERVER_URL).first()
 
-    def generate_resources(self, pf):
-        json_format = 'JSON'
-        jsonl_format = 'JSONL'
-        csv_format = 'CSV'
+    def generate_resources(self, is_for_api=False):
+        part_of = [(relation, list(values))
+                   for relation, values in itertools.groupby(self.dataset.part_of.order_by('relation'),
+                    lambda x: x.relation)]
 
-        dynamic_resources = []
-        dataservice_found = self.check_dataservice_found(pf)
+        if not self._check_dataservice_found(part_of):
+            return []
 
-        if dataservice_found:
-            models = self.dataset.model_set.all()
-            if not models:
-                return []
+        models = self.dataset.model_set.all()
+        if not models:
+            return []
 
-            json_distribution = self.create_json_distribution(models, json_format)
-            dynamic_resources.append(json_distribution)
+        return [
+            self._create_distribution(models, self.JSON_FORMAT, is_for_api),
+            self._create_distribution(models, self.JSONL_FORMAT, is_for_api),
+            *self._create_csv_distributions(models, is_for_api)
+        ]
 
-            jsonl_distribution = self.create_jsonl_distribution(models, jsonl_format)
-            dynamic_resources.append(jsonl_distribution)
+    def _check_dataservice_found(self, part_of):
+        return any(
+            value.part_of.service and value.part_of.endpoint_url == SPINTA_SERVER_URL
+            for rel, values in part_of for value in values
+        )
 
-            csv_distributions = self.create_csv_distributions(models, csv_format)
-            dynamic_resources.extend(csv_distributions)
+    def _create_distribution(self, models, distribution_format, is_for_api):
+        download_url, distribution_name = self._generate_download_url(models, distribution_format)
 
-        return dynamic_resources
-
-    def check_dataservice_found(self, pf):
-        for rel, values in pf:
-            if any(value.part_of.service
-                   and value.part_of.endpoint_url == "https://get.data.gov.lt" for value in values):
-                return True
-        return False
-
-    def create_json_distribution(self, models, json_format):
-        full_name_parts = models[0].full_name.split('/')
-        base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
-        json_download_url = f"{base_url}/:all/:format/json"
-        distribution_name = models[0].full_name.split('/')[-2]
+        if is_for_api:
+            return DatasetDistribution(
+                dataset=self.dataset,
+                title=distribution_name,
+                download_url=download_url,
+                format=Format.objects.filter(title=distribution_format).first(),
+                type="URL",
+                upload_to_storage=True,
+                description = f"This is a dynamic resource created for a DataService ({self.dataset_service.title})"
+            )
         return {
             'title': distribution_name,
-            'get_format': json_format,
-            'get_download_url': json_download_url,
+            'format': distribution_format,
+            'download_url': download_url,
             'data_service_id': self.dataset_service.id,
             'models': list(models),
-            'get_absolute_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, json_format.lower()])
+            'resource_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, distribution_format.lower()])
         }
 
-    def create_jsonl_distribution(self, models, jsonl_format):
-        full_name_parts = models[0].full_name.split('/')
-        base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
-        json_download_url = f"{base_url}/:all/:format/jsonl"
-        distribution_name = models[0].full_name.split('/')[-2]
-        return {
-            'title': distribution_name,
-            'get_format': jsonl_format,
-            'get_download_url': json_download_url,
-            'data_service_id': self.dataset_service.id,
-            'models': list(models),
-            'get_absolute_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, jsonl_format.lower()])
-        }
+    def _create_csv_distributions(self, models, is_for_api):
+        return [
+            self._create_distribution([model], self.CSV_FORMAT, is_for_api)
+            for model in models
+        ]
 
-    def create_csv_distributions(self, models, csv_format):
-        csv_distributions = []
-        if models.count() > 1:
-            for model in models:
-                if model:
-                    csv_distributions.append(self.create_csv_distribution(model, csv_format))
+    def _generate_download_url(self, models, distribution_format):
+        if distribution_format == self.JSON_FORMAT or distribution_format == self.JSONL_FORMAT:
+            base_url = f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
+            download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
+            distribution_name = models[0].full_name.split('/')[-2]
         else:
-            if models[0]:
-                csv_distributions.append(self.create_csv_distribution(models[0], csv_format))
-        return csv_distributions
+            download_url =  f"{SPINTA_SERVER_URL}/{models[0].full_name}/:format/csv"
+            distribution_name = models[0].name
 
-    def create_csv_distribution(self, model, csv_format):
-        csv_download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
-        return {
-            'title': model.name,
-            'get_format': csv_format,
-            'get_download_url': csv_download_url,
-            'data_service_id': self.dataset_service.id,
-            'models': [model],
-            'get_absolute_url': reverse('dynamic-resource-detail', args=[model.dataset.pk, model.name, csv_format.lower()])
-        }
+        return download_url, distribution_name
 
     @staticmethod
     def retrieve_data(dataset_pk, resource_name):
@@ -423,20 +411,18 @@ class DynamicResourceService:
         if multi_model:
             full_name_parts = models[0].full_name.split('/')
             base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
-            json_download_url = f"{base_url}/:all/:format/json"
-            data = {
+            download_url = f"{base_url}/:all/:format/json"
+            return {
                 'title': resource_name,
                 'dataset': dataset,
                 'models': models,
-                'get_download_url': json_download_url
-            }
-        else:
-            model = [model for model in models if model.name == resource_name][0]
-            csv_download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
-            data = {
-                'title': resource_name,
-                'models': [model],
-                'get_download_url': csv_download_url
+                'get_download_url': download_url
             }
 
-        return data
+        model = next(model for model in models if model.name == resource_name)
+        download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
+        return {
+            'title': resource_name,
+            'models': [model],
+            'get_download_url': download_url
+        }

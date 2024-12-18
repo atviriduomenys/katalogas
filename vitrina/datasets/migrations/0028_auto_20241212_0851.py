@@ -14,7 +14,7 @@ def assign_datasets_to_dataservice(apps, schema_editor):
     dataset_distributions = dataset_distribution.objects.filter(format=uapi_format)
     dataset_ids = dataset_distributions.values_list('dataset_id', flat=True)
     datasets = dataset.objects.filter(id__in=dataset_ids)
-    dataservice = dataset.objects.filter(service=True).first()
+    dataservice = dataset.objects.filter(service=True, endpoint_url = "https://get.data.gov.lt").first()
     relation_type = relation.objects.get(pk=1)
 
     for dataset in datasets:

@@ -336,15 +336,12 @@ class DynamicResourceService:
     CSV_FORMAT = 'CSV'
 
     def __init__(self, dataset):
-        self.dataset = dataset
+        self.dataset: Dataset = dataset
         self.dataset_service = Dataset.objects.filter(service=True, endpoint_url = SPINTA_SERVER_URL).first()
+        self.uapi_distribution = self.dataset.datasetdistribution_set.filter(format__extension="UAPI").first()
 
-    def generate_resources(self, is_for_api=False):
-        part_of = [(relation, list(values))
-                   for relation, values in itertools.groupby(self.dataset.part_of.order_by('relation'),
-                    lambda x: x.relation)]
-
-        if not self._check_dataservice_found(part_of):
+    def generate_resources(self, is_for_rdf_export=False):
+        if not self.dataset.is_part_of_dataservice():
             return []
 
         models = self.dataset.model_set.all()
@@ -352,42 +349,53 @@ class DynamicResourceService:
             return []
 
         return [
-            self._create_distribution(models, self.JSON_FORMAT, is_for_api),
-            self._create_distribution(models, self.JSONL_FORMAT, is_for_api),
-            *self._create_csv_distributions(models, is_for_api)
+            self._create_distribution(models, self.JSON_FORMAT,  is_for_rdf_export),
+            self._create_distribution(models, self.JSONL_FORMAT,  is_for_rdf_export),
+            *self._create_csv_distributions(models, is_for_rdf_export)
         ]
 
-    def _check_dataservice_found(self, part_of):
-        return any(
-            value.part_of.service and value.part_of.endpoint_url == SPINTA_SERVER_URL
-            for rel, values in part_of for value in values
-        )
+    def _create_distribution(self, models, distribution_format, is_for_rdf_export):
 
-    def _create_distribution(self, models, distribution_format, is_for_api):
         download_url, distribution_name = self._generate_download_url(models, distribution_format)
-
-        if is_for_api:
-            return DatasetDistribution(
-                dataset=self.dataset,
-                title=distribution_name,
-                download_url=download_url,
-                format=Format.objects.filter(title=distribution_format).first(),
-                type="URL",
-                upload_to_storage=True,
-                description = f"This is a dynamic resource created for a DataService ({self.dataset_service.title})"
-            )
+        if is_for_rdf_export:
+            format_uri = Format.objects.filter(title=distribution_format).values_list('uri', flat=True).first()
+            format_media_type = Format.objects.filter(title=distribution_format).values_list('uri', flat=True).first()
+            return {
+                'uri': reverse('dynamic-resource-detail', args=[self.dataset.pk, self.uapi_distribution.pk, distribution_name, distribution_format.lower()]),
+                'translations': [
+                    {
+                        'lang': 'lt',
+                        'title': self.uapi_distribution.title,
+                        'description': self.uapi_distribution.description,
+                    },
+                ],
+                'type': self.uapi_distribution.type,
+                'access_url': download_url,
+                'licence': self.dataset.licence if self.dataset.licence and self.dataset.licence.url else None,
+                'format': {'uri': format_uri},
+                'media_type': {'uri':format_media_type},
+                'created': self.uapi_distribution.created,
+                'modified': self.uapi_distribution.modified,
+            }
         return {
             'title': distribution_name,
             'format': distribution_format,
             'download_url': download_url,
-            'data_service_id': self.dataset_service.id,
             'models': list(models),
-            'resource_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, distribution_name, distribution_format.lower()])
+            'created': self.uapi_distribution.created,
+            'modified': self.uapi_distribution.modified,
+            'period_start': self.uapi_distribution.period_start,
+            'period_end': self.uapi_distribution.period_end,
+            'geo_location': self.uapi_distribution.geo_location,
+            'data_service_id': self.dataset_service.id if self.dataset_service else None,
+            'resource_url': reverse('dynamic-resource-detail', args=[self.dataset.pk, self.uapi_distribution.pk, distribution_name, distribution_format.lower()])
         }
 
-    def _create_csv_distributions(self, models, is_for_api):
+    def _create_csv_distributions(self, models, is_for_rdf_export, no_models = False):
+        if no_models:
+            return [self._create_distribution([], self.CSV_FORMAT, is_for_rdf_export)]
         return [
-            self._create_distribution([model], self.CSV_FORMAT, is_for_api)
+            self._create_distribution([model], self.CSV_FORMAT, is_for_rdf_export)
             for model in models
         ]
 
@@ -395,15 +403,14 @@ class DynamicResourceService:
         if distribution_format == self.JSON_FORMAT or distribution_format == self.JSONL_FORMAT:
             base_url = f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
             download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
-            distribution_name = models[0].full_name.split('/')[-2]
+            distribution_name = models[0].full_name.split('/')[-2] if len(models[0].full_name.split('/')) > 1 else models[0].name
         else:
             download_url =  f"{SPINTA_SERVER_URL}/{models[0].full_name}/:format/csv"
             distribution_name = models[0].name
 
         return download_url, distribution_name
 
-    @staticmethod
-    def retrieve_data(dataset_pk, resource_name):
+    def retrieve_data(self, dataset_pk, resource_name, distribution_format):
         dataset = Dataset.objects.get(pk=dataset_pk)
         models = dataset.model_set.all()
 
@@ -416,13 +423,24 @@ class DynamicResourceService:
                 'title': resource_name,
                 'dataset': dataset,
                 'models': models,
-                'get_download_url': download_url
+                'get_download_url': download_url,
+                'created': self.uapi_distribution.created,
+                'modified': self.uapi_distribution.modified,
+                'period_start': self.uapi_distribution.period_start,
+                'period_end': self.uapi_distribution.period_end,
+                'geo_location': self.uapi_distribution.geo_location,
             }
 
         model = next(model for model in models if model.name == resource_name)
         download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
         return {
             'title': resource_name,
+            'dataset': dataset,
             'models': [model],
-            'get_download_url': download_url
+            'get_download_url': download_url,
+            'created': self.uapi_distribution.created,
+            'modified': self.uapi_distribution.modified,
+            'period_start': self.uapi_distribution.period_start,
+            'period_end': self.uapi_distribution.period_end,
+            'geo_location': self.uapi_distribution.geo_location,
         }

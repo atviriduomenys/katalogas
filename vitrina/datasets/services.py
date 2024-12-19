@@ -418,7 +418,7 @@ class DynamicResourceService:
         if multi_model:
             full_name_parts = models[0].full_name.split('/')
             base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
-            download_url = f"{base_url}/:all/:format/json"
+            download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
             return {
                 'title': resource_name,
                 'dataset': dataset,
@@ -432,7 +432,7 @@ class DynamicResourceService:
             }
 
         model = next(model for model in models if model.name == resource_name)
-        download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/csv"
+        download_url = f"{SPINTA_SERVER_URL}/{model.full_name}/:format/{distribution_format.lower()}"
         return {
             'title': resource_name,
             'dataset': dataset,

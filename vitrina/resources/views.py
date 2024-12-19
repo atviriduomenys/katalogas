@@ -301,10 +301,6 @@ class ResourceModelCreateView(ModelCreateView):
         return redirect(self.resource.get_absolute_url())
 
 
-class DynamicResource:
-    pass
-
-
 class DynamicResourceDetailView(
     PermissionRequiredMixin,
     HistoryMixin,
@@ -320,8 +316,10 @@ class DynamicResourceDetailView(
         else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get_data(self, dataset_pk, model_name):
-        data = DynamicResourceService.retrieve_data(dataset_pk, model_name)
+    def get_data(self, dataset_pk, model_name, distribution_format):
+        dataset = get_object_or_404(Dataset, id=dataset_pk)
+        dynamic_resource = DynamicResourceService(dataset)
+        data = dynamic_resource.retrieve_data(dataset_pk, model_name, distribution_format)
         if not data:
             raise Http404("Data not found")
         return data
@@ -332,8 +330,8 @@ class DynamicResourceDetailView(
     def get(self, request, *args, **kwargs):
         dataset_pk = self.kwargs.get('pk')
         distribution_name = self.kwargs.get('distribution_name')
-        data_format = self.kwargs.get('format').upper()
-        dynamic_resource = self.get_data(dataset_pk, distribution_name)
+        distribution_format = self.kwargs.get('format').upper()
+        dynamic_resource = self.get_data(dataset_pk, distribution_name, distribution_format)
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
         self.models = dynamic_resource['models']
@@ -341,11 +339,11 @@ class DynamicResourceDetailView(
         context = {
             'resource': dynamic_resource,
             'dataset': self.dataset,
-            'format': data_format,
+            'format': distribution_format,
             'detail_url': self.get_detail_url(),
             'structure_url': reverse('dataset-structure', args=[self.dataset.pk]),
-            'data_url': reverse('model-data', args=[self.dataset.pk, self.models[0].name]),
-            'api_url': reverse('getall-api', args=[self.dataset.pk, self.models[0].name]),
+            'data_url': reverse('model-data', args=[self.dataset.pk, self.models[0].name]) if self.models else None,
+            'api_url': reverse('getall-api', args=[self.dataset.pk, self.models[0].name]) if self.models else None,
             'can_view_members': has_perm(
                 self.request.user,
                 Action.VIEW,

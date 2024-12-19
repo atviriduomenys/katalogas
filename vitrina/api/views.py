@@ -37,7 +37,6 @@ from vitrina.api.serializers import (
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata
@@ -343,13 +342,7 @@ class DatasetDistributionViewSet(ModelViewSet):
         tags=[RETRIEVING_DATA_TAG]
     )
     def list(self, request, *args, **kwargs):
-        dataset = self.get_dataset()
-        db_distributions = self.get_queryset()
-        dynamic_resources = DynamicResourceService(dataset)
-        generated_distributions = dynamic_resources.generate_resources(is_for_api=True)
-        combined_distributions = list(db_distributions) + generated_distributions
-        serializer = self.get_serializer(combined_distributions, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Get a single dataset distribution",

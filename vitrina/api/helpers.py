@@ -67,6 +67,8 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
     dist_type = None
     if dist.format:
         if dist.format.extension in (FormatName.API, FormatName.UAPI):
+            if dataset.model_set.all():
+                return None
             dist_type = 'WEB_SERVICE'
         else:
             dist_type = 'DOWNLOADABLE_FILE'

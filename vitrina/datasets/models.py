@@ -370,11 +370,18 @@ class Dataset(TranslatableModel):
         ]
 
     def filter_formats(self):
-        return [
+        formats = [
             obj.get_format().pk
             for obj in self.datasetdistribution_set.all()
             if obj.get_format()
         ]
+
+        if self.model_set.exists() and any(
+                dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all()):
+            from vitrina.resources.models import Format
+            additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list('pk', flat=True)
+            formats.extend(additional_formats)
+        return formats
 
     @property
     def distinct_formats(self):

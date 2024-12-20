@@ -559,6 +559,7 @@ class DatasetCreateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organization_id = self.kwargs.get('pk')
+        self.object.save()
 
         if self.object.is_public:
             self.object.published = timezone.now()

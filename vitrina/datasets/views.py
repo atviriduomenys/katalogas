@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
 from django.db.models import Func, F, Value, TextField, Max
@@ -71,7 +72,7 @@ from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateF
 from vitrina.datasets.services import update_facet_data, get_projects, get_frequency_and_format, \
     get_requests, get_datasets_for_user, sort_publication_stats, sort_publication_stats_reversed, \
     get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
-    manage_subscriptions_for_representative
+    manage_subscriptions_for_representative, DynamicResourceService
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
     Relation, DatasetFile
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
@@ -394,6 +395,12 @@ class DatasetDetailView(
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get('dataset')
         organization = dataset.organization
+
+        related_datasets = dataset.related_datasets.all()
+        paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
         extra_context_data = {
             'tags': dataset.get_tag_object_list(),
             'subscription': [],
@@ -408,12 +415,17 @@ class DatasetDetailView(
             'org_logo': organization.image if organization else None,
             'attributions': dataset.datasetattribution_set.order_by('attribution'),
             'data_maturity': dataset.metadata_set.average_level(),
-            'json_ld': self.get_json_ld_from_dataset(dataset)
+            'json_ld': self.get_json_ld_from_dataset(dataset),
+            'page_obj': page_obj,
         }
         part_of = dataset.part_of.order_by('relation')
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data['part_of'] = [(relation, list(values)) for relation, values in part_of]
-        related_datasets = dataset.related_datasets.all()
+
+        dynamic_resource = DynamicResourceService(dataset)
+        generated_resources = dynamic_resource.generate_resources()
+        extra_context_data['dynamic_resources'] = generated_resources
+
         related_datasets = itertools.groupby(related_datasets, lambda x: x.relation)
         extra_context_data['related_datasets'] = [(relation, list(values)) for relation, values in related_datasets]
 
@@ -619,6 +631,11 @@ class DatasetCreateView(
         if self.object.organization:
             org_id = self.object.organization.id
             sub_ct = get_content_type_for_model(Organization)
+            subs = Subscription.objects.filter(Q(object_id=org_id) | Q(object_id=None),
+                                               sub_type=Subscription.ORGANIZATION,
+                                               content_type=sub_ct,
+                                               dataset_update_sub=True)
+
             subs = Subscription.objects.filter(
                 (
                     Q(object_id=org_id) |

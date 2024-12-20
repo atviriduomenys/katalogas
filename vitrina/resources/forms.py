@@ -1,3 +1,4 @@
+import requests
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import DateField
@@ -67,7 +68,7 @@ class DatasetResourceForm(forms.ModelForm):
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
         required=False,
-        queryset=Dataset.public.all()
+    queryset=Dataset.public.filter(service=True)
     )
 
     class Meta:
@@ -119,9 +120,6 @@ class DatasetResourceForm(forms.ModelForm):
             Submit('submit', button, css_class='button is-primary'),
         )
 
-        related_datasets = self.dataset.related_datasets.values_list('dataset__pk', flat=True)
-        self.fields['data_service'].queryset = self.fields['data_service'].queryset.filter(pk__in=related_datasets)
-
         if self.resource and self.resource.metadata.first():
             self.initial['access'] = self.resource.metadata.first().access
             self.initial['name'] = self.resource.metadata.first().name
@@ -158,9 +156,25 @@ class DatasetResourceForm(forms.ModelForm):
                     url_extension != fmt_extension and
                     fmt_extension not in ['URL', 'API', 'UAPI']
                 ):
-                    self.add_error('format', _(
-                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                    ))
+                    content_type = ''
+                    try:
+                        if not url.startswith(('http://', 'https://')):
+                            self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+                        else:
+                            try:
+                                response = requests.head(url)
+                                content_type = response.headers.get('Content-Type', '').upper().strip()
+                            except requests.RequestException:
+                                self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+
+                        if fmt_extension not in content_type:
+                            self.add_error('format', _(
+                                "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                            ))
+                    except requests.RequestException:
+                        self.add_error('download_url', _(
+                            "Pateikta nuoroda yra neteisinga."
+                        ))
             elif not url and file:
                 file_extension = file.extension.upper().strip()
                 if fmt_extension != file_extension:

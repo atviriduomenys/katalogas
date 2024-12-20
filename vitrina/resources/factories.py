@@ -16,6 +16,14 @@ class FileFormat(DjangoModelFactory):
     title = factory.Faker('word')
     extension = 'CSV'
 
+class UapiFormat(DjangoModelFactory):
+    class Meta:
+        model = Format
+        django_get_or_create = ('title', 'extension')
+
+    title = 'Saugykla API'
+    extension = 'UAPI'
+
 
 class DatasetDistributionFactory(DjangoModelFactory):
     class Meta:
@@ -31,3 +39,9 @@ class DatasetDistributionFactory(DjangoModelFactory):
     file = factory.SubFactory(FilerFileFactory)
     type = "FILE"
     version = 1
+
+    class Params:
+        uapi_format = factory.Trait(
+            format=factory.SubFactory(UapiFormat),
+            type="URL",
+        )

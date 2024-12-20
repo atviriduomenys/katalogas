@@ -413,22 +413,28 @@ class DynamicResourceService:
     def retrieve_data(self, dataset_pk, resource_name, distribution_format):
         dataset = Dataset.objects.get(pk=dataset_pk)
         models = dataset.model_set.all()
-
-        multi_model = any(model.full_name.split('/')[-2] == resource_name for model in models)
-        if multi_model:
-            full_name_parts = models[0].full_name.split('/')
-            base_url = f"{SPINTA_SERVER_URL}/{'/'.join(full_name_parts[:-1])}"
+        
+        if distribution_format in [self.JSON_FORMAT, self.JSONL_FORMAT]:
+            full_name_parts = models[0].full_name \
+                if '/' not in models[0].full_name \
+                else '/'.join(models[0].full_name.split('/')[:-1])
+            base_url = f"{SPINTA_SERVER_URL}/{full_name_parts}"
             download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
             return {
                 'title': resource_name,
                 'dataset': dataset,
                 'models': models,
                 'get_download_url': download_url,
-                'created': self.uapi_distribution.created,
-                'modified': self.uapi_distribution.modified,
-                'period_start': self.uapi_distribution.period_start,
-                'period_end': self.uapi_distribution.period_end,
-                'geo_location': self.uapi_distribution.geo_location,
+                'created': self.uapi_distribution.created
+                    if self.uapi_distribution else None,
+                'modified': self.uapi_distribution.modified
+                    if self.uapi_distribution else None,
+                'period_start': self.uapi_distribution.period_start
+                    if self.uapi_distribution else None,
+                'period_end': self.uapi_distribution.period_end
+                    if self.uapi_distribution else None,
+                'geo_location': self.uapi_distribution.geo_location
+                    if self.uapi_distribution else None,
             }
 
         model = next(model for model in models if model.name == resource_name)
@@ -438,9 +444,14 @@ class DynamicResourceService:
             'dataset': dataset,
             'models': [model],
             'get_download_url': download_url,
-            'created': self.uapi_distribution.created,
-            'modified': self.uapi_distribution.modified,
-            'period_start': self.uapi_distribution.period_start,
-            'period_end': self.uapi_distribution.period_end,
-            'geo_location': self.uapi_distribution.geo_location,
+            'created': self.uapi_distribution.created
+                if self.uapi_distribution else None,
+            'modified': self.uapi_distribution.modified
+                if self.uapi_distribution else None,
+            'period_start': self.uapi_distribution.period_start
+                if self.uapi_distribution else None,
+            'period_end': self.uapi_distribution.period_end
+                if self.uapi_distribution else None,
+            'geo_location': self.uapi_distribution.geo_location
+                if self.uapi_distribution else None,
         }

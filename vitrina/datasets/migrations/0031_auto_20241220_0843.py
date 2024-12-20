@@ -18,7 +18,7 @@ def create_dataservice_if_not_exists(apps, schema_editor):
         frequency = frequency_model.objects.get(title="Kas 2 valandas")
         endpoint_type = dataservice_type_model.objects.get(title="JSON")
         endpoint_description_type = dataservice_spec_type_model.objects.get(title="Manual")
-        organization = organization_model.objects.get(email="info@ivpk.lt")
+        organization = organization_model.objects.get(company_code=188772433)
 
         uapi_dataservice = dataset.objects.create(
             service=True,

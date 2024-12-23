@@ -54,7 +54,13 @@
                     {% else %}
                     <td><em>{% translate "(pakvietimas išsiųstas)" %}</em></td>
                     <td><a href="mailto:{{ m.email }}">{{ m.email }}</a></td>
-                    <td>-</td>
+                    <td>
+                        {% if m.phone %}
+                            {{ m.phone }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     {% endif %}
                     <td>{{ m.get_role_display|default:"-" }}</td>
                     {% if has_permission %}

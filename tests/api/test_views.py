@@ -342,6 +342,7 @@ def test_get_all_datasets(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -411,6 +412,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -470,6 +472,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -560,6 +563,7 @@ def test_create_dataset(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": ['tag1', 'tag2'],
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -634,6 +638,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -679,6 +684,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
+        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]

@@ -1,6 +1,7 @@
 from typing import Optional
 
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
 from vitrina.resources.models import Format
 from vitrina.resources.models import FormatName
@@ -22,9 +23,15 @@ def get_datasets_for_rdf(qs):
     )
     for dataset in datasets:
         distributions = [
-            _get_distribution(dataset, dist)
-            for dist in dataset.datasetdistribution_set.all()
+        distribution
+        for dist in dataset.datasetdistribution_set.all()
+        if (distribution := _get_distribution(dataset, dist)) is not None
         ]
+
+        if dataset.is_part_of_dataservice():
+            dataset_resources = DynamicResourceService(dataset)
+            dynamic_distributions = dataset_resources.generate_resources(is_for_rdf_export=True)
+            distributions.extend(dynamic_distributions)
 
         yield {
             'uri': dataset.get_absolute_url(),
@@ -60,6 +67,8 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
     dist_type = None
     if dist.format:
         if dist.format.extension in (FormatName.API, FormatName.UAPI):
+            if dataset.model_set.all():
+                return None
             dist_type = 'WEB_SERVICE'
         else:
             dist_type = 'DOWNLOADABLE_FILE'

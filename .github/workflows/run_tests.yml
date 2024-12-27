@@ -30,6 +30,11 @@ jobs:
           sudo sysctl -w fs.file-max=262144
           sudo sysctl -w vm.max_map_count=262144
 
+      - name: Setup redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: 7
+
       - name: Runs Elasticsearch
         uses: elastic/elastic-github-actions/elasticsearch@master
         with:

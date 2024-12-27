@@ -40,6 +40,7 @@ class Comment(models.Model):
         (APPROVED, _("Įvertintas")),
         (REJECTED, _("Atmestas"))
     )
+    COMBINED_STATUSES = STATUSES  + tuple(Request.STATUSES)
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -52,7 +53,7 @@ class Comment(models.Model):
     user = models.ForeignKey('vitrina_users.User', on_delete=models.CASCADE)
     is_public = models.BooleanField(default=True, verbose_name=_("Viešas komentaras"))
     type = models.CharField(max_length=255, choices=TYPES, default=USER)
-    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES)
+    status = models.CharField(max_length=255, blank=True, null=True, choices=COMBINED_STATUSES)
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,

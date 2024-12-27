@@ -35,6 +35,7 @@ class RepresentativeFactory(DjangoModelFactory):
         model = Representative
         django_get_or_create = ('first_name', 'last_name', 'email', 'phone')
 
+    organization = None
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     phone = factory.Sequence(lambda n: '+3706%07d' % n)

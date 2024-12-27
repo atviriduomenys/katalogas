@@ -727,3 +727,201 @@ def test_pre_representative_delete__different_organization_dataset():
     pre_representative_delete(rep)
     user.refresh_from_db()
     assert user.is_active is True
+
+
+@pytest.mark.django_db
+def test_dataset_create_permission_dataset_publisher():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.CREATE, Dataset, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_create_permission_organization_publisher():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=dataset.organization.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.CREATE, Dataset, dataset.organization)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_edit_permission_dataset_publisher():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_edit_permission_organization_publisher():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=dataset.organization.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_history_view_permission_publisher():
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ct,
+        object_id=dataset.pk,
+        role=Representative.MANAGER,
+        user = None
+    )
+    res = has_perm(user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_organization_representative_view_permission_publisher():
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = user_organization
+    user.save()
+
+    organization = OrganizationFactory()
+
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(
+        organization = user_organization,
+        content_type=ct,
+        object_id=organization.pk,
+        role=Representative.MANAGER,
+        user=None
+    )
+    res = has_perm(user, Action.VIEW, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_create_publisher():
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=organization.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.CREATE, Organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_edit_publisher():
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=organization.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    res = has_perm(user, Action.UPDATE, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_distribution_create_permission_organization_publisher():
+    dataset = DatasetFactory()
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset.organization),
+        object_id=dataset.organization.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+    res = has_perm(user, Action.CREATE, DatasetDistribution, dataset)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_distribution_edit_permission_organization_publisher():
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    dataset_distribution = DatasetDistributionFactory()
+    ct = ContentType.objects.get_for_model(dataset_distribution.dataset.organization)
+    RepresentativeFactory(
+        organization = organization,
+        content_type=ct,
+        object_id=dataset_distribution.dataset.organization.pk,
+        role=Representative.MANAGER,
+        user=None
+    )
+    res = has_perm(user, Action.UPDATE, dataset_distribution)
+    assert res is True

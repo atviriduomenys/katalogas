@@ -467,6 +467,7 @@ class OrganizationMembersView(
             Representative,
             self.object,
         )
+        context_data['can_delete_publishers'] = self.request.user.is_superuser
         context_data['organization_id'] = self.object.pk
         context_data['organization'] = self.object
         return context_data
@@ -694,6 +695,11 @@ class RepresentativeCreateView(
                 user.save()
         except ObjectDoesNotExist:
             user = None
+        try:
+            organization = Organization.objects.get(email=self.object.email)
+        except ObjectDoesNotExist:
+            organization = None
+
         if user:
             self.object.user = user
             self.object.save()
@@ -705,6 +711,16 @@ class RepresentativeCreateView(
                 reverse('organization-detail', kwargs={'pk': self.object.object_id})
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
+        elif organization and self.request.user.is_superuser:
+            if self.object.role == Representative.COORDINATOR:
+                form.add_error('role', _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+                return self.form_invalid(form)
+            self.object.organization = organization
+            self.object.save()
+
+            if not organization.provider:
+                organization.provider = True
+                organization.save()
         else:
             if not SentMail.objects.filter(
                 Q(
@@ -852,10 +868,10 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         obj = self.get_object()
-        if obj.role == Representative.COORDINATOR:
-            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
-        else:
-            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        role = "koordinatorių" if obj.role == Representative.COORDINATOR else "tvarkytojų" if obj.organization else "tvarkytoją"
+        context['delete_text'] = _(
+            f'Ar tikrai norite pašalinti "{obj.organization.title}" iš {role}?') if obj.organization else _(
+            f'Ar tikrai norite ištrinti "{obj}" {role}?')
         return context
 
     def get_success_url(self):

@@ -38,12 +38,11 @@ class CategoryAdmin(TreeAdmin):
     ]
     list_filter = [
         RootCategoryFilter,
+        'groups',
     ]
     search_fields = (
         'title',
     )
-
-    exclude = ('groups',)
 
 
 class LicenceAdmin(admin.ModelAdmin):

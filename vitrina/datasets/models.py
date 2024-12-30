@@ -162,9 +162,6 @@ class Dataset(TranslatableModel):
     access_rights = models.CharField(_('Prieigos teisės'), blank=True, null=True, choices=ACCESS_RIGHTS, max_length=255)
     distribution_conditions = models.TextField(blank=True, null=True, verbose_name=_('Platinimo salygos'))
 
-    creator = models.ForeignKey(Organization, related_name='created_datasets', on_delete=models.SET_NULL, null=True, verbose_name=_('Duomenų rinkinio kūrėjas'))
-    publisher = models.ForeignKey(Organization, related_name='published_datasets', on_delete=models.SET_NULL, null=True, verbose_name=_('"Duomenų atvėrimo paslaugų teikėjas"'))
-
     tags = TagField(
         blank=True,
         force_lowercase=True,

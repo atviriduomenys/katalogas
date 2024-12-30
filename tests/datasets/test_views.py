@@ -2352,3 +2352,75 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
 
     ]
     assert table_data == expected_data
+
+
+@pytest.mark.django_db
+def test_view_non_public_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    response = app.get(reverse('dataset-detail', args=[dataset.pk]))
+    assert response.status_code == 200
+    assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_edit_non_public_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'Edited description'
+    response = form.submit()
+    dataset.refresh_from_db()
+
+    assert response.status_code == 302
+    assert response.url == reverse('dataset-detail', args=[dataset.pk])
+    assert dataset.title == 'Edited title'
+    assert dataset.description == 'Edited description'
+
+
+@pytest.mark.django_db
+def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    response = app.get(reverse('dataset-members', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403

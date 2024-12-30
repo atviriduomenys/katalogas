@@ -1059,6 +1059,7 @@ class DatasetMembersView(
             Representative,
             self.object,
         )
+        context['can_delete_publishers'] = self.request.user.is_superuser
         return context
 
 
@@ -1122,6 +1123,11 @@ class CreateMemberView(
             user = User.objects.get(email=self.object.email)
         except ObjectDoesNotExist:
             user = None
+        try:
+            organization = Organization.objects.get(email=self.object.email)
+        except ObjectDoesNotExist:
+            organization = None
+
         if user:
             self.object.user = user
             self.object.save()
@@ -1135,6 +1141,16 @@ class CreateMemberView(
             )
             manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user,
                                                     self.dataset, link)
+        elif organization and self.request.user.is_superuser:
+            if self.object.role == Representative.COORDINATOR:
+                form.add_error('role', _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+                return self.form_invalid(form)
+            self.object.organization = organization
+            self.object.save()
+
+            if not organization.provider:
+                organization.provider = True
+                organization.save()
         else:
             self.object.save()
             if not SentMail.objects.filter(
@@ -1340,10 +1356,10 @@ class DeleteMemberView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         obj = self.get_object()
-        if obj.role == Representative.COORDINATOR:
-            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" koordinatorių?')
-        else:
-            context['delete_text'] = _(f'Ar tikrai norite ištrinti "{obj}" tvarkytoją?')
+        role = "koordinatorių" if obj.role == Representative.COORDINATOR else "tvarkytojų" if obj.organization else "tvarkytoją"
+        context['delete_text'] = _(
+            f'Ar tikrai norite pašalinti "{obj.organization.title}" iš {role}?') if obj.organization else _(
+            f'Ar tikrai norite ištrinti "{obj}" {role}?')
         return context
 
     def get_success_url(self):

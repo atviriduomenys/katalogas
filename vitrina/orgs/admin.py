@@ -1,5 +1,6 @@
 import pytz
 from django.contrib import admin, messages
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
@@ -15,7 +16,7 @@ from vitrina import settings
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, AdminPublisherOrganizationForm, \
     AdminPublisherAssignedOrganizationForm
-from vitrina.orgs.models import Representative, Template, PublisherAssignment
+from vitrina.orgs.models import Representative, Template
 
 from vitrina.orgs.models import Organization, RepresentativeRequest, PublisherOrganization
 from django.utils.translation import gettext_lazy as _
@@ -65,6 +66,7 @@ class PublisherAdmin(admin.ModelAdmin):
     search_fields = ('title',)
     actions = ['remove_publisher_status']
     change_list_template = 'vitrina/orgs/admin/organization_publisher_change_list.html'
+    change_form_template = 'vitrina/orgs/admin/organization_publisher_change_form.html'
     form = AdminPublisherAssignedOrganizationForm
 
     def get_queryset(self, request):
@@ -75,20 +77,50 @@ class PublisherAdmin(admin.ModelAdmin):
         if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
             obj.publisher = True
         obj.save()
+
         if change:
-            current_assignments = set(
-                PublisherAssignment.objects.filter(publisher=obj).values_list('organization', flat=True))
-            new_assignments = set(form.cleaned_data['organizations'].values_list('id', flat=True))
-            # Remove orgs from publishers
-            for org_id in current_assignments - new_assignments:
-                PublisherAssignment.objects.filter(publisher=obj, organization_id=org_id).delete()
-                # Unassign  publisher from all related datasets
-                Dataset.objects.filter(organization_id=org_id).update(publisher=None)
-            # Add orgs to publishers
-            for org_id in new_assignments - current_assignments:
-                PublisherAssignment.objects.create(publisher=obj, organization_id=org_id)
-                # Assign publisher to all related datasets
-                Dataset.objects.filter(organization_id=org_id).update(publisher=obj)
+            self._update_assignments(
+                obj,
+                form.cleaned_data['organizations'],
+                Organization,
+                Representative.MANAGER
+            )
+            self._update_assignments(
+                obj,
+                form.cleaned_data['datasets'],
+                Dataset,
+                Representative.MANAGER
+            )
+
+    @staticmethod
+    def _update_assignments(obj, new_assignments, model, role):
+        content_type = ContentType.objects.get_for_model(model)
+        current_assignments = set(model.objects.filter(
+            pk__in=Representative.objects.filter(
+                content_type=content_type,
+                organization=obj
+            ).values_list('object_id', flat=True)
+        ))
+        new_assignments = set(new_assignments.values_list('id', flat=True))
+
+        removed_assignments = current_assignments - new_assignments
+        added_assignments = new_assignments - current_assignments
+
+        Representative.objects.filter(
+            content_type=content_type,
+            object_id__in=[item.id for item in removed_assignments],
+            organization=obj
+        ).delete()
+
+        for item in added_assignments:
+            Representative.objects.create(
+                content_type=content_type,
+                object_id=item,
+                organization=obj,
+                role=role
+            )
+            if model == Dataset:
+                Dataset.objects.filter(organization_id=item).update(publisher=obj)
 
     def delete_model(self, request, obj):
         obj.publisher = False
@@ -113,6 +145,17 @@ class PublisherAdmin(admin.ModelAdmin):
         extra_context['title'] = _("Duomenų atvėrimo paslaugos tiekėjai")
         extra_context['add_button_label'] = _("Priskirti duomenų atvėrimo paslaugos tiekėjo rolę")
         return super().changelist_view(request, extra_context=extra_context)
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
+        extra_context['chosen_title_org'] = _("Pasirinktos organizacijos")
+        extra_context['available_title_org'] = _("Galimos organizacijos")
+        extra_context['chosen_title_datasets'] = _("Pasirinkti duomenų rinkiniai")
+        extra_context['available_title_datasets'] = _("Galimi duomenų rinkiniai")
+        extra_context['show_save_and_add_another'] = False
+        extra_context['show_save_and_continue'] = False
+        return super().changeform_view(request, object_id, form_url, extra_context)
 
     def add_view(self, request, form_url='', extra_context=None):
         extra_context = extra_context or {}

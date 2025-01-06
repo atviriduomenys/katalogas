@@ -25,8 +25,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerImageField, TranslatedFileField, TranslatedFileInput
 from vitrina.helpers import validate_file
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template, PublisherOrganization, \
-    PublisherAssignment
+from vitrina.orgs.models import Organization, Representative, RepresentativeRequest, Template
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
@@ -907,14 +906,34 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
         required=False,
         widget=FilteredSelectMultiple(
             verbose_name=_("Organizacijos"),
-            is_stacked=False
+            is_stacked=False,
+        ),
+    )
+    datasets = ModelMultipleChoiceField(
+        queryset=Dataset.objects.all(),
+        label=_("Duomenų rinkiniai"),
+        required=False,
+        widget=FilteredSelectMultiple(
+            verbose_name=_("Duomenų rinkiniai"),
+            is_stacked=False,
         )
     )
     class Meta:
-        model = PublisherAssignment
-        fields = ['organizations']
+        model = Representative
+        fields = ['organizations', 'datasets']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields['organizations'].initial = PublisherAssignment.objects.filter(publisher=self.instance).values_list('organization', flat=True)
+            self.fields['organizations'].initial = Organization.objects.filter(
+                pk__in=Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    organization=self.instance.pk
+                ).values_list('object_id', flat=True)
+            )
+            self.fields['datasets'].initial = Dataset.objects.filter(
+                pk__in=Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=self.instance.pk
+                ).values_list('object_id', flat=True)
+            )

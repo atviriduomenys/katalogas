@@ -718,8 +718,8 @@ class RepresentativeCreateView(
             self.object.organization = organization
             self.object.save()
 
-            if not organization.provider:
-                organization.provider = True
+            if not organization.publisher:
+                organization.publisher = True
                 organization.save()
         else:
             if not SentMail.objects.filter(

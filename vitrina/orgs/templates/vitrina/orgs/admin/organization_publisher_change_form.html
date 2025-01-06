@@ -1,0 +1,40 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+{% load admin_urls %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        // Customization for organizations
+        const availableTitleOrg = document.querySelector('.field-organizations .selector-available h2');
+        const chosenTitleOrg = document.querySelector('.field-organizations .selector-chosen h2');
+
+        console.log('Available title (org):', availableTitleOrg);
+        console.log('Chosen title (org):', chosenTitleOrg);
+
+        if (availableTitleOrg) {
+            availableTitleOrg.textContent = '{{ available_title_org|escapejs }}';
+        }
+        if (chosenTitleOrg) {
+            chosenTitleOrg.textContent = '{{ chosen_title_org|escapejs }}';
+        }
+
+        // Customization for datasets
+        const availableTitleDataset = document.querySelector('.field-datasets .selector-available h2');
+        const chosenTitleDataset = document.querySelector('.field-datasets .selector-chosen h2');
+
+        console.log('Available title (dataset):', availableTitleDataset);
+        console.log('Chosen title (dataset):', chosenTitleDataset);
+
+        if (availableTitleDataset) {
+            availableTitleDataset.textContent = '{{ available_title_datasets|escapejs }}';
+        }
+        if (chosenTitleDataset) {
+            chosenTitleDataset.textContent = '{{ chosen_title_datasets|escapejs }}';
+        }
+    }, 100);  // 100ms delay
+});
+</script>
+{% endblock %}

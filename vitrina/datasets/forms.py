@@ -28,7 +28,7 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
-from vitrina.orgs.models import Organization, PublisherAssignment
+from vitrina.orgs.models import Organization
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 

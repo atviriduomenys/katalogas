@@ -227,22 +227,24 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for dr in dataset_relations %}
-                                <tr>
-                                    <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
-                                    <td>
-                                        {% if can_update_dataset %}
-                                        <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
-                                           onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
-                                           class="button is-link is-small is-pulled-right"
-                                           id="delete_resource">{% translate "Trinti" %}
-                                        </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                            {% for dr in page_obj %}
+                            <tr>
+                                <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
+                                <td>
+                                    {% if can_update_dataset %}
+                                    <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
+                                       onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
+                                       class="button is-link is-small is-pulled-right"
+                                       id="delete_resource">{% translate "Trinti" %}
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
+                    <br/>
+                        {% include "vitrina/common/pagination.html" %}
                 </div>
             </div>
         {% endfor %}
@@ -364,6 +366,19 @@
                     $('.modal').toggleClass('is-active');
                     $('html').toggleClass('is-clipped');
                     $("#info-table-body").empty();
+                });
+            });
+        });
+        // add scroll position checkpoint for paginated result loading
+        document.addEventListener("DOMContentLoaded", function() {
+            if (sessionStorage.getItem("scrollPosition")) {
+                window.scrollTo(0, sessionStorage.getItem("scrollPosition"));
+                sessionStorage.removeItem("scrollPosition");
+            }
+
+            document.querySelectorAll(".pagination a").forEach(function(link) {
+                link.addEventListener("click", function() {
+                    sessionStorage.setItem("scrollPosition", window.scrollY);
                 });
             });
         });

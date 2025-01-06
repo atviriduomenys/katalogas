@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 
 import pytz
+from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -2277,3 +2278,149 @@ def test_access_rights_filter(app: DjangoTestApp):
     filters = {f.name: f for f in resp.context['filters']}
     selected = [i.value for i in filters['access_rights'].items() if i.selected]
     assert selected == [Dataset.RESTRICTED]
+
+
+def parse_table(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    table = soup.find('table', {'id': 'resource-table'})
+    rows = table.find('tbody').find_all('tr')
+
+    data = []
+    for row in rows:
+        cols = row.find_all('td')
+        cols = [col.get_text(strip=True) for col in cols]
+        data.append(cols)
+
+    return data
+
+
+@pytest.mark.django_db
+def test_dataset_dynamic_resources(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    resource = DatasetDistributionFactory(uapi_format = True)
+    form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    form.submit()
+    assert resource.model_set.first().name == 'TestModel'
+
+    response = app.get(reverse('dataset-detail', args=[resource.dataset.pk]))
+    html = response.text
+    table_data = parse_table(html)
+    expected_data = [
+        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', 'Saugykla API',
+            resource.created.strftime('%Y-%m-%d'),resource.modified.strftime('%Y-%m-%d'),
+            'PeržiūrėtiAtsisiųsti', 'Redaguoti', 'Trinti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti']
+    ]
+    assert table_data == expected_data
+
+
+@pytest.mark.django_db
+def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    resource = DatasetDistributionFactory(uapi_format = True)
+    for model_name in ["TestModel", "TestModel2", "TestModel3"]:
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form['name'] = model_name
+        form.submit()
+    assert resource.model_set.count() == 3
+
+    response = app.get(reverse('dataset-detail', args=[resource.dataset.pk]))
+    html = response.text
+    table_data = parse_table(html)
+    expected_data = [
+        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', 'Saugykla API',
+            resource.created.strftime('%Y-%m-%d'),resource.modified.strftime('%Y-%m-%d'),
+            'PeržiūrėtiAtsisiųsti', 'Redaguoti', 'Trinti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel2', '2022-01-01', '2022-12-31', '-', 'CSV',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel3', '2022-01-01', '2022-12-31', '-', 'CSV',
+            resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+
+    ]
+    assert table_data == expected_data
+
+
+@pytest.mark.django_db
+def test_view_non_public_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    response = app.get(reverse('dataset-detail', args=[dataset.pk]))
+    assert response.status_code == 200
+    assert response.context['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_edit_non_public_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'Edited description'
+    response = form.submit()
+    dataset.refresh_from_db()
+
+    assert response.status_code == 302
+    assert response.url == reverse('dataset-detail', args=[dataset.pk])
+    assert dataset.title == 'Edited title'
+    assert dataset.description == 'Edited description'
+
+
+@pytest.mark.django_db
+def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=Representative.MANAGER,
+    )
+
+    app.set_user(user)
+    response = app.get(reverse('dataset-members', args=[dataset.pk]), expect_errors=True)
+    assert response.status_code == 403

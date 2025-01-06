@@ -78,18 +78,57 @@
                 <a href="{%url 'resource-change' pk=r.id %}"
                    class="button is-link is-small is-pulled-right"
                    id="change_resource">{% translate "Redaguoti" %}</a>
-                </div>
             </td>
             <td>
                 <a href="{%url 'resource-delete' pk=r.id %}"
                    onclick="return confirm('Ar jūs tikrai norite trinti šį šaltinį?')"
                    class="button is-link is-small is-pulled-right"
                    id="delete_resource">{% translate "Trinti" %}</a>
-                </div>
             </td>
             {% endif %}
         </tr>
     {% endfor %}
+    {% if dynamic_resources %}
+        {% for r in dynamic_resources %}
+        <tr>
+            <td><span class="icon icon-is-small">
+                    <i class="fas fa-lg fa-file-export"></i>
+            </span></td>
+            <td>{{ r.geo_location|default:"-" }}</td>
+            <td class="has-fixed-width-130">
+                <a href="{{ r.resource_url }}" class="has-text-info-dark">
+                {% if r.title %}
+                    {{ r.title }}
+                {% else %}
+                    ({% translate "pavadinimas nenurodytas" %})
+                {% endif %}
+                </a>
+            </td>
+            <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
+            <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
+            <td>{{ r.size|default:"-" }}</td>
+            <td class="has-text-centered">
+                {{ r.format|default:"-" }}
+            </td>
+            <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+            <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
+
+            {% if can_add_resource %}
+            <td>
+            </td>
+            <td>
+            </td>
+            {% endif %}
+
+            {% if r.download_url %}
+            <td>
+                <a class="button is-primary is-small is-pulled-right" href="{{ r.download_url }}"
+                   target="_blank">{% translate "Atidaryti" %}</a>
+            </td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    {% endif %}
     </tbody>
 </table>
 

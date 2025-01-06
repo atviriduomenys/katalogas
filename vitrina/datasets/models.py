@@ -370,14 +370,25 @@ class Dataset(TranslatableModel):
         ]
 
     def filter_formats(self):
-        return [
+        formats = [
             obj.get_format().pk
             for obj in self.datasetdistribution_set.all()
             if obj.get_format()
         ]
 
+        if self.model_set.exists() and any(
+                dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all()):
+            from vitrina.resources.models import Format
+            additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list('pk', flat=True)
+            formats.extend(additional_formats)
+        return formats
+
     @property
     def distinct_formats(self):
+        if self.is_part_of_dataservice() and self.model_set.all():
+            from vitrina.resources.models import Format
+            additional_formats = [Format.objects.get(title="CSV"), Format.objects.get(title="JSON"), Format.objects.get(title="JSONL")]
+            return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
         return sorted(set(self.formats), key=lambda x: x.title)
 
     def get_acl_parents(self):
@@ -788,6 +799,11 @@ class Dataset(TranslatableModel):
             "isAccessibleForFree": self.is_public if self.is_public else None,
         }
         return json.dumps(json_ld, ensure_ascii=False)
+
+    def is_part_of_dataservice(self):
+        if self.datasetdistribution_set.filter(format__extension="UAPI").exists():
+            return True
+        return False
 
 
 class DatasetReport(Dataset):

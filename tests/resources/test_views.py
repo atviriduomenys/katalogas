@@ -9,6 +9,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
@@ -290,3 +291,135 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
     app.set_user(user)
     response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]))
     assert response.context['object'] == resource
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True)
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    form.submit()
+    assert resource.model_set.first().name == 'TestModel'
+
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "json"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'JSON'
+    assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True)
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    form.submit()
+    assert resource.model_set.first().name == 'TestModel'
+
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "jsonl"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'JSONL'
+    assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True)
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    form.submit()
+    assert resource.model_set.first().name == 'TestModel'
+
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "csv"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'CSV'
+    assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTestApp):
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    for model_name in ["TestModel", "TestModel2", "TestModel3"]:
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form['name'] = model_name
+        form.submit()
+    assert resource.model_set.count() == 3
+
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "json"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'JSON'
+    assert response.context['resource']['dataset'] == resource.dataset
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_jsonl_multiple_models(app: DjangoTestApp):
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    for model_name in ["TestModel", "TestModel2", "TestModel3"]:
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form['name'] = model_name
+        form.submit()
+    assert resource.model_set.count() == 3
+
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "jsonl"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'JSONL'
+    assert response.context['resource']['dataset'] == resource.dataset
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTestApp):
+    resource = DatasetDistributionFactory( uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    for model_name in ["TestModel", "TestModel2", "TestModel3"]:
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form['name'] = model_name
+        form.submit()
+    assert resource.model_set.count() == 3
+
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "csv"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
+    assert str(response.context['resource']['models'][0]) == "TestModel"
+    assert response.context['format'] == 'CSV'
+    assert response.context['resource']['dataset'] == resource.dataset
+
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel2", "csv"]))
+    assert response.status_code == 200
+    assert str(response.context['resource']['models'][0]) == "TestModel2"
+
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel3", "csv"]))
+    assert response.status_code == 200
+    assert str(response.context['resource']['models'][0]) == "TestModel3"

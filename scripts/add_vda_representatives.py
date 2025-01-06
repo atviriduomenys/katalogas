@@ -25,7 +25,7 @@ def main():
     """
 
     data = pd.read_excel('scripts/institucijos.xlsx')
-    pbar = tqdm("Migrating news items", total=len(data))
+    pbar = tqdm("Creating VDA representatives", total=len(data))
 
     rep_info = [
         ('igne.cesnakauskiene@stat.gov.lt', '+37064048307'),

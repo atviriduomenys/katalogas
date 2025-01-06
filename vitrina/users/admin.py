@@ -418,3 +418,4 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(EmailAddress)
 admin.site.register(User, UserAdmin)
 
+

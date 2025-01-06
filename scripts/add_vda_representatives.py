@@ -46,7 +46,8 @@ def main():
         if not organization:
             organization = Organization.add_root(
                 title=title,
-                company_code=company_code
+                company_code=company_code,
+                is_public=True
             )
 
         for email_address, phone in rep_info:

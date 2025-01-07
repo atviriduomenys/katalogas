@@ -1,3 +1,5 @@
+import contextlib
+import gzip
 import os
 import json
 import urllib.parse
@@ -38,6 +40,15 @@ def get_peak_memory():
         process = psutil.Process(os.getpid())
         return process.memory_info().peak_wset
 
+@contextlib.contextmanager
+def read_log_file(file_path):
+    if str(file_path).lower().endswith('.gz'):
+        with gzip.open(file_path, 'rt', encoding='utf-8') as f:
+            yield f
+    else:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            yield f
+
 
 def main(
         name: str = Argument(..., help="stats source name, i.e. get.data.gov.lt"),
@@ -50,9 +61,15 @@ def main(
         config_file: str = Option(os.path.expanduser('~/.config/vitrina/downloadstats.json')),
         state_file: str = Option(os.path.expanduser('~/.local/share/vitrina/state.json')),
         bot_status_file: str = Option(os.path.expanduser('~/.local/share/vitrina/downloadstats.json')),
+        start_from: str = Option(None, help="Start processing from this log file")
 ):
     transactions = {}
-    current_state = {'files': {}}
+    current_state = {'line_offset': 0, 'start_from': start_from, 'read_files': []}
+    state_entry = {}
+
+    start_from_update = None
+    if start_from:
+        start_from_update = start_from
 
     bots_found = {'agents': {}}
     apikey = ""
@@ -61,9 +78,6 @@ def main(
     total_lines_read = 0
     lines_read = 0
     final_stats = {}
-    file_size = os.path.getsize(logfile)
-    existing_size = 0
-    existing_offset = 0
     temp = {}
 
     if not os.path.exists(os.path.dirname(state_file)):
@@ -76,10 +90,6 @@ def main(
     else:
         with open(state_file, 'r') as f:
             current_state = json.load(f)
-        state = current_state.get('files').get(logfile)
-        if state is not None:
-            existing_size = state.get('size')
-            existing_offset = state.get('offset')
 
     if not os.path.exists(os.path.dirname(bot_status_file)):
         os.makedirs(os.path.dirname(bot_status_file))
@@ -98,13 +108,15 @@ def main(
             bots.update(bot_list)
             apikey = data.get('apikey')
 
-    if not os.path.exists(logfile):
-        print(f'File {logfile} not found. Aborting.')
-        return
+    log_files = [Path(logfile)] + sorted(Path(logfile).parent.glob('accesslog.json-*.gz'))
 
-    if file_size == existing_size:
-        # File did not change?
-        return
+    start_from = start_from or current_state.get('start_from')
+
+    if start_from:
+        log_files = [lf for lf in log_files if lf.name == 'accesslog.json' or lf.name >= start_from]
+
+    read_files = set(current_state.get('read_files', []))
+    log_files = sorted([lf for lf in log_files if lf.name not in read_files])
 
     endpoint_url = urllib.parse.urljoin(target, 'partner/api/1/downloads')
     session = req.Session()
@@ -113,37 +125,51 @@ def main(
     total_lines_in_file = 0
     d = deque([], maxlen=limit)
 
-    with open(logfile) as ff:
-        total_lines_in_file = sum(bl.count('\n') for bl in blocks(ff))
+    for log_file in log_files:
+        with read_log_file(log_file) as ff:
+            total_lines_in_file += sum(bl.count('\n') for bl in blocks(ff))
 
     pbar = tqdm("Parsing download stats", total=total_lines_in_file)
 
-    with open(logfile) as f:
-        bytesread = 0
-        if existing_offset > 0:
-            f.seek(existing_offset)
-        line = f.readline()
-        while line:
-            bytesread += len(str.encode(line))
-            d.append(line)
-            total_lines_read += 1
-            lines_read += 1
-            if lines_read == limit:
-                find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
-                lines_read = 0
-            state_entry = {
-                logfile: {
-                    'size': file_size,
-                    'offset': f.tell()
-                }
-            }
-            pbar.update(1)
+    line_offset = current_state.get('line_offset', 0)
+    read_files_list = list(read_files)
+
+    for log_file in log_files:
+        with read_log_file(log_file) as f:
+            if log_file.name == 'accesslog.json':
+                total_lines_in_file = sum(1 for _ in f)
+                f.seek(0)
+            while line_offset > 0:
+                line = f.readline()
+                if not line:
+                    break
+                line_offset -= 1
+
             line = f.readline()
-        find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+            if log_file.name != 'accesslog.json':
+                read_files_list.append(log_file.name)
+            while line:
+                d.append(line)
+                total_lines_read += 1
+                lines_read += 1
+                if lines_read == limit:
+                    find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+                    d.clear()
+                    lines_read = 0
+                state_entry = {
+                    'line_offset': total_lines_in_file,
+                    'read_files': sorted(read_files_list)
+                }
+                if start_from_update:
+                    state_entry['start_from'] = start_from_update
+                pbar.update(1)
+                line = f.readline()
+            find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, transactions)
+            d.clear()
 
     post_data(temp, name, session, endpoint_url)
 
-    current_state.get('files', {}).update(state_entry)
+    current_state.update(state_entry)
 
     with open(state_file, "w") as outfile:
         outfile.write(json.dumps(current_state, indent=4))
@@ -271,7 +297,6 @@ def find_transactions(name, d, final_stats, bot_status_file, bots_found, temp, t
                                 temp[model].append(
                                     {'source': name, 'model': model, 'time': dt, 'date': date, 'hour': hour,
                                      'format': frmt, 'requests': requests, 'objects': objects})
-
             with open(bot_status_file, "w+") as bot_file:
                 bot_file.write(json.dumps(bots_found, indent=4))
 

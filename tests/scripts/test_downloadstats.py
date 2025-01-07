@@ -1,3 +1,4 @@
+import gzip
 import uuid
 import json
 from datetime import datetime
@@ -143,15 +144,9 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     # }
     state_file = tmp_path / 'state.json'
     assert json.loads(state_file.read_text()) == {
-        'files': {
-            str(tmp_path / 'accesslog.json'): {
-                # Store last seen file size
-                'size': len(logbytes),
-                # And offset in the file
-                'offset': len(logbytes),
-            }
-        },
-    }
+        'line_offset': 10,
+        'start_from': None,
+        'read_files': []}
 
     bot_stats_file = tmp_path / 'downloadstats.json'
     assert json.loads(bot_stats_file.read_text()) == {
@@ -232,5 +227,54 @@ def test_find_transactions(tmp_path: Path):
     assert json.loads(bot_status_file.read_text()) == {
         'agents': {
             'HTTPie/2.6.0': 3,
+        },
+    }
+
+
+def create_gz_file(path: Path, filename: str, content: str):
+    gz_path = path / filename
+    with gzip.open(gz_path, 'wt') as f:
+        f.write(content)
+    return gz_path
+
+
+def test_reading_archived_logs(patcher: MagicMock, tmp_path: Path):
+    res = run(tmp_path, [
+        log(day='1'),
+        log(day='2', agent='Mozilla/5.0 (compatible; SemrushBot)'),
+    ])
+
+    for day in range(1, 3):
+        create_gz_file(tmp_path, f'accesslog.json-2000-01-0{day}.gz', '\n'.join(log(day=str(day))))
+    assert res.exit_code == 0
+
+    session = patcher.return_value
+
+    res = run(tmp_path, [log(day='3')])
+    assert res.exit_code == 0
+
+    assert session.post.call_count == 2
+    assert session.post.call_args.kwargs['data'] == {
+        'format': 'html',
+        'model': 'datasets/example/City',
+        'objects': 1,
+        'requests': 1,
+        'source': 'get.data.gov.lt',
+        'time': datetime(2000, 1, 2, tzinfo=timezone.utc),
+    }
+
+    state_file = tmp_path / 'state.json'
+    assert json.loads(state_file.read_text()) == {
+        'line_offset': 2,
+        'read_files': ['accesslog.json-2000-01-01.gz',
+                       'accesslog.json-2000-01-02.gz'],
+        'start_from': None,
+    }
+
+    bot_stats_file = tmp_path / 'downloadstats.json'
+    assert json.loads(bot_stats_file.read_text()) == {
+        'agents': {
+            'HTTPie/2.6.0': 2,
+            'SemrushBot': 1
         },
     }

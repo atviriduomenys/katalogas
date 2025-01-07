@@ -118,6 +118,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         queryset = queryset.filter(
             deleted__isnull=True,
             deleted_on__isnull=True,
+            organization_id__isnull=False,
             translations__title__isnull=False,
             status=Dataset.HAS_DATA
         ).distinct()

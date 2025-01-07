@@ -1252,10 +1252,7 @@ class RequestDeleteDatasetView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.request_object)
-
-    def handle_no_permission(self):
-        return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.dataset.pk}))
+        return has_perm(self.request.user, Action.ASSIGN, self.request_object)
 
     def delete(self, request, *args, **kwargs):
         request_obj_items = RequestObject.objects.filter(object_id=self.dataset.pk,
@@ -1360,12 +1357,13 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        orgs = [ra.organization for ra in  RequestAssignment.objects.filter(
-            request=self.request_obj
-        )]
         user_can_manage_datasets = False
         if not self.request.user.is_anonymous:
-            user_can_manage_datasets = self.request.user.organization in orgs
+            user_can_manage_datasets = has_perm(
+                self.request.user,
+                Action.ASSIGN,
+                self.request_obj
+            )
         context['request_obj'] = self.request_obj
         context['show_edit_buttons'] = user_can_manage_datasets
         return context
@@ -1411,11 +1409,12 @@ class RequestDatasetsEditView(
         return HttpResponseRedirect(reverse('request-datasets', kwargs={'pk': self.object.id}))
 
     def has_permission(self):
-        return self.request.user and self.request.user.organization
-
-    def handle_no_permission(self):
-        messages.error(self.request, 'Šio poreikio duomenų rinkinių keisti negalite.')
-        return HttpResponseRedirect(reverse('request-organizations', kwargs={'pk': self.kwargs.get('pk')}))
+        request_obj = get_object_or_404(Request, pk=self.kwargs.get('pk'))
+        return has_perm(
+            self.request.user,
+            Action.ASSIGN,
+            request_obj
+        )
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

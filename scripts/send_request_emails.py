@@ -42,25 +42,28 @@ def main():
             for obj in rel_objects:
                 dataset = obj.content_object
 
+                coordinator_emails = []
                 if request.created.date() == date_5:
-                    coordinator_emails = Representative.objects.filter(
-                        content_type=ContentType.objects.get_for_model(dataset.organization),
-                        object_id=dataset.organization.pk,
-                        role=Representative.COORDINATOR
-                    ).values_list('email', flat=True)
+                    if dataset.organization:
+                        coordinator_emails = list(Representative.objects.filter(
+                            content_type=ContentType.objects.get_for_model(dataset.organization),
+                            object_id=dataset.organization.pk,
+                            role=Representative.COORDINATOR
+                        ).values_list('email', flat=True))
                 else:
-                    parent_organization = dataset.organization.get_parent()
+                    if dataset.organization:
+                        parent_organization = dataset.organization.get_parent()
 
-                    if not parent_organization:
-                        parent_organization = dataset.organization
+                        if not parent_organization:
+                            parent_organization = dataset.organization
 
-                    coordinator_emails = Representative.objects.filter(
-                        content_type=ContentType.objects.get_for_model(parent_organization),
-                        object_id=parent_organization.pk,
-                        role=Representative.COORDINATOR
-                    ).values_list('email', flat=True)
+                        coordinator_emails = list(Representative.objects.filter(
+                            content_type=ContentType.objects.get_for_model(parent_organization),
+                            object_id=parent_organization.pk,
+                            role=Representative.COORDINATOR
+                        ).values_list('email', flat=True))
 
-                emails.extend(list(coordinator_emails))
+                emails.extend(coordinator_emails)
 
         if emails:
             email(

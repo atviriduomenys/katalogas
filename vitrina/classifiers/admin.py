@@ -43,6 +43,7 @@ class CategoryAdmin(TreeAdmin):
     search_fields = (
         'title',
     )
+    readonly_fields = ('name',)
 
 
 class LicenceAdmin(admin.ModelAdmin):

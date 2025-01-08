@@ -1011,9 +1011,9 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp):
-    CategoryFactory(title="Flora ir fauna")
-    CategoryFactory(title="Energetika")
-    CategoryFactory(title="Transportas ir ryšiai")
+    CategoryFactory(name="Flora ir fauna")
+    CategoryFactory(name="Energetika")
+    CategoryFactory(name="Transportas ir ryšiai")
 
     with patch('scripts.geoportal_import.requests.get') as get_all_mock, \
             patch('scripts.geoportal_import.ET.parse') as get_one_mock:
@@ -1052,7 +1052,7 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.category.count() == 3
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == [
+    assert sorted(list(dataset.category.values_list('name', flat=True))) == [
         'Energetika',
         'Flora ir fauna',
         'Transportas ir ryšiai'
@@ -1062,7 +1062,7 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
 @pytest.mark.django_db
 def test_geoportal_import__categories_create_not_existing_values(app: DjangoTestApp):
     UserFactory(is_superuser=True)
-    CategoryFactory(title="Energetika")
+    CategoryFactory(name="Energetika")
 
     with patch('scripts.geoportal_import.requests.get') as get_all_mock, \
             patch('scripts.geoportal_import.ET.parse') as get_one_mock:
@@ -1101,7 +1101,7 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.category.count() == 1
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == ['Energetika']
+    assert sorted(list(dataset.category.values_list('name', flat=True))) == ['Energetika']
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -1156,11 +1156,11 @@ def test_geoportal_import__categories_create_not_mapped_values(app: DjangoTestAp
 @pytest.mark.django_db
 def test_geoportal_import__categories_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1")
-    category = CategoryFactory(title="Flora ir fauna")
+    category = CategoryFactory(name="Flora ir fauna")
     dataset.category.add(category)
 
-    CategoryFactory(title="Energetika")
-    CategoryFactory(title="Transportas ir ryšiai")
+    CategoryFactory(name="Energetika")
+    CategoryFactory(name="Transportas ir ryšiai")
 
     with patch('scripts.geoportal_import.requests.get') as get_all_mock, \
             patch('scripts.geoportal_import.ET.parse') as get_one_mock:
@@ -1199,7 +1199,7 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.category.count() == 3
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == [
+    assert sorted(list(dataset.category.values_list('name', flat=True))) == [
         'Energetika',
         'Flora ir fauna',
         'Transportas ir ryšiai'

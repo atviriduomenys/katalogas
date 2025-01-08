@@ -352,7 +352,7 @@ def main():
                 category_value = category
                 if category := CATEGORIES.get(category_value.text):
                     for cat in category:
-                        cat_obj = Category.objects.filter(title=cat).first()
+                        cat_obj = Category.objects.filter(name=cat).first()
                         if cat_obj:
                             if not dataset.category.filter(pk=cat_obj.pk):
                                 changed = True

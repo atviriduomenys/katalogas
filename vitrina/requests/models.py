@@ -158,7 +158,7 @@ class Request(models.Model):
         )]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
-            if dataset and dataset.organization not in orgs:
+            if dataset and dataset.organization and dataset.organization not in orgs:
                 orgs.append(dataset.organization.pk)
         return orgs
 

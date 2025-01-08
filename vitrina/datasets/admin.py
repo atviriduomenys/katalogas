@@ -100,7 +100,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         'late_display'
     )
     list_display_links = None
-    search_fields = ('translations__title', 'organization__title', 'representative_emails',)
+    search_fields = ('translations__title', 'organization__title', 'creator_text', 'representative_emails',)
     list_filter = (FormatFilter, DatasetLateFilter, 'organization',)
     change_list_template = 'vitrina/datasets/admin/dataset_report_change_list.html'
 
@@ -128,22 +128,30 @@ class DatasetReportAdmin(admin.ModelAdmin):
         return queryset
 
     def organization_display(self, obj):
-        if len(obj.organization.title) >= 40:
-            title = obj.organization.title[:40] + "..."
-        else:
-            title = obj.organization.title
-        return format_html('<a href="{}" target="_blank">{}</a>', obj.organization.get_absolute_url(), title)
+        if obj.organization:
+            if len(obj.organization.title) >= 40:
+                title = obj.organization.title[:40] + "..."
+            else:
+                title = obj.organization.title
+            return format_html('<a href="{}" target="_blank">{}</a>', obj.organization.get_absolute_url(), title)
+        elif obj.creator_text:
+            if len(obj.creator_text) >= 40:
+                return obj.creator_text[:40] + "..."
+            else:
+                return obj.creator_text
+        return "-"
     organization_display.short_description = _('Institucija')
     organization_display.allow_tags = True
 
     def root_organization_display(self, obj):
-        root_organization = obj.organization.get_root()
-        if root_organization:
-            if len(root_organization.title) >= 40:
-                title = root_organization.title[:40] + "..."
-            else:
-                title = root_organization.title
-            return format_html('<a href="{}" target="_blank">{}</a>', root_organization.get_absolute_url(), title)
+        if obj.organization:
+            root_organization = obj.organization.get_root()
+            if root_organization:
+                if len(root_organization.title) >= 40:
+                    title = root_organization.title[:40] + "..."
+                else:
+                    title = root_organization.title
+                return format_html('<a href="{}" target="_blank">{}</a>', root_organization.get_absolute_url(), title)
         return "-"
     root_organization_display.short_description = _('Tėvinė institucija')
     root_organization_display.allow_tags = True
@@ -333,9 +341,18 @@ class DatasetReportAdmin(admin.ModelAdmin):
             else:
                 managers = "-"
 
+            organization = "-"
+            root_organization = "-"
+            if item.organization:
+                organization = organization.title
+                if root := item.organization.get_root():
+                    root_organization = root.title
+            elif item.creator_text:
+                organization = item.creator_text
+
             yield to_row(cols.keys(), {
-                'organization': item.organization.title,
-                'root_organization': item.organization.get_root().title if item.organization.get_root() else '-',
+                'organization': organization,
+                'root_organization': root_organization,
                 'dataset_title': item.title,
                 'coordinators': coordinators,
                 'managers': managers,

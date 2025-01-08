@@ -28,6 +28,7 @@ class Category(MP_Node):
                             blank=True,
                             help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
     groups = models.ManyToManyField(to='vitrina_datasets.DatasetGroup')
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, blank=True, null=True)
 
     node_order_by = ['title']
 

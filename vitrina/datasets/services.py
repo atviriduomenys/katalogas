@@ -93,7 +93,8 @@ def get_requests(user, dataset):
                 if isinstance(rep.content_object, Organization):
                     user_orgs.append(rep.content_object.pk)
                 elif isinstance(rep.content_object, Dataset):
-                    user_orgs.append(rep.content_object.organization.pk)
+                    if rep.content_object.organization:
+                        user_orgs.append(rep.content_object.organization.pk)
             requests = Request.public.filter(Q(user=user) | Q(organizations__pk__in=user_orgs))
         else:
             requests = Request.public.filter(user=user)
@@ -118,7 +119,8 @@ def has_remove_from_request_perm(dataset, request, user):
                 if isinstance(rep.content_object, Organization):
                     user_orgs.append(rep.content_object.pk)
                 elif isinstance(rep.content_object, Dataset):
-                    user_orgs.append(rep.content_object.organization.pk)
+                    if rep.content_object.organization:
+                        user_orgs.append(rep.content_object.organization.pk)
             return request.organizations.filter(pk__in=user_orgs).exists()
     return False
 

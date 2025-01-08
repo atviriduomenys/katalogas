@@ -103,7 +103,11 @@ def main():
 
 def create_task_for_dataset(dataset_id, title, desc, error_type):
     target_dataset = Dataset.objects.get(pk=dataset_id)
-    org = Organization.objects.get(pk=target_dataset.organization.pk)
+    if target_dataset.organization:
+        org = Organization.objects.get(pk=target_dataset.organization.pk)
+    else:
+        org = None
+
     Task.objects.create(
         content_type=ContentType.objects.get_for_model(target_dataset),
         object_id=target_dataset.pk,

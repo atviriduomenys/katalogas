@@ -960,9 +960,8 @@ def test_add_form_wrong_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
     org = OrganizationFactory()
-    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
-    assert response.status_code == 302
-    assert str(org.id) in response.location
+    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db

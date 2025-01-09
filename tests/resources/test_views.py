@@ -423,3 +423,18 @@ def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTes
     response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel3", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel3"
+
+
+@pytest.mark.django_db
+def test_create_distribution_with_invalid_url(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension='URL')
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'Added title'
+    form['description'] = 'Added new resource description'
+    form['format'] = file_format.id
+    form['download_url'] = "invalid"
+    resp = form.submit()
+    assert 'Įveskite tinkamą URL adresą.' in list(resp.context['form'].errors['download_url'])

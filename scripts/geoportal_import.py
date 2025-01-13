@@ -17,7 +17,7 @@ from urllib.request import urlopen
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Type
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
@@ -124,8 +124,15 @@ def create_or_get_url_format():
         format_obj.title = 'URL'
         format_obj.mimetype = "text/url"
         format_obj.save()
-
     return format_obj
+
+
+def create_or_get_service_type():
+    type_obj, created = Type.objects.get_or_create(name='service')
+    if created:
+        type_obj.title = 'Duomenų publikavimo paslauga'
+        type_obj.save()
+    return type_obj
 
 
 def main():
@@ -162,6 +169,7 @@ def main():
 
             created = False
             changed = False
+            is_service = False
             dataset = Dataset.objects.filter(geoportal_id=record['id']).first()
             if not dataset:
                 created = True
@@ -169,6 +177,16 @@ def main():
                     geoportal_id=record['id'],
                     published=timezone.now()
                 )
+
+            # type
+            dataset_type = _get_elem("{%s}hierarchyLevel" % gmd, xml)
+            dataset_type = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_type)
+            if dataset_type is not None and dataset_type.text == 'service':
+                is_service = True
+                service_type = create_or_get_service_type()
+                if not dataset.type.filter(pk=service_type.pk):
+                    changed = True
+                    dataset.type.add(service_type)
 
             # dataset info
             dataset_info = _get_elem("{%s}identificationInfo" % gmd, xml)
@@ -310,24 +328,31 @@ def main():
             distribution_url = _get_elem(".//{%s}CI_OnlineResource" % gmd, distribution_url)
             distribution_url = _get_elem(".//{%s}URL" % gmd, distribution_url)
 
-            if distribution_url is not None:
-                dataset.status = Dataset.HAS_DATA
-                comment_status = Comment.OPENED
-                if distribution := dataset.datasetdistribution_set.first():
-                    if distribution_url.text != distribution.download_url:
-                        changed = True
-                        distribution.download_url = distribution_url.text
-                        distribution.save()
-                else:
+            if is_service:
+                if distribution_url is not None and dataset.endpoint_url != distribution_url.text:
                     changed = True
-                    DatasetDistribution.objects.create(
-                        dataset=dataset,
-                        download_url=distribution_url.text,
-                        format=create_or_get_url_format()
-                    )
-            else:
+                    dataset.endpoint_url = distribution_url.text
                 dataset.status = Dataset.INVENTORED
                 comment_status = Comment.INVENTORED
+            else:
+                if distribution_url is not None:
+                    dataset.status = Dataset.HAS_DATA
+                    comment_status = Comment.OPENED
+                    if distribution := dataset.datasetdistribution_set.first():
+                        if distribution_url.text != distribution.download_url:
+                            changed = True
+                            distribution.download_url = distribution_url.text
+                            distribution.save()
+                    else:
+                        changed = True
+                        DatasetDistribution.objects.create(
+                            dataset=dataset,
+                            download_url=distribution_url.text,
+                            format=create_or_get_url_format()
+                        )
+                else:
+                    dataset.status = Dataset.INVENTORED
+                    comment_status = Comment.INVENTORED
 
             # status comment
             latest_status_comment = Comment.objects.filter(

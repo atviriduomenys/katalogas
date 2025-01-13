@@ -193,7 +193,7 @@ class Dataset(TranslatableModel):
         blank=True
     )
     type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True)
-    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
+    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True, max_length=512)
     endpoint_type = models.ForeignKey(
         'DataServiceType',
         on_delete=models.SET_NULL,
@@ -236,6 +236,7 @@ class Dataset(TranslatableModel):
 
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
+    tasks = GenericRelation('vitrina_tasks.Task')
     representatives = GenericRelation('vitrina_orgs.Representative')
     request_objects = GenericRelation('vitrina_requests.RequestObject')
 

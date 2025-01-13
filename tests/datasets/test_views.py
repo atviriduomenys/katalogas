@@ -14,7 +14,7 @@ from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 
-from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory
+from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, AreaOfManagementFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
@@ -2423,3 +2423,18 @@ def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('dataset-members', args=[dataset.pk]), expect_errors=True)
     assert response.status_code == 403
+
+
+@pytest.mark.haystack
+def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp):
+    jurisdiction = AreaOfManagementFactory(name_lt="Organization")
+    organization = OrganizationFactory(title="Organization", jurisdiction=jurisdiction)
+    dataset1 = DatasetFactory(organization=organization)
+    dataset2 = DatasetFactory(organization=organization)
+    resp = app.get(
+        "%s?selected_facets=organization_exact:%s" % (
+            reverse('organization-datasets', args=[organization.pk]),
+            organization.pk
+        )
+    )
+    assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([dataset1.pk, dataset2.pk])

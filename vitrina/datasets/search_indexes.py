@@ -70,11 +70,6 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.append(category.pk)
         return categories
 
-    def prepare_organization(self, obj):
-        if obj.organization:
-            if obj.organization.title != obj.organization.jurisdiction.name_lt :
-                return obj.organization.pk
-
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):
     def setup(self):

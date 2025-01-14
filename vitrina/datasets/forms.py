@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
-from django.http import JsonResponse
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
@@ -28,7 +27,7 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 
@@ -72,10 +71,11 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             )
         ])
 
-    creator = forms.ModelChoiceField(queryset=Organization.objects.all(),
-                                     label=_('Duomenų rinkinio kūrėjas'),required=False)
+    creator = forms.ModelChoiceField( queryset=Organization.objects.all(),
+                                    label=_('Duomenų rinkinio kūrėjas'),required=False)
+
     publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
-                                       label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
+                                    label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
 
     class Meta:
         model = Dataset
@@ -102,27 +102,31 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'catalog': _("Katalogas")
         }
 
-    def __init__(self, request=None, organization = None , *args, **kwargs):
+    def __init__(self, request=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
-
         self.request = request
-        self.organization = organization
 
-        if self.request and self.organization and self.request.user:
-            if ((getattr(self.request.user.organization, 'publisher', False) and
-                    PublisherAssignment.objects.filter(publisher=self.request.user.organization, organization=self.organization).exists())
+        if self.request.user:
+            creator_ids = Representative.objects.filter(
+                organization=self.request.user.organization,
+                content_type=ContentType.objects.get_for_model(Organization)
+            ).values_list('object_id', flat=True)
+            self.fields['creator'].queryset = Organization.objects.filter(id__in=creator_ids)
+
+            if (getattr(self.request.user.organization, 'publisher', False)
                     or self.request.user.is_superuser):
                 self.fields['publisher'].widget = HiddenInput()
             else:
                 self.fields['creator'].widget = HiddenInput()
         else:
-            self.fields['creator'].widget = HiddenInput()
             self.fields['publisher'].widget = HiddenInput()
+            self.fields['creator'].widget = HiddenInput()
+
 
         self.helper.layout = Layout(
             Field('is_public',

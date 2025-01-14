@@ -618,14 +618,15 @@ class DatasetCreateView(
         self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
-        Representative.objects.create(
-            content_type=ContentType.objects.get_for_model(self.object),
-            object_id=self.object.pk,
-            user=self.request.user,
-            email=self.request.user.email,
-            role=Representative.COORDINATOR if self.request.user.is_coordinator \
-                else Representative.MANAGER
-        )
+        if not form.cleaned_data.get('creator'):
+            Representative.objects.create(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                user=self.request.user,
+                email=self.request.user.email,
+                role=Representative.COORDINATOR if self.request.user.is_coordinator \
+                    else Representative.MANAGER
+            )
 
         for file in form.cleaned_data.get('files', []):
             DatasetFile.objects.get_or_create(
@@ -698,6 +699,32 @@ class DatasetCreateView(
                         content_type=ContentType.objects.get_for_model(self.object)
                     )
 
+        creator = form.cleaned_data.get('creator')
+        if creator:
+            if self.object.organization:
+                Representative.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    organization = self.object.organization,
+                    role = Representative.MANAGER,
+                )
+
+                self.object.publisher = self.object.organization
+            self.object.organization = creator
+            self.object.save()
+
+        publisher = form.cleaned_data.get('publisher')
+        if publisher:
+            self.object.publisher = publisher
+            rep = Representative.objects.create(
+                object_id=self.object.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+                organization=publisher,
+                role=Representative.MANAGER,
+            )
+            rep.save()
+        # TODO: Check if index is updated if this is not used
+        self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -728,7 +755,7 @@ class DatasetUpdateView(
         }
         switch_language(self.object, get_language())
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
-        context['request_user'] = self.request.user
+        context['request_user'] = self.request.user if self.request.user.is_authenticated else None
         return context
 
     def get(self, request, *args, **kwargs):

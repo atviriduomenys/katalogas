@@ -4,29 +4,36 @@
 
 {% block extrahead %}
 {{ block.super }}
+
+<style>
+        .select2-selection--single {
+            background-color: #2a2c2e;
+        }
+        .select2-dropdown {
+            background-color: #2a2c2e;
+        }
+        .select2-container--default .select2-selection--single {
+            background-color: #2a2c2e;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #fff;
+        }
+        #organization-message {
+            margin-top: 5px;
+        }
+        .form-row.field-creator {
+            width: 50%;
+        }
+        .form-row.field-coordinator {
+            width: 50%;
+        }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
-        // Customization for organizations
-        const availableTitleOrg = document.querySelector('.field-organizations .selector-available h2');
-        const chosenTitleOrg = document.querySelector('.field-organizations .selector-chosen h2');
-
-        console.log('Available title (org):', availableTitleOrg);
-        console.log('Chosen title (org):', chosenTitleOrg);
-
-        if (availableTitleOrg) {
-            availableTitleOrg.textContent = '{{ available_title_org|escapejs }}';
-        }
-        if (chosenTitleOrg) {
-            chosenTitleOrg.textContent = '{{ chosen_title_org|escapejs }}';
-        }
-
-        // Customization for datasets
         const availableTitleDataset = document.querySelector('.field-datasets .selector-available h2');
         const chosenTitleDataset = document.querySelector('.field-datasets .selector-chosen h2');
-
-        console.log('Available title (dataset):', availableTitleDataset);
-        console.log('Chosen title (dataset):', chosenTitleDataset);
 
         if (availableTitleDataset) {
             availableTitleDataset.textContent = '{{ available_title_datasets|escapejs }}';
@@ -34,7 +41,130 @@ document.addEventListener('DOMContentLoaded', function() {
         if (chosenTitleDataset) {
             chosenTitleDataset.textContent = '{{ chosen_title_datasets|escapejs }}';
         }
-    }, 100);  // 100ms delay
+
+        const datasetsField = document.querySelector('.form-row.field-datasets');
+        const removedCreatorsField = document.querySelector('.form-row.hidden.field-removed_creators');
+        if (datasetsField && removedCreatorsField) {
+            const hr = document.createElement('hr');
+            hr.style.margin = '60px 0';
+            datasetsField.parentNode.insertBefore(hr, removedCreatorsField);
+        }
+    }, 100);
 });
+
+(function($) {
+    $(document).ready(function() {
+        $('.form-row.field-coordinator').hide();
+        const organizationSelect = $('.remote-organization-select');
+
+        if (organizationSelect.length) {
+            try {
+                organizationSelect.select2({
+                    width: '100%',
+                    minimumInputLength: 3,
+                    language: {
+                        inputTooShort: function() {
+                            return "{{ input_too_short_message }}";
+                        },
+                        noResults: function() {
+                            return "{{ no_results_message }}";
+                        },
+                        searching: function() {
+                            return "{{ searching_message }}";
+                        }
+                    },
+                    ajax: {
+                        url: organizationSelect.data('search-url'),
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                q: params.term
+                            };
+                        },
+                        processResults: function (data) {
+                            if (data.errors) {
+                                console.error('Server errors:', data.errors);
+                                return {
+                                    results: []
+                                };
+                            }
+                            return {
+                                results: data.results
+                            };
+                        },
+                        cache: true
+                    },
+                    templateResult: function(data) {
+                        if (data.loading) {
+                            return data.text;
+                        }
+                        return $('<span>').text(data.text);
+                    },
+                    templateSelection: function(data) {
+                        return data.text || data.id;
+                    }
+                }).on('select2:select', function(e) {
+                    const data = e.params.data;
+                    if (data.company_code) {
+                        $('#id_creator').val(data.company_code);
+                    }
+                    var company_code = $(this).val();
+                    $.ajax({
+                        url: '{% url "check-organization" %}',
+                        data: {'company_code': company_code},
+                        success: function(data) {
+                            if (data.exists) {
+                                if ($('#organization-message').length === 0) {
+                                    var messageDiv = $('<div>', { id: 'organization-message' });
+                                    $('.form-row.field-creator').append(messageDiv);
+                                }
+
+                                $('#organization-message').text("{{ remote_organization_exists }}").css('color', 'green');
+                                $('.form-row.field-coordinator').hide();
+                                $('#id_coordinator').prop('required', false);
+                            } else {
+                                if ($('#organization-message').length === 0) {
+                                    var messageDiv = $('<div>', { id: 'organization-message' });
+                                    $('.form-row.field-creator').append(messageDiv);
+                                }
+
+                                $('#organization-message').text("{{ remote_organization_not_exist }}").css('color', 'red');
+                                $('.form-row.field-coordinator').show();
+                                $('#id_coordinator').prop('required', true);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error checking organization:', error);
+                            $('#organization-message').text("Error checking organization status").css('color', 'red');
+                        }
+                    });
+                }).on('select2:unselect', function() {
+                    $('#id_creator').val('');
+                }).on('select2:clear', function() {
+                    $('.form-row.field-coordinator').hide();
+                    $('#id_coordinator').prop('required', false);
+                    $('#organization-message').remove();
+                });
+
+                $('form').on('submit', function(e) {
+                    const coordinatorField = $('#id_coordinator');
+                    const organizationExists = $('#organization-message').css('color') === 'rgb(0, 128, 0)';
+
+                    if (!organizationExists && (!coordinatorField.val() || coordinatorField.val().trim() === '')) {
+                        e.preventDefault();
+                        alert('{{ coordinator_required_message }}');
+                        coordinatorField.focus();
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error initializing Select2:', error);
+            }
+        } else {
+            console.error('Required elements not found');
+        }
+    });
+})(django.jQuery);
 </script>
 {% endblock %}

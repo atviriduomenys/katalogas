@@ -78,33 +78,60 @@ class PublisherAdmin(admin.ModelAdmin):
             obj.publisher = True
         obj.save()
 
-        if change:
+        if not change:
+            return
+
+        creator = form.cleaned_data.get('creator')
+        coordinator = form.cleaned_data.get('coordinator')
+
+        if creator and coordinator:
+            Representative.objects.create(
+                object_id=creator.pk,
+                content_type=ContentType.objects.get_for_model(Organization),
+                user=coordinator,
+                email=coordinator.email,
+                first_name=coordinator.first_name,
+                last_name=coordinator.last_name,
+                phone=coordinator.phone,
+                role=Representative.COORDINATOR,
+            )
+
+        if isinstance(creator, Organization):
             self._update_assignments(
                 obj,
-                form.cleaned_data['organizations'],
+                [creator],
                 Organization,
                 Representative.MANAGER
             )
-            self._update_assignments(
-                obj,
-                form.cleaned_data['datasets'],
-                Dataset,
-                Representative.MANAGER
-            )
 
-    @staticmethod
-    def _update_assignments(obj, new_assignments, model, role):
+        removed_creators = form.cleaned_data.get('removed_creators')
+        if removed_creators:
+            self._handle_removed_creators(obj, removed_creators)
+
+        self._update_assignments(
+            obj,
+            form.cleaned_data['datasets'],
+            Dataset,
+            Representative.MANAGER
+        )
+
+    def _update_assignments(self, obj, new_assignments, model, role):
         content_type = ContentType.objects.get_for_model(model)
         current_assignments = set(model.objects.filter(
             pk__in=Representative.objects.filter(
                 content_type=content_type,
                 organization=obj
             ).values_list('object_id', flat=True)
-        ))
-        new_assignments = set(new_assignments.values_list('id', flat=True))
+        ).values_list('id', flat=True))
 
-        removed_assignments = current_assignments - new_assignments
-        added_assignments = new_assignments - current_assignments
+        removed_assignments = set()
+        # If new assignments is a list it is for added organizations and a queryset is not needed
+        if isinstance(new_assignments, list):
+            added_assignments = set(new_assignments)
+        else:
+            new_assignments = set(new_assignments.values_list('id', flat=True))
+            removed_assignments = current_assignments - new_assignments
+            added_assignments = new_assignments - current_assignments
 
         Representative.objects.filter(
             content_type=content_type,
@@ -149,12 +176,16 @@ class PublisherAdmin(admin.ModelAdmin):
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         extra_context = extra_context or {}
         extra_context['title'] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
-        extra_context['chosen_title_org'] = _("Pasirinktos organizacijos")
-        extra_context['available_title_org'] = _("Galimos organizacijos")
-        extra_context['chosen_title_datasets'] = _("Pasirinkti duomenų rinkiniai")
+        extra_context['chosen_title_datasets'] = _("Sąrašas duomenų rinkinių, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju")
         extra_context['available_title_datasets'] = _("Galimi duomenų rinkiniai")
         extra_context['show_save_and_add_another'] = False
         extra_context['show_save_and_continue'] = False
+        extra_context['input_too_short_message'] = _("Įveskite bent 3 simbolius...")
+        extra_context['no_results_message'] = _("Rezultatų nerasta")
+        extra_context['searching_message'] = _("Ieškoma...")
+        extra_context['remote_organization_not_exist'] = _("Pasirinktos organizacijos nėra, nurodykite koordinatorių naujai organizacijai.")
+        extra_context['remote_organization_exists'] = _("Pasirinkta organizacija egzistuoja")
+        extra_context['coordinator_required_message'] = _("Privaloma nurodyti koordinatorių naujai organizacijai.")
         return super().changeform_view(request, object_id, form_url, extra_context)
 
     def add_view(self, request, form_url='', extra_context=None):

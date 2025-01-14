@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -607,7 +607,7 @@ class OrganizationCreateView(
                 email=form.cleaned_data.get('email'),
                 phone=form.cleaned_data.get('phone'),
                 description=form.cleaned_data.get('description'),
-                provider=True,
+                publisher=False,
                 is_public=True,
                 jurisdiction=jurisdiction,
             )
@@ -624,7 +624,7 @@ class OrganizationCreateView(
                 email=form.cleaned_data.get('email'),
                 phone=form.cleaned_data.get('phone'),
                 description=form.cleaned_data.get('description'),
-                provider=True,
+                publisher=False,
                 is_public=True,
             )
         return HttpResponseRedirect(self.get_success_url(org))
@@ -2579,3 +2579,41 @@ class RepresentativeExistsView(TemplateView):
 
 class RepresentativeRequestExistsView(TemplateView):
     template_name = 'vitrina/orgs/partners/representative_request_exists.html'
+
+
+class AdminRemoteOrganizationSearchView(TemplateView):
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = "ja_pavadinimas.contains('{}')"
+    company_code_query_uri = "ja_kodas={}"
+    max_results = 20
+    limit = 10
+
+    def get(self, request, *args, **kwargs):
+        q = request.GET.get('q', '')
+        if not q:
+            return JsonResponse({'results': []})
+        if q.isdigit():
+            query = self.company_code_query_uri.format(q)
+        else:
+            query = self.query_uri.format(q)+ f"&limit({self.limit})"
+
+        data = get_data_from_spinta(
+            model=self.model_uri,
+            query=query
+        )
+        jar_data = data.get('_data', [])[:self.max_results]
+        errors = data.get('errors', [])
+        if errors:
+            return JsonResponse({'results': [], 'errors': errors})
+
+        results = []
+        for item in jar_data:
+            company_name = item.get('ja_pavadinimas')
+            company_code = item.get('ja_kodas')
+            results.append({
+                'id': company_code,
+                'text': company_name,
+                'company_code': company_code,
+            })
+
+        return JsonResponse({'results': results})

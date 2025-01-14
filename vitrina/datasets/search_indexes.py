@@ -61,6 +61,7 @@ class DatasetIndex(SearchIndex, Indexable):
     def index_queryset(self, using=None):
         return self.get_model().objects.all().filter(deleted__isnull=True,
                                                      deleted_on__isnull=True,
+                                                     organization_id__isnull=False,
                                                      translations__title__isnull=False).distinct()
 
     def prepare_category(self, obj):
@@ -69,11 +70,6 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
             categories.append(category.pk)
         return categories
-
-    def prepare_organization(self, obj):
-        if obj.organization:
-            if obj.organization.title != obj.organization.jurisdiction.name_lt :
-                return obj.organization.pk
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

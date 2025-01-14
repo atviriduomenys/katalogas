@@ -258,3 +258,229 @@ def test_request_orgs_view_click_delete_button_staff_user(app: DjangoTestApp):
     form = app.get(reverse('request-orgs-delete', args=[ra.pk])).forms['delete-form']
     resp = form.submit()
     assert resp.url == reverse('request-organizations', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_add_new_dataset_to_request_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-new-dataset" not in resp.text
+    resp = app.get(
+        reverse('dataset-add', args=[organization.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}",
+        expect_errors=True
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_add_new_dataset_to_request_with_representative_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(organization=organization)
+    app.set_user(user)
+    request = RequestFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-new-dataset" in resp.text
+    resp = resp.click(linkid="add-new-dataset")
+    assert resp.request.path_qs == \
+           reverse('dataset-add', args=[organization.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
+
+
+@pytest.mark.django_db
+def test_add_new_dataset_to_request_with_organization_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    user = UserFactory(organization=organization2)
+    app.set_user(user)
+    request = RequestFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        organization=organization2,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization2),
+        object_id=organization2.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-new-dataset" in resp.text
+    resp = resp.click(linkid="add-new-dataset")
+    assert resp.request.path_qs == \
+           reverse('dataset-add', args=[organization2.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
+
+
+@pytest.mark.django_db
+def test_add_existing_dataset_to_request_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-dataset" not in resp.text
+    resp = app.get(reverse('request-datasets-edit', args=[request.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_add_existing_dataset_to_request_with_representative_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(organization=organization)
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-dataset" in resp.text
+    resp = app.get(reverse('request-datasets-edit', args=[request.pk]))
+    assert resp.request.path_qs == reverse('request-datasets-edit', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_add_existing_dataset_to_request_with_organization_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    user = UserFactory(organization=organization2)
+    app.set_user(user)
+    request = RequestFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        organization=organization2,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization2),
+        object_id=organization2.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert "add-dataset" in resp.text
+    resp = app.get(reverse('request-datasets-edit', args=[request.pk]))
+    assert resp.request.path_qs == reverse('request-datasets-edit', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_remove_dataset_from_request_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    dataset = DatasetFactory()
+    RequestObjectFactory(
+        request=request,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert f"remove-dataset-{dataset.pk}-btn" not in resp.text
+    resp = app.get(reverse('request-dataset-remove', args=[request.pk, dataset.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_remove_dataset_from_request_with_representative_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(organization=organization)
+    app.set_user(user)
+    request = RequestFactory()
+    organization = OrganizationFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    dataset = DatasetFactory()
+    RequestObjectFactory(
+        request=request,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert f"remove-dataset-{dataset.pk}-btn" in resp.text
+    resp = app.get(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
+    assert resp.request.path_qs == reverse('request-dataset-remove', args=[request.pk, dataset.pk])
+
+
+@pytest.mark.django_db
+def test_remove_dataset_from_request_with_organization_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    organization2 = OrganizationFactory()
+    user = UserFactory(organization=organization2)
+    app.set_user(user)
+    request = RequestFactory()
+    RequestAssignmentFactory(
+        organization=organization,
+        request=request,
+        status=request.status
+    )
+    RepresentativeFactory(
+        organization=organization2,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization2),
+        object_id=organization2.pk
+    )
+    dataset = DatasetFactory()
+    RequestObjectFactory(
+        request=request,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
+    )
+    resp = app.get(reverse('request-datasets', args=[request.pk]))
+    assert f"remove-dataset-{dataset.pk}-btn" in resp.text
+    resp = app.get(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
+    assert resp.request.path_qs == reverse('request-dataset-remove', args=[request.pk, dataset.pk])

@@ -56,7 +56,7 @@ from vitrina.orgs.views import ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFI
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.comments.models import Comment
-from vitrina.requests.models import RequestObject, RequestAssignment
+from vitrina.requests.models import RequestObject, RequestAssignment, Request
 from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
@@ -557,15 +557,15 @@ class DatasetCreateView(
     form_class = DatasetForm
 
     def has_permission(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            match = resolve(next_url)
+            if match.url_name == 'request-datasets':
+                if request_id := match.kwargs.get('pk'):
+                    request_obj = get_object_or_404(Request, pk=request_id)
+                    return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get('pk'))
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        else:
-            org = get_object_or_404(Organization, id=self.kwargs['pk'])
-            return redirect(org)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

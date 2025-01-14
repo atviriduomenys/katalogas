@@ -377,7 +377,7 @@ class Dataset(TranslatableModel):
         ]
 
         if self.model_set.exists() and any(
-                dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all()):
+                dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format):
             from vitrina.resources.models import Format
             additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list('pk', flat=True)
             formats.extend(additional_formats)

@@ -4,23 +4,23 @@ from django.db import migrations
 
 
 def create_dataservice_if_not_exists(apps, schema_editor):
-    dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    type_model = apps.get_model('vitrina_datasets', 'Type')
-    licence_model = apps.get_model('vitrina_classifiers', 'Licence')
-    frequency_model = apps.get_model('vitrina_classifiers', 'Frequency')
-    dataservice_type_model = apps.get_model('vitrina_datasets', 'DataServiceType')
-    dataservice_spec_type_model = apps.get_model('vitrina_datasets', 'DataServiceSpecType')
-    organization_model = apps.get_model('vitrina_orgs', 'Organization')
+    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    Type = apps.get_model('vitrina_datasets', 'Type')
+    Licence = apps.get_model('vitrina_classifiers', 'Licence')
+    Frequency = apps.get_model('vitrina_classifiers', 'Frequency')
+    DataServiceType = apps.get_model('vitrina_datasets', 'DataServiceType')
+    DataServiceSpecType = apps.get_model('vitrina_datasets', 'DataServiceSpecType')
+    Organization = apps.get_model('vitrina_orgs', 'Organization')
 
-    if not dataset.objects.filter(service=True, endpoint_url="https://get.data.gov.lt").exists():
-        service_type = type_model.objects.get(name="service")
-        licence = licence_model.objects.get(title="Creative Commons Attribution 4.0")
-        frequency = frequency_model.objects.get(title="Kas 2 valandas")
-        endpoint_type = dataservice_type_model.objects.get(title="JSON")
-        endpoint_description_type = dataservice_spec_type_model.objects.get(title="Manual")
-        organization = organization_model.objects.get(company_code=188772433)
+    if not Dataset.objects.filter(service=True, endpoint_url="https://get.data.gov.lt").exists():
+        service_type = Type.objects.get(name="service")
+        licence = Licence.objects.get(title="Creative Commons Attribution 4.0")
+        frequency = Frequency.objects.get(title="Kas 2 valandas")
+        endpoint_type = DataServiceType.objects.get(title="JSON")
+        endpoint_description_type = DataServiceSpecType.objects.get(title="Manual")
+        organization = Organization.objects.get(company_code=188772433)
 
-        uapi_dataservice = dataset.objects.create(
+        uapi_dataservice = Dataset.objects.create(
             service=True,
             is_public=True,
             title="Atvirų duomenų saugykla",
@@ -38,24 +38,24 @@ def create_dataservice_if_not_exists(apps, schema_editor):
 
 
 def process_api_format_distributions(apps, schema_editor):
-    dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    dataset_distribution = apps.get_model('vitrina_resources', 'DatasetDistribution')
-    distribution_format = apps.get_model('vitrina_resources', 'Format')
-    model_type = apps.get_model('vitrina_datasets', 'Type')
+    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    DatasetDistribution = apps.get_model('vitrina_resources', 'DatasetDistribution')
+    Format = apps.get_model('vitrina_resources', 'Format')
+    Type = apps.get_model('vitrina_datasets', 'Type')
 
-    distributions = dataset_distribution.objects.filter(format__extension='API').all()
+    distributions = DatasetDistribution.objects.filter(format__extension='API').all()
     for distribution in distributions:
         if not distribution:
             return
 
         if distribution.download_url.startswith("https://get.data.gov.lt"):
-            uapi_format = distribution_format.objects.get(extension='UAPI')
+            uapi_format = Format.objects.get(extension='UAPI')
             distribution.format = uapi_format
             distribution.save()
         else:
-            dataset = dataset.objects.get(id=distribution.dataset_id)
+            dataset = Dataset.objects.get(id=distribution.dataset_id)
             dataset.service = True
-            service_type = model_type.objects.get(name="service")
+            service_type = Type.objects.get(name="service")
             dataset.type.add(service_type)
             dataset.endpoint_url = distribution.download_url
             dataset.save()
@@ -63,22 +63,22 @@ def process_api_format_distributions(apps, schema_editor):
 
 
 def assign_datasets_to_dataservice(apps, schema_editor):
-    dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    dataset_distribution = apps.get_model('vitrina_resources', 'DatasetDistribution')
-    format_model = apps.get_model('vitrina_resources', 'Format')
-    dataset_relation = apps.get_model('vitrina_datasets', 'DatasetRelation')
-    relation = apps.get_model('vitrina_datasets', 'Relation')
+    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    DatasetDistribution = apps.get_model('vitrina_resources', 'DatasetDistribution')
+    Format = apps.get_model('vitrina_resources', 'Format')
+    DatasetRelation = apps.get_model('vitrina_datasets', 'DatasetRelation')
+    Relation = apps.get_model('vitrina_datasets', 'Relation')
 
-    uapi_format = format_model.objects.get(extension='UAPI')
-    dataset_distributions = dataset_distribution.objects.filter(format=uapi_format)
+    uapi_format = Format.objects.get(extension='UAPI')
+    dataset_distributions = DatasetDistribution.objects.filter(format=uapi_format)
     dataset_ids = dataset_distributions.values_list('dataset_id', flat=True)
-    datasets = dataset.objects.filter(id__in=dataset_ids)
-    dataservice = dataset.objects.filter(service=True, endpoint_url = "https://get.data.gov.lt").first()
-    relation_type = relation.objects.filter(name='service').first()
+    datasets = Dataset.objects.filter(id__in=dataset_ids)
+    dataservice = Dataset.objects.filter(service=True, endpoint_url = "https://get.data.gov.lt").first()
+    relation_type = Relation.objects.filter(name='service').first()
 
     for dataset in datasets:
-        if not dataset_relation.objects.filter(dataset=dataset, part_of=dataservice, relation=relation_type).exists():
-            dataset_relation_instance = dataset_relation.objects.create(
+        if not DatasetRelation.objects.filter(dataset=dataset, part_of=dataservice, relation=relation_type).exists():
+            dataset_relation_instance = DatasetRelation.objects.create(
                 dataset=dataset,
                 part_of=dataservice,
                 relation=relation_type
@@ -87,9 +87,9 @@ def assign_datasets_to_dataservice(apps, schema_editor):
 
 
 def create_jsonl_format_if_not_exists(apps, schema_editor):
-    resource_format = apps.get_model('vitrina_resources', 'Format')
-    if not resource_format.objects.filter(extension='JSONL').exists():
-        resource_format.objects.create(
+    Format = apps.get_model('vitrina_resources', 'Format')
+    if not Format.objects.filter(extension='JSONL').exists():
+        Format.objects.create(
             extension='JSONL',
             mimetype='application/jsonl',
             title='JSONL',

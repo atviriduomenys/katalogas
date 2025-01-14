@@ -182,7 +182,7 @@ class DatasetResourceForm(forms.ModelForm):
                         "Formatas nesutampa su įkelto failo ar nuorodos formatu."
                     ))
 
-        if 'get.data.gov.lt' in url and not upload:
+        if url and 'get.data.gov.lt' in url and not upload:
             self.cleaned_data['upload_to_storage'] = True
 
         if url:

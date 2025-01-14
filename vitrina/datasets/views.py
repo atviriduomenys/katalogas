@@ -723,8 +723,7 @@ class DatasetCreateView(
                 role=Representative.MANAGER,
             )
             rep.save()
-        # TODO: Check if index is updated if this is not used
-        self.object.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 

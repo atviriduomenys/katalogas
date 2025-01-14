@@ -148,13 +148,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 $('form').on('submit', function(e) {
+                    const creatorField = $('#id_creator');
                     const coordinatorField = $('#id_coordinator');
                     const organizationExists = $('#organization-message').css('color') === 'rgb(0, 128, 0)';
 
-                    if (!organizationExists && (!coordinatorField.val() || coordinatorField.val().trim() === '')) {
-                        e.preventDefault();
-                        alert('{{ coordinator_required_message }}');
-                        coordinatorField.focus();
+                    if (creatorField.val() && creatorField.val().trim() !== '') {
+                        if (!organizationExists && (!coordinatorField.val() || coordinatorField.val().trim() === '')) {
+                            e.preventDefault();
+                            alert('{{ coordinator_required_message }}');
+                            coordinatorField.focus();
+                        }
                     }
                 });
 

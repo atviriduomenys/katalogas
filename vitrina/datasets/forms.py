@@ -102,7 +102,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'catalog': _("Katalogas")
         }
 
-    def __init__(self, request=None, *args, **kwargs):
+    def __init__(self, request=None, organization = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
@@ -110,23 +110,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
         self.request = request
-
-        if self.request.user:
-            creator_ids = Representative.objects.filter(
-                organization=self.request.user.organization,
-                content_type=ContentType.objects.get_for_model(Organization)
-            ).values_list('object_id', flat=True)
-            self.fields['creator'].queryset = Organization.objects.filter(id__in=creator_ids)
-
-            if (getattr(self.request.user.organization, 'publisher', False)
-                    or self.request.user.is_superuser):
-                self.fields['publisher'].widget = HiddenInput()
-            else:
-                self.fields['creator'].widget = HiddenInput()
-        else:
-            self.fields['publisher'].widget = HiddenInput()
-            self.fields['creator'].widget = HiddenInput()
-
+        self.organization = organization
 
         self.helper.layout = Layout(
             Field('is_public',
@@ -170,6 +154,29 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
             if instance.name:
                 self.initial['name'] = instance.name
+
+        # self.organization is only available in Create view
+        if self.request.user and self.organization:
+            creator_ids = Representative.objects.filter(
+                organization=self.request.user.organization,
+                content_type=ContentType.objects.get_for_model(Organization)
+            ).values_list('object_id', flat=True)
+            self.fields['creator'].queryset = Organization.objects.filter(Q(id__in=creator_ids) | Q(id=self.organization.id))
+
+            if (getattr(self.request.user.organization, 'publisher', False)
+                    or self.request.user.is_superuser):
+                # Show creator
+                if self.organization:
+                    self.fields['creator'].initial = self.organization
+                self.fields['publisher'].widget = HiddenInput()
+            else:
+                # Show publisher
+                self.fields['creator'].widget = HiddenInput()
+        else:
+            self.fields['publisher'].widget = HiddenInput()
+            self.fields['creator'].widget = HiddenInput()
+
+
 
     def clean_type(self):
         type = self.cleaned_data.get('type')

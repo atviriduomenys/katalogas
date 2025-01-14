@@ -133,21 +133,70 @@ class PublisherAdmin(admin.ModelAdmin):
             removed_assignments = current_assignments - new_assignments
             added_assignments = new_assignments - current_assignments
 
+        if removed_assignments:
+            self._handle_removed_assignments(content_type, model, obj, removed_assignments)
+
+        if added_assignments:
+            self._handle_added_assignments(content_type, model, obj, added_assignments, role)
+
+    @staticmethod
+    def _handle_removed_assignments(content_type, model, obj, removed_assignments):
         Representative.objects.filter(
             content_type=content_type,
-            object_id__in=[item.id for item in removed_assignments],
+            object_id__in=[item.id if isinstance(item, model) else item for item in removed_assignments],
             organization=obj
         ).delete()
 
-        for item in added_assignments:
+        for assignment in removed_assignments:
+            if isinstance(assignment, model):
+                assignment = assignment.pk
+            if model == Dataset:
+                assignment = Dataset.objects.get(pk=assignment)
+                assignment.publisher = None
+                assignment.save()
+            if model == Organization:
+                datasets = Dataset.objects.filter(organization_id=assignment)
+                for dataset in datasets:
+                    dataset.publisher = None
+                    dataset.save()
+
+    @staticmethod
+    def _handle_added_assignments(content_type, model, obj, added_assignments, role):
+        for assignment in added_assignments:
+            if isinstance(assignment, model):
+                assignment = assignment.pk
             Representative.objects.create(
                 content_type=content_type,
-                object_id=item,
+                object_id=assignment,
                 organization=obj,
                 role=role
             )
             if model == Dataset:
-                Dataset.objects.filter(organization_id=item).update(publisher=obj)
+                assignment = Dataset.objects.get(pk=assignment)
+                assignment.publisher = obj
+                assignment.save()
+            if model == Organization:
+                datasets = Dataset.objects.filter(organization_id=assignment)
+                for dataset in datasets:
+                    dataset.publisher = obj
+                    dataset.save()
+
+    @staticmethod
+    def _handle_removed_creators(obj, removed_creators):
+        removed_creator_ids = list(map(int, removed_creators.split(',')))
+        content_type = ContentType.objects.get_for_model(Organization)
+
+        Representative.objects.filter(
+            content_type=content_type,
+            object_id__in=removed_creator_ids,
+            organization=obj
+        ).delete()
+
+        for org_id in removed_creators:
+            datasets = Dataset.objects.filter(organization_id=org_id)
+            for dataset in datasets:
+                dataset.publisher = None
+                dataset.save()
 
     def delete_model(self, request, obj):
         obj.publisher = False

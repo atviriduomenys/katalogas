@@ -171,6 +171,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 self.fields['publisher'].widget = HiddenInput()
             else:
                 # Show publisher
+                representative = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=self.organization.id,
+                    organization__isnull=False
+                )
+                if representative and representative.first().organization.publisher:
+                    self.fields['publisher'].initial = representative.first().organization.pk
                 self.fields['creator'].widget = HiddenInput()
         else:
             self.fields['publisher'].widget = HiddenInput()

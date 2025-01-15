@@ -192,7 +192,7 @@ class PublisherAdmin(admin.ModelAdmin):
             organization=obj
         ).delete()
 
-        for org_id in removed_creators:
+        for org_id in removed_creator_ids:
             datasets = Dataset.objects.filter(organization_id=org_id)
             for dataset in datasets:
                 dataset.publisher = None

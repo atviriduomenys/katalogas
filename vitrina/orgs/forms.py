@@ -991,7 +991,7 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
     )
 
     coordinator = ModelChoiceField(
-        queryset=None,
+        queryset=User.objects.all(),
         label=_('Naujos organizacijos koordinatorius'),
         required=False,
         empty_label=_('---------')

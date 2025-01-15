@@ -62,7 +62,7 @@ from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
-from vitrina.structure.services import create_structure_objects, get_model_name
+from vitrina.structure.services import create_structure_objects, get_model_name, get_data_from_spinta
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
@@ -91,6 +91,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     facet_fields = [
         'status',
         'organization',
+        'publisher',
         'jurisdiction',
         'category',
         'parent_category',
@@ -201,6 +202,13 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                     multiple=True,
                     is_int=False,
                 ),
+                Filter(
+                    *filter_args,
+                    'publisher',
+                    _("Duomenų atvėrimo paslaugų teikėjas"),
+                    Organization,
+                    multiple=True,
+                    is_int=False,),
                 Filter(
                     *filter_args,
                     'jurisdiction',
@@ -565,6 +573,12 @@ class DatasetCreateView(
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
         return context
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        kwargs['organization'] = get_object_or_404(Organization, id=self.kwargs['pk'])
+        return kwargs
+
     def get(self, request, *args, **kwargs):
         return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
@@ -604,14 +618,15 @@ class DatasetCreateView(
         self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
-        Representative.objects.create(
-            content_type=ContentType.objects.get_for_model(self.object),
-            object_id=self.object.pk,
-            user=self.request.user,
-            email=self.request.user.email,
-            role=Representative.COORDINATOR if self.request.user.is_coordinator \
-                else Representative.MANAGER
-        )
+        if not form.cleaned_data.get('creator'):
+            Representative.objects.create(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                user=self.request.user,
+                email=self.request.user.email,
+                role=Representative.COORDINATOR if self.request.user.is_coordinator \
+                    else Representative.MANAGER
+            )
 
         for file in form.cleaned_data.get('files', []):
             DatasetFile.objects.get_or_create(
@@ -684,6 +699,31 @@ class DatasetCreateView(
                         content_type=ContentType.objects.get_for_model(self.object)
                     )
 
+        creator = form.cleaned_data.get('creator')
+        if creator:
+            if self.object.organization:
+                Representative.objects.create(
+                    content_type=ContentType.objects.get_for_model(self.object),
+                    object_id=self.object.pk,
+                    organization = self.object.organization,
+                    role = Representative.MANAGER,
+                )
+
+                self.object.publisher = self.object.organization
+            self.object.organization = creator
+            self.object.save()
+
+        publisher = form.cleaned_data.get('publisher')
+        if publisher:
+            self.object.publisher = publisher
+            rep = Representative.objects.create(
+                object_id=self.object.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+                organization=publisher,
+                role=Representative.MANAGER,
+            )
+            rep.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -714,10 +754,16 @@ class DatasetUpdateView(
         }
         switch_language(self.object, get_language())
         context['service_types'] = list(Type.objects.filter(name=Type.SERVICE).values_list('pk', flat=True))
+        context['request_user'] = self.request.user if self.request.user.is_authenticated else None
         return context
 
     def get(self, request, *args, **kwargs):
         return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -1128,8 +1174,8 @@ class CreateMemberView(
             self.object.organization = organization
             self.object.save()
 
-            if not organization.provider:
-                organization.provider = True
+            if not organization.publisher:
+                organization.publisher = True
                 organization.save()
         else:
             self.object.save()
@@ -1911,6 +1957,19 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
     title = _("Organizacija")
     current_title = _("Duomenų rinkinių organizacijos")
     filter = 'organization'
+    filter_model = Organization
+
+    def get_graph_title(self, indicator):
+        if indicator == 'level-average' or indicator == 'object-count':
+            return _(f'{self.get_title_for_indicator(indicator)} '
+                     f'pagal rinkinio organizaciją rinkinio įkėlimo datai')
+        else:
+            return _(f'{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike')
+
+class DatasetsPublishersView(DatasetStatsMixin, DatasetListView):
+    title = _("Duomenų atvėrimo paslaugų teikėjas")
+    current_title = _("Duomenų atvėrimo paslaugų teikėjas")
+    filter = 'publisher'
     filter_model = Organization
 
     def get_graph_title(self, indicator):
@@ -3116,6 +3175,43 @@ class UpdateDatasetJurisdictionFilters(FacetedSearchView):
                     is_int=False,
                     use_str=True,
                     remove_search_query=True
+            ),
+            items = []
+            for item in filter[0].items():
+                if q.lower() in item.title.lower():
+                    items.append(item)
+            extra_context = {
+                'filter_items': items
+            }
+            context.update(extra_context)
+            return context
+
+
+class UpdateDatasetPublisherFilters(FacetedSearchView):
+    template_name = 'vitrina/datasets/publisher_filter_items.html'
+    form_class = DatasetSearchForm
+    facet_fields = DatasetListView.facet_fields
+
+    def get_queryset(self):
+        datasets = super().get_queryset()
+        datasets = get_datasets_for_user(self.request, datasets)
+        return datasets
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get('q')
+        if q and len(q) > 2:
+            facet_fields = context.get('facets').get('fields')
+            form = context.get('form')
+            filter_args = (self.request, form, facet_fields)
+            filter = Filter(
+                *filter_args,
+                'publisher',
+                _("Duomenų atvėrimo paslaugų teikėjas"),
+                Organization,
+                multiple=True,
+                is_int=False,
+                remove_search_query=True
             ),
             items = []
             for item in filter[0].items():

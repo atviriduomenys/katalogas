@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 
 import pytz
+import webtest
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -2438,3 +2439,169 @@ def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp
         )
     )
     assert sorted([int(obj.pk) for obj in resp.context['object_list']]) == sorted([dataset1.pk, dataset2.pk])
+
+
+@pytest.mark.django_db
+def test_create_dataset_change_creator(app):
+    licence = LicenceFactory(is_default=True)
+    frequency = FrequencyFactory(is_default=True)
+
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher = True)
+
+    RepresentativeFactory(user=None,
+                                organization=publisher_org,
+                                role=Representative.MANAGER,
+                                object_id = org.pk,
+                                content_type = ContentType.objects.get_for_model(org)
+                                )
+
+    user = UserFactory(is_staff=True, organization=publisher_org)
+    app.set_user(user)
+
+    form = app.get(reverse('dataset-add', kwargs={'pk': publisher_org.id})).forms['dataset-form']
+
+    assert isinstance(form.fields['publisher'][0], webtest.forms.Hidden)
+    assert not isinstance(form.fields['creator'][0], webtest.forms.Hidden)
+
+    form['title'] = 'Test Dataset'
+    form['description'] = 'This is a test dataset.'
+    form['licence'] = str(licence.pk)
+    form['frequency'] = str(frequency.pk)
+    form['creator'] = str(org.pk)
+
+    response = form.submit()
+
+    assert response.status_code == 302
+    assert Dataset.objects.filter(translations__title='Test Dataset').exists()
+    ds = Dataset.objects.filter(translations__title='Test Dataset').first()
+    assert ds.organization == org
+    assert ds.publisher == publisher_org
+
+
+@pytest.mark.django_db
+def test_create_dataset_change_publisher(app):
+    licence = LicenceFactory(is_default=True)
+    frequency = FrequencyFactory(is_default=True)
+
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+
+    RepresentativeFactory(user=None,
+                          organization=publisher_org,
+                          role=Representative.MANAGER,
+                          object_id=org.pk,
+                          content_type=ContentType.objects.get_for_model(org)
+                          )
+
+    user = UserFactory(is_staff=True, organization=org)
+    app.set_user(user)
+
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+
+    assert not isinstance(form.fields['publisher'][0], webtest.forms.Hidden)
+    assert isinstance(form.fields['creator'][0], webtest.forms.Hidden)
+
+    form['title'] = 'Test Dataset'
+    form['description'] = 'This is a test dataset.'
+    form['licence'] = str(licence.pk)
+    form['frequency'] = str(frequency.pk)
+    form['publisher'] = str(publisher_org.pk)
+
+    response = form.submit()
+
+    assert response.status_code == 302
+    assert Dataset.objects.filter(translations__title='Test Dataset').exists()
+    ds = Dataset.objects.filter(translations__title='Test Dataset').first()
+    assert ds.organization == org
+    assert ds.publisher == publisher_org
+
+
+@pytest.mark.django_db
+def test_create_dataset_creator_options(app):
+    org = OrganizationFactory()
+    org2 = OrganizationFactory()
+    org3 = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+
+    for org_instance in [org, org2, org3]:
+        RepresentativeFactory(
+            user=None,
+            organization=publisher_org,
+            role=Representative.MANAGER,
+            object_id=org_instance.pk,
+            content_type=ContentType.objects.get_for_model(org)
+        )
+
+    user = UserFactory(is_staff=False, organization=publisher_org)
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    options = [option[2] for option in form.fields["creator"][0].options]
+    assert len(options) == 4 # includes default option
+    assert org.title in options
+    assert org2.title in options
+    assert org3.title in options
+
+
+@pytest.mark.django_db
+def test_create_dataset_publisher_options(app):
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+    publisher_org2 = OrganizationFactory(publisher=True)
+    publisher_org3 = OrganizationFactory(publisher=True)
+
+    user = UserFactory(is_staff=True, organization=org)
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    options = [option[2] for option in form.fields["publisher"][0].options]
+    assert len(options) == 4 # includes default option
+    assert publisher_org.title in options
+    assert publisher_org2.title in options
+    assert publisher_org3.title in options
+
+
+@pytest.mark.django_db
+def test_dataset_detail_with_publisher(app: DjangoTestApp):
+    licence = LicenceFactory(is_default=True)
+    frequency = FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+    user = UserFactory(is_staff=True)
+
+    ds = DatasetFactory(
+        organization=organization,
+        publisher=publisher_org,
+        licence=licence,
+        frequency=frequency
+    )
+
+    app.set_user(user)
+    response = app.get(reverse('dataset-detail', kwargs={'pk': ds.pk}))
+    assert response.status_code == 200
+    assert publisher_org.title in response.text
+    assert publisher_org.email in response.text
+    assert publisher_org.phone in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_filter_by_publisher(app: DjangoTestApp):
+    publisher1 = OrganizationFactory(publisher=True)
+    publisher2 = OrganizationFactory(publisher=True)
+    DatasetFactory(publisher=publisher1)
+    DatasetFactory(publisher=publisher1)
+    DatasetFactory(publisher=publisher2)
+
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    response = app.get(reverse('dataset-list') + f'?selected_facets=publisher_exact:{publisher1.pk}')
+    assert response.status_code == 200
+    assert len(response.context['object_list']) == 2
+    for ds in response.context['object_list']:
+        assert ds.publisher == [publisher1.pk]
+
+    response = app.get(reverse('dataset-list') + f'?selected_facets=publisher_exact:{publisher2.pk}')
+    assert response.status_code == 200
+    assert len(response.context['object_list']) == 1
+    for ds in response.context['object_list']:
+        assert ds.publisher == [publisher2.pk]

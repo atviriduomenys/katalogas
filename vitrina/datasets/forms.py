@@ -6,7 +6,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -21,12 +21,13 @@ from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Licence, Category
+
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 
@@ -70,6 +71,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             )
         ])
 
+    creator = forms.ModelChoiceField( queryset=Organization.objects.all(),
+                                    label=_('Duomenų rinkinio kūrėjas'),required=False)
+
+    publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
+                                    label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
+
     class Meta:
         model = Dataset
         fields = (
@@ -87,19 +94,24 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_description_type',
             'files',
             'name',
+            'creator',
+            'publisher',
         )
         labels = {
             'tags': _("Žymės"),
             'catalog': _("Katalogas")
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, request=None, organization = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs['novalidate'] = ''
         self.helper.form_id = "dataset-form"
+        self.request = request
+        self.organization = organization
+
         self.helper.layout = Layout(
             Field('is_public',
                   placeholder=_('Ar duomenys vieši')),
@@ -123,6 +135,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('access_rights'),
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
+            Field('creator'),
+            Field('publisher'),
             Submit('submit', button, css_class='button is-primary')
         )
 
@@ -140,6 +154,36 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
             if instance.name:
                 self.initial['name'] = instance.name
+
+        # self.organization is only available in Create view
+        if self.request.user and self.organization:
+            creator_ids = Representative.objects.filter(
+                organization=self.request.user.organization,
+                content_type=ContentType.objects.get_for_model(Organization)
+            ).values_list('object_id', flat=True)
+            self.fields['creator'].queryset = Organization.objects.filter(Q(id__in=creator_ids) | Q(id=self.organization.id))
+
+            if (getattr(self.request.user.organization, 'publisher', False)
+                    or self.request.user.is_superuser):
+                # Show creator
+                if self.organization:
+                    self.fields['creator'].initial = self.organization
+                self.fields['publisher'].widget = HiddenInput()
+            else:
+                # Show publisher
+                representative = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=self.organization.id,
+                    organization__isnull=False
+                )
+                if representative and representative.first().organization.publisher:
+                    self.fields['publisher'].initial = representative.first().organization.pk
+                self.fields['creator'].widget = HiddenInput()
+        else:
+            self.fields['publisher'].widget = HiddenInput()
+            self.fields['creator'].widget = HiddenInput()
+
+
 
     def clean_type(self):
         type = self.cleaned_data.get('type')
@@ -544,7 +588,7 @@ class PlanForm(OrganizationPlanForm):
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'provider', 'provider_title', 'receiver',)
+        fields = ('title', 'description', 'deadline', 'publisher', 'provider_title', 'receiver',)
 
     def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
@@ -560,7 +604,7 @@ class PlanForm(OrganizationPlanForm):
             Field('description'),
             Field('deadline'),
             Field('receiver'),
-            Field('provider'),
+            Field('publisher'),
             Field('provider_title'),
             Submit('submit', _('Įtraukti'), css_class='button is-primary'),
         )

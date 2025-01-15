@@ -88,7 +88,7 @@ class Organization(MP_Node):
     image = FilerImageField(null=True, blank=True,
                             related_name="image_organization",
                             on_delete=models.SET_NULL, verbose_name=_('Logotipas'))
-    provider = models.BooleanField(default=False, verbose_name=_("Atvėrimo duomenų teikėjas"))
+    publisher = models.BooleanField(default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
     alternative_titles = models.TextField(_('Alternatyvūs pavadinimai'), null=True, blank=True)
 
@@ -134,6 +134,13 @@ class Organization(MP_Node):
         # save related requests to update search index
         for request_assignment in self.requestassignment_set.all():
             request_assignment.request.save()
+
+
+class PublisherOrganization(Organization):
+    class Meta:
+        proxy = True
+        verbose_name = _("Duomenų atvėrimo paslaugų tiekėjas")
+        verbose_name_plural = _("Duomenų atvėrimo paslaugų tiekėjai")
 
 
 class Representative(models.Model):

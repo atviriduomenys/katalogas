@@ -2,21 +2,23 @@ import secrets
 from urllib.parse import urlparse
 import re
 
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.template.loader import render_to_string
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, \
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
-    DateField, DateInput, Textarea, CheckboxInput
+    DateField, DateInput, Textarea, CheckboxInput, Widget
 from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget, Select2Widget
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.classifiers.models import AreaOfManagement
@@ -29,6 +31,7 @@ from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
+from vitrina.users.models import User
 
 
 class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
@@ -51,7 +54,7 @@ class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
         return value
 
 
-class ProviderWidget(ModelSelect2Widget):
+class PublisherWidget(ModelSelect2Widget):
     model = Organization
     search_fields = ['title__icontains']
     dependent_fields = {
@@ -65,8 +68,8 @@ class ProviderWidget(ModelSelect2Widget):
             ids.extend(organizations)
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
-        provider_orgs = queryset.filter(provider=True).values_list('pk', flat=True)
-        ids.extend(provider_orgs)
+        publisher_orgs = queryset.filter(publisher=True).values_list('pk', flat=True)
+        ids.extend(publisher_orgs)
         queryset = queryset.filter(pk__in=ids)
         return queryset
 
@@ -180,7 +183,7 @@ class OrganizationUpdateForm(ModelForm):
             'email',
             'phone',
             'address',
-            'provider',
+            'publisher',
             'description',
         )
 
@@ -205,7 +208,7 @@ class OrganizationUpdateForm(ModelForm):
             Field('email', placeholder=_("Elektroninis paštas")),
             Field('phone', placeholder=_("Telefono numeris")),
             Field('address', placeholder=_("Adresas")),
-            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('publisher', placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field('description', placeholder=_("Aprašymas")),
             Submit('submit', button, css_class='button is-primary')
         )
@@ -257,7 +260,7 @@ class OrganizationCreateForm(ModelForm):
             'email',
             'phone',
             'address',
-            'provider',
+            'publisher',
             'description',
         )
 
@@ -283,7 +286,7 @@ class OrganizationCreateForm(ModelForm):
             Field('email', placeholder=_("Elektroninis paštas")),
             Field('phone', placeholder=_("Telefono numeris")),
             Field('address', placeholder=_("Adresas")),
-            Field('provider', placeholder=_("Atvėrimo duomenų teikėjas")),
+            Field('publisher', placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field('description', placeholder=_("Aprašymas")),
             Submit('submit', button, css_class='button is-primary')
         )
@@ -518,11 +521,11 @@ class PartnerRegisterForm(ModelForm):
 class OrganizationPlanForm(ModelForm):
     organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
     user_id = IntegerField(widget=HiddenInput(), required=False)
-    provider = ModelChoiceField(
+    publisher = ModelChoiceField(
         label=_("Paslaugų teikėjas"),
         required=False,
         queryset=Organization.objects.all(),
-        widget=ProviderWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=PublisherWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
     )
     deadline = DateField(
         label=_("Įgyvendinimo terminas"),
@@ -532,8 +535,16 @@ class OrganizationPlanForm(ModelForm):
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'provider', 'provider_title',
-                  'procurement', 'price', 'project', 'organizations', 'user_id')
+        fields = ('title',
+                  'description',
+                  'deadline',
+                  'publisher',
+                  'provider_title',
+                  'procurement',
+                  'price',
+                  'project',
+                  'organizations',
+                  'user_id')
 
     def __init__(self, organizations, user, *args, **kwargs):
         self.organizations = organizations
@@ -549,7 +560,7 @@ class OrganizationPlanForm(ModelForm):
             Field('title'),
             Field('description'),
             Field('deadline'),
-            Field('provider'),
+            Field('publisher'),
             Field('provider_title'),
             Field('procurement'),
             Field('price'),
@@ -562,26 +573,26 @@ class OrganizationPlanForm(ModelForm):
 
         if not instance:
             if len(self.organizations) == 1:
-                self.initial['provider'] = self.organizations[0]
+                self.initial['publisher'] = self.organizations[0]
             elif (
                     self.user.organization and
-                    self.user.organization.provider and
+                    self.user.organization.publisher and
                     self.user.organization in self.organizations
             ):
-                self.initial['provider'] = self.user.organization
+                self.initial['publisher'] = self.user.organization
 
     def clean(self):
-        provider = self.cleaned_data.get('provider')
+        publisher = self.cleaned_data.get('publisher')
         provider_title = self.cleaned_data.get('provider_title')
 
-        if provider and provider_title:
+        if publisher and provider_title:
             self.add_error(
-                'provider',
+                'publisher',
                 _('Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu.')
             )
-        elif not provider and not provider_title:
+        elif not publisher and not provider_title:
             self.add_error(
-                'provider',
+                'publisher',
                 _('Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas.')
             )
 
@@ -873,3 +884,211 @@ class TemplateForm(ModelForm):
         if document:
             validate_file(document)
         return document
+
+
+class AdminPublisherOrganizationForm(ModelForm):
+    organization = ModelChoiceField(queryset=Organization.objects.filter(publisher=False), label=_("Organizacija"),
+                                    required=True)
+    class Meta:
+        model = Organization
+        fields = ['organization']
+
+    def save(self, commit=True):
+        organization = self.cleaned_data['organization']
+        organization.publisher = True
+        if commit:
+            organization.save()
+        return organization
+
+
+class OrganizationSelectField(CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs['required'] = kwargs.get('required', False)
+        super().__init__(*args, **kwargs)
+        self.widget = Select2Widget(attrs={
+            'class': 'remote-organization-select',
+            'data-search-url': '/orgs/remote-organization-search/',
+            'data-placeholder': '---------',
+            'minimumInputLength': 3,
+        })
+
+
+class CreatorListWidget(Widget):
+    template_name = 'vitrina/orgs/admin/organization_publisher_creator_list.html'
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+        self.attrs = {} if attrs is None else attrs.copy()
+
+    def render(self, name, value, attrs=None, renderer=None):
+        if not value:
+            value = []
+        elif isinstance(value, str):
+            value = [int(v) for v in value.split(',') if v]
+        elif isinstance(value, (list, QuerySet)):
+            value = [int(v) for v in value]
+
+        context = {
+            'widget': {
+                'name': name,
+                'value': value,
+                'attrs': attrs or {},
+            },
+            'creators': self.get_creators_data(value),
+            'no_creator': _('Nėra priskirtų kūrėjų'),
+            'remove': _('Pašalinti'),
+        }
+
+        return render_to_string(self.template_name, context)
+
+    def value_from_datadict(self, data, files, name):
+        value = data.get(name)
+        if value:
+            return [int(x) for x in value.split(',') if x]
+        return []
+
+    @staticmethod
+    def get_creators_data(value):
+        if not value:
+            return []
+        return [
+            {
+                'id': org.id,
+                'title': org.title,
+                'company_code': org.company_code,
+                'remove_url': f'#remove-{org.id}'
+            }
+            for org in Organization.objects.filter(id__in=value)
+        ]
+
+
+class CreatorListField(ModelMultipleChoiceField):
+    widget = CreatorListWidget
+
+    def __init__(self, *args, **kwargs):
+        kwargs['queryset'] = Organization.objects.all()
+        kwargs['required'] = False
+        super().__init__(*args, **kwargs)
+
+    def clean(self, value):
+        if not value:
+            return []
+        if isinstance(value, str):
+            value = [int(x) for x in value.split(',') if x]
+        return super().clean(value)
+
+    def prepare_value(self, value):
+        if value is None:
+            return []
+        return value
+
+
+class AdminPublisherAssignedOrganizationForm(ModelForm):
+    creator = OrganizationSelectField(
+        label=_('Pridėti duomenų rinkinio kūrėją'),
+        required=False,
+        help_text=_('Įveskite organizacijos pavadinimą arba pilną įmonės kodą.'),
+    )
+
+    coordinator = ModelChoiceField(
+        queryset=User.objects.all(),
+        label=_('Naujos organizacijos koordinatorius'),
+        required=False,
+        empty_label=_('---------')
+    )
+
+    existing_creators = CreatorListField(
+        label=_('Sąrašas organizacijų, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju'),
+        help_text=_('Paspauskite X, kad pašalintumėte kūrėją.')
+    )
+
+    removed_creators = CharField(widget=HiddenInput(), required=False)
+
+    datasets = ModelMultipleChoiceField(
+        queryset=None,
+        label=_("Duomenų rinkiniai"),
+        required=False,
+        widget=FilteredSelectMultiple(
+            verbose_name=_("Duomenų rinkiniai"),
+            is_stacked=False,
+        )
+    )
+
+    class Meta:
+        model = Representative
+        fields = ['creator', 'coordinator', 'existing_creators', 'removed_creators', 'datasets',]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['datasets'].queryset = (
+            Dataset.objects
+            .only('id')
+        )
+
+        if self.instance and self.instance.pk:
+            org_content_type = ContentType.objects.get_for_model(Organization)
+            creator_ids = Representative.objects.filter(
+                organization=self.instance.pk,
+                content_type=org_content_type
+            ).values_list('object_id', flat=True)
+
+            self.fields['existing_creators'].initial = creator_ids
+            self.initial_creator_ids = set(creator_ids)
+
+            dataset_content_type = ContentType.objects.get_for_model(Dataset)
+
+            representative_qs = Representative.objects.filter(
+                organization=self.instance.pk
+            ).select_related('content_type')
+
+            dataset_ids = set()
+
+            for rep in representative_qs:
+                if rep.content_type_id == dataset_content_type.id:
+                    dataset_ids.add(rep.object_id)
+
+            if dataset_ids:
+                self.fields['datasets'].initial = dataset_ids
+
+        self.fields['coordinator'].queryset = User.objects.filter(
+            organization = self.instance
+        ).distinct()
+
+    def clean(self):
+        model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+        query_uri = "ja_kodas={}"
+        cleaned_data = super().clean()
+
+        company_code = cleaned_data.get('creator')
+        if company_code:
+            org = Organization.objects.filter(company_code=company_code)
+            if org:
+                org = org.first()
+            else:
+                data = get_data_from_spinta(
+                    model=model_uri,
+                    query=query_uri.format(company_code)
+                )
+                organization_data = data.get('_data', [])
+
+                errors = data.get('errors', [])
+                if errors:
+                    raise ValidationError(_("Nepavyko atnaujinti duomenų iš JAR:") + [f"\n\nERROR: {error}" for error in errors])
+
+                if organization_data:
+                    org = Organization.add_root(
+                        title=organization_data[0].get('ja_pavadinimas'),
+                        company_code=organization_data[0].get('ja_kodas'),
+                        address=organization_data[0].get('pilnas_adresas'),
+                        is_public = True,
+                        publisher=False,
+                    )
+                    org.save()
+            self.cleaned_data['creator'] = org
+
+            existing_creators = cleaned_data.get('existing_creators')
+            if org in existing_creators:
+                raise ValidationError(_('Kūrėjas jau priskirtas duomenų rinkiniui.'))
+
+        return cleaned_data

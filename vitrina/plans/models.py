@@ -93,10 +93,10 @@ class Plan(models.Model):
         related_name='receiver_plans',
         on_delete=models.PROTECT
     )
-    provider = models.ForeignKey(
+    publisher = models.ForeignKey(
         'vitrina_orgs.Organization',
-        verbose_name=_("Paslaugų teikėjas"),
-        related_name='provider_plans',
+        verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
+        related_name='publisher_plans',
         on_delete=models.PROTECT,
         null=True,
         blank=True

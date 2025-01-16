@@ -49,6 +49,10 @@
           border-right: 1px solid #dcdcdc;
           height: 100%;
         }
+        .dataset-list-description {
+        word-break: break-all;
+        overflow-wrap: break-word;
+        }
     </style>
 {% endblock %}
 
@@ -249,7 +253,7 @@
                                     <p class="dataset-list-description my-1">
                                         {% if i.object %}
                                             {% objectlanguage i.object LANGUAGE_CODE %}
-                                                {{ i.object.description }}
+                                                {{ i.object.description|escape }}
                                             {% endobjectlanguage %}
                                         {% else %}
                                             {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}

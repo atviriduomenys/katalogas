@@ -125,7 +125,7 @@ def test_admin_publisher_remove_creator(app: DjangoTestApp, admin_user: User, pu
 
     ds_before = Dataset.objects.filter(publisher=publisher_org)
     assert ds_before.count() == 2
-    assert list(ds_before.values_list('slug', flat=True)) == ['tst-1', 'tst-2']
+    assert sorted(list(ds_before.values_list('slug', flat=True))) == ['tst-1', 'tst-2']
 
     app.set_user(admin_user)
     form = app.get(

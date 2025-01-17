@@ -74,11 +74,16 @@
                     {% endif %}
                     <td>{{ m.get_role_display|default:"-" }}</td>
                     {% if has_permission %}
+                        {% if m.organization and not can_delete_publishers %}
+                        <td></td>
+                        {% else %}
                         <td>
                             <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>
+                        {% endif %}
+
 
                         {% if m.organization and not can_delete_publishers %}
                         <td></td>

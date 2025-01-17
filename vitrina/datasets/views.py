@@ -1167,16 +1167,13 @@ class CreateMemberView(
             )
             manage_subscriptions_for_representative(form.cleaned_data.get('subscribe'), self.object.user,
                                                     self.dataset, link)
-        elif organization and self.request.user.is_superuser:
+        elif organization and self.request.user.is_superuser and organization.publisher:
             if self.object.role == Representative.COORDINATOR:
                 form.add_error('role', _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
                 return self.form_invalid(form)
             self.object.organization = organization
             self.object.save()
-
-            if not organization.publisher:
-                organization.publisher = True
-                organization.save()
+            self.dataset.publisher = organization
         else:
             self.object.save()
             if not SentMail.objects.filter(
@@ -1318,7 +1315,7 @@ class UpdateMemberView(
     def form_valid(self, form):
         self.object: Representative = form.save()
 
-        if not self.object.user.organization:
+        if self.object.user and not self.object.user.organization:
             self.object.user.organization = self.dataset.organization
             self.object.user.save()
 
@@ -1397,6 +1394,8 @@ class DeleteMemberView(
         super().delete((self, request, args, kwargs))
         if self.object.content_type == ContentType.objects.get_for_model(Dataset):
             dataset = Dataset.objects.get(id=self.object.object_id)
+            if dataset.publisher == self.object.organization:
+                dataset.publisher = None
             dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 

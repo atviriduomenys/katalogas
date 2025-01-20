@@ -394,6 +394,10 @@ class RepresentativeUpdateForm(ModelForm):
                 "Negalima panaikinti koordinatoriaus rolės naudotojui, "
                 "jei tai yra vienintelis koordinatoriaus rolės atstovas."
             ))
+
+        if self.instance.organization and role == Representative.COORDINATOR:
+            raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+
         return self.cleaned_data
 
 

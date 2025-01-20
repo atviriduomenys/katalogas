@@ -367,16 +367,18 @@ class RepresentativeUpdateForm(ModelForm):
             Field('subscribe'),
             Submit('submit', _("Redaguoti"), css_class='button is-primary'),
         )
-
-        try:
-            content_type = ContentType.objects.get_for_model(self.object_model)
-            subscription = Subscription.objects.get(user=self.instance.user,
-                                                    content_type=content_type,
-                                                    object_id=self.object.id)
-            if subscription:
-                self.fields['subscribe'].initial = True
-        except ObjectDoesNotExist:
-            self.fields['subscribe'].initial = False
+        if self.instance.user is None and self.instance.organization is not None:
+            self.fields.pop('subscribe')
+        else:
+            try:
+                content_type = ContentType.objects.get_for_model(self.object_model)
+                subscription = Subscription.objects.get(user=self.instance.user,
+                                                        content_type=content_type,
+                                                        object_id=self.object.id)
+                if subscription:
+                    self.fields['subscribe'].initial = True
+            except ObjectDoesNotExist:
+                self.fields['subscribe'].initial = False
 
     def clean(self):
         role = self.cleaned_data.get('role')
@@ -392,6 +394,10 @@ class RepresentativeUpdateForm(ModelForm):
                 "Negalima panaikinti koordinatoriaus rolės naudotojui, "
                 "jei tai yra vienintelis koordinatoriaus rolės atstovas."
             ))
+
+        if self.instance.organization and role == Representative.COORDINATOR:
+            raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+
         return self.cleaned_data
 
 

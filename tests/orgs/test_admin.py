@@ -110,7 +110,7 @@ def test_admin_publisher_add_new_creator(app, admin_user, publisher_org, monkeyp
 
     ds = Dataset.objects.filter(publisher=publisher_org)
     assert ds.count() == 2
-    assert list(ds.values_list('slug', flat=True)) == ['tst-1', 'tst-2']
+    assert sorted(list(ds.values_list('slug', flat=True))) == ['tst-1', 'tst-2']
 
 @pytest.mark.django_db
 def test_admin_publisher_remove_creator(app: DjangoTestApp, admin_user: User, publisher_org: Organization):

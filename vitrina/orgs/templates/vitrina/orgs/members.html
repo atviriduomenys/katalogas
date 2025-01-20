@@ -74,7 +74,7 @@
                     {% endif %}
                     <td>{{ m.get_role_display|default:"-" }}</td>
                     {% if has_permission %}
-                        {% if m.organization %}
+                        {% if m.organization and not can_delete_publishers %}
                         <td></td>
                         {% else %}
                         <td>
@@ -83,6 +83,7 @@
                             </a>
                         </td>
                         {% endif %}
+
 
                         {% if m.organization and not can_delete_publishers %}
                         <td></td>

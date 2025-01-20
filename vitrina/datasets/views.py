@@ -1358,6 +1358,10 @@ class UpdateMemberView(
         else:
             self.object.apikey_set.all().delete()
 
+        if self.object.role == Representative.COORDINATOR:
+            form.add_error('role', _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+            return self.form_invalid(form)
+
         return HttpResponseRedirect(self.get_success_url())
 
 

@@ -29,7 +29,7 @@ class APIKeyPermission(BasePermission):
 class HasStatsPostPermission(BasePermission):
 
     def has_permission(self, request, view):
-        organization, user, dataset, is_org_representative = get_api_key_organization_and_user(request)
+        organization, user, dataset, publisher = get_api_key_organization_and_user(request)
         if user:
             if user.is_superuser or user.is_staff:
                 return True

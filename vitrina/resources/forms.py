@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
+from parler.forms import TranslatedField, TranslatableModelForm
 
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
@@ -14,7 +15,9 @@ from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 
 
-class DatasetResourceForm(forms.ModelForm):
+class DatasetResourceForm(TranslatableModelForm):
+    title = TranslatedField(label=_('Pavadinimas'), required=False)
+    description = TranslatedField(label=_('Aprašymas'), required=False)
     name = forms.CharField(label=_('Kodinis pavadinimas'), required=False)
     access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
     period_start = DateField(
@@ -68,7 +71,7 @@ class DatasetResourceForm(forms.ModelForm):
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
         required=False,
-    queryset=Dataset.public.filter(service=True)
+        queryset=Dataset.public.filter(service=True)
     )
 
     class Meta:

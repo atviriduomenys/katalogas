@@ -638,6 +638,7 @@ def test_structure_with_resource_and_existing_distribution_without_title(app: Dj
     create_structure_objects(structure)
 
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert Metadata.objects.get(uuid='1').object == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
     assert Model.objects.get(metadata__uuid='5').distribution == distribution
@@ -742,6 +743,7 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
     create_structure_objects(structure)
 
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
     assert Model.objects.get(metadata__uuid='1').distribution == distribution

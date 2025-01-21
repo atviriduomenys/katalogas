@@ -277,7 +277,7 @@ class Dataset(TranslatableModel):
         return ''
 
     def get_resource_titles(self):
-        return list(self.datasetdistribution_set.all().values_list('title', flat=True))
+        return list(self.datasetdistribution_set.all().values_list('translations__title', flat=True))
 
     def get_model_title_list(self):
         return list(model.title for model in self.model_set.all())
@@ -295,7 +295,7 @@ class Dataset(TranslatableModel):
         return list(self.project_set.all().values_list('title', flat=True))
 
     def get_resource_description(self):
-        return list(self.datasetdistribution_set.all().values_list('description', flat=True))
+        return list(self.datasetdistribution_set.all().values_list('translations__description', flat=True))
 
     def get_model_title_description(self):
         return list(model.description for model in self.model_set.all())

@@ -597,6 +597,7 @@ def _link_distributions(
                         title=resource_meta.name,
                         type='URL',
                     )
+                distribution.set_current_language("lt")
                 distribution.title = title
                 distribution.save()
 
@@ -624,6 +625,7 @@ def _link_distributions(
                         model.distribution = distribution
                         model.save()
 
+                distribution.save()
                 _create_errors(resource_meta.errors, dataset.current_structure)
     else:
         title = dataset_meta.title or dataset_meta.name.split('/')[-1]
@@ -661,12 +663,12 @@ def _link_distributions(
                 dataset=dataset,
                 download_url=url,
                 format=format,
-                title=title,
                 type='URL',
             )
         elif distribution.download_url:
             resource_meta.source = distribution.download_url
 
+        distribution.set_current_language("lt")
         distribution.title = title
         distribution.save()
 
@@ -693,6 +695,7 @@ def _link_distributions(
                 model.distribution = distribution
                 model.save()
 
+        distribution.save()
         _create_errors(resource_meta.errors, dataset.current_structure)
 
 

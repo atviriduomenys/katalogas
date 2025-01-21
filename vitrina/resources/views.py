@@ -8,6 +8,7 @@ from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -69,7 +70,11 @@ class ResourceDetailView(
         return context
 
 
-class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ResourceCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    TranslatableCreateView,
+):
     model = DatasetDistribution
     template_name = 'vitrina/resources/form.html'
     context_object_name = 'datasetdistribution'
@@ -156,6 +161,7 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
+        resource.save()
         return redirect(resource.get_absolute_url())
 
     def get_form_kwargs(self):
@@ -164,7 +170,11 @@ class ResourceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         return kwargs
 
 
-class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ResourceUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    TranslatableUpdateView
+):
     model = DatasetDistribution
     template_name = 'vitrina/resources/form.html'
     context_object_name = 'datasetdistribution'
@@ -224,6 +234,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
                 access=form.cleaned_data.get('access') or None,
                 version=1,
             )
+        resource.save()
         return redirect(resource.get_absolute_url())
 
     def get_form_kwargs(self):

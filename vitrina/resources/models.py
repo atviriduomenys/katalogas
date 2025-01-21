@@ -1,13 +1,17 @@
 import pathlib
 from enum import StrEnum
 
+import requests
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
+from parler.managers import TranslatableManager
+from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.datasets.models import Dataset
+from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
 class FormatName(StrEnum):
@@ -51,7 +55,7 @@ class DistributionFormat(models.Model):
         db_table = 'distribution_format'
 
 
-class DatasetDistribution(models.Model):
+class DatasetDistribution(TranslatableModel):
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -60,14 +64,9 @@ class DatasetDistribution(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     dataset = models.ForeignKey(Dataset, models.CASCADE)
-    title = models.CharField(
-        blank=True,
-        max_length=255,
-        verbose_name=_('Pavadinimas'),
-    )
-    description = models.TextField(
-        blank=True,
-        verbose_name=_('Aprašymas'),
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
+        description=models.TextField(_("Aprašymas"), blank=True),
     )
 
     access_url = models.CharField(
@@ -146,11 +145,13 @@ class DatasetDistribution(models.Model):
     metadata = GenericRelation('vitrina_structure.Metadata')
     params = GenericRelation('vitrina_structure.Param')
 
+    objects = TranslatableManager()
+
     class Meta:
         db_table = 'dataset_distribution'
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter('title', language_code=self.get_current_language()) or ''
 
     def extension(self) -> str:
         if self.file and self.file.file:
@@ -196,4 +197,61 @@ class DatasetDistribution(models.Model):
             'pk': self.dataset.pk,
             'resource_id': self.pk
         })
+
+    def lt_title(self):
+        return self.safe_translation_getter('title', language_code='lt')
+
+    def en_title(self):
+        return self.safe_translation_getter('title', language_code='en')
+
+    def lt_description(self):
+        return self.safe_translation_getter('description', language_code='lt')
+
+    def en_description(self):
+        return self.safe_translation_getter('description', language_code='en')
+
+    def save_translations(self, *args, **kwargs):
+        super(DatasetDistribution, self).save_translations(*args, **kwargs)
+
+        if not self.has_translation(language_code='en') or not self.en_title() or not self.en_description():
+            lt_title = self.lt_title()
+            lt_description = self.lt_description()
+
+            if not self.has_translation(language_code='en'):
+                self.create_translation(language_code='en')
+            self.set_current_language('en')
+
+            if lt_title and not self.en_title():
+                response_title = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
+
+            if lt_description and not self.en_description():
+                response_desc = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
 

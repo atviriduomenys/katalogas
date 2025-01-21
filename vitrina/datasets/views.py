@@ -1225,6 +1225,10 @@ class CreateMemberView(
                 api_key
             ]))
 
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
+            self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -1365,6 +1369,11 @@ class UpdateMemberView(
                 ]))
         else:
             self.object.apikey_set.all().delete()
+
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
+            self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
 

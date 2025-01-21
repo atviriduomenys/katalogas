@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models import Q, QuerySet
 from django.forms import ModelForm, EmailField, ChoiceField, BooleanField, CharField, \
     HiddenInput, FileField, ModelChoiceField, IntegerField, Form, URLField, ModelMultipleChoiceField, \
-    DateField, DateInput, Textarea, CheckboxInput, Widget
+    DateField, DateInput, Textarea, CheckboxInput, Widget, RegexField
 from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
 from django.utils.safestring import mark_safe
@@ -344,6 +344,10 @@ class OrganizationSearchForm(FacetedSearchForm):
 
 class RepresentativeUpdateForm(ModelForm):
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
+    phone = RegexField(label=_("Telefono numeris"),
+                       regex=r'^\+3706\d{7}$|^0\d{8}$',
+                       error_messages = {"invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")},
+                       required=False)
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
@@ -352,7 +356,7 @@ class RepresentativeUpdateForm(ModelForm):
 
     class Meta:
         model = Representative
-        fields = ('role', 'has_api_access', 'regenerate_api_key',)
+        fields = ('role', 'phone', 'has_api_access', 'regenerate_api_key',)
 
     def __init__(self, *args, **kwargs):
         self.object = kwargs.pop('object', None)
@@ -362,6 +366,7 @@ class RepresentativeUpdateForm(ModelForm):
         self.helper.form_id = "representative-form"
         self.helper.layout = Layout(
             Field('role'),
+            Field('phone', placeholder=_("Formatas 0... arba +370...")),
             Field('has_api_access'),
             Field('regenerate_api_key'),
             Field('subscribe'),
@@ -404,6 +409,10 @@ class RepresentativeUpdateForm(ModelForm):
 class RepresentativeCreateForm(ModelForm):
     email = EmailField(label=_("El. paštas"))
     role = ChoiceField(label=_("Rolė"), choices=Representative.ROLES)
+    phone = RegexField(label=_("Telefono numeris"),
+                       regex=r'^\+3706\d{7}$|^0\d{8}$',
+                       error_messages = {"invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")},
+                       required=False)
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
 
@@ -412,7 +421,7 @@ class RepresentativeCreateForm(ModelForm):
 
     class Meta:
         model = Representative
-        fields = ('email', 'role', 'has_api_access')
+        fields = ('email', 'role','phone', 'has_api_access')
 
     def __init__(self, object_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -423,6 +432,7 @@ class RepresentativeCreateForm(ModelForm):
         self.helper.layout = Layout(
             Field('email'),
             Field('role'),
+            Field('phone', placeholder=_("Formatas 0... arba +370...")),
             Field('has_api_access'),
             Field('subscribe'),
             Submit('submit', _("Sukurti"), css_class='button is-primary'),

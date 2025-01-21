@@ -2426,6 +2426,88 @@ def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
     assert response.status_code == 403
 
 
+@pytest.mark.django_db
+def test_dataset_member_create_invalid_phone(app: DjangoTestApp):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "123456"
+    form.submit()
+
+    assert resp.status_code == 200
+    assert Representative.objects.filter(email="new@gmail.com").count() == 0
+
+
+@pytest.mark.django_db
+def test_dataset_member_create_valid_phone(app: DjangoTestApp):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+
+    form['email'] = "new1@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "+37061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new1@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "+37061234567"
+
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+
+    form['email'] = "new2@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new2@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "061234567"
+
+
+@pytest.mark.django_db
+def test_dataset_member_update_phone(app: DjangoTestApp, dataset):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid=f"update-member-{coordinator.pk}-btn")
+    form = resp.forms['representative-form']
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    coordinator.refresh_from_db()
+    assert coordinator.phone == "061234567"
+
+
 @pytest.mark.haystack
 def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp):
     jurisdiction = AreaOfManagementFactory(name_lt="Organization")

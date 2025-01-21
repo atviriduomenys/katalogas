@@ -770,6 +770,11 @@ class RepresentativeCreateView(
                 api_key
             ]))
 
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
+            self.object.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -860,6 +865,9 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         else:
             self.object.apikey_set.all().delete()
 
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
         return HttpResponseRedirect(self.get_success_url())
 
 

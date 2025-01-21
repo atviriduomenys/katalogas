@@ -329,6 +329,66 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
 
 
 @pytest.mark.django_db
+def test_representative_create_invalid_phone(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "123456"
+    resp = form.submit()
+    assert resp.status_code == 200
+    assert "Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)" in resp.context['form'].errors['phone'][0]
+    assert Representative.objects.filter(email="new@gmail.com").count() == 0
+
+
+@pytest.mark.django_db
+def test_representative_create_valid_phone(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "new1@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "+37061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new1@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "+37061234567"
+
+    form = app.get(reverse('representative-create', kwargs={
+        'organization_id': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "new2@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new2@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "061234567"
+
+
+@pytest.mark.django_db
+def test_representative_update_phone(app: DjangoTestApp, representative_data):
+    representative_data['representative_manager'].user = representative_data['manager']
+    representative_data['representative_manager'].save()
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-update', kwargs={
+        'organization_id': representative_data['organization'].pk,
+        'pk': representative_data['representative_manager'].pk
+    })).forms['representative-form']
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    representative_data['representative_manager'].refresh_from_db()
+    assert representative_data['representative_manager'].phone == "061234567"
+
+
+@pytest.mark.django_db
 def test_representative_subscription(app: DjangoTestApp, representative_data):
     subscriptions_before = Subscription.objects.all()
     assert len(subscriptions_before) == 0

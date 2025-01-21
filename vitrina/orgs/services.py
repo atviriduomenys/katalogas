@@ -32,6 +32,7 @@ class Action(Enum):
     PLAN = 'plan'
     MANAGE_KEYS = 'manage_keys'
     MANAGE_PROJECT_KEYS = 'manage_project_keys'
+    ASSIGN = 'assign'
 
 
 class Role(Enum):
@@ -68,6 +69,7 @@ acl = {
     (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
     (Request, Action.VIEW): [Role.AUTHOR, Role.COORDINATOR, Role.MANAGER],
     (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
+    (Request, Action.ASSIGN): [Role.COORDINATOR, Role.MANAGER],
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],

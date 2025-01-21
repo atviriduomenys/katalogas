@@ -338,6 +338,7 @@ def test_get_all_datasets(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -407,6 +408,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -466,6 +468,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -556,6 +559,7 @@ def test_create_dataset(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": ['en', 'lt'],
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -630,6 +634,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -675,6 +680,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         'organization_title': dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
+        "publisher": None,
         "spatial": dataset.spatial_coverage,
         "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
@@ -987,6 +993,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1028,6 +1035,7 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1070,6 +1078,7 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
     }), params)
     assert distribution.dataset.datasetdistribution_set.count() == 1
     distribution = distribution.dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1111,6 +1120,7 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1234,6 +1244,7 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1275,6 +1286,7 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1316,6 +1328,7 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1484,6 +1497,7 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         'distributionId': distribution.pk
     }), params)
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': distribution.filename_without_path(),
@@ -1524,6 +1538,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         'datasetId': distribution.dataset.pk,
         'distributionId': distribution.pk
     }), params)
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': "",
@@ -1566,6 +1581,7 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'distributionId': distribution.pk
     }), params)
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': distribution.filename_without_path(),
@@ -2118,3 +2134,89 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
         </dcat:distribution>
     </dcat:Dataset>
 </rdf:RDF>'''
+
+
+@pytest.mark.django_db
+def test_get_all_datasets_publisher_exclusive(app: DjangoTestApp):
+    """
+    If API access is granted to 1 dataset,
+    get all should be forbidden
+    """
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher = True)
+    dataset = DatasetFactory(is_public=False, organization=org)
+    DatasetFactory(organization=org)
+    DatasetFactory(organization=org)
+    ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.pk,
+        user = None,
+        organization = publisher_org
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
+    res = app.get(reverse("api-dataset"), expect_errors=True)
+    dataset.refresh_from_db()
+    assert res.status_code == 403
+
+
+@pytest.mark.django_db
+def test_get_all_datasets_publisher(app: DjangoTestApp):
+    """
+    If API access is granted to an organization,
+    get all should return all the datasets from that organization
+    """
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher = True)
+    ds1 = DatasetFactory(is_public=False, organization=org)
+    ds2 = DatasetFactory(organization=org)
+    DatasetFactory()
+    ct = ContentType.objects.get_for_model(org)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        user = None,
+        organization = publisher_org
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
+    res = app.get(reverse("api-dataset"), expect_errors=True)
+    assert len(res.json) == 2
+    assert {int(ds['id']) for ds in res.json} == {ds1.pk, ds2.pk}
+
+
+@pytest.mark.django_db
+def test_get_dataset_publisher(app: DjangoTestApp):
+    """
+    If API access is granted to a single dataset,
+    access should only be granted to that dataset.
+    """
+    org = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher = True)
+    ds1 = DatasetFactory(is_public=False, organization=org)
+    ds2 = DatasetFactory(organization=org)
+    ct = ContentType.objects.get_for_model(ds1)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds1.pk,
+        user = None,
+        organization = publisher_org
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({
+        'HTTP_AUTHORIZATION': 'ApiKey test'
+    })
+    res = app.delete(reverse('api-single-dataset', kwargs={
+        'datasetId': ds2.pk
+    }), expect_errors=True)
+    assert res.status_code == 403
+
+    res = app.get(reverse("api-single-dataset", kwargs={
+        'datasetId': ds1.pk
+    }))
+    assert int(res.json['id']) == ds1.pk

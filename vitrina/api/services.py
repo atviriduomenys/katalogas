@@ -22,7 +22,8 @@ def get_api_key_organization_and_user(
     request: HttpRequest,
     raise_error: bool = True
 ) -> (Organization, User):
-    organization = user = None
+    organization = user = dataset = None
+    publisher = False
 
     auth = request.META.get('HTTP_AUTHORIZATION', '')
     if auth.lower().startswith('apikey '):
@@ -50,12 +51,19 @@ def get_api_key_organization_and_user(
                     not api_key_obj.expires or
                     api_key_obj.expires > timezone.make_aware(datetime.now())
                 ):
-                    if isinstance(api_key_obj.representative.content_object, Organization):
-                        organization = api_key_obj.representative.content_object
-                    elif isinstance(api_key_obj.representative.content_object, Dataset):
-                        organization = api_key_obj.representative.content_object.organization
-                    user = api_key_obj.representative.user
-    return organization, user
+                    representative = api_key_obj.representative
+                    content_object = representative.content_object
+
+                    if isinstance(content_object, Organization):
+                        organization = content_object
+                    elif isinstance(content_object, Dataset):
+                        dataset = content_object
+                        organization = content_object.organization
+
+                    publisher = bool(representative.organization)
+                    if not publisher:
+                        user = representative.user
+    return organization, user, dataset, publisher
 
 
 def is_duplicate_key(api_key: str) -> (Organization, bool):

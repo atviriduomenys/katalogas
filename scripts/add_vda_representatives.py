@@ -17,6 +17,7 @@ from vitrina.helpers import email
 from vitrina.orgs.views import ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
+from django.db.models.functions import Trim
 
 
 def main():
@@ -35,12 +36,15 @@ def main():
 
     sent_email = []
     for i, row in data.iterrows():
-        company_code = row["JAR kodas"]
-        title = row["Institucija"]
+        company_code = str(row["JAR kodas"]).strip()
+        title = row["Institucija"].strip()
 
-        organization = Organization.objects.filter(
-            Q(company_code=company_code) |
-            Q(title=title)
+        organization = Organization.public.annotate(
+            company_code_stripped=Trim("company_code"),
+            title_stripped=Trim("title")
+        ).filter(
+            Q(company_code_stripped=company_code) |
+            Q(title_stripped=title)
         ).first()
 
         if not organization:

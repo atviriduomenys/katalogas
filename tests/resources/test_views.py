@@ -423,3 +423,86 @@ def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTes
     response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel3", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel3"
+
+
+@pytest.mark.django_db
+def test_create_distribution_with_invalid_url(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension='URL')
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'Added title'
+    form['description'] = 'Added new resource description'
+    form['format'] = file_format.id
+    form['download_url'] = "invalid"
+    resp = form.submit()
+    assert 'Įveskite tinkamą URL adresą.' in list(resp.context['form'].errors['download_url'])
+
+
+@pytest.mark.django_db
+def test_create_distribution__translation(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension='URL')
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    form['format'] = file_format.id
+    form['download_url'] = "www.google.lt"
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert DatasetDistribution.objects.count() == 1
+    distribution = DatasetDistribution.objects.first()
+    distribution.set_current_language("lt")
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    distribution.set_current_language("en")
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
+
+
+@pytest.mark.django_db
+def test_update_distribution__translation(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory(title="", description="")
+    user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    resp = form.submit()
+    distribution.refresh_from_db()
+    assert resp.status_code == 302
+    distribution.set_current_language("lt")
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    distribution.set_current_language("en")
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
+
+
+@pytest.mark.django_db
+def test_update_distribution__existing_translation(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory()
+    user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    resp = form.submit()
+    assert resp.status_code == 302
+
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=en").forms['resource-form']
+    form['title'] = 'Title'
+    form['description'] = 'Description'
+    resp = form.submit()
+
+    distribution.refresh_from_db()
+    assert resp.status_code == 302
+    distribution.set_current_language("lt")
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    distribution.set_current_language("en")
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"

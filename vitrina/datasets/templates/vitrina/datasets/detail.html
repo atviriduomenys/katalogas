@@ -97,7 +97,7 @@
                     {% endif %}
                 </div>
 
-                <p class="has-text-dark">{% translate "Organizacija" %}</p>
+                <p class="has-text-dark">{% translate "Institucija, teikianti duomenis" %}</p>
                 <p class="has-text-black organization-title"><a
                             href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a></p>
 
@@ -121,7 +121,27 @@
                     {% endif %}
                 {% endif %}
 
+                {% if dataset.publisher %}
                 <hr class="custom-line-margin">
+
+                <p class="has-text-dark">{% translate "Institucija, atsakinga už duomenų atvėrimą" %}</p>
+                    <p class="has-text-black creator-title"><a
+                                href="{{ dataset.publisher.get_absolute_url }}">{{ dataset.publisher.title }}</a></p>
+
+                <p class="has-text-dark">{% translate "El. paštas" %}</p>
+                <p class="has-text-black"><a href="mailto:{{ dataset.publisher.email }}">{{ dataset.publisher.email|default_if_none:"" }}</a></p>
+
+                <p class="has-text-dark">{% translate "Telefonas" %}</p>
+                <p class="has-text-black">{{ dataset.publisher.phone|default_if_none:"" }}</p>
+
+                <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
+                <p class="has-text-black"><a href="{{ dataset.publisher.website }}"
+                                                 target="_blank">{{ dataset.publisher.website|default_if_none:"" }}</a></p>
+
+                {% endif %}
+
+                <hr class="custom-line-margin">
+
                 <p class="has-text-dark m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
                 <p class="social-icons m-t-md">
                     <a target="_blank"

@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -607,7 +607,7 @@ class OrganizationCreateView(
                 email=form.cleaned_data.get('email'),
                 phone=form.cleaned_data.get('phone'),
                 description=form.cleaned_data.get('description'),
-                provider=True,
+                publisher=False,
                 is_public=True,
                 jurisdiction=jurisdiction,
             )
@@ -624,7 +624,7 @@ class OrganizationCreateView(
                 email=form.cleaned_data.get('email'),
                 phone=form.cleaned_data.get('phone'),
                 description=form.cleaned_data.get('description'),
-                provider=True,
+                publisher=False,
                 is_public=True,
             )
         return HttpResponseRedirect(self.get_success_url(org))
@@ -718,9 +718,15 @@ class RepresentativeCreateView(
             self.object.organization = organization
             self.object.save()
 
-            if not organization.provider:
-                organization.provider = True
+            if not organization.publisher:
+                organization.publisher = True
                 organization.save()
+            target_org = self.kwargs.get('organization_id')
+            datasets = Dataset.objects.filter(organization_id=target_org)
+            if datasets:
+                for dataset in datasets:
+                    dataset.publisher = organization
+                    dataset.save()
         else:
             if not SentMail.objects.filter(
                 Q(
@@ -879,6 +885,13 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
 
     def delete(self, request, *args, **kwargs):
         obj = self.get_object()
+        org_id = self.kwargs.get('organization_id')
+        if obj.organization:
+            datasets = Dataset.objects.filter(organization_id=org_id)
+            for dataset in datasets:
+                if dataset.publisher is not None:
+                    dataset.publisher = None
+                    dataset.save()
         pre_representative_delete(obj)
         return super().delete(request, *args, **kwargs)
 
@@ -2454,7 +2467,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             _('Harvestinimo operacija'): self.organization.harvestingjob_set.all(),
             _('Finansavimo planai'): self.organization.financingplan_set.all(),
             _('Planai (organizacija paslaugų gavėjas)'): self.organization.receiver_plans.all(),
-            _('Planai (organizacija paslaugų teikėjas)'): self.organization.provider_plans.all(),
+            _('Planai (organizacija paslaugų teikėjas)'): self.organization.publisher_plans.all(),
         }
 
         return context
@@ -2516,7 +2529,7 @@ class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, Templ
             obj.receiver = self.merge_organization
             obj.save()
 
-        for obj in self.organization.provider_plans.all():
+        for obj in self.organization.publisher_plans.all():
             obj.provider = self.merge_organization
             obj.save()
 
@@ -2579,3 +2592,41 @@ class RepresentativeExistsView(TemplateView):
 
 class RepresentativeRequestExistsView(TemplateView):
     template_name = 'vitrina/orgs/partners/representative_request_exists.html'
+
+
+class AdminRemoteOrganizationSearchView(TemplateView):
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = "ja_pavadinimas.contains('{}')"
+    company_code_query_uri = "ja_kodas={}"
+    max_results = 20
+    limit = 10
+
+    def get(self, request, *args, **kwargs):
+        q = request.GET.get('q', '')
+        if not q:
+            return JsonResponse({'results': []})
+        if q.isdigit():
+            query = self.company_code_query_uri.format(q)
+        else:
+            query = self.query_uri.format(q)+ f"&limit({self.limit})"
+
+        data = get_data_from_spinta(
+            model=self.model_uri,
+            query=query
+        )
+        jar_data = data.get('_data', [])[:self.max_results]
+        errors = data.get('errors', [])
+        if errors:
+            return JsonResponse({'results': [], 'errors': errors})
+
+        results = []
+        for item in jar_data:
+            company_name = item.get('ja_pavadinimas')
+            company_code = item.get('ja_kodas')
+            results.append({
+                'id': company_code,
+                'text': company_name,
+                'company_code': company_code,
+            })
+
+        return JsonResponse({'results': results})

@@ -426,7 +426,7 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
 
 
 @pytest.mark.django_db
-def test_organization_plan_create_with_no_provider(app: DjangoTestApp):
+def test_organization_plan_create_with_no_publisher(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
     rep = RepresentativeFactory(
@@ -439,7 +439,7 @@ def test_organization_plan_create_with_no_provider(app: DjangoTestApp):
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
     form['title'] = "Test plan"
     form['description'] = "Plan for testing"
-    form['provider'] = ''
+    form['publisher'] = ''
     resp = form.submit()
 
     assert list(resp.context['form'].errors.values()) == [[
@@ -448,7 +448,7 @@ def test_organization_plan_create_with_no_provider(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
+def test_organization_plan_create_with_multiple_publishers(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
     rep = RepresentativeFactory(
@@ -461,8 +461,8 @@ def test_organization_plan_create_with_multiple_providers(app: DjangoTestApp):
     form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
     form['title'] = "Test plan"
     form['description'] = "Plan for testing"
-    form['provider'].force_value(organization.pk)
-    form['provider_title'] = "Provider"
+    form['publisher'].force_value(organization.pk)
+    form['provider_title'] = "Publisher"
     resp = form.submit()
 
     assert list(resp.context['form'].errors.values()) == [[
@@ -508,13 +508,13 @@ def test_organization_plan_update(app: DjangoTestApp):
 
     form = app.get(reverse('plan-change', args=[plan.receiver.pk, plan.pk])).forms['plan-form']
     form['title'] = "Test plan (updated)"
-    form['provider'].force_value(plan.receiver.pk)
+    form['publisher'].force_value(plan.receiver.pk)
     resp = form.submit()
 
     assert resp.url == reverse('plan-detail', args=[plan.receiver.pk, plan.pk])
     assert Plan.objects.count() == 1
     assert Plan.objects.first().title == "Test plan (updated)"
-    assert Plan.objects.first().provider == plan.receiver
+    assert Plan.objects.first().publisher == plan.receiver
 
 
 @pytest.mark.django_db

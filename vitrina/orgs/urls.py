@@ -1,13 +1,14 @@
 from django.urls import path
 
 from vitrina.datasets.views import DatasetListView
+from vitrina.orgs.helpers import check_organization
 from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
     RepresentativeDeleteView, OrganizationManagementsView, OrganizationUpdateView, OrganizationApiKeysView, \
     OrganizationApiKeysCreateView, OrganizationApiKeysUpdateView, OrganizationApiKeysDeleteView, \
     OrganizationApiKeysDetailView, OrganizationApiKeysScopeCreateView, OrganizationApiKeysScopeChangeView, \
     OrganizationApiKeysScopeDeleteView, OrganizationApiKeysScopeToggleView, OrganizationApiKeysRegenerateView, \
     OrganizationApiKeysScopeObjectChangeView, OrganizationApiKeysScopeObjectDeleteView, \
-    OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView
+    OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView, AdminRemoteOrganizationSearchView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
@@ -87,6 +88,10 @@ urlpatterns = [
          ConfirmOrganizationMergeView.as_view(), name='confirm-organization-merge'),
     path('orgs/<int:pk>/members/<int:rep_id>/api/<key>', RepresentativeApiKeyView.as_view(),
          name='representative-api-key'),
+    path('orgs/remote-organization-search/',
+         AdminRemoteOrganizationSearchView.as_view(),
+         name='organization-search'),
+    path('orgs/remote-organization-check/', check_organization, name='check-organization'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")
     # @GetMapping("/group")

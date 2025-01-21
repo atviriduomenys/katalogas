@@ -53,6 +53,7 @@ class DatasetIndex(SearchIndex, Indexable):
     is_public = BooleanField(model_attr='is_public', faceted=True, null=False)
     managers = MultiValueField(model_attr='get_managers', faceted=True)
     access_rights = CharField(model_attr='access_rights', faceted=True, null=True)
+    publisher = MultiValueField(model_attr='publisher__pk', faceted=True, null=True)
 
     def get_model(self):
         return Dataset
@@ -69,11 +70,6 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
             categories.append(category.pk)
         return categories
-
-    def prepare_organization(self, obj):
-        if obj.organization:
-            if obj.organization.title != obj.organization.jurisdiction.name_lt :
-                return obj.organization.pk
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

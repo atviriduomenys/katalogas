@@ -1,5 +1,6 @@
 import pytz
 from django.contrib import admin, messages
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
@@ -12,10 +13,12 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from vitrina import settings
-from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, AdminPublisherOrganizationForm, \
+    AdminPublisherAssignedOrganizationForm
 from vitrina.orgs.models import Representative, Template
 
-from vitrina.orgs.models import Organization, RepresentativeRequest
+from vitrina.orgs.models import Organization, RepresentativeRequest, PublisherOrganization
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.services import pre_representative_delete
@@ -58,7 +61,199 @@ class RepresentativeAdmin(admin.ModelAdmin):
         super().delete_queryset(request, queryset)
 
 
+class PublisherAdmin(admin.ModelAdmin):
+    list_display = ['title']
+    search_fields = ('title',)
+    actions = ['remove_publisher_status']
+    change_list_template = 'vitrina/orgs/admin/organization_publisher_change_list.html'
+    change_form_template = 'vitrina/orgs/admin/organization_publisher_change_form.html'
+    form = AdminPublisherAssignedOrganizationForm
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(publisher=True)
+
+    def save_model(self, request, obj, form, change):
+        if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
+            obj.publisher = True
+        obj.save()
+
+        if not change:
+            return
+
+        creator = form.cleaned_data.get('creator')
+        coordinator = form.cleaned_data.get('coordinator')
+
+        if creator and coordinator:
+            Representative.objects.create(
+                object_id=creator.pk,
+                content_type=ContentType.objects.get_for_model(Organization),
+                user=coordinator,
+                email=coordinator.email,
+                first_name=coordinator.first_name,
+                last_name=coordinator.last_name,
+                phone=coordinator.phone,
+                role=Representative.COORDINATOR,
+            )
+
+        if isinstance(creator, Organization):
+            self._update_assignments(
+                obj,
+                [creator],
+                Organization,
+                Representative.MANAGER
+            )
+
+        removed_creators = form.cleaned_data.get('removed_creators')
+        if removed_creators:
+            self._handle_removed_creators(obj, removed_creators)
+
+        self._update_assignments(
+            obj,
+            form.cleaned_data['datasets'],
+            Dataset,
+            Representative.MANAGER
+        )
+
+    def _update_assignments(self, obj, new_assignments, model, role):
+        content_type = ContentType.objects.get_for_model(model)
+        current_assignments = set(model.objects.filter(
+            pk__in=Representative.objects.filter(
+                content_type=content_type,
+                organization=obj
+            ).values_list('object_id', flat=True)
+        ).values_list('id', flat=True))
+
+        removed_assignments = set()
+        # If new assignments is a list it is for added organizations and a queryset is not needed
+        if isinstance(new_assignments, list):
+            added_assignments = set(new_assignments)
+        else:
+            new_assignments = set(new_assignments.values_list('id', flat=True))
+            removed_assignments = current_assignments - new_assignments
+            added_assignments = new_assignments - current_assignments
+
+        if removed_assignments:
+            self._handle_removed_assignments(content_type, model, obj, removed_assignments)
+
+        if added_assignments:
+            self._handle_added_assignments(content_type, model, obj, added_assignments, role)
+
+    @staticmethod
+    def _handle_removed_assignments(content_type, model, obj, removed_assignments):
+        Representative.objects.filter(
+            content_type=content_type,
+            object_id__in=[item.id if isinstance(item, model) else item for item in removed_assignments],
+            organization=obj
+        ).delete()
+
+        for assignment in removed_assignments:
+            if isinstance(assignment, model):
+                assignment = assignment.pk
+            if model == Dataset:
+                assignment = Dataset.objects.get(pk=assignment)
+                assignment.publisher = None
+                assignment.save()
+            if model == Organization:
+                datasets = Dataset.objects.filter(organization_id=assignment)
+                for dataset in datasets:
+                    dataset.publisher = None
+                    dataset.save()
+
+    @staticmethod
+    def _handle_added_assignments(content_type, model, obj, added_assignments, role):
+        for assignment in added_assignments:
+            if isinstance(assignment, model):
+                assignment = assignment.pk
+            Representative.objects.create(
+                content_type=content_type,
+                object_id=assignment,
+                organization=obj,
+                role=role
+            )
+            if model == Dataset:
+                assignment = Dataset.objects.get(pk=assignment)
+                assignment.publisher = obj
+                assignment.save()
+            if model == Organization:
+                datasets = Dataset.objects.filter(organization_id=assignment)
+                for dataset in datasets:
+                    dataset.publisher = obj
+                    dataset.save()
+
+    @staticmethod
+    def _handle_removed_creators(obj, removed_creators):
+        removed_creator_ids = list(map(int, removed_creators.split(',')))
+        content_type = ContentType.objects.get_for_model(Organization)
+
+        Representative.objects.filter(
+            content_type=content_type,
+            object_id__in=removed_creator_ids,
+            organization=obj
+        ).delete()
+
+        for org_id in removed_creator_ids:
+            datasets = Dataset.objects.filter(organization_id=org_id)
+            for dataset in datasets:
+                dataset.publisher = None
+                dataset.save()
+
+    def delete_model(self, request, obj):
+        obj.publisher = False
+        obj.save()
+
+    def remove_publisher_status(self, request, queryset):
+        queryset.update(publisher=False)
+        self.message_user(request, _("Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos tiekėjo rolė."), messages.SUCCESS)
+    remove_publisher_status.short_description = _("Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę")
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def save_related(self, request, form, formsets, change):
+        pass
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = _("Duomenų atvėrimo paslaugos tiekėjai")
+        extra_context['add_button_label'] = _("Priskirti duomenų atvėrimo paslaugos tiekėjo rolę")
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['title'] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
+        extra_context['chosen_title_datasets'] = _("Sąrašas duomenų rinkinių, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju")
+        extra_context['available_title_datasets'] = _("Galimi duomenų rinkiniai")
+        extra_context['show_save_and_add_another'] = False
+        extra_context['show_save_and_continue'] = False
+        extra_context['input_too_short_message'] = _("Įveskite bent 3 simbolius...")
+        extra_context['no_results_message'] = _("Rezultatų nerasta")
+        extra_context['searching_message'] = _("Ieškoma...")
+        extra_context['remote_organization_not_exist'] = _("Pasirinktos organizacijos nėra, nurodykite koordinatorių naujai organizacijai.")
+        extra_context['remote_organization_exists'] = _("Pasirinkta organizacija egzistuoja")
+        extra_context['coordinator_required_message'] = _("Privaloma nurodyti koordinatorių naujai organizacijai.")
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context.update({
+            'title': _("Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"),
+            'show_save_and_add_another': False,
+            'show_save_and_continue': False,
+        })
+        return super().add_view(request, form_url, extra_context)
+
+    def get_form(self, request, obj=None, **kwargs):
+        if request.path == "/admin/vitrina_orgs/publisherorganization/add/":
+            kwargs["form"] = AdminPublisherOrganizationForm
+        return super().get_form(request, obj, **kwargs)
+
+
 admin.site.register(Organization, OrganizationAdmin)
+admin.site.register(PublisherOrganization, PublisherAdmin)
 admin.site.register(Representative, RepresentativeAdmin)
 
 

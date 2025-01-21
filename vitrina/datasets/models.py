@@ -3,11 +3,11 @@ import pathlib
 import tagulous
 import requests
 import reversion
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, ForeignKey
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -1270,3 +1270,40 @@ class DatasetStructureMapping(models.Model):
 
     class Meta:
         db_table = 'dataset_structure_mapping'
+
+
+class Contact(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    deleted = models.BooleanField(blank=True, null=True)
+    deleted_on = models.DateTimeField(blank=True, null=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        verbose_name=_("Content Type"),
+        limit_choices_to={
+            'model__in': ('organization', 'user')
+        }
+    )
+    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"))
+    content_object = GenericForeignKey('content_type', 'object_id')
+    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    email = models.EmailField(_("Email"), blank=True)
+    phone = models.CharField(_("Phone"), max_length=50, blank=True)
+
+    class Meta:
+        verbose_name = _("Kontaktai")
+        unique_together = ['content_type', 'object_id']
+
+    def __str__(self):
+        if self.name:
+            return f"{self.name} ({self.get_email()})"
+        return self.get_email()
+
+    def get_email(self):
+        if self.email:
+            return self.email
+        if hasattr(self.content_object, 'email'):
+            return self.content_object.email
+        return ''

@@ -23,7 +23,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, 
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
     DatasetRelationFactory
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -2605,3 +2605,56 @@ def test_dataset_filter_by_publisher(app: DjangoTestApp):
     assert len(response.context['object_list']) == 1
     for ds in response.context['object_list']:
         assert ds.publisher == [publisher2.pk]
+
+
+@pytest.mark.django_db
+def test_dataset_update_contact(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    org = OrganizationFactory()
+    ds = DatasetFactory(organization = org)
+
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+    form['contact'] = f'org-{org.pk}'
+    form.submit()
+    assert Contact.objects.filter(dataset=ds,
+                                content_type = ContentType.objects.get_for_model(org),
+                                object_id = org.pk).exists()
+
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+    form['contact'] = f'user-{user.pk}'
+    form.submit()
+    assert Contact.objects.filter(dataset=ds,
+                                content_type = ContentType.objects.get_for_model(user),
+                                object_id = user.pk).exists()
+
+
+@pytest.mark.django_db
+def test_dataset_update_contact_options(app: DjangoTestApp):
+    org = OrganizationFactory()
+    org2 = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+
+    user = UserFactory(is_staff=True, organization=org)
+    user2 = UserFactory(is_staff=True, organization = org)
+    user3 = UserFactory(is_staff=True)
+    publisher_user = UserFactory(is_staff=True, organization = publisher_org)
+    app.set_user(user)
+
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+
+    form_options = sorted([option[2] for option in form.fields["contact"][0].options])
+    correct_options = sorted(['---------',
+                              org.title,
+                              publisher_org.title,
+                              f'{user.first_name} {user.last_name}',
+                              f'{user2.first_name} {user2.last_name}',
+                              f'{publisher_user.first_name} {publisher_user.last_name}'])
+    incorrect_options = sorted(['---------',
+                                org2.title,
+                                f'{user3.first_name} {user3.last_name}'])
+    assert form_options == correct_options
+    assert form_options != incorrect_options
+
+

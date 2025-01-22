@@ -30,6 +30,10 @@ def populate_area_of_management(apps, schema_editor):
         AreaOfManagement.objects.create(id=id, name_lt=name_lt, name_en=name_en)
 
 class Migration(migrations.Migration):
+    replaces = [
+        ('vitrina_classifiers', '0016_areaofmanagement'),
+        ('vitrina_classifiers', '0017_auto_20241115_0926'),
+    ]
 
     dependencies = [
         ('vitrina_classifiers', '0014_merge_20231114_0754'),
@@ -39,13 +43,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AreaOfManagement',
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('name_lt', models.CharField(max_length=255, verbose_name='Name LT')),
-                ('name_en', models.CharField(max_length=255, verbose_name='Name EN')),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name_lt', models.CharField(default='Nepriskirta', max_length=255, verbose_name='Pavadinimas lietuviškai')),
+                ('name_en', models.CharField(default='Unassigned', max_length=255, verbose_name='Pavadinimas angliškai')),
             ],
             options={
-                'verbose_name': 'Area of Management',
-                'verbose_name_plural': 'Areas of Management',
+                'verbose_name': 'Valdymo sritis',
+                'verbose_name_plural': 'Valdymo sritys',
                 'db_table': 'area_of_management',
             },
         ),

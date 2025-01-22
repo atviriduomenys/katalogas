@@ -197,13 +197,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         )
         user_contacts = User.objects.filter(
             Q(organization=self.instance.organization) |
-            Q(organization=self.instance.publisher_id)
+            (Q(organization=self.instance.publisher_id) if self.instance.publisher_id else Q())
         )
 
         self.fields['contact'].choices = [
             ('', '---------'),
             ('Organizacijos kontaktai', [(f"org-{contact.id}", f'{contact.title}') for contact in organization_contacts]),
-            ('Asmenų kontaktai', [(f"user-{contact.id}", f'{contact.first_name} {contact.last_name}') for contact in user_contacts]),
+            ('Asmenų kontaktai', [(f"user-{contact.id}", f'{contact.get_full_name()}') for contact in user_contacts]),
         ]
 
 

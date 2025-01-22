@@ -2691,9 +2691,9 @@ def test_dataset_filter_by_publisher(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_update_contact(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
     org = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=org)
+    app.set_user(user)
     ds = DatasetFactory(organization = org)
 
     form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']

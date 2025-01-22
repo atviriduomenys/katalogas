@@ -1293,7 +1293,8 @@ class Contact(models.Model):
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
     class Meta:
-        verbose_name = _("Kontaktai")
+        verbose_name = _("Kontaktas")
+        verbose_name_plural = _("Kontaktai")
         unique_together = ['content_type', 'object_id']
 
     def __str__(self):

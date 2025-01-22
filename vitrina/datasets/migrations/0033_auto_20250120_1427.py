@@ -26,7 +26,8 @@ class Migration(migrations.Migration):
                 ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.dataset', verbose_name='Duomenų rinkinys')),
             ],
             options={
-                'verbose_name': 'Kontaktai',
+                'verbose_name': 'Kontaktas',
+                'verbose_name_plural': 'Kontaktai',
                 'unique_together': {('content_type', 'object_id')},
             },
         ),

@@ -21,7 +21,7 @@ from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
-    DatasetRelationFactory
+    DatasetRelationFactory, ContactFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.messages.models import Subscription
@@ -2706,6 +2706,7 @@ def test_dataset_update_contact(app: DjangoTestApp):
     form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
     form['contact'] = f'user-{user.pk}'
     form.submit()
+    assert Contact.objects.filter(dataset=ds).count() == 1
     assert Contact.objects.filter(dataset=ds,
                                 content_type = ContentType.objects.get_for_model(user),
                                 object_id = user.pk).exists()
@@ -2738,5 +2739,81 @@ def test_dataset_update_contact_options(app: DjangoTestApp):
                                 f'{user3.first_name} {user3.last_name}'])
     assert form_options == correct_options
     assert form_options != incorrect_options
+
+
+@pytest.mark.django_db
+def test_dataset_view_publisher_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    app.set_user(user)
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+    assert publisher_org.email in response.text
+    assert publisher_org.phone in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_view_user_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    ContactFactory(dataset = ds,
+                   object_id = user.pk,
+                   content_type = ContentType.objects.get_for_model(user),
+                   email = user.email,
+                   phone = user.phone,
+                   )
+
+    app.set_user(user)
+
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+
+    assert user.get_full_name() in response.text
+    assert user.email in response.text
+    assert user.phone in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_view_organization_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    ContactFactory(dataset = ds,
+                   object_id = org.pk,
+                   content_type = ContentType.objects.get_for_model(org),
+                   email = org.email,
+                   phone = org.phone,
+                   )
+
+    app.set_user(user)
+
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+    assert org.email in response.text
+    assert org.phone in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+
 
 

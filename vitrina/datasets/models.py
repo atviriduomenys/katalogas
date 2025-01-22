@@ -770,6 +770,33 @@ class Dataset(TranslatableModel):
                 en_description = response_desc.json()
                 self.description = en_description
 
+    def get_main_contact(self):
+        contacts = Contact.objects.filter(dataset=self, deleted__isnull=True)
+
+        user_contact = contacts.filter(content_type__model='user').first()
+        if user_contact:
+            return user_contact
+
+        org_contact = contacts.filter(content_type__model='organization').first()
+        if org_contact:
+            return org_contact
+
+        if self.publisher:
+            return self._create_virtual_contact(self.publisher)
+
+        return self._create_virtual_contact(self.organization)
+
+    def _create_virtual_contact(self, org: Organization):
+        content_type = ContentType.objects.get_for_model(org)
+        contact = Contact(
+            content_type=content_type,
+            object_id=org.id,
+            content_object=org,
+            dataset=self,
+            phone = org.phone if org.phone else None,
+        )
+        return contact
+
     def is_opened(self):
         return self.status == self.HAS_DATA
 
@@ -1298,8 +1325,6 @@ class Contact(models.Model):
         unique_together = ['content_type', 'object_id']
 
     def __str__(self):
-        if self.name:
-            return f"{self.name} ({self.get_email()})"
         return self.get_email()
 
     def get_email(self):
@@ -1308,3 +1333,7 @@ class Contact(models.Model):
         if hasattr(self.content_object, 'email'):
             return self.content_object.email
         return ''
+
+    def save(self, *args, **kwargs):
+        Contact.objects.filter(dataset=self.dataset).delete()
+        super().save(*args, **kwargs)

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Contact
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
 from vitrina.resources.models import Format
@@ -60,6 +60,7 @@ def get_datasets_for_rdf(qs):
             'frequency': _get_frequency(dataset.frequency),
             'licence': _get_licence(dataset.licence),
             'distributions': distributions,
+            'contact': _get_contact_email(dataset),
         }
 
 
@@ -160,3 +161,17 @@ def _get_media_type(format: Optional[Format]):
         return {
             'uri': format.media_type_uri,
         }
+
+def _get_contact_email(dataset: Dataset) -> str:
+    dataset_contact = Contact.objects.filter(dataset=dataset).first()
+
+    if dataset_contact and (email := dataset_contact.get_email()):
+        return email
+
+    if dataset.publisher and (email := dataset.publisher.email):
+        return email
+
+    if dataset.organization and (email := dataset.organization.email):
+        return email
+
+    return ''

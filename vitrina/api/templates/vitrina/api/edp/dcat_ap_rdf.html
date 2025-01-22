@@ -81,7 +81,7 @@
         {% endif %}
         <dcat:contactPoint>
             <vcard:Kind>
-                <vcard:hasEmail rdf:resource="mailto:{{ dataset.organization.email }}"/>
+                <vcard:hasEmail rdf:resource="mailto:{{ dataset.contact }}"/>
             </vcard:Kind>
         </dcat:contactPoint>
         {% for keyword in dataset.keywords %}

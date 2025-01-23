@@ -65,6 +65,18 @@ class ElasticsearchBackend(Elasticsearch7SearchBackend):
         "integer": {"type": "long"},
     }
 
+    def setup(self):
+        self.setup_complete = False
+
+        try:
+            self.conn.indices.create(index=self.index_name, body=self.DEFAULT_SETTINGS)
+            self.setup_complete = True
+        except Exception as e:
+            if not self.silently_fail:
+                raise
+
+            self.log.error("Failed to create index '%s': %s", self.index_name, e)
+
 
 class ElasticSearchEngine(Elasticsearch7SearchEngine):
     backend = ElasticsearchBackend

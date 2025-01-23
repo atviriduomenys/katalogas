@@ -9,6 +9,7 @@ def generate_mimetype_for_format_table(apps, schema_editor):
         'pdf': 'application/pdf',
         'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'json': 'application/json',
+        'jsonl': 'application/json',
         'geojson': 'application/json',
         'xml': 'application/xml',
         'shape': 'application/octet-stream',

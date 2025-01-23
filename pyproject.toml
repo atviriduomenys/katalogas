@@ -65,9 +65,7 @@ django-otp = "^1.5.4"
 django-ipware = "^7.0.1"
 django-redis = "^5.4.0"
 setuptools = "^75.7.0"
-dataset = "^1.5.2"
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
 pytest-django = "^4.5.2"
 WebTest = "^3.0.0"
@@ -77,10 +75,28 @@ pprintpp = "^0.4.0"
 django-compressor = "^4.0"
 django-libsass = "^0.9"
 libsass = "^0.21.0"
+dataset = "^1.5.2"
 flake8 = "^4.0.1"
 xlsxwriter = "^3.0.3"
 django-browser-reload = "^1.10.0"
+pytest-xdist = "^3.6.1"
+pytest-asyncio = "^0.25.2"
+pytest = ">=8.2,<9"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "vitrina.settings"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+fail_invalid_template_vars = true
+filterwarnings = [
+    "ignore:.*U.*mode is deprecated:DeprecationWarning",
+    "ignore:.*method is deprecated and slated for removal in Python 3.12*:DeprecationWarning",
+    "ignore:.*html5lib's sanitizer is deprecated.:DeprecationWarning",
+    "ignore:.*distutils Version classes are deprecated. Use packaging.version instead.:DeprecationWarning",
+    "ignore:.*Django now detects this configuration.*:django.utils.deprecation.RemovedInDjango41Warning",
+    "ignore:.*:django.utils.deprecation.RemovedInDjango40Warning"
+]

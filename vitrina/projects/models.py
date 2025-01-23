@@ -17,11 +17,11 @@ class Project(models.Model):
     CREATED = "CREATED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
-    STATUSES = {
+    STATUSES = (
         (CREATED, _("Pateiktas")),
         (APPROVED, _("Patvirtintas")),
         (REJECTED, _("Atmestas")),
-    }
+    )
 
     EDITED = "EDITED"
     STATUS_CHANGED = "STATUS_CHANGED"
@@ -172,7 +172,7 @@ class ApplicationUseCase(models.Model):
 
 
 class ApplicationUsecaseDatasetIds(models.Model):
-    application_usecase = models.ForeignKey(ApplicationUseCase, models.CASCADE)
+    application_usecase = models.ForeignKey(ApplicationUseCase, models.CASCADE, null=True)
     dataset_ids = models.BigIntegerField(blank=True, null=True)
 
     class Meta:

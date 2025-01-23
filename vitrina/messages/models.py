@@ -98,13 +98,13 @@ class Subscription(models.Model):
     REQUEST = "REQUEST"
     PROJECT = "PROJECT"
     COMMENT = "COMMENT"
-    SUB_TYPE_CHOICES = {
+    SUB_TYPE_CHOICES = (
         (ORGANIZATION, _("Organizacijos prenumerata")),
         (DATASET, _("Duomenų rinkinio prenumerata")),
         (REQUEST, _("Poreikio prenumerata")),
         (PROJECT, _("Projekto prenumerata")),
         (COMMENT, _("Komentaro prenumerata"))
-    }
+    )
 
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)

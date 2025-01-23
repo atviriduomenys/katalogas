@@ -30,7 +30,7 @@ class User(AbstractUser):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)
+    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True, unique=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)

@@ -36,7 +36,7 @@ from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.api.services import get_auth_session
 from vitrina.helpers import prepare_email_by_identifier, get_stats_filter_options_based_on_model
 from vitrina.api.models import ApiKey, ApiScope
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Contact
 from vitrina.helpers import get_current_domain, prepare_email_by_identifier, send_email_with_logging, \
     get_stats_filter_options_based_on_model, email
 from django.template.defaultfilters import date as _date
@@ -48,7 +48,7 @@ from vitrina.datasets.services import manage_subscriptions_for_representative as
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import OrganizationPlanForm, OrganizationMergeForm, OrganizationUpdateForm, \
     OrganizationCreateForm, ApiKeyForm, \
-    ApiScopeForm, ApiKeyRegenerateForm, OrganizationSearchForm
+    ApiScopeForm, ApiKeyRegenerateForm, OrganizationSearchForm, ContactCreateForm, ContactUpdateForm
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, PartnerRegisterForm
 from vitrina.orgs.models import Organization, Representative, RepresentativeRequest
 from vitrina.orgs.services import has_perm, Action, hash_api_key, manage_subscriptions_for_representative, \
@@ -408,6 +408,12 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, DetailView):
             Representative,
             organization
         )
+        context_data['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
         context_data['can_update_organization'] = has_perm(
             self.request.user,
             Action.UPDATE,
@@ -467,10 +473,247 @@ class OrganizationMembersView(
             Representative,
             self.object,
         )
+        context_data['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
         context_data['can_delete_publishers'] = self.request.user.is_superuser
         context_data['organization_id'] = self.object.pk
         context_data['organization'] = self.object
         return context_data
+
+
+class OrganizationContactsView(
+    PlanMixin,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    ListView,
+):
+    template_name = 'vitrina/orgs/contacts.html'
+    context_object_name = 'contacts'
+    paginate_by = 20
+    plan_url_name = 'organization-plans'
+
+    object: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Organization, pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
+
+    def get_queryset(self):
+        org_content_type = ContentType.objects.get_for_model(Organization)
+        publisher_org = Representative.objects.filter(
+            content_type=org_content_type,
+            object_id=self.object.id,
+            organization__isnull=False
+        ).values_list('organization_id', flat=True).first()
+
+        queryset = (
+            Contact.objects.
+            filter(
+                Q(content_type=org_content_type,
+                  object_id=self.object.pk) |
+                Q(content_type=org_content_type,
+                  object_id=publisher_org) |
+                Q(content_type=ContentType.objects.get_for_model(User),
+                  object_id__in=User.objects.filter(organization=self.object.pk).values_list('id', flat=True)) |
+                Q(content_type=ContentType.objects.get_for_model(User),
+                  object_id__in=User.objects.filter(organization=publisher_org).values_list('id', flat=True))
+            ).
+            order_by("content_type", "email")
+        )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data['has_permission'] = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Contact,
+            self.object,
+        )
+        context_data['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        context_data['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
+        context_data['organization_id'] = self.object.pk
+        context_data['organization'] = self.object
+
+        return context_data
+
+
+class ContactCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    CreateView,
+):
+    model = Contact
+    form_class = ContactCreateForm
+    template_name = 'base_form.html'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        organization_id = self.kwargs.get('organization_id')
+        self.organization = get_object_or_404(Organization, pk=organization_id)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object_id'] = self.organization.pk
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('organization-contacts', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def has_permission(self):
+        return has_perm(self.request.user,
+                        Action.CREATE,
+                        Contact,
+                        self.organization)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = "vitrina/orgs/tabs.html"
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.organization,
+        )
+        context['contact_url'] = reverse('organization-contacts', args=[self.organization.pk])
+        context['current_title'] = _("Tvarkytojo pridėjimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['organization_id'] = self.organization.pk
+        return context
+
+    def form_valid(self, form):
+        contact = form.cleaned_data.get('contact')
+        email = form.cleaned_data.get('email')
+        phone = form.cleaned_data.get('phone')
+        dataset = form.cleaned_data.get('dataset')
+        if contact:
+            Contact.objects.create(
+                content_type=ContentType.objects.get_for_model(contact),
+                object_id=contact.pk,
+                dataset=dataset,
+                email=email if email else contact.email,
+                phone=phone if phone else contact.phone,
+            )
+
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Contact
+    form_class = ContactUpdateForm
+    template_name = 'base_form.html'
+
+    organization: Organization
+
+    def dispatch(self, request, *args, **kwargs):
+        self.organization = get_object_or_404(Organization, pk=kwargs.get('organization_id'))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['object'] = self.organization
+        return kwargs
+
+    def has_permission(self):
+        contact = get_object_or_404(Contact, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user,
+                        Action.UPDATE,
+                        contact)
+
+    def get_success_url(self):
+        return reverse('organization-contacts', kwargs={'pk': self.kwargs.get('organization_id')})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tabs'] = "vitrina/orgs/tabs.html"
+        context['can_view_members'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.organization,
+        )
+        context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
+        context['current_title'] = _("Kontaktų redagavimas")
+        context['parent_links'] = {
+            reverse('home'): _('Pradžia'),
+            reverse('organization-list'): _('Organizacijos'),
+            reverse('organization-detail', args=[self.organization.pk]): self.organization.title,
+        }
+        context['organization_id'] = self.organization.pk
+        return context
+
+    def form_valid(self, form):
+        contact = form.cleaned_data.get('contact')
+        email = form.cleaned_data.get('email')
+        phone = form.cleaned_data.get('phone')
+        dataset = form.cleaned_data.get('dataset')
+
+        self.object.dataset = dataset
+        self.object.email = email if email else contact.email
+        self.object.phone = phone if phone else contact.phone
+        self.object.object_id = contact.pk
+        self.object.content_type = ContentType.objects.get_for_model(contact)
+        self.object.save()
+
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class ContactDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Contact
+    template_name = 'confirm_delete.html'
+
+    def has_permission(self):
+        representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.DELETE, representative)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        context['delete_text'] = _(f'Ar tikrai norite ištrinti kontaktą "{obj}"?')
+        return context
+
+    def get_success_url(self):
+        return reverse('organization-contacts', kwargs={'pk': self.kwargs.get('organization_id')})
 
 
 class OrganizationUpdateView(
@@ -673,6 +916,12 @@ class RepresentativeCreateView(
             Representative,
             self.organization,
         )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
         context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
         context['current_title'] = _("Tvarkytojo pridėjimas")
         context['parent_links'] = {
@@ -809,6 +1058,12 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
             Action.VIEW,
             Representative,
             self.organization,
+        )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
         )
         context['representative_url'] = reverse('organization-members', args=[self.organization.pk])
         context['current_title'] = _("Tvarkytojo redagavimas")
@@ -1102,6 +1357,12 @@ class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, TemplateView):
             Representative,
             self.organization
         )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.organization,
+        )
         context['history_url'] = reverse('organization-plans-history', args=[self.organization.pk])
         context['history_url_name'] = 'organization-plans-hisotry'
         context['can_manage_history'] = has_perm(
@@ -1248,6 +1509,12 @@ class OrganizationApiKeysView(
             Representative,
             self.object
         )
+        context_data['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
+        )
         context_data['can_update_organization'] = has_perm(
             self.request.user,
             Action.UPDATE,
@@ -1309,6 +1576,12 @@ class OrganizationApiKeysDetailView(
             Action.VIEW,
             Representative,
             self.object
+        )
+        context_data['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
+            self.object,
         )
         context_data['can_update_organization'] = has_perm(
             self.request.user,
@@ -2392,6 +2665,12 @@ class OrganizationPlansHistoryView(PlanMixin, HistoryView):
             self.request.user,
             Action.VIEW,
             Representative,
+            self.object,
+        )
+        context['can_view_contacts'] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Contact,
             self.object,
         )
         context['organization_id'] = self.object.pk

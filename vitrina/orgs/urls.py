@@ -8,7 +8,8 @@ from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, R
     OrganizationApiKeysDetailView, OrganizationApiKeysScopeCreateView, OrganizationApiKeysScopeChangeView, \
     OrganizationApiKeysScopeDeleteView, OrganizationApiKeysScopeToggleView, OrganizationApiKeysRegenerateView, \
     OrganizationApiKeysScopeObjectChangeView, OrganizationApiKeysScopeObjectDeleteView, \
-    OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView, AdminRemoteOrganizationSearchView
+    OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView, AdminRemoteOrganizationSearchView, \
+    OrganizationContactsView, ContactCreateView, ContactUpdateView, ContactDeleteView
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
@@ -42,6 +43,10 @@ urlpatterns = [
          name='representative-update'),
     path('orgs/<int:organization_id>/members/<int:pk>/delete/', RepresentativeDeleteView.as_view(),
          name='representative-delete'),
+    path('orgs/<int:pk>/contacts/', OrganizationContactsView.as_view(), name='organization-contacts'),
+    path('orgs/<int:organization_id>/contacts/add/', ContactCreateView.as_view(), name='contact-create'),
+    path('orgs/<int:organization_id>/contacts/<int:pk>/change/', ContactUpdateView.as_view(), name='contact-update'),
+    path('orgs/<int:organization_id>/contacts/<int:pk>/delete/', ContactDeleteView.as_view(), name='contact-delete'),
     path('register/<token>/', RepresentativeRegisterView.as_view(), name='representative-register'),
     path('register/link-expired', RepresentativeRegisterExpiredView.as_view(), name='register-link-expired'),
     path('partner/register-info/', PartnerRegisterInfoView.as_view(), name='partner-register-info'),

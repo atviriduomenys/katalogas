@@ -13,6 +13,13 @@
             </a>
         </li>
         {% endif %}
+        {% if can_view_contacts %}
+        <li class="{%if request.resolver_match.url_name == 'organization-contacts' or request.resolver_match.url_name == 'contacts-create' or request.resolver_match.url_name == 'contacts-update' %} is-active {% endif %}">
+            <a href="{% url 'organization-contacts' organization_id %}">
+                {% translate "Kontaktai" %}
+            </a>
+        </li>
+        {% endif %}
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
             <a href="{% url 'organization-datasets' organization_id %}?selected_facets=organization_exact:{{organization_id}}">
                 {% translate "Duomenų rinkiniai" %}

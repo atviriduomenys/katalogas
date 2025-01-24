@@ -1322,16 +1322,25 @@ class Contact(models.Model):
     class Meta:
         verbose_name = _("Kontaktas")
         verbose_name_plural = _("Kontaktai")
-        unique_together = ['content_type', 'object_id']
 
     def __str__(self):
-        return self.get_email()
+        if self.content_type.model == 'organization':
+            return self.content_object.title
+        return self.content_object.get_full_name()
+
 
     def get_email(self):
         if self.email:
             return self.email
         if hasattr(self.content_object, 'email'):
             return self.content_object.email
+        return ''
+
+    def get_type(self):
+        if self.content_type == ContentType.objects.get_for_model(Organization):
+            return _('Organizacija')
+        elif self.content_type == ContentType.objects.get_for_model(User):
+            return _('Naudotojas')
         return ''
 
     def save(self, *args, **kwargs):

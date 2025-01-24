@@ -7,6 +7,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
+from vitrina import settings
 
 from django.utils.translation import gettext_lazy as _
 
@@ -129,7 +130,7 @@ class OldPassword(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     password = models.CharField(max_length=128, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -144,7 +145,7 @@ class PasswordResetToken(models.Model):
     version = models.IntegerField()
     expiry_date = models.DateTimeField(blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, null=True)
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -160,7 +161,7 @@ class SsoToken(models.Model):
     version = models.IntegerField()
     ip = models.CharField(max_length=255, blank=True, null=True)
     token = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True

@@ -867,10 +867,7 @@ CREATE TABLE `old_password` (
   `modified` datetime(6) DEFAULT NULL,
   `version` int(11) NOT NULL,
   `password` char(60) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
-  `user_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK3h975gamp3cdbn09ljckuiv3a` (`user_id`),
-  CONSTRAINT `FK3h975gamp3cdbn09ljckuiv3a` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_lithuanian_ci;
 
 
@@ -962,11 +959,8 @@ CREATE TABLE `password_reset_token` (
   `version` int(11) NOT NULL,
   `expiry_date` datetime(6) DEFAULT NULL,
   `token` varchar(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
-  `user_id` bigint(20) NOT NULL,
   `used_date` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK5lwtbncug84d4ero33v3cfxvl` (`user_id`),
-  CONSTRAINT `FK5lwtbncug84d4ero33v3cfxvl` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_lithuanian_ci;
 
 
@@ -1112,11 +1106,8 @@ CREATE TABLE `sso_token` (
   `version` int(11) NOT NULL,
   `ip` varchar(255) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
   `token` varchar(36) COLLATE utf8mb4_lithuanian_ci DEFAULT NULL,
-  `user_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UKbf4iv8dfxpwfmh5e2xupfqqsa` (`token`),
-  KEY `FKkju7shggmw61xqmyw2ha2u6hn` (`user_id`),
-  CONSTRAINT `FKkju7shggmw61xqmyw2ha2u6hn` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+  UNIQUE KEY `UKbf4iv8dfxpwfmh5e2xupfqqsa` (`token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_lithuanian_ci;
 
 

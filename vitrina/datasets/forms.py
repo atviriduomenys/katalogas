@@ -193,7 +193,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         organization_contacts = Organization.objects.filter(
             Q(id=self.instance.organization_id) |
-            Q(id=self.instance.publisher_id)
+            (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
         )
         user_contacts = User.objects.filter(
             Q(organization=self.instance.organization) |
@@ -202,10 +202,18 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         self.fields['contact'].choices = [
             ('', '---------'),
-            ('Organizacijos kontaktai', [(f"org-{contact.id}", f'{contact.title}') for contact in organization_contacts]),
-            ('Asmenų kontaktai', [(f"user-{contact.id}", f'{contact.get_full_name()}') for contact in user_contacts]),
         ]
 
+        for org in organization_contacts:
+            self.fields['contact'].choices.append(
+                (_(f'Organizacija:'), [(f"org-{org.id}", f'{org.title}')])
+            )
+            user_choices = [(f"user-{user.id}", f'{user.get_full_name()}')
+                            for user in user_contacts
+                            if user.organization_id == org.id]
+            self.fields['contact'].choices.append(
+                (_(f'Naudotojai:'), user_choices)
+            )
 
 
     def clean_type(self):

@@ -28,7 +28,6 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Kontaktas',
                 'verbose_name_plural': 'Kontaktai',
-                'unique_together': {('content_type', 'object_id')},
             },
         ),
     ]

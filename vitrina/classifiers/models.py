@@ -28,7 +28,6 @@ class Category(MP_Node):
                             blank=True,
                             help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
     groups = models.ManyToManyField(to='vitrina_datasets.DatasetGroup')
-    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, blank=True, null=True)
 
     node_order_by = ['title']
 
@@ -116,3 +115,18 @@ class AreaOfManagement(models.Model):
         if lang == 'en' and self.name_en:
             return self.name_en
         return self.name_lt
+
+
+class GeoportalCategory(models.Model):
+    title = models.CharField(_("Pavadinimas"), max_length=255)
+    categories = models.ManyToManyField(Category, verbose_name=_("Atitinkančios kategorijos"), blank=True)
+
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'geoportal_category'
+        verbose_name = _("Geoportalo kategorija")
+        verbose_name_plural = _("Geoportalo kategorijos")
+
+    def __str__(self):
+        return self.title

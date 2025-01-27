@@ -14,14 +14,14 @@ from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset, Type
+from vitrina.datasets.models import Dataset, Type, GeoportalDataServiceTypeValue
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
 from vitrina.helpers import email
 from django.contrib.contenttypes.models import ContentType
-from vitrina.classifiers.models import Frequency, Category, Licence
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.classifiers.models import Frequency, Licence, GeoportalCategory
+from vitrina.resources.models import DatasetDistribution, GeoportalFormatValue
 from vitrina.comments.models import Comment
 from vitrina.messages.models import Subscription
 
@@ -83,28 +83,6 @@ LICENCES = {
     'unrestricted': "Creative Commons Attribution 4.0",
 }
 
-CATEGORIES = {
-    'biota': ['Flora ir fauna'],
-    'boundaries': ['Administracinės ribos'],
-    'climatologyMeteorologyAtmosphere': ['Hidrometeorologija'],
-    'disaster': ['Socialinė apsauga'],
-    'economy': ['Ekonomika ir finansai'],
-    'elevation': ['Reljefas'],
-    'environment': ['Aplinkos tarša'],
-    'farming': ['Žemės ūkis'],
-    'geoscientificInformation': ['Geoerdviniai duomenys', 'Žemės gelmės'],
-    'health': ['Sveikatos apsauga'],
-    'imageryBaseMapsEarthCover': ['Georeferenciniai žemėlapiai'],
-    'inlandWaters': ['Ežerai ir tvenkiniai', 'Upės'],
-    'location': ['Geoerdviniai duomenys'],
-    'oceans': ['Jūra'],
-    'planningCadastre': ['Teritorijų planavimas'],
-    'society': ['Švietimas', 'Socialinė apsauga', 'Kultūra'],
-    'structure': ['Pastatai ir statiniai'],
-    'transportation': ['Transportas ir ryšiai'],
-    'utilitiesCommunication': ['Energetika', 'Transportas ir ryšiai'],
-}
-
 
 def _get_elem(tag, element, find_all=False):
     if element is not None:
@@ -115,21 +93,21 @@ def _get_elem(tag, element, find_all=False):
     return [] if find_all else None
 
 
-def create_or_get_url_format():
-    format_obj, created = Format.objects.get_or_create(extension='URL')
-    if created:
-        format_obj.title = 'URL'
-        format_obj.mimetype = "text/url"
-        format_obj.save()
-    return format_obj
-
-
-def create_or_get_service_type():
+def _create_or_get_service_type():
     type_obj, created = Type.objects.get_or_create(name='service')
     if created:
         type_obj.title = 'Duomenų publikavimo paslauga'
         type_obj.save()
     return type_obj
+
+
+def _get_categories(title):
+    categories = []
+    if mapping := GeoportalCategory.objects.filter(title=title).first():
+        categories = mapping.categories.all()
+    else:
+        GeoportalCategory.objects.create(title=title)
+    return categories
 
 
 def main():
@@ -138,9 +116,9 @@ def main():
     """
 
     start_index = 1
-    body = f'''
+    body = '''
     <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" 
-        service="CSW" version="2.0.2" resultType="results" startPosition="{start_index}" maxRecords="15" 
+        service="CSW" version="2.0.2" resultType="results" startPosition="{}" maxRecords="15" 
         outputFormat="application/xml" outputSchema="http://www.opengis.net/cat/csw/2.0.2" 
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2 
         http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
@@ -151,7 +129,7 @@ def main():
     '''
 
     url = "https://www.geoportal.lt/metadata-catalog/csw?Request=GetRecords&Service=CSW&Version=2.0.2"
-    response = requests.get(url, data=body)
+    response = requests.get(url, data=body.format(start_index))
     xml = ET.XML(response.content)
 
     namespaces = xml.nsmap
@@ -162,11 +140,11 @@ def main():
     total_results = 0
     results = _get_elem("{%s}SearchResults" % csw, xml)
     if results is not None and results.get('numberOfRecordsMatched'):
-        total_results = results.get('numberOfRecordsMatched')
+        total_results = int(results.get('numberOfRecordsMatched'))
 
     records = _get_elem(".//{%s}Record" % csw, results, find_all=True)
 
-    pbar = tqdm("Importing Geoportal datasets", total=int(total_results))
+    pbar = tqdm("Importing Geoportal datasets", total=total_results)
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
 
     while records:
@@ -189,13 +167,9 @@ def main():
                 elif scheme.endswith("Server"):
                     data_url = ref.text
 
-            if not metadata_url:
-                print("no url:" + dataset_id)
-            if not dataset_id:
-                print("no id:" + metadata_url)
-            if metadata_url:
-                response = requests.get(metadata_url)
-                xml = ET.XML(response.content)
+            if metadata_url and dataset_id:
+                res = requests.get(metadata_url)
+                xml = ET.XML(res.content)
 
                 errors = []
 
@@ -220,7 +194,7 @@ def main():
                 dataset_type = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_type)
                 if dataset_type is not None and dataset_type.text == 'service':
                     is_service = True
-                    service_type = create_or_get_service_type()
+                    service_type = _create_or_get_service_type()
                     if not dataset.type.filter(pk=service_type.pk):
                         changed = True
                         dataset.type.add(service_type)
@@ -361,35 +335,53 @@ def main():
                 # distribution
                 distribution_info = _get_elem(".//{%s}distributionInfo" % gmd, xml)
 
-                distribution_url = _get_elem(".//{%s}transferOptions" % gmd, distribution_info)
-                distribution_url = _get_elem(".//{%s}CI_OnlineResource" % gmd, distribution_url)
-                distribution_url = _get_elem(".//{%s}URL" % gmd, distribution_url)
-
-                if distribution_url is not None and distribution_url.text != data_url:
-                    print(metadata_url)
+                distribution_format = _get_elem(".//{%s}distributionFormat" % gmd, distribution_info)
+                distribution_format = _get_elem(".//{%s}name" % gmd, distribution_format)
+                distribution_format = _get_elem(".//{%s}CharacterString" % gco, distribution_format)
 
                 if is_service:
-                    if distribution_url is not None and dataset.endpoint_url != distribution_url.text:
+                    if data_url and data_url != "-" and dataset.endpoint_url != data_url:
                         changed = True
-                        dataset.endpoint_url = distribution_url.text
+                        dataset.endpoint_url = data_url
+                    if distribution_format is not None:
+                        if endpoint_type := GeoportalDataServiceTypeValue.objects.filter(
+                            value__iexact=distribution_format.text
+                        ).first():
+                            endpoint_type = endpoint_type.geoportal_data_service_type.data_service_type
+                            if endpoint_type and endpoint_type != dataset.endpoint_type:
+                                changed = True
+                                dataset.endpoint_type = endpoint_type
+                        else:
+                            errors.append(f'Nerastas API formatas: "{distribution_format.text}"')
                     dataset.status = Dataset.INVENTORED
                     comment_status = Comment.INVENTORED
                 else:
-                    if distribution_url is not None:
+                    if data_url and data_url != "-":
                         dataset.status = Dataset.HAS_DATA
                         comment_status = Comment.OPENED
                         if distribution := dataset.datasetdistribution_set.first():
-                            if distribution_url.text != distribution.download_url:
+                            if data_url != distribution.download_url:
                                 changed = True
-                                distribution.download_url = distribution_url.text
+                                distribution.download_url = data_url
                                 distribution.save()
                         else:
                             changed = True
-                            DatasetDistribution.objects.create(
+                            distribution = DatasetDistribution.objects.create(
                                 dataset=dataset,
-                                download_url=distribution_url.text,
-                                format=create_or_get_url_format()
+                                download_url=data_url
                             )
+
+                        if distribution_format is not None:
+                            if dist_format := GeoportalFormatValue.objects.filter(
+                                value__iexact=distribution_format.text
+                            ).first():
+                                dist_format = dist_format.geoportal_format.format
+                                if dist_format and dist_format != distribution.format:
+                                    changed = True
+                                    distribution.format = dist_format
+                                    distribution.save()
+                            else:
+                                errors.append(f'Nerastas formatas: "{distribution_format.text}"')
                     else:
                         dataset.status = Dataset.INVENTORED
                         comment_status = Comment.INVENTORED
@@ -413,19 +405,22 @@ def main():
 
                 # category
                 categories = _get_elem(".//{%s}MD_TopicCategoryCode" % gmd, dataset_info, find_all=True)
+                dataset_categories = dataset.category.all()
+                category_list = []
                 for category in categories:
                     category_value = category
-                    if category := CATEGORIES.get(category_value.text):
+                    if category := _get_categories(category_value.text):
                         for cat in category:
-                            cat_obj = Category.objects.filter(name=cat).first()
-                            if cat_obj:
-                                if not dataset.category.filter(pk=cat_obj.pk):
-                                    changed = True
-                                    dataset.category.add(cat_obj)
-                            else:
-                                errors.append(f'Nerasta kategorija: "{cat}"')
+                            category_list.append(cat)
+                            if not dataset.category.filter(pk=cat.pk):
+                                changed = True
+                                dataset.category.add(cat)
                     else:
                         errors.append(f'Nerasta kategorija: "{category_value.text}"')
+                removed_categories = list(set(dataset_categories) - set(category_list))
+                for cat in removed_categories:
+                    changed = True
+                    dataset.category.remove(cat)
 
                 # inform superusers about import errors
                 dataset_url = "https://%s%s" % (
@@ -438,8 +433,8 @@ def main():
 
                     errors = "<br/>".join(errors)
                     title = f'Klaida importuojant Geoportal duomenų rinkinį id: {dataset.pk}'
-                    description = f"Importuojant duomenų rinkinį iš Geoportal (<a href='{url}'>metaduomenys</a>) " \
-                                  f"įvyko klaida: <br/>{errors}"
+                    description = f"Importuojant duomenų rinkinį iš Geoportal (<a href='{metadata_url}'>" \
+                                  f"metaduomenys</a>) įvyko klaida: <br/>{errors}"
 
                     for user in users:
                         if not Task.objects.filter(
@@ -557,19 +552,7 @@ def main():
             pbar.update(1)
 
         if start_index <= total_results:
-            body = f'''
-            <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" 
-                service="CSW" version="2.0.2" resultType="results" startPosition="{start_index}" maxRecords="15" 
-                outputFormat="application/xml" outputSchema="http://www.opengis.net/cat/csw/2.0.2" 
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-                xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2 
-                http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
-                <csw:Query typeNames="csw:Record">
-                    <csw:ElementSetName>full</csw:ElementSetName>
-                </csw:Query>
-            </csw:GetRecords>
-            '''
-            response = requests.get(url, data=body)
+            response = requests.get(url, data=body.format(start_index))
             xml = ET.XML(response.content)
 
             records = _get_elem(".//{%s}Record" % csw, xml, find_all=True)

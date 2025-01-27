@@ -1,11 +1,12 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
 from vitrina.classifiers.forms import AreaOfManagementAdminForm
-from vitrina.classifiers.models import Category, AreaOfManagement
+from vitrina.classifiers.models import Category, AreaOfManagement, GeoportalCategory
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.orgs.helpers import get_or_create_parent_org
@@ -43,7 +44,6 @@ class CategoryAdmin(TreeAdmin):
     search_fields = (
         'title',
     )
-    readonly_fields = ('name',)
 
 
 class LicenceAdmin(admin.ModelAdmin):
@@ -146,7 +146,17 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
         return super().add_view(request, form_url, extra_context)
 
 
+class GeoportalCategoryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'categories_display',)
+    autocomplete_fields = ['categories']
+
+    def categories_display(self, obj):
+        return mark_safe("<br/>".join([cat.title for cat in obj.categories.all()]))
+    categories_display.short_description = _('Kategorijos')
+
+
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Licence, LicenceAdmin)
 admin.site.register(Frequency, FrequencyAdmin)
+admin.site.register(GeoportalCategory, GeoportalCategoryAdmin)

@@ -1271,3 +1271,32 @@ class DatasetStructureMapping(models.Model):
 
     class Meta:
         db_table = 'dataset_structure_mapping'
+
+
+class GeoportalDataServiceType(models.Model):
+    data_service_type = models.ForeignKey(DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type'
+        verbose_name = _("Geoportalo API formatas")
+        verbose_name_plural = _("Geoportalo API formatai")
+
+    def __str__(self):
+        return str(self.data_service_type)
+
+
+class GeoportalDataServiceTypeValue(models.Model):
+    geoportal_data_service_type = models.ForeignKey(
+        GeoportalDataServiceType,
+        verbose_name=_("Geoportalo API formatas"),
+        on_delete=models.CASCADE
+    )
+    value = models.CharField(_("Reikšmė"), max_length=255)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type_value'
+        verbose_name = _("Geoportalo API formato reikšmė")
+        verbose_name_plural = _("Geoportalo API formato reikšmės")
+
+    def __str__(self):
+        return self.value

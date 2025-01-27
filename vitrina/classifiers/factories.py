@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.classifiers.models import Category, Frequency, Licence, AreaOfManagement
+from vitrina.classifiers.models import Category, Frequency, Licence, AreaOfManagement, GeoportalCategory
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -45,3 +45,11 @@ class AreaOfManagementFactory(DjangoModelFactory):
     id = factory.Sequence(lambda n: n + 2)
     name_lt = factory.LazyAttribute(lambda obj: f'Jurisdiction{obj.id}')
     name_en = factory.LazyAttribute(lambda obj: f'Jurisdikcija{obj.id}')
+
+
+class GeoportalCategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalCategory
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('catch_phrase')

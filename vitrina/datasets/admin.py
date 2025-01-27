@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina import settings
 from vitrina.datasets.forms import DatasetAdminForm
 from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, \
-    Relation, DatasetReport
+    Relation, DatasetReport, GeoportalDataServiceTypeValue, GeoportalDataServiceType
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
@@ -365,6 +365,21 @@ class DatasetReportAdmin(admin.ModelAdmin):
             })
 
 
+class GeoportalDataServiceTypeValueInline(admin.TabularInline):
+    model = GeoportalDataServiceTypeValue
+    extra = 0
+
+
+class GeoportalDataServiceTypeAdmin(admin.ModelAdmin):
+    inlines = [GeoportalDataServiceTypeValueInline]
+    list_display = ('data_service_type', 'values_display',)
+
+    def values_display(self, obj):
+        return mark_safe("<br/>".join([item.value for item in obj.geoportaldataservicetypevalue_set.all()]))
+
+    values_display.short_description = _('Geoportalo reikšmės')
+
+
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
@@ -373,5 +388,6 @@ admin.site.register(DataServiceSpecType, DataServiceSpecTypeAdmin)
 admin.site.register(Type, TypeAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
+admin.site.register(GeoportalDataServiceType, GeoportalDataServiceTypeAdmin)
 
 tagulous.admin.register(Dataset.tags)

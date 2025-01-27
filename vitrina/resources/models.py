@@ -42,6 +42,35 @@ class Format(models.Model):
         return self.title
 
 
+class GeoportalFormat(models.Model):
+    format = models.ForeignKey(Format, verbose_name=_("Formatas"), on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'geoportal_format'
+        verbose_name = _("Geoportalo formatas")
+        verbose_name_plural = _("Geoportalo formatai")
+
+    def __str__(self):
+        return str(self.format)
+
+
+class GeoportalFormatValue(models.Model):
+    geoportal_format = models.ForeignKey(
+        GeoportalFormat,
+        verbose_name=_("Geoportalo formatas"),
+        on_delete=models.CASCADE
+    )
+    value = models.CharField(_("Reikšmė"), max_length=255)
+
+    class Meta:
+        db_table = 'geoportal_format_value'
+        verbose_name = _("Geoportalo formato reikšmė")
+        verbose_name_plural = _("Geoportalo formato reikšmės")
+
+    def __str__(self):
+        return self.value
+
+
 class DistributionFormat(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

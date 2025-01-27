@@ -17,7 +17,7 @@
 *.mo
 *.css.map
 .idea/
-./webpack/node_modules/
+**/node_modules/
 /dist/
 /requirements.txt
 /docker/dist/

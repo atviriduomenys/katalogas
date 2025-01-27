@@ -193,7 +193,7 @@ class Dataset(TranslatableModel):
         blank=True
     )
     type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True)
-    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
+    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True, max_length=512)
     endpoint_type = models.ForeignKey(
         'DataServiceType',
         on_delete=models.SET_NULL,
@@ -236,6 +236,7 @@ class Dataset(TranslatableModel):
 
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
+    tasks = GenericRelation('vitrina_tasks.Task')
     representatives = GenericRelation('vitrina_orgs.Representative')
     request_objects = GenericRelation('vitrina_requests.RequestObject')
 
@@ -277,7 +278,7 @@ class Dataset(TranslatableModel):
         return ''
 
     def get_resource_titles(self):
-        return list(self.datasetdistribution_set.all().values_list('title', flat=True))
+        return list(self.datasetdistribution_set.all().values_list('translations__title', flat=True))
 
     def get_model_title_list(self):
         return list(model.title for model in self.model_set.all())
@@ -295,7 +296,7 @@ class Dataset(TranslatableModel):
         return list(self.project_set.all().values_list('title', flat=True))
 
     def get_resource_description(self):
-        return list(self.datasetdistribution_set.all().values_list('description', flat=True))
+        return list(self.datasetdistribution_set.all().values_list('translations__description', flat=True))
 
     def get_model_title_description(self):
         return list(model.description for model in self.model_set.all())
@@ -1354,3 +1355,31 @@ class Contact(models.Model):
             return parents
         parents.extend(self.content_object.organization.get_acl_parents())
         return parents
+
+class GeoportalDataServiceType(models.Model):
+    data_service_type = models.ForeignKey(DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type'
+        verbose_name = _("Geoportalo API formatas")
+        verbose_name_plural = _("Geoportalo API formatai")
+
+    def __str__(self):
+        return str(self.data_service_type)
+
+
+class GeoportalDataServiceTypeValue(models.Model):
+    geoportal_data_service_type = models.ForeignKey(
+        GeoportalDataServiceType,
+        verbose_name=_("Geoportalo API formatas"),
+        on_delete=models.CASCADE
+    )
+    value = models.CharField(_("Reikšmė"), max_length=255)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type_value'
+        verbose_name = _("Geoportalo API formato reikšmė")
+        verbose_name_plural = _("Geoportalo API formato reikšmės")
+
+    def __str__(self):
+        return self.value

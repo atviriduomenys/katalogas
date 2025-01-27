@@ -18,6 +18,7 @@ def main():
     pbar = tqdm("Removing Geoportal datasets", total=len(datasets))
 
     for dataset in datasets:
+        dataset.tasks.all().delete()
         dataset.delete()
         pbar.update(1)
 

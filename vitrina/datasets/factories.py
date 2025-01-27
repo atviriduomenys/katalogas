@@ -11,7 +11,8 @@ from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, Contact
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, Contact, GeoportalDataServiceType, \
+    GeoportalDataServiceTypeValue
 
 MANIFEST = '''\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
@@ -214,3 +215,18 @@ class ContactFactory(DjangoModelFactory):
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
     object_id = factory.SelfAttribute('organization.id')
 
+
+
+class GeoportalDataServiceTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalDataServiceType
+
+    data_service_type = factory.SubFactory(DataServiceTypeFactory)
+
+
+class GeoportalDataServiceTypeValueFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalDataServiceTypeValue
+
+    geoportal_data_service_type = factory.SubFactory(GeoportalDataServiceTypeFactory)
+    value = factory.Faker('word')

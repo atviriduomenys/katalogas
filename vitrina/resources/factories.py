@@ -1,11 +1,12 @@
 from datetime import datetime, date
+from typing import Union
 
 import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import DatasetDistribution, Format, GeoportalFormat, GeoportalFormatValue
 
 
 class FileFormat(DjangoModelFactory):
@@ -15,6 +16,7 @@ class FileFormat(DjangoModelFactory):
 
     title = factory.Faker('word')
     extension = 'CSV'
+
 
 class UapiFormat(DjangoModelFactory):
     class Meta:
@@ -30,8 +32,14 @@ class DatasetDistributionFactory(DjangoModelFactory):
         model = DatasetDistribution
         django_get_or_create = ('title', 'description')
 
-    title = factory.Faker('catch_phrase')
-    description = factory.Faker('catch_phrase')
+    title = factory.Dict({
+        'en': factory.Faker('text', max_nb_chars=20, locale='en_US'),
+        'lt': factory.Faker('text', max_nb_chars=20, locale='lt_LT'),
+    })
+    description = factory.Dict({
+        'en': factory.Faker('text', locale='en_US'),
+        'lt': factory.Faker('text', locale='lt_LT'),
+    })
     dataset = factory.SubFactory(DatasetFactory)
     format = factory.SubFactory(FileFormat)
     period_start = date(2022, 1, 1)
@@ -45,3 +53,37 @@ class DatasetDistributionFactory(DjangoModelFactory):
             format=factory.SubFactory(UapiFormat),
             type="URL",
         )
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        title = kwargs.pop('title')
+        description = kwargs.pop('description')
+        dataset = model_class(*args, **kwargs)
+        for lang in ('en', 'lt'):
+            dataset.set_current_language(lang)
+            dataset.title = _get_language_value(lang, title)
+            dataset.description = _get_language_value(lang, description)
+        dataset.save()
+        return dataset
+
+
+def _get_language_value(lang: str, value: Union[str | dict]) -> str:
+    if isinstance(value, str):
+        return value
+    else:
+        return value[lang]
+
+
+class GeoportalFormatFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalFormat
+
+    format = factory.SubFactory(FileFormat)
+
+
+class GeoportalFormatValueFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalFormatValue
+
+    geoportal_format = factory.SubFactory(GeoportalFormatFactory)
+    value = factory.Faker('word')

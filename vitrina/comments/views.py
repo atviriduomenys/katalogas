@@ -87,27 +87,27 @@ class CommentView(
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
 
-                if isinstance(obj, Model):
+                if isinstance(obj, Model) and obj.dataset.organization:
                     RequestAssignment.objects.create(
                         request=new_request,
                         organization=obj.dataset.organization,
                         status=Request.CREATED
                     )
-                elif isinstance(obj, Property):
+                elif isinstance(obj, Property) and obj.model.dataset.organization:
                     RequestAssignment.objects.create(
                         request=new_request,
                         organization=obj.model.dataset.organization,
                         status=Request.CREATED
                     )
                 elif isinstance(obj, Dataset):
-                    RequestAssignment.objects.create(
-                        request=new_request,
-                        organization=obj.organization,
-                        status=Request.CREATED
-                    )
-
-                    if obj.organization.email:
-                        sub_email_list.append(obj.organization.email)
+                    if obj.organization:
+                        RequestAssignment.objects.create(
+                            request=new_request,
+                            organization=obj.organization,
+                            status=Request.CREATED
+                        )
+                        if obj.organization.email:
+                            sub_email_list.append(obj.organization.email)
 
                     subs = Subscription.objects.filter(
                         Q(object_id=obj.pk) | Q(object_id=None),
@@ -333,17 +333,18 @@ class ExternalCommentView(
                     external_object_id=external_object_id,
                     external_content_type=external_content_type,
                 )
-                RequestAssignment.objects.create(
-                    request=new_request,
-                    organization=self.dataset.organization,
-                    status=Request.CREATED
-                )
+                if self.dataset.organization:
+                    RequestAssignment.objects.create(
+                        request=new_request,
+                        organization=self.dataset.organization,
+                        status=Request.CREATED
+                    )
                 set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
 
-                if self.dataset.organization.email:
+                if self.dataset.organization and self.dataset.organization.email:
                     sub_email_list.append(self.dataset.organization.email)
 
                 subs = Subscription.objects.filter(

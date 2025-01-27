@@ -993,6 +993,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1034,6 +1035,7 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1076,6 +1078,7 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
     }), params)
     assert distribution.dataset.datasetdistribution_set.count() == 1
     distribution = distribution.dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1117,6 +1120,7 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1240,6 +1244,7 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': distribution.filename_without_path(),
@@ -1281,6 +1286,7 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1322,6 +1328,7 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
     }), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': distribution.description,
         'file': "",
@@ -1490,6 +1497,7 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         'distributionId': distribution.pk
     }), params)
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': distribution.filename_without_path(),
@@ -1530,6 +1538,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         'datasetId': distribution.dataset.pk,
         'distributionId': distribution.pk
     }), params)
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': "",
@@ -1572,6 +1581,7 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         'distributionId': distribution.pk
     }), params)
     distribution.refresh_from_db()
+    distribution.set_current_language("lt")
     assert res.json == {
         'description': "Updated description",
         'file': distribution.filename_without_path(),

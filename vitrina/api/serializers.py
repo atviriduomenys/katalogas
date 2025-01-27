@@ -187,10 +187,16 @@ class DatasetSerializer(serializers.ModelSerializer):
         return landing_page
 
     def get_organization_id(self, obj):
-        return obj.organization.id
+        if obj.organization:
+            return obj.organization.id
+        return None
 
     def get_organization_title(self, obj):
-        return obj.organization.title
+        if obj.organization:
+            return obj.organization.title
+        elif obj.creator_text:
+            return obj.creator_text
+        return None
 
 
 class PostDatasetSerializer(DatasetSerializer):
@@ -368,7 +374,9 @@ class UploadToStorageSerializer(DatasetDistributionSerializer):
         fields = DatasetDistributionSerializer.Meta.fields + ['organization_id', 'dataset_id', 'update_interval']
 
     def get_organization_id(self, obj):
-        return obj.dataset.organization.id
+        if obj.dataset.organization:
+            return obj.dataset.organization.id
+        return None
 
     def get_dataset_id(self, obj):
         return obj.dataset.id

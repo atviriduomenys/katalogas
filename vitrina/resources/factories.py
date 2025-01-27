@@ -6,7 +6,7 @@ from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import DatasetDistribution, Format, GeoportalFormat, GeoportalFormatValue
 
 
 class FileFormat(DjangoModelFactory):
@@ -16,6 +16,7 @@ class FileFormat(DjangoModelFactory):
 
     title = factory.Faker('word')
     extension = 'CSV'
+
 
 class UapiFormat(DjangoModelFactory):
     class Meta:
@@ -71,3 +72,18 @@ def _get_language_value(lang: str, value: Union[str | dict]) -> str:
         return value
     else:
         return value[lang]
+
+
+class GeoportalFormatFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalFormat
+
+    format = factory.SubFactory(FileFormat)
+
+
+class GeoportalFormatValueFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalFormatValue
+
+    geoportal_format = factory.SubFactory(GeoportalFormatFactory)
+    value = factory.Faker('word')

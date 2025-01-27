@@ -193,7 +193,7 @@ class Dataset(TranslatableModel):
         blank=True
     )
     type = models.ManyToManyField('Type', verbose_name=_("Tipas"), blank=True)
-    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True)
+    endpoint_url = models.URLField(_("API adresas"), null=True, blank=True, max_length=512)
     endpoint_type = models.ForeignKey(
         'DataServiceType',
         on_delete=models.SET_NULL,
@@ -236,6 +236,7 @@ class Dataset(TranslatableModel):
 
     metadata = GenericRelation('vitrina_structure.Metadata')
     comments = GenericRelation('vitrina_comments.Comment')
+    tasks = GenericRelation('vitrina_tasks.Task')
     representatives = GenericRelation('vitrina_orgs.Representative')
     request_objects = GenericRelation('vitrina_requests.RequestObject')
 
@@ -1270,3 +1271,32 @@ class DatasetStructureMapping(models.Model):
 
     class Meta:
         db_table = 'dataset_structure_mapping'
+
+
+class GeoportalDataServiceType(models.Model):
+    data_service_type = models.ForeignKey(DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type'
+        verbose_name = _("Geoportalo API formatas")
+        verbose_name_plural = _("Geoportalo API formatai")
+
+    def __str__(self):
+        return str(self.data_service_type)
+
+
+class GeoportalDataServiceTypeValue(models.Model):
+    geoportal_data_service_type = models.ForeignKey(
+        GeoportalDataServiceType,
+        verbose_name=_("Geoportalo API formatas"),
+        on_delete=models.CASCADE
+    )
+    value = models.CharField(_("Reikšmė"), max_length=255)
+
+    class Meta:
+        db_table = 'geoportal_data_service_type_value'
+        verbose_name = _("Geoportalo API formato reikšmė")
+        verbose_name_plural = _("Geoportalo API formato reikšmės")
+
+    def __str__(self):
+        return self.value

@@ -54,7 +54,7 @@ acl = {
     (Contact, Action.CREATE): [Role.COORDINATOR],
     (Contact, Action.UPDATE): [Role.COORDINATOR],
     (Contact, Action.DELETE): [Role.COORDINATOR],
-    (Contact, Action.VIEW): [Role.COORDINATOR],
+    (Contact, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],

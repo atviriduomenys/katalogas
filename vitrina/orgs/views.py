@@ -493,7 +493,7 @@ class OrganizationContactsView(
 ):
     template_name = 'vitrina/orgs/contacts.html'
     context_object_name = 'contacts'
-    paginate_by = 20
+    paginate_by = 9
     plan_url_name = 'organization-plans'
 
     object: Organization
@@ -703,8 +703,8 @@ class ContactDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     template_name = 'confirm_delete.html'
 
     def has_permission(self):
-        representative = get_object_or_404(Representative, pk=self.kwargs.get('pk'))
-        return has_perm(self.request.user, Action.DELETE, representative)
+        contact = get_object_or_404(Contact, pk=self.kwargs.get('pk'))
+        return has_perm(self.request.user, Action.DELETE, contact)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

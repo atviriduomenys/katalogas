@@ -1346,3 +1346,11 @@ class Contact(models.Model):
     def save(self, *args, **kwargs):
         Contact.objects.filter(dataset=self.dataset).delete()
         super().save(*args, **kwargs)
+
+    def get_acl_parents(self):
+        parents = [self]
+        if isinstance(self.content_object, Organization):
+            parents.extend(self.content_object.get_acl_parents())
+            return parents
+        parents.extend(self.content_object.organization.get_acl_parents())
+        return parents

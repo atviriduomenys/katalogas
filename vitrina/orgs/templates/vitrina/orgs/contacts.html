@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}
+{% translate "Organizacijos narių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/orgs/tabs.html' %}
+
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'contact-create' request.resolver_match.kwargs.pk %}">
+                {% translate "Pridėti kontaką" %}
+            </a>
+        </div>
+    {% endif %}
+    {% if contacts %}
+        <table class="table is-fullwidth">
+            <tbody>
+            <tr>
+                <th>{% translate "Kontaktas" %}</th>
+                <th>{% translate "Duomenų rinkinys" %}</th>
+                <th>{% translate "El. paštas" %}</th>
+                <th>{% translate "Telefonas" %}</th>
+                <th>{% translate "Tipas" %}</th>
+                {% if has_permission %}
+                    <td></td>
+                    <td></td>
+                {% endif %}
+            </tr>
+            {% for c in contacts %}
+                <tr>
+                    {% if c.dataset %}
+                    <td>{{ c }}</td>
+                    <td> <strong><a href="{{ c.dataset.get_absolute_url }}" class="dataset-title">{{ c.dataset }}</a></strong></td>
+                    <td><a href="mailto:{{ c.get_email }}">{{ c.get_email }}</a></td>
+                    <td>
+                        {% if c.phone %}
+                            {{ c.phone }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ c.get_type }}</td>
+                    {% if has_permission %}
+                        <td>
+                            <a id="update-member-{{ c.pk }}-btn" href="{% url 'contact-update' organization_id=request.resolver_match.kwargs.pk pk=c.pk %}" class="button is-primary is-small">
+                                {% translate "Redaguoti" %}
+                            </a>
+                        </td>
+                        <td>
+                            <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' organization_id=request.resolver_match.kwargs.pk pk=c.pk %}" class="button is-link is-small">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% endif %}
+{% endblock %}

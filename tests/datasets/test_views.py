@@ -21,9 +21,9 @@ from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
-    DatasetRelationFactory
+    DatasetRelationFactory, ContactFactory
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -2426,6 +2426,88 @@ def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
     assert response.status_code == 403
 
 
+@pytest.mark.django_db
+def test_dataset_member_create_invalid_phone(app: DjangoTestApp):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+    form['email'] = "new@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "123456"
+    form.submit()
+
+    assert resp.status_code == 200
+    assert Representative.objects.filter(email="new@gmail.com").count() == 0
+
+
+@pytest.mark.django_db
+def test_dataset_member_create_valid_phone(app: DjangoTestApp):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+
+    form['email'] = "new1@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "+37061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new1@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "+37061234567"
+
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid="add-member-btn")
+    form = resp.forms['representative-form']
+
+    form['email'] = "new2@gmail.com"
+    form['role'] = "manager"
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    rep_queryset = Representative.objects.filter(email="new2@gmail.com")
+    assert rep_queryset.count() == 1
+    assert rep_queryset.first().phone == "061234567"
+
+
+@pytest.mark.django_db
+def test_dataset_member_update_phone(app: DjangoTestApp, dataset):
+    ds = DatasetFactory()
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    coordinator = RepresentativeFactory(
+        content_type=ct,
+        object_id=ds.pk,
+        role=Representative.COORDINATOR,
+    )
+    app.set_user(coordinator.user)
+    resp = app.get(reverse('dataset-members', kwargs={'pk': ds.pk}))
+    resp = resp.click(linkid=f"update-member-{coordinator.pk}-btn")
+    form = resp.forms['representative-form']
+    form['phone'] = "061234567"
+    resp = form.submit()
+    assert resp.status_code == 302
+    coordinator.refresh_from_db()
+    assert coordinator.phone == "061234567"
+
+
 @pytest.mark.haystack
 def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp):
     jurisdiction = AreaOfManagementFactory(name_lt="Organization")
@@ -2605,3 +2687,133 @@ def test_dataset_filter_by_publisher(app: DjangoTestApp):
     assert len(response.context['object_list']) == 1
     for ds in response.context['object_list']:
         assert ds.publisher == [publisher2.pk]
+
+
+@pytest.mark.django_db
+def test_dataset_update_contact(app: DjangoTestApp):
+    org = OrganizationFactory()
+    user = UserFactory(is_staff=True, organization=org)
+    app.set_user(user)
+    ds = DatasetFactory(organization = org)
+
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+    form['contact'] = f'org-{org.pk}'
+    form.submit()
+    assert Contact.objects.filter(dataset=ds,
+                                content_type = ContentType.objects.get_for_model(org),
+                                object_id = org.pk).exists()
+
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+    form['contact'] = f'user-{user.pk}'
+    form.submit()
+    assert Contact.objects.filter(dataset=ds).count() == 1
+    assert Contact.objects.filter(dataset=ds,
+                                content_type = ContentType.objects.get_for_model(user),
+                                object_id = user.pk).exists()
+
+
+@pytest.mark.django_db
+def test_dataset_update_contact_options(app: DjangoTestApp):
+    org = OrganizationFactory()
+    org2 = OrganizationFactory()
+    publisher_org = OrganizationFactory(publisher=True)
+
+    user = UserFactory(is_staff=True, organization=org)
+    user2 = UserFactory(is_staff=True, organization = org)
+    user3 = UserFactory(is_staff=True)
+    publisher_user = UserFactory(is_staff=True, organization = publisher_org)
+    app.set_user(user)
+
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    form = app.get(reverse('dataset-change', args=[ds.pk])).forms['dataset-form']
+
+    form_options = sorted([option[2] for option in form.fields["contact"][0].options])
+    correct_options = sorted(['---------',
+                              org.title,
+                              publisher_org.title,
+                              f'{user.first_name} {user.last_name}',
+                              f'{user2.first_name} {user2.last_name}',
+                              f'{publisher_user.first_name} {publisher_user.last_name}'])
+    incorrect_options = sorted(['---------',
+                                org2.title,
+                                f'{user3.first_name} {user3.last_name}'])
+    assert form_options == correct_options
+    assert form_options != incorrect_options
+
+
+@pytest.mark.django_db
+def test_dataset_view_publisher_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    app.set_user(user)
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+    assert publisher_org.email in response.text
+    assert publisher_org.phone in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_view_user_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    ContactFactory(dataset = ds,
+                   object_id = user.pk,
+                   content_type = ContentType.objects.get_for_model(user),
+                   email = user.email,
+                   phone = user.phone,
+                   )
+
+    app.set_user(user)
+
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+
+    assert user.get_full_name() in response.text
+    assert user.email in response.text
+    assert user.phone in response.text
+
+
+@pytest.mark.django_db
+def test_dataset_view_organization_contacts(app: DjangoTestApp):
+    org = OrganizationFactory(website = 'https://org.lt')
+    publisher_org = OrganizationFactory(publisher=True, website = 'https://publisher.lt')
+    user = UserFactory(is_staff=True, organization=org)
+    ds = DatasetFactory(organization=org, publisher=publisher_org)
+    ContactFactory(dataset = ds,
+                   object_id = org.pk,
+                   content_type = ContentType.objects.get_for_model(org),
+                   email = org.email,
+                   phone = org.phone,
+                   )
+
+    app.set_user(user)
+
+    response = app.get(reverse('dataset-detail', args=[ds.pk]))
+    assert response.status_code == 200
+
+    assert org.title in response.text
+    assert org.website in response.text
+    assert org.email in response.text
+    assert org.phone in response.text
+
+    assert publisher_org.title in response.text
+    assert publisher_org.website in response.text
+
+
+

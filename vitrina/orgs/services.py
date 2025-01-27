@@ -10,7 +10,7 @@ from django.db.models import Model
 from django.db.models import Q
 
 from vitrina import settings
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
@@ -51,6 +51,10 @@ acl = {
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
     (Representative, Action.VIEW): [Role.COORDINATOR],
+    (Contact, Action.CREATE): [Role.COORDINATOR],
+    (Contact, Action.UPDATE): [Role.COORDINATOR],
+    (Contact, Action.DELETE): [Role.COORDINATOR],
+    (Contact, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],

@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina import settings
 from vitrina.datasets.forms import DatasetAdminForm
 from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, \
-    Relation, DatasetReport, GeoportalDataServiceTypeValue, GeoportalDataServiceType
+    Relation, DatasetReport, Contact, GeoportalDataServiceTypeValue, GeoportalDataServiceType
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
@@ -365,6 +365,25 @@ class DatasetReportAdmin(admin.ModelAdmin):
             })
 
 
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ( 'dataset', 'email', 'phone_display', 'content_type_display', 'content_object_display')
+    search_fields = ('email', 'phone', 'content_object')
+    title = _("Kontaktai")
+
+    def phone_display(self, obj):
+        return obj.phone
+    phone_display.short_description = _('Telefono numeris')
+
+    def content_type_display(self, obj):
+        return obj.content_type
+    content_type_display.short_description = _("Kontaktinio objekto tipas")
+
+    def content_object_display(self, obj):
+        return obj.content_object
+    content_object_display.short_description = _("Kontaktinis objektas")
+
+
+
 class GeoportalDataServiceTypeValueInline(admin.TabularInline):
     model = GeoportalDataServiceTypeValue
     extra = 0
@@ -388,6 +407,7 @@ admin.site.register(DataServiceSpecType, DataServiceSpecTypeAdmin)
 admin.site.register(Type, TypeAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
+admin.site.register(Contact, ContactAdmin)
 admin.site.register(GeoportalDataServiceType, GeoportalDataServiceTypeAdmin)
 
 tagulous.admin.register(Dataset.tags)

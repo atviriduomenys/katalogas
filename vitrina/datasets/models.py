@@ -3,11 +3,11 @@ import pathlib
 import tagulous
 import requests
 import reversion
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, ForeignKey
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -771,6 +771,33 @@ class Dataset(TranslatableModel):
                 en_description = response_desc.json()
                 self.description = en_description
 
+    def get_main_contact(self):
+        contacts = Contact.objects.filter(dataset=self, deleted__isnull=True)
+
+        user_contact = contacts.filter(content_type__model='user').first()
+        if user_contact:
+            return user_contact
+
+        org_contact = contacts.filter(content_type__model='organization').first()
+        if org_contact:
+            return org_contact
+
+        if self.publisher:
+            return self._create_virtual_contact(self.publisher)
+
+        return self._create_virtual_contact(self.organization)
+
+    def _create_virtual_contact(self, org: Organization):
+        content_type = ContentType.objects.get_for_model(org)
+        contact = Contact(
+            content_type=content_type,
+            object_id=org.id,
+            content_object=org,
+            dataset=self,
+            phone = org.phone if org.phone else None,
+        )
+        return contact
+
     def is_opened(self):
         return self.status == self.HAS_DATA
 
@@ -1272,6 +1299,62 @@ class DatasetStructureMapping(models.Model):
     class Meta:
         db_table = 'dataset_structure_mapping'
 
+
+class Contact(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    deleted = models.BooleanField(blank=True, null=True)
+    deleted_on = models.DateTimeField(blank=True, null=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        verbose_name=_("Content Type"),
+        limit_choices_to={
+            'model__in': ('organization', 'user')
+        }
+    )
+    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"))
+    content_object = GenericForeignKey('content_type', 'object_id')
+    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    email = models.EmailField(_("Email"), blank=True)
+    phone = models.CharField(_("Phone"), max_length=50, blank=True)
+
+    class Meta:
+        verbose_name = _("Kontaktas")
+        verbose_name_plural = _("Kontaktai")
+
+    def __str__(self):
+        if self.content_type.model == 'organization':
+            return self.content_object.title
+        return self.content_object.get_full_name()
+
+
+    def get_email(self):
+        if self.email:
+            return self.email
+        if hasattr(self.content_object, 'email'):
+            return self.content_object.email
+        return ''
+
+    def get_type(self):
+        if self.content_type == ContentType.objects.get_for_model(Organization):
+            return _('Organizacija')
+        elif self.content_type == ContentType.objects.get_for_model(User):
+            return _('Naudotojas')
+        return ''
+
+    def save(self, *args, **kwargs):
+        Contact.objects.filter(dataset=self.dataset).delete()
+        super().save(*args, **kwargs)
+
+    def get_acl_parents(self):
+        parents = [self]
+        if isinstance(self.content_object, Organization):
+            parents.extend(self.content_object.get_acl_parents())
+            return parents
+        parents.extend(self.content_object.organization.get_acl_parents())
+        return parents
 
 class GeoportalDataServiceType(models.Model):
     data_service_type = models.ForeignKey(DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE)

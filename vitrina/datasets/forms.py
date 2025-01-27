@@ -30,6 +30,7 @@ from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Dat
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
+from vitrina.users.models import User
 
 
 class DatasetTypeField(forms.ModelMultipleChoiceField):
@@ -71,6 +72,11 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             )
         ])
 
+    contact = forms.ChoiceField(
+        label=_('Kontaktinis asmuo ar organizacija'),
+        required=False
+    )
+
     creator = forms.ModelChoiceField( queryset=Organization.objects.all(),
                                     label=_('Duomenų rinkinio kūrėjas'),required=False)
 
@@ -94,6 +100,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'endpoint_description_type',
             'files',
             'name',
+            'contact',
             'creator',
             'publisher',
         )
@@ -135,6 +142,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('access_rights'),
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
+            Field('contact'),
             Field('creator'),
             Field('publisher'),
             Submit('submit', button, css_class='button is-primary')
@@ -183,6 +191,29 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.fields['publisher'].widget = HiddenInput()
             self.fields['creator'].widget = HiddenInput()
 
+        organization_contacts = Organization.objects.filter(
+            Q(id=self.instance.organization_id) |
+            (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
+        )
+        user_contacts = User.objects.filter(
+            Q(organization=self.instance.organization) |
+            (Q(organization=self.instance.publisher_id) if self.instance.publisher_id else Q())
+        )
+
+        self.fields['contact'].choices = [
+            ('', '---------'),
+        ]
+
+        for org in organization_contacts:
+            self.fields['contact'].choices.append(
+                (_(f'Organizacija:'), [(f"org-{org.id}", f'{org.title}')])
+            )
+            user_choices = [(f"user-{user.id}", f'{user.get_full_name()}')
+                            for user in user_contacts
+                            if user.organization_id == org.id]
+            self.fields['contact'].choices.append(
+                (_(f'Naudotojai:'), user_choices)
+            )
 
 
     def clean_type(self):
@@ -217,6 +248,16 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             if any([ch.isupper() for ch in name]):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
         return name
+
+    def clean_contact(self):
+        contact = self.cleaned_data.get('contact')
+        if contact:
+            contact_type, contact_id = contact.split('-')
+            if contact_type == 'org':
+                return Organization.objects.get(pk=contact_id)
+            elif contact_type == 'user':
+                return User.objects.get(pk=contact_id)
+        return None
 
 
 class DatasetAdminForm(forms.ModelForm):

@@ -2,6 +2,7 @@ from typing import Union
 
 import factory
 import faker
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from factory.django import DjangoModelFactory, FileField
 
@@ -10,7 +11,7 @@ from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, GeoportalDataServiceType, \
+    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, Contact, GeoportalDataServiceType, \
     GeoportalDataServiceTypeValue
 
 MANIFEST = '''\
@@ -203,6 +204,17 @@ class DataServiceSpecTypeFactory(DjangoModelFactory):
         model = DataServiceSpecType
 
     title = factory.Faker('word')
+
+
+class ContactFactory(DjangoModelFactory):
+    class Meta:
+        model = Contact
+    phone = factory.Faker('phone_number')
+    email = factory.Faker('email')
+    dataset = factory.SubFactory(DatasetFactory)
+    content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
+    object_id = factory.SelfAttribute('organization.id')
+
 
 
 class GeoportalDataServiceTypeFactory(DjangoModelFactory):

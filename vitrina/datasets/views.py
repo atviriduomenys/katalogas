@@ -74,7 +74,7 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
     get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
     manage_subscriptions_for_representative, DynamicResourceService
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
-    Relation, DatasetFile
+    Relation, DatasetFile, Contact
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.helpers import get_selected_value, Filter, DateFilter, send_email_with_logging, \
     get_stats_filter_options_based_on_model
@@ -906,7 +906,15 @@ class DatasetUpdateView(
                     'link': "%s%s" % (get_current_domain(self.request), self.object.get_absolute_url())
                 }
             )
-
+        contact = form.cleaned_data.get('contact')
+        if contact:
+            Contact.objects.create(
+                content_type = ContentType.objects.get_for_model(contact),
+                object_id = contact.pk,
+                dataset = self.object,
+                email = contact.email,
+                phone = contact.phone,
+            )
         self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -1217,6 +1225,10 @@ class CreateMemberView(
                 api_key
             ]))
 
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
+            self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -1357,6 +1369,11 @@ class UpdateMemberView(
                 ]))
         else:
             self.object.apikey_set.all().delete()
+
+        phone = form.cleaned_data.get('phone')
+        if phone:
+            self.object.phone = phone
+            self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
 

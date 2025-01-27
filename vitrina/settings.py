@@ -451,6 +451,9 @@ SPINTA_SERVER_CLIENT_SECRET = env('SPINTA_SERVER_CLIENT_SECRET', default='')
 SECURE_HSTS_SECONDS = 31536000 # The max-age must be at least 31536000 seconds (1 year)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
+if env('RECAPTCHA_SILENCE_KEY_ERROR', default=False):
+    SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error']
+
 RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY', default='')
 RECAPTCHA_PRIVATE_KEY = env('RECAPTCHA_PRIVATE_KEY', default='')
 

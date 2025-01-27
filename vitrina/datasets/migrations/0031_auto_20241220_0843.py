@@ -3,7 +3,75 @@
 from django.db import migrations
 
 
-def create_dataservice_if_not_exists(apps, schema_editor):
+def create_service_type(apps, schema_editor):
+    Type = apps.get_model('vitrina_datasets', 'Type')
+    if not Type.objects.filter(name='service').exists():
+        Type.objects.create(
+            name='service',
+            title='Paslauga'  # Adjust translation if needed
+        )
+
+def create_licence(apps, schema_editor):
+   Licence = apps.get_model('vitrina_classifiers', 'Licence')
+   if not Licence.objects.filter(title="Creative Commons Attribution 4.0").exists():
+       Licence.objects.create(
+           title="Creative Commons Attribution 4.0",
+           url="https://creativecommons.org/licenses/by/4.0/"
+       )
+
+def create_dataservice(apps, schema_editor):
+    DataServiceType = apps.get_model('vitrina_datasets', 'DataServiceType')
+    if not DataServiceType.objects.filter(title="Creative Commons Attribution 4.0").exists():
+        DataServiceType.objects.create(title="JSON")
+
+def create_dataservicesspecttype(apps, schema_editor):
+    DataServiceSpecType = apps.get_model('vitrina_datasets', 'DataServiceSpecType')
+    if not DataServiceSpecType.objects.filter(title="Manual").exists():
+        DataServiceSpecType.objects.create(title="Manual")
+
+def create_organization(apps, schema_editor):
+    Organization = apps.get_model('vitrina_orgs', 'Organization')
+    AreaOfManagement = apps.get_model('vitrina_classifiers', 'AreaOfManagement')
+
+    if not Organization.objects.filter(company_code='188772433').exists():
+        area = AreaOfManagement.objects.first() or AreaOfManagement.objects.create(title="Default")
+
+        Organization.objects.create(
+           title="Informacinės visuomenės plėtros komitetas",
+           company_code='188772433',
+           kind='gov',
+           is_public=True,
+           jurisdiction=area,
+           path='0001',
+           depth=1,
+           numchild=0
+       )
+
+def create_format(apps, schema_editor):
+    Format = apps.get_model('vitrina_resources', 'Format')
+
+    formats = [
+        {
+            'extension': 'API',
+            'mimetype': 'application/json',
+            'title': 'API',
+            'version': 1,
+            'rating': 3
+        },
+        {
+            'extension': 'UAPI',
+            'mimetype': 'application/json',
+            'title': 'UAPI',
+            'version': 1,
+            'rating': 3
+        }
+    ]
+
+    for format_data in formats:
+        if not Format.objects.filter(extension=format_data['extension']).exists():
+            Format.objects.create(**format_data)
+
+def create_dataset(apps, schema_editor):
     Dataset = apps.get_model('vitrina_datasets', 'Dataset')
     Type = apps.get_model('vitrina_datasets', 'Type')
     Licence = apps.get_model('vitrina_classifiers', 'Licence')
@@ -43,10 +111,10 @@ def process_api_format_distributions(apps, schema_editor):
     Format = apps.get_model('vitrina_resources', 'Format')
     Type = apps.get_model('vitrina_datasets', 'Type')
 
-    distributions = DatasetDistribution.objects.filter(format__extension='API').all()
+    distributions = DatasetDistribution.objects.filter(url_format__extension='API').all()
     for distribution in distributions:
         if not distribution:
-            return
+           return
 
         if distribution.download_url.startswith("https://get.data.gov.lt"):
             uapi_format = Format.objects.get(extension='UAPI')
@@ -57,7 +125,7 @@ def process_api_format_distributions(apps, schema_editor):
             dataset.service = True
             service_type = Type.objects.get(name="service")
             dataset.type.add(service_type)
-            dataset.endpoint_url = distribution.download_url
+            dataset.endpoint_url = distribution.url
             dataset.save()
             distribution.delete()
 
@@ -69,8 +137,7 @@ def assign_datasets_to_dataservice(apps, schema_editor):
     DatasetRelation = apps.get_model('vitrina_datasets', 'DatasetRelation')
     Relation = apps.get_model('vitrina_datasets', 'Relation')
 
-    uapi_format = Format.objects.get(extension='UAPI')
-    dataset_distributions = DatasetDistribution.objects.filter(format=uapi_format)
+    dataset_distributions = DatasetDistribution.objects.filter(url_format__extension="UAPI")
     dataset_ids = dataset_distributions.values_list('dataset_id', flat=True)
     datasets = Dataset.objects.filter(id__in=dataset_ids)
     dataservice = Dataset.objects.filter(service=True, endpoint_url = "https://get.data.gov.lt").first()
@@ -95,19 +162,22 @@ def create_jsonl_format_if_not_exists(apps, schema_editor):
             title='JSONL',
             version=1,
             rating=3,
-            media_type_uri='https://data.europa.eu/mqa/shacl-validator-ui/editor',
-            uri='https://data.europa.eu/mqa/shacl-validator-ui/editor'
         )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('vitrina_datasets', '0030_auto_20241210_1100'),
     ]
 
     operations = [
-        migrations.RunPython(create_dataservice_if_not_exists),
+        migrations.RunPython(create_service_type),
+        migrations.RunPython(create_licence),
+        migrations.RunPython(create_dataservice),
+        migrations.RunPython(create_dataservicesspecttype),
+        migrations.RunPython(create_organization),
+        migrations.RunPython(create_format),
+        migrations.RunPython(create_dataset),
         migrations.RunPython(process_api_format_distributions),
         migrations.RunPython(assign_datasets_to_dataservice),
         migrations.RunPython(create_jsonl_format_if_not_exists),

@@ -34,14 +34,14 @@ class Request(models.Model):
     ANSWERED = "ANSWERED"
     PLANNED = "PLANNED"
     APPROVED = "APPROVED"
-    STATUSES = {
+    STATUSES = (
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
         (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
         (PLANNED, _("Suplanuotas")),
         (APPROVED, _("Įvertintas"))
-    }
+    )
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
         REJECTED: _("Atmestas"),

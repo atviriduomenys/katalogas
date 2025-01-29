@@ -19,6 +19,28 @@
 </div>
 
 <style>
+:root {
+    --background-color: #fff;
+    --text-color: #000;
+    --border-color: #ccc;
+    --creator-item-bg: #f9f9f9;
+    --creator-remove-color: #999;
+    --creator-remove-hover-color: #c00;
+    --no-creators-color: #666;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #3d3f42;
+        --text-color: #fff;
+        --border-color: #e0e0e0;
+        --creator-item-bg: #3d3f42;
+        --creator-remove-color: #999;
+        --creator-remove-hover-color: #c00;
+        --no-creators-color: #666;
+    }
+}
+
 .form-row.field-existing_creators {
     width: 50%;
 }
@@ -27,10 +49,12 @@
 }
 
 .creator-list {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     padding: 10px;
-    height:300px;
+    height: 300px;
     overflow-y: scroll;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 .creator-item {
@@ -39,25 +63,25 @@
     align-items: center;
     padding: 5px 10px;
     margin: 2px 0;
-    background: #3d3f42;
-    border: 1px solid #e0e0e0;
+    background: var(--creator-item-bg);
+    border: 1px solid var(--border-color);
     border-radius: 3px;
 }
 
 .creator-remove {
     background: none;
     border: none;
-    color: #999;
+    color: var(--creator-remove-color);
     cursor: pointer;
     padding: 0 5px;
 }
 
 .creator-remove:hover {
-    color: #c00;
+    color: var(--creator-remove-hover-color);
 }
 
 .no-creators {
-    color: #666;
+    color: var(--no-creators-color);
     font-style: italic;
     padding: 5px;
 }

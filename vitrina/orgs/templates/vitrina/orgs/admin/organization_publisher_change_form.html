@@ -6,6 +6,7 @@
 {{ block.super }}
 
 <style>
+    @media (prefers-color-scheme: dark) {
         .select2-selection--single {
             background-color: #2a2c2e;
         }
@@ -18,15 +19,33 @@
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             color: #fff;
         }
-        #organization-message {
-            margin-top: 5px;
+    }
+
+    @media (prefers-color-scheme: light) {
+        .select2-selection--single {
+            background-color: #fff;
         }
-        .form-row.field-creator {
-            width: 50%;
+        .select2-dropdown {
+            background-color: #fff;
         }
-        .form-row.field-coordinator {
-            width: 50%;
+        .select2-container--default .select2-selection--single {
+            background-color: #fff;
         }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #000;
+        }
+        }
+    }
+
+    #organization-message {
+        margin-top: 5px;
+    }
+    .form-row.field-creator {
+        width: 50%;
+    }
+    .form-row.field-coordinator {
+        width: 50%;
+    }
 </style>
 
 <script>

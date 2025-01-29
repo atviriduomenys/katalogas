@@ -26,7 +26,8 @@ from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
+    Relation, DatasetExcludedGroups
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
@@ -456,7 +457,12 @@ class DatasetMemberCreateForm(RepresentativeCreateForm):
 
 class DatasetCategoryForm(Form):
     search = CharField(label=_("Paieška"), required=False)
-    group = ModelChoiceField(label=_("Grupė"), required=False, queryset=DatasetGroup.objects.all())
+    group = ModelMultipleChoiceField(
+        label=_("Grupės"),
+        required=False,
+        queryset=DatasetGroup.objects.all(),
+        widget=CheckboxSelectMultiple
+    )
     category = ModelMultipleChoiceField(
         label=_("Kategorija"),
         required=False,
@@ -483,6 +489,8 @@ class DatasetCategoryForm(Form):
         category_choices = category_choices[1:]
         self.fields['category'].choices = category_choices
         self.initial['category'] = self.dataset.category.all()
+
+        self.initial['group'] = DatasetGroup.objects.filter(category__in=self.dataset.category.all()).distinct()
 
 
 class PartOfWidget(ModelSelect2Widget):

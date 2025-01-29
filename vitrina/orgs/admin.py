@@ -154,11 +154,6 @@ class PublisherAdmin(admin.ModelAdmin):
                 assignment = Dataset.objects.get(pk=assignment)
                 assignment.publisher = None
                 assignment.save()
-            if model == Organization:
-                datasets = Dataset.objects.filter(organization_id=assignment)
-                for dataset in datasets:
-                    dataset.publisher = None
-                    dataset.save()
 
     @staticmethod
     def _handle_added_assignments(content_type, model, obj, added_assignments, role):
@@ -175,11 +170,6 @@ class PublisherAdmin(admin.ModelAdmin):
                 assignment = Dataset.objects.get(pk=assignment)
                 assignment.publisher = obj
                 assignment.save()
-            if model == Organization:
-                datasets = Dataset.objects.filter(organization_id=assignment)
-                for dataset in datasets:
-                    dataset.publisher = obj
-                    dataset.save()
 
     @staticmethod
     def _handle_removed_creators(obj, removed_creators):
@@ -191,12 +181,6 @@ class PublisherAdmin(admin.ModelAdmin):
             object_id__in=removed_creator_ids,
             organization=obj
         ).delete()
-
-        for org_id in removed_creator_ids:
-            datasets = Dataset.objects.filter(organization_id=org_id)
-            for dataset in datasets:
-                dataset.publisher = None
-                dataset.save()
 
     def delete_model(self, request, obj):
         obj.publisher = False

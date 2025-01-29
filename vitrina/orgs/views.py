@@ -970,12 +970,6 @@ class RepresentativeCreateView(
             if not organization.publisher:
                 organization.publisher = True
                 organization.save()
-            target_org = self.kwargs.get('organization_id')
-            datasets = Dataset.objects.filter(organization_id=target_org)
-            if datasets:
-                for dataset in datasets:
-                    dataset.publisher = organization
-                    dataset.save()
         else:
             if not SentMail.objects.filter(
                 Q(

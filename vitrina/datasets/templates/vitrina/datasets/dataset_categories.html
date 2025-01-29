@@ -23,13 +23,11 @@
 {% block scripts %}
     <script type="text/javascript">
         $(document).ready(function () {
-            let group = $('select#id_group');
             let search = $('input#id_search');
             let showSelected = $('input#show_selected_id');
 
             showSelected.on('click', function() {
                 let checked = $(this).is(":checked");
-                let groupId = group.val();
                 let term = search.val();
                 let datasetId = {{ dataset.pk }};
                 if (checked) {
@@ -40,7 +38,6 @@
                     $.ajax({
                         url: `/datasets/${datasetId}/filter_categories/`,
                         data: {
-                            group_id: groupId,
                             category_ids: checkedIds.join(','),
                             term: term,
                         }
@@ -65,57 +62,12 @@
                     });
                 }
                 else {
-                    group.trigger('change');
+                    search.trigger('input');
                 }
             });
-
-            group.on('change', function() {
-                let term = search.val();
-                let groupId = group.val();
-                let datasetId = {{ dataset.pk }};
-
-                let checked = $(showSelected).is(":checked");
-                let checkedIds = [];
-                if (checked){
-                    $('#div_id_category input:checked').each(function() {
-                        checkedIds.push($(this).val());
-                    });
-                }
-
-                $.ajax({
-                     url: `/datasets/${datasetId}/filter_categories/`,
-                     data: {
-                         group_id: groupId,
-                         category_ids: checkedIds.join(','),
-                         term: term,
-                     }
-                 }).then(response => {
-                     let categories = response['categories'];
-                     let ids = Object.keys(categories);
-                     let values = Object.values(categories);
-
-                     $('#div_id_category input').each(function() {
-                        if(!ids.includes($(this).val())) {
-                            $(this).parents('.control').hide();
-                        }
-                        else {
-                            $(this).parents('.control').show();
-                            let showCheckbox = categories[$(this).val()]['show_checkbox'];
-                            if (!showCheckbox) {
-                                $(this).prop( "disabled", true );
-                            }
-                            else {
-                                $(this).prop( "disabled", false );
-                            };
-                        }
-                     });
-                 });
-            });
-            group.trigger('change');
 
             search.on('input', function() {
                 let term = search.val();
-                let groupId = group.val();
                 let datasetId = {{ dataset.pk }};
 
                 let checkedIds = [];
@@ -128,7 +80,6 @@
                 $.ajax({
                     url: `/datasets/${datasetId}/filter_categories/`,
                     data: {
-                        group_id: groupId,
                         category_ids: checkedIds.join(','),
                         term: term,
                     }
@@ -153,6 +104,62 @@
                     });
                 });
             });
+
+            search.trigger('input');
         })
+
+
+        $(document).ready(function () {
+            let search = $('input#id_search');
+            let showSelected = $('input#show_selected_id');
+            let categoryField = $('#div_id_category');
+
+            function updateGroups() {
+                let datasetId = {{ dataset.pk }};
+                let categoryIds = [];
+                $('#div_id_category input:checked').each(function() {
+                    categoryIds.push($(this).val());
+                });
+
+                $.ajax({
+                    url: `/datasets/${datasetId}/filter_groups/`,
+                    data: {
+                        category_ids: categoryIds.join(',')
+                    }
+                }).then(response => {
+                    let groups = response['groups'];
+                    let groupField = $('#div_id_group');
+                    groupField.find('.control').each(function() {
+                        let groupId = $(this).find('input').val();
+                        if (groups[groupId]) {
+                            $(this).show();
+                            let checked = groups[groupId]['checked'] ? 'checked' : '';
+                            $(this).find('input').prop('checked', checked);
+                        } else {
+                            $(this).hide();
+                            $(this).find('input').prop('checked', false);
+                        }
+                    });
+
+                    if (Object.keys(groups).length === 0) {
+                        if (groupField.find('p').length === 0) {
+                            groupField.append('<p>{% translate "Pasirinkite kategoriją." %}</p>');
+                        }
+                    } else {
+                        groupField.find('p').remove();
+                    }
+                });
+            }
+
+            showSelected.on('click', function() {
+                updateGroups();
+            });
+
+            categoryField.on('change', function() {
+                updateGroups();
+            });
+
+            updateGroups();
+        });
     </script>
 {% endblock %}

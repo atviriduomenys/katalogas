@@ -13,7 +13,7 @@ from vitrina.datasets.views import (
     DatasetDeletePlanView, DatasetPlansHistoryView, DatasetDeletePlanDetailView, DatasetRepresentativeApiKeyView,
     UpdateDatasetOrgFilters, UpdateDatasetCategoryFilters, UpdateDatasetTagFilters, UpdateDatasetJurisdictionFilters,
     OpenDataPortalDatasetDetailView, DatasetRedirectView, DatasetDeleteView, DatasetsAccessRightsView,
-    DatasetsPublishersView, UpdateDatasetPublisherFilters
+    DatasetsPublishersView, UpdateDatasetPublisherFilters, FilterGroupsView
 )
 
 urlpatterns = [
@@ -96,6 +96,7 @@ urlpatterns = [
          name='open-data-portal-dataset'),
     path('datasets/<int:dataset_id>/category/', DatasetCategoryView.as_view(), name='assign-category'),
     path('datasets/<int:dataset_id>/filter_categories/', FilterCategoryView.as_view(), name='filter-categories'),
+    path('datasets/<int:dataset_id>/filter_groups/', FilterGroupsView.as_view(), name='filter-groups'),
     path('datasets/<int:dataset_id>/attribution/add/', DatasetAttributionCreateView.as_view(), name="attribution-add"),
     path('datasets/<int:dataset_id>/attribution/delete/<int:pk>',
          DatasetAttributionDeleteView.as_view(), name="attribution-delete"),

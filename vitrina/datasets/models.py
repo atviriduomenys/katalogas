@@ -312,10 +312,14 @@ class Dataset(TranslatableModel):
 
     def get_all_groups(self):
         ids = self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
-        return DatasetGroup.objects.filter(pk__in=ids)
+        return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self):
-        return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct())
+        return list(self.category.filter(groups__isnull=False).values_list('groups__pk', flat=True).distinct()
+                    .exclude(pk__in=self.get_excluded_groups()))
+
+    def get_excluded_groups(self):
+        return set(DatasetExcludedGroups.objects.filter(dataset=self).values_list('group__pk', flat=True))
 
     def get_parent_organization_title(self):
         if self.organization:
@@ -1383,3 +1387,12 @@ class GeoportalDataServiceTypeValue(models.Model):
 
     def __str__(self):
         return self.value
+
+
+class DatasetExcludedGroups(models.Model):
+    dataset = models.ForeignKey('Dataset', on_delete=models.CASCADE, related_name='excluded_groups')
+    group = models.ForeignKey('DatasetGroup', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dataset', 'group')
+        db_table = 'dataset_excluded_groups'

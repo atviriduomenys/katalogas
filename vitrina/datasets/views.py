@@ -74,7 +74,7 @@ from vitrina.datasets.services import update_facet_data, get_projects, get_frequ
     get_total_by_indicator_from_stats, has_remove_from_request_perm, get_values_for_frequency, get_query_for_frequency, \
     manage_subscriptions_for_representative, DynamicResourceService
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
-    Relation, DatasetFile, Contact
+    Relation, DatasetFile, Contact, DatasetExcludedGroups
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.helpers import get_selected_value, Filter, DateFilter, send_email_with_logging, \
     get_stats_filter_options_based_on_model
@@ -2633,9 +2633,29 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
             for category in form.cleaned_data.get('category'):
                 self.dataset.category.add(category)
             self.dataset.save()
+
+            DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
+            for group in DatasetGroup.objects.filter(category__in=form.cleaned_data.get('category')).distinct():
+                if group not in form.cleaned_data.get('group'):
+                    DatasetExcludedGroups.objects.create(dataset=self.dataset, group=group)
         else:
             messages.error(request, '\n'.join([error[0] for error in form.errors.values()]))
         return redirect(self.dataset.get_absolute_url())
+
+
+class FilterGroupsView(LoginRequiredMixin, View):
+    @staticmethod
+    def get(request, *args, **kwargs):
+        dataset_id = kwargs.get('dataset_id')
+        dataset = get_object_or_404(Dataset, pk=dataset_id)
+        category_ids = request.GET.get('category_ids', '').split(',')  \
+            if request.GET.get('category_ids') else []
+
+        groups = DatasetGroup.objects.filter(category__in=category_ids).distinct()
+        excluded_groups = dataset.get_excluded_groups()
+        group_data = {group.pk: {'title': group.title, 'checked': group.pk not in excluded_groups}
+                      for group in groups}
+        return JsonResponse({'groups': group_data})
 
 
 class FilterCategoryView(LoginRequiredMixin, View):

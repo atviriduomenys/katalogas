@@ -60,91 +60,6 @@ def publisher_org():
 def creator_org():
     return OrganizationFactory(publisher=False)
 
-@pytest.mark.django_db
-def test_form_initial_load(app: DjangoTestApp, admin_user: User, publisher_org: Organization):
-    app.set_user(admin_user)
-    response = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    )
-
-    form = response.forms['publisherorganization_form']
-    assert form['coordinator'].value == ''
-    assert form['existing_creators'].value == ''
-    assert form['removed_creators'].value == ''
-
-
-@pytest.mark.django_db
-def test_admin_publisher_add_new_creator(app, admin_user, publisher_org, monkeypatch):
-    def mock_get_data_from_spinta(*args, **kwargs):
-        return {
-            '_data': [{
-                'ja_pavadinimas': 'Test Organization',
-                'ja_kodas': '123456789',
-                'pilnas_adresas': 'Test Address 1'
-            }]
-        }
-
-    existing_org = OrganizationFactory(company_code='123456789')
-    for ds in ['tst-1', 'tst-2']:
-        DatasetFactory(slug=ds, organization=existing_org)
-
-    monkeypatch.setattr(forms, 'get_data_from_spinta', mock_get_data_from_spinta)
-    app.set_user(admin_user)
-    response = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    )
-    form = response.forms['publisherorganization_form']
-
-    form.fields['creator'][0].options.append(('123456789', False, 'Test Organization'))
-    form['creator'] = '123456789'
-    response = form.submit()
-
-    assert response.status_code == 302
-    assert Representative.objects.filter(
-        organization=publisher_org,
-        content_type=ContentType.objects.get_for_model(Organization),
-        object_id=existing_org.id
-    ).exists()
-
-    ds = Dataset.objects.filter(publisher=publisher_org)
-    assert ds.count() == 2
-    assert sorted(list(ds.values_list('slug', flat=True))) == ['tst-1', 'tst-2']
-
-@pytest.mark.django_db
-def test_admin_publisher_remove_creator(app: DjangoTestApp, admin_user: User, publisher_org: Organization):
-    existing_org = OrganizationFactory()
-    for ds in ['tst-1', 'tst-2']:
-        DatasetFactory(slug=ds, organization=existing_org, publisher=publisher_org)
-    Representative.objects.create(
-        organization=publisher_org,
-        content_type=ContentType.objects.get_for_model(Organization),
-        object_id=existing_org.pk
-    )
-
-    ds_before = Dataset.objects.filter(publisher=publisher_org)
-    assert ds_before.count() == 2
-    assert sorted(list(ds_before.values_list('slug', flat=True))) == ['tst-1', 'tst-2']
-
-    app.set_user(admin_user)
-    form = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    ).forms['publisherorganization_form']
-    form['removed_creators'] = str(existing_org.id)
-    response = form.submit()
-
-    assert response.status_code == 302
-    assert not Representative.objects.filter(
-        organization=publisher_org,
-        object_id=existing_org.id
-    ).exists()
-
-    ds = Dataset.objects.filter(publisher=publisher_org)
-    assert ds.count() == 0
-    assert list(ds.values_list('slug', flat=True)) == []
-
 
 @pytest.mark.django_db
 def test_admin_dataset_assign(app: DjangoTestApp, admin_user: User, publisher_org: Organization):
@@ -198,4 +113,51 @@ def test_admin_dataset_remove(app: DjangoTestApp, admin_user: User, publisher_or
             content_type=ContentType.objects.get_for_model(Dataset),
             object_id=dataset.id
         ).exists()
+
+
+@pytest.mark.django_db
+def test_admin_organization_assign(app: DjangoTestApp, admin_user: User, publisher_org: Organization):
+    orgs = [OrganizationFactory() for _ in range(3)]
+
+    app.set_user(admin_user)
+    form = app.get(
+        reverse('admin:vitrina_orgs_publisherorganization_change',
+                args=[publisher_org.pk])
+    ).forms['publisherorganization_form']
+
+    form['creator_assignment'] = [str(org.id) for org in orgs]
+    response = form.submit()
+
+    assert response.status_code == 302
+    for org in orgs:
+        assert Representative.objects.filter(
+            organization=publisher_org,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=org.id
+        ).exists()
+
+
+@pytest.mark.django_db
+def test_admin_organization_remove(app: DjangoTestApp, admin_user: User, publisher_org: Organization):
+    orgs = [OrganizationFactory() for _ in range(3)]
+    app.set_user(admin_user)
+    for org in orgs:
+        Representative.objects.create(
+            organization=publisher_org,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=org.id
+        )
+    form = app.get(
+        reverse('admin:vitrina_orgs_publisherorganization_change',
+                args=[publisher_org.pk])
+    ).forms['publisherorganization_form']
+    form['creator_assignment'] = [str(orgs[0].id), str(orgs[1].id)]
+    response = form.submit()
+    assert response.status_code == 302
+
+    assert not Representative.objects.filter(
+        organization=publisher_org,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=orgs[2].id
+    ).exists()
 

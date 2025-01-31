@@ -65,7 +65,6 @@ class PublisherAdmin(admin.ModelAdmin):
     list_display = ['title']
     search_fields = ('title',)
     actions = ['remove_publisher_status']
-    change_list_template = 'vitrina/orgs/admin/organization_publisher_change_list.html'
     change_form_template = 'vitrina/orgs/admin/organization_publisher_change_form.html'
     form = AdminPublisherAssignedOrganizationForm
 
@@ -81,37 +80,17 @@ class PublisherAdmin(admin.ModelAdmin):
         if not change:
             return
 
-        creator = form.cleaned_data.get('creator')
-        coordinator = form.cleaned_data.get('coordinator')
-
-        if creator and coordinator:
-            Representative.objects.create(
-                object_id=creator.pk,
-                content_type=ContentType.objects.get_for_model(Organization),
-                user=coordinator,
-                email=coordinator.email,
-                first_name=coordinator.first_name,
-                last_name=coordinator.last_name,
-                phone=coordinator.phone,
-                role=Representative.COORDINATOR,
-            )
-
-        if isinstance(creator, Organization):
-            self._update_assignments(
-                obj,
-                [creator],
-                Organization,
-                Representative.MANAGER
-            )
-
-        removed_creators = form.cleaned_data.get('removed_creators')
-        if removed_creators:
-            self._handle_removed_creators(obj, removed_creators)
+        self._update_assignments(
+            obj,
+            set(form.cleaned_data['datasets'].values_list('id', flat=True)),
+            Dataset,
+            Representative.MANAGER
+        )
 
         self._update_assignments(
             obj,
-            form.cleaned_data['datasets'],
-            Dataset,
+            set(form.cleaned_data['creator_assignment'].values_list('id', flat=True)),
+            Organization,
             Representative.MANAGER
         )
 
@@ -124,14 +103,8 @@ class PublisherAdmin(admin.ModelAdmin):
             ).values_list('object_id', flat=True)
         ).values_list('id', flat=True))
 
-        removed_assignments = set()
-        # If new assignments is a list it is for added organizations and a queryset is not needed
-        if isinstance(new_assignments, list):
-            added_assignments = set(new_assignments)
-        else:
-            new_assignments = set(new_assignments.values_list('id', flat=True))
-            removed_assignments = current_assignments - new_assignments
-            added_assignments = new_assignments - current_assignments
+        removed_assignments = current_assignments - new_assignments
+        added_assignments = new_assignments - current_assignments
 
         if removed_assignments:
             self._handle_removed_assignments(content_type, model, obj, removed_assignments)
@@ -155,12 +128,13 @@ class PublisherAdmin(admin.ModelAdmin):
                 assignment.publisher = None
                 assignment.save()
 
+
     @staticmethod
     def _handle_added_assignments(content_type, model, obj, added_assignments, role):
         for assignment in added_assignments:
             if isinstance(assignment, model):
                 assignment = assignment.pk
-            Representative.objects.create(
+            Representative.objects.get_or_create(
                 content_type=content_type,
                 object_id=assignment,
                 organization=obj,
@@ -170,17 +144,6 @@ class PublisherAdmin(admin.ModelAdmin):
                 assignment = Dataset.objects.get(pk=assignment)
                 assignment.publisher = obj
                 assignment.save()
-
-    @staticmethod
-    def _handle_removed_creators(obj, removed_creators):
-        removed_creator_ids = list(map(int, removed_creators.split(',')))
-        content_type = ContentType.objects.get_for_model(Organization)
-
-        Representative.objects.filter(
-            content_type=content_type,
-            object_id__in=removed_creator_ids,
-            organization=obj
-        ).delete()
 
     def delete_model(self, request, obj):
         obj.publisher = False
@@ -209,16 +172,10 @@ class PublisherAdmin(admin.ModelAdmin):
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         extra_context = extra_context or {}
         extra_context['title'] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
-        extra_context['chosen_title_datasets'] = _("Sąrašas duomenų rinkinių, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju")
-        extra_context['available_title_datasets'] = _("Galimi duomenų rinkiniai")
         extra_context['show_save_and_add_another'] = False
         extra_context['show_save_and_continue'] = False
-        extra_context['input_too_short_message'] = _("Įveskite bent 3 simbolius...")
-        extra_context['no_results_message'] = _("Rezultatų nerasta")
-        extra_context['searching_message'] = _("Ieškoma...")
-        extra_context['remote_organization_not_exist'] = _("Pasirinktos organizacijos nėra, nurodykite koordinatorių naujai organizacijai.")
-        extra_context['remote_organization_exists'] = _("Pasirinkta organizacija egzistuoja")
-        extra_context['coordinator_required_message'] = _("Privaloma nurodyti koordinatorių naujai organizacijai.")
+        extra_context['publisher_id'] = object_id
+
         return super().changeform_view(request, object_id, form_url, extra_context)
 
     def add_view(self, request, form_url='', extra_context=None):

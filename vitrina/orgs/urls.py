@@ -1,7 +1,6 @@
 from django.urls import path
 
 from vitrina.datasets.views import DatasetListView
-from vitrina.orgs.helpers import check_organization
 from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, RepresentativeUpdateView, \
     RepresentativeDeleteView, OrganizationManagementsView, OrganizationUpdateView, OrganizationApiKeysView, \
     OrganizationApiKeysCreateView, OrganizationApiKeysUpdateView, OrganizationApiKeysDeleteView, \
@@ -9,7 +8,8 @@ from vitrina.orgs.views import OrganizationListView, RepresentativeCreateView, R
     OrganizationApiKeysScopeDeleteView, OrganizationApiKeysScopeToggleView, OrganizationApiKeysRegenerateView, \
     OrganizationApiKeysScopeObjectChangeView, OrganizationApiKeysScopeObjectDeleteView, \
     OrganizationApiKeysScopeObjectToggleView, OrganizationApiKeysToggleView, AdminRemoteOrganizationSearchView, \
-    OrganizationContactsView, ContactCreateView, ContactUpdateView, ContactDeleteView
+    OrganizationContactsView, ContactCreateView, ContactUpdateView, ContactDeleteView, create_remote_organization, \
+    check_organization
 from vitrina.orgs.views import OrganizationDetailView, OrganizationMembersView, \
      RepresentativeRegisterView, PartnerRegisterInfoView, \
      PartnerRegisterView, OrganizationPlanView, OrganizationPlanCreateView, \
@@ -96,6 +96,7 @@ urlpatterns = [
     path('orgs/remote-organization-search/',
          AdminRemoteOrganizationSearchView.as_view(),
          name='organization-search'),
+    path('orgs/remote-organization-create/', create_remote_organization, name='create-remote-organization'),
     path('orgs/remote-organization-check/', check_organization, name='check-organization'),
     # @GetMapping("/partner/register")
     # @PostMapping("/partner/register")

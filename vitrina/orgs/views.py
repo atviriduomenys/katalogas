@@ -970,12 +970,6 @@ class RepresentativeCreateView(
             if not organization.publisher:
                 organization.publisher = True
                 organization.save()
-            target_org = self.kwargs.get('organization_id')
-            datasets = Dataset.objects.filter(organization_id=target_org)
-            if datasets:
-                for dataset in datasets:
-                    dataset.publisher = organization
-                    dataset.save()
         else:
             if not SentMail.objects.filter(
                 Q(
@@ -2917,3 +2911,64 @@ class AdminRemoteOrganizationSearchView(TemplateView):
             })
 
         return JsonResponse({'results': results})
+
+
+def create_remote_organization(request):
+    company_code = request.GET.get('company_code')
+    publisher_id = request.GET.get('publisher_id')
+    coordinator_id = request.GET.get('coordinator_id')
+    exists = Organization.objects.filter(company_code=company_code).exists()
+    model_uri = 'datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo'
+    query_uri = "ja_kodas={}"
+    org = None
+
+    if not exists:
+        data = get_data_from_spinta(
+            model=model_uri,
+            query=query_uri.format(company_code)
+        )
+        organization_data = data.get('_data', [])
+
+        errors = data.get('errors', [])
+        if errors:
+            return JsonResponse({'errors': errors})
+
+        if organization_data:
+            org = Organization.add_root(
+                title=organization_data[0].get('ja_pavadinimas'),
+                company_code=organization_data[0].get('ja_kodas'),
+                address=organization_data[0].get('pilnas_adresas'),
+                is_public=True,
+                publisher=False,
+            )
+            org.save()
+    if exists:
+        org = Organization.objects.get(company_code=company_code)
+
+    if org:
+        content_type = ContentType.objects.get_for_model(Organization)
+
+        if publisher := Organization.objects.filter(pk=publisher_id):
+            Representative.objects.get_or_create(
+                content_type=content_type,
+                object_id=org.id,
+                organization=publisher.first(),
+                role=Representative.MANAGER
+            )
+        if coordinator_id:
+            coordinator = User.objects.filter(pk=coordinator_id).first()
+            Representative.objects.get_or_create(
+                content_type=content_type,
+                object_id=org.id,
+                user=coordinator,
+                email = coordinator.email,
+                role=Representative.COORDINATOR
+            )
+
+    return JsonResponse({'organization': org.pk if org else None})
+
+
+def check_organization(request):
+    company_code = request.GET.get('company_code')
+    exists = Organization.objects.filter(company_code=company_code).exists()
+    return JsonResponse({'exists': exists})

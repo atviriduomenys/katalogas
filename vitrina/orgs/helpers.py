@@ -1,6 +1,6 @@
 from typing import Union
 
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import AreaOfManagement
@@ -30,9 +30,3 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
         )
         parent_org.save()
     return parent_org
-
-
-def check_organization(request):
-    company_code = request.GET.get('company_code')
-    exists = Organization.objects.filter(company_code=company_code).exists()
-    return JsonResponse({'exists': exists})

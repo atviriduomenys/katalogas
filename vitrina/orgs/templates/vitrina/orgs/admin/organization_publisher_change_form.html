@@ -6,6 +6,7 @@
 {{ block.super }}
 
 <style>
+    @media (prefers-color-scheme: dark) {
         .select2-selection--single {
             background-color: #2a2c2e;
         }
@@ -18,15 +19,93 @@
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             color: #fff;
         }
-        #organization-message {
-            margin-top: 5px;
+    }
+
+    @media (prefers-color-scheme: light) {
+        .select2-selection--single {
+            background-color: #fff;
         }
-        .form-row.field-creator {
-            width: 50%;
+        .select2-dropdown {
+            background-color: #fff;
         }
-        .form-row.field-coordinator {
-            width: 50%;
+        .select2-container--default .select2-selection--single {
+            background-color: #fff;
         }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #000;
+        }
+        }
+    }
+
+    #organization-message {
+        margin-top: 5px;
+    }
+    .form-row.field-creator {
+        width: 50%;
+    }
+    .form-row.field-coordinator {
+        width: 50%;
+    }
+
+      .creator-actions {
+        margin-top: 10px;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .preview-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .preview-content {
+        position: relative;
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 5px;
+    }
+
+    .preview-header {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .preview-section {
+        margin-bottom: 20px;
+    }
+
+    .preview-actions {
+        text-align: right;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .preview-content {
+            background-color: #2a2c2e;
+            color: #fff;
+        }
+
+        .preview-header {
+            border-bottom-color: #444;
+        }
+
+        .preview-actions {
+            border-top-color: #444;
+        }
+    }
 </style>
 
 <script>
@@ -36,18 +115,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const chosenTitleDataset = document.querySelector('.field-datasets .selector-chosen h2');
 
         if (availableTitleDataset) {
-            availableTitleDataset.textContent = '{{ available_title_datasets|escapejs }}';
+            availableTitleDataset.textContent = '{% translate 'Galimi duomenų rinkiniai' %}';
         }
         if (chosenTitleDataset) {
-            chosenTitleDataset.textContent = '{{ chosen_title_datasets|escapejs }}';
+            chosenTitleDataset.textContent = '{% translate 'Sąrašas duomenų rinkinių, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju' %}';
         }
 
-        const datasetsField = document.querySelector('.form-row.field-datasets');
-        const removedCreatorsField = document.querySelector('.form-row.hidden.field-removed_creators');
-        if (datasetsField && removedCreatorsField) {
-            const hr = document.createElement('hr');
-            hr.style.margin = '60px 0';
-            datasetsField.parentNode.insertBefore(hr, removedCreatorsField);
+        const availableTitleOrg = document.querySelector('.field-creator_assignment .selector-available h2');
+        const chosenTitleOrg = document.querySelector('.field-creator_assignment .selector-chosen h2');
+
+        if (availableTitleOrg) {
+            availableTitleOrg.textContent = '{% translate 'Galimos organizacijos' %}';
+        }
+        if (chosenTitleOrg) {
+            chosenTitleOrg.textContent = '{% translate 'Sąrašas organizacijų, kurių atžvilgiu tampama duomenų atvėrimo paslaugų teikėju' %}';
         }
     }, 100);
 });
@@ -64,13 +145,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     minimumInputLength: 3,
                     language: {
                         inputTooShort: function() {
-                            return "{{ input_too_short_message }}";
+                            return "{% translate 'Įveskite bent 3 simbolius...' %}";
                         },
                         noResults: function() {
-                            return "{{ no_results_message }}";
+                            return "{% translate 'Rezultatų nerasta' %}";
                         },
                         searching: function() {
-                            return "{{ searching_message }}";
+                            return "{% translate 'Ieškoma...' %}";
                         }
                     },
                     ajax: {
@@ -114,13 +195,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         url: '{% url "check-organization" %}',
                         data: {'company_code': company_code},
                         success: function(data) {
+                            window.organizationExists = data.exists;
                             if (data.exists) {
                                 if ($('#organization-message').length === 0) {
                                     var messageDiv = $('<div>', { id: 'organization-message' });
                                     $('.form-row.field-creator').append(messageDiv);
                                 }
 
-                                $('#organization-message').text("{{ remote_organization_exists }}").css('color', 'green');
+                                $('#organization-message').text("{% translate 'Pasirinkta organizacija egzistuoja' %}").css('color', 'green');
                                 $('.form-row.field-coordinator').hide();
                                 $('#id_coordinator').prop('required', false);
                             } else {
@@ -129,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     $('.form-row.field-creator').append(messageDiv);
                                 }
 
-                                $('#organization-message').text("{{ remote_organization_not_exist }}").css('color', 'red');
+                                $('#organization-message').text("{% translate 'Pasirinktos organizacijos nėra, nurodykite koordinatorių naujai organizacijai.' %}").css('color', 'red');
                                 $('.form-row.field-coordinator').show();
                                 $('#id_coordinator').prop('required', true);
                             }
@@ -147,27 +229,107 @@ document.addEventListener('DOMContentLoaded', function() {
                     $('#organization-message').remove();
                 });
 
-                $('form').on('submit', function(e) {
-                    const creatorField = $('#id_creator');
-                    const coordinatorField = $('#id_coordinator');
-                    const organizationExists = $('#organization-message').css('color') === 'rgb(0, 128, 0)';
-
-                    if (creatorField.val() && creatorField.val().trim() !== '') {
-                        if (!organizationExists && (!coordinatorField.val() || coordinatorField.val().trim() === '')) {
-                            e.preventDefault();
-                            alert('{{ coordinator_required_message }}');
-                            coordinatorField.focus();
-                        }
-                    }
-                });
-
             } catch (error) {
                 console.error('Error initializing Select2:', error);
             }
         } else {
             console.error('Required elements not found');
         }
-    });
+
+        const previewModal = document.createElement('div');
+        previewModal.className = 'preview-modal';
+        previewModal.innerHTML = `
+            <div class="preview-content">
+                <div class="preview-header">
+                    <h2>{% translate 'Patvirtinkite pakeitimus' %}</h2>
+                </div>
+                <div class="preview-section new-creator">
+                    <h3>Nauji kūrėjai</h3>
+                    <div class="new-creators-list"></div>
+                </div>
+                <div class="preview-actions">
+                    <button type="button" class="cancel-btn">{% translate 'Atšaukti' %}</button>
+                    <button type="button" class="confirm-btn">{% translate 'Patvirtinti' %}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(previewModal);
+
+        const addCreatorBtn = document.createElement('button');
+        addCreatorBtn.type = 'button';
+        addCreatorBtn.id = 'add-creator-btn';
+        addCreatorBtn.className = 'add-creator-btn';
+        addCreatorBtn.innerHTML = '<span>+</span> {% translate 'Pridėti' %}';
+
+        const creatorField = document.querySelector('.form-row.field-creator');
+        const coordinatorField = document.querySelector('.form-row.field-coordinator');
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'creator-actions';
+        actionsDiv.appendChild(addCreatorBtn);
+        creatorField.parentNode.insertBefore(actionsDiv, coordinatorField.nextSibling);
+
+        addCreatorBtn.onclick = function() {
+           const creatorField = document.getElementById('id_creator');
+           const companyCode = creatorField.value.trim();
+
+
+           if (companyCode) {
+                const coordinatorField = document.getElementById('id_coordinator');
+                const exists = window.organizationExists;
+                if (!exists && !coordinatorField.value) {
+                        alert("{% translate 'Privaloma nurodyti koordinatorių naujai organizacijai.' %}");
+                        return;
+                    }
+
+                previewModal.style.display = 'block';
+                companyName = document.querySelector('.remote-organization-select option:checked').textContent;
+                const coordinatorName = coordinatorField ? coordinatorField.options[coordinatorField.selectedIndex].text : '';
+
+                creatorInfo = document.createElement('div');
+                creatorInfo.className = 'new-creators-list';
+                const newCreatorSection = previewModal.querySelector('.new-creator');
+                newCreatorSection.innerHTML = '';
+                newCreatorSection.appendChild(creatorInfo);
+
+                creatorInfo.innerHTML = `
+                    <p><strong>{% translate 'Įmonės kodas' %}:</strong> ${companyCode}</p>
+                    <p><strong>{% translate 'Įmonės pavadinimas' %}:</strong> ${companyName}</p>
+                    <p><strong>{% translate 'Ar organizacija egzistuoja?' %}:</strong> ${exists ? 'Taip' : 'Ne'}</p>
+                    ${!exists ? `<p>{% translate '*Pastaba: Bus sukurta nauja organizacija.' %}</p>` : ''}
+                    ${!exists ? `<p><strong>{% translate 'Koordinatorius' %}:</strong> ${coordinatorName}</p>` : ''}
+                `;
+
+           } else {
+                alert("{% translate 'Pasirinktie duomenų rinkino kūrėją' %}");
+           }
+        };
+
+        previewModal.querySelector('.cancel-btn').onclick = function() {
+            previewModal.style.display = 'none';
+        };
+
+        previewModal.querySelector('.confirm-btn').onclick = function() {
+            previewModal.style.display = 'none';
+            const companyCode = document.getElementById('id_creator').value;
+            const coordinatorId = document.getElementById('id_coordinator').value;
+            const exists = window.organizationExists;
+            $.ajax({
+                url: '{% url "create-remote-organization" %}',
+                data: {
+                    'company_code': companyCode,
+                    'coordinator_id': coordinatorId,
+                    'publisher_id': '{{ publisher_id }}'
+                },
+                success: function(data) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+            };
+        });
+
 })(django.jQuery);
 </script>
 {% endblock %}

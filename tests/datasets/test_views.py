@@ -2619,10 +2619,11 @@ def test_create_dataset_creator_options(app):
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
     options = [option[2] for option in form.fields["creator"][0].options]
-    assert len(options) == 4 # includes default option
+    assert len(options) == 5 # includes default option
     assert org.title in options
     assert org2.title in options
     assert org3.title in options
+    assert publisher_org.title in options
 
 
 @pytest.mark.django_db

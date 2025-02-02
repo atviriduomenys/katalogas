@@ -84,6 +84,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
                                     label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
 
+    managed_by_publisher = forms.BooleanField(label=_('Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?'), required=False)
+
     class Meta:
         model = Dataset
         fields = (
@@ -104,6 +106,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             'contact',
             'creator',
             'publisher',
+            'managed_by_publisher'
         )
         labels = {
             'tags': _("Žymės"),
@@ -144,6 +147,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field('distribution_conditions',
                   placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
             Field('contact'),
+            Field('managed_by_publisher'),
             Field('creator'),
             Field('publisher'),
             Submit('submit', button, css_class='button is-primary')
@@ -164,33 +168,54 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             if instance.name:
                 self.initial['name'] = instance.name
 
-        # self.organization is only available in Create view
-        if self.request.user and self.organization:
+        if self.request.user and self.request.user.organization:
+            """
+            Publishers:
+            - Can assign themselves as the publisher of the dataset via managed_by_publisher field
+                (If they are set as a publisher for the dataset.organization)
+            - Can change the creator of the dataset
+            Creators:
+            - Can assign the publisher of the dataset
+            Superusers:
+            - Can do the same as publishers and creators
+            """
             creator_ids = Representative.objects.filter(
                 organization=self.request.user.organization,
                 content_type=ContentType.objects.get_for_model(Organization)
             ).values_list('object_id', flat=True)
-            self.fields['creator'].queryset = Organization.objects.filter(Q(id__in=creator_ids) | Q(id=self.organization.id))
+            self.fields['creator'].queryset = Organization.objects.filter(Q(id__in=creator_ids) |
+                                                                          Q(id=self.request.user.organization.id))
+            if self.request.user.organization.publisher:
+                # Show creator (Meant for publishers)
+                self.fields['managed_by_publisher'].initial = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(self.instance),
+                    object_id=self.instance.id,
+                    organization=self.request.user.organization
+                ).exists()
 
-            if (getattr(self.request.user.organization, 'publisher', False)
-                    or self.request.user.is_superuser):
-                # Show creator
                 if self.organization:
                     self.fields['creator'].initial = self.organization
-                self.fields['publisher'].widget = HiddenInput()
-            else:
-                # Show publisher
+                else:
+                    self.fields['creator'].initial = self.instance.organization
+                if not self.request.user.is_superuser:
+                    self.fields['publisher'].widget = HiddenInput()
+
+            if not self.request.user.organization.publisher:
+                # Show publisher (Meant for creators)
                 representative = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(Organization),
-                    object_id=self.organization.id,
+                    object_id=self.organization.id if self.organization else self.instance.organization.id,
                     organization__isnull=False
                 )
-                if representative and representative.first().organization.publisher:
+                if self.request.user.is_superuser or (representative and representative.first().organization.publisher):
                     self.fields['publisher'].initial = representative.first().organization.pk
-                self.fields['creator'].widget = HiddenInput()
+                if not self.request.user.is_superuser:
+                    self.fields['creator'].widget = HiddenInput()
+                    self.fields['managed_by_publisher'].widget = HiddenInput()
         else:
             self.fields['publisher'].widget = HiddenInput()
             self.fields['creator'].widget = HiddenInput()
+            self.fields['managed_by_publisher'].widget = HiddenInput()
 
         organization_contacts = Organization.objects.filter(
             Q(id=self.instance.organization_id) |

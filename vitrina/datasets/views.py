@@ -915,6 +915,74 @@ class DatasetUpdateView(
                 email = contact.email,
                 phone = contact.phone,
             )
+
+        if 'creator' in form.changed_data and self.request.user.organization:
+            creator = form.cleaned_data.get('creator')
+            if creator:
+                if self.request.user.organization.publisher:
+                    Representative.objects.create(
+                        content_type=ContentType.objects.get_for_model(self.object),
+                        object_id=self.object.pk,
+                        organization = self.request.user.organization,
+                        role = Representative.MANAGER,
+                    )
+
+                    self.object.publisher = self.request.user.organization
+                self.object.organization = creator
+
+                if creator == self.request.user.organization and self.request.user.organization.publisher:
+                    self.object.publisher = None
+                    Representative.objects.filter(
+                        object_id=self.object.pk,
+                        content_type=ContentType.objects.get_for_model(Dataset),
+                        role=Representative.MANAGER,
+                        organization__isnull=False,
+                    ).delete()
+
+            self.object.save()
+
+        if 'managed_by_publisher' in form.changed_data and self.request.user.organization:
+            managed_by_publisher = form.cleaned_data.get('managed_by_publisher')
+            if managed_by_publisher and self.request.user.organization.publisher:
+                self.object.publisher = self.request.user.organization
+                rep = Representative.objects.create(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=self.request.user.organization,
+                    role=Representative.MANAGER,
+                )
+                rep.save()
+            else:
+                self.object.publisher = None
+                Representative.objects.filter(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    role=Representative.MANAGER,
+                    organization__isnull=False,
+                ).delete()
+            self.object.save()
+
+        if 'publisher' in form.changed_data:
+            publisher = form.cleaned_data.get('publisher')
+            if publisher:
+                self.object.publisher = publisher
+                rep = Representative.objects.create(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=publisher,
+                    role=Representative.MANAGER,
+                )
+                rep.save()
+            else:
+                self.object.publisher = None
+                Representative.objects.filter(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    role=Representative.MANAGER,
+                    organization__isnull=False,
+                ).delete()
+            self.object.save()
+
         self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 

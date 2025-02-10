@@ -129,7 +129,12 @@ def main():
     '''
 
     url = "https://www.geoportal.lt/metadata-catalog/csw?Request=GetRecords&Service=CSW&Version=2.0.2"
-    response = requests.get(url, data=body.format(start_index))
+    try:
+        response = requests.get(url, data=body.format(start_index))
+    except requests.RequestException as e:
+        print(f"Got error while receiving data: {str(e)}")
+        return
+
     xml = ET.XML(response.content)
 
     namespaces = xml.nsmap
@@ -168,7 +173,14 @@ def main():
                     data_url = ref.text
 
             if metadata_url and dataset_id:
-                res = requests.get(metadata_url)
+                try:
+                    res = requests.get(metadata_url)
+                except requests.RequestException as e:
+                    print(f"Got error while receiving data: {str(e)}")
+                    start_index += 1
+                    pbar.update(1)
+                    continue
+
                 xml = ET.XML(res.content)
 
                 errors = []
@@ -343,7 +355,7 @@ def main():
                     if data_url and data_url != "-" and dataset.endpoint_url != data_url:
                         changed = True
                         dataset.endpoint_url = data_url
-                    if distribution_format is not None:
+                    if distribution_format is not None and distribution_format.text != "-":
                         if endpoint_type := GeoportalDataServiceTypeValue.objects.filter(
                             value__iexact=distribution_format.text
                         ).first():
@@ -371,7 +383,7 @@ def main():
                                 download_url=data_url
                             )
 
-                        if distribution_format is not None:
+                        if distribution_format is not None and distribution_format.text != "-":
                             if dist_format := GeoportalFormatValue.objects.filter(
                                 value__iexact=distribution_format.text
                             ).first():
@@ -552,7 +564,11 @@ def main():
             pbar.update(1)
 
         if start_index <= total_results:
-            response = requests.get(url, data=body.format(start_index))
+            try:
+                response = requests.get(url, data=body.format(start_index))
+            except requests.RequestException as e:
+                print(f"Got error while receiving data: {str(e)}")
+                return
             xml = ET.XML(response.content)
 
             records = _get_elem(".//{%s}Record" % csw, xml, find_all=True)

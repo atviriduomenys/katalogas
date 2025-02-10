@@ -344,7 +344,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             organization = "-"
             root_organization = "-"
             if item.organization:
-                organization = organization.title
+                organization = item.organization.title
                 if root := item.organization.get_root():
                     root_organization = root.title
             elif item.creator_text:

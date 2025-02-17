@@ -51,18 +51,18 @@ def get_api_key_organization_and_user(
                     not api_key_obj.expires or
                     api_key_obj.expires > timezone.make_aware(datetime.now())
                 ):
-                    representative = api_key_obj.representative
-                    content_object = representative.content_object
+                    if representative := api_key_obj.representative:
+                        content_object = representative.content_object
 
-                    if isinstance(content_object, Organization):
-                        organization = content_object
-                    elif isinstance(content_object, Dataset):
-                        dataset = content_object
-                        organization = content_object.organization
+                        if isinstance(content_object, Organization):
+                            organization = content_object
+                        elif isinstance(content_object, Dataset):
+                            dataset = content_object
+                            organization = content_object.organization
 
-                    publisher = bool(representative.organization)
-                    if not publisher:
-                        user = representative.user
+                        publisher = bool(representative.organization)
+                        if not publisher:
+                            user = representative.user
     return organization, user, dataset, publisher
 
 

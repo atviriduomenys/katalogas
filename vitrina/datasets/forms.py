@@ -207,7 +207,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                     object_id=self.organization.id if self.organization else self.instance.organization.id,
                     organization__isnull=False
                 )
-                if self.request.user.is_superuser or (representative and representative.first().organization.publisher):
+                if representative.first() and (self.request.user.is_superuser or representative.first().organization.publisher):
                     self.fields['publisher'].initial = representative.first().organization.pk
                 if not self.request.user.is_superuser:
                     self.fields['creator'].widget = HiddenInput()

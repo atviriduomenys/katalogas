@@ -371,29 +371,45 @@ def main():
                     if data_url and data_url != "-":
                         dataset.status = Dataset.HAS_DATA
                         comment_status = Comment.OPENED
-                        if distribution := dataset.datasetdistribution_set.first():
-                            if data_url != distribution.download_url:
-                                changed = True
-                                distribution.download_url = data_url
-                                distribution.save()
-                        else:
+
+                        if (
+                            distribution_format is not None and
+                            distribution_format.text and
+                            distribution_format.text != "-"
+                        ):
+                            formats = [frm.strip() for frm in distribution_format.text.split(',')]
+                            for frm in formats:
+                                if frm:
+                                    if dist_format := GeoportalFormatValue.objects.filter(
+                                        value__iexact=frm
+                                    ).first():
+                                        dist_format = dist_format.geoportal_format.format
+                                        if not dataset.datasetdistribution_set.filter(
+                                            download_url=data_url,
+                                            format=dist_format
+                                        ):
+                                            changed = True
+                                            DatasetDistribution.objects.create(
+                                                dataset=dataset,
+                                                download_url=data_url,
+                                                format=dist_format
+                                            )
+                                    else:
+                                        if not dataset.datasetdistribution_set.filter(
+                                            download_url=data_url,
+                                        ):
+                                            changed = True
+                                            DatasetDistribution.objects.create(
+                                                dataset=dataset,
+                                                download_url=data_url
+                                            )
+                                        errors.append(f'Nerastas formatas: "{frm}"')
+                        elif not dataset.datasetdistribution_set.filter(download_url=data_url):
                             changed = True
-                            distribution = DatasetDistribution.objects.create(
+                            DatasetDistribution.objects.create(
                                 dataset=dataset,
                                 download_url=data_url
                             )
-
-                        if distribution_format is not None and distribution_format.text != "-":
-                            if dist_format := GeoportalFormatValue.objects.filter(
-                                value__iexact=distribution_format.text
-                            ).first():
-                                dist_format = dist_format.geoportal_format.format
-                                if dist_format and dist_format != distribution.format:
-                                    changed = True
-                                    distribution.format = dist_format
-                                    distribution.save()
-                            else:
-                                errors.append(f'Nerastas formatas: "{distribution_format.text}"')
                     else:
                         dataset.status = Dataset.INVENTORED
                         comment_status = Comment.INVENTORED

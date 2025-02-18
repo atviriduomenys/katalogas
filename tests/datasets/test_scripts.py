@@ -1251,17 +1251,86 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
 
 
 @pytest.mark.django_db
+def test_geoportal_import__distribution_create_with_multiple_formats(app: DjangoTestApp):
+    frm1 = FileFormat(extension="CSV")
+    geo_frm1 = GeoportalFormatFactory(format=frm1)
+    GeoportalFormatValueFactory(geoportal_format=geo_frm1, value="csv")
+
+    frm2 = FileFormat(extension="JSON")
+    geo_frm2 = GeoportalFormatFactory(format=frm2)
+    GeoportalFormatValueFactory(geoportal_format=geo_frm2, value="json")
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">https://example.com/file.zip</dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+            </gmd:identificationInfo>
+            <gmd:distributionInfo>
+                <gmd:distributionFormat>
+                    <gmd:name>
+                        <gco:CharacterString>CSV, JSON</gco:CharacterString>
+                    </gmd:name>
+                </gmd:distributionFormat>
+                <gmd:transferOptions>
+                    <gmd:CI_OnlineResource>
+                        <gmd:URL>https://example.com/file.zip</gmd:URL>
+                    </gmd:CI_OnlineResource>
+                </gmd:transferOptions>
+            </gmd:distributionInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_data.side_effect = [get_all_mock, get_one_mock]
+        geoportal_import()
+
+    assert Dataset.objects.count() == 1
+    dataset = Dataset.objects.first()
+    assert dataset.datasetdistribution_set.count() == 2
+    assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
+        "https://example.com/file.zip",
+        "https://example.com/file.zip"
+    ])
+    assert sorted(list(dataset.datasetdistribution_set.values_list('format__pk', flat=True))) == sorted([
+        frm1.pk,
+        frm2.pk
+    ])
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.OPENED
+
+
+@pytest.mark.django_db
 def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
     frm = FileFormat(extension="CSV")
     geo_frm = GeoportalFormatFactory(format=frm)
     GeoportalFormatValueFactory(geoportal_format=geo_frm, value="csv")
 
     dataset = DatasetFactory(geoportal_id="1")
-    distribution = DatasetDistributionFactory(
-        dataset=dataset,
-        format=frm,
-        download_url="https://test.com/file.csv"
-    )
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -1311,9 +1380,9 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    distribution.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.datasetdistribution_set.count() == 1
+    distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
     assert distribution.format == frm
     assert dataset.status == Dataset.HAS_DATA
@@ -1329,10 +1398,6 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
     GeoportalFormatValueFactory(geoportal_format=geo_frm, value="csv")
 
     dataset = DatasetFactory(geoportal_id="1")
-    distribution = DatasetDistributionFactory(
-        dataset=dataset,
-        download_url="https://test.com/file.csv"
-    )
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -1382,9 +1447,9 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    distribution.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.datasetdistribution_set.count() == 1
+    distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
     assert distribution.format == frm
     assert dataset.status == Dataset.HAS_DATA
@@ -1397,11 +1462,6 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
 def test_geoportal_import__distribution_update_with_not_existing_format(app: DjangoTestApp):
     UserFactory(is_superuser=True)
     dataset = DatasetFactory(geoportal_id="1")
-    distribution = DatasetDistributionFactory(
-        dataset=dataset,
-        download_url="https://test.com/file.csv",
-        format=None
-    )
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -1451,9 +1511,9 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
         geoportal_import()
 
     dataset.refresh_from_db()
-    distribution.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.datasetdistribution_set.count() == 1
+    distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
     assert distribution.format is None
     assert dataset.status == Dataset.HAS_DATA
@@ -1464,6 +1524,153 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
     assert Task.objects.count() == 1
     task = Task.objects.first()
     assert 'Nerastas formatas: "CSV"' in task.description
+
+
+@pytest.mark.django_db
+def test_geoportal_import__distribution_create_with_not_existing_format(app: DjangoTestApp):
+    UserFactory(is_superuser=True)
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">https://example.com/file.csv</dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+            </gmd:identificationInfo>
+            <gmd:distributionInfo>
+                <gmd:distributionFormat>
+                    <gmd:name>
+                        <gco:CharacterString>CSV</gco:CharacterString>
+                    </gmd:name>
+                </gmd:distributionFormat>
+                <gmd:transferOptions>
+                    <gmd:CI_OnlineResource>
+                        <gmd:URL>https://example.com/file.csv</gmd:URL>
+                    </gmd:CI_OnlineResource>
+                </gmd:transferOptions>
+            </gmd:distributionInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_data.side_effect = [get_all_mock, get_one_mock]
+        geoportal_import()
+
+    assert Dataset.objects.count() == 1
+    dataset = Dataset.objects.first()
+    assert dataset.datasetdistribution_set.count() == 1
+    assert dataset.datasetdistribution_set.first().download_url == "https://example.com/file.csv"
+    assert dataset.datasetdistribution_set.first().format is None
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.OPENED
+
+    assert Task.objects.count() == 1
+    task = Task.objects.first()
+    assert 'Nerastas formatas: "CSV"' in task.description
+
+
+@pytest.mark.django_db
+def test_geoportal_import__distribution_update_with_multiple_formats(app: DjangoTestApp):
+    frm1 = FileFormat(extension="CSV")
+    geo_frm1 = GeoportalFormatFactory(format=frm1)
+    GeoportalFormatValueFactory(geoportal_format=geo_frm1, value="csv")
+
+    frm2 = FileFormat(extension="JSON")
+    geo_frm2 = GeoportalFormatFactory(format=frm2)
+    GeoportalFormatValueFactory(geoportal_format=geo_frm2, value="json")
+
+    dataset = DatasetFactory(geoportal_id="1")
+    DatasetDistributionFactory(
+        dataset=dataset,
+        download_url="https://example.com/file.zip",
+        format=frm1
+    )
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">https://example.com/file.zip</dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+            </gmd:identificationInfo>
+            <gmd:distributionInfo>
+                <gmd:distributionFormat>
+                    <gmd:name>
+                        <gco:CharacterString>CSV, JSON</gco:CharacterString>
+                    </gmd:name>
+                </gmd:distributionFormat>
+                <gmd:transferOptions>
+                    <gmd:CI_OnlineResource>
+                        <gmd:URL>https://example.com/file.zip</gmd:URL>
+                    </gmd:CI_OnlineResource>
+                </gmd:transferOptions>
+            </gmd:distributionInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_data.side_effect = [get_all_mock, get_one_mock]
+        geoportal_import()
+
+    assert Dataset.objects.count() == 1
+    dataset = Dataset.objects.first()
+    assert dataset.datasetdistribution_set.count() == 2
+    assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
+        "https://example.com/file.zip",
+        "https://example.com/file.zip"
+    ])
+    assert sorted(list(dataset.datasetdistribution_set.values_list('format__pk', flat=True))) == sorted([
+        frm1.pk,
+        frm2.pk
+    ])
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.OPENED
 
 
 @pytest.mark.django_db

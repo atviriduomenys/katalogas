@@ -92,14 +92,18 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
         orgs_to_remove = current_orgs - new_orgs
         orgs_to_add = new_orgs - current_orgs
 
+        Organization.fix_tree(fix_paths=True)
+
         if orgs_to_remove:
+            unassigned_area = AreaOfManagement.objects.get(pk=1)  # Unassigned
+            unassigned_parent = Organization.objects.get(title='Nepriskirta')
+
             for org in orgs_to_remove:
-                org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+                org.jurisdiction = unassigned_area
                 org.save()
-                # Move node to unassigned (1)
-                org.move(Organization.objects.get(title='Nepriskirta'), 'sorted-child')
-                node = Organization.objects.get(pk=org.pk)
-                node.save()
+                # Update hierarchy tree
+                org.move(unassigned_parent, 'sorted-child')
+                org.refresh_from_db()
 
         if orgs_to_add:
             for org in orgs_to_add:
@@ -109,9 +113,7 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
                 if org.jurisdiction_id != 1:
                     parent_org = get_or_create_parent_org(obj)
                     org.move(parent_org, 'sorted-child')
-                    node = Organization.objects.get(pk=org.pk)
-                    node.save()
-                Organization.fix_tree(fix_paths=True)
+                    org.refresh_from_db()
 
         # Update organization name if area of management name is changed
         if ('name_lt' in form.changed_data and

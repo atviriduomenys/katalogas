@@ -757,15 +757,19 @@ class OrganizationUpdateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.slug = slugify(self.object.title)
+
+        current_parent = self.object.get_parent()
+        new_jurisdiction = form.cleaned_data.get('jurisdiction')
+
         self.object.save()
-        if self.object.get_parent() != form.cleaned_data.get('jurisdiction'):
+
+        if current_parent != new_jurisdiction and new_jurisdiction:
             Organization.fix_tree(fix_paths=True)
-            if jurisdiction := form.cleaned_data.get('jurisdiction'):
-                parent_org = get_or_create_parent_org(jurisdiction)
-                self.object.move(parent_org, 'sorted-child')
-                # this is needed to update organization parent
-                node = Organization.objects.get(pk=self.object.pk)
-                node.save()
+            parent_org = get_or_create_parent_org(new_jurisdiction)
+            node = Organization.objects.get(pk=self.object.pk)
+            node.move(parent_org, 'sorted-child')
+            self.object.refresh_from_db()
+
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -855,8 +859,8 @@ class OrganizationCreateView(
                 jurisdiction=jurisdiction,
             )
             # this is needed to update organization parent
-            node: Organization = Organization.objects.get(pk=org.pk)
-            node.save()
+            org: Organization = Organization.objects.get(pk=org.pk)
+            org.refresh_from_db()
         else:
             org: Organization = Organization.add_root(
                 title=form.cleaned_data.get('title'),
@@ -870,6 +874,7 @@ class OrganizationCreateView(
                 publisher=False,
                 is_public=True,
             )
+        Organization.fix_tree(fix_paths=True)
         return HttpResponseRedirect(self.get_success_url(org))
 
     def get_success_url(self, organization):

@@ -709,7 +709,7 @@ class DatasetCreateView(
                     role = Representative.MANAGER,
                 )
 
-                self.object.publisher = self.object.organization
+                self.object.publisher = self.object.organization if self.object.organization != creator else None
             self.object.organization = creator
             self.object.save()
 
@@ -723,6 +723,7 @@ class DatasetCreateView(
                 role=Representative.MANAGER,
             )
             rep.save()
+            self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
 

@@ -27,7 +27,7 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
 
 from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
-    Relation, DatasetExcludedGroups
+    Relation, DatasetExcludedGroups, Contact
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
@@ -183,25 +183,25 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 organization=self.request.user.organization,
                 content_type=ContentType.objects.get_for_model(Organization)
             ).values_list('object_id', flat=True)
-            self.fields['creator'].queryset = Organization.objects.filter(Q(id__in=creator_ids) |
-                                                                          Q(id=self.request.user.organization.id))
+            self.fields['creator'].queryset = Organization.objects.filter(
+                Q(id__in=creator_ids) |
+                Q(id=self.request.user.organization.id) |
+                Q(id=self.organization.id if self.organization else self.instance.organization.id)
+            ).distinct()
             if self.request.user.organization.publisher:
-                # Show creator (Meant for publishers)
+                # Show creator field (Meant for publishers)
                 self.fields['managed_by_publisher'].initial = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(self.instance),
                     object_id=self.instance.id,
                     organization=self.request.user.organization
                 ).exists()
 
-                if self.organization:
-                    self.fields['creator'].initial = self.organization
-                else:
-                    self.fields['creator'].initial = self.instance.organization
+                self.fields['creator'].initial = self.instance.organization or self.organization
                 if not self.request.user.is_superuser:
                     self.fields['publisher'].widget = HiddenInput()
 
             if not self.request.user.organization.publisher:
-                # Show publisher (Meant for creators)
+                # Show publisher field (Meant for creators)
                 representative = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(Organization),
                     object_id=self.organization.id if self.organization else self.instance.organization.id,
@@ -212,6 +212,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 if not self.request.user.is_superuser:
                     self.fields['creator'].widget = HiddenInput()
                     self.fields['managed_by_publisher'].widget = HiddenInput()
+                self.fields['creator'].initial = self.instance.organization or self.organization
         else:
             self.fields['publisher'].widget = HiddenInput()
             self.fields['creator'].widget = HiddenInput()
@@ -240,6 +241,12 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.fields['contact'].choices.append(
                 (_(f'Naudotojai:'), user_choices)
             )
+
+        if contact:= self._get_contact(self.instance):
+            if isinstance(contact, Organization):
+                self.fields['contact'].initial = f"org-{contact.id}"
+            elif isinstance(contact, User):
+                self.fields['contact'].initial = f"user-{contact.id}"
 
 
     def clean_type(self):
@@ -284,6 +291,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             elif contact_type == 'user':
                 return User.objects.get(pk=contact_id)
         return None
+
+    @staticmethod
+    def _get_contact(instance):
+        contact = Contact.objects.filter(
+            dataset=instance
+        ).first() or None
+        return contact.content_object if contact else None
 
 
 class DatasetAdminForm(forms.ModelForm):

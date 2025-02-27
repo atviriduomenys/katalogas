@@ -27,6 +27,9 @@ BASE_DIR = Path(env.path(
     default=Path(__file__).resolve().parent.parent,
 ))
 
+env_file = '.env' if os.path.exists(os.path.join(BASE_DIR, '.env')) else '.env.example'
+environ.Env.read_env(os.path.join(BASE_DIR, env_file))
+
 # Take environment variables from .env file
 environ.Env.read_env(BASE_DIR / '.env')
 

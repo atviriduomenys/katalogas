@@ -24,6 +24,9 @@ Contributing
 
 Development environment
 ***********************
+From project root directory start with copying over `.env.example` to `.env`::
+
+    cp .env.example .env
 
 From project root directory run::
 

@@ -910,11 +910,11 @@ class DatasetUpdateView(
         contact = form.cleaned_data.get('contact')
         if contact:
             Contact.objects.create(
-                content_type = ContentType.objects.get_for_model(contact),
-                object_id = contact.pk,
-                dataset = self.object,
-                email = contact.email,
-                phone = contact.phone,
+                content_type=ContentType.objects.get_for_model(contact),
+                object_id=contact.pk,
+                dataset=self.object,
+                email=contact.email or "",
+                phone=contact.phone or "",
             )
 
         if 'creator' in form.changed_data and self.request.user.organization:
@@ -924,8 +924,8 @@ class DatasetUpdateView(
                     Representative.objects.create(
                         content_type=ContentType.objects.get_for_model(self.object),
                         object_id=self.object.pk,
-                        organization = self.request.user.organization,
-                        role = Representative.MANAGER,
+                        organization=self.request.user.organization,
+                        role=Representative.MANAGER,
                     )
 
                     self.object.publisher = self.request.user.organization

@@ -24,6 +24,9 @@ Contributing
 
 Development environment
 ***********************
+From project root directory start with copying over `.env.example` to `.env`::
+
+    cp .env.example .env
 
 From project root directory run::
 
@@ -57,6 +60,7 @@ By default pgloader creates a schema with the same name as in source database. S
 Then we can run::
 
     poetry install
+    poetry run python manage.py migrate vitrina_classifiers
     poetry run python manage.py migrate sites
     poetry run python manage.py migrate
     poetry run python manage.py rebuild_index --noinput

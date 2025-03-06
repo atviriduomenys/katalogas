@@ -50,11 +50,11 @@ class Organization(MP_Node):
     GOV = "gov"
     COM = "com"
     ORG = "org"
-    ORGANIZATION_KINDS = {
+    ORGANIZATION_KINDS = (
         (GOV, _("Valstybinė įstaiga")),
         (COM, _("Verslo organizacija")),
         (ORG, _("Nepelno ir nevalstybinė organizacija"))
-    }
+    )
 
     GROUP = "group"
     MINISTRY = "ministry"
@@ -147,10 +147,10 @@ class Representative(models.Model):
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'
     SUPERVISOR = 'supervisor'
-    ROLES = {
+    ROLES = (
         (COORDINATOR, _("Koordinatorius")),
         (MANAGER, _("Tvarkytojas"))
-    }
+    )
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -241,11 +241,11 @@ class RepresentativeRequest(models.Model):
     CREATED = "CREATED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
-    STATUSES = {
+    STATUSES = (
         (CREATED, _("Pateiktas")),
         (APPROVED, _("Patvirtintas")),
         (REJECTED, _("Atmestas")),
-    }
+    )
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta"))
     user = models.ForeignKey(

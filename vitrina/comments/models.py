@@ -40,7 +40,7 @@ class Comment(models.Model):
         (APPROVED, _("Įvertintas")),
         (REJECTED, _("Atmestas"))
     )
-    COMBINED_STATUSES = tuple(set(STATUSES + tuple(Request.STATUSES)))
+    COMBINED_STATUSES = tuple(sorted(set(STATUSES + tuple(Request.STATUSES))))
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

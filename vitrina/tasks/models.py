@@ -24,11 +24,11 @@ class Task(models.Model):
     SUPERVISOR = 'supervisor'
     COORDINATOR = 'coordinator'
     MANAGER = 'manager'
-    ROLES = {
+    ROLES = (
         (SUPERVISOR, _("Vyr. koordinatorius")),
         (COORDINATOR, _("Organizacijos koordinatorius")),
         (MANAGER, _("Organizacijos tvarkytojas"))
-    }
+    )
 
     APIKEY = 'apikey'
     DATASET = 'dataset'

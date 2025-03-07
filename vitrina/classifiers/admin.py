@@ -6,7 +6,8 @@ from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
 from vitrina.classifiers.forms import AreaOfManagementAdminForm
-from vitrina.classifiers.models import Category, AreaOfManagement, GeoportalCategory
+from vitrina.classifiers.models import Category, AreaOfManagement, GeoportalCategory, GeoportalFrequency, \
+    GeoportalLicence, GeoportalAccessRights
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.orgs.helpers import get_or_create_parent_org
@@ -157,8 +158,23 @@ class GeoportalCategoryAdmin(admin.ModelAdmin):
     categories_display.short_description = _('Kategorijos')
 
 
+class GeoportalFrequencyAdmin(admin.ModelAdmin):
+    list_display = ('title', 'frequency',)
+
+
+class GeoportalLicenceAdmin(admin.ModelAdmin):
+    list_display = ('title', 'licence',)
+
+
+class GeoportalAccessRightsAdmin(admin.ModelAdmin):
+    list_display = ('title', 'access_rights',)
+
+
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Licence, LicenceAdmin)
 admin.site.register(Frequency, FrequencyAdmin)
 admin.site.register(GeoportalCategory, GeoportalCategoryAdmin)
+admin.site.register(GeoportalFrequency, GeoportalFrequencyAdmin)
+admin.site.register(GeoportalLicence, GeoportalLicenceAdmin)
+admin.site.register(GeoportalAccessRights, GeoportalAccessRightsAdmin)

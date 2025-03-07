@@ -1,7 +1,8 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.classifiers.models import Category, Frequency, Licence, AreaOfManagement, GeoportalCategory
+from vitrina.classifiers.models import Category, Frequency, Licence, AreaOfManagement, GeoportalCategory, \
+    GeoportalFrequency, GeoportalLicence, GeoportalAccessRights
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -53,3 +54,30 @@ class GeoportalCategoryFactory(DjangoModelFactory):
         django_get_or_create = ('title',)
 
     title = factory.Faker('catch_phrase')
+
+
+class GeoportalFrequencyFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalFrequency
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('catch_phrase')
+    frequency = factory.SubFactory(FrequencyFactory)
+
+
+class GeoportalLicenceFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalLicence
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('catch_phrase')
+    licence = factory.SubFactory(LicenceFactory)
+
+
+class GeoportalAccessRightsFactory(DjangoModelFactory):
+    class Meta:
+        model = GeoportalAccessRights
+        django_get_or_create = ('title',)
+
+    title = factory.Faker('catch_phrase')
+    access_rights = GeoportalAccessRights.PUBLIC

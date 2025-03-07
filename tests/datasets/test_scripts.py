@@ -8,8 +8,9 @@ from reversion.models import Version
 
 from scripts.geoportal_import import main as geoportal_import
 from vitrina import settings
-from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, CategoryFactory, GeoportalCategoryFactory
-from vitrina.classifiers.models import GeoportalCategory
+from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, CategoryFactory, GeoportalCategoryFactory, \
+    GeoportalFrequencyFactory, GeoportalLicenceFactory, GeoportalAccessRightsFactory
+from vitrina.classifiers.models import GeoportalCategory, GeoportalAccessRights
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DataServiceTypeFactory, GeoportalDataServiceTypeFactory, \
     GeoportalDataServiceTypeValueFactory
@@ -305,6 +306,7 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestApp):
     frequency = FrequencyFactory(title="Neapibrėžtu periodiškumu")
+    GeoportalFrequencyFactory(title='asNeeded', frequency=frequency)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -404,67 +406,14 @@ def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoT
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
-    assert 'Nerastas atnaujinimo periodiškumas: "Neapibrėžtu periodiškumu"' in task.description
-
-
-@pytest.mark.django_db
-def test_geoportal_import__frequency_create_with_not_mapped_value(app: DjangoTestApp):
-    UserFactory(is_superuser=True)
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
-        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
-            xmlns:dct="http://purl.org/dc/terms/"
-            xmlns:dc="http://purl.org/dc/elements/1.1/">
-            <csw:SearchResults numberOfRecordsMatched="1">
-                <csw:Record>
-                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
-                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
-                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">
-                        http://www.data.com
-                    </dct:references>
-                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">
-                        https://www.metadata.com
-                    </dct:references>
-                </csw:Record>
-            </csw:SearchResults>
-        </csw:GetRecordsResponse>              
-        '''
-
-        get_one = '''
-        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
-            <gmd:identificationInfo>
-                <gmd:title>
-                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
-                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
-                </gmd:title>
-                <gmd:abstract>
-                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
-                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
-                </gmd:abstract>
-                <gmd:resourceMaintenance>
-                    <gmd:MD_MaintenanceFrequencyCode>test</gmd:MD_MaintenanceFrequencyCode>
-                </gmd:resourceMaintenance>
-            </gmd:identificationInfo>
-        </gmd:MD_Metadata>
-        '''
-        get_all_mock = Mock(content=get_all)
-        get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
-        geoportal_import()
-
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
-    assert dataset.frequency is None
-
-    assert Task.objects.count() == 1
-    task = Task.objects.first()
-    assert 'Nerastas atnaujinimo periodiškumas: "test"' in task.description
+    assert 'Nerastas atnaujinimo periodiškumas: "asNeeded"' in task.description
 
 
 @pytest.mark.django_db
 def test_geoportal_import__frequency_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1")
     frequency = FrequencyFactory(title="Neapibrėžtu periodiškumu")
+    GeoportalFrequencyFactory(title="asNeeded", frequency=frequency)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -516,6 +465,8 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_geoportal_import__access_rights_and_licence_create_with_existing_value(app: DjangoTestApp):
     licence = LicenceFactory(title="Creative Commons Attribution 4.0")
+    GeoportalLicenceFactory(title='copyright', licence=licence)
+    GeoportalAccessRightsFactory(title="copyright", access_rights=GeoportalAccessRights.PUBLIC)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -617,77 +568,21 @@ def test_geoportal_import__access_rights_and_licence_create_with_not_existing_va
 
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
-    assert dataset.access_rights == Dataset.PUBLIC
-    assert dataset.licence is None
-
-    assert Task.objects.count() == 1
-    task = Task.objects.first()
-    assert 'Nerasta licencija: "Creative Commons Attribution 4.0"' in task.description
-
-
-@pytest.mark.django_db
-def test_geoportal_import__access_rights_and_licence_create_with_not_mapped_value(app: DjangoTestApp):
-    UserFactory(is_superuser=True)
-
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
-        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
-            xmlns:dct="http://purl.org/dc/terms/"
-            xmlns:dc="http://purl.org/dc/elements/1.1/">
-            <csw:SearchResults numberOfRecordsMatched="1">
-                <csw:Record>
-                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
-                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
-                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">
-                        http://www.data.com
-                    </dct:references>
-                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">
-                        https://www.metadata.com
-                    </dct:references>
-                </csw:Record>
-            </csw:SearchResults>
-        </csw:GetRecordsResponse>              
-        '''
-
-        get_one = '''
-        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
-            <gmd:identificationInfo>
-                <gmd:title>
-                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
-                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
-                </gmd:title>
-                <gmd:abstract>
-                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
-                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
-                </gmd:abstract>
-                <gmd:resourceConstraints>
-                    <gmd:accessConstraints>
-                        <gmd:MD_RestrictionCode>test</gmd:MD_RestrictionCode>
-                    </gmd:accessConstraints>
-                </gmd:resourceConstraints>
-            </gmd:identificationInfo>
-        </gmd:MD_Metadata>
-        '''
-        get_all_mock = Mock(content=get_all)
-        get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
-        geoportal_import()
-
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
     assert dataset.access_rights is None
     assert dataset.licence is None
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
-    assert 'Nerastos prieigos teisės: "test"' in task.description
-    assert 'Nerasta licencija: "test"' in task.description
+    assert 'Nerastos prieigos teisės: "copyright"' in task.description
+    assert 'Nerasta licencija: "copyright"' in task.description
 
 
 @pytest.mark.django_db
 def test_geoportal_import__access_rights_and_licence_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
     licence = LicenceFactory(title="Creative Commons Attribution 4.0")
+    GeoportalLicenceFactory(title="copyright", licence=licence)
+    GeoportalAccessRightsFactory(title="copyright", access_rights=GeoportalAccessRights.PUBLIC)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''

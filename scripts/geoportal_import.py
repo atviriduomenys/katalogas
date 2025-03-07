@@ -20,68 +20,11 @@ from vitrina.users.models import User
 from vitrina.tasks.models import Task
 from vitrina.helpers import email
 from django.contrib.contenttypes.models import ContentType
-from vitrina.classifiers.models import Frequency, Licence, GeoportalCategory
+from vitrina.classifiers.models import GeoportalCategory, GeoportalFrequency, GeoportalLicence, \
+    GeoportalAccessRights
 from vitrina.resources.models import DatasetDistribution, GeoportalFormatValue
 from vitrina.comments.models import Comment
 from vitrina.messages.models import Subscription
-
-FREQUENCIES = {
-    'annually': 'Kasmet',
-    'asNeeded': 'Neapibrėžtu periodiškumu',
-    'biannually': 'Dukart per metus',
-    'biennially': 'Kas 2 metai',
-    'continual': 'Nepertraukiamas',
-    'daily': 'Kasdien',
-    'fortnightly': 'Kas 2 savaitės',
-    'irregular': 'Nevienodu periodiškumu',
-    'monthly': 'Kas mėnesį',
-    'notPlanned': 'Neatnaujinamas',
-    'periodic': 'Neapibrėžtu periodiškumu',
-    'quarterly': 'Kas 3 mėnesiai',
-    'semimonthly': 'Dukart per mėnesį',
-    'unknown': 'Nežinomas',
-    'weekly': 'Kas savaitę',
-}
-
-ACCESS_RIGHTS = {
-    'confidential': Dataset.NON_PUBLIC,
-    'copyright': Dataset.PUBLIC,
-    'in-confidence': Dataset.NON_PUBLIC,
-    'intellectualPropertyRights': Dataset.PUBLIC,
-    'licenceDistributor': Dataset.RESTRICTED,
-    'licenceEndUser': Dataset.RESTRICTED,
-    'licenceUnrestricted': Dataset.PUBLIC,
-    'license': Dataset.PUBLIC,
-    'otherRestrictions': Dataset.RESTRICTED,
-    'patent': Dataset.RESTRICTED,
-    'patentPending': Dataset.RESTRICTED,
-    'private': Dataset.NON_PUBLIC,
-    'restricted': Dataset.NON_PUBLIC,
-    'SBU': Dataset.NON_PUBLIC,
-    'statutory': Dataset.NON_PUBLIC,
-    'trademark': Dataset.NON_PUBLIC,
-    'unrestricted': Dataset.PUBLIC,
-}
-
-LICENCES = {
-    'confidential': "Pagal sutartį",
-    'copyright': "Creative Commons Attribution 4.0",
-    'in-confidence': None,
-    'intellectualPropertyRights': "Creative Commons Attribution 4.0",
-    'licenceDistributor': "Pagal sutartį",
-    'licenceEndUser': "Pagal sutartį",
-    'licenceUnrestricted': "Creative Commons Attribution 4.0",
-    'license': "Creative Commons Attribution-NoDerivatives 4.0",
-    'otherRestrictions': "Pagal sutartį",
-    'patent': "Pagal sutartį",
-    'patentPending': "Pagal sutartį",
-    'private': "Pagal sutartį",
-    'restricted': "Pagal sutartį",
-    'SBU': "Pagal sutartį",
-    'statutory': "Pagal sutartį",
-    'trademark': "Pagal sutartį",
-    'unrestricted': "Creative Commons Attribution 4.0",
-}
 
 
 def _get_elem(tag, element, find_all=False):
@@ -108,6 +51,33 @@ def _get_categories(title):
     else:
         GeoportalCategory.objects.create(title=title)
     return categories
+
+
+def _get_frequency(title):
+    frequency = None
+    if mapping := GeoportalFrequency.objects.filter(title=title).first():
+        frequency = mapping.frequency
+    else:
+        GeoportalFrequency.objects.create(title=title)
+    return frequency
+
+
+def _get_licence(title):
+    licence = None
+    if mapping := GeoportalLicence.objects.filter(title=title).first():
+        licence = mapping.licence
+    else:
+        GeoportalLicence.objects.create(title=title)
+    return licence
+
+
+def _get_access_rights(title):
+    access_rights = None
+    if mapping := GeoportalAccessRights.objects.filter(title=title).first():
+        access_rights = mapping.access_rights
+    else:
+        GeoportalAccessRights.objects.create(title=title)
+    return access_rights
 
 
 def main():
@@ -261,23 +231,20 @@ def main():
                 # frequency
                 frequency_value = _get_elem(".//{%s}MD_MaintenanceFrequencyCode" % gmd, dataset_info)
                 if frequency_value is not None:
-                    if frequency := FREQUENCIES.get(frequency_value.text):
-                        frequency = Frequency.objects.filter(title=frequency).first()
-
+                    frequency = _get_frequency(frequency_value.text)
                     if created or dataset.frequency != frequency:
                         changed = True
                         if frequency:
                             dataset.frequency = frequency
                         else:
                             dataset.frequency = None
-                            title = FREQUENCIES.get(frequency_value.text) or frequency_value.text
-                            errors.append(f'Nerastas atnaujinimo periodiškumas: "{title}"')
+                            errors.append(f'Nerastas atnaujinimo periodiškumas: "{frequency_value.text}"')
 
                 # access rights and licence
                 access_rights_value = _get_elem(".//{%s}accessConstraints" % gmd, dataset_info)
                 access_rights_value = _get_elem(".//{%s}MD_RestrictionCode" % gmd, access_rights_value)
                 if access_rights_value is not None:
-                    access_rights = ACCESS_RIGHTS.get(access_rights_value.text)
+                    access_rights = _get_access_rights(access_rights_value.text)
 
                     if created or dataset.access_rights != access_rights:
                         changed = True
@@ -285,20 +252,16 @@ def main():
                             dataset.access_rights = access_rights
                         else:
                             dataset.access_rights = None
-                            title = ACCESS_RIGHTS.get(access_rights_value.text) or access_rights_value.text
-                            errors.append(f'Nerastos prieigos teisės: "{title}"')
+                            errors.append(f'Nerastos prieigos teisės: "{access_rights_value.text}"')
 
-                    if licence := LICENCES.get(access_rights_value.text):
-                        licence = Licence.objects.filter(title=licence).first()
-
+                    licence = _get_licence(access_rights_value.text)
                     if created or dataset.licence != licence:
                         changed = True
                         if licence:
                             dataset.licence = licence
                         else:
                             dataset.licence = None
-                            title = LICENCES.get(access_rights_value.text) or access_rights_value.text
-                            errors.append(f'Nerasta licencija: "{title}"')
+                            errors.append(f'Nerasta licencija: "{access_rights_value.text}"')
 
                 # organization
                 if created:

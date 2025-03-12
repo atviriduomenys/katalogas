@@ -1,8 +1,6 @@
-from django.db import migrations, models
-import django.db.models.deletion
+from django.db import migrations
 from vitrina.settings import SITE_ID
 from django.contrib.redirects.models import Redirect
-from django.contrib.sites.models import Site
 
 
 def create_redirects(apps, schema_editor):

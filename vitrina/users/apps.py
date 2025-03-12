@@ -8,4 +8,4 @@ class UsersConfig(AppConfig):
     verbose_name = _("Naudotojai")
 
     def ready(self):
-        import vitrina.users.signals
+        pass

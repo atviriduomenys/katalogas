@@ -4,7 +4,6 @@ import operator
 from datetime import timedelta
 from typing import Optional
 
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.db.models import QuerySet
 from django.utils import timezone

@@ -1,6 +1,4 @@
-import mimetypes
-from django.db import migrations, models
-import django.db.models.deletion
+from django.db import migrations
 
 
 def delete_resources_with_dataset_null(apps, schema_editor):

@@ -1,6 +1,5 @@
 import json
 import pathlib
-import tagulous
 import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
@@ -8,14 +7,11 @@ from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 from django.db.models import Sum, ForeignKey
-from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from django.apps import apps
 
 from filer.fields.file import FilerFileField
-from parler.signals import post_translation_save
 from tagulous.models import TagField
 from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel

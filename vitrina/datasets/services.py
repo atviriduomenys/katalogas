@@ -1,4 +1,3 @@
-import itertools
 from collections import OrderedDict
 from typing import List, Any, Dict, Type
 
@@ -12,7 +11,6 @@ from django.db.models import Q
 from django.urls import reverse
 from haystack.backends import SQ
 
-from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
@@ -22,7 +20,7 @@ from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
 
 

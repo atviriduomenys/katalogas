@@ -1214,7 +1214,7 @@ class ApiView(
             "curl": {
                 "name": "curl",
                 "query": highlight(
-                    f'curl "%s"'
+                    'curl "%s"'
                     % url.replace("\\", r"\\").replace('"', r"\"").replace(" ", "%20"),
                     TextLexer(),
                     HtmlFormatter(),
@@ -2836,7 +2836,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     f"{version_content_type}, "
                     f"id: {version.pk}"
                 ),
-                description=(f"Sukurta nauja duomenų rinkinio struktūros versija."),
+                description=("Sukurta nauja duomenų rinkinio struktūros versija."),
                 content_type=version_content_type,
                 object_id=version.pk,
                 user=proj.user,

@@ -28,7 +28,7 @@ from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
-from vitrina.api.models import ApiDescription, ApiKey
+from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
     CatalogSerializer,
@@ -50,7 +50,7 @@ from vitrina.api.serializers import (
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import (

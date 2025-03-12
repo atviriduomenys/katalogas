@@ -1,5 +1,4 @@
 from django.urls import path
-from vitrina.viisp.provider import VIISPProvider
 from vitrina.viisp.views import (
     VIISPLoginView,
     VIISPCompleteLoginView,
@@ -11,11 +10,7 @@ from vitrina.viisp.views import (
 )
 from vitrina.orgs.views import PartnerRegisterView
 from allauth.socialaccount.views import SignupView, ConnectionsView
-from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-
-
-from allauth.socialaccount.providers.oauth2.urls import default_urlpatterns
 
 
 class SignupViewViisp(SignupView):

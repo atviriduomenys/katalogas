@@ -2,7 +2,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
 from django.shortcuts import get_object_or_404
 
-from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription

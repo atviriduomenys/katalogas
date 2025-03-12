@@ -1,7 +1,5 @@
-import json
 from datetime import datetime
 
-from django.contrib.contenttypes.models import ContentType
 import requests
 from django.core.cache import cache
 from django.http import HttpRequest

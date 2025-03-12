@@ -8,4 +8,4 @@ class ClassifiersConfig(AppConfig):
     verbose_name = _("Klasifikatoriai")
 
     def ready(self):
-        import vitrina.classifiers.signals
+        import vitrina.classifiers.signals  # noqa: F401

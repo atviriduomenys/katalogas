@@ -1,5 +1,4 @@
-import mimetypes
-from django.db import migrations, models
+from django.db import migrations
 
 
 def generate_mimetype_for_format_table(apps, schema_editor):

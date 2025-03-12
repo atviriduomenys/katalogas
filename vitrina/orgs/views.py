@@ -42,21 +42,16 @@ from vitrina.helpers import get_stats_filter_options_based_on_model
 from vitrina.api.services import get_auth_session
 from vitrina.helpers import (
     prepare_email_by_identifier,
-    get_stats_filter_options_based_on_model,
 )
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.helpers import (
     get_current_domain,
-    prepare_email_by_identifier,
     send_email_with_logging,
-    get_stats_filter_options_based_on_model,
     email,
 )
 from django.template.defaultfilters import date as _date
 from vitrina import settings
-from vitrina.api.models import ApiKey
-from vitrina.datasets.models import Dataset
 from vitrina.datasets.services import (
     get_frequency_and_format,
     get_values_for_frequency,
@@ -65,7 +60,6 @@ from vitrina.datasets.services import (
 from vitrina.datasets.services import (
     manage_subscriptions_for_representative as manage_dataset_subscriptions,
 )
-from vitrina.helpers import get_current_domain
 from vitrina.orgs.forms import (
     OrganizationPlanForm,
     OrganizationMergeForm,
@@ -102,7 +96,6 @@ from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
-from vitrina.helpers import email, get_current_domain
 from django.http import HttpResponse
 
 
@@ -1635,7 +1628,7 @@ class OrganizationApiKeysView(
                         key.save()
             else:
                 error = True
-                err_message = f"Error syncing apikeys"
+                err_message = "Error syncing apikeys"
 
         if error:
             print(err_message)
@@ -2249,7 +2242,7 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
                         title=f"Prašymas suteikti prieigą prie duomenų. Raktas: {self.api_key.pk}",
                         status=Task.CREATED,
                         type=Task.APIKEY,
-                        description=f"Kita organizacija prašo suteikti prieigą prie duomenų raktui.",
+                        description="Kita organizacija prašo suteikti prieigą prie duomenų raktui.",
                     )
             else:
                 organization = self.organization

@@ -97,7 +97,7 @@ class EnumForm(forms.ModelForm):
             md = markdown.Markdown()
             try:
                 md.convert(description)
-            except:
+            except Exception:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
 
@@ -477,7 +477,7 @@ class ModelCreateForm(forms.ModelForm):
             md = markdown.Markdown()
             try:
                 md.convert(description)
-            except:
+            except Exception:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
 
@@ -848,7 +848,7 @@ class PropertyForm(forms.ModelForm):
             md = markdown.Markdown()
             try:
                 md.convert(description)
-            except:
+            except Exception:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
 
@@ -943,7 +943,7 @@ class ParamForm(forms.ModelForm):
             md = markdown.Markdown()
             try:
                 md.convert(description)
-            except:
+            except Exception:
                 raise ValidationError(_("Aprašymas neatitinka Markdown formato."))
         return description
 

@@ -21,25 +21,18 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from django.template.loader import render_to_string, get_template
-from django.template import engines, Template, Context
+from django.template.loader import get_template
+from django.template import Template, Context
 from filer.validation import validate_upload
 
 from vitrina import settings
-from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
 from vitrina.messages.models import EmailTemplate, SentMail
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from vitrina.messages.models import EmailTemplate
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
-from vitrina.messages.models import SentMail
-from django.template.loaders.app_directories import Loader
 
 
 class Filter:
@@ -421,32 +414,6 @@ def get_filter_url(
             query_dict[key].remove(value)
         else:
             query_dict[key] = value
-    return "?" + urlencode(query_dict, True)
-
-
-def get_date_filter_url(
-    request: WSGIRequest,
-    start: datetime.date,
-    end: datetime.date,
-    selected: bool = False,
-) -> str:
-    query_dict = dict(request.GET.copy())
-    if "page" in query_dict:
-        query_dict.pop("page")
-    if selected:
-        val = "%s_exact:%s" % (key, value)
-        if val in query_dict.get("selected_facets", []):
-            query_dict["selected_facets"].remove(val)
-        if is_org_dataset_list(request) and key == "organization":
-            if "selected_facets" in query_dict:
-                query_dict["selected_facets"].append("%s_exact:%s" % (key, value))
-            else:
-                query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
-    else:
-        if "selected_facets" in query_dict:
-            query_dict["selected_facets"].append("%s_exact:%s" % (key, value))
-        else:
-            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
     return "?" + urlencode(query_dict, True)
 
 

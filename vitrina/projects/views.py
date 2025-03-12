@@ -27,7 +27,7 @@ from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.services import get_auth_session
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
-from vitrina.orgs.forms import ProjectApiKeyRegenerateForm, ProjectApiKeyForm
+from vitrina.orgs.forms import ProjectApiKeyRegenerateForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
@@ -120,7 +120,7 @@ class ProjectCreateView(
         set_comment(Project.CREATED)
         Task.objects.create(
             title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
-            description=f"Portale užregistruotas naujas panaudos atvejis.",
+            description="Portale užregistruotas naujas panaudos atvejis.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             status=Task.CREATED,
@@ -359,7 +359,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
                         ),
                         description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudos atvejui:"
                         f" {project.title}."
-                        + f"<br/><a href="
+                        + "<br/><a href="
                         + url
                         + ">Peržiūrėti leidimus</a>.",
                         organization=m.dataset.organization,

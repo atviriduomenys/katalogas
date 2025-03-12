@@ -1,10 +1,8 @@
-import csv
 import itertools
 import json
 import secrets
 import uuid
 import pytz
-import os
 from datetime import datetime, date
 from typing import List
 from urllib.parse import urlencode
@@ -22,12 +20,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
-from django.db.models import Func, F, Value, TextField, Max
+from django.db.models import Func, F, Value, TextField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy, resolve
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import date as _date
 
@@ -72,7 +69,6 @@ from vitrina.structure.models import Model, Metadata, Property
 from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
-    get_data_from_spinta,
 )
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.tasks.models import Task
@@ -122,7 +118,6 @@ from vitrina.helpers import (
     get_selected_value,
     Filter,
     DateFilter,
-    send_email_with_logging,
     get_stats_filter_options_based_on_model,
 )
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -224,7 +219,6 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        datasets = self.get_queryset()
         facet_fields = context.get("facets").get("fields")
         date_facets = context.get("facets").get("dates")
         form = context.get("form")
@@ -871,7 +865,6 @@ class DatasetUpdateView(
         self.object = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
-        base_email_template = "Sveiki, duomenų rinkinys {object} buvo atnaujintas"
         if self.object.is_public and not self.object.published:
             self.object.published = timezone.now()
 
@@ -980,8 +973,6 @@ class DatasetUpdateView(
         if org_subs:
             subs = org_subs | subs
 
-        sub_email_list = []
-        email_data_sub = None
         for sub in subs:
             queries.append(
                 Subscription.objects.filter(

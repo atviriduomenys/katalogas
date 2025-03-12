@@ -4,11 +4,10 @@ from datetime import datetime
 from allauth.account.views import ConfirmEmailView as BaseConfirmEmailView
 from allauth.utils import build_absolute_uri
 from django.contrib.sites.models import Site
-from django_otp.forms import OTPAuthenticationForm
 from django_otp.views import LoginView as BaseLoginView
 from pandas import period_range
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.views import (
     PasswordResetView as BasePasswordResetView,
@@ -27,7 +26,6 @@ from allauth.account.models import (
     EmailConfirmation,
     EmailConfirmationHMAC,
 )
-from django.http import HttpResponseRedirect
 
 from vitrina import settings
 from vitrina.helpers import email
@@ -156,7 +154,7 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         user = get_object_or_404(User, id=self.request.user.id)
         soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
         if soc_acc:
-            return soc_acc.extra_data.get("password_not_set") == True
+            return soc_acc.extra_data.get("password_not_set", False)
 
     def handle_no_permission(self):
         return redirect("home")
@@ -176,8 +174,6 @@ class PasswordSetView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         soc_acc.save()
 
         update_session_auth_hash(self.request, user)
-        soc_acc = SocialAccount.objects.filter(user_id=user.id).first()
-        company_code = soc_acc.extra_data.get("company_code")
         return redirect("partner-register")
 
     def get_context_data(self, **kwargs):

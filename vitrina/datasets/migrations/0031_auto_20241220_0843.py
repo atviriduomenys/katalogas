@@ -147,7 +147,6 @@ def process_api_format_distributions(apps, schema_editor):
 def assign_datasets_to_dataservice(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
-    Format = apps.get_model("vitrina_resources", "Format")
     DatasetRelation = apps.get_model("vitrina_datasets", "DatasetRelation")
     Relation = apps.get_model("vitrina_datasets", "Relation")
 

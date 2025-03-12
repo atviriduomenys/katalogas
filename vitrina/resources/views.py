@@ -7,7 +7,7 @@ from django.http import Http404
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina import settings

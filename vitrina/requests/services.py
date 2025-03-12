@@ -1,12 +1,9 @@
 from typing import List, Any, Dict, Type
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
 from vitrina.helpers import get_filter_url
-from vitrina.orgs.models import Representative, Organization
-from vitrina.orgs.services import has_perm, Action
 
 
 def update_facet_data(

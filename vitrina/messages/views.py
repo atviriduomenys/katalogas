@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView
-from django.urls import reverse
 
 from vitrina.datasets.models import Dataset
 from vitrina.messages.forms import SubscriptionForm

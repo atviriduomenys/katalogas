@@ -7,7 +7,6 @@ from typing import Union, Tuple, List, Dict
 
 import requests
 from django.db.models import Q
-from lark import ParseError
 from pyproj import Transformer
 
 import vitrina.datasets.structure as struct

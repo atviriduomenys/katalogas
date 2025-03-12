@@ -3,14 +3,13 @@ from urllib.parse import urlparse
 import re
 
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.template.loader import render_to_string
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Q, QuerySet
+from django.db.models import Q
 from django.forms import (
     ModelForm,
     EmailField,
@@ -18,7 +17,6 @@ from django.forms import (
     BooleanField,
     CharField,
     HiddenInput,
-    FileField,
     ModelChoiceField,
     IntegerField,
     Form,
@@ -28,7 +26,6 @@ from django.forms import (
     DateInput,
     Textarea,
     CheckboxInput,
-    Widget,
     RegexField,
 )
 from django.forms.models import ModelChoiceIterator
@@ -307,7 +304,6 @@ class OrganizationCreateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initial = kwargs.get("initial")
-        disable_fields = True if initial else False
         button = "Sukurti"
         parent = self.instance.get_parent()
         if parent:
@@ -738,27 +734,6 @@ class OrganizationMergeForm(Form):
         return organization
 
 
-class ProjectApiKeyForm(ModelForm):
-    project_id = IntegerField(widget=HiddenInput(), required=False)
-
-    class Meta:
-        model = ApiKey
-        fields = ("project_id",)
-
-    def __init__(self, project, *args, **kwargs):
-        self.project = project
-        super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.attrs["novalidate"] = ""
-        self.helper.form_id = "project-apikey-form"
-        self.helper.layout = Layout(
-            Field("project_id"),
-            Submit("submit", _("Sukurti"), css_class="button is-primary"),
-        )
-
-        self.initial["project_id"] = self.project.pk
-
-
 class ApiKeyForm(ModelForm):
     organization_id = IntegerField(widget=HiddenInput(), required=False)
     client_name = CharField(label=_("Pavadinimas"), required=False)
@@ -913,7 +888,6 @@ class ProjectApiKeyRegenerateForm(ModelForm):
     def __init__(self, project, *args, **kwargs):
         self.project = project
         super().__init__(*args, **kwargs)
-        instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-apikey-regenerate-form"
@@ -1224,14 +1198,14 @@ class ContactCreateForm(ModelForm):
 
         for org in organization_contacts:
             self.fields["contact"].choices.append(
-                (_(f"Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
+                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
             )
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
                 if user.organization_id == org.id
             ]
-            self.fields["contact"].choices.append((_(f"Naudotojai:"), user_choices))
+            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
         self.fields["dataset"].queryset = Dataset.objects.filter(
             organization_id=self.object_id
@@ -1307,14 +1281,14 @@ class ContactUpdateForm(ModelForm):
 
         for org in organization_contacts:
             self.fields["contact"].choices.append(
-                (_(f"Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
+                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
             )
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
                 if user.organization_id == org.id
             ]
-            self.fields["contact"].choices.append((_(f"Naudotojai:"), user_choices))
+            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
         self.fields["dataset"].queryset = Dataset.objects.filter(
             organization_id=self.object.id

@@ -21,7 +21,6 @@ from django.forms import (
     BooleanField,
     CharField,
     EmailField,
-    Form,
     ModelChoiceField,
     ModelForm,
     PasswordInput,

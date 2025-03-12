@@ -6,7 +6,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget, Select2Widget
+from django_select2.forms import ModelSelect2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -46,7 +46,6 @@ from vitrina.datasets.models import (
     Type,
     DatasetRelation,
     Relation,
-    DatasetExcludedGroups,
     Contact,
 )
 from vitrina.orgs.models import Organization, Representative
@@ -292,14 +291,14 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         for org in organization_contacts:
             self.fields["contact"].choices.append(
-                (_(f"Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
+                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
             )
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
                 if user.organization_id == org.id
             ]
-            self.fields["contact"].choices.append((_(f"Naudotojai:"), user_choices))
+            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
         if contact := self._get_contact(self.instance):
             if isinstance(contact, Organization):

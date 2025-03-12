@@ -37,16 +37,13 @@ from typing import List
 from urllib.parse import urlencode
 
 
-import vitrina.settings as settings
 from vitrina.comments.models import Comment
-from vitrina.datasets.forms import PlanForm
 from vitrina.datasets.models import Dataset, DatasetGroup
 from vitrina.datasets.services import (
     get_frequency_and_format,
     get_query_for_frequency,
     get_values_for_frequency,
     sort_publication_stats,
-    get_requests,
 )
 from vitrina.helpers import (
     DateFilter,
@@ -80,11 +77,9 @@ from vitrina.tasks.models import Task
 from vitrina.users.models import User
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
-from django.http.response import HttpResponsePermanentRedirect, Http404
+from django.http.response import HttpResponsePermanentRedirect
 from vitrina.requests.forms import RequestPlanForm
 from vitrina.plans.models import PlanDataset
-
-ELASTIC_FACET_SIZE = settings.ELASTIC_FACET_SIZE
 
 
 class RequestListView(FacetedSearchView):

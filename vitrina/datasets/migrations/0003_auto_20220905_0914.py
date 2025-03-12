@@ -5,15 +5,16 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0002_alter_datasetstructure_options'),
+        ("vitrina_datasets", "0002_alter_datasetstructure_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='datasetstructure',
-            name='file',
-            field=models.FileField(blank=True, null=True, upload_to='files/datasets/%Y/%m/%d/'),
+            model_name="datasetstructure",
+            name="file",
+            field=models.FileField(
+                blank=True, null=True, upload_to="files/datasets/%Y/%m/%d/"
+            ),
         ),
     ]

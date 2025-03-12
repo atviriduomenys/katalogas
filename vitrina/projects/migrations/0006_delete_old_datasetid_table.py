@@ -8,14 +8,13 @@ from django.utils.timezone import utc
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_projects', '0005_auto_20221125_1251'),
+        ("vitrina_projects", "0005_auto_20221125_1251"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='UsecaseDatasetIds',
+            name="UsecaseDatasetIds",
         ),
     ]

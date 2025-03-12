@@ -7,38 +7,62 @@ import parler.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0020_auto_20231211_1134'),
+        ("vitrina_resources", "0020_auto_20231211_1134"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='title',
-            new_name='title_old'
+            model_name="datasetdistribution", old_name="title", new_name="title_old"
         ),
         migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='description',
-            new_name='description_old'
+            model_name="datasetdistribution",
+            old_name="description",
+            new_name="description_old",
         ),
         migrations.CreateModel(
-            name='DatasetDistributionTranslation',
+            name="DatasetDistributionTranslation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('language_code', models.CharField(db_index=True, max_length=15, verbose_name='Language')),
-                ('title', models.CharField(blank=True, max_length=255, verbose_name='Pavadinimas')),
-                ('description', models.TextField(blank=True, verbose_name='Aprašymas')),
-                ('master', parler.fields.TranslationsForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='vitrina_resources.datasetdistribution')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "language_code",
+                    models.CharField(
+                        db_index=True, max_length=15, verbose_name="Language"
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        blank=True, max_length=255, verbose_name="Pavadinimas"
+                    ),
+                ),
+                ("description", models.TextField(blank=True, verbose_name="Aprašymas")),
+                (
+                    "master",
+                    parler.fields.TranslationsForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="translations",
+                        to="vitrina_resources.datasetdistribution",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'dataset distribution Translation',
-                'db_table': 'dataset_distribution_translation',
-                'db_tablespace': '',
-                'managed': True,
-                'default_permissions': (),
-                'unique_together': {('language_code', 'master')},
+                "verbose_name": "dataset distribution Translation",
+                "db_table": "dataset_distribution_translation",
+                "db_tablespace": "",
+                "managed": True,
+                "default_permissions": (),
+                "unique_together": {("language_code", "master")},
             },
             bases=(parler.models.TranslatedFieldsModel, models.Model),
         ),

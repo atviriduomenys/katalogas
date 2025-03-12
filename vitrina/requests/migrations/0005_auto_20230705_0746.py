@@ -6,10 +6,9 @@ from vitrina.datasets.models import Dataset
 from django.core.exceptions import ObjectDoesNotExist
 
 
-
 def migrate_request_datasets(apps, schema_editor):
-    Request = apps.get_model('vitrina_requests', 'Request')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Request = apps.get_model("vitrina_requests", "Request")
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     for request in Request.objects.filter(dataset_id__isnull=False):
         request.content_type = ContentType.objects.get_for_model(Dataset)
@@ -23,45 +22,49 @@ def migrate_request_datasets(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_requests', '0004_auto_20230705_0746'),
-        ('vitrina_datasets', '0017_merge_20230629_0914'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_requests", "0004_auto_20230705_0746"),
+        ("vitrina_datasets", "0017_merge_20230629_0914"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='request',
-            options={'managed': True},
+            name="request",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='requestevent',
-            options={'managed': True},
+            name="requestevent",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='requeststructure',
-            options={'managed': True},
+            name="requeststructure",
+            options={"managed": True},
         ),
         migrations.AddField(
-            model_name='request',
-            name='content_type',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype', verbose_name='Objekto tipas'),
+            model_name="request",
+            name="content_type",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="contenttypes.contenttype",
+                verbose_name="Objekto tipas",
+            ),
         ),
         migrations.AddField(
-            model_name='request',
-            name='external_content_type',
+            model_name="request",
+            name="external_content_type",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='request',
-            name='external_object_id',
+            model_name="request",
+            name="external_object_id",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='request',
-            name='object_id',
-            field=models.PositiveIntegerField(null=True, verbose_name='Objekto id'),
+            model_name="request",
+            name="object_id",
+            field=models.PositiveIntegerField(null=True, verbose_name="Objekto id"),
         ),
-        migrations.RunPython(migrate_request_datasets)
+        migrations.RunPython(migrate_request_datasets),
     ]

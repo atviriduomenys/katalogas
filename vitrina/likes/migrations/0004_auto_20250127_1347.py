@@ -4,23 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_likes', '0003_auto_20220928_0842'),
+        ("vitrina_likes", "0003_auto_20220928_0842"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='userlike',
-            options={'managed': True},
+            name="userlike",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='uservote',
-            options={'managed': True},
+            name="uservote",
+            options={"managed": True},
         ),
         migrations.AlterField(
-            model_name='like',
-            name='created',
+            model_name="like",
+            name="created",
             field=models.DateTimeField(auto_now_add=True),
         ),
     ]

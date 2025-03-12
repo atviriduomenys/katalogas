@@ -6,10 +6,10 @@ from django.utils import timezone
 
 
 def migrate_subscriptions(apps, schema_editor):
-    UserSubscription = apps.get_model('vitrina_messages', 'UserSubscription')
-    Subscription = apps.get_model('vitrina_messages', 'Subscription')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    UserSubscription = apps.get_model("vitrina_messages", "UserSubscription")
+    Subscription = apps.get_model("vitrina_messages", "Subscription")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
     seen = set()
     for subscription in UserSubscription.objects.all():
         key = (subscription.dataset.pk, subscription.user)
@@ -21,31 +21,50 @@ def migrate_subscriptions(apps, schema_editor):
             created=subscription.created or timezone.now(),
             content_type=content_type,
             object_id=subscription.dataset.pk,
-            user=subscription.user
+            user=subscription.user,
         )
         seen.add(key)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_messages', '0001_initial'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_messages", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Subscription',
+            name="Subscription",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True)),
-                ('object_id', models.PositiveIntegerField()),
-                ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True)),
+                ("object_id", models.PositiveIntegerField()),
+                (
+                    "content_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'subscription',
+                "db_table": "subscription",
             },
         ),
         migrations.RunPython(migrate_subscriptions),

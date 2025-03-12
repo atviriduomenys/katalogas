@@ -7,26 +7,35 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_orgs', '0004_auto_20220919_0859'),
+        ("vitrina_orgs", "0004_auto_20220919_0859"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='representative',
-            name='role',
-            field=models.CharField(blank=True, choices=[('coordinator', 'Koordinatorius'), ('manager', 'Tvarkytojas')], max_length=255, null=True),
+            model_name="representative",
+            name="role",
+            field=models.CharField(
+                blank=True,
+                choices=[("coordinator", "Koordinatorius"), ("manager", "Tvarkytojas")],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='representative',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            model_name="representative",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='representative',
-            name='version',
+            model_name="representative",
+            name="version",
             field=models.IntegerField(default=1),
         ),
     ]

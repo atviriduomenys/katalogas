@@ -6,42 +6,65 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0036_auto_20250127_1347'),
+        ("vitrina_datasets", "0036_auto_20250127_1347"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_messages', '0015_auto_20241122_1309'),
+        ("vitrina_messages", "0015_auto_20241122_1309"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='sentmail',
-            name='email_content',
-            field=models.TextField(blank=True, null=True, verbose_name='Turinys'),
+            model_name="sentmail",
+            name="email_content",
+            field=models.TextField(blank=True, null=True, verbose_name="Turinys"),
         ),
         migrations.AlterField(
-            model_name='sentmail',
-            name='email_sent',
-            field=models.BooleanField(blank=True, null=True, verbose_name='Išsiųsta'),
+            model_name="sentmail",
+            name="email_sent",
+            field=models.BooleanField(blank=True, null=True, verbose_name="Išsiųsta"),
         ),
         migrations.AlterField(
-            model_name='sentmail',
-            name='email_subject',
-            field=models.TextField(blank=True, null=True, verbose_name='Tema'),
+            model_name="sentmail",
+            name="email_subject",
+            field=models.TextField(blank=True, null=True, verbose_name="Tema"),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='sub_type',
-            field=models.CharField(blank=True, choices=[('ORGANIZATION', 'Organizacijos prenumerata'), ('DATASET', 'Duomenų rinkinio prenumerata'), ('REQUEST', 'Poreikio prenumerata'), ('PROJECT', 'Projekto prenumerata'), ('COMMENT', 'Komentaro prenumerata')], max_length=255, null=True, verbose_name='Prenumeratos tipas'),
+            model_name="subscription",
+            name="sub_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("ORGANIZATION", "Organizacijos prenumerata"),
+                    ("DATASET", "Duomenų rinkinio prenumerata"),
+                    ("REQUEST", "Poreikio prenumerata"),
+                    ("PROJECT", "Projekto prenumerata"),
+                    ("COMMENT", "Komentaro prenumerata"),
+                ],
+                max_length=255,
+                null=True,
+                verbose_name="Prenumeratos tipas",
+            ),
         ),
         migrations.AlterField(
-            model_name='usersubscription',
-            name='dataset',
-            field=models.ForeignKey(blank=True, db_column='dataset', null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.dataset'),
+            model_name="usersubscription",
+            name="dataset",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="dataset",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_datasets.dataset",
+            ),
         ),
         migrations.AlterField(
-            model_name='usersubscription',
-            name='user',
-            field=models.ForeignKey(blank=True, db_column='user', null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="usersubscription",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="user",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

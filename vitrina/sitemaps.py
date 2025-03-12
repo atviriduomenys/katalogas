@@ -11,7 +11,7 @@ class RootSitemap(Sitemap):
     priority = 1.0
 
     def items(self):
-        return ['/']
+        return ["/"]
 
     def location(self, item):
         return item
@@ -35,7 +35,9 @@ class ModelSitemap(Sitemap):
 
     # Only public models
     def items(self):
-        return [model for model in Model.objects.all().order_by('id') if model.is_opened()]
+        return [
+            model for model in Model.objects.all().order_by("id") if model.is_opened()
+        ]
 
 
 class OrganizationSitemap(Sitemap):
@@ -55,7 +57,11 @@ class MoreViewSitemap(sitemaps.Sitemap):
     changefreq = "yearly"
 
     def items(self):
-        return ["/more/about/", "/more/regulation/regulation_legal/", "/more/regulation/regulation_strat/",]
+        return [
+            "/more/about/",
+            "/more/regulation/regulation_legal/",
+            "/more/regulation/regulation_strat/",
+        ]
 
     def location(self, item):
         return item

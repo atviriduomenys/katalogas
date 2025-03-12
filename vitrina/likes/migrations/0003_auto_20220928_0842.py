@@ -5,16 +5,15 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_likes', '0002_auto_20220921_0933'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_likes", "0002_auto_20220921_0933"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='like',
-            unique_together={('user', 'content_type', 'object_id')},
+            name="like",
+            unique_together={("user", "content_type", "object_id")},
         ),
     ]

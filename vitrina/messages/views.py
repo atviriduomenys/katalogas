@@ -32,7 +32,10 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+            if (
+                self.obj.status == Project.APPROVED
+                or self.obj.user == self.request.user
+            ):
                 return True
             else:
                 return has_perm(
@@ -43,27 +46,24 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return True
 
     def dispatch(self, request, *args, **kwargs):
-        self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])
-        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs['obj_id'])
+        self.ct = get_object_or_404(ContentType, pk=self.kwargs["content_type_id"])
+        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs["obj_id"])
         # FIXME: take user from request.user
-        self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
+        self.user = get_object_or_404(User, pk=self.kwargs["user_id"])
 
         # FIXME: take userFrom request user
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(request, _(
-                "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
-            ))
+            messages.error(
+                request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui.")
+            )
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, content_type_id, obj_id, user_id):
-        qs = (
-            Subscription.objects.
-            filter(
-                content_type=self.ct,
-                object_id=self.obj.pk,
-                user=self.user,
-            )
+        qs = Subscription.objects.filter(
+            content_type=self.ct,
+            object_id=self.obj.pk,
+            user=self.user,
         )
         if qs.exists():
             qs.delete()
@@ -71,33 +71,41 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         unsubscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            self.obj.get_absolute_url()
+            self.obj.get_absolute_url(),
         )
 
         subscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            reverse('subscribe-form', kwargs={'content_type_id': content_type_id,
-                                           'obj_id': obj_id,
-                                           'user_id': user_id})
+            reverse(
+                "subscribe-form",
+                kwargs={
+                    "content_type_id": content_type_id,
+                    "obj_id": obj_id,
+                    "user_id": user_id,
+                },
+            ),
         )
 
-        email([self.user.email], 'newsletter-unsubscribed', 'vitrina/messages/emails/sub/deleted.md', {
-            'obj': self.obj,
-            'subscribe_url': subscribe_url,
-            'unsubscribe_url': unsubscribe_url
-        })
+        email(
+            [self.user.email],
+            "newsletter-unsubscribed",
+            "vitrina/messages/emails/sub/deleted.md",
+            {
+                "obj": self.obj,
+                "subscribe_url": subscribe_url,
+                "unsubscribe_url": unsubscribe_url,
+            },
+        )
 
-        return HttpResponseRedirect(reverse('user-profile', args=[self.user.pk]) + "#sub")
+        return HttpResponseRedirect(
+            reverse("user-profile", args=[self.user.pk]) + "#sub"
+        )
 
 
-class SubscribeFormView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    CreateView
-):
+class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Subscription
     form_class = SubscriptionForm
-    template_name = 'vitrina/messages/form.html'
+    template_name = "vitrina/messages/form.html"
 
     ct: ContentType | None = None
     obj: None
@@ -110,7 +118,10 @@ class SubscribeFormView(
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+            if (
+                self.obj.status == Project.APPROVED
+                or self.obj.user == self.request.user
+            ):
                 return True
             else:
                 return has_perm(
@@ -121,28 +132,28 @@ class SubscribeFormView(
         return True
 
     def dispatch(self, request, *args, **kwargs):
-        self.ct = get_object_or_404(ContentType, pk=self.kwargs['content_type_id'])
-        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs['obj_id'])
+        self.ct = get_object_or_404(ContentType, pk=self.kwargs["content_type_id"])
+        self.obj = get_object_or_404(self.ct.model_class(), pk=self.kwargs["obj_id"])
         # FIXME: take user from request.user
-        self.user = get_object_or_404(User, pk=self.kwargs['user_id'])
+        self.user = get_object_or_404(User, pk=self.kwargs["user_id"])
 
         # FIXME: take userFrom request user
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(request, _(
-                "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
-            ))
+            messages.error(
+                request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui.")
+            )
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data['current_title'] = _('Prenumeratos kūrimas')
-        context_data['object_title'] = self.obj.title
+        context_data["current_title"] = _("Prenumeratos kūrimas")
+        context_data["object_title"] = self.obj.title
         return context_data
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['ct'] = self.ct
+        kwargs["ct"] = self.ct
         return kwargs
 
     def form_valid(self, form):
@@ -157,21 +168,26 @@ class SubscribeFormView(
 
         subscribe_url = "%s%s" % (
             get_current_domain(self.request),
-            self.obj.get_absolute_url()
+            self.obj.get_absolute_url(),
         )
         unsubscribe_url = "%s%s#sub" % (
             get_current_domain(self.request),
-            reverse('user-profile', args=[self.user.pk])
+            reverse("user-profile", args=[self.user.pk]),
         )
         try:
             self.object.save()
             messages.success(self.request, _("Prenumerata sukurta sėkmingai"))
 
-            email([self.object.user.email], 'newsletter-subscribed', 'vitrina/messages/emails/sub/created.md', {
-                'obj': self.obj,
-                'subscribe_url': subscribe_url,
-                'unsubscribe_url': unsubscribe_url
-            })
+            email(
+                [self.object.user.email],
+                "newsletter-subscribed",
+                "vitrina/messages/emails/sub/created.md",
+                {
+                    "obj": self.obj,
+                    "subscribe_url": subscribe_url,
+                    "unsubscribe_url": unsubscribe_url,
+                },
+            )
         except IntegrityError:
             existing_subscription = Subscription.objects.filter(
                 content_type=self.ct,
@@ -182,5 +198,10 @@ class SubscribeFormView(
             if existing_subscription:
                 existing_subscription.delete()
                 self.object.save()
-                messages.success(self.request, _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."))
+                messages.success(
+                    self.request,
+                    _(
+                        "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
+                    ),
+                )
         return HttpResponseRedirect(self.obj.get_absolute_url())

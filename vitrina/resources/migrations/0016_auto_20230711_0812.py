@@ -5,15 +5,14 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0015_auto_20230608_1257'),
+        ("vitrina_resources", "0015_auto_20230608_1257"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='datasetdistribution',
-            name='is_parameterized',
-            field=models.BooleanField(default=False, verbose_name='Parametrizuotas'),
+            model_name="datasetdistribution",
+            name="is_parameterized",
+            field=models.BooleanField(default=False, verbose_name="Parametrizuotas"),
         ),
     ]

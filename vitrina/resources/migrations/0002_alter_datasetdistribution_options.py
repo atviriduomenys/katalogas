@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0001_initial'),
+        ("vitrina_resources", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='datasetdistribution',
+            name="datasetdistribution",
             options={},
         ),
     ]

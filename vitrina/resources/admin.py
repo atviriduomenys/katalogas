@@ -17,14 +17,18 @@ class GeoportalFormatValueInline(admin.TabularInline):
 
 class GeoportalFormatAdmin(admin.ModelAdmin):
     inlines = [GeoportalFormatValueInline]
-    list_display = ('format', 'values_display',)
+    list_display = (
+        "format",
+        "values_display",
+    )
 
     def values_display(self, obj):
-        return mark_safe("<br/>".join([item.value for item in obj.geoportalformatvalue_set.all()]))
+        return mark_safe(
+            "<br/>".join([item.value for item in obj.geoportalformatvalue_set.all()])
+        )
 
-    values_display.short_description = _('Geoportalo reikšmės')
+    values_display.short_description = _("Geoportalo reikšmės")
 
 
 admin.site.register(Format, FormatAdmin)
 admin.site.register(GeoportalFormat, GeoportalFormatAdmin)
-

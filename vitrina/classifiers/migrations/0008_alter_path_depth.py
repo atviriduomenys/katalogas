@@ -4,21 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0007_remake_categories'),
+        ("vitrina_classifiers", "0007_remake_categories"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='category',
-            name='path',
+            model_name="category",
+            name="path",
             field=models.CharField(unique=True, max_length=255),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='numchild',
+            model_name="category",
+            name="numchild",
             field=models.PositiveIntegerField(),
         ),
     ]
-

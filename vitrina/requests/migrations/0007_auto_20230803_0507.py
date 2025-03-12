@@ -3,31 +3,29 @@
 from django.db import migrations, models
 import django.db.models.deletion
 
+
 def copy_orgs(apps, schema_editor):
-    Request = apps.get_model('vitrina_requests', 'Request')
+    Request = apps.get_model("vitrina_requests", "Request")
 
     for request in Request.objects.filter(organization__isnull=False):
         request.organizations.add(request.organization)
         request.save()
 
 
-
-
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_requests', '0006_auto_20230720_1648'),
+        ("vitrina_requests", "0006_auto_20230720_1648"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='request',
-            name='organizations',
-            field=models.ManyToManyField(to='vitrina_orgs.Organization'),
+            model_name="request",
+            name="organizations",
+            field=models.ManyToManyField(to="vitrina_orgs.Organization"),
         ),
         migrations.RunPython(copy_orgs),
         migrations.RemoveField(
-            model_name='request',
-            name='organization',
+            model_name="request",
+            name="organization",
         ),
     ]

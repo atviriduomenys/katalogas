@@ -20,7 +20,7 @@ def _fix_mp(
     order_by: list[str],  # model.node_order_by
     parent: MP_Node | None = None,
     depth: int = 1,
-    path: str = '',
+    path: str = "",
 ) -> int:  # numchild
     i = 0
     qs = model.objects.filter(parent=parent).order_by(*order_by)
@@ -28,19 +28,18 @@ def _fix_mp(
         obj.depth = depth
         obj.path = path + _get_path(i)
         obj.numchild = _fix_mp(model, order_by, obj, depth + 1, obj.path)
-        obj.save(update_fields=['depth', 'path', 'numchild'])
+        obj.save(update_fields=["depth", "path", "numchild"])
     return i
 
 
 def remake_categories(apps, schema_editor):
     Category = apps.get_model("vitrina_classifiers", "Category")
-    _fix_mp(Category, ['title'])
+    _fix_mp(Category, ["title"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0006_alter_add_fields'),
+        ("vitrina_classifiers", "0006_alter_add_fields"),
     ]
 
     operations = [

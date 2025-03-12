@@ -5,14 +5,13 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0018_auto_20250108_0747'),
+        ("vitrina_classifiers", "0018_auto_20250108_0747"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='category',
-            name='name',
+            model_name="category",
+            name="name",
         ),
     ]

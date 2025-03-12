@@ -4,10 +4,10 @@ from django.db import migrations
 
 
 def create_history_objects(apps, schema_editor):
-    Project = apps.get_model('vitrina_projects', 'Project')
-    Revision = apps.get_model('reversion', 'Revision')
-    Version = apps.get_model('reversion', 'Version')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Project = apps.get_model("vitrina_projects", "Project")
+    Revision = apps.get_model("reversion", "Revision")
+    Version = apps.get_model("reversion", "Version")
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     for project in Project.objects.all():
         content_type = ContentType.objects.get_for_model(Project)
@@ -27,11 +27,8 @@ def create_history_objects(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_projects', '0003_auto_20220901_1239'),
+        ("vitrina_projects", "0003_auto_20220901_1239"),
     ]
 
-    operations = [
-        migrations.RunPython(create_history_objects)
-    ]
+    operations = [migrations.RunPython(create_history_objects)]

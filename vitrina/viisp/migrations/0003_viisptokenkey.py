@@ -4,21 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_viisp', '0002_alter_viispkey_options'),
+        ("vitrina_viisp", "0002_alter_viispkey_options"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ViispTokenKey',
+            name="ViispTokenKey",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key_content', models.TextField(help_text='Pgp key content', verbose_name='key_content')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "key_content",
+                    models.TextField(
+                        help_text="Pgp key content", verbose_name="key_content"
+                    ),
+                ),
             ],
             options={
-                'db_table': 'viisptokenkey',
-                'managed': True,
+                "db_table": "viisptokenkey",
+                "managed": True,
             },
         ),
     ]

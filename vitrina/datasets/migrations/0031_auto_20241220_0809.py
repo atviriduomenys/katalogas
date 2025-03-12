@@ -7,10 +7,10 @@ from vitrina import settings
 
 
 def fix_dataset_statuses(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    User = apps.get_model("vitrina_users", "User")
 
     ct = ContentType.objects.get_for_model(Dataset)
 
@@ -22,17 +22,21 @@ def fix_dataset_statuses(apps, schema_editor):
             last_name="Naudotojas",
             email=settings.SYSTEM_USER_EMAIL,
             password="",
-            is_staff=True
+            is_staff=True,
         )
 
     for dataset in Dataset.objects.all():
         if dataset.is_public:
-            latest_status_comment = Comment.objects.filter(
-                content_type=ct,
-                object_id=dataset.pk,
-                type="STATUS",
-                status__isnull=False
-            ).order_by('-created').first()
+            latest_status_comment = (
+                Comment.objects.filter(
+                    content_type=ct,
+                    object_id=dataset.pk,
+                    type="STATUS",
+                    status__isnull=False,
+                )
+                .order_by("-created")
+                .first()
+            )
 
             if dataset.datasetdistribution_set.exists():
                 dataset.status = "HAS_DATA"
@@ -44,7 +48,10 @@ def fix_dataset_statuses(apps, schema_editor):
                 dataset.status = "INVENTORED"
                 comment_status = "INVENTORED"
 
-            if not latest_status_comment or latest_status_comment.status != comment_status:
+            if (
+                not latest_status_comment
+                or latest_status_comment.status != comment_status
+            ):
                 Comment.objects.create(
                     content_type=ct,
                     object_id=dataset.pk,
@@ -58,12 +65,11 @@ def fix_dataset_statuses(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_comments', '0008_alter_comment_status'),
-        ('vitrina_datasets', '0030_auto_20241210_1100'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_comments", "0008_alter_comment_status"),
+        ("vitrina_datasets", "0030_auto_20241210_1100"),
     ]
 
     operations = [

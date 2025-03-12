@@ -16,25 +16,23 @@ from vitrina.structure.models import Metadata
 
 
 class DatasetResourceForm(TranslatableModelForm):
-    title = TranslatedField(label=_('Pavadinimas'), required=False)
-    description = TranslatedField(label=_('Aprašymas'), required=False)
-    name = forms.CharField(label=_('Kodinis pavadinimas'), required=False)
-    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
+    title = TranslatedField(label=_("Pavadinimas"), required=False)
+    description = TranslatedField(label=_("Aprašymas"), required=False)
+    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
+    access = forms.ChoiceField(
+        label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
+    )
     period_start = DateField(
-        widget=forms.TextInput(attrs={'type': 'date'}),
+        widget=forms.TextInput(attrs={"type": "date"}),
         required=False,
         label=_("Periodo pradžia"),
-        help_text=_(
-            "Data nuo kada duomenys yra aktualūs."
-        ),
+        help_text=_("Data nuo kada duomenys yra aktualūs."),
     )
     period_end = DateField(
-        widget=forms.TextInput(attrs={'type': 'date'}),
+        widget=forms.TextInput(attrs={"type": "date"}),
         required=False,
         label=_("Periodo pabaiga"),
-        help_text=_(
-            "Data nuo kada duomenys nebėra aktualūs."
-        ),
+        help_text=_("Data nuo kada duomenys nebėra aktualūs."),
     )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
@@ -58,40 +56,40 @@ class DatasetResourceForm(TranslatableModelForm):
     )
     file = FilerFileField(
         upload_to=DatasetDistribution.UPLOAD_TO,
-        label=_('Duomenų failas'),
+        label=_("Duomenų failas"),
         help_text=_(
-            'Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir '
-            'įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų '
-            'Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų '
-            'atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) '
-            'duomenų failus, galima talpinti ir kataloge.'
+            "Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir "
+            "įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų "
+            "Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų "
+            "atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) "
+            "duomenų failus, galima talpinti ir kataloge."
         ),
-        required=False
+        required=False,
     )
     data_service = forms.ModelChoiceField(
         label=_("Duomenų paslauga"),
         required=False,
-        queryset=Dataset.public.filter(service=True)
+        queryset=Dataset.public.filter(service=True),
     )
 
     class Meta:
         model = DatasetDistribution
         fields = (
-            'title',
-            'description',
-            'geo_location',
-            'period_start',
-            'period_end',
-            'access_url',
-            'format',
-            'data_service',
-            'download_url',
-            'file',
-            'name',
-            'access',
-            'is_parameterized',
-            'upload_to_storage',
-            'imported',
+            "title",
+            "description",
+            "geo_location",
+            "period_start",
+            "period_end",
+            "access_url",
+            "format",
+            "data_service",
+            "download_url",
+            "file",
+            "name",
+            "access",
+            "is_parameterized",
+            "upload_to_storage",
+            "imported",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -100,122 +98,149 @@ class DatasetResourceForm(TranslatableModelForm):
         self.resource = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if self.resource else _("Sukurti")
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
         self.helper.layout = Layout(
-            Field('title', placeholder=_("Šaltinio pavadinimas"), css_class="control is-expanded"),
-            Field('description', placeholder=_("Detalus šaltinio aprašas"), rows="2"),
-            Field('name'),
-            Field('access'),
-            Field('is_parameterized'),
-            Field('geo_location', placeholder=_("Pateikitę geografinę padėtį")),
-            inline_fields(
-                Field('period_start', placeholder=_("Pasirinkite pradžios datą")),
-                Field('period_end', placeholder=_("Pasirinkite pabaigos datą")),
+            Field(
+                "title",
+                placeholder=_("Šaltinio pavadinimas"),
+                css_class="control is-expanded",
             ),
-            Field('access_url'),
-            Field('format'),
-            Field('download_url'),
-            Field('imported'),
-            Field('data_service'),
-            Field('upload_to_storage'),
-            Field('file', placeholder=_("Šaltinio failas")),
-            Submit('submit', button, css_class='button is-primary'),
+            Field("description", placeholder=_("Detalus šaltinio aprašas"), rows="2"),
+            Field("name"),
+            Field("access"),
+            Field("is_parameterized"),
+            Field("geo_location", placeholder=_("Pateikitę geografinę padėtį")),
+            inline_fields(
+                Field("period_start", placeholder=_("Pasirinkite pradžios datą")),
+                Field("period_end", placeholder=_("Pasirinkite pabaigos datą")),
+            ),
+            Field("access_url"),
+            Field("format"),
+            Field("download_url"),
+            Field("imported"),
+            Field("data_service"),
+            Field("upload_to_storage"),
+            Field("file", placeholder=_("Šaltinio failas")),
+            Submit("submit", button, css_class="button is-primary"),
         )
 
         if self.resource and self.resource.metadata.first():
-            self.initial['access'] = self.resource.metadata.first().access
-            self.initial['name'] = self.resource.metadata.first().name
+            self.initial["access"] = self.resource.metadata.first().access
+            self.initial["name"] = self.resource.metadata.first().name
 
-        if not dataset.type.filter(name='catalog'):
-            self.fields['imported'].widget = forms.HiddenInput()
+        if not dataset.type.filter(name="catalog"):
+            self.fields["imported"].widget = forms.HiddenInput()
 
     def clean(self):
-        file = self.cleaned_data.get('file')
-        url = self.cleaned_data.get('download_url')
-        upload = self.cleaned_data.get('upload_to_storage')
+        file = self.cleaned_data.get("file")
+        url = self.cleaned_data.get("download_url")
+        upload = self.cleaned_data.get("upload_to_storage")
 
         if file and url:
-            raise ValidationError(_(
-                "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
-                "įkelkit failą, ne abu."
-            ))
+            raise ValidationError(
+                _(
+                    "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
+                    "įkelkit failą, ne abu."
+                )
+            )
         if not file and not url:
-            self.add_error('download_url', _(
-                "Pateikite duomenų atsisiuntimo nuorodą."
-            ))
-            self.add_error('file', _(
-                "Arba įkelkite duomenų failą."
-            ))
+            self.add_error("download_url", _("Pateikite duomenų atsisiuntimo nuorodą."))
+            self.add_error("file", _("Arba įkelkite duomenų failą."))
 
-        fmt = self.cleaned_data.get('format')
+        fmt = self.cleaned_data.get("format")
         if fmt:
             fmt_extension = fmt.extension.upper().strip()
             if not file and url:
-                url_extension = url.split('.')
-                url_extension = url_extension[-1].upper().strip() if url_extension else None
+                url_extension = url.split(".")
+                url_extension = (
+                    url_extension[-1].upper().strip() if url_extension else None
+                )
 
-                if (
-                    url_extension != fmt_extension and
-                    fmt_extension not in ['URL', 'API', 'UAPI']
-                ):
-                    content_type = ''
+                if url_extension != fmt_extension and fmt_extension not in [
+                    "URL",
+                    "API",
+                    "UAPI",
+                ]:
+                    content_type = ""
                     try:
-                        if not url.startswith(('http://', 'https://')):
-                            self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+                        if not url.startswith(("http://", "https://")):
+                            self.add_error(
+                                "download_url", _("Pateikta nuoroda yra neteisinga.")
+                            )
                         else:
                             try:
                                 response = requests.head(url)
-                                content_type = response.headers.get('Content-Type', '').upper().strip()
+                                content_type = (
+                                    response.headers.get("Content-Type", "")
+                                    .upper()
+                                    .strip()
+                                )
                             except requests.RequestException:
-                                self.add_error('download_url', _("Pateikta nuoroda yra neteisinga."))
+                                self.add_error(
+                                    "download_url",
+                                    _("Pateikta nuoroda yra neteisinga."),
+                                )
 
                         if fmt_extension not in content_type:
-                            self.add_error('format', _(
-                                "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                            ))
+                            self.add_error(
+                                "format",
+                                _(
+                                    "Formatas nesutampa su įkelto failo ar nuorodos formatu."
+                                ),
+                            )
                     except requests.RequestException:
-                        self.add_error('download_url', _(
-                            "Pateikta nuoroda yra neteisinga."
-                        ))
+                        self.add_error(
+                            "download_url", _("Pateikta nuoroda yra neteisinga.")
+                        )
             elif not url and file:
                 file_extension = file.extension.upper().strip()
                 if fmt_extension != file_extension:
-                    self.add_error('format', _(
-                        "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                    ))
+                    self.add_error(
+                        "format",
+                        _("Formatas nesutampa su įkelto failo ar nuorodos formatu."),
+                    )
 
-        if url and 'get.data.gov.lt' in url and not upload:
-            self.cleaned_data['upload_to_storage'] = True
+        if url and "get.data.gov.lt" in url and not upload:
+            self.cleaned_data["upload_to_storage"] = True
 
         if url:
             if self.resource:
-                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
-                    download_url=url
-                ).exclude(
-                    pk=self.resource.pk
+                distributions_with_same_url = (
+                    self.dataset.datasetdistribution_set.filter(
+                        download_url=url
+                    ).exclude(pk=self.resource.pk)
                 )
             else:
-                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(
-                    download_url=url
+                distributions_with_same_url = (
+                    self.dataset.datasetdistribution_set.filter(download_url=url)
                 )
             if distributions_with_same_url.exists():
-                self.add_error('download_url', _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."))
+                self.add_error(
+                    "download_url",
+                    _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."),
+                )
         return self.cleaned_data
 
     def clean_access(self):
-        access = self.cleaned_data.get('access')
-        if access == '':
+        access = self.cleaned_data.get("access")
+        if access == "":
             return None
         return access
 
     def clean_name(self):
-        name = self.cleaned_data.get('name')
+        name = self.cleaned_data.get("name")
         if name:
             if not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+                raise ValidationError(
+                    _(
+                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+                    )
+                )
             if any(c.isupper() for c in name):
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+                raise ValidationError(
+                    _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
+                )
         return name
 
 
@@ -226,4 +251,11 @@ class FormatAdminForm(forms.ModelForm):
 
     class Meta:
         model = Format
-        fields = ('extension', 'title', 'mimetype', 'rating', 'uri', 'media_type_uri',)
+        fields = (
+            "extension",
+            "title",
+            "mimetype",
+            "rating",
+            "uri",
+            "media_type_uri",
+        )

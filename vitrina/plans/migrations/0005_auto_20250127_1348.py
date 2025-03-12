@@ -6,22 +6,32 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_orgs', '0037_auto_20250127_1347'),
-        ('vitrina_plans', '0004_auto_20250127_1347'),
+        ("vitrina_orgs", "0037_auto_20250127_1347"),
+        ("vitrina_plans", "0004_auto_20250127_1347"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='financingplan',
-            name='created_by',
-            field=models.ForeignKey(blank=True, db_column='created_by', null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="financingplan",
+            name="created_by",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="created_by",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='financingplan',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_orgs.organization'),
+            model_name="financingplan",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_orgs.organization",
+            ),
         ),
     ]

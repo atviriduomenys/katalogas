@@ -5,35 +5,64 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0033_auto_20250113_0900'),
+        ("vitrina_datasets", "0033_auto_20250113_0900"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='GeoportalDataServiceType',
+            name="GeoportalDataServiceType",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_service_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.dataservicetype', verbose_name='API formatas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "data_service_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="vitrina_datasets.dataservicetype",
+                        verbose_name="API formatas",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Geoportalo API formatas',
-                'verbose_name_plural': 'Geoportalo API formatai',
-                'db_table': 'geoportal_data_service_type',
+                "verbose_name": "Geoportalo API formatas",
+                "verbose_name_plural": "Geoportalo API formatai",
+                "db_table": "geoportal_data_service_type",
             },
         ),
         migrations.CreateModel(
-            name='GeoportalDataServiceTypeValue',
+            name="GeoportalDataServiceTypeValue",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('value', models.CharField(max_length=255, verbose_name='Reikšmė')),
-                ('geoportal_data_service_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.geoportaldataservicetype', verbose_name='Geoportalo API formatas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("value", models.CharField(max_length=255, verbose_name="Reikšmė")),
+                (
+                    "geoportal_data_service_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="vitrina_datasets.geoportaldataservicetype",
+                        verbose_name="Geoportalo API formatas",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Geoportalo API formato reikšmė',
-                'verbose_name_plural': 'Geoportalo API formato reikšmės',
-                'db_table': 'geoportal_data_service_type_value',
+                "verbose_name": "Geoportalo API formato reikšmė",
+                "verbose_name_plural": "Geoportalo API formato reikšmės",
+                "db_table": "geoportal_data_service_type_value",
             },
         ),
     ]

@@ -6,50 +6,50 @@ from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
 from django.utils.translation import gettext_lazy as _
 
 DIMS = [
-    'dataset',
-    'resource',
-    'base',
-    'model',
-    'property',
+    "dataset",
+    "resource",
+    "base",
+    "model",
+    "property",
 ]
 
 XDIMS = [
-    'comment',
-    'prefix',
-    'enum',
-    'param',
-    'lang',
+    "comment",
+    "prefix",
+    "enum",
+    "param",
+    "lang",
 ]
 
 ATTRS = [
-    'id',
-    'type',
-    'ref',
-    'source',
-    'prepare',
-    'level',
-    'access',
-    'uri',
-    'title',
-    'description',
+    "id",
+    "type",
+    "ref",
+    "source",
+    "prepare",
+    "level",
+    "access",
+    "uri",
+    "title",
+    "description",
 ]
 
 HEADER = [
-    'id',
-    'dataset',
-    'resource',
-    'base',
-    'model',
-    'property',
-    'type',
-    'ref',
-    'source',
-    'prepare',
-    'level',
-    'access',
-    'uri',
-    'title',
-    'description',
+    "id",
+    "dataset",
+    "resource",
+    "base",
+    "model",
+    "property",
+    "type",
+    "ref",
+    "source",
+    "prepare",
+    "level",
+    "access",
+    "uri",
+    "title",
+    "description",
 ]
 
 
@@ -59,120 +59,120 @@ class Rule(NamedTuple):
 
 
 RULES = {
-    'manifest': Rule(
+    "manifest": Rule(
         parents=[],
         accepts=[
-            'comment',
+            "comment",
         ],
     ),
-    'dataset': Rule(
+    "dataset": Rule(
         parents=[
-            'manifest',
+            "manifest",
         ],
         accepts=[
-            'comment',
-            'prefix',
-            'enum',
-            'lang',
+            "comment",
+            "prefix",
+            "enum",
+            "lang",
         ],
     ),
-    'resource': Rule(
+    "resource": Rule(
         parents=[
-            'dataset',
+            "dataset",
         ],
         accepts=[
-            'comment',
-            'param',
-            'lang',
+            "comment",
+            "param",
+            "lang",
         ],
     ),
-    'base': Rule(
+    "base": Rule(
         parents=[
-            'dataset',
-            'resource',
+            "dataset",
+            "resource",
         ],
         accepts=[
-            'comment',
-            'param',
-            'lang',
+            "comment",
+            "param",
+            "lang",
         ],
     ),
-    'model': Rule(
+    "model": Rule(
         parents=[
-            'dataset',
-            'resource',
-            'base',
+            "dataset",
+            "resource",
+            "base",
         ],
         accepts=[
-            'comment',
-            'param',
-            'lang',
+            "comment",
+            "param",
+            "lang",
         ],
     ),
-    'property': Rule(
+    "property": Rule(
         parents=[
-            'model',
+            "model",
         ],
         accepts=[
-            'comment',
-            'param',
-            'lang',
-            'enum',
+            "comment",
+            "param",
+            "lang",
+            "enum",
         ],
     ),
-    'comment': Rule(
+    "comment": Rule(
         parents=[
-            'dataset',
-            'resource',
-            'base',
-            'model',
-            'property',
-            'enum',
-            'prefix',
-            'lang',
+            "dataset",
+            "resource",
+            "base",
+            "model",
+            "property",
+            "enum",
+            "prefix",
+            "lang",
         ],
         accepts=[],
     ),
-    'prefix': Rule(
+    "prefix": Rule(
         parents=[
-            'dataset',
+            "dataset",
         ],
         accepts=[
-            'coment',
-            'lang',
+            "coment",
+            "lang",
         ],
     ),
-    'enum': Rule(
+    "enum": Rule(
         parents=[
-            'dataset',
-            'property',
+            "dataset",
+            "property",
         ],
         accepts=[
-            'coment',
+            "coment",
         ],
     ),
-    'param': Rule(
+    "param": Rule(
         parents=[
-            'resource',
-            'model',
-            'property',
+            "resource",
+            "model",
+            "property",
         ],
         accepts=[
-            'coment',
+            "coment",
         ],
     ),
-    'lang': Rule(
+    "lang": Rule(
         parents=[
-            'dataset',
-            'resource',
-            'base',
-            'model',
-            'property',
-            'enum',
-            'prefix',
+            "dataset",
+            "resource",
+            "base",
+            "model",
+            "property",
+            "enum",
+            "prefix",
         ],
         accepts=[
-            'coment',
+            "coment",
         ],
     ),
 }
@@ -198,7 +198,7 @@ class Row(TypedDict):
 
 @dataclass
 class Manifest:
-    dim: str = field(default='manifest')
+    dim: str = field(default="manifest")
 
     datasets: dict[str, Dataset] = field(default_factory=dict, init=False)
     models: dict[str, Model] = field(default_factory=dict, init=False)
@@ -209,24 +209,24 @@ class Manifest:
 
 @dataclass
 class Metadata:
-    id: str = ''
-    ref: str = ''
-    source: str = ''
-    prepare: str = ''
+    id: str = ""
+    ref: str = ""
+    source: str = ""
+    prepare: str = ""
     level: int | None = None
     level_given: int | None = None
-    access: str = ''
-    uri: str = ''
-    title: str = ''
-    description: str = ''
+    access: str = ""
+    uri: str = ""
+    title: str = ""
+    description: str = ""
 
 
 @dataclass
 class Dataset(Metadata):
-    dim: str = field(default='dataset')
+    dim: str = field(default="dataset")
 
-    name: str = ''
-    type: str = ''
+    name: str = ""
+    type: str = ""
 
     resources: dict[str, Resource] = field(default_factory=dict, init=False)
     models: dict[str, Model] = field(default_factory=dict, init=False)
@@ -239,10 +239,10 @@ class Dataset(Metadata):
 
 @dataclass
 class Resource(Metadata):
-    dim: str = field(default='resource')
+    dim: str = field(default="resource")
 
-    name: str = ''
-    type: str = ''
+    name: str = ""
+    type: str = ""
 
     dataset: Dataset = field(init=False)
     comments: list[Comment] = field(default_factory=list, init=False)
@@ -252,10 +252,10 @@ class Resource(Metadata):
 
 @dataclass
 class Base(Metadata):
-    dim: str = field(default='base')
+    dim: str = field(default="base")
 
-    name: str = ''
-    type: str = ''
+    name: str = ""
+    type: str = ""
 
     comments: list[Comment] = field(default_factory=list, init=False)
     errors: list[str] = field(default_factory=list, init=False)
@@ -263,10 +263,10 @@ class Base(Metadata):
 
 @dataclass
 class Model(Metadata):
-    dim: str = field(default='model')
+    dim: str = field(default="model")
 
-    name: str = ''
-    type: str = ''
+    name: str = ""
+    type: str = ""
 
     dataset: Dataset | None = field(default=None, init=False)
     properties: dict[str, Property] = field(default_factory=dict, init=False)
@@ -280,16 +280,16 @@ class Model(Metadata):
     @property
     def absname(self):
         if self.dataset:
-            return f'{self.dataset.name}/{self.name}'
+            return f"{self.dataset.name}/{self.name}"
         return self.name
 
 
 @dataclass
 class Property(Metadata):
-    dim: str = field(default='property')
+    dim: str = field(default="property")
 
-    name: str = ''
-    type: str = ''
+    name: str = ""
+    type: str = ""
     required: bool = False
     unique: bool = False
     type_args: list[str] = None
@@ -303,7 +303,7 @@ class Property(Metadata):
 
 @dataclass
 class Comment(Metadata):
-    dim: str = field(default='comment')
+    dim: str = field(default="comment")
 
     meta: Metadata = field(init=False)
     errors: list[str] = field(default_factory=list, init=False)
@@ -311,9 +311,9 @@ class Comment(Metadata):
 
 @dataclass
 class Prefix(Metadata):
-    dim: str = field(default='prefix')
+    dim: str = field(default="prefix")
 
-    name: str = ''
+    name: str = ""
 
     meta: Metadata = field(init=False)
     errors: list[str] = field(default_factory=list, init=False)
@@ -321,9 +321,9 @@ class Prefix(Metadata):
 
 @dataclass
 class Enum(Metadata):
-    dim: str = field(default='enum')
+    dim: str = field(default="enum")
 
-    name: str = ''
+    name: str = ""
 
     meta: Metadata = field(init=False)
     errors: list[str] = field(default_factory=list, init=False)
@@ -332,9 +332,9 @@ class Enum(Metadata):
 
 @dataclass
 class Param(Metadata):
-    dim: str = field(default='param')
+    dim: str = field(default="param")
 
-    name: str = ''
+    name: str = ""
 
     meta: Metadata = field(init=False)
     errors: list[str] = field(default_factory=list, init=False)
@@ -394,20 +394,20 @@ def precedes(a: str, b: str) -> bool:
     return False
 
 
-def detect_read_errors(path: str, encoding: str = 'utf-8') -> list[str]:
+def detect_read_errors(path: str, encoding: str = "utf-8") -> list[str]:
     path = pathlib.Path(path)
     if not path.exists():
         return ["File does not exist."]
 
-    with path.open('rb') as f:
+    with path.open("rb") as f:
         sample = f.readline(200).rstrip(b"\r\n")
 
         if error := _detect_separator_errors(sample):
             return [error]
 
-        sample = sample.decode(encoding, errors='replace')
+        sample = sample.decode(encoding, errors="replace")
         errors = []
-        for name in sample.split(','):
+        for name in sample.split(","):
             if error := _detect_header_errors(name):
                 errors.append(error)
         if errors:
@@ -417,23 +417,17 @@ def detect_read_errors(path: str, encoding: str = 'utf-8') -> list[str]:
 
 
 def _detect_separator_errors(sample: bytes) -> str | None:
-    if b',' in sample:
+    if b"," in sample:
         return
 
-    if b';' in sample:
-        return (
-            "Incorrect value separator. Must be ',', but ';' "
-            "is given."
-        )
+    if b";" in sample:
+        return "Incorrect value separator. Must be ',', but ';' is given."
 
-    elif b'\t' in sample:
-        return (
-            "Incorrect value separator. Must be ',', but 'TAB' "
-            "is given."
-        )
+    elif b"\t" in sample:
+        return "Incorrect value separator. Must be ',', but 'TAB' is given."
 
     else:
-        header = ','.join(HEADER)
+        header = ",".join(HEADER)
         return f"Unrecognized CSV file header. Header must be: {header}."
 
 
@@ -460,9 +454,7 @@ def _detect_header_errors(name: str) -> str | None:
         )
 
     else:
-        return (
-            f"Unrecognized header name {name!r}."
-        )
+        return f"Unrecognized header name {name!r}."
 
 
 def read(reader: Iterable[Row]) -> State:
@@ -479,53 +471,52 @@ def read(reader: Iterable[Row]) -> State:
 
         # Extra dimension
         else:
-            if row['type']:
-                dim = row['type']
+            if row["type"]:
+                dim = row["type"]
             elif any(row.values()):
                 dim = state.last.dim
             else:
                 continue  # empty row
 
-            if row['ref']:
-                name = row['ref']
-            elif (
-                (dim == 'enum' and isinstance(state.last, Enum)) or
-                (dim == 'param' and isinstance(state.last, Param))
+            if row["ref"]:
+                name = row["ref"]
+            elif (dim == "enum" and isinstance(state.last, Enum)) or (
+                dim == "param" and isinstance(state.last, Param)
             ):
                 name = state.last.name
             else:
-                name = ''
+                name = ""
 
         # Clean stack of lower precedence metadata
         state.clean(dim)
 
         # Read metadata
         meta = None
-        if dim == 'dataset':
+        if dim == "dataset":
             meta = _read_dataset(state, row, name)
 
-        elif dim == 'resource':
+        elif dim == "resource":
             meta = _read_resource(state, row, name)
 
-        elif dim == 'base':
+        elif dim == "base":
             meta = _read_base(state, row, name)
 
-        elif dim == 'model':
+        elif dim == "model":
             meta = _read_model(state, row, name)
 
-        elif dim == 'property':
+        elif dim == "property":
             meta = _read_property(state, row, name)
 
-        elif dim == 'comment':
+        elif dim == "comment":
             meta = _read_comment(state, row, name)
 
-        elif dim == 'prefix':
+        elif dim == "prefix":
             meta = _read_prefix(state, row, name)
 
-        elif dim == 'enum':
+        elif dim == "enum":
             meta = _read_enum(state, row, name)
 
-        elif dim == 'param':
+        elif dim == "param":
             meta = _read_param(state, row, name)
 
         # Push read metadata to stack
@@ -540,22 +531,22 @@ def _read_dataset(
     row: Row,
     name: str,
 ) -> Dataset:
-    if name == '/':
+    if name == "/":
         dataset = state.dataset = None
     else:
         dataset = state.dataset = Dataset(
-            id=row['id'],
+            id=row["id"],
             name=name,
-            type=row['type'],
-            ref=row['ref'],
-            source=row['source'],
-            prepare=row['prepare'],
-            level=_parse_int(row['level']),
-            level_given=_parse_int(row['level']),
-            access=row['access'],
-            uri=row['uri'],
-            title=row['title'],
-            description=row['description'],
+            type=row["type"],
+            ref=row["ref"],
+            source=row["source"],
+            prepare=row["prepare"],
+            level=_parse_int(row["level"]),
+            level_given=_parse_int(row["level"]),
+            access=row["access"],
+            uri=row["uri"],
+            title=row["title"],
+            description=row["description"],
         )
         state.manifest.datasets[name] = dataset
     return dataset
@@ -566,22 +557,22 @@ def _read_resource(
     row: Row,
     name: str,
 ) -> Resource:
-    if name == '/':
+    if name == "/":
         resource = state.resource = None
     else:
         resource = state.resource = Resource(
-            id=row['id'],
+            id=row["id"],
             name=name,
-            type=row['type'],
-            ref=row['ref'],
-            source=row['source'],
-            prepare=row['prepare'],
-            level=_parse_int(row['level']),
-            level_given=_parse_int(row['level']),
-            access=row['access'],
-            uri=row['uri'],
-            title=row['title'],
-            description=row['description'],
+            type=row["type"],
+            ref=row["ref"],
+            source=row["source"],
+            prepare=row["prepare"],
+            level=_parse_int(row["level"]),
+            level_given=_parse_int(row["level"]),
+            access=row["access"],
+            uri=row["uri"],
+            title=row["title"],
+            description=row["description"],
         )
 
         _validate_resource_name(name, resource)
@@ -597,23 +588,23 @@ def _read_base(
     row: Row,
     name: str,
 ) -> Base:
-    if name == '/':
+    if name == "/":
         base = state.base = None
     else:
         name = get_relative_model_name(state.dataset, name)
         base = state.base = Base(
-            id=row['id'],
+            id=row["id"],
             name=name,
-            type=row['type'],
-            ref=row['ref'],
-            source=row['source'],
-            prepare=row['prepare'],
+            type=row["type"],
+            ref=row["ref"],
+            source=row["source"],
+            prepare=row["prepare"],
             level=_parse_int(_get_level(row)),
-            level_given=_parse_int(row['level']),
-            access=row['access'],
-            uri=row['uri'],
-            title=row['title'],
-            description=row['description'],
+            level_given=_parse_int(row["level"]),
+            access=row["access"],
+            uri=row["uri"],
+            title=row["title"],
+            description=row["description"],
         )
     return base
 
@@ -625,24 +616,24 @@ def _read_model(
 ) -> Model:
     name = get_relative_model_name(state.dataset, name)
     model = state.model = Model(
-        id=row['id'],
+        id=row["id"],
         name=name,
-        type=row['type'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
+        type=row["type"],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
     )
 
     _validate_model_name(name, model)
 
     if model.ref:
-        model.ref_props = [x.strip() for x in model.ref.split(',')]
+        model.ref_props = [x.strip() for x in model.ref.split(",")]
 
     if state.manifest.models.get(model.name):
         model.errors.append(_(f'Modelis "{model.name}" jau egzistuoja.'))
@@ -664,10 +655,10 @@ def _read_model(
 
 
 def _parse_property_ref(ref: str) -> Tuple[str, List[str]]:
-    if '[' in ref:
-        ref = ref.rstrip(']')
-        ref_model, ref_props = ref.split('[', 1)
-        ref_props = [p.strip() for p in ref_props.split(',')]
+    if "[" in ref:
+        ref = ref.rstrip("]")
+        ref_model, ref_props = ref.split("[", 1)
+        ref_props = [p.strip() for p in ref_props.split(",")]
     else:
         ref_model = ref
         ref_props = []
@@ -679,32 +670,32 @@ def _read_property(
     row: Row,
     name: str,
 ) -> Property:
-    dtype = _parse_dtype_string(row['type'])
+    dtype = _parse_dtype_string(row["type"])
 
     prop = state.prop = Property(
-        id=row['id'],
+        id=row["id"],
         name=name,
-        type=dtype['type'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
+        type=dtype["type"],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
-        required=dtype['required'],
-        unique=dtype['unique'],
-        type_args=dtype['type_args'],
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
+        required=dtype["required"],
+        unique=dtype["unique"],
+        type_args=dtype["type_args"],
     )
 
-    if dtype['error']:
-        prop.errors.append(dtype['error'])
+    if dtype["error"]:
+        prop.errors.append(dtype["error"])
 
     _validate_property_name(name, prop)
 
-    if prop.ref and prop.type in ('ref', 'backref', 'generic'):
+    if prop.ref and prop.type in ("ref", "backref", "generic"):
         ref_model, ref_props = _parse_property_ref(prop.ref)
         prop.ref = get_relative_model_name(state.dataset, ref_model)
         prop.ref_props = ref_props
@@ -725,20 +716,20 @@ def _read_comment(
     name: str,
 ) -> Comment:
     comment = state.comment = Comment(
-        id=row['id'],
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
+        id=row["id"],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
+        level=_parse_int(row["level"]),
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
     )
 
     comment.meta = state.last
-    if hasattr(comment.meta, 'comments'):
+    if hasattr(comment.meta, "comments"):
         comment.meta.comments.append(comment)
 
     return comment
@@ -750,17 +741,17 @@ def _read_prefix(
     name: str,
 ) -> Prefix:
     prefix = state.prefix = Prefix(
-        id=row['id'],
+        id=row["id"],
         name=name,
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
+        level=_parse_int(row["level"]),
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
     )
 
     prefix.meta = state.dataset or state.manifest
@@ -780,17 +771,17 @@ def _read_enum(
     name: str,
 ) -> Enum:
     enum = state.enum = Enum(
-        id=row['id'],
+        id=row["id"],
         name=name,
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
+        level=_parse_int(row["level"]),
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
     )
 
     last = None
@@ -816,17 +807,17 @@ def _read_param(
     name: str,
 ) -> Param:
     param = Param(
-        id=row['id'],
+        id=row["id"],
         name=name,
-        ref=row['ref'],
-        source=row['source'],
-        prepare=row['prepare'],
-        level=_parse_int(row['level']),
-        level_given=_parse_int(row['level']),
-        access=row['access'],
-        uri=row['uri'],
-        title=row['title'],
-        description=row['description'],
+        ref=row["ref"],
+        source=row["source"],
+        prepare=row["prepare"],
+        level=_parse_int(row["level"]),
+        level_given=_parse_int(row["level"]),
+        access=row["access"],
+        uri=row["uri"],
+        title=row["title"],
+        description=row["description"],
     )
 
     last = None
@@ -853,7 +844,7 @@ def _split_dim(
     row: dict[str, Any],
 ) -> tuple[
     list[str],  # upper
-    str,        # found
+    str,  # found
     list[str],  # lower
 ]:
     upper = []
@@ -874,26 +865,28 @@ def _parse_int(v: str) -> int | None:
 
 
 def get_relative_model_name(dataset: Dataset, name: str) -> str:
-    if name.startswith('/'):
+    if name.startswith("/"):
         return name[1:]
     elif dataset is None:
         return name
     else:
-        return '/'.join([
-            dataset.name,
-            name,
-        ])
+        return "/".join(
+            [
+                dataset.name,
+                name,
+            ]
+        )
 
 
 def _get_level(row: Row) -> str:
-    if row['level']:
-        return row['level']
+    if row["level"]:
+        return row["level"]
 
-    level = '3'
-    if row['ref'] and row['uri']:
-        level = '5'
-    elif row['ref']:
-        level = '4'
+    level = "3"
+    if row["ref"] and row["uri"]:
+        level = "5"
+    elif row["ref"]:
+        level = "4"
     return level
 
 
@@ -903,11 +896,11 @@ def _parse_dtype_string(dtype: str) -> dict:
     required = unique = False
     invalid_args = []
 
-    if '(' in dtype:
-        dtype, args = dtype.split('(', 1)
-        args, additional_args = args.split(')', 1)
-        args = args.strip().rstrip(')')
-        args = [a.strip() for a in args.split(',')]
+    if "(" in dtype:
+        dtype, args = dtype.split("(", 1)
+        args, additional_args = args.split(")", 1)
+        args = args.strip().rstrip(")")
+        args = [a.strip() for a in args.split(",")]
     else:
         if len(dtype.split(None, 1)) > 1:
             dtype, additional_args = dtype.split(None, 1)
@@ -916,57 +909,85 @@ def _parse_dtype_string(dtype: str) -> dict:
 
     if additional_args:
         for arg in additional_args.split(None):
-            if arg == 'required':
+            if arg == "required":
                 required = True
-            elif arg == 'unique':
+            elif arg == "unique":
                 unique = True
             else:
                 invalid_args.append(arg)
         if invalid_args:
-            error = f'Invalid type arguments: {", ".join(invalid_args)}.'
+            error = f"Invalid type arguments: {', '.join(invalid_args)}."
 
     return {
-        'type': dtype,
-        'type_args': args,
-        'required': required,
-        'unique': unique,
-        'error': error,
+        "type": dtype,
+        "type_args": args,
+        "required": required,
+        "unique": unique,
+        "error": error,
     }
 
 
 def _validate_name(name: str, meta: Metadata):
     if name:
-        if not name.isascii() and hasattr(meta, 'errors'):
-            meta.errors.append(_(f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
+        if not name.isascii() and hasattr(meta, "errors"):
+            meta.errors.append(
+                _(
+                    f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
+                )
+            )
 
 
 def _validate_model_name(name: str, meta: Model):
     if name:
-        name = name.split('/')[-1]
+        name = name.split("/")[-1]
         _validate_name(name, meta)
         if not name[0].isupper():
-            meta.errors.append(_(f'Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "{name}".'))
+            meta.errors.append(
+                _(
+                    f'Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "{name}".'
+                )
+            )
         elif any(not c.isalnum() for c in name):
-            meta.errors.append(_(f'Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, '
-                                 f'jokie kiti simboliai negalimi: "{name}".'))
+            meta.errors.append(
+                _(
+                    f"Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                    f'jokie kiti simboliai negalimi: "{name}".'
+                )
+            )
 
 
 def _validate_property_name(name: str, meta: Property):
     if name:
         _validate_name(name, meta)
         if not name[0].islower():
-            meta.errors.append(_(f'Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: "{name}".'))
+            meta.errors.append(
+                _(
+                    f'Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: "{name}".'
+                )
+            )
         elif any([ch.isupper() for ch in name]):
-            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
-        elif any((not ch.isalnum() and ch != '_' and ch != '.') for ch in name):
-            meta.errors.append(_(f'Pavadinime gali būti mažosios raidės ir skaičiai, ' 
-                                 f'žodžiai gali būti atskirti _ simboliu, arba . simboliu, '
-                                 f'jei tai denormalizuotas laukas, jokie kiti simboliai negalimi: "{name}".'))
+            meta.errors.append(
+                _(
+                    f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'
+                )
+            )
+        elif any((not ch.isalnum() and ch != "_" and ch != ".") for ch in name):
+            meta.errors.append(
+                _(
+                    f"Pavadinime gali būti mažosios raidės ir skaičiai, "
+                    f"žodžiai gali būti atskirti _ simboliu, arba . simboliu, "
+                    f'jei tai denormalizuotas laukas, jokie kiti simboliai negalimi: "{name}".'
+                )
+            )
 
 
 def _validate_resource_name(name: str, meta: Model):
     if name:
-        name = name.split('/')[-1]
+        name = name.split("/")[-1]
         _validate_name(name, meta)
         if any([ch.isupper() for ch in name]):
-            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
+            meta.errors.append(
+                _(
+                    f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'
+                )
+            )

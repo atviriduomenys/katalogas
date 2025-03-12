@@ -5,23 +5,21 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0025_auto_20240228_2006'),
+        ("vitrina_datasets", "0025_auto_20240228_2006"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DatasetReport',
-            fields=[
-            ],
+            name="DatasetReport",
+            fields=[],
             options={
-                'verbose_name': 'Duomenų rinkinių atnaujinimo ataskaita',
-                'verbose_name_plural': 'Duomenų rinkinių atnaujinimo ataskaita',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Duomenų rinkinių atnaujinimo ataskaita",
+                "verbose_name_plural": "Duomenų rinkinių atnaujinimo ataskaita",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('vitrina_datasets.dataset',),
+            bases=("vitrina_datasets.dataset",),
         ),
     ]

@@ -3,26 +3,25 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0009_match_translations_with_datasets'),
+        ("vitrina_datasets", "0009_match_translations_with_datasets"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='dataset',
-            name='description_old',
+            model_name="dataset",
+            name="description_old",
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='title_old',
+            model_name="dataset",
+            name="title_old",
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='description_en_old',
+            model_name="dataset",
+            name="description_en_old",
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='title_en_old',
+            model_name="dataset",
+            name="title_en_old",
         ),
     ]

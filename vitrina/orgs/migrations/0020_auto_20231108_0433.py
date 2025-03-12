@@ -5,27 +5,31 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0019_auto_20231011_1538'),
+        ("vitrina_orgs", "0019_auto_20231011_1538"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='representativerequest',
-            name='org_code',
+            model_name="representativerequest",
+            name="org_code",
         ),
         migrations.RemoveField(
-            model_name='representativerequest',
-            name='org_name',
+            model_name="representativerequest",
+            name="org_name",
         ),
         migrations.RemoveField(
-            model_name='representativerequest',
-            name='org_slug',
+            model_name="representativerequest",
+            name="org_slug",
         ),
         migrations.AddField(
-            model_name='representativerequest',
-            name='organization',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_orgs.organization'),
-        )
+            model_name="representativerequest",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="vitrina_orgs.organization",
+            ),
+        ),
     ]

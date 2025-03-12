@@ -5,23 +5,22 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0004_alter_dataset_options'),
-        ('vitrina_orgs', '0011_auto_20221012_1350'),
+        ("vitrina_datasets", "0004_alter_dataset_options"),
+        ("vitrina_orgs", "0011_auto_20221012_1350"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='dataset',
-            name='coordinator',
+            model_name="dataset",
+            name="coordinator",
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='manager',
+            model_name="dataset",
+            name="manager",
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='representative_id',
+            model_name="dataset",
+            name="representative_id",
         ),
     ]

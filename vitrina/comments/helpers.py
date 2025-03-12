@@ -11,8 +11,8 @@ from vitrina.tasks.models import Task
 from vitrina.helpers import email
 from vitrina.users.models import User
 
-NEW_COMMENT = 'New'
-REPLY_COMMENT = 'Reply'
+NEW_COMMENT = "New"
+REPLY_COMMENT = "Reply"
 
 
 def get_title_description_by_comment_type(comment_type, content_type, object_id):
@@ -25,12 +25,20 @@ def get_title_description_by_comment_type(comment_type, content_type, object_id)
     return title, description
 
 
-def create_task(comment_type, content_type, object_id, user, obj=None, comment_object=None, comment_ct=None):
-    organization = obj.organization if hasattr(obj, 'organization') else None
+def create_task(
+    comment_type,
+    content_type,
+    object_id,
+    user,
+    obj=None,
+    comment_object=None,
+    comment_ct=None,
+):
+    organization = obj.organization if hasattr(obj, "organization") else None
 
-    title, description = get_title_description_by_comment_type(comment_type,
-                                                               comment_ct if comment_ct else content_type,
-                                                               object_id)
+    title, description = get_title_description_by_comment_type(
+        comment_type, comment_ct if comment_ct else content_type, object_id
+    )
     Task.objects.create(
         title=title,
         organization=organization,
@@ -40,7 +48,7 @@ def create_task(comment_type, content_type, object_id, user, obj=None, comment_o
         status=Task.CREATED,
         user=user,
         type=Task.COMMENT,
-        comment_object=comment_object
+        comment_object=comment_object,
     )
 
 
@@ -51,7 +59,7 @@ def create_subscription(user, comment):
         object_id=comment.pk,
         sub_type=Subscription.COMMENT,
         email_subscribed=True,
-        comment_replies_sub=True
+        comment_replies_sub=True,
     )
 
 
@@ -64,7 +72,7 @@ def send_mail_and_create_tasks_for_subs(
     obj=None,
     comment_object=None,
     excluded_emails=None,
-    text=""
+    text="",
 ):
     if excluded_emails is None:
         excluded_emails = []
@@ -85,46 +93,49 @@ def send_mail_and_create_tasks_for_subs(
         )
 
     for sub in object_subs:
-        if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
+        if (
+            sub.dataset_comments_sub
+            or sub.request_comments_sub
+            or sub.project_comments_sub
+        ):
             create_task(
                 comment_type=comment_type,
                 content_type=content_type,
                 object_id=object_id,
                 user=sub.user,
                 obj=obj,
-                comment_object=comment_object
+                comment_object=comment_object,
             )
         if (
-            sub.user.email and
-            sub.user.email not in email_list and
-            sub.user.email not in excluded_emails
+            sub.user.email
+            and sub.user.email not in email_list
+            and sub.user.email not in excluded_emails
         ):
             email_list.append(sub.user.email)
     for sub in org_subs:
-        if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
+        if (
+            sub.dataset_comments_sub
+            or sub.request_comments_sub
+            or sub.project_comments_sub
+        ):
             create_task(
                 comment_type=comment_type,
                 content_type=content_type,
                 object_id=object_id,
                 user=sub.user,
                 obj=obj,
-                comment_object=comment_object
+                comment_object=comment_object,
             )
             if (
-                sub.user.email and
-                sub.user.email not in email_list and
-                sub.user.email not in org_email_list and
-                sub.user.email not in excluded_emails
+                sub.user.email
+                and sub.user.email not in email_list
+                and sub.user.email not in org_email_list
+                and sub.user.email not in excluded_emails
             ):
                 org_email_list.append(sub.user.email)
 
     send_mail_to_object_subscribers(
-        email_list,
-        content_type,
-        object_id,
-        link,
-        comment_type,
-        text=text
+        email_list, content_type, object_id, link, comment_type, text=text
     )
     if len(org_subs) > 0:
         send_mail_to_object_subscribers(
@@ -134,18 +145,12 @@ def send_mail_and_create_tasks_for_subs(
             link,
             comment_type,
             org=obj.organization,
-            text=text
+            text=text,
         )
 
 
 def send_mail_to_object_subscribers(
-    email_list,
-    content_type,
-    object_id,
-    link,
-    comment_type,
-    org=None,
-    text=""
+    email_list, content_type, object_id, link, comment_type, org=None, text=""
 ):
     if org:
         sub_object = org
@@ -153,18 +158,20 @@ def send_mail_to_object_subscribers(
         sub_object = get_object_or_404(content_type.model_class(), pk=object_id)
 
     if comment_type == NEW_COMMENT:
-        email_identifier = 'comment-for-sub'
-        file = 'vitrina/comments/emails/sub/created.md'
+        email_identifier = "comment-for-sub"
+        file = "vitrina/comments/emails/sub/created.md"
     else:
-        email_identifier = 'replay-comment-for-sub'
-        file = 'vitrina/comments/emails/sub/replay.md'
+        email_identifier = "replay-comment-for-sub"
+        file = "vitrina/comments/emails/sub/replay.md"
 
     if sub_object is not None:
-        email(email_list, email_identifier, file, {
-            'object': sub_object,
-            'link': link,
-            'text': text
-        })
+        email(
+            email_list,
+            email_identifier,
+            file,
+            {"object": sub_object, "link": link, "text": text},
+        )
+
 
 def save_request_comment(obj: Model, status: str, body: str, user: User):
     content_type = ContentType.objects.get_for_model(Request)
@@ -190,5 +197,3 @@ def save_request_comment(obj: Model, status: str, body: str, user: User):
             is_public=True,
         )
         request_comment.save()
-
-

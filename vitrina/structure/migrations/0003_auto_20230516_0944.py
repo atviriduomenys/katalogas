@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0002_metadata_average_level'),
+        ("vitrina_structure", "0002_metadata_average_level"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='metadata',
-            name='required',
-            field=models.BooleanField(blank=True, null=True, verbose_name='Privalomas'),
+            model_name="metadata",
+            name="required",
+            field=models.BooleanField(blank=True, null=True, verbose_name="Privalomas"),
         ),
         migrations.AddField(
-            model_name='metadata',
-            name='unique',
-            field=models.BooleanField(blank=True, null=True, verbose_name='Unikalus'),
+            model_name="metadata",
+            name="unique",
+            field=models.BooleanField(blank=True, null=True, verbose_name="Unikalus"),
         ),
         migrations.AlterField(
-            model_name='metadata',
-            name='description',
-            field=models.TextField(blank=True, verbose_name='Aprašymas'),
+            model_name="metadata",
+            name="description",
+            field=models.TextField(blank=True, verbose_name="Aprašymas"),
         ),
     ]

@@ -4,14 +4,15 @@ from django.db import migrations
 
 
 def create_organization_representatives(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    User = apps.get_model("vitrina_users", "User")
+    Representative = apps.get_model("vitrina_orgs", "Representative")
+    ContentType = apps.get_model("contenttypes", "ContentType")
     for user in User.objects.all():
         if user.organization:
             content_type = ContentType.objects.get_for_model(user.organization)
-            if not Representative.objects.filter(content_type=content_type, object_id=user.organization.pk,
-                                                 user=user).exists():
+            if not Representative.objects.filter(
+                content_type=content_type, object_id=user.organization.pk, user=user
+            ).exists():
                 Representative.objects.create(
                     email=user.email,
                     user=user,
@@ -22,9 +23,9 @@ def create_organization_representatives(apps, schema_editor):
 
 
 def create_dataset_representatives(apps, schema_editor):
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    Representative = apps.get_model("vitrina_orgs", "Representative")
+    ContentType = apps.get_model("contenttypes", "ContentType")
     for dataset in Dataset.objects.all():
         content_type = ContentType.objects.get_for_model(Dataset)
         if dataset.coordinator:
@@ -35,11 +36,12 @@ def create_dataset_representatives(apps, schema_editor):
                 email=dataset.coordinator.email,
                 role="coordinator",
             )
-        if dataset.manager and not Representative.objects.filter(
-                content_type=content_type,
-                object_id=dataset.pk,
-                user=dataset.manager
-        ).exists():
+        if (
+            dataset.manager
+            and not Representative.objects.filter(
+                content_type=content_type, object_id=dataset.pk, user=dataset.manager
+            ).exists()
+        ):
             Representative.objects.create(
                 content_type=content_type,
                 object_id=dataset.pk,
@@ -50,10 +52,9 @@ def create_dataset_representatives(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0010_auto_20221010_1049'),
-        ('vitrina_datasets', '0001_initial'),
+        ("vitrina_orgs", "0010_auto_20221010_1049"),
+        ("vitrina_datasets", "0001_initial"),
     ]
 
     operations = [

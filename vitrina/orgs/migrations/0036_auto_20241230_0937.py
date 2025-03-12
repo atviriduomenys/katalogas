@@ -5,20 +5,21 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0035_auto_20241223_0844'),
+        ("vitrina_orgs", "0035_auto_20241223_0844"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='organization',
-            old_name='provider',
-            new_name='publisher',
+            model_name="organization",
+            old_name="provider",
+            new_name="publisher",
         ),
         migrations.AlterField(
-            model_name='organization',
-            name='publisher',
-            field=models.BooleanField(default=False, verbose_name='Duomenų atvėrimo paslaugų teikėjas'),
+            model_name="organization",
+            name="publisher",
+            field=models.BooleanField(
+                default=False, verbose_name="Duomenų atvėrimo paslaugų teikėjas"
+            ),
         ),
     ]

@@ -19,7 +19,7 @@ class UserLike(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'user_like'
+        db_table = "user_like"
 
 
 # TODO: Merge into UserLike.
@@ -32,11 +32,13 @@ class UserVote(models.Model):
     rating = models.IntegerField()
     dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
     user = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
-    harvested = models.ForeignKey(HarvestingResult, models.CASCADE, blank=True, null=True)
+    harvested = models.ForeignKey(
+        HarvestingResult, models.CASCADE, blank=True, null=True
+    )
 
     class Meta:
         managed = True
-        db_table = 'user_vote'
+        db_table = "user_vote"
 
 
 class Like(models.Model):
@@ -44,11 +46,11 @@ class Like(models.Model):
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = 'like'
-        unique_together = ['user', 'content_type', 'object_id']
+        db_table = "like"
+        unique_together = ["user", "content_type", "object_id"]
 
     def __str__(self):
         return str(self.user)

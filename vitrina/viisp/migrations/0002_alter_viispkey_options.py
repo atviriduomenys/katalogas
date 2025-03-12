@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_viisp', '0001_initial'),
+        ("vitrina_viisp", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='viispkey',
-            options={'managed': True},
+            name="viispkey",
+            options={"managed": True},
         ),
     ]

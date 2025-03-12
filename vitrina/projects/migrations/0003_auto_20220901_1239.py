@@ -4,20 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_projects', '0002_alter_project_options'),
+        ("vitrina_projects", "0002_alter_project_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='image',
-            field=models.ImageField(blank=True, null=True, upload_to='projects/%Y/%m/%d/'),
+            model_name="project",
+            name="image",
+            field=models.ImageField(
+                blank=True, null=True, upload_to="projects/%Y/%m/%d/"
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='title',
+            model_name="project",
+            name="title",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

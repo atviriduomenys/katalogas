@@ -5,29 +5,41 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0016_areaofmanagement'),
+        ("vitrina_classifiers", "0016_areaofmanagement"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='areaofmanagement',
-            options={'verbose_name': 'Valdymo sritis', 'verbose_name_plural': 'Valdymo sritys'},
+            name="areaofmanagement",
+            options={
+                "verbose_name": "Valdymo sritis",
+                "verbose_name_plural": "Valdymo sritys",
+            },
         ),
         migrations.AlterField(
-            model_name='areaofmanagement',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="areaofmanagement",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.AlterField(
-            model_name='areaofmanagement',
-            name='name_en',
-            field=models.CharField(default='Unassigned', max_length=255, verbose_name='Pavadinimas angliškai'),
+            model_name="areaofmanagement",
+            name="name_en",
+            field=models.CharField(
+                default="Unassigned",
+                max_length=255,
+                verbose_name="Pavadinimas angliškai",
+            ),
         ),
         migrations.AlterField(
-            model_name='areaofmanagement',
-            name='name_lt',
-            field=models.CharField(default='Nepriskirta', max_length=255, verbose_name='Pavadinimas lietuviškai'),
+            model_name="areaofmanagement",
+            name="name_lt",
+            field=models.CharField(
+                default="Nepriskirta",
+                max_length=255,
+                verbose_name="Pavadinimas lietuviškai",
+            ),
         ),
     ]

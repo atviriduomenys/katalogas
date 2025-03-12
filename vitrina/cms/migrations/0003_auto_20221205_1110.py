@@ -7,26 +7,43 @@ import filer.fields.image
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.FILER_IMAGE_MODEL),
-        ('vitrina_cms', '0002_alter_options'),
+        ("vitrina_cms", "0002_alter_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='externalsite',
-            name='image',
-            field=filer.fields.image.FilerImageField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='image_site', to=settings.FILER_IMAGE_MODEL),
+            model_name="externalsite",
+            name="image",
+            field=filer.fields.image.FilerImageField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="image_site",
+                to=settings.FILER_IMAGE_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='learningmaterial',
-            name='image',
-            field=filer.fields.image.FilerImageField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='image_learning_material', to=settings.FILER_IMAGE_MODEL),
+            model_name="learningmaterial",
+            name="image",
+            field=filer.fields.image.FilerImageField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="image_learning_material",
+                to=settings.FILER_IMAGE_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='newsitem',
-            name='image',
-            field=filer.fields.image.FilerImageField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='image_news_item', to=settings.FILER_IMAGE_MODEL),
+            model_name="newsitem",
+            name="image",
+            field=filer.fields.image.FilerImageField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="image_news_item",
+                to=settings.FILER_IMAGE_MODEL,
+            ),
         ),
     ]

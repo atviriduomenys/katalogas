@@ -4,21 +4,24 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0007_files_fix'),
+        ("vitrina_resources", "0007_files_fix"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='url',
-            field=models.TextField(blank=True, help_text='Tiesioginė duomenų atsisiuntimo nuoroda.', null=True,
-                                   verbose_name='Atsisniuntimo nuoroda'),
+            model_name="datasetdistribution",
+            name="url",
+            field=models.TextField(
+                blank=True,
+                help_text="Tiesioginė duomenų atsisiuntimo nuoroda.",
+                null=True,
+                verbose_name="Atsisniuntimo nuoroda",
+            ),
         ),
         migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='url',
-            new_name='download_url',
+            model_name="datasetdistribution",
+            old_name="url",
+            new_name="download_url",
         ),
     ]

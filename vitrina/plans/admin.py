@@ -6,11 +6,11 @@ from vitrina.plans.models import Project, Plan
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class PlanAdmin(VersionAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
     form = PlanAdminForm
 
 

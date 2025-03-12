@@ -5,15 +5,18 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0012_auto_20230619_1315'),
+        ("vitrina_classifiers", "0012_auto_20230619_1315"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='category',
-            name='uri',
-            field=models.CharField(blank=True, max_length=255, verbose_name='Nuoroda į kontroliuojamą žodyną'),
+            model_name="category",
+            name="uri",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                verbose_name="Nuoroda į kontroliuojamą žodyną",
+            ),
         ),
     ]

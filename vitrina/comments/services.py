@@ -2,8 +2,13 @@ from typing import Type
 
 from django.db import models
 
-from vitrina.comments.forms import DatasetCommentForm, RequestCommentForm, CommentForm, ProjectCommentForm, \
-    RegisterRequestForm
+from vitrina.comments.forms import (
+    DatasetCommentForm,
+    RequestCommentForm,
+    CommentForm,
+    ProjectCommentForm,
+    RegisterRequestForm,
+)
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -28,14 +33,16 @@ def get_comment_form_class(obj: models.Model = None, user: User = None) -> Type:
 
 
 def has_comment_permission(obj: models.Model = None, user: User = None) -> bool:
-    if isinstance(obj, (Dataset, Model, Property, DatasetStructure, DatasetDistribution)):
+    if isinstance(
+        obj, (Dataset, Model, Property, DatasetStructure, DatasetDistribution)
+    ):
         if isinstance(obj, (Model, DatasetStructure, DatasetDistribution)):
             dataset = obj.dataset
         elif isinstance(obj, Property):
             dataset = obj.model.dataset
         else:
             dataset = obj
-        if dataset and hasattr(dataset, 'is_public') and dataset.is_public:
+        if dataset and hasattr(dataset, "is_public") and dataset.is_public:
             return True
         else:
             return has_perm(user, Action.VIEW, dataset)

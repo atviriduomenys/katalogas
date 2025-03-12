@@ -16,8 +16,8 @@ class ModelDownloadStats(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'model_download_statistic'
-        unique_together = (('source', 'model', 'model_format', 'created'),)
+        db_table = "model_download_statistic"
+        unique_together = (("source", "model", "model_format", "created"),)
 
 
 class DatasetStats(models.Model):
@@ -33,7 +33,7 @@ class DatasetStats(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'dataset_statistic'
+        db_table = "dataset_statistic"
 
 
 class StatRoute(TranslatableModel):
@@ -41,15 +41,22 @@ class StatRoute(TranslatableModel):
         title=models.CharField(_("Pavadinimas"), max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True, null=True),
     )
-    image = FilerImageField(verbose_name=_("Paveiksliukas"), null=True, blank=True, on_delete=models.SET_NULL)
+    image = FilerImageField(
+        verbose_name=_("Paveiksliukas"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     url = models.CharField(_("Nuoroda"), max_length=512)
     featured = models.BooleanField(_("Rodoma tituliniame puslapyje"), default=False)
     order = models.IntegerField(_("Eiliškumas"), null=True, blank=True)
 
     class Meta:
-        db_table = 'stat_route'
+        db_table = "stat_route"
         verbose_name = _("Statistikos nuoroda")
         verbose_name_plural = _("Statistikos nuorodos")
 
     def __str__(self):
-        return self.safe_translation_getter('title', language_code=self.get_current_language())
+        return self.safe_translation_getter(
+            "title", language_code=self.get_current_language()
+        )

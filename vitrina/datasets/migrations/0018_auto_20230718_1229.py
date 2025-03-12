@@ -6,72 +6,117 @@ import tagulous.models.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0012_auto_20230619_1315'),
-        ('vitrina_datasets', '0017_merge_20230629_0914'),
+        ("vitrina_classifiers", "0012_auto_20230619_1315"),
+        ("vitrina_datasets", "0017_merge_20230629_0914"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DatasetStructureLink',
+            name="DatasetStructureLink",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(blank=True, max_length=255)),
-                ('dataset_id', models.IntegerField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(blank=True, max_length=255)),
+                ("dataset_id", models.IntegerField()),
             ],
             options={
-                'db_table': 'dataset_structure_link',
-                'managed': True,
+                "db_table": "dataset_structure_link",
+                "managed": True,
             },
         ),
         migrations.RemoveField(
-            model_name='dataset',
-            name='tags_old',
+            model_name="dataset",
+            name="tags_old",
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='access_rights',
-            field=models.TextField(blank=True, null=True, verbose_name='Prieigos teisės'),
+            model_name="dataset",
+            name="access_rights",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="Prieigos teisės"
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='distribution_conditions',
-            field=models.TextField(blank=True, null=True, verbose_name='Platinimo salygos'),
+            model_name="dataset",
+            name="distribution_conditions",
+            field=models.TextField(
+                blank=True, null=True, verbose_name="Platinimo salygos"
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='frequency',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_classifiers.frequency', verbose_name='Atnaujinimo dažnumas'),
+            model_name="dataset",
+            name="frequency",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="vitrina_classifiers.frequency",
+                verbose_name="Atnaujinimo dažnumas",
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='is_public',
-            field=models.BooleanField(default=True, verbose_name='Duomenų rinkinys viešinamas'),
+            model_name="dataset",
+            name="is_public",
+            field=models.BooleanField(
+                default=True, verbose_name="Duomenų rinkinys viešinamas"
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='licence',
-            field=models.ForeignKey(db_column='licence', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_classifiers.licence', verbose_name='Licenzija'),
+            model_name="dataset",
+            name="licence",
+            field=models.ForeignKey(
+                db_column="licence",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="vitrina_classifiers.licence",
+                verbose_name="Licenzija",
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='slug',
+            model_name="dataset",
+            name="slug",
             field=models.CharField(max_length=255, null=True, unique=True),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='status',
-            field=models.CharField(blank=True, choices=[('HAS_STRUCTURE', 'Struktūruotas'), ('HAS_DATA', 'Atvertas'), ('INVENTORED', 'Inventorintas')], max_length=255, null=True),
+            model_name="dataset",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("HAS_STRUCTURE", "Struktūruotas"),
+                    ("HAS_DATA", "Atvertas"),
+                    ("INVENTORED", "Inventorintas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='dataset',
-            name='tags',
-            field=tagulous.models.fields.TagField(_set_tag_meta=True, autocomplete_limit=20, autocomplete_settings={'width': '100%'}, autocomplete_view='autocomplete_tags', autocomplete_view_fulltext=True, blank=True, force_lowercase=True, help_text='Pateikite kableliu atskirtą sąrašą žymių.', space_delimiter=False, to='vitrina_datasets.Tagulous_Dataset_tags', verbose_name='Žymės'),
+            model_name="dataset",
+            name="tags",
+            field=tagulous.models.fields.TagField(
+                _set_tag_meta=True,
+                autocomplete_limit=20,
+                autocomplete_settings={"width": "100%"},
+                autocomplete_view="autocomplete_tags",
+                autocomplete_view_fulltext=True,
+                blank=True,
+                force_lowercase=True,
+                help_text="Pateikite kableliu atskirtą sąrašą žymių.",
+                space_delimiter=False,
+                to="vitrina_datasets.Tagulous_Dataset_tags",
+                verbose_name="Žymės",
+            ),
         ),
         migrations.AlterField(
-            model_name='datasetstructure',
-            name='version',
+            model_name="datasetstructure",
+            name="version",
             field=models.IntegerField(default=1),
         ),
     ]

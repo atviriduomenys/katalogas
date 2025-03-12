@@ -4,30 +4,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0004_auto_20231009_1918'),
+        ("vitrina_messages", "0004_auto_20231009_1918"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='subscription',
-            name='comment_replies_sub',
-            field=models.BooleanField(default=False, verbose_name='Komentaro atsako prenumerata'),
+            model_name="subscription",
+            name="comment_replies_sub",
+            field=models.BooleanField(
+                default=False, verbose_name="Komentaro atsako prenumerata"
+            ),
         ),
         migrations.AddField(
-            model_name='subscription',
-            name='project_comments_sub',
-            field=models.BooleanField(default=False, verbose_name='Projektų komentarų prenumerata'),
+            model_name="subscription",
+            name="project_comments_sub",
+            field=models.BooleanField(
+                default=False, verbose_name="Projektų komentarų prenumerata"
+            ),
         ),
         migrations.AddField(
-            model_name='subscription',
-            name='project_update_sub',
-            field=models.BooleanField(default=False, verbose_name='Susijusių projektų prenumerata'),
+            model_name="subscription",
+            name="project_update_sub",
+            field=models.BooleanField(
+                default=False, verbose_name="Susijusių projektų prenumerata"
+            ),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='sub_type',
-            field=models.CharField(blank=True, choices=[('REQUEST', 'Poreikio prenumerata'), ('DATASET', 'Duomenų rinkinio prenumerata'), ('COMMENT', 'Komentaro prenumerata'), ('ORGANIZATION', 'Organizacijos prenumerata'), ('PROJECT', 'Projekto prenumerata')], max_length=255, null=True, verbose_name='Prenumeratos tipas'),
+            model_name="subscription",
+            name="sub_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("REQUEST", "Poreikio prenumerata"),
+                    ("DATASET", "Duomenų rinkinio prenumerata"),
+                    ("COMMENT", "Komentaro prenumerata"),
+                    ("ORGANIZATION", "Organizacijos prenumerata"),
+                    ("PROJECT", "Projekto prenumerata"),
+                ],
+                max_length=255,
+                null=True,
+                verbose_name="Prenumeratos tipas",
+            ),
         ),
     ]

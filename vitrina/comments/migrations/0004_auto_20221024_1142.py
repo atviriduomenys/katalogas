@@ -8,70 +8,63 @@ from vitrina import settings
 
 
 def create_comments_for_datasets(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    DatasetEvent = apps.get_model('vitrina_datasets', 'DatasetEvent')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    DatasetEvent = apps.get_model("vitrina_datasets", "DatasetEvent")
+    User = apps.get_model("vitrina_users", "User")
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
     ct = ContentType.objects.get_for_model(Dataset)
 
-    qs = (
-        Dataset.objects.
-        values(
-            'id',
-            'created',
-        ).
-        annotate(
-            opened=Min('datasetdistribution__created'),
-            structured=Min('datasetstructure__created'),
-        )
+    qs = Dataset.objects.values(
+        "id",
+        "created",
+    ).annotate(
+        opened=Min("datasetdistribution__created"),
+        structured=Min("datasetstructure__created"),
     )
 
     for dataset in qs:
         user = sys_user
-        event_qs = (
-            DatasetEvent.objects.
-            filter(dataset_id=dataset['id'], type="CREATED")
-        )
+        event_qs = DatasetEvent.objects.filter(dataset_id=dataset["id"], type="CREATED")
         if event_qs.exists():
             create_event = event_qs.first()
             if create_event.user_0:
                 user = create_event.user_0
 
-        if dataset['created']:
+        if dataset["created"]:
             Comment.objects.create(
-                created=dataset['created'],
+                created=dataset["created"],
                 content_type=ct,
-                object_id=dataset['id'],
+                object_id=dataset["id"],
                 user=user,
                 type="STATUS",
-                status="INVENTORED"
+                status="INVENTORED",
             )
 
-        if dataset['structured']:
+        if dataset["structured"]:
             Comment.objects.create(
-                created=dataset['structured'],
+                created=dataset["structured"],
                 content_type=ct,
-                object_id=dataset['id'],
+                object_id=dataset["id"],
                 user=user,
                 type="STATUS",
-                status="STRUCTURED"
+                status="STRUCTURED",
             )
 
-        if dataset['opened']:
+        if dataset["opened"]:
             Comment.objects.create(
-                created=dataset['opened'],
+                created=dataset["opened"],
                 content_type=ct,
-                object_id=dataset['id'],
+                object_id=dataset["id"],
                 user=user,
                 type="STATUS",
-                status="OPENED"
+                status="OPENED",
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
     import django
 
@@ -87,21 +80,21 @@ if __name__ == '__main__':
 
     class Apps:
         models = {
-            'vitrina_comments': {
-                'Comment': Comment,
+            "vitrina_comments": {
+                "Comment": Comment,
             },
-            'vitrina_datasets': {
-                'Dataset': Dataset,
-                'DatasetEvent': DatasetEvent,
+            "vitrina_datasets": {
+                "Dataset": Dataset,
+                "DatasetEvent": DatasetEvent,
             },
-            'vitrina_resources': {
-                'DatasetDistribution': DatasetDistribution,
+            "vitrina_resources": {
+                "DatasetDistribution": DatasetDistribution,
             },
-            'contenttypes': {
-                'ContentType': ContentType,
+            "contenttypes": {
+                "ContentType": ContentType,
             },
-            'vitrina_users': {
-                'User': User,
+            "vitrina_users": {
+                "User": User,
             },
         }
 
@@ -117,12 +110,12 @@ if __name__ == '__main__':
 
 
 def create_comments_for_requests(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    RequestEvent = apps.get_model('vitrina_requests', 'RequestEvent')
-    Request = apps.get_model('vitrina_requests', 'Request')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    RequestEvent = apps.get_model("vitrina_requests", "RequestEvent")
+    Request = apps.get_model("vitrina_requests", "Request")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    User = apps.get_model("vitrina_users", "User")
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
     ct = ContentType.objects.get_for_model(Request)
@@ -140,7 +133,7 @@ def create_comments_for_requests(apps, schema_editor):
                 object_id=event.request.pk,
                 user=user,
                 type="STATUS",
-                status="APPROVED"
+                status="APPROVED",
             )
         elif event.type == "REJECTED":
             Comment.objects.create(
@@ -149,7 +142,7 @@ def create_comments_for_requests(apps, schema_editor):
                 object_id=event.request.pk,
                 user=user,
                 type="STATUS",
-                status="REJECTED"
+                status="REJECTED",
             )
         elif event.type == "STATUS_CHANGED":
             created = event.created
@@ -164,17 +157,17 @@ def create_comments_for_requests(apps, schema_editor):
                 object_id=event.request.pk,
                 user=user,
                 type="STATUS",
-                status="OPENED"
+                status="OPENED",
             )
 
 
 def create_comments_for_dataset_projects(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Project = apps.get_model('vitrina_projects', 'Project')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    UsecaseDatasetIds = apps.get_model('vitrina_projects', 'UsecaseDatasetIds')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Project = apps.get_model("vitrina_projects", "Project")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    UsecaseDatasetIds = apps.get_model("vitrina_projects", "UsecaseDatasetIds")
+    User = apps.get_model("vitrina_users", "User")
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
@@ -200,11 +193,11 @@ def create_comments_for_dataset_projects(apps, schema_editor):
 
 
 def create_comments_for_dataset_requests(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Request = apps.get_model('vitrina_requests', 'Request')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Request = apps.get_model("vitrina_requests", "Request")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    User = apps.get_model("vitrina_users", "User")
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
@@ -228,38 +221,55 @@ def create_comments_for_dataset_requests(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_comments', '0003_auto_20221024_1113'),
-        ('vitrina_orgs', '0013_auto_20221014_0904'),
-        ('vitrina_datasets', '0003_auto_20220905_0914'),
-        ('vitrina_resources', '0001_initial'),
-        ('vitrina_users', '0006_auto_20221027_1109'),
-        ('vitrina_projects', '0001_initial')
+        ("vitrina_comments", "0003_auto_20221024_1113"),
+        ("vitrina_orgs", "0013_auto_20221014_0904"),
+        ("vitrina_datasets", "0003_auto_20220905_0914"),
+        ("vitrina_resources", "0001_initial"),
+        ("vitrina_users", "0006_auto_20221027_1109"),
+        ("vitrina_projects", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='comment',
-            name='parent_id',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='vitrina_comments.comment'),
+            model_name="comment",
+            name="parent_id",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="vitrina_comments.comment",
+            ),
         ),
         migrations.AddField(
-            model_name='comment',
-            name='status',
-            field=models.CharField(blank=True,
-                                   choices=[('INVENTORED', 'Inventorintas'), ('STRUCTURED', 'Įkelta duomenų struktūra'),
-                                            ('OPENED', 'Atvertas'), ('APPROVED', 'Patvirtintas'),
-                                            ('REJECTED', 'Atmestas')], max_length=255, null=True),
+            model_name="comment",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("INVENTORED", "Inventorintas"),
+                    ("STRUCTURED", "Įkelta duomenų struktūra"),
+                    ("OPENED", "Atvertas"),
+                    ("APPROVED", "Patvirtintas"),
+                    ("REJECTED", "Atmestas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='comment',
-            name='type',
-            field=models.CharField(choices=[('USER', 'Naudotojo komentaras'),
-                                            ('REQUEST', 'Prašymo atverti duomenis komentaras'),
-                                            ('PROJECT', 'Duomenų rinkinio įtraukimo į projektą komentaras'),
-                                            ('STATUS', 'Statuso keitimo komentaras')], max_length=255, default='USER'),
+            model_name="comment",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("USER", "Naudotojo komentaras"),
+                    ("REQUEST", "Prašymo atverti duomenis komentaras"),
+                    ("PROJECT", "Duomenų rinkinio įtraukimo į projektą komentaras"),
+                    ("STATUS", "Statuso keitimo komentaras"),
+                ],
+                max_length=255,
+                default="USER",
+            ),
         ),
         migrations.RunPython(create_comments_for_datasets),
         migrations.RunPython(create_comments_for_requests),

@@ -5,14 +5,13 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_requests', '0010_auto_20240124_0541'),
+        ("vitrina_requests", "0010_auto_20240124_0541"),
     ]
 
     operations = [
         migrations.AlterModelTable(
-            name='requestassignment',
-            table='request_assignment',
+            name="requestassignment",
+            table="request_assignment",
         ),
     ]

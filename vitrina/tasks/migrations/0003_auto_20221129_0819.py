@@ -5,14 +5,13 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_tasks', '0002_auto_20221124_1307'),
+        ("vitrina_tasks", "0002_auto_20221124_1307"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='task',
-            name='role',
+            model_name="task",
+            name="role",
         ),
     ]

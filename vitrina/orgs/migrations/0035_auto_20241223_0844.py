@@ -5,15 +5,20 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0034_auto_20241202_1340'),
+        ("vitrina_orgs", "0034_auto_20241202_1340"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='representative',
-            name='organization',
-            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_orgs.organization'),
+            model_name="representative",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                default=None,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="vitrina_orgs.organization",
+            ),
         ),
     ]

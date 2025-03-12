@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0013_auto_20221014_0904'),
+        ("vitrina_orgs", "0013_auto_20221014_0904"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='representative',
-            name='has_api_access',
+            model_name="representative",
+            name="has_api_access",
             field=models.BooleanField(default=False),
         ),
     ]

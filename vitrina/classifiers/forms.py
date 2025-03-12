@@ -9,14 +9,14 @@ class AreaOfManagementAdminForm(forms.ModelForm):
     organizations = forms.ModelMultipleChoiceField(
         queryset=Organization.objects.all(),
         widget=FilteredSelectMultiple("Organizacijos", is_stacked=False),
-        required=False
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
-            self.fields['organizations'].initial = self.instance.organization_set.all()
+            self.fields["organizations"].initial = self.instance.organization_set.all()
 
     class Meta:
         model = AreaOfManagement
-        fields = '__all__'
+        fields = "__all__"

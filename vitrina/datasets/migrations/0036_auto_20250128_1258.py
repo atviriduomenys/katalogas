@@ -5,22 +5,45 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0035_merge_0033_auto_20250120_1427_0034_auto_20250124_0848'),
+        (
+            "vitrina_datasets",
+            "0035_merge_0033_auto_20250120_1427_0034_auto_20250124_0848",
+        ),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DatasetExcludedGroups',
+            name="DatasetExcludedGroups",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='excluded_groups', to='vitrina_datasets.dataset')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.datasetgroup')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "dataset",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="excluded_groups",
+                        to="vitrina_datasets.dataset",
+                    ),
+                ),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="vitrina_datasets.datasetgroup",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'dataset_excluded_groups',
-                'unique_together': {('dataset', 'group')},
+                "db_table": "dataset_excluded_groups",
+                "unique_together": {("dataset", "group")},
             },
         ),
     ]

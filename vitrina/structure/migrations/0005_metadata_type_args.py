@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0004_alter_metadata_access'),
+        ("vitrina_structure", "0004_alter_metadata_access"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='metadata',
-            name='type_args',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Tipo argumentai'),
+            model_name="metadata",
+            name="type_args",
+            field=models.CharField(
+                blank=True, max_length=255, null=True, verbose_name="Tipo argumentai"
+            ),
         ),
     ]

@@ -5,14 +5,13 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_requests', '0009_auto_20231105_1818'),
+        ("vitrina_requests", "0009_auto_20231105_1818"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='requestassignment',
-            unique_together={('organization', 'request')},
+            name="requestassignment",
+            unique_together={("organization", "request")},
         )
     ]

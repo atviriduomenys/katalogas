@@ -7,15 +7,15 @@ from vitrina import settings
 
 
 def delete_structured_status_comments(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
+    Comment = apps.get_model("vitrina_comments", "Comment")
     Comment.objects.filter(type="STATUS", status="STRUCTURED").delete()
 
 
 def create_planned_status_comments(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    User = apps.get_model('vitrina_users', 'User')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    User = apps.get_model("vitrina_users", "User")
 
     ct = ContentType.objects.get_for_model(Dataset)
 
@@ -27,18 +27,14 @@ def create_planned_status_comments(apps, schema_editor):
             last_name="Naudotojas",
             email=settings.SYSTEM_USER_EMAIL,
             password="",
-            is_staff=True
+            is_staff=True,
         )
 
     for dataset in Dataset.objects.annotate(
-        planned=Min('plandataset__created'),
-        opened=Min('datasetdistribution__created')
+        planned=Min("plandataset__created"), opened=Min("datasetdistribution__created")
     ).filter(
-        Q(planned__isnull=False) &
-        Q(
-            Q(opened__isnull=True) |
-            Q(planned__lt=F('opened'))
-        )
+        Q(planned__isnull=False)
+        & Q(Q(opened__isnull=True) | Q(planned__lt=F("opened")))
     ):
         Comment.objects.create(
             created=dataset.planned,
@@ -46,24 +42,28 @@ def create_planned_status_comments(apps, schema_editor):
             object_id=dataset.pk,
             user=sys_user,
             type="STATUS",
-            status="PLANNED"
+            status="PLANNED",
         )
 
 
 def set_dataset_status(apps, schema_editor):
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     ct = ContentType.objects.get_for_model(Dataset)
 
     for dataset in Dataset.objects.all():
-        latest_status_comment = Comment.objects.filter(
-            content_type=ct,
-            object_id=dataset.pk,
-            type="STATUS",
-            status__isnull=False
-        ).order_by('-created').first()
+        latest_status_comment = (
+            Comment.objects.filter(
+                content_type=ct,
+                object_id=dataset.pk,
+                type="STATUS",
+                status__isnull=False,
+            )
+            .order_by("-created")
+            .first()
+        )
 
         if latest_status_comment:
             if latest_status_comment.status == "OPENED":
@@ -72,42 +72,49 @@ def set_dataset_status(apps, schema_editor):
                 dataset.status = "PLANNED"
             else:
                 dataset.status = "INVENTORED"
-            dataset.save(update_fields=['status'])
+            dataset.save(update_fields=["status"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_comments', '0007_auto_20230522_1627'),
-        ('vitrina_datasets', '0019_merge_0018_auto_20230705_1128_0018_auto_20230718_1229'),
-        ('vitrina_plans', '0001_initial'),
-        ('vitrina_users', '0006_auto_20221027_1109'),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_comments", "0007_auto_20230522_1627"),
+        (
+            "vitrina_datasets",
+            "0019_merge_0018_auto_20230705_1128_0018_auto_20230718_1229",
+        ),
+        ("vitrina_plans", "0001_initial"),
+        ("vitrina_users", "0006_auto_20221027_1109"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='comment',
-            name='status',
-            field=models.CharField(blank=True, choices=[
-                ('INVENTORED', 'Inventorintas'),
-                ('PLANNED', 'Planuojamas atverti'),
-                ('OPENED', 'Atvertas'),
-                ('APPROVED', 'Patvirtintas'),
-                ('REJECTED', 'Atmestas')
-            ], max_length=255, null=True),
+            model_name="comment",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("INVENTORED", "Inventorintas"),
+                    ("PLANNED", "Planuojamas atverti"),
+                    ("OPENED", "Atvertas"),
+                    ("APPROVED", "Patvirtintas"),
+                    ("REJECTED", "Atmestas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='comment',
-            name='created',
+            model_name="comment",
+            name="created",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.RunPython(delete_structured_status_comments),
         migrations.RunPython(create_planned_status_comments),
         migrations.RunPython(set_dataset_status),
         migrations.AlterField(
-            model_name='comment',
-            name='created',
+            model_name="comment",
+            name="created",
             field=models.DateTimeField(blank=True, null=True, auto_now_add=True),
         ),
     ]

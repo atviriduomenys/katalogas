@@ -7,25 +7,27 @@ import filer.fields.image
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.FILER_IMAGE_MODEL),
-        ('vitrina_projects', '0006_delete_old_datasetid_table'),
+        ("vitrina_projects", "0006_delete_old_datasetid_table"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='img',
-            field=filer.fields.image.FilerImageField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='image_project', to=settings.FILER_IMAGE_MODEL),
+            model_name="project",
+            name="img",
+            field=filer.fields.image.FilerImageField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="image_project",
+                to=settings.FILER_IMAGE_MODEL,
+            ),
         ),
-        migrations.RemoveField(
-            model_name='project',
-            name='image'
-        ),
+        migrations.RemoveField(model_name="project", name="image"),
         migrations.RenameField(
-            model_name='project',
-            old_name='img',
-            new_name='image',
+            model_name="project",
+            old_name="img",
+            new_name="image",
         ),
     ]

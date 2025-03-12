@@ -6,6 +6,6 @@ def current_domain(request):
     domain = Site.objects.get_current().domain
     url = request.build_absolute_uri(f"{protocol}://{domain}")
     return {
-       "current_domain_full": url,
-       "current_domain": domain,
+        "current_domain_full": url,
+        "current_domain": domain,
     }

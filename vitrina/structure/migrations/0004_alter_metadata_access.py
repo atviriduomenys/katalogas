@@ -9,39 +9,48 @@ OPEN = 3
 
 
 def migrate_access(apps, schema_editor):
-    Metadata = apps.get_model('vitrina_structure', 'Metadata')
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
     for meta in Metadata.objects.all():
-        if meta.access == 'private':
+        if meta.access == "private":
             meta.access_temp = PRIVATE
-        elif meta.access == 'protected':
+        elif meta.access == "protected":
             meta.access_temp = PROTECTED
-        elif meta.access == 'public':
+        elif meta.access == "public":
             meta.access_temp = PUBLIC
-        elif meta.access == 'open':
+        elif meta.access == "open":
             meta.access_temp = OPEN
-        meta.save(update_fields=['access_temp'])
+        meta.save(update_fields=["access_temp"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0003_auto_20230516_0944'),
+        ("vitrina_structure", "0003_auto_20230516_0944"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='metadata',
-            name='access_temp',
-            field=models.IntegerField(blank=True, null=True, choices=[(0, 'Privatus'), (1, 'Apsaugotas'), (2, 'Viešas'), (3, 'Atviras')], verbose_name='Prieiga'),
+            model_name="metadata",
+            name="access_temp",
+            field=models.IntegerField(
+                blank=True,
+                null=True,
+                choices=[
+                    (0, "Privatus"),
+                    (1, "Apsaugotas"),
+                    (2, "Viešas"),
+                    (3, "Atviras"),
+                ],
+                verbose_name="Prieiga",
+            ),
         ),
         migrations.RunPython(migrate_access),
         migrations.RemoveField(
-            model_name='metadata',
-            name='access',
+            model_name="metadata",
+            name="access",
         ),
         migrations.RenameField(
-            model_name='metadata',
-            old_name='access_temp',
-            new_name='access',
+            model_name="metadata",
+            old_name="access_temp",
+            new_name="access",
         ),
     ]

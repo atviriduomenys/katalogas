@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0009_auto_20220930_0838'),
+        ("vitrina_classifiers", "0009_auto_20220930_0838"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='frequency',
-            name='is_default',
+            model_name="frequency",
+            name="is_default",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='licence',
-            name='is_default',
+            model_name="licence",
+            name="is_default",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -7,26 +7,30 @@ from vitrina import settings
 
 def forwards_func(apps, schema_editor):
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
-    DatasetDistributionTranslation = apps.get_model('vitrina_resources', 'DatasetDistributionTranslation')
+    DatasetDistributionTranslation = apps.get_model(
+        "vitrina_resources", "DatasetDistributionTranslation"
+    )
 
     for dist in DatasetDistribution.objects.all():
         DatasetDistributionTranslation.objects.create(
             master_id=dist.pk,
             language_code="lt",
             title=dist.title_old,
-            description=dist.description_old
+            description=dist.description_old,
         )
 
 
 def backwards_func(apps, schema_editor):
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
-    DatasetDistributionTranslation = apps.get_model('vitrina_resources', 'DatasetDistributionTranslation')
+    DatasetDistributionTranslation = apps.get_model(
+        "vitrina_resources", "DatasetDistributionTranslation"
+    )
 
     for dist in DatasetDistribution.objects.all():
         translation = _get_translation(dist, DatasetDistributionTranslation)
         dist.title = translation.title
         dist.description = translation.description
-        dist.save()   # Note this only calls Model.save()
+        dist.save()  # Note this only calls Model.save()
 
 
 def _get_translation(dist, DatasetDistributionTranslation):
@@ -45,9 +49,8 @@ def _get_translation(dist, DatasetDistributionTranslation):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0021_add_translation_model'),
+        ("vitrina_resources", "0021_add_translation_model"),
     ]
 
     operations = [

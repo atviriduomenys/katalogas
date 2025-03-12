@@ -12,11 +12,11 @@ from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
-    ACTIVE = 'active'
-    AWAITING_CONFIRMATION = 'awaiting_confirmation'
-    SUSPENDED = 'suspended'
-    DELETED = 'deleted'
-    LOCKED = 'locked'
+    ACTIVE = "active"
+    AWAITING_CONFIRMATION = "awaiting_confirmation"
+    SUSPENDED = "suspended"
+    DELETED = "deleted"
+    LOCKED = "locked"
 
     STATUSES = (
         (ACTIVE, _("Aktyvus")),
@@ -30,18 +30,28 @@ class User(AbstractUser):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)
+    email = models.CharField(
+        _("Elektroninis paštas"), max_length=255, blank=True, null=True
+    )
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.SET_NULL, blank=True, null=True)
+    organization = models.ForeignKey(
+        Organization, models.SET_NULL, blank=True, null=True
+    )
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
     needs_password_change = models.BooleanField(default=False)
     year_of_birth = models.IntegerField(blank=True, null=True)
-    status = models.CharField(max_length=255, blank=True, null=True, choices=STATUSES, default=AWAITING_CONFIRMATION)
+    status = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=STATUSES,
+        default=AWAITING_CONFIRMATION,
+    )
     failed_login_attempts = models.IntegerField(default=0)
     password_last_updated = models.DateTimeField(default=now, null=True)
     is_viisp_login = models.BooleanField(default=False)
@@ -50,14 +60,14 @@ class User(AbstractUser):
     disabled = models.BooleanField(default=False)
     suspended = models.BooleanField(default=False)
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = UserManager()
     objects_with_deleted = DeletedUserManager()
 
     class Meta:
-        db_table = 'user'
+        db_table = "user"
         verbose_name = _("Naudotojas")
         verbose_name_plural = _("Visi naudotojai")
 
@@ -78,12 +88,16 @@ class User(AbstractUser):
     @property
     def is_supervisor(self):
         return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
-                
+
     @property
     def can_see_manager_dataset_list_url(self):
         from vitrina.datasets.models import Dataset
+
         if self.is_manager:
-            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.MANAGER)]
+            org_ids = [
+                rep.object_id
+                for rep in self.representative_set.filter(role=Representative.MANAGER)
+            ]
             for org_id in org_ids:
                 if Dataset.objects.filter(organization=org_id):
                     return True
@@ -96,7 +110,10 @@ class User(AbstractUser):
                 self.status = User.DELETED
             elif not self.is_active:
                 self.status = User.SUSPENDED
-            elif self.emailaddress_set.first() and not self.emailaddress_set.first().verified:
+            elif (
+                self.emailaddress_set.first()
+                and not self.emailaddress_set.first().verified
+            ):
                 self.status = User.AWAITING_CONFIRMATION
             else:
                 self.status = User.ACTIVE
@@ -119,7 +136,7 @@ class UserTablePreferences(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'user_table_preferences'
+        db_table = "user_table_preferences"
 
 
 class OldPassword(models.Model):
@@ -129,11 +146,11 @@ class OldPassword(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     password = models.CharField(max_length=128, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey("User", models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'old_password'
+        db_table = "old_password"
 
 
 class PasswordResetToken(models.Model):
@@ -144,12 +161,12 @@ class PasswordResetToken(models.Model):
     version = models.IntegerField()
     expiry_date = models.DateTimeField(blank=True, null=True)
     token = models.CharField(max_length=255, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, null=True)
+    user = models.ForeignKey("User", models.CASCADE, null=True)
     used_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'password_reset_token'
+        db_table = "password_reset_token"
 
 
 class SsoToken(models.Model):
@@ -160,25 +177,37 @@ class SsoToken(models.Model):
     version = models.IntegerField()
     ip = models.CharField(max_length=255, blank=True, null=True)
     token = models.CharField(unique=True, max_length=36, blank=True, null=True)
-    user = models.ForeignKey('User', models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey("User", models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'sso_token'
+        db_table = "sso_token"
 
 
 class UserEmailDevice(EmailDevice):
-    ip_address = models.CharField(_("IP adresas"), max_length=40, editable=False, db_index=True, null=True, blank=True)
+    ip_address = models.CharField(
+        _("IP adresas"),
+        max_length=40,
+        editable=False,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
     user_agent = models.TextField(editable=False, null=True, blank=True)
 
     class Meta:
         managed = True
-        db_table = 'user_email_device'
+        db_table = "user_email_device"
 
     def send_mail(self, body, **kwargs):
         from vitrina.helpers import email
 
-        email([self.email or self.user.email], 'confirm-login', 'vitrina/email/confirm_login.md', {
-            'full_name': str(self.user),
-            'token': self.token,
-        })
+        email(
+            [self.email or self.user.email],
+            "confirm-login",
+            "vitrina/email/confirm_login.md",
+            {
+                "full_name": str(self.user),
+                "token": self.token,
+            },
+        )

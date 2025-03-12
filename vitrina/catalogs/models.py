@@ -23,7 +23,7 @@ class Catalog(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'catalog'
+        db_table = "catalog"
 
     def __str__(self):
         return self.title
@@ -43,12 +43,14 @@ class HarvestingJob(models.Model):
     translated = models.BooleanField(blank=True, null=True)
     type = models.CharField(max_length=255, blank=True, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.CASCADE, db_column='organization', blank=True, null=True)
+    organization = models.ForeignKey(
+        Organization, models.CASCADE, db_column="organization", blank=True, null=True
+    )
     active = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'harvesting_job'
+        db_table = "harvesting_job"
 
     def __str__(self):
         return f"{self.title}"

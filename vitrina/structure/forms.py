@@ -16,53 +16,71 @@ from lark import ParseError
 
 from vitrina.structure import spyna
 from vitrina.structure.helpers import is_time_unit, is_si_unit
-from vitrina.structure.models import EnumItem, Metadata, Property, Model, Prefix, Version
+from vitrina.structure.models import (
+    EnumItem,
+    Metadata,
+    Property,
+    Model,
+    Prefix,
+    Version,
+)
 
 
 class EnumForm(forms.ModelForm):
     value = forms.CharField(label=_("Reikšmė"))
     source = forms.CharField(label=_("Reikšmė šaltinyje"), required=False)
-    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
+    access = forms.ChoiceField(
+        label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
+    )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
-    description = forms.CharField(label=_("Aprašymas"), widget=forms.Textarea(attrs={'rows': 8}), required=False)
+    description = forms.CharField(
+        label=_("Aprašymas"), widget=forms.Textarea(attrs={"rows": 8}), required=False
+    )
 
     class Meta:
         model = EnumItem
-        fields = ('value', 'source', 'access', 'title', 'description')
+        fields = ("value", "source", "access", "title", "description")
 
     def __init__(self, prop=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.prop = prop
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "enum-form"
         self.helper.layout = Layout(
-            Field('value'),
-            Field('source'),
-            Field('access'),
-            Field('title'),
-            Field('description'),
-            Submit('submit', _("Redaguoti") if instance else _("Sukurti"), css_class='button is-primary'),
+            Field("value"),
+            Field("source"),
+            Field("access"),
+            Field("title"),
+            Field("description"),
+            Submit(
+                "submit",
+                _("Redaguoti") if instance else _("Sukurti"),
+                css_class="button is-primary",
+            ),
         )
 
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
-            if self.prop.metadata.first() and self.prop.metadata.first().type == 'string':
-                value = metadata.prepare.replace('"', '')
+            if (
+                self.prop.metadata.first()
+                and self.prop.metadata.first().type == "string"
+            ):
+                value = metadata.prepare.replace('"', "")
             else:
                 value = metadata.prepare
-            self.initial['value'] = value
-            self.initial['source'] = metadata.source
-            self.initial['access'] = metadata.access
-            self.initial['title'] = metadata.title
-            self.initial['description'] = metadata.description
+            self.initial["value"] = value
+            self.initial["source"] = metadata.source
+            self.initial["access"] = metadata.access
+            self.initial["title"] = metadata.title
+            self.initial["description"] = metadata.description
 
     def clean_value(self):
-        value = self.cleaned_data.get('value')
+        value = self.cleaned_data.get("value")
         if value:
             if metadata := self.prop.metadata.first():
-                if metadata.type == 'integer':
+                if metadata.type == "integer":
                     try:
                         int(value)
                     except ValueError:
@@ -74,7 +92,7 @@ class EnumForm(forms.ModelForm):
         return value
 
     def clean_description(self):
-        description = self.cleaned_data.get('description')
+        description = self.cleaned_data.get("description")
         if description:
             md = markdown.Markdown()
             try:
@@ -93,59 +111,105 @@ def _get_level_title(title, description=None):
 
 MODEL_LEVEL_CHOICES = (
     (None, _get_level_title(_("Nenurodyta"))),
-    (0, _get_level_title(
-        _("Nėra identifikatoriaus"),
-        _("Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą.")
-    )),
-    (1, _get_level_title(
-        _("Neunikalus identifikatorius"),
-        _("Duomenų laukas parinktas kaip identifikatorius nėra unikalus arba parinktas "
-          "laukas nėra privalomas ir ne visi objektai gali turėti reikšmę.")
-    )),
-    (2, _get_level_title(
-        _("Nepatikimas identifikatorius"),
-        _("Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis.")
-    )),
-    (3, _get_level_title(
-        _("Patikimas identifikatorius"),
-        _("Naudojamas patikimas lokalus identifikatorius, tačiau objektams nėra priskirtas "
-          "globalus nekintantis identifikatorius.")
-    )),
-    (4, _get_level_title(
-        _("Globalus identifikatorius"),
-        _("Objektams priskirtas globalus nekintantis identifikatorius.")
-    )),
+    (
+        0,
+        _get_level_title(
+            _("Nėra identifikatoriaus"),
+            _(
+                "Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
+            ),
+        ),
+    ),
+    (
+        1,
+        _get_level_title(
+            _("Neunikalus identifikatorius"),
+            _(
+                "Duomenų laukas parinktas kaip identifikatorius nėra unikalus arba parinktas "
+                "laukas nėra privalomas ir ne visi objektai gali turėti reikšmę."
+            ),
+        ),
+    ),
+    (
+        2,
+        _get_level_title(
+            _("Nepatikimas identifikatorius"),
+            _(
+                "Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."
+            ),
+        ),
+    ),
+    (
+        3,
+        _get_level_title(
+            _("Patikimas identifikatorius"),
+            _(
+                "Naudojamas patikimas lokalus identifikatorius, tačiau objektams nėra priskirtas "
+                "globalus nekintantis identifikatorius."
+            ),
+        ),
+    ),
+    (
+        4,
+        _get_level_title(
+            _("Globalus identifikatorius"),
+            _("Objektams priskirtas globalus nekintantis identifikatorius."),
+        ),
+    ),
 )
 
 BASE_LEVEL_CHOICES = (
     (None, _get_level_title(_("Nenurodyta"))),
-    (0, _get_level_title(
-        _("Nėra per ką sieti"),
-        _("Nėra tokių duomenų laukų, per kuriuos būtų galima daryti susiejimą.")
-    )),
-    (1, _get_level_title(
-        _("Susiejimas neįmanomas"),
-        _("Modelio ir jo bazės susiejimas nėra įmanomas, kadangi laukai, per kuriuos "
-          "siejama turi skirtingos formos reikšmes, nors semantiškai laukai, per kuriuos "
-          "galimas susiejimas turi tą pačią prasmę.")
-    )),
-    (2, _get_level_title(
-        _("Susiejimas nepatikimas"),
-        _("Modelio ir jo bazės susiejimas galimas per duomenų laukus, kurie nėra objekto "
-          "identifikatoriai ir gali keistis, pavyzdžiui siejimas pagal pavadinimą ar aprašymą. "
-          "Daugelis objektų, gali būti susieti, nes tarkim pavadinimai sutampa, bet gali būti "
-          "tokių atvejų, kur pavadinimai nesutampa.")
-    )),
-    (3, _get_level_title(
-        _("Susiejimas netikrinant"),
-        _("Modelio ir jo bazės susiejimas daromas per patikimą identifikatorių, tačiau nėra "
-          "daromas patikrinimas ar duomenys tikrai susisieja.")
-    )),
-    (4, _get_level_title(
-        _("Susiejimas tikrinant"),
-        _("Modelio ir jo bazės siejimas atliekamas ne tik naudojant patikimą identifikatorių, "
-          "tačiau teikiant duomenis užtikrinamas identifikatorių vientisumas.")
-    )),
+    (
+        0,
+        _get_level_title(
+            _("Nėra per ką sieti"),
+            _("Nėra tokių duomenų laukų, per kuriuos būtų galima daryti susiejimą."),
+        ),
+    ),
+    (
+        1,
+        _get_level_title(
+            _("Susiejimas neįmanomas"),
+            _(
+                "Modelio ir jo bazės susiejimas nėra įmanomas, kadangi laukai, per kuriuos "
+                "siejama turi skirtingos formos reikšmes, nors semantiškai laukai, per kuriuos "
+                "galimas susiejimas turi tą pačią prasmę."
+            ),
+        ),
+    ),
+    (
+        2,
+        _get_level_title(
+            _("Susiejimas nepatikimas"),
+            _(
+                "Modelio ir jo bazės susiejimas galimas per duomenų laukus, kurie nėra objekto "
+                "identifikatoriai ir gali keistis, pavyzdžiui siejimas pagal pavadinimą ar aprašymą. "
+                "Daugelis objektų, gali būti susieti, nes tarkim pavadinimai sutampa, bet gali būti "
+                "tokių atvejų, kur pavadinimai nesutampa."
+            ),
+        ),
+    ),
+    (
+        3,
+        _get_level_title(
+            _("Susiejimas netikrinant"),
+            _(
+                "Modelio ir jo bazės susiejimas daromas per patikimą identifikatorių, tačiau nėra "
+                "daromas patikrinimas ar duomenys tikrai susisieja."
+            ),
+        ),
+    ),
+    (
+        4,
+        _get_level_title(
+            _("Susiejimas tikrinant"),
+            _(
+                "Modelio ir jo bazės siejimas atliekamas ne tik naudojant patikimą identifikatorių, "
+                "tačiau teikiant duomenis užtikrinamas identifikatorių vientisumas."
+            ),
+        ),
+    ),
 )
 
 
@@ -157,7 +221,6 @@ class OrderedModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 
 class OrderMixin:
-
     def optgroups(self, name, value, attrs=None):
         default = (None, [], 0)
         groups = [default]
@@ -195,13 +258,13 @@ class OrderMixin:
 
 class RefWidget(OrderMixin, ModelSelect2MultipleWidget):
     model = Property
-    search_fields = ['metadata__name__icontains']
-    dependent_fields = {'model_id': 'model__pk'}
+    search_fields = ["metadata__name__icontains"]
+    dependent_fields = {"model_id": "model__pk"}
 
 
 class BaseWidget(ModelSelect2Widget):
     model = Model
-    search_fields = ['metadata__name__icontains', 'metadata__title__icontains']
+    search_fields = ["metadata__name__icontains", "metadata__title__icontains"]
 
     def label_from_instance(self, obj):
         if obj.title:
@@ -212,19 +275,23 @@ class BaseWidget(ModelSelect2Widget):
 
 class BaseRefWidget(OrderMixin, ModelSelect2MultipleWidget):
     model = Property
-    search_fields = ['metadata__name__icontains']
-    dependent_fields = {'base': 'model'}
+    search_fields = ["metadata__name__icontains"]
+    dependent_fields = {"base": "model"}
 
 
 def _check_prepare_ast(ast, model_props, bind=False):
     if isinstance(ast, dict):
-        if ast.get('name') == 'bind':
+        if ast.get("name") == "bind":
             bind = True
-        for arg in ast.get('args', []):
+        for arg in ast.get("args", []):
             _check_prepare_ast(arg, model_props, bind)
     elif bind:
         if ast not in model_props:
-            raise ValidationError(_(f'Duomenų filtre nurodytas modelyje neegzistuojantis laukas: "{ast}".'))
+            raise ValidationError(
+                _(
+                    f'Duomenų filtre nurodytas modelyje neegzistuojantis laukas: "{ast}".'
+                )
+            )
 
 
 class ModelCreateForm(forms.ModelForm):
@@ -240,22 +307,22 @@ class ModelCreateForm(forms.ModelForm):
     )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(
-        label=_("Aprašymas"),
-        required=False,
-        widget=forms.Textarea(attrs={'rows': 8})
+        label=_("Aprašymas"), required=False, widget=forms.Textarea(attrs={"rows": 8})
     )
 
     base = forms.ModelChoiceField(
         label=_("Modelio bazė"),
         required=False,
         queryset=Model.objects.all(),
-        widget=BaseWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=BaseWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
     )
     base_ref = OrderedModelMultipleChoiceField(
         label=_("Pirminis raktas"),
         required=False,
-        widget=BaseRefWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0}),
-        queryset=Property.objects.all()
+        widget=BaseRefWidget(
+            attrs={"data-width": "100%", "data-minimum-input-length": 0}
+        ),
+        queryset=Property.objects.all(),
     )
     base_level = forms.ChoiceField(
         label=_("Brandos lygis"),
@@ -267,59 +334,73 @@ class ModelCreateForm(forms.ModelForm):
     comment = forms.CharField(
         label=_("Keitimo komentaras"),
         required=False,
-        widget=forms.Textarea(attrs={'rows': 6})
+        widget=forms.Textarea(attrs={"rows": 6}),
     )
     is_parameterized = forms.BooleanField(label=_("Parametrizuotas"), required=False)
 
     class Meta:
         model = Metadata
-        fields = ('name', 'source', 'prepare', 'uri', 'level', 'title',
-                  'description', 'base', 'base_ref', 'base_level', 'comment', 'is_parameterized',)
+        fields = (
+            "name",
+            "source",
+            "prepare",
+            "uri",
+            "level",
+            "title",
+            "description",
+            "base",
+            "base_ref",
+            "base_level",
+            "comment",
+            "is_parameterized",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "model-form"
         self.helper.layout = Layout(
-            Field('name'),
-            Field('source'),
-            Field('prepare'),
-            Field('uri'),
-            Field('level'),
-            Field('title'),
-            Field('description'),
-            Field('is_parameterized'),
+            Field("name"),
+            Field("source"),
+            Field("prepare"),
+            Field("uri"),
+            Field("level"),
+            Field("title"),
+            Field("description"),
+            Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
-            Field('base'),
-            Field('base_ref'),
-            Field('base_level'),
+            Field("base"),
+            Field("base_ref"),
+            Field("base_level"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Istorija")}</h4>'),
-            Field('comment'),
-            Submit('submit', _("Sukurti"), css_class='button is-primary')
+            Field("comment"),
+            Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 
-        self.initial['level'] = 'None'
-        self.initial['base_level'] = 'None'
+        self.initial["level"] = "None"
+        self.initial["base_level"] = "None"
 
     def clean_level(self):
-        level = self.cleaned_data.get('level')
-        if level and level != 'None':
+        level = self.cleaned_data.get("level")
+        if level and level != "None":
             return int(level)
         return None
 
     def clean_base_level(self):
-        level = self.cleaned_data.get('base_level')
-        if level and level != 'None':
+        level = self.cleaned_data.get("base_level")
+        if level and level != "None":
             return int(level)
         return None
 
     def clean_prepare(self):
-        prepare = self.cleaned_data.get('prepare')
+        prepare = self.cleaned_data.get("prepare")
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
-            props = instance.object.model_properties.values_list('metadata__name', flat=True)
+            props = instance.object.model_properties.values_list(
+                "metadata__name", flat=True
+            )
         else:
             props = []
         if prepare:
@@ -331,55 +412,67 @@ class ModelCreateForm(forms.ModelForm):
         return prepare
 
     def clean_name(self):
-        name = self.cleaned_data.get('name')
+        name = self.cleaned_data.get("name")
         if self.dataset.name:
-            metadata_name = self.dataset.name + '/' + name
+            metadata_name = self.dataset.name + "/" + name
         else:
             metadata_name = name
 
         if self.instance and self.instance.pk:
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
-                name=metadata_name
+                name=metadata_name,
             ).exclude(pk=self.instance.pk)
         else:
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
-                name=metadata_name
+                name=metadata_name,
             )
 
         if name:
             if not name[0].isupper():
-                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."))
+                raise ValidationError(
+                    _("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė.")
+                )
             elif any(not c.isalnum() for c in name):
-                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                                        "jokie kiti simboliai negalimi."))
+                raise ValidationError(
+                    _(
+                        "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                        "jokie kiti simboliai negalimi."
+                    )
+                )
             elif not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+                raise ValidationError(
+                    _(
+                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+                    )
+                )
             elif metadata:
-                raise ValidationError(_("Modelis su tokiu kodiniu pavadinimu jau egzistuoja."))
+                raise ValidationError(
+                    _("Modelis su tokiu kodiniu pavadinimu jau egzistuoja.")
+                )
         return name
 
     def clean_uri(self):
-        uri = self.cleaned_data.get('uri')
+        uri = self.cleaned_data.get("uri")
         if uri:
-            if '://' not in uri and ':' not in uri:
+            if "://" not in uri and ":" not in uri:
                 raise ValidationError(_(f'Nevalidus uri "{uri}" formatas.'))
-            if '://' not in uri and ':' in uri:
-                parts = uri.split(':')
+            if "://" not in uri and ":" in uri:
+                parts = uri.split(":")
                 if len(parts) != 2:
                     raise ValidationError(_(f'Nevalidus uri "{uri}" formatas.'))
                 else:
                     prefix = parts[0]
                     if not Prefix.objects.filter(
-                        Q(content_type=None, object_id=None, name=prefix) |
-                        Q(metadata__dataset=self.dataset, name=prefix)
+                        Q(content_type=None, object_id=None, name=prefix)
+                        | Q(metadata__dataset=self.dataset, name=prefix)
                     ).exists():
                         raise ValidationError(_(f'Neatpažintas "{prefix}" prefiksas.'))
         return uri
 
     def clean_description(self):
-        description = self.cleaned_data.get('description')
+        description = self.cleaned_data.get("description")
         if description:
             md = markdown.Markdown()
             try:
@@ -394,89 +487,136 @@ class ModelUpdateForm(ModelCreateForm):
     ref = OrderedModelMultipleChoiceField(
         label=_("Pirminis raktas"),
         required=False,
-        widget=RefWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0}),
+        widget=RefWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
         queryset=Property.objects.all(),
     )
 
     class Meta:
         model = Metadata
-        fields = ('model_id', 'name', 'ref', 'source', 'prepare', 'uri', 'is_parameterized',
-                  'level', 'title', 'description', 'base', 'base_ref', 'base_level', 'comment')
+        fields = (
+            "model_id",
+            "name",
+            "ref",
+            "source",
+            "prepare",
+            "uri",
+            "is_parameterized",
+            "level",
+            "title",
+            "description",
+            "base",
+            "base_ref",
+            "base_level",
+            "comment",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         super().__init__(dataset, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
 
         self.helper.layout = Layout(
-            Field('model_id'),
-            Field('name'),
-            Field('ref'),
-            Field('source'),
-            Field('prepare'),
-            Field('uri'),
-            Field('level'),
-            Field('title'),
-            Field('description'),
-            Field('is_parameterized'),
+            Field("model_id"),
+            Field("name"),
+            Field("ref"),
+            Field("source"),
+            Field("prepare"),
+            Field("uri"),
+            Field("level"),
+            Field("title"),
+            Field("description"),
+            Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
-            Field('base'),
-            Field('base_ref'),
-            Field('base_level'),
+            Field("base"),
+            Field("base_ref"),
+            Field("base_level"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Istorija")}</h4>'),
-            Field('comment'),
-            Submit('submit', _("Redaguoti"), css_class='button is-primary')
+            Field("comment"),
+            Submit("submit", _("Redaguoti"), css_class="button is-primary"),
         )
 
         if instance:
             model = instance.object
-            self.initial['model_id'] = model.pk
-            self.initial['name'] = instance.name.split('/')[-1]
-            self.initial['level'] = instance.level_given if instance.level_given is not None else 'None'
-            self.initial['ref'] = model.property_list.order_by('order').values_list('property', flat=True)
-            self.initial['is_parameterized'] = model.is_parameterized
-            self.initial['base_level'] = 'None'
+            self.initial["model_id"] = model.pk
+            self.initial["name"] = instance.name.split("/")[-1]
+            self.initial["level"] = (
+                instance.level_given if instance.level_given is not None else "None"
+            )
+            self.initial["ref"] = model.property_list.order_by("order").values_list(
+                "property", flat=True
+            )
+            self.initial["is_parameterized"] = model.is_parameterized
+            self.initial["base_level"] = "None"
             if model.base:
-                self.initial['base'] = model.base.model
-                self.initial['base_ref'] = model.base.property_list.order_by('order').values_list('property', flat=True)
+                self.initial["base"] = model.base.model
+                self.initial["base_ref"] = model.base.property_list.order_by(
+                    "order"
+                ).values_list("property", flat=True)
                 if model.base.metadata.first():
-                    self.initial['base_level'] = model.base.metadata.first().level_given or 'None'
+                    self.initial["base_level"] = (
+                        model.base.metadata.first().level_given or "None"
+                    )
 
 
 PROPERTY_LEVEL_CHOICES = (
     (None, _get_level_title(_("Nenurodyta"))),
-    (0, _get_level_title(
-        _("Duomenų nėra"),
-        _("Tokių duomenų nėra, tačiau jie yra reikalingi.")
-    )),
-    (1, _get_level_title(
-        _("Laisvos formos duomenys"),
-        _("Duomenys pateikti nesilaikant vientisumo ar aiškios struktūros, dažnai tai "
-          "yra laisvos formos tekstas arba duomenys įvedami ranka.")
-    )),
-    (2, _get_level_title(
-        _("Nestandartiniai duomenys"),
-        _("Duomenyse išlaikytas vientisumas ir aiški struktūra, tačiau duomenys "
-          "pateikti nestandartine forma.")
-    )),
-    (3, _get_level_title(
-        _("Standartinė forma"),
-        _("Duomenys pateikti standartine forma, tačiau nėra nurodyti vienetai ar duomenų tikslumas.")
-    )),
-    (4, _get_level_title(
-        _("Identifikatoriai"),
-        _("Duomenys susieti su kitais duomenimis, vienetais, klasifikatoriais, nurodytas duomenų tikslumas.")
-    )),
-    (5, _get_level_title(
-        _("Standartai"),
-        _("Duomenys susieti su standartiniais žodynais/ontologijomis.")
-    )),
+    (
+        0,
+        _get_level_title(
+            _("Duomenų nėra"), _("Tokių duomenų nėra, tačiau jie yra reikalingi.")
+        ),
+    ),
+    (
+        1,
+        _get_level_title(
+            _("Laisvos formos duomenys"),
+            _(
+                "Duomenys pateikti nesilaikant vientisumo ar aiškios struktūros, dažnai tai "
+                "yra laisvos formos tekstas arba duomenys įvedami ranka."
+            ),
+        ),
+    ),
+    (
+        2,
+        _get_level_title(
+            _("Nestandartiniai duomenys"),
+            _(
+                "Duomenyse išlaikytas vientisumas ir aiški struktūra, tačiau duomenys "
+                "pateikti nestandartine forma."
+            ),
+        ),
+    ),
+    (
+        3,
+        _get_level_title(
+            _("Standartinė forma"),
+            _(
+                "Duomenys pateikti standartine forma, tačiau nėra nurodyti vienetai ar duomenų tikslumas."
+            ),
+        ),
+    ),
+    (
+        4,
+        _get_level_title(
+            _("Identifikatoriai"),
+            _(
+                "Duomenys susieti su kitais duomenimis, vienetais, klasifikatoriais, nurodytas duomenų tikslumas."
+            ),
+        ),
+    ),
+    (
+        5,
+        _get_level_title(
+            _("Standartai"),
+            _("Duomenys susieti su standartiniais žodynais/ontologijomis."),
+        ),
+    ),
 )
 
 
 class PropertyRefWidget(ModelSelect2Widget):
     model = Model
-    search_fields = ['metadata__name__icontains', 'metadata__title__icontains']
-    dependent_fields = {'dataset_id': 'dataset__pk'}
+    search_fields = ["metadata__name__icontains", "metadata__title__icontains"]
+    dependent_fields = {"dataset_id": "dataset__pk"}
 
     def label_from_instance(self, obj):
         if obj.title:
@@ -486,18 +626,22 @@ class PropertyRefWidget(ModelSelect2Widget):
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         dataset_id = None
-        if 'dataset__pk' in dependent_fields:
-            dataset_id = dependent_fields.pop('dataset__pk')
+        if "dataset__pk" in dependent_fields:
+            dataset_id = dependent_fields.pop("dataset__pk")
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
-        top_models = queryset.annotate(
-            count=Count('ref_model_properties')
-        ).order_by('-count')[:5].values_list('pk', flat=True)
+        top_models = (
+            queryset.annotate(count=Count("ref_model_properties"))
+            .order_by("-count")[:5]
+            .values_list("pk", flat=True)
+        )
         dataset_models = []
         if dataset_id:
-            dataset_models = queryset.filter(dataset__pk=dataset_id).exclude(
-                pk__in=top_models
-            ).values_list('pk', flat=True)
+            dataset_models = (
+                queryset.filter(dataset__pk=dataset_id)
+                .exclude(pk__in=top_models)
+                .values_list("pk", flat=True)
+            )
         if top_models or dataset_models:
             ids = []
             ids.extend(top_models)
@@ -512,31 +656,31 @@ class PropertyRefWidget(ModelSelect2Widget):
 
 
 TYPES = (
-    ('any', _("any")),
-    ('pk', _("pk")),
-    ('date', _("date")),
-    ('time', _("time")),
-    ('datetime', _("datetime")),
-    ('temporal', _("temporal")),
-    ('string', _("string")),
-    ('binary', _("binary")),
-    ('integer', _("integer")),
-    ('number', _("number")),
-    ('boolean', _("boolean")),
-    ('url', _("url")),
-    ('uri', _("uri")),
-    ('image', _("image")),
-    ('geometry', _("geometry")),
-    ('spatial', _("spatial")),
-    ('ref', _("ref")),
-    ('backref', _("backref")),
-    ('generic', _("generic")),
-    ('object', _("object")),
-    ('file', _("file")),
-    ('rql', _("rql")),
-    ('json', _("json")),
-    ('denorm', _("denorm")),
-    ('inherit', _("inherit")),
+    ("any", _("any")),
+    ("pk", _("pk")),
+    ("date", _("date")),
+    ("time", _("time")),
+    ("datetime", _("datetime")),
+    ("temporal", _("temporal")),
+    ("string", _("string")),
+    ("binary", _("binary")),
+    ("integer", _("integer")),
+    ("number", _("number")),
+    ("boolean", _("boolean")),
+    ("url", _("url")),
+    ("uri", _("uri")),
+    ("image", _("image")),
+    ("geometry", _("geometry")),
+    ("spatial", _("spatial")),
+    ("ref", _("ref")),
+    ("backref", _("backref")),
+    ("generic", _("generic")),
+    ("object", _("object")),
+    ("file", _("file")),
+    ("rql", _("rql")),
+    ("json", _("json")),
+    ("denorm", _("denorm")),
+    ("inherit", _("inherit")),
 )
 
 
@@ -547,8 +691,10 @@ class PropertyForm(forms.ModelForm):
     ref = forms.ModelChoiceField(
         label=_("Ryšys"),
         required=False,
-        widget=PropertyRefWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0}),
-        queryset=Model.objects.all()
+        widget=PropertyRefWidget(
+            attrs={"data-width": "100%", "data-minimum-input-length": 0}
+        ),
+        queryset=Model.objects.all(),
     )
     ref_others = forms.CharField(label=_("Ryšys"), required=False)
     source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
@@ -567,80 +713,109 @@ class PropertyForm(forms.ModelForm):
     )
     title = forms.CharField(label=_("Pavadinimas"), required=False)
     description = forms.CharField(
-        label=_("Aprašymas"),
-        required=False,
-        widget=forms.Textarea(attrs={'rows': 8})
+        label=_("Aprašymas"), required=False, widget=forms.Textarea(attrs={"rows": 8})
     )
     type_args = forms.CharField(label=_("Tipo parametrai"), required=False)
 
     class Meta:
         model = Metadata
-        fields = ('dataset_id', 'name', 'type', 'type_args', 'ref', 'ref_others', 'source',
-                  'prepare', 'uri', 'level', 'access', 'title', 'description',)
+        fields = (
+            "dataset_id",
+            "name",
+            "type",
+            "type_args",
+            "ref",
+            "ref_others",
+            "source",
+            "prepare",
+            "uri",
+            "level",
+            "access",
+            "title",
+            "description",
+        )
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.model = model
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "property-form"
         self.helper.layout = Layout(
-            Field('dataset_id'),
-            Field('name'),
-            Field('type'),
-            Field('type_args'),
-            Field('ref'),
-            Field('ref_others'),
-            Field('source'),
-            Field('prepare'),
-            Field('uri'),
-            Field('level'),
-            Field('access'),
-            Field('title'),
-            Field('description'),
-            Submit('submit', _("Redaguoti") if instance else _("Sukurti"), css_class='button is-primary')
+            Field("dataset_id"),
+            Field("name"),
+            Field("type"),
+            Field("type_args"),
+            Field("ref"),
+            Field("ref_others"),
+            Field("source"),
+            Field("prepare"),
+            Field("uri"),
+            Field("level"),
+            Field("access"),
+            Field("title"),
+            Field("description"),
+            Submit(
+                "submit",
+                _("Redaguoti") if instance else _("Sukurti"),
+                css_class="button is-primary",
+            ),
         )
 
-        self.initial['dataset_id'] = self.model.dataset.pk
-        self.initial['level'] = 'None'
+        self.initial["dataset_id"] = self.model.dataset.pk
+        self.initial["level"] = "None"
         if instance:
-            self.initial['level'] = instance.level_given if instance.level_given is not None else 'None'
-            self.initial['access'] = instance.access
+            self.initial["level"] = (
+                instance.level_given if instance.level_given is not None else "None"
+            )
+            self.initial["access"] = instance.access
             if instance.object.ref_model:
-                self.initial['ref'] = instance.object.ref_model
-                self.initial['ref_others'] = None
+                self.initial["ref"] = instance.object.ref_model
+                self.initial["ref_others"] = None
             else:
-                self.initial['ref_others'] = instance.ref
-                self.initial['ref'] = None
+                self.initial["ref_others"] = instance.ref
+                self.initial["ref"] = None
 
             if self.instance.object not in self.model.get_props_excluding_base():
-                self.fields['name'].widget.attrs['readonly'] = True
+                self.fields["name"].widget.attrs["readonly"] = True
 
     def clean_name(self):
-        name = self.cleaned_data.get('name')
+        name = self.cleaned_data.get("name")
         if name:
             if not name[0].islower():
-                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
+                raise ValidationError(
+                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
+                )
             elif any([ch.isupper() for ch in name]):
-                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
-            elif any((not c.isalnum() and c != '_') for c in name):
-                raise ValidationError(_("Pavadinime gali būti mažosios raidės ir skaičiai, "
-                                        "žodžiai gali būti atskirti _ simboliu, "
-                                        "jokie kiti simboliai negalimi."))
+                raise ValidationError(
+                    _("Kodiniame pavadinime negali būti naudojamos didžiosios raidės.")
+                )
+            elif any((not c.isalnum() and c != "_") for c in name):
+                raise ValidationError(
+                    _(
+                        "Pavadinime gali būti mažosios raidės ir skaičiai, "
+                        "žodžiai gali būti atskirti _ simboliu, "
+                        "jokie kiti simboliai negalimi."
+                    )
+                )
             elif not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+                raise ValidationError(
+                    _(
+                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+                    )
+                )
         return name
 
     def clean_level(self):
-        level = self.cleaned_data.get('level')
-        if level and level != 'None':
+        level = self.cleaned_data.get("level")
+        if level and level != "None":
             return int(level)
         return None
 
     def clean_prepare(self):
-        prepare = self.cleaned_data.get('prepare')
-        props = self.model.model_properties.values_list('metadata__name', flat=True)
+        prepare = self.cleaned_data.get("prepare")
+        props = self.model.model_properties.values_list("metadata__name", flat=True)
         if prepare:
             try:
                 prepare_ast = spyna.parse(prepare)
@@ -650,25 +825,25 @@ class PropertyForm(forms.ModelForm):
         return prepare
 
     def clean_uri(self):
-        uri = self.cleaned_data.get('uri')
+        uri = self.cleaned_data.get("uri")
         if uri:
-            if '://' not in uri and ':' not in uri:
+            if "://" not in uri and ":" not in uri:
                 raise ValidationError(_(f'Nevalidus uri "{uri}" formatas.'))
-            if '://' not in uri and ':' in uri:
-                parts = uri.split(':')
+            if "://" not in uri and ":" in uri:
+                parts = uri.split(":")
                 if len(parts) != 2:
                     raise ValidationError(_(f'Nevalidus uri "{uri}" formatas.'))
                 else:
                     prefix = parts[0]
                     if not Prefix.objects.filter(
-                            Q(content_type=None, object_id=None, name=prefix) |
-                            Q(metadata__dataset=self.model.dataset, name=prefix)
+                        Q(content_type=None, object_id=None, name=prefix)
+                        | Q(metadata__dataset=self.model.dataset, name=prefix)
                     ).exists():
                         raise ValidationError(_(f'Neatpažintas "{prefix}" prefiksas.'))
         return uri
 
     def clean_description(self):
-        description = self.cleaned_data.get('description')
+        description = self.cleaned_data.get("description")
         if description:
             md = markdown.Markdown()
             try:
@@ -678,27 +853,27 @@ class PropertyForm(forms.ModelForm):
         return description
 
     def clean_ref(self):
-        type = self.cleaned_data.get('type')
-        ref = self.cleaned_data.get('ref')
-        if type == 'ref' and not ref:
+        type = self.cleaned_data.get("type")
+        ref = self.cleaned_data.get("ref")
+        if type == "ref" and not ref:
             raise ValidationError(_("Šis laukas yra privalomas."))
         return ref
 
     def clean_ref_others(self):
-        type = self.cleaned_data.get('type')
-        ref = self.cleaned_data.get('ref_others') or None
+        type = self.cleaned_data.get("type")
+        ref = self.cleaned_data.get("ref_others") or None
         if ref:
-            if type == 'date' or type == 'datetime':
+            if type == "date" or type == "datetime":
                 if not is_time_unit(ref):
                     raise ValidationError(_("Netinkami matavimo vienetai."))
-            elif type == 'integer' or type == 'number' or type == 'geometry':
+            elif type == "integer" or type == "number" or type == "geometry":
                 if not is_si_unit(ref):
                     raise ValidationError(_("Netinkami matavimo vienetai."))
         return ref
 
     def clean_access(self):
-        access = self.cleaned_data.get('access')
-        if access == '':
+        access = self.cleaned_data.get("access")
+        if access == "":
             return None
         return access
 
@@ -709,38 +884,52 @@ class ParamForm(forms.ModelForm):
 
     class Meta:
         model = Metadata
-        fields = ('name', 'source', 'prepare', 'title', 'description')
+        fields = ("name", "source", "prepare", "title", "description")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "param-form"
         self.helper.layout = Layout(
-            Field('name'),
-            Field('source'),
-            Field('prepare'),
-            Field('title'),
-            Field('description', rows="2"),
-            Submit('submit', _("Redaguoti") if instance else _("Sukurti"), css_class='button is-primary'),
+            Field("name"),
+            Field("source"),
+            Field("prepare"),
+            Field("title"),
+            Field("description", rows="2"),
+            Submit(
+                "submit",
+                _("Redaguoti") if instance else _("Sukurti"),
+                css_class="button is-primary",
+            ),
         )
 
     def clean_name(self):
-        name = self.cleaned_data.get('name')
+        name = self.cleaned_data.get("name")
         if name:
             if not name[0].islower():
-                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
-            elif any((not c.isalnum() and c != '_') for c in name):
-                raise ValidationError(_("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                                        "žodžiai gali būti atskirti _ simboliu,"
-                                        "jokie kiti simboliai negalimi."))
+                raise ValidationError(
+                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
+                )
+            elif any((not c.isalnum() and c != "_") for c in name):
+                raise ValidationError(
+                    _(
+                        "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
+                        "žodžiai gali būti atskirti _ simboliu,"
+                        "jokie kiti simboliai negalimi."
+                    )
+                )
             elif not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+                raise ValidationError(
+                    _(
+                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+                    )
+                )
         return name
 
     def clean_prepare(self):
-        prepare = self.cleaned_data.get('prepare')
+        prepare = self.cleaned_data.get("prepare")
         if prepare:
             try:
                 spyna.parse(prepare)
@@ -749,7 +938,7 @@ class ParamForm(forms.ModelForm):
         return prepare
 
     def clean_description(self):
-        description = self.cleaned_data.get('description')
+        description = self.cleaned_data.get("description")
         if description:
             md = markdown.Markdown()
             try:
@@ -761,38 +950,46 @@ class ParamForm(forms.ModelForm):
 
 class VersionForm(forms.ModelForm):
     released = forms.DateField(
-        label=_("Įsigalioja"),
-        widget=forms.DateInput(attrs={'type': 'date'})
+        label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"})
     )
     metadata = forms.MultipleChoiceField(
-        label=_("Įtraukiama į versiją"),
-        required=False,
-        widget=CheckboxSelectMultiple
+        label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple
     )
 
     class Meta:
         model = Version
-        fields = ('released', 'description',)
+        fields = (
+            "released",
+            "description",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "version-form"
         self.helper.layout = Layout(
-            Field('released'),
-            Field('description',),
-            Field('metadata'),
-            Submit('submit', _("Sukurti"), css_class='button is-primary'),
+            Field("released"),
+            Field(
+                "description",
+            ),
+            Field("metadata"),
+            Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
-        self.fields['metadata'].choices = self.dataset.get_metadata_objects_for_version()
+        self.fields[
+            "metadata"
+        ].choices = self.dataset.get_metadata_objects_for_version()
 
     def clean_released(self):
-        released = self.cleaned_data.get('released')
+        released = self.cleaned_data.get("released")
         if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
-            raise ValidationError(_('Versija gali įsigalioti ne anksčiau kaip po 2 savaičių.'))
-        latest_version = self.dataset.dataset_version.order_by('-created').first()
+            raise ValidationError(
+                _("Versija gali įsigalioti ne anksčiau kaip po 2 savaičių.")
+            )
+        latest_version = self.dataset.dataset_version.order_by("-created").first()
         if latest_version and released < latest_version.released:
-            raise ValidationError(_('Versija negali įsigalioti anksčiau už praėjusią versiją.'))
+            raise ValidationError(
+                _("Versija negali įsigalioti anksčiau už praėjusią versiją.")
+            )
         return released

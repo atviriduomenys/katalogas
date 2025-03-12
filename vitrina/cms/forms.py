@@ -16,13 +16,21 @@ class LearningMaterialAdminForm(forms.ModelForm):
 
     class Meta:
         model = LearningMaterial
-        fields = ('published', 'author_name', 'topic', 'description', 'summary', 'image', 'video_url',)
+        fields = (
+            "published",
+            "author_name",
+            "topic",
+            "description",
+            "summary",
+            "image",
+            "video_url",
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         if not instance:
-            self.initial['published'] = datetime.date.today()
+            self.initial["published"] = datetime.date.today()
 
 
 class FaqAdminForm(forms.ModelForm):
@@ -31,7 +39,10 @@ class FaqAdminForm(forms.ModelForm):
 
     class Meta:
         model = Faq
-        fields = ('question', 'answer',)
+        fields = (
+            "question",
+            "answer",
+        )
 
 
 class ExternalSiteAdminForm(forms.ModelForm):
@@ -41,7 +52,12 @@ class ExternalSiteAdminForm(forms.ModelForm):
 
     class Meta:
         model = ExternalSite
-        fields = ('title', 'type', 'url', 'image',)
+        fields = (
+            "title",
+            "type",
+            "url",
+            "image",
+        )
 
 
 class PublishedReportAdminForm(forms.ModelForm):
@@ -50,5 +66,7 @@ class PublishedReportAdminForm(forms.ModelForm):
 
     class Meta:
         model = PublishedReport
-        fields = ('title', 'data',)
-
+        fields = (
+            "title",
+            "data",
+        )

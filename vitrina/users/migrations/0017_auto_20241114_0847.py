@@ -6,15 +6,14 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0016_merge_0015_auto_20241024_0753_0015_auto_20241024_0803'),
+        ("vitrina_users", "0016_merge_0015_auto_20241024_0753_0015_auto_20241024_0803"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='is_viisp_login',
+            model_name="user",
+            name="is_viisp_login",
             field=models.BooleanField(default=False),
         ),
     ]

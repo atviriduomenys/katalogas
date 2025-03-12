@@ -4,17 +4,16 @@ from django.db import migrations
 
 
 def fix_none_passwords(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
+    User = apps.get_model("vitrina_users", "User")
 
     for user in User.objects.filter(password="bcrypt$None"):
         user.password = make_password(None)
-        user.save(update_fields=['password'])
+        user.save(update_fields=["password"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0007_auto_20230905_1610'),
+        ("vitrina_users", "0007_auto_20230905_1610"),
     ]
 
     operations = [

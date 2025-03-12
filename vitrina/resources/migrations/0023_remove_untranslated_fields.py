@@ -4,18 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0022_migrate_translatable_fields'),
+        ("vitrina_resources", "0022_migrate_translatable_fields"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='datasetdistribution',
-            name='title_old',
+            model_name="datasetdistribution",
+            name="title_old",
         ),
         migrations.RemoveField(
-            model_name='datasetdistribution',
-            name='description_old',
+            model_name="datasetdistribution",
+            name="description_old",
         ),
     ]

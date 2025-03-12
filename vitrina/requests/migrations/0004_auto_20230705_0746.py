@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_requests', '0003_auto_20221028_1019'),
+        ("vitrina_requests", "0003_auto_20221028_1019"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='request',
+            name="request",
             options={},
         ),
     ]

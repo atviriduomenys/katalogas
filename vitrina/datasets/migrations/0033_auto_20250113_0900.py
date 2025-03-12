@@ -5,15 +5,19 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0032_merge_0031_auto_20241220_0809_0031_auto_20241220_0843'),
+        (
+            "vitrina_datasets",
+            "0032_merge_0031_auto_20241220_0809_0031_auto_20241220_0843",
+        ),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='dataset',
-            name='endpoint_url',
-            field=models.URLField(blank=True, max_length=512, null=True, verbose_name='API adresas'),
+            model_name="dataset",
+            name="endpoint_url",
+            field=models.URLField(
+                blank=True, max_length=512, null=True, verbose_name="API adresas"
+            ),
         ),
     ]

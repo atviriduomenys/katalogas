@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include
@@ -28,47 +29,60 @@ from django.views.generic import TemplateView
 from vitrina.sitemaps import DatasetSitemap, RootSitemap, MoreViewSitemap
 
 sitemaps = {
-    'root': RootSitemap,
-    'datasets': DatasetSitemap,
-    'more': MoreViewSitemap,
+    "root": RootSitemap,
+    "datasets": DatasetSitemap,
+    "more": MoreViewSitemap,
 }
 
 urlpatterns = [
-    path('', home, name="home"),
-    path('', include('vitrina.api.urls')),
-    path('', include('vitrina.requests.urls')),
-    path('', include('vitrina.tasks.urls')),
-    path('', include('vitrina.projects.urls')),
-    path('', include('vitrina.orgs.urls')),
-    path('', include('vitrina.structure.urls')),
-    path('', include('vitrina.likes.urls')),
-    path('', include('vitrina.messages.urls')),
-    path('', include('vitrina.plans.urls')),
-    path('', include('vitrina.resources.urls')),
-    path('', include('vitrina.catalogs.urls')),
-    path('', include('vitrina.users.urls')),
-    path('', include('vitrina.datasets.urls')),
-    path('', include('vitrina.comments.urls')),
-    path('', include('vitrina.classifiers.urls')),
-    path('', include('vitrina.cms.urls')),
-    path('', include('vitrina.translate.urls')),
-    path('', include('vitrina.statistics.urls')),
-    path('admin/', admin.site.urls),
-    path('coordinator-admin/', site.urls),
-    path('taggit-autosuggest/', include('taggit_autosuggest.urls')),
+    path("", home, name="home"),
+    path("", include("vitrina.api.urls")),
+    path("", include("vitrina.requests.urls")),
+    path("", include("vitrina.tasks.urls")),
+    path("", include("vitrina.projects.urls")),
+    path("", include("vitrina.orgs.urls")),
+    path("", include("vitrina.structure.urls")),
+    path("", include("vitrina.likes.urls")),
+    path("", include("vitrina.messages.urls")),
+    path("", include("vitrina.plans.urls")),
+    path("", include("vitrina.resources.urls")),
+    path("", include("vitrina.catalogs.urls")),
+    path("", include("vitrina.users.urls")),
+    path("", include("vitrina.datasets.urls")),
+    path("", include("vitrina.comments.urls")),
+    path("", include("vitrina.classifiers.urls")),
+    path("", include("vitrina.cms.urls")),
+    path("", include("vitrina.translate.urls")),
+    path("", include("vitrina.statistics.urls")),
+    path("admin/", admin.site.urls),
+    path("coordinator-admin/", site.urls),
+    path("taggit-autosuggest/", include("taggit_autosuggest.urls")),
     path("select2/", include("django_select2.urls")),
-    path('hitcount/', include('hitcount.urls', namespace='hitcount')),
-    path('i18n/', include('django.conf.urls.i18n')),
-    path('accounts/', include('vitrina.viisp.urls')),
+    path("hitcount/", include("hitcount.urls", namespace="hitcount")),
+    path("i18n/", include("django.conf.urls.i18n")),
+    path("accounts/", include("vitrina.viisp.urls")),
     path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
-    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
-    path("sitemap.xml", views.index, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.index"),
-    path("sitemap-<section>.xml", views.sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+    ),
+    path(
+        "sitemap.xml",
+        views.index,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.index",
+    ),
+    path(
+        "sitemap-<section>.xml",
+        views.sitemap,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
-    path('', include('cms.urls')),
+    path("", include("cms.urls")),
 ]

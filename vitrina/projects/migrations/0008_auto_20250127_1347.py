@@ -6,37 +6,49 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_projects', '0007_auto_20221205_1101'),
+        ("vitrina_projects", "0007_auto_20221205_1101"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='ApplicationUseCase',
+            name="ApplicationUseCase",
         ),
         migrations.DeleteModel(
-            name='ApplicationSetting',
+            name="ApplicationSetting",
         ),
         migrations.DeleteModel(
-            name='ApplicationUsecaseDatasetIds',
+            name="ApplicationUsecaseDatasetIds",
         ),
         migrations.DeleteModel(
-            name='PartnerApplication',
+            name="PartnerApplication",
         ),
         migrations.AlterModelOptions(
-            name='usecaselike',
-            options={'managed': True},
+            name="usecaselike",
+            options={"managed": True},
         ),
         migrations.AlterField(
-            model_name='project',
-            name='status',
-            field=models.CharField(choices=[('CREATED', 'Pateiktas'), ('APPROVED', 'Patvirtintas'), ('REJECTED', 'Atmestas')], max_length=255, null=True),
+            model_name="project",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("CREATED", "Pateiktas"),
+                    ("APPROVED", "Patvirtintas"),
+                    ("REJECTED", "Atmestas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            model_name="project",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

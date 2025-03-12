@@ -8,7 +8,7 @@ from vitrina.plans.models import Plan
 class PlanFactory(DjangoModelFactory):
     class Meta:
         model = Plan
-        django_get_or_create = ('title',)
+        django_get_or_create = ("title",)
 
-    title = factory.Faker('word')
+    title = factory.Faker("word")
     receiver = factory.SubFactory(OrganizationFactory)

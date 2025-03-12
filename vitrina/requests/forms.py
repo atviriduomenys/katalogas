@@ -5,10 +5,18 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
-from django.forms import (BooleanField, CharField, DateField, HiddenInput,
-                          ModelChoiceField, ModelForm,
-                          CheckboxSelectMultiple,
-                          ModelMultipleChoiceField, RadioSelect, Textarea)
+from django.forms import (
+    BooleanField,
+    CharField,
+    DateField,
+    HiddenInput,
+    ModelChoiceField,
+    ModelForm,
+    CheckboxSelectMultiple,
+    ModelMultipleChoiceField,
+    RadioSelect,
+    Textarea,
+)
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from haystack.forms import FacetedSearchForm, SearchForm
@@ -33,9 +41,12 @@ class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
     def build_attrs(self, base_attrs, extra_attrs=None):
         base_attrs = super().build_attrs(base_attrs, extra_attrs)
         base_attrs.update(
-            {"data-minimum-input-length": 0,
-             "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius,"
-                                 " kad matytumet daugiau rezultatų", "style": "min-width: 650px;"}
+            {
+                "data-minimum-input-length": 0,
+                "data-placeholder": "Organizacijų sąrašas ribojamas, įveskite 3 simbolius,"
+                " kad matytumet daugiau rezultatų",
+                "style": "min-width: 650px;",
+            }
         )
         return base_attrs
 
@@ -55,9 +66,13 @@ class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
         if dependent_fields:
             select &= Q(**dependent_fields)
         if len(term) > 2:
-            return queryset.filter(select).distinct().order_by('title')[:10]
+            return queryset.filter(select).distinct().order_by("title")[:10]
         else:
-            return queryset.distinct().annotate(dataset_count=Count('dataset')).order_by('-dataset_count')[:10]
+            return (
+                queryset.distinct()
+                .annotate(dataset_count=Count("dataset"))
+                .order_by("-dataset_count")[:10]
+            )
 
 
 class RequestForm(ModelForm):
@@ -65,13 +80,15 @@ class RequestForm(ModelForm):
     description = CharField(label=_("Aprašymas"), widget=Textarea)
     organizations = ModelMultipleChoiceField(
         label=_("Organizacija"),
-        queryset=Organization.public.annotate(dataset_count=Count('dataset')).order_by('-dataset_count'),
+        queryset=Organization.public.annotate(dataset_count=Count("dataset")).order_by(
+            "-dataset_count"
+        ),
         required=False,
     )
 
     class Meta:
         model = Request
-        fields = ['title', 'description']
+        fields = ["title", "description"]
 
     class Media:
         css = ModelSelect2MultipleWidget().media._css
@@ -82,20 +99,20 @@ class RequestForm(ModelForm):
         request_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if request_instance else _("Sukurti")
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "request-form"
         if request_instance:
             self.helper.layout = Layout(
-                Field('title', placeholder=_('Pavadinimas')),
-                Field('description', placeholder=_('Aprašymas')),
-                Submit('submit', button, css_class='button is-primary')
+                Field("title", placeholder=_("Pavadinimas")),
+                Field("description", placeholder=_("Aprašymas")),
+                Submit("submit", button, css_class="button is-primary"),
             )
         else:
             self.helper.layout = Layout(
-                Field('title', placeholder=_('Pavadinimas')),
-                Field('description', placeholder=_('Aprašymas')),
-                Field('organizations', placeholder=_('Organizacijos')),
-                Submit('submit', button, css_class='button is-primary')
+                Field("title", placeholder=_("Pavadinimas")),
+                Field("description", placeholder=_("Aprašymas")),
+                Field("organizations", placeholder=_("Organizacijos")),
+                Submit("submit", button, css_class="button is-primary"),
             )
 
 
@@ -104,32 +121,38 @@ class RequestEditOrgForm(ModelForm):
         label="Organizacija",
         widget=PublisherWidget,
         queryset=Organization.objects.filter(),
-        to_field_name="pk"
+        to_field_name="pk",
     )
-    plural = BooleanField(label=_("Pridėti organizaciją ir visas pavaldžias jai organizacijas"), required=False)
+    plural = BooleanField(
+        label=_("Pridėti organizaciją ir visas pavaldžias jai organizacijas"),
+        required=False,
+    )
 
     class Meta:
         model = Request
-        fields = ['organizations']
+        fields = ["organizations"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         button = _("Pridėti")
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "request-add-org-form"
-        self.initial['organizations'] = []
+        self.initial["organizations"] = []
         self.helper.layout = Layout(
-            Field('organizations', placeholder=_('Organizacijos')),
-            Field('plural'),
-            Submit('submit', button, css_class='button is-primary')
+            Field("organizations", placeholder=_("Organizacijos")),
+            Field("plural"),
+            Submit("submit", button, css_class="button is-primary"),
         )
 
 
 class IconChoiceField(ModelMultipleChoiceField):
     def label_from_instance(self, obj):
-        return format_html('{} <a href="{}" target="_blank"><i class="fas fa-solid fa-chevron-right"></i></a>',
-                           obj.title, obj.get_absolute_url())
+        return format_html(
+            '{} <a href="{}" target="_blank"><i class="fas fa-solid fa-chevron-right"></i></a>',
+            obj.title,
+            obj.get_absolute_url(),
+        )
 
 
 class RequestDatasetsEditForm(ModelForm):
@@ -137,23 +160,23 @@ class RequestDatasetsEditForm(ModelForm):
         label="Duomenų rinkinys",
         widget=CheckboxSelectMultiple,
         queryset=Dataset.objects.filter(),
-        to_field_name="pk"
+        to_field_name="pk",
     )
 
     class Meta:
         model = Request
-        fields = ['datasets']
+        fields = ["datasets"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         button = _("Priskirti pažymėtus")
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "request-add-dataset-form"
-        self.initial['datasets'] = []
+        self.initial["datasets"] = []
         self.helper.layout = Layout(
-            Field('datasets', placeholder=_('Duomenų rinkinys')),
-            Submit('submit', button, css_class='button is-primary')
+            Field("datasets", placeholder=_("Duomenų rinkinys")),
+            Submit("submit", button, css_class="button is-primary"),
         )
 
 
@@ -166,16 +189,16 @@ class RequestSearchForm(FacetedSearchForm):
         sqs = sqs.models(Request)
         if not self.is_valid():
             return self.no_query_found()
-        if self.cleaned_data.get('q'):
-            keyword = self.cleaned_data.get('q')
+        if self.cleaned_data.get("q"):
+            keyword = self.cleaned_data.get("q")
             if len(keyword) < 5:
                 sqs = sqs.autocomplete(text__startswith=keyword)
             else:
                 sqs = sqs.autocomplete(text__icontains=keyword)
-        if self.cleaned_data.get('date_from'):
-            sqs = sqs.filter(created__gte=self.cleaned_data['date_from'])
-        if self.cleaned_data.get('date_to'):
-            sqs = sqs.filter(created__lte=self.cleaned_data['date_to'])
+        if self.cleaned_data.get("date_from"):
+            sqs = sqs.filter(created__gte=self.cleaned_data["date_from"])
+        if self.cleaned_data.get("date_to"):
+            sqs = sqs.filter(created__lte=self.cleaned_data["date_to"])
         return sqs
 
     def no_query_found(self):
@@ -185,46 +208,42 @@ class RequestSearchForm(FacetedSearchForm):
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.deadline:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+            return mark_safe(
+                f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>"
+            )
         else:
             return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class RequestIncludePlanForm(ModelForm):
     plan = PlanChoiceField(
-        label=_("Terminas"),
-        widget=RadioSelect(),
-        queryset=Plan.objects.all()
+        label=_("Terminas"), widget=RadioSelect(), queryset=Plan.objects.all()
     )
     form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
         model = PlanRequest
-        fields = ('plan',)
+        fields = ("plan",)
 
     def __init__(self, request, *args, **kwargs):
         self.request = request
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "request-plan-form"
         self.helper.layout = Layout(
-            Field('form_type'),
-            Field('plan'),
-            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+            Field("form_type"),
+            Field("plan"),
+            Submit("submit", _("Įtraukti"), css_class="button is-primary"),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
-            Q(deadline__isnull=True) |
-            Q(deadline__gt=date.today())
+        self.fields["plan"].queryset = self.fields["plan"].queryset.filter(
+            Q(deadline__isnull=True) | Q(deadline__gt=date.today())
         )
 
     def clean_plan(self):
-        plan = self.cleaned_data.get('plan')
-        if PlanRequest.objects.filter(
-            plan=plan,
-            request=self.request
-        ):
+        plan = self.cleaned_data.get("plan")
+        if PlanRequest.objects.filter(plan=plan, request=self.request):
             raise ValidationError(_("Poreikis jau priskirtas šiam planui."))
         return plan
 
@@ -234,43 +253,57 @@ class RequestPlanForm(OrganizationPlanForm):
     datasets = IconChoiceField(
         queryset=None,
         widget=CheckboxSelectMultiple,
-        help_text=_("Jei į planą norite įtraukti ne visus rinkinius, pažymėkite tuos, kuriuos pageidaujate įtraukti. Jei nebus pažymėtas nei vienas rinkinys, tada visi rinkiniai priskirti poreikiui bus įtraukti į planą."),
-        required=False
+        help_text=_(
+            "Jei į planą norite įtraukti ne visus rinkinius, pažymėkite tuos, kuriuos pageidaujate įtraukti. Jei nebus pažymėtas nei vienas rinkinys, tada visi rinkiniai priskirti poreikiui bus įtraukti į planą."
+        ),
+        required=False,
     )
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'publisher', 'provider_title', 'receiver',)
-    
+        fields = (
+            "title",
+            "description",
+            "deadline",
+            "publisher",
+            "provider_title",
+            "receiver",
+        )
+
     def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
         super().__init__(organizations, user, *args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('form_type'),
-            Field('organizations'),
-            Field('user_id'),
-            Field('title'),
-            Field('description'),
-            Field('deadline'),
-            Field('receiver'),
-            Field('publisher'),
-            Field('provider_title'),
-            Field('datasets'),
-            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+            Field("form_type"),
+            Field("organizations"),
+            Field("user_id"),
+            Field("title"),
+            Field("description"),
+            Field("deadline"),
+            Field("receiver"),
+            Field("publisher"),
+            Field("provider_title"),
+            Field("datasets"),
+            Submit("submit", _("Įtraukti"), css_class="button is-primary"),
         )
-        request_object_ids = RequestObject.objects.filter(content_type=ContentType.objects.get_for_model(Dataset),
-                                                          request_id=self.obj.pk) \
-        .values_list('object_id', flat=True)
-        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by('-created')
-        self.fields['datasets'].queryset = datasets
+        request_object_ids = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            request_id=self.obj.pk,
+        ).values_list("object_id", flat=True)
+        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by(
+            "-created"
+        )
+        self.fields["datasets"].queryset = datasets
         if len(self.organizations) == 1:
-            self.initial['receiver'] = self.organizations[0]
-            self.fields['receiver'].widget = HiddenInput()
+            self.initial["receiver"] = self.organizations[0]
+            self.fields["receiver"].widget = HiddenInput()
         else:
             organization_ids = [org.pk for org in self.organizations]
-            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+            self.fields["receiver"].queryset = self.fields["receiver"].queryset.filter(
+                pk__in=organization_ids
+            )
 
-        self.initial['title'] = self.obj.get_plan_title()
+        self.initial["title"] = self.obj.get_plan_title()

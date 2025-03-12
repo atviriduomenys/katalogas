@@ -6,37 +6,39 @@ import tagulous.models.fields
 
 
 def migrate_categories(apps, schema_editor):
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
 
     for dataset in Dataset.objects.filter(category__isnull=False):
         dataset.category_temp.add(dataset.category)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0012_auto_20230619_1315'),
-        ('vitrina_datasets', '0014_merge_0013_auto_20221202_0923_0013_auto_20221206_1003'),
+        ("vitrina_classifiers", "0012_auto_20230619_1315"),
+        (
+            "vitrina_datasets",
+            "0014_merge_0013_auto_20221202_0923_0013_auto_20221206_1003",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='dataset',
-            name='groups',
+            model_name="dataset",
+            name="groups",
         ),
         migrations.AddField(
-            model_name='dataset',
-            name='category_temp',
-            field=models.ManyToManyField(to='vitrina_classifiers.Category', verbose_name='Kategorija'),
+            model_name="dataset",
+            name="category_temp",
+            field=models.ManyToManyField(
+                to="vitrina_classifiers.Category", verbose_name="Kategorija"
+            ),
         ),
         migrations.RunPython(migrate_categories),
         migrations.RemoveField(
-            model_name='dataset',
-            name='category',
+            model_name="dataset",
+            name="category",
         ),
         migrations.RenameField(
-            model_name='dataset',
-            old_name='category_temp',
-            new_name='category'
-        )
+            model_name="dataset", old_name="category_temp", new_name="category"
+        ),
     ]

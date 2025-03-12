@@ -4,53 +4,68 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0016_auto_20230711_1554'),
+        ("vitrina_orgs", "0016_auto_20230711_1554"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='OrganizationMapping',
+            name="OrganizationMapping",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('org_id', models.IntegerField()),
-                ('name', models.CharField(blank=True, max_length=255, null=True)),
-                ('title', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("org_id", models.IntegerField()),
+                ("name", models.CharField(blank=True, max_length=255, null=True)),
+                ("title", models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'db_table': 'organization_mapping',
+                "db_table": "organization_mapping",
             },
         ),
         migrations.AlterModelOptions(
-            name='municipality',
-            options={'managed': True},
+            name="municipality",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='publishedreport',
-            options={'managed': True},
+            name="publishedreport",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='region',
-            options={'managed': True},
+            name="region",
+            options={"managed": True},
         ),
         migrations.AlterModelOptions(
-            name='report',
-            options={'managed': True},
+            name="report",
+            options={"managed": True},
         ),
         migrations.AddField(
-            model_name='organization',
-            name='name',
+            model_name="organization",
+            name="name",
             field=models.TextField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='organization',
-            name='created',
+            model_name="organization",
+            name="created",
             field=models.DateTimeField(auto_now_add=True, null=True),
         ),
         migrations.AlterField(
-            model_name='organization',
-            name='kind',
-            field=models.CharField(choices=[('gov', 'Valstybinė įstaiga'), ('org', 'Nepelno ir nevalstybinė organizacija'), ('com', 'Verslo organizacija')], default='org', max_length=36),
+            model_name="organization",
+            name="kind",
+            field=models.CharField(
+                choices=[
+                    ("gov", "Valstybinė įstaiga"),
+                    ("org", "Nepelno ir nevalstybinė organizacija"),
+                    ("com", "Verslo organizacija"),
+                ],
+                default="org",
+                max_length=36,
+            ),
         ),
     ]

@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0008_alter_modeldownloadstats_created'),
+        ("statistics", "0008_alter_modeldownloadstats_created"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetstats',
-            name='created',
-            field=models.DateField(blank=True, default=datetime.datetime.today, null=True),
+            model_name="datasetstats",
+            name="created",
+            field=models.DateField(
+                blank=True, default=datetime.datetime.today, null=True
+            ),
         ),
     ]

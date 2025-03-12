@@ -6,13 +6,13 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ClientIdFilter(admin.SimpleListFilter):
-    title = _('kliento id')
-    parameter_name = 'client_id'
+    title = _("kliento id")
+    parameter_name = "client_id"
     default_value = None
 
     def lookups(self, request, model_admin):
         return [
-            ('organization_null', _('Nepriskirti')),
+            ("organization_null", _("Nepriskirti")),
         ]
 
     def queryset(self, request, queryset):
@@ -27,11 +27,9 @@ class ApiScopeInline(admin.TabularInline):
 
 
 class ApiKeyAdmin(VersionAdmin):
-    list_display = ('organization', 'client_id', 'client_name')
+    list_display = ("organization", "client_id", "client_name")
     list_filter = [ClientIdFilter]
-    search_fields = (
-        'organization',
-    )
+    search_fields = ("organization",)
     inlines = [ApiScopeInline]
 
 

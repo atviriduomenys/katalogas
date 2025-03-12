@@ -6,22 +6,44 @@ import filer.fields.file
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('filer', '0015_alter_file_owner_alter_file_polymorphic_ctype_and_more'),
-        ('vitrina_datasets', '0017_merge_20230629_0914'),
+        ("filer", "0015_alter_file_owner_alter_file_polymorphic_ctype_and_more"),
+        ("vitrina_datasets", "0017_merge_20230629_0914"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DatasetFile',
+            name="DatasetFile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dataset_files', to='vitrina_datasets.dataset', verbose_name='Duomenų rinkinys')),
-                ('file', filer.fields.file.FilerFileField(on_delete=django.db.models.deletion.CASCADE, to='filer.file', verbose_name='Failas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "dataset",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dataset_files",
+                        to="vitrina_datasets.dataset",
+                        verbose_name="Duomenų rinkinys",
+                    ),
+                ),
+                (
+                    "file",
+                    filer.fields.file.FilerFileField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="filer.file",
+                        verbose_name="Failas",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'dataset_file',
+                "db_table": "dataset_file",
             },
         ),
     ]

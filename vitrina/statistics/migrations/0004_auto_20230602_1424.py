@@ -4,60 +4,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0003_auto_20230602_1340'),
+        ("statistics", "0003_auto_20230602_1340"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetstats',
-            name='dataset_id',
+            model_name="datasetstats",
+            name="dataset_id",
             field=models.IntegerField(),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='distribution_count',
+            model_name="datasetstats",
+            name="distribution_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='download_object_count',
+            model_name="datasetstats",
+            name="download_object_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='download_request_count',
+            model_name="datasetstats",
+            name="download_request_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='field_count',
+            model_name="datasetstats",
+            name="field_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='maturity_level',
+            model_name="datasetstats",
+            name="maturity_level",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='model_count',
+            model_name="datasetstats",
+            name="model_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='object_count',
+            model_name="datasetstats",
+            name="object_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='project_count',
+            model_name="datasetstats",
+            name="project_count",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='datasetstats',
-            name='request_count',
+            model_name="datasetstats",
+            name="request_count",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

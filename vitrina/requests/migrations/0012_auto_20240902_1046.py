@@ -4,16 +4,16 @@ from django.db import migrations
 
 
 def assign_request_organizations(apps, schema_editor):
-    Request = apps.get_model('vitrina_requests', 'Request')
-    RequestAssignment = apps.get_model('vitrina_requests', 'RequestAssignment')
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    Model = apps.get_model('vitrina_structure', 'Model')
-    Property = apps.get_model('vitrina_structure', 'Property')
+    Request = apps.get_model("vitrina_requests", "Request")
+    RequestAssignment = apps.get_model("vitrina_requests", "RequestAssignment")
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    Model = apps.get_model("vitrina_structure", "Model")
+    Property = apps.get_model("vitrina_structure", "Property")
 
     for request in Request.objects.all():
         if (
-            not request.requestassignment_set.exists() and
-            request.requestobject_set.exists()
+            not request.requestassignment_set.exists()
+            and request.requestobject_set.exists()
         ):
             for obj in request.requestobject_set.all():
                 organization = None
@@ -32,22 +32,23 @@ def assign_request_organizations(apps, schema_editor):
                     organization = content_object.model.dataset.organization
 
                 if (
-                    organization and
-                    not request.requestassignment_set.filter(organization=organization).exists()
+                    organization
+                    and not request.requestassignment_set.filter(
+                        organization=organization
+                    ).exists()
                 ):
                     RequestAssignment.objects.create(
                         organization=organization,
                         request=request,
-                        status=request.status
+                        status=request.status,
                     )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_requests', '0011_auto_20240126_0852'),
-        ('vitrina_datasets', '0026_auto_20240822_0849'),
-        ('vitrina_structure', '0014_alter_metadata_prepare_ast'),
+        ("vitrina_requests", "0011_auto_20240126_0852"),
+        ("vitrina_datasets", "0026_auto_20240822_0849"),
+        ("vitrina_structure", "0014_alter_metadata_prepare_ast"),
     ]
 
     operations = [

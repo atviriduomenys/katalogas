@@ -6,15 +6,16 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0012_auto_20241016_1340'),
+        ("vitrina_users", "0012_auto_20241016_1340"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='useremaildevice',
-            name='ip_address',
-            field=models.GenericIPAddressField(blank=True, null=True, verbose_name='IP adresas'),
+            model_name="useremaildevice",
+            name="ip_address",
+            field=models.GenericIPAddressField(
+                blank=True, null=True, verbose_name="IP adresas"
+            ),
         ),
     ]

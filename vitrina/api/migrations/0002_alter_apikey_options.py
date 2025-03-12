@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_api', '0001_initial'),
+        ("vitrina_api", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='apikey',
+            name="apikey",
             options={},
         ),
     ]

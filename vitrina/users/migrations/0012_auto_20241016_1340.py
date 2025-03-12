@@ -6,21 +6,30 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('otp_email', '0006_add_timestamps'),
-        ('vitrina_users', '0011_auto_20240917_0926'),
+        ("otp_email", "0006_add_timestamps"),
+        ("vitrina_users", "0011_auto_20240917_0926"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserEmailDevice',
+            name="UserEmailDevice",
             fields=[
-                ('emaildevice_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='otp_email.emaildevice')),
+                (
+                    "emaildevice_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="otp_email.emaildevice",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'user_email_device',
+                "db_table": "user_email_device",
             },
-            bases=('otp_email.emaildevice',),
+            bases=("otp_email.emaildevice",),
         ),
     ]

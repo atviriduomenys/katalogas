@@ -4,70 +4,97 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('version', models.IntegerField()),
-                ('deleted', models.BooleanField(blank=True, null=True)),
-                ('deleted_on', models.DateTimeField(blank=True, null=True)),
-                ('title', models.CharField(blank=True, max_length=255, null=True)),
-                ('title_en', models.CharField(blank=True, max_length=255, null=True)),
-                ('edp_title', models.CharField(blank=True, max_length=255, null=True)),
-                ('description', models.TextField(blank=True, null=True)),
-                ('parent_id', models.BigIntegerField(blank=True, null=True)),
-                ('featured', models.BooleanField()),
-                ('icon', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("modified", models.DateTimeField(auto_now=True, null=True)),
+                ("version", models.IntegerField()),
+                ("deleted", models.BooleanField(blank=True, null=True)),
+                ("deleted_on", models.DateTimeField(blank=True, null=True)),
+                ("title", models.CharField(blank=True, max_length=255, null=True)),
+                ("title_en", models.CharField(blank=True, max_length=255, null=True)),
+                ("edp_title", models.CharField(blank=True, max_length=255, null=True)),
+                ("description", models.TextField(blank=True, null=True)),
+                ("parent_id", models.BigIntegerField(blank=True, null=True)),
+                ("featured", models.BooleanField()),
+                ("icon", models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'db_table': 'category',
-                'managed': False,
+                "db_table": "category",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='Frequency',
+            name="Frequency",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('version', models.IntegerField()),
-                ('deleted', models.BooleanField(blank=True, null=True)),
-                ('deleted_on', models.DateTimeField(blank=True, null=True)),
-                ('title', models.TextField(blank=True, null=True)),
-                ('title_en', models.TextField(blank=True, null=True)),
-                ('uri', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("modified", models.DateTimeField(auto_now=True, null=True)),
+                ("version", models.IntegerField()),
+                ("deleted", models.BooleanField(blank=True, null=True)),
+                ("deleted_on", models.DateTimeField(blank=True, null=True)),
+                ("title", models.TextField(blank=True, null=True)),
+                ("title_en", models.TextField(blank=True, null=True)),
+                ("uri", models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'db_table': 'frequency',
-                'managed': False,
+                "db_table": "frequency",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='Licence',
+            name="Licence",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('version', models.IntegerField()),
-                ('deleted', models.BooleanField(blank=True, null=True)),
-                ('deleted_on', models.DateTimeField(blank=True, null=True)),
-                ('identifier', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('url', models.CharField(blank=True, max_length=255, null=True)),
-                ('title', models.CharField(blank=True, max_length=255, null=True)),
-                ('description', models.TextField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("modified", models.DateTimeField(auto_now=True, null=True)),
+                ("version", models.IntegerField()),
+                ("deleted", models.BooleanField(blank=True, null=True)),
+                ("deleted_on", models.DateTimeField(blank=True, null=True)),
+                (
+                    "identifier",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                ("url", models.CharField(blank=True, max_length=255, null=True)),
+                ("title", models.CharField(blank=True, max_length=255, null=True)),
+                ("description", models.TextField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'licence',
-                'managed': False,
+                "db_table": "licence",
+                "managed": False,
             },
         ),
     ]

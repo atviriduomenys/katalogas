@@ -4,69 +4,63 @@ from django.db import migrations
 
 
 def create_geoportal_frequencies(apps, schema_editor):
-    GeoportalFrequency = apps.get_model('vitrina_classifiers', 'GeoportalFrequency')
-    Frequency = apps.get_model('vitrina_classifiers', 'Frequency')
+    GeoportalFrequency = apps.get_model("vitrina_classifiers", "GeoportalFrequency")
+    Frequency = apps.get_model("vitrina_classifiers", "Frequency")
 
     frequencies = {
-        'annually': 'Kasmet',
-        'asNeeded': 'Neapibrėžtu periodiškumu',
-        'biannually': 'Dukart per metus',
-        'biennially': 'Kas 2 metai',
-        'continual': 'Nepertraukiamas',
-        'daily': 'Kasdien',
-        'fortnightly': 'Kas 2 savaitės',
-        'irregular': 'Nevienodu periodiškumu',
-        'monthly': 'Kas mėnesį',
-        'notPlanned': 'Neatnaujinamas',
-        'periodic': 'Neapibrėžtu periodiškumu',
-        'quarterly': 'Kas 3 mėnesiai',
-        'semimonthly': 'Dukart per mėnesį',
-        'unknown': 'Nežinomas',
-        'weekly': 'Kas savaitę',
-        'semiannually': '',
-        'fixed': ''
+        "annually": "Kasmet",
+        "asNeeded": "Neapibrėžtu periodiškumu",
+        "biannually": "Dukart per metus",
+        "biennially": "Kas 2 metai",
+        "continual": "Nepertraukiamas",
+        "daily": "Kasdien",
+        "fortnightly": "Kas 2 savaitės",
+        "irregular": "Nevienodu periodiškumu",
+        "monthly": "Kas mėnesį",
+        "notPlanned": "Neatnaujinamas",
+        "periodic": "Neapibrėžtu periodiškumu",
+        "quarterly": "Kas 3 mėnesiai",
+        "semimonthly": "Dukart per mėnesį",
+        "unknown": "Nežinomas",
+        "weekly": "Kas savaitę",
+        "semiannually": "",
+        "fixed": "",
     }
 
     for key, value in frequencies.items():
         frequency = Frequency.objects.filter(title=value).first()
-        GeoportalFrequency.objects.create(
-            title=key,
-            frequency=frequency
-        )
+        GeoportalFrequency.objects.create(title=key, frequency=frequency)
 
 
 def create_geoportal_licences(apps, schema_editor):
-    GeoportalLicence = apps.get_model('vitrina_classifiers', 'GeoportalLicence')
-    Licence = apps.get_model('vitrina_classifiers', 'Licence')
+    GeoportalLicence = apps.get_model("vitrina_classifiers", "GeoportalLicence")
+    Licence = apps.get_model("vitrina_classifiers", "Licence")
 
     licences = {
-        'confidential': "Pagal sutartį",
-        'copyright': "Creative Commons Attribution 4.0",
-        'in-confidence': '',
-        'intellectualPropertyRights': "Creative Commons Attribution 4.0",
-        'licenceDistributor': "Pagal sutartį",
-        'licenceEndUser': "Pagal sutartį",
-        'licenceUnrestricted': "Creative Commons Attribution 4.0",
-        'license': "Creative Commons Attribution-NoDerivatives 4.0",
-        'otherRestrictions': "Pagal sutartį",
-        'patent': "Pagal sutartį",
-        'patentPending': "Pagal sutartį",
-        'private': "Pagal sutartį",
-        'restricted': "Pagal sutartį",
-        'SBU': "Pagal sutartį",
-        'statutory': "Pagal sutartį",
-        'trademark': "Pagal sutartį",
-        'unrestricted': "Creative Commons Attribution 4.0",
+        "confidential": "Pagal sutartį",
+        "copyright": "Creative Commons Attribution 4.0",
+        "in-confidence": "",
+        "intellectualPropertyRights": "Creative Commons Attribution 4.0",
+        "licenceDistributor": "Pagal sutartį",
+        "licenceEndUser": "Pagal sutartį",
+        "licenceUnrestricted": "Creative Commons Attribution 4.0",
+        "license": "Creative Commons Attribution-NoDerivatives 4.0",
+        "otherRestrictions": "Pagal sutartį",
+        "patent": "Pagal sutartį",
+        "patentPending": "Pagal sutartį",
+        "private": "Pagal sutartį",
+        "restricted": "Pagal sutartį",
+        "SBU": "Pagal sutartį",
+        "statutory": "Pagal sutartį",
+        "trademark": "Pagal sutartį",
+        "unrestricted": "Creative Commons Attribution 4.0",
     }
 
     Licence.objects.get_or_create(title="Pagal sutartį")
-    
+
     for key, value in licences.items():
         licence = Licence.objects.filter(title=value).first()
-        GeoportalLicence.objects.create(
-            licence=licence,
-            title=key
-        )
+        GeoportalLicence.objects.create(licence=licence, title=key)
 
 
 NON_PUBLIC = "NON_PUBLIC"
@@ -75,39 +69,37 @@ RESTRICTED = "RESTRICTED"
 
 
 def create_geoportal_access_rights(apps, schema_editor):
-    GeoportalAccessRights = apps.get_model('vitrina_classifiers', 'GeoportalAccessRights')
+    GeoportalAccessRights = apps.get_model(
+        "vitrina_classifiers", "GeoportalAccessRights"
+    )
 
     access_rights = {
-        'confidential': NON_PUBLIC,
-        'copyright': PUBLIC,
-        'in-confidence': NON_PUBLIC,
-        'intellectualPropertyRights': PUBLIC,
-        'licenceDistributor': RESTRICTED,
-        'licenceEndUser': RESTRICTED,
-        'licenceUnrestricted': PUBLIC,
-        'license': PUBLIC,
-        'otherRestrictions': RESTRICTED,
-        'patent': RESTRICTED,
-        'patentPending': RESTRICTED,
-        'private': NON_PUBLIC,
-        'restricted': NON_PUBLIC,
-        'SBU': NON_PUBLIC,
-        'statutory': NON_PUBLIC,
-        'trademark': NON_PUBLIC,
-        'unrestricted': PUBLIC,
+        "confidential": NON_PUBLIC,
+        "copyright": PUBLIC,
+        "in-confidence": NON_PUBLIC,
+        "intellectualPropertyRights": PUBLIC,
+        "licenceDistributor": RESTRICTED,
+        "licenceEndUser": RESTRICTED,
+        "licenceUnrestricted": PUBLIC,
+        "license": PUBLIC,
+        "otherRestrictions": RESTRICTED,
+        "patent": RESTRICTED,
+        "patentPending": RESTRICTED,
+        "private": NON_PUBLIC,
+        "restricted": NON_PUBLIC,
+        "SBU": NON_PUBLIC,
+        "statutory": NON_PUBLIC,
+        "trademark": NON_PUBLIC,
+        "unrestricted": PUBLIC,
     }
 
     for key, value in access_rights.items():
-        GeoportalAccessRights.objects.create(
-            title=key,
-            access_rights=value
-        )
+        GeoportalAccessRights.objects.create(title=key, access_rights=value)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0021_auto_20250307_0713'),
+        ("vitrina_classifiers", "0021_auto_20250307_0713"),
     ]
 
     operations = [

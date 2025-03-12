@@ -8,7 +8,7 @@ from vitrina.orgs.models import Organization
 
 
 def is_org_dataset_list(request: HttpRequest):
-    return request.resolver_match.url_name == 'organization-datasets'
+    return request.resolver_match.url_name == "organization-datasets"
 
 
 def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
@@ -17,9 +17,13 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
     elif isinstance(obj, AreaOfManagement):
         jurisdiction = obj
     else:
-        raise ValueError(_("Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"))
+        raise ValueError(
+            _("Neteisingas objekto tipas. Turi būti AreaOfManagement arba int")
+        )
 
-    parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
+    parent_org: Organization = Organization.objects.filter(
+        title=jurisdiction.name_lt
+    ).first()
     if not parent_org:
         parent_org = Organization.add_root(
             title=jurisdiction.name_lt,

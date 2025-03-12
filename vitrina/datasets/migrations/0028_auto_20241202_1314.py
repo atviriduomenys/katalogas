@@ -5,15 +5,16 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0027_auto_20241128_1214'),
+        ("vitrina_datasets", "0027_auto_20241128_1214"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
-            name='geoportal_id',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Geoportalo id'),
+            model_name="dataset",
+            name="geoportal_id",
+            field=models.CharField(
+                blank=True, max_length=255, null=True, verbose_name="Geoportalo id"
+            ),
         ),
     ]

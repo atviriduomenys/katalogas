@@ -4,35 +4,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0005_fix_icons'),
+        ("vitrina_classifiers", "0005_fix_icons"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='category',
-            name='icon',
-            field=models.CharField(blank=True,
-                                   max_length=255,
-                                   help_text='Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search'),
+            model_name="category",
+            name="icon",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                help_text="Pasirinkite kategorijos paveikslėlį iš šios nuorodos: https://fontawesome.com/search",
+            ),
         ),
         migrations.AddField(
-            model_name='category',
-            name='depth',
+            model_name="category",
+            name="depth",
             field=models.PositiveIntegerField(default=0),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='category',
-            name='numchild',
+            model_name="category",
+            name="numchild",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='category',
-            name='path',
+            model_name="category",
+            name="path",
             field=models.CharField(blank=True, null=True, max_length=255),
             preserve_default=False,
         ),
     ]
-

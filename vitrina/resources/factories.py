@@ -6,40 +6,49 @@ from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.resources.models import DatasetDistribution, Format, GeoportalFormat, GeoportalFormatValue
+from vitrina.resources.models import (
+    DatasetDistribution,
+    Format,
+    GeoportalFormat,
+    GeoportalFormatValue,
+)
 
 
 class FileFormat(DjangoModelFactory):
     class Meta:
         model = Format
-        django_get_or_create = ('title', 'extension')
+        django_get_or_create = ("title", "extension")
 
-    title = factory.Faker('word')
-    extension = 'CSV'
+    title = factory.Faker("word")
+    extension = "CSV"
 
 
 class UapiFormat(DjangoModelFactory):
     class Meta:
         model = Format
-        django_get_or_create = ('title', 'extension')
+        django_get_or_create = ("title", "extension")
 
-    title = 'Saugykla API'
-    extension = 'UAPI'
+    title = "Saugykla API"
+    extension = "UAPI"
 
 
 class DatasetDistributionFactory(DjangoModelFactory):
     class Meta:
         model = DatasetDistribution
-        django_get_or_create = ('title', 'description')
+        django_get_or_create = ("title", "description")
 
-    title = factory.Dict({
-        'en': factory.Faker('text', max_nb_chars=20, locale='en_US'),
-        'lt': factory.Faker('text', max_nb_chars=20, locale='lt_LT'),
-    })
-    description = factory.Dict({
-        'en': factory.Faker('text', locale='en_US'),
-        'lt': factory.Faker('text', locale='lt_LT'),
-    })
+    title = factory.Dict(
+        {
+            "en": factory.Faker("text", max_nb_chars=20, locale="en_US"),
+            "lt": factory.Faker("text", max_nb_chars=20, locale="lt_LT"),
+        }
+    )
+    description = factory.Dict(
+        {
+            "en": factory.Faker("text", locale="en_US"),
+            "lt": factory.Faker("text", locale="lt_LT"),
+        }
+    )
     dataset = factory.SubFactory(DatasetFactory)
     format = factory.SubFactory(FileFormat)
     period_start = date(2022, 1, 1)
@@ -56,10 +65,10 @@ class DatasetDistributionFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        title = kwargs.pop('title')
-        description = kwargs.pop('description')
+        title = kwargs.pop("title")
+        description = kwargs.pop("description")
         dataset = model_class(*args, **kwargs)
-        for lang in ('en', 'lt'):
+        for lang in ("en", "lt"):
             dataset.set_current_language(lang)
             dataset.title = _get_language_value(lang, title)
             dataset.description = _get_language_value(lang, description)
@@ -86,4 +95,4 @@ class GeoportalFormatValueFactory(DjangoModelFactory):
         model = GeoportalFormatValue
 
     geoportal_format = factory.SubFactory(GeoportalFormatFactory)
-    value = factory.Faker('word')
+    value = factory.Faker("word")

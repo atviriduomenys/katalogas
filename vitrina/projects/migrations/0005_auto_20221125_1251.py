@@ -18,17 +18,16 @@ def add_datasets_to_project(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_projects', '0004_auto_20221019_1510'),
+        ("vitrina_projects", "0004_auto_20221019_1510"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='datasets',
-            field=models.ManyToManyField(to='vitrina_datasets.Dataset'),
+            model_name="project",
+            name="datasets",
+            field=models.ManyToManyField(to="vitrina_datasets.Dataset"),
         ),
         migrations.RunPython(add_datasets_to_project),
     ]

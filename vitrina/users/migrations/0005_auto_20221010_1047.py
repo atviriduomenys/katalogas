@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0004_auto_20220909_1301'),
-        ('vitrina_orgs', '0011_auto_20221012_1350'),
+        ("vitrina_users", "0004_auto_20220909_1301"),
+        ("vitrina_orgs", "0011_auto_20221012_1350"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='user',
-            name='role',
+            model_name="user",
+            name="role",
         ),
     ]

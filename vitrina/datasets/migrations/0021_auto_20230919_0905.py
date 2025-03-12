@@ -6,10 +6,10 @@ from vitrina import settings
 
 
 def assign_dataset_status(apps, schema_editor):
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
-    Comment = apps.get_model('vitrina_comments', 'Comment')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    User = apps.get_model('vitrina_users', 'User')
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
+    Comment = apps.get_model("vitrina_comments", "Comment")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    User = apps.get_model("vitrina_users", "User")
 
     sys_user = User.objects.filter(email=settings.SYSTEM_USER_EMAIL).first()
     if not sys_user:
@@ -18,7 +18,7 @@ def assign_dataset_status(apps, schema_editor):
             last_name="Naudotojas",
             email=settings.SYSTEM_USER_EMAIL,
             password="",
-            is_staff=True
+            is_staff=True,
         )
 
     ct = ContentType.objects.get_for_model(Dataset)
@@ -29,12 +29,12 @@ def assign_dataset_status(apps, schema_editor):
         status__isnull=True,
     ):
         if (
-            not dataset.datasetdistribution_set.exists() and
-            not dataset.plandataset_set.exists() and
-            not dataset.datasetstructure_set.exists()
+            not dataset.datasetdistribution_set.exists()
+            and not dataset.plandataset_set.exists()
+            and not dataset.datasetstructure_set.exists()
         ):
             dataset.status = "INVENTORED"
-            dataset.save(update_fields=['status'])
+            dataset.save(update_fields=["status"])
 
             Comment.objects.create(
                 created=dataset.created,
@@ -42,17 +42,16 @@ def assign_dataset_status(apps, schema_editor):
                 object_id=dataset.pk,
                 user=sys_user,
                 type="STATUS",
-                status="INVENTORED"
+                status="INVENTORED",
             )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0020_auto_20230911_0840'),
-        ('vitrina_comments', '0007_auto_20230522_1627'),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_users', '0007_auto_20230905_1610'),
+        ("vitrina_datasets", "0020_auto_20230911_0840"),
+        ("vitrina_comments", "0007_auto_20230522_1627"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_users", "0007_auto_20230905_1610"),
     ]
 
     operations = [

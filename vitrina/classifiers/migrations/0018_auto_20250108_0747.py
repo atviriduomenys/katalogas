@@ -4,24 +4,28 @@ from django.db import migrations, models
 
 
 def assign_category_name(apps, schema_editor):
-    Category = apps.get_model('vitrina_classifiers', 'Category')
+    Category = apps.get_model("vitrina_classifiers", "Category")
 
     for category in Category.objects.filter(title__isnull=False):
         category.name = category.title
-        category.save(update_fields=['name'])
+        category.save(update_fields=["name"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0017_auto_20241115_0926'),
+        ("vitrina_classifiers", "0017_auto_20241115_0926"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='category',
-            name='name',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Kodinis pavadinimas'),
+            model_name="category",
+            name="name",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Kodinis pavadinimas",
+            ),
         ),
         migrations.RunPython(assign_category_name),
     ]

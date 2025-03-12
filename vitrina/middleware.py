@@ -6,9 +6,8 @@ from django.utils.timezone import now
 
 
 class NoAutoLocaleMiddleware(MiddlewareMixin):
-
     def process_request(self, request):
-        request.META['HTTP_ACCEPT_LANGUAGE'] = ''
+        request.META["HTTP_ACCEPT_LANGUAGE"] = ""
 
 
 class LogoutMiddleware:
@@ -17,11 +16,9 @@ class LogoutMiddleware:
 
     def __call__(self, request):
         if request.user and request.user.is_authenticated:
-            if (
-                not request.user.is_viisp_login and (
-                    request.user.password_last_updated is None or
-                    request.user.password_last_updated < (now() - timedelta(days=90))
-                )
+            if not request.user.is_viisp_login and (
+                request.user.password_last_updated is None
+                or request.user.password_last_updated < (now() - timedelta(days=90))
             ):
                 logout(request)
         response = self.get_response(request)

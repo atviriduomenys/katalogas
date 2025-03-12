@@ -4,24 +4,52 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0027_auto_20240821_1118'),
+        ("vitrina_orgs", "0027_auto_20240821_1118"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Template',
+            name="Template",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True, verbose_name='Sukurta')),
-                ('modified', models.DateTimeField(auto_now=True, null=True, verbose_name='Modifikuota')),
-                ('identifier', models.CharField(max_length=255, unique=True, verbose_name='Identifikatorius')),
-                ('text', models.CharField(max_length=100, verbose_name='Tekstas')),
-                ('document', models.FileField(upload_to='data/files/templates', verbose_name='Pridėtas dokumentas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, null=True, verbose_name="Sukurta"
+                    ),
+                ),
+                (
+                    "modified",
+                    models.DateTimeField(
+                        auto_now=True, null=True, verbose_name="Modifikuota"
+                    ),
+                ),
+                (
+                    "identifier",
+                    models.CharField(
+                        max_length=255, unique=True, verbose_name="Identifikatorius"
+                    ),
+                ),
+                ("text", models.CharField(max_length=100, verbose_name="Tekstas")),
+                (
+                    "document",
+                    models.FileField(
+                        upload_to="data/files/templates",
+                        verbose_name="Pridėtas dokumentas",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'template',
+                "db_table": "template",
             },
         ),
     ]

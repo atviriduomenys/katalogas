@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0013_auto_20231121_1425'),
+        ("vitrina_structure", "0013_auto_20231121_1425"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='metadata',
-            name='prepare_ast',
-            field=models.JSONField(blank=True, null=True, verbose_name='Formulės AST'),
+            model_name="metadata",
+            name="prepare_ast",
+            field=models.JSONField(blank=True, null=True, verbose_name="Formulės AST"),
         ),
     ]

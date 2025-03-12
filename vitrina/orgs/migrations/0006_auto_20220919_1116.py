@@ -4,8 +4,8 @@ from django.db import migrations
 
 
 def update_user_field(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
+    User = apps.get_model("vitrina_users", "User")
+    Representative = apps.get_model("vitrina_orgs", "Representative")
 
     for user in User.objects.all():
         if user.email:
@@ -20,9 +20,8 @@ def update_user_field(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0005_auto_20220919_1057'),
+        ("vitrina_orgs", "0005_auto_20220919_1057"),
     ]
 
     operations = [

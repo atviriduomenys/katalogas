@@ -6,56 +6,107 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0037_auto_20250127_1347'),
-        ('vitrina_datasets', '0036_auto_20250127_1347'),
+        ("vitrina_orgs", "0037_auto_20250127_1347"),
+        ("vitrina_datasets", "0036_auto_20250127_1347"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_requests', '0012_auto_20240902_1046'),
+        ("vitrina_requests", "0012_auto_20240902_1046"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='request',
+            name="request",
             options={},
         ),
         migrations.RemoveField(
-            model_name='request',
-            name='dataset_id',
+            model_name="request",
+            name="dataset_id",
         ),
         migrations.AddField(
-            model_name='request',
-            name='dataset',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='dataset_request', to='vitrina_datasets.dataset'),
+            model_name="request",
+            name="dataset",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="dataset_request",
+                to="vitrina_datasets.dataset",
+            ),
         ),
         migrations.AlterField(
-            model_name='request',
-            name='status',
-            field=models.CharField(blank=True, choices=[('CREATED', 'Pateiktas'), ('REJECTED', 'Atmestas'), ('OPENED', 'Įvykdytas'), ('ANSWERED', 'Atsakytas'), ('PLANNED', 'Suplanuotas'), ('APPROVED', 'Įvertintas')], max_length=255, null=True),
+            model_name="request",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("CREATED", "Pateiktas"),
+                    ("REJECTED", "Atmestas"),
+                    ("OPENED", "Įvykdytas"),
+                    ("ANSWERED", "Atsakytas"),
+                    ("PLANNED", "Suplanuotas"),
+                    ("APPROVED", "Įvertintas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='request',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            model_name="request",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='requestassignment',
-            name='organization',
-            field=models.ForeignKey(blank=True, db_column='organization', null=True, on_delete=django.db.models.deletion.PROTECT, to='vitrina_orgs.organization'),
+            model_name="requestassignment",
+            name="organization",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="organization",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="vitrina_orgs.organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='requestassignment',
-            name='request',
-            field=models.ForeignKey(blank=True, db_column='request', null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_requests.request'),
+            model_name="requestassignment",
+            name="request",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="request",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_requests.request",
+            ),
         ),
         migrations.AlterField(
-            model_name='requestassignment',
-            name='status',
-            field=models.CharField(blank=True, choices=[('CREATED', 'Pateiktas'), ('REJECTED', 'Atmestas'), ('OPENED', 'Įvykdytas'), ('ANSWERED', 'Atsakytas'), ('PLANNED', 'Suplanuotas'), ('APPROVED', 'Įvertintas')], max_length=255, null=True),
+            model_name="requestassignment",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("CREATED", "Pateiktas"),
+                    ("REJECTED", "Atmestas"),
+                    ("OPENED", "Įvykdytas"),
+                    ("ANSWERED", "Atsakytas"),
+                    ("PLANNED", "Suplanuotas"),
+                    ("APPROVED", "Įvertintas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='requestevent',
-            name='request',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_requests.request'),
+            model_name="requestevent",
+            name="request",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_requests.request",
+            ),
         ),
     ]

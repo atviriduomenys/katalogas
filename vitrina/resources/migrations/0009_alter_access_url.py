@@ -4,17 +4,21 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0008_alter_url'),
+        ("vitrina_resources", "0008_alter_url"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='access_url',
-            field=models.CharField(blank=True, default='', help_text='Nuoroda į svetainę iš kurios galima atsisiųsti duomenis.',
-                                   max_length=255, verbose_name='Prieigos nuoroda'),
+            model_name="datasetdistribution",
+            name="access_url",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="Nuoroda į svetainę iš kurios galima atsisiųsti duomenis.",
+                max_length=255,
+                verbose_name="Prieigos nuoroda",
+            ),
             preserve_default=False,
         ),
     ]

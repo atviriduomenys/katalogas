@@ -6,27 +6,41 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0036_auto_20250127_1347'),
+        ("vitrina_datasets", "0036_auto_20250127_1347"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_likes', '0004_auto_20250127_1347'),
+        ("vitrina_likes", "0004_auto_20250127_1347"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='uservote',
-            name='dataset',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.dataset'),
+            model_name="uservote",
+            name="dataset",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_datasets.dataset",
+            ),
         ),
         migrations.AlterField(
-            model_name='uservote',
-            name='harvested',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_datasets.harvestingresult'),
+            model_name="uservote",
+            name="harvested",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_datasets.harvestingresult",
+            ),
         ),
         migrations.AlterField(
-            model_name='uservote',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="uservote",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

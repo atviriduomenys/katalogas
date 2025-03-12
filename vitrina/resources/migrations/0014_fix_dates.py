@@ -8,33 +8,38 @@ def fix_dates(apps, schema_editor):
     Dist = apps.get_model("vitrina_resources", "DatasetDistribution")
 
     for dist in Dist.objects.all():
-        if dist.period_start in ('-', '', None):
+        if dist.period_start in ("-", "", None):
             dist.period_start = None
         else:
-            dist.period_start = datetime.strptime(str(dist.period_start), "%Y-%m-%d").date()
-        if dist.period_end in ('-', '', None):
+            dist.period_start = datetime.strptime(
+                str(dist.period_start), "%Y-%m-%d"
+            ).date()
+        if dist.period_end in ("-", "", None):
             dist.period_end = None
         else:
             dist.period_end = datetime.strptime(str(dist.period_end), "%Y-%m-%d").date()
-        dist.save(update_fields=['period_start', 'period_end'])
+        dist.save(update_fields=["period_start", "period_end"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0013_auto_20221206_1005'),
+        ("vitrina_resources", "0013_auto_20221206_1005"),
     ]
 
     operations = [
         migrations.RunPython(fix_dates),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='period_end',
-            field=models.DateField(blank=True, null=True, verbose_name='Periodo pabaiga'),
+            model_name="datasetdistribution",
+            name="period_end",
+            field=models.DateField(
+                blank=True, null=True, verbose_name="Periodo pabaiga"
+            ),
         ),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='period_start',
-            field=models.DateField(blank=True, null=True, verbose_name='Periodo pradžia'),
+            model_name="datasetdistribution",
+            name="period_start",
+            field=models.DateField(
+                blank=True, null=True, verbose_name="Periodo pradžia"
+            ),
         ),
     ]

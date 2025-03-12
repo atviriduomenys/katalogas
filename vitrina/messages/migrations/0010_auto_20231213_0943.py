@@ -4,25 +4,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0009_auto_20231211_1133'),
+        ("vitrina_messages", "0009_auto_20231211_1133"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='sentmail',
-            name='email_content',
+            model_name="sentmail",
+            name="email_content",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='sentmail',
-            name='email_subject',
+            model_name="sentmail",
+            name="email_subject",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='sub_type',
-            field=models.CharField(blank=True, choices=[('COMMENT', 'Komentaro prenumerata'), ('DATASET', 'Duomenų rinkinio prenumerata'), ('PROJECT', 'Projekto prenumerata'), ('ORGANIZATION', 'Organizacijos prenumerata'), ('REQUEST', 'Poreikio prenumerata')], max_length=255, null=True, verbose_name='Prenumeratos tipas'),
+            model_name="subscription",
+            name="sub_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("COMMENT", "Komentaro prenumerata"),
+                    ("DATASET", "Duomenų rinkinio prenumerata"),
+                    ("PROJECT", "Projekto prenumerata"),
+                    ("ORGANIZATION", "Organizacijos prenumerata"),
+                    ("REQUEST", "Poreikio prenumerata"),
+                ],
+                max_length=255,
+                null=True,
+                verbose_name="Prenumeratos tipas",
+            ),
         ),
     ]

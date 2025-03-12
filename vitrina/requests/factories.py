@@ -4,15 +4,20 @@ from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.requests.models import Request, RequestStructure, RequestObject, RequestAssignment
+from vitrina.requests.models import (
+    Request,
+    RequestStructure,
+    RequestObject,
+    RequestAssignment,
+)
 
 
 class RequestFactory(DjangoModelFactory):
     class Meta:
         model = Request
-        django_get_or_create = ('title',)
+        django_get_or_create = ("title",)
 
-    title = factory.Faker('catch_phrase')
+    title = factory.Faker("catch_phrase")
     version = 1
     is_existing = True
     is_public = True
@@ -25,7 +30,7 @@ class RequestFactory(DjangoModelFactory):
         request.title = fake.word()
         request.save()
         return request
-    
+
     @factory.post_generation
     def organizations(self, create, extracted, **kwargs):
         if not create:
@@ -41,13 +46,18 @@ class RequestFactory(DjangoModelFactory):
 class RequestStructureFactory(DjangoModelFactory):
     class Meta:
         model = RequestStructure
-        django_get_or_create = ('data_title', 'data_notes', 'data_type', 'dictionary_title',)
+        django_get_or_create = (
+            "data_title",
+            "data_notes",
+            "data_type",
+            "dictionary_title",
+        )
 
     version = 1
-    data_title = factory.Faker('catch_phrase')
-    data_notes = factory.Faker('catch_phrase')
-    data_type = factory.Faker('catch_phrase')
-    dictionary_title = factory.Faker('catch_phrase')
+    data_title = factory.Faker("catch_phrase")
+    data_notes = factory.Faker("catch_phrase")
+    data_type = factory.Faker("catch_phrase")
+    dictionary_title = factory.Faker("catch_phrase")
 
 
 class RequestObjectFactory(DjangoModelFactory):
@@ -60,5 +70,6 @@ class RequestObjectFactory(DjangoModelFactory):
 class RequestAssignmentFactory(DjangoModelFactory):
     class Meta:
         model = RequestAssignment
+
     organization = factory.SubFactory(OrganizationFactory)
     request = factory.SubFactory(RequestFactory)

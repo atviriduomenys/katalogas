@@ -4,35 +4,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0008_generate_subscriptions_for_representatives'),
+        ("vitrina_messages", "0008_generate_subscriptions_for_representatives"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='sentmail',
-            name='email_content',
+            model_name="sentmail",
+            name="email_content",
             field=models.CharField(blank=True, max_length=500, null=True),
         ),
         migrations.AddField(
-            model_name='sentmail',
-            name='email_sent',
+            model_name="sentmail",
+            name="email_sent",
             field=models.BooleanField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='sentmail',
-            name='email_subject',
+            model_name="sentmail",
+            name="email_subject",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='sentmail',
-            name='recipient',
+            model_name="sentmail",
+            name="recipient",
             field=models.CharField(blank=True, max_length=500, null=True),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='sub_type',
-            field=models.CharField(blank=True, choices=[('REQUEST', 'Poreikio prenumerata'), ('DATASET', 'Duomenų rinkinio prenumerata'), ('PROJECT', 'Projekto prenumerata'), ('ORGANIZATION', 'Organizacijos prenumerata'), ('COMMENT', 'Komentaro prenumerata')], max_length=255, null=True, verbose_name='Prenumeratos tipas'),
+            model_name="subscription",
+            name="sub_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("REQUEST", "Poreikio prenumerata"),
+                    ("DATASET", "Duomenų rinkinio prenumerata"),
+                    ("PROJECT", "Projekto prenumerata"),
+                    ("ORGANIZATION", "Organizacijos prenumerata"),
+                    ("COMMENT", "Komentaro prenumerata"),
+                ],
+                max_length=255,
+                null=True,
+                verbose_name="Prenumeratos tipas",
+            ),
         ),
     ]

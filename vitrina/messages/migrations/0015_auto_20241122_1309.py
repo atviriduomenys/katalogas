@@ -4,16 +4,15 @@ from django.db import migrations
 
 
 def delete_comment_email_templates(apps, schema_editor):
-    EmailTemplate = apps.get_model('vitrina_messages', 'EmailTemplate')
+    EmailTemplate = apps.get_model("vitrina_messages", "EmailTemplate")
 
-    EmailTemplate.objects.filter(identifier='comment-for-sub').delete()
-    EmailTemplate.objects.filter(identifier='replay-comment-for-sub').delete()
+    EmailTemplate.objects.filter(identifier="comment-for-sub").delete()
+    EmailTemplate.objects.filter(identifier="replay-comment-for-sub").delete()
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0014_auto_20241007_1348'),
+        ("vitrina_messages", "0014_auto_20241007_1348"),
     ]
 
     operations = [

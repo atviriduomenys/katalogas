@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0015_auto_20221205_1111'),
+        ("vitrina_orgs", "0015_auto_20221205_1111"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='provider',
-            field=models.BooleanField(default=False, verbose_name='Atvėrimo duomenų teikėjas'),
+            model_name="organization",
+            name="provider",
+            field=models.BooleanField(
+                default=False, verbose_name="Atvėrimo duomenų teikėjas"
+            ),
         ),
     ]

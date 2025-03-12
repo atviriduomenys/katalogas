@@ -4,7 +4,7 @@ from django.db import migrations
 
 
 def fix_representative_roles(apps, shema_editor):
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
+    Representative = apps.get_model("vitrina_orgs", "Representative")
     for rep in Representative.objects.all():
         if rep.role == "orgcoordinator":
             rep.role = "coordinator"
@@ -14,11 +14,8 @@ def fix_representative_roles(apps, shema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0012_auto_20221012_1402'),
+        ("vitrina_orgs", "0012_auto_20221012_1402"),
     ]
 
-    operations = [
-        migrations.RunPython(fix_representative_roles)
-    ]
+    operations = [migrations.RunPython(fix_representative_roles)]

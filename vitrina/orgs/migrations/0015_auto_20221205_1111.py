@@ -7,16 +7,21 @@ import filer.fields.image
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.FILER_IMAGE_MODEL),
-        ('vitrina_orgs', '0014_auto_20221103_1225'),
+        ("vitrina_orgs", "0014_auto_20221103_1225"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='image',
-            field=filer.fields.image.FilerImageField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='image_organization', to=settings.FILER_IMAGE_MODEL),
+            model_name="organization",
+            name="image",
+            field=filer.fields.image.FilerImageField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="image_organization",
+                to=settings.FILER_IMAGE_MODEL,
+            ),
         ),
     ]

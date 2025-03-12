@@ -22,13 +22,13 @@ class LicenceSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True,
         label="",
-        source='identifier',
+        source="identifier",
     )
     title = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:
         model = Licence
-        fields = ['description', 'id', 'title']
+        fields = ["description", "id", "title"]
 
 
 class CatalogSerializer(serializers.ModelSerializer):
@@ -37,14 +37,14 @@ class CatalogSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True,
         label="",
-        source='identifier',
+        source="identifier",
     )
     licence = LicenceSerializer(read_only=True, label="")
     title = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:
         model = Catalog
-        fields = ['description', 'id', 'licence', 'title']
+        fields = ["description", "id", "licence", "title"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['description', 'id', 'title']
+        fields = ["description", "id", "title"]
 
 
 class DatasetSerializer(serializers.ModelSerializer):
@@ -65,7 +65,7 @@ class DatasetSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True,
         label="",
-        source='internal_id',
+        source="internal_id",
         validators=[
             UniqueValidator(Dataset.objects.all()),
         ],
@@ -74,58 +74,56 @@ class DatasetSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True,
         label="",
-        help_text="dct:title - Title (required)"
+        help_text="dct:title - Title (required)",
     )
     description = serializers.CharField(
         required=False,
         allow_blank=True,
         label="",
-        help_text="dct:description - Description (required)"
+        help_text="dct:description - Description (required)",
     )
     modified = serializers.DateTimeField(
-        required=False,
-        label="",
-        help_text="dct:modified - Update / modification date"
+        required=False, label="", help_text="dct:modified - Update / modification date"
     )
     temporalCoverage = serializers.CharField(
         required=False,
         allow_blank=True,
         label="",
         help_text="dct:temporal - Temporal coverage of dataset data",
-        source='temporal_coverage'
+        source="temporal_coverage",
     )
     language = serializers.ListField(
         required=False,
         child=serializers.CharField(),
         source="language_array",
-        help_text="dct:language - Language"
+        help_text="dct:language - Language",
     )
     publisher = serializers.CharField(
         required=False,
         allow_blank=True,
         label="",
-        help_text="dct:publisher - Publisher"
+        help_text="dct:publisher - Publisher",
     )
     spatial = serializers.CharField(
         required=False,
-        source='spatial_coverage',
+        source="spatial_coverage",
         allow_blank=True,
         label="",
-        help_text="dct:spatial - Spatial information"
+        help_text="dct:spatial - Spatial information",
     )
     licence = serializers.CharField(
-        source='licence.identifier',
+        source="licence.identifier",
         required=False,
         allow_blank=True,
         label="",
-        help_text="Licence"
+        help_text="Licence",
     )
     periodicity = serializers.CharField(
-        source='frequency.title',
+        source="frequency.title",
         required=False,
         allow_blank=True,
         label="",
-        help_text="Periodicity"
+        help_text="Periodicity",
     )
     contactPoint = serializers.CharField(
         required=False,
@@ -136,8 +134,8 @@ class DatasetSerializer(serializers.ModelSerializer):
     keyword = serializers.ListField(
         required=False,
         child=serializers.CharField(),
-        source='tag_name_array',
-        help_text="dcat:keyword - Keywords"
+        source="tag_name_array",
+        help_text="dcat:keyword - Keywords",
     )
     landingPage = serializers.SerializerMethodField(
         required=False,
@@ -146,7 +144,7 @@ class DatasetSerializer(serializers.ModelSerializer):
     )
     theme = serializers.ListField(
         child=serializers.CharField(),
-        source='category_titles',
+        source="category_titles",
         required=False,
         label="",
         help_text="dcat:theme - Category of the dataset",
@@ -157,30 +155,30 @@ class DatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dataset
         fields = [
-            'created',
-            'id',
-            'internalId',
-            'origin',
-            'title',
-            'description',
-            'modified',
-            'temporalCoverage',
-            'language',
-            'publisher',
-            'spatial',
-            'licence',
-            'periodicity',
-            'contactPoint',
-            'keyword',
-            'landingPage',
-            'theme',
-            'organization_id',
-            'organization_title'
+            "created",
+            "id",
+            "internalId",
+            "origin",
+            "title",
+            "description",
+            "modified",
+            "temporalCoverage",
+            "language",
+            "publisher",
+            "spatial",
+            "licence",
+            "periodicity",
+            "contactPoint",
+            "keyword",
+            "landingPage",
+            "theme",
+            "organization_id",
+            "organization_title",
         ]
 
     def get_landingPage(self, obj):
         landing_page = ""
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request:
             domain = get_current_domain(request)
             landing_page = f"{domain}{obj.get_absolute_url()}"
@@ -201,20 +199,12 @@ class DatasetSerializer(serializers.ModelSerializer):
 
 class PostDatasetSerializer(DatasetSerializer):
     title = serializers.CharField(
-        allow_blank=True,
-        label="",
-        help_text="dct:title - Title (required)"
+        allow_blank=True, label="", help_text="dct:title - Title (required)"
     )
     description = serializers.CharField(
-        allow_blank=True,
-        label="",
-        help_text="dct:description - Description (required)"
+        allow_blank=True, label="", help_text="dct:description - Description (required)"
     )
-    published = serializers.BooleanField(
-        required=False,
-        label="",
-        source='is_public'
-    )
+    published = serializers.BooleanField(required=False, label="", source="is_public")
     landingPage = serializers.CharField(
         required=False,
         label="",
@@ -224,43 +214,53 @@ class PostDatasetSerializer(DatasetSerializer):
 
     class Meta(DatasetSerializer.Meta):
         fields = [
-            'internalId',
-            'published',
-            'title',
-            'description',
-            'temporalCoverage',
-            'language',
-            'publisher',
-            'spatial',
-            'licence',
-            'periodicity',
-            'contactPoint',
-            'keyword',
-            'landingPage',
-            'theme',
+            "internalId",
+            "published",
+            "title",
+            "description",
+            "temporalCoverage",
+            "language",
+            "publisher",
+            "spatial",
+            "licence",
+            "periodicity",
+            "contactPoint",
+            "keyword",
+            "landingPage",
+            "theme",
         ]
 
     def create(self, validated_data):
-        languages = validated_data.pop('language_array', [])
-        licence = validated_data.pop('licence', None)
-        periodicity = validated_data.pop('frequency', None)
-        keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_titles', [])
+        languages = validated_data.pop("language_array", [])
+        licence = validated_data.pop("licence", None)
+        periodicity = validated_data.pop("frequency", None)
+        keywords = validated_data.pop("tag_name_array", [])
+        theme = validated_data.pop("category_titles", [])
 
         # these fields are not saved in the old code
-        validated_data.pop('publisher', None)
-        validated_data.pop('contactPoint', None)
-        validated_data.pop('landingPage', None)
+        validated_data.pop("publisher", None)
+        validated_data.pop("contactPoint", None)
+        validated_data.pop("landingPage", None)
 
         instance = super().create(validated_data)
         instance.origin = Dataset.API_ORIGIN
-        instance.organization = self.context.get('organization')
+        instance.organization = self.context.get("organization")
         if languages:
             instance.language = " ".join(languages)
-        if licence and Licence.objects.filter(identifier=licence['identifier']).exists():
-            instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
-        if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
-            instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
+        if (
+            licence
+            and Licence.objects.filter(identifier=licence["identifier"]).exists()
+        ):
+            instance.licence = Licence.objects.filter(
+                identifier=licence["identifier"]
+            ).first()
+        if (
+            periodicity
+            and Frequency.objects.filter(title=periodicity["title"]).exists()
+        ):
+            instance.frequency = Frequency.objects.filter(
+                title=periodicity["title"]
+            ).first()
         if theme and Category.objects.filter(title__in=theme).exists():
             for category in Category.objects.filter(title__in=theme):
                 instance.category.add(category)
@@ -268,43 +268,50 @@ class PostDatasetSerializer(DatasetSerializer):
             instance.tags.add(tag)
         instance.save()
         set_comment(Dataset.CREATED)
-        set_user(self.context.get('user'))
+        set_user(self.context.get("user"))
         return instance
 
 
 class PatchDatasetSerializer(PostDatasetSerializer):
     title = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        label="",
-        help_text="dct:title - Title"
+        required=False, allow_blank=True, label="", help_text="dct:title - Title"
     )
     description = serializers.CharField(
         required=False,
         allow_blank=True,
         label="",
-        help_text="dct:description - Description"
+        help_text="dct:description - Description",
     )
 
     def update(self, instance, validated_data):
-        languages = validated_data.pop('language_array', [])
-        licence = validated_data.pop('licence', None)
-        periodicity = validated_data.pop('frequency', None)
-        keywords = validated_data.pop('tag_name_array', [])
-        theme = validated_data.pop('category_titles', [])
+        languages = validated_data.pop("language_array", [])
+        licence = validated_data.pop("licence", None)
+        periodicity = validated_data.pop("frequency", None)
+        keywords = validated_data.pop("tag_name_array", [])
+        theme = validated_data.pop("category_titles", [])
 
         # these fields are not saved in the old code
-        validated_data.pop('publisher', None)
-        validated_data.pop('contactPoint', None)
-        validated_data.pop('landingPage', None)
+        validated_data.pop("publisher", None)
+        validated_data.pop("contactPoint", None)
+        validated_data.pop("landingPage", None)
 
         instance = super().update(instance, validated_data)
         if languages:
             instance.language = " ".join(languages)
-        if licence and Licence.objects.filter(identifier=licence['identifier']).exists():
-            instance.licence = Licence.objects.filter(identifier=licence['identifier']).first()
-        if periodicity and Frequency.objects.filter(title=periodicity['title']).exists():
-            instance.frequency = Frequency.objects.filter(title=periodicity['title']).first()
+        if (
+            licence
+            and Licence.objects.filter(identifier=licence["identifier"]).exists()
+        ):
+            instance.licence = Licence.objects.filter(
+                identifier=licence["identifier"]
+            ).first()
+        if (
+            periodicity
+            and Frequency.objects.filter(title=periodicity["title"]).exists()
+        ):
+            instance.frequency = Frequency.objects.filter(
+                title=periodicity["title"]
+            ).first()
         if theme and Category.objects.filter(title__in=theme).exists():
             instance.category.clear()
             for category in Category.objects.filter(title__in=theme):
@@ -315,42 +322,46 @@ class PatchDatasetSerializer(PostDatasetSerializer):
                 instance.tags.add(tag)
         instance.save()
         set_comment(Dataset.EDITED)
-        set_user(self.context.get('user'))
+        set_user(self.context.get("user"))
         return instance
 
 
 class DatasetDistributionSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    file = serializers.CharField(required=False, label="", allow_blank=True, source="filename_without_path")
+    file = serializers.CharField(
+        required=False, label="", allow_blank=True, source="filename_without_path"
+    )
     id = serializers.IntegerField(required=False, label="")
     issued = serializers.CharField(required=False, allow_blank=True, label="")
     municipality = serializers.CharField(required=False, allow_blank=True, label="")
-    periodEnd = serializers.DateField(required=False, label="", source='period_end')
-    periodStart = serializers.DateField(required=False, label="", source='period_start')
+    periodEnd = serializers.DateField(required=False, label="", source="period_end")
+    periodStart = serializers.DateField(required=False, label="", source="period_start")
     region = serializers.CharField(required=False, allow_blank=True, label="")
     title = serializers.CharField(required=False, allow_blank=True, label="")
     type = serializers.CharField(required=False, allow_blank=True, label="")
     url = serializers.SerializerMethodField(required=False, label="")
-    version = serializers.IntegerField(required=False, label="", source="distribution_version")
+    version = serializers.IntegerField(
+        required=False, label="", source="distribution_version"
+    )
     geo_location = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:
         model = DatasetDistribution
         fields = [
-            'description',
-            'file',
-            'id',
-            'issued',
-            'municipality',
-            'periodEnd',
-            'periodStart',
-            'region',
-            'geo_location',
-            'title',
-            'type',
-            'url',
-            'version',
-            'upload_to_storage'
+            "description",
+            "file",
+            "id",
+            "issued",
+            "municipality",
+            "periodEnd",
+            "periodStart",
+            "region",
+            "geo_location",
+            "title",
+            "type",
+            "url",
+            "version",
+            "upload_to_storage",
         ]
 
     def get_url(self, obj):
@@ -358,7 +369,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
             return obj.download_url
         else:
             dataset_url = ""
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request:
                 domain = get_current_domain(request)
                 dataset_url = f"{domain}{obj.dataset.get_absolute_url()}"
@@ -371,7 +382,11 @@ class UploadToStorageSerializer(DatasetDistributionSerializer):
     update_interval = serializers.SerializerMethodField()
 
     class Meta(DatasetDistributionSerializer.Meta):
-        fields = DatasetDistributionSerializer.Meta.fields + ['organization_id', 'dataset_id', 'update_interval']
+        fields = DatasetDistributionSerializer.Meta.fields + [
+            "organization_id",
+            "dataset_id",
+            "update_interval",
+        ]
 
     def get_organization_id(self, obj):
         if obj.dataset.organization:
@@ -403,20 +418,20 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
-            'title',
-            'created',
-            'user',
-            'organization',
-            'comment_object',
-            'status',
-            'type',
-            'role',
-            'comment',
-            'due_date',
-            'assigned',
-            'completed',
-            'description',
-            'content_object'
+            "title",
+            "created",
+            "user",
+            "organization",
+            "comment_object",
+            "status",
+            "type",
+            "role",
+            "comment",
+            "due_date",
+            "assigned",
+            "completed",
+            "description",
+            "content_object",
         ]
 
 
@@ -428,68 +443,77 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
 
     class Meta(DatasetDistributionSerializer.Meta):
         fields = [
-            'description',
-            'file',
-            'issued',
-            'municipality',
-            'overwrite',
-            'periodEnd',
-            'periodStart',
-            'region',
-            'title',
-            'url',
-            'version',
+            "description",
+            "file",
+            "issued",
+            "municipality",
+            "overwrite",
+            "periodEnd",
+            "periodStart",
+            "region",
+            "title",
+            "url",
+            "version",
         ]
 
     def validate(self, data):
-        file = data.get('file')
-        url = data.get('url')
+        file = data.get("file")
+        url = data.get("url")
         if file:
             try:
                 validate_file(file)
             except ValidationError as e:
-                raise serializers.ValidationError({'file': e})
+                raise serializers.ValidationError({"file": e})
         if not file and not url:
-            raise serializers.ValidationError({
-                'file': _("file' arba 'url' laukui turi būti priskirta reikšmė"),
-                'url': _("file' arba 'url' laukui turi būti priskirta reikšmė")
-            })
+            raise serializers.ValidationError(
+                {
+                    "file": _("file' arba 'url' laukui turi būti priskirta reikšmė"),
+                    "url": _("file' arba 'url' laukui turi būti priskirta reikšmė"),
+                }
+            )
         if file and url:
-            raise serializers.ValidationError({
-                'file': _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
-                'url': _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
-            })
+            raise serializers.ValidationError(
+                {
+                    "file": _(
+                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
+                    ),
+                    "url": _(
+                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
+                    ),
+                }
+            )
         return data
 
     def overwrite_file(self, validated_data):
-        return validated_data.pop('overwrite', False)
+        return validated_data.pop("overwrite", False)
 
     def create(self, validated_data):
-        issued = validated_data.get('issued', None)
-        file = validated_data.pop('file', None)
-        region = validated_data.pop('region', None)
-        municipality = validated_data.pop('municipality', None)
-        url = validated_data.pop('url', None)
+        issued = validated_data.get("issued", None)
+        file = validated_data.pop("file", None)
+        region = validated_data.pop("region", None)
+        municipality = validated_data.pop("municipality", None)
+        url = validated_data.pop("url", None)
         overwrite = self.overwrite_file(validated_data)
 
-        dataset = self.context.get('dataset')
-        validated_data.update({
-            'dataset': dataset
-        })
+        dataset = self.context.get("dataset")
+        validated_data.update({"dataset": dataset})
 
         # if overwrite True, try to look for existing distribution
         upload_to = DatasetDistribution.UPLOAD_TO
         upload_folder = None
-        folders = upload_to.split('/')
+        folders = upload_to.split("/")
         for folder_name in folders:
             upload_folder, created = Folder.objects.get_or_create(
-                name=folder_name,
-                parent=upload_folder
+                name=folder_name, parent=upload_folder
             )
 
-        if overwrite and file and dataset.datasetdistribution_set.filter(
-            file__folder=upload_folder,
-            file__original_filename=file.name,
+        if (
+            overwrite
+            and file
+            and dataset.datasetdistribution_set.filter(
+                file__folder=upload_folder,
+                file__original_filename=file.name,
+            )
         ):
             instance = dataset.datasetdistribution_set.filter(
                 file__folder=upload_folder,
@@ -508,9 +532,7 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
             instance.geo_location = f"{region} {municipality}"
         if file:
             instance.file = File.objects.create(
-                file=file,
-                original_filename=file.name,
-                folder=upload_folder
+                file=file, original_filename=file.name, folder=upload_folder
             )
             instance.type = "FILE"
         elif url:
@@ -523,19 +545,18 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
 
 
 class PutDatasetDistributionSerializer(PostDatasetDistributionSerializer):
-
     class Meta(PostDatasetDistributionSerializer.Meta):
         fields = [
-            'description',
-            'file',
-            'issued',
-            'municipality',
-            'periodEnd',
-            'periodStart',
-            'region',
-            'title',
-            'url',
-            'version',
+            "description",
+            "file",
+            "issued",
+            "municipality",
+            "periodEnd",
+            "periodStart",
+            "region",
+            "title",
+            "url",
+            "version",
         ]
 
     def overwrite_file(self, validated_data):
@@ -549,37 +570,43 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
 
     class Meta(DatasetSerializer.Meta):
         fields = [
-            'description',
-            'file',
-            'issued',
-            'municipality',
-            'periodEnd',
-            'periodStart',
-            'region',
-            'title',
-            'url'
+            "description",
+            "file",
+            "issued",
+            "municipality",
+            "periodEnd",
+            "periodStart",
+            "region",
+            "title",
+            "url",
         ]
 
     def validate(self, data):
-        file = data.get('file')
-        url = data.get('url')
+        file = data.get("file")
+        url = data.get("url")
         if file:
             try:
                 validate_file(file)
             except ValidationError as e:
-                raise serializers.ValidationError({'file': e})
+                raise serializers.ValidationError({"file": e})
         if file and url:
-            raise serializers.ValidationError({
-                'file': _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
-                'url': _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
-            })
+            raise serializers.ValidationError(
+                {
+                    "file": _(
+                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
+                    ),
+                    "url": _(
+                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
+                    ),
+                }
+            )
         return data
 
     def update(self, instance, validated_data):
-        file = validated_data.pop('file', None)
-        region = validated_data.pop('region', None)
-        municipality = validated_data.pop('municipality', None)
-        url = validated_data.pop('url', None)
+        file = validated_data.pop("file", None)
+        region = validated_data.pop("region", None)
+        municipality = validated_data.pop("municipality", None)
+        url = validated_data.pop("url", None)
 
         instance = super().update(instance, validated_data)
         if region and not municipality:
@@ -591,16 +618,13 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
         if file:
             upload_to = DatasetDistribution.UPLOAD_TO
             upload_folder = None
-            folders = upload_to.split('/')
+            folders = upload_to.split("/")
             for folder_name in folders:
                 upload_folder, created = Folder.objects.get_or_create(
-                    name=folder_name,
-                    parent=upload_folder
+                    name=folder_name, parent=upload_folder
                 )
             instance.file = File.objects.create(
-                file=file,
-                original_filename=file.name,
-                folder=upload_folder
+                file=file, original_filename=file.name, folder=upload_folder
             )
             instance.type = "FILE"
             instance.download_url = None
@@ -618,20 +642,17 @@ class DatasetStructureSerializer(serializers.ModelSerializer):
     size = serializers.IntegerField(required=False, label="file_size")
     title = serializers.CharField(required=False, allow_blank=True, label="")
     filename = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        label="",
-        source="filename_without_path"
+        required=False, allow_blank=True, label="", source="filename_without_path"
     )
 
     class Meta:
         model = DatasetStructure
         fields = [
-            'created',
-            'filename',
-            'id',
-            'size',
-            'title',
+            "created",
+            "filename",
+            "id",
+            "size",
+            "title",
         ]
 
 
@@ -641,40 +662,32 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DatasetStructure
-        fields = [
-            'file',
-            'title'
-        ]
+        fields = ["file", "title"]
 
     def validate(self, data):
-        file = data.get('file')
+        file = data.get("file")
         if file:
             try:
                 validate_file(file)
             except ValidationError as e:
-                raise serializers.ValidationError({'file': e})
+                raise serializers.ValidationError({"file": e})
         return data
 
     def create(self, validated_data):
-        file = validated_data.pop('file', None)
-        dataset = self.context.get('dataset')
-        validated_data.update({
-            'dataset': dataset
-        })
+        file = validated_data.pop("file", None)
+        dataset = self.context.get("dataset")
+        validated_data.update({"dataset": dataset})
         instance = super().create(validated_data)
         if file:
             upload_to = DatasetStructure.UPLOAD_TO
             upload_folder = None
-            folders = upload_to.split('/')
+            folders = upload_to.split("/")
             for folder_name in folders:
                 upload_folder, created = Folder.objects.get_or_create(
-                    name=folder_name,
-                    parent=upload_folder
+                    name=folder_name, parent=upload_folder
                 )
             instance.file = File.objects.create(
-                file=file,
-                original_filename=file.name,
-                folder=upload_folder
+                file=file, original_filename=file.name, folder=upload_folder
             )
             instance.save()
             dataset.current_structure = instance
@@ -685,17 +698,25 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
 class ModelDownloadStatsSerializer(serializers.Serializer):
     source = serializers.CharField(required=True, allow_blank=False, label="")
     model = serializers.CharField(required=True, allow_blank=False, label="")
-    format = serializers.CharField(required=True, allow_blank=False, label="", source="model_format")
-    time = serializers.DateTimeField(required=True, allow_null=False, label="", source="created")
-    requests = serializers.IntegerField(required=True, allow_null=False, label="", source="model_requests")
-    objects = serializers.IntegerField(required=True, allow_null=False, label="", source="model_objects")
+    format = serializers.CharField(
+        required=True, allow_blank=False, label="", source="model_format"
+    )
+    time = serializers.DateTimeField(
+        required=True, allow_null=False, label="", source="created"
+    )
+    requests = serializers.IntegerField(
+        required=True, allow_null=False, label="", source="model_requests"
+    )
+    objects = serializers.IntegerField(
+        required=True, allow_null=False, label="", source="model_objects"
+    )
 
     def create(self, validated_data):
         return ModelDownloadStats(id=None, **validated_data)
 
     def validate(self, data):
-        if hasattr(self, 'initial_data'):
+        if hasattr(self, "initial_data"):
             extra_fields = set(self.initial_data.keys()) - set(self.fields.keys())
             if extra_fields:
-                raise ValidationError('Extra fields %s in payload' % extra_fields)
+                raise ValidationError("Extra fields %s in payload" % extra_fields)
         return data

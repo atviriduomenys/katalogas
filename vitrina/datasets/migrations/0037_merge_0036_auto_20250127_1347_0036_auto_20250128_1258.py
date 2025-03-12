@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0036_auto_20250127_1347'),
-        ('vitrina_datasets', '0036_auto_20250128_1258'),
+        ("vitrina_datasets", "0036_auto_20250127_1347"),
+        ("vitrina_datasets", "0036_auto_20250128_1258"),
     ]
 
-    operations = [
-    ]
+    operations = []

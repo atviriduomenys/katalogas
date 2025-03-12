@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class CatalogsConfig(AppConfig):
-    name = 'vitrina.catalogs'
-    label = 'vitrina_catalogs'
+    name = "vitrina.catalogs"
+    label = "vitrina_catalogs"

@@ -5,16 +5,21 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0017_auto_20241115_0926'),
-        ('vitrina_orgs', '0032_auto_20241108_0942'),
+        ("vitrina_classifiers", "0017_auto_20241115_0926"),
+        ("vitrina_orgs", "0032_auto_20241108_0942"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='organization',
-            name='jurisdiction',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.SET_DEFAULT, related_name='organization_set', to='vitrina_classifiers.areaofmanagement', verbose_name='Valdymo sritis'),
+            model_name="organization",
+            name="jurisdiction",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.SET_DEFAULT,
+                related_name="organization_set",
+                to="vitrina_classifiers.areaofmanagement",
+                verbose_name="Valdymo sritis",
+            ),
         ),
     ]

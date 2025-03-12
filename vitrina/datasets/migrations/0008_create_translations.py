@@ -6,38 +6,37 @@ def fix_null_fields(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     for object in Dataset.objects.all():
         if not object.description_old:
-            object.description_old = ''
+            object.description_old = ""
         if not object.title_old:
-            object.title_old = ''
+            object.title_old = ""
         if not object.title_en_old:
-            object.title_en_old = ''
+            object.title_en_old = ""
         if not object.description_en_old:
-            object.description_en_old = ''
+            object.description_en_old = ""
         object.save()
 
 
 def create_translations(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
-    DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
+    DatasetTranslation = apps.get_model("vitrina_datasets", "DatasetTranslation")
     for object in Dataset.objects.all():
         DatasetTranslation.objects.create(
             master_id=object.pk,
-            language_code='lt',
+            language_code="lt",
             title=object.title_old,
-            description=object.description_old
+            description=object.description_old,
         )
         DatasetTranslation.objects.create(
             master_id=object.pk,
-            language_code='en',
+            language_code="en",
             title=object.title_en_old,
-            description=object.description_en_old
+            description=object.description_en_old,
         )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0007_create_translation_model'),
+        ("vitrina_datasets", "0007_create_translation_model"),
     ]
 
     operations = [

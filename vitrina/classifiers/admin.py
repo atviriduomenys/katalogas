@@ -6,8 +6,14 @@ from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
 from vitrina.classifiers.forms import AreaOfManagementAdminForm
-from vitrina.classifiers.models import Category, AreaOfManagement, GeoportalCategory, GeoportalFrequency, \
-    GeoportalLicence, GeoportalAccessRights
+from vitrina.classifiers.models import (
+    Category,
+    AreaOfManagement,
+    GeoportalCategory,
+    GeoportalFrequency,
+    GeoportalLicence,
+    GeoportalAccessRights,
+)
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
 from vitrina.orgs.helpers import get_or_create_parent_org
@@ -17,9 +23,9 @@ from vitrina.orgs.models import Organization
 class RootCategoryFilter(admin.SimpleListFilter):
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
-    title = _('kategoriją')
+    title = _("kategoriją")
 
-    parameter_name = 'root'
+    parameter_name = "root"
 
     def lookups(self, request, model_admin):
         for cat in Category.objects.filter(depth=1):
@@ -35,21 +41,27 @@ class RootCategoryFilter(admin.SimpleListFilter):
 class CategoryAdmin(TreeAdmin):
     form = movenodeform_factory(Category)
     list_display = [
-        'title',
-        'numchild',
+        "title",
+        "numchild",
     ]
     list_filter = [
         RootCategoryFilter,
-        'groups',
+        "groups",
     ]
-    search_fields = (
-        'title',
-    )
+    search_fields = ("title",)
 
 
 class LicenceAdmin(admin.ModelAdmin):
-    list_display = ('title', 'is_default',)
-    fields = ('title', 'description', 'url', 'is_default',)
+    list_display = (
+        "title",
+        "is_default",
+    )
+    fields = (
+        "title",
+        "description",
+        "url",
+        "is_default",
+    )
 
     def save_model(self, request, obj, form, change):
         if obj.is_default:
@@ -58,8 +70,14 @@ class LicenceAdmin(admin.ModelAdmin):
 
 
 class FrequencyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'is_default', 'hours')
-    fields = ('title', 'title_en', 'hours', 'uri', 'is_default',)
+    list_display = ("title", "is_default", "hours")
+    fields = (
+        "title",
+        "title_en",
+        "hours",
+        "uri",
+        "is_default",
+    )
 
     def save_model(self, request, obj, form, change):
         if obj.is_default:
@@ -69,26 +87,29 @@ class FrequencyAdmin(admin.ModelAdmin):
 
 class AreaOfManagementAdmin(admin.ModelAdmin):
     form = AreaOfManagementAdminForm
-    list_display = ('name_lt_verbose', 'organization_count')
-    fields = ('name_lt', 'name_en', 'organizations')
-    search_fields = ('name_lt', 'name_en')
+    list_display = ("name_lt_verbose", "organization_count")
+    fields = ("name_lt", "name_en", "organizations")
+    search_fields = ("name_lt", "name_en")
 
     def get_organizations(self, obj):
         return ", ".join([org.name for org in obj.organization_set.all()])
-    get_organizations.short_description = _('organizacijos')
+
+    get_organizations.short_description = _("organizacijos")
 
     def organization_count(self, obj):
         return obj.organization_set.count()
-    organization_count.short_description = _('Priskirtų organizacijų kiekis')
+
+    organization_count.short_description = _("Priskirtų organizacijų kiekis")
 
     def name_lt_verbose(self, obj):
         return obj.name_lt
-    name_lt_verbose.short_description = _('Pavadinimas')
+
+    name_lt_verbose.short_description = _("Pavadinimas")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         current_orgs = set(obj.organization_set.all())
-        new_orgs = set(form.cleaned_data.get('organizations', []))
+        new_orgs = set(form.cleaned_data.get("organizations", []))
 
         orgs_to_remove = current_orgs - new_orgs
         orgs_to_add = new_orgs - current_orgs
@@ -97,13 +118,13 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
 
         if orgs_to_remove:
             unassigned_area = AreaOfManagement.objects.get(pk=1)  # Unassigned
-            unassigned_parent = Organization.objects.get(title='Nepriskirta')
+            unassigned_parent = Organization.objects.get(title="Nepriskirta")
 
             for org in orgs_to_remove:
                 org.jurisdiction = unassigned_area
                 org.save()
                 # Update hierarchy tree
-                org.move(unassigned_parent, 'sorted-child')
+                org.move(unassigned_parent, "sorted-child")
                 org.refresh_from_db()
 
         if orgs_to_add:
@@ -113,61 +134,78 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
                 # Update hierarchy tree
                 if org.jurisdiction_id != 1:
                     parent_org = get_or_create_parent_org(obj)
-                    org.move(parent_org, 'sorted-child')
+                    org.move(parent_org, "sorted-child")
                     org.refresh_from_db()
 
         # Update organization name if area of management name is changed
-        if ('name_lt' in form.changed_data and
-                'name_lt' in form.initial and
-                Organization.objects.filter(title=form.initial['name_lt']).exists()):
-            org = Organization.objects.get(title=form.initial['name_lt'])
+        if (
+            "name_lt" in form.changed_data
+            and "name_lt" in form.initial
+            and Organization.objects.filter(title=form.initial["name_lt"]).exists()
+        ):
+            org = Organization.objects.get(title=form.initial["name_lt"])
             org.title = obj.name_lt
             org.save()
 
     def delete_model(self, request, obj):
         for org in obj.organization_set.all():
-            org.jurisdiction = AreaOfManagement.objects.get(pk=1) # Unassigned
+            org.jurisdiction = AreaOfManagement.objects.get(pk=1)  # Unassigned
             org.save()
         super().delete_model(request, obj)
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('organization_set')
+        return super().get_queryset(request).prefetch_related("organization_set")
 
     def history_view(self, request, object_id, extra_context=None):
         extra_context = extra_context or {}
-        extra_context['title'] = _("Valdymo srities koregavimo istorija")
+        extra_context["title"] = _("Valdymo srities koregavimo istorija")
         return super().history_view(request, object_id, extra_context=extra_context)
 
-    def add_view(self, request, form_url='', extra_context=None):
+    def add_view(self, request, form_url="", extra_context=None):
         extra_context = extra_context or {}
 
-        extra_context.update({
-            'title': _("Pridėti valdymo sritį"),
-            'show_save_and_add_another': False,
-            'show_save_and_continue': False
-        })
+        extra_context.update(
+            {
+                "title": _("Pridėti valdymo sritį"),
+                "show_save_and_add_another": False,
+                "show_save_and_continue": False,
+            }
+        )
         return super().add_view(request, form_url, extra_context)
 
 
 class GeoportalCategoryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'categories_display',)
-    autocomplete_fields = ['categories']
+    list_display = (
+        "title",
+        "categories_display",
+    )
+    autocomplete_fields = ["categories"]
 
     def categories_display(self, obj):
         return mark_safe("<br/>".join([cat.title for cat in obj.categories.all()]))
-    categories_display.short_description = _('Kategorijos')
+
+    categories_display.short_description = _("Kategorijos")
 
 
 class GeoportalFrequencyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'frequency',)
+    list_display = (
+        "title",
+        "frequency",
+    )
 
 
 class GeoportalLicenceAdmin(admin.ModelAdmin):
-    list_display = ('title', 'licence',)
+    list_display = (
+        "title",
+        "licence",
+    )
 
 
 class GeoportalAccessRightsAdmin(admin.ModelAdmin):
-    list_display = ('title', 'access_rights',)
+    list_display = (
+        "title",
+        "access_rights",
+    )
 
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)

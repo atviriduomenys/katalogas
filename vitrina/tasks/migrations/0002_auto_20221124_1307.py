@@ -6,15 +6,18 @@ from django.utils.timezone import utc
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_tasks', '0001_initial'),
+        ("vitrina_tasks", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='status',
-            field=models.CharField(choices=[('created', 'Sukurta'), ('completed', 'Atlikta')], default='created', max_length=255),
+            model_name="task",
+            name="status",
+            field=models.CharField(
+                choices=[("created", "Sukurta"), ("completed", "Atlikta")],
+                default="created",
+                max_length=255,
+            ),
         ),
     ]

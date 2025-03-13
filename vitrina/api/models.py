@@ -65,7 +65,6 @@ class ApiDescription(models.Model):
     title = models.CharField(blank=True, null=True, max_length=255)
 
     class Meta:
-        managed = False
         db_table = "api_description"
 
 

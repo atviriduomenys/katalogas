@@ -21,25 +21,18 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Model
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from django.template.loader import render_to_string, get_template
-from django.template import engines, Template, Context
+from django.template.loader import get_template
+from django.template import Template, Context
 from filer.validation import validate_upload
 
 from vitrina import settings
-from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.helpers import is_org_dataset_list
 from haystack.forms import FacetedSearchForm
 
 from crispy_forms.layout import Div, Submit
 from vitrina.messages.models import EmailTemplate, SentMail
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from vitrina.messages.models import EmailTemplate
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
-from vitrina.messages.models import SentMail
-from django.template.loaders.app_directories import Loader
 
 
 class Filter:
@@ -56,7 +49,7 @@ class Filter:
             List[
                 Tuple[
                     Union[str, int],  # Field value
-                    int,              # Matching objects count
+                    int,  # Matching objects count
                 ],
             ],
         ],
@@ -68,13 +61,13 @@ class Filter:
         multiple: bool = False,
         is_int: bool = True,
         # For tree-like filters
-        parent: str = '',
+        parent: str = "",
         stats: bool = True,
         display_method: str = None,
         use_str: bool = False,
         remove_search_query: bool = False,
         order: classmethod = None,
-        expand: bool = True
+        expand: bool = True,
     ):
         self.name = name
         self.title = title
@@ -94,14 +87,14 @@ class Filter:
         self.expand = expand
 
     def get_stats_url(self):
-        path = reverse(f'dataset-stats-{self.name}')
+        path = reverse(f"dataset-stats-{self.name}")
         query = self.request.GET.urlencode()
-        return f'{path}?{query}'
+        return f"{path}?{query}"
 
     def get_stats_url_request(self):
-        path = reverse(f'request-stats-{self.name}')
+        path = reverse(f"request-stats-{self.name}")
         query = self.request.GET.urlencode()
-        return f'{path}?{query}'
+        return f"{path}?{query}"
 
     def items(self):
         fields = self.fields
@@ -137,9 +130,12 @@ class Filter:
 
         show_count = 1
         for value, count in facet:
-
             title = value
-            if self.model and self.display_method and getattr(self.model, self.display_method):
+            if (
+                self.model
+                and self.display_method
+                and getattr(self.model, self.display_method)
+            ):
                 method = getattr(self.model, self.display_method)
                 title = method(self.model, value)
             elif self.model:
@@ -164,13 +160,15 @@ class Filter:
                 value=value,
                 title=title,
                 count=count,
-                selected=(
-                    value in selected
-                    if self.multiple else
-                    value == selected
+                selected=(value in selected if self.multiple else value == selected),
+                url=get_filter_url(
+                    self.request,
+                    self.name,
+                    value,
+                    is_selected,
+                    self.remove_search_query,
                 ),
-                url=get_filter_url(self.request, self.name, value, is_selected, self.remove_search_query),
-                hidden=show_count > self.limit
+                hidden=show_count > self.limit,
             )
             show_count += 1
 
@@ -182,12 +180,11 @@ class Filter:
 
 DateFacetItem = Tuple[
     datetime.datetime,  # value
-    int,                # count
+    int,  # count
 ]
 
 
 class Period:
-
     def facet_sort_key(self, facet_item: DateFacetItem):
         value, count = facet_item
         return self.get_value(value)
@@ -215,9 +212,8 @@ class Period:
 
 
 class Yearly(Period):
-
     def get_value(self, value: datetime.datetime) -> int:
-        return value.year, 'Y'
+        return value.year, "Y"
 
     def get_title(self, value: int) -> str:
         year, _ = value
@@ -228,10 +224,7 @@ class Yearly(Period):
         value: int,
     ) -> Tuple[datetime.date, datetime.date]:
         year, _ = value
-        return (
-            datetime.date(year, 1, 1),
-            datetime.date(year, 12, 31)
-        )
+        return (datetime.date(year, 1, 1), datetime.date(year, 12, 31))
 
 
 class Quarterly(Period):
@@ -243,7 +236,7 @@ class Quarterly(Period):
     }
 
     def get_value(self, value: datetime.datetime) -> Tuple[int, int]:
-        return (value.year, math.ceil(value.month / 3), 'Q')
+        return (value.year, math.ceil(value.month / 3), "Q")
 
     def get_title(self, value: Tuple[int, int]) -> str:
         year, quarter, _ = value
@@ -256,10 +249,7 @@ class Quarterly(Period):
         year, quarter, _ = value
         month = quarter * 3
         _, day = calendar.monthrange(year, month)
-        return (
-            datetime.date(year, month - 2, 1),
-            datetime.date(year, month, day)
-        )
+        return (datetime.date(year, month - 2, 1), datetime.date(year, month, day))
 
 
 class Monthly(Period):
@@ -279,11 +269,11 @@ class Monthly(Period):
     }
 
     def get_value(self, value: datetime.datetime) -> Tuple[int, int]:
-        return (value.year, value.month, 'M')
+        return (value.year, value.month, "M")
 
     def get_date(self, value: Tuple[int, int]) -> datetime.date:
         year, month, _ = value
-        return datetime.date(value.year, month, 1),
+        return (datetime.date(value.year, month, 1),)
 
     def get_title(self, value: int) -> str:
         year, month, _ = value
@@ -295,10 +285,7 @@ class Monthly(Period):
     ) -> Tuple[datetime.date, datetime.date]:
         year, month, _ = value
         _, day = calendar.monthrange(year, month)
-        return (
-            datetime.date(year, month, 1),
-            datetime.date(year, month, day)
-        )
+        return (datetime.date(year, month, 1), datetime.date(year, month, day))
 
 
 class DateFilter(Filter):
@@ -312,8 +299,8 @@ class DateFilter(Filter):
         fields = self.fields
         date_facet = fields[self.name]
 
-        date_from = self.form.cleaned_data.get('date_from')
-        date_to = self.form.cleaned_data.get('date_to')
+        date_from = self.form.cleaned_data.get("date_from")
+        date_to = self.form.cleaned_data.get("date_to")
 
         if date_from and date_to:
             facets = []
@@ -361,7 +348,7 @@ class FilterItem:
         count: int,
         selected: int,
         url: str,
-        hidden: bool = False
+        hidden: bool = False,
     ):
         self.name = value
         self.value = value
@@ -372,8 +359,12 @@ class FilterItem:
         self.hidden = hidden
 
 
-def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool = False, is_int: bool = True) \
-        -> Optional[List[Any]]:
+def get_selected_value(
+    form: FacetedSearchForm,
+    field_name: str,
+    multiple: bool = False,
+    is_int: bool = True,
+) -> Optional[List[Any]]:
     selected_value = [] if multiple else None
     for selected_facet in form.selected_facets:
         if selected_facet.split(":")[0] == "%s_exact" % field_name:
@@ -384,7 +375,11 @@ def get_selected_value(form: FacetedSearchForm, field_name: str, multiple: bool 
                 break
     if selected_value and is_int:
         try:
-            selected_value = [int(val) for val in selected_value] if multiple else int(selected_value)
+            selected_value = (
+                [int(val) for val in selected_value]
+                if multiple
+                else int(selected_value)
+            )
         except ValueError:
             return [] if multiple else None
     return selected_value
@@ -396,22 +391,22 @@ def get_filter_url(
     value: str,
     selected: bool = False,
     remove_search_query: bool = False,
-    facet_field: bool = True
+    facet_field: bool = True,
 ) -> str:
     query_dict = dict(request.GET.copy())
-    if 'page' in query_dict:
-        query_dict.pop('page')
-    if remove_search_query and 'q' in query_dict:
-        query_dict.pop('q')
+    if "page" in query_dict:
+        query_dict.pop("page")
+    if remove_search_query and "q" in query_dict:
+        query_dict.pop("q")
 
     if facet_field:
         if selected:
-            val = '%s_exact:%s' % (key, value)
-            if val in query_dict.get('selected_facets', []):
-                query_dict['selected_facets'].remove(val)
+            val = "%s_exact:%s" % (key, value)
+            if val in query_dict.get("selected_facets", []):
+                query_dict["selected_facets"].remove(val)
         else:
             if "selected_facets" in query_dict:
-                query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
+                query_dict["selected_facets"].append("%s_exact:%s" % (key, value))
             else:
                 query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
     else:
@@ -426,45 +421,19 @@ def get_date_filter_url(
     request: WSGIRequest,
     start: datetime.date,
     end: datetime.date,
-    selected: bool = False
+    selected: bool = False,
 ) -> str:
     query_dict = dict(request.GET.copy())
-    if 'page' in query_dict:
-        query_dict.pop('page')
+    if "page" in query_dict:
+        query_dict.pop("page")
     if selected:
-        val = '%s_exact:%s' % (key, value)
-        if val in query_dict.get('selected_facets', []):
-            query_dict['selected_facets'].remove(val)
-        if is_org_dataset_list(request) and key == 'organization':
-            if 'selected_facets' in query_dict:
-                query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
-            else:
-                query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
+        if "date_from" in query_dict:
+            query_dict.pop("date_from")
+        if "date_to" in query_dict:
+            query_dict.pop("date_to")
     else:
-        if "selected_facets" in query_dict:
-            query_dict["selected_facets"].append('%s_exact:%s' % (key, value))
-        else:
-            query_dict["selected_facets"] = "%s_exact:%s" % (key, value)
-    return "?" + urlencode(query_dict, True)
-
-
-def get_date_filter_url(
-    request: WSGIRequest,
-    start: datetime.date,
-    end: datetime.date,
-    selected: bool = False
-) -> str:
-    query_dict = dict(request.GET.copy())
-    if 'page' in query_dict:
-        query_dict.pop('page')
-    if selected:
-        if 'date_from' in query_dict:
-            query_dict.pop('date_from')
-        if 'date_to' in query_dict:
-            query_dict.pop('date_to')
-    else:
-        query_dict['date_from'] = start
-        query_dict['date_to'] = end
+        query_dict["date_from"] = start
+        query_dict["date_to"] = end
     return "?" + urlencode(query_dict, True)
 
 
@@ -473,7 +442,8 @@ def inline_fields(*args):
         Div(
             *args,
             css_class="field-body",
-        ), css_class="field is-horizontal",
+        ),
+        css_class="field is-horizontal",
     )
 
 
@@ -486,19 +456,21 @@ def buttons(*args):
 
 def submit(title=None):
     title = title or _("Patvirtinti")
-    return Submit('submit', title, css_class='button is-primary'),
+    return (Submit("submit", title, css_class="button is-primary"),)
 
 
 def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
     protocol = "https" if request.is_secure() or ensure_secure else "http"
     domain = Site.objects.get_current().domain
-    localhost = '127.0.0.1' in domain
+    localhost = "127.0.0.1" in domain
     if not localhost:
         return request.build_absolute_uri("%s://%s" % (protocol, domain))
     return request.build_absolute_uri(domain)
 
 
-def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
+def prepare_email_by_identifier(
+    email_identifier, base_template_content, email_title_subject, email_template_keys
+):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
     if not email_template:
         email_subject = email_title = email_title_subject
@@ -509,7 +481,7 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
             identifier=email_identifier,
             template=base_template_content,
             subject=_(email_title_subject),
-            title=_(email_title)
+            title=_(email_title),
         )
         created_template.save()
     else:
@@ -518,7 +490,7 @@ def prepare_email_by_identifier(email_identifier, base_template_content, email_t
         email_content = email_content.format(*email_template_keys)
         email_subject = str(email_template.subject)
 
-    return {'email_content': email_content, 'email_subject': email_subject}
+    return {"email_content": email_content, "email_subject": email_subject}
 
 
 def _get_email_tempate_from_db(name: str) -> EmailTemplate | None:
@@ -562,7 +534,7 @@ def email(
         subject_context = Context(context)
         subject = subject_template.render(subject_context)
 
-        content_to_save = markdown.markdown(''.join(read_data[2:]))
+        content_to_save = markdown.markdown("".join(read_data[2:]))
         template = Template(content_to_save)
         context = Context(context)
         content = template.render(context)
@@ -573,7 +545,7 @@ def email(
             identifier=email_identifier,
             template=content_to_save,
             subject=subject_template_text,
-            title=subject_template_text
+            title=subject_template_text,
         )
     try:
         send_mail(
@@ -586,8 +558,8 @@ def email(
         email_send = True
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", subject,
-                        _(str(content)), recipients, e)
+
+        logging.warning("Email was not sent", subject, _(str(content)), recipients, e)
         email_send = False
 
     SentMail.objects.create(
@@ -605,79 +577,123 @@ def email(
 def send_email_with_logging(email_data, email_list):
     try:
         send_mail(
-            subject=email_data['email_subject'],
-            message=email_data['email_content'],
+            subject=email_data["email_subject"],
+            message=email_data["email_content"],
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=email_list,
         )
     except Exception as e:
         import logging
-        logging.warning("Email was not sent", email_data['email_subject'],
-                        email_data['email_content'], email_list, e)
+
+        logging.warning(
+            "Email was not sent",
+            email_data["email_subject"],
+            email_data["email_content"],
+            email_list,
+            e,
+        )
 
 
-def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
+def get_stats_filter_options_based_on_model(
+    model, duration, sorting, indicator, filter=None
+):
     duration = {
-        'selected': duration,
-        'label': _("Laikotarpis"),
-        'fields': [
-            {'value': 'duration-yearly', 'label': _("Kas metus")},
-            {'value': 'duration-quarterly', 'label': _("Kas ketvirtį")},
-            {'value': 'duration-monthly', 'label': _("Kas mėnesį")},
-            {'value': 'duration-weekly', 'label': _("Kas savaitę")},
-            {'value': 'duration-daily', 'label': _("Kas dieną")}
+        "selected": duration,
+        "label": _("Laikotarpis"),
+        "fields": [
+            {"value": "duration-yearly", "label": _("Kas metus")},
+            {"value": "duration-quarterly", "label": _("Kas ketvirtį")},
+            {"value": "duration-monthly", "label": _("Kas mėnesį")},
+            {"value": "duration-weekly", "label": _("Kas savaitę")},
+            {"value": "duration-daily", "label": _("Kas dieną")},
         ],
     }
     sort = {
-            'selected': sorting,
-            'label': _("Rūšiuoti"),
-            'fields': [
-                {'value': 'sort-year-desc', 'label': _("Naujausi")},
-                {'value': 'sort-year-asc', 'label': _("Seniausi")},
-            ] if indicator == 'publication' else [
-                {'value': 'sort-asc', 'label': _("Mažiausias rodiklis")},
-                {'value': 'sort-desc', 'label': _("Didžiausias rodiklis")},
-            ]
-        }
+        "selected": sorting,
+        "label": _("Rūšiuoti"),
+        "fields": [
+            {"value": "sort-year-desc", "label": _("Naujausi")},
+            {"value": "sort-year-asc", "label": _("Seniausi")},
+        ]
+        if indicator == "publication"
+        else [
+            {"value": "sort-asc", "label": _("Mažiausias rodiklis")},
+            {"value": "sort-desc", "label": _("Didžiausias rodiklis")},
+        ],
+    }
     active_indicator = {
-        'selected': indicator,
-        'label': _("Rodiklis"),
+        "selected": indicator,
+        "label": _("Rodiklis"),
     }
     if model is Request:
-        active_indicator.update({
-                'fields': [
-                    {'value': 'request-count', 'label': _("Poreikių skaičius")},
-                    {'value': 'request-count-open', 'label': _("Poreikių skaičius (neatsakytų)")},
-                    {'value': 'request-count-late', 'label': _("Poreikių skaičius (vėluojančių)")},
+        active_indicator.update(
+            {
+                "fields": [
+                    {"value": "request-count", "label": _("Poreikių skaičius")},
+                    {
+                        "value": "request-count-open",
+                        "label": _("Poreikių skaičius (neatsakytų)"),
+                    },
+                    {
+                        "value": "request-count-late",
+                        "label": _("Poreikių skaičius (vėluojančių)"),
+                    },
                 ]
-            })
+            }
+        )
     if model is Dataset and filter:
-        active_indicator.update({
-            'fields': [
-                {'value': 'download-request-count', 'label': _("Atsisiuntimų (užklausų) skaičius")},
-                {'value': 'download-object-count', 'label': _("Atsisiuntimų (objektų) skaičius")},
-                {'value': 'object-count', 'label': _("Objektų skaičius")},
-                {'value': 'field-count', 'label': _("Savybių (duomenų laukų) skaičius")},
-                {'value': 'model-count', 'label': _("Esybių (modelių) skaičius")},
-                {'value': 'distribution-count', 'label': _("Duomenų šaltinių (distribucijų) skaičius")},
-                {'value': 'dataset-count', 'label': _("Duomenų rinkinių skaičius")},
-                {'value': 'request-count', 'label': _("Poreikių skaičius")},
-                {'value': 'project-count', 'label': _("Projektų skaičius")},
-            ] + ([{'value': 'level-average', 'label': _("Brandos lygis (vidurkis)")}] if filter != 'level' else [])
-        })
+        active_indicator.update(
+            {
+                "fields": [
+                    {
+                        "value": "download-request-count",
+                        "label": _("Atsisiuntimų (užklausų) skaičius"),
+                    },
+                    {
+                        "value": "download-object-count",
+                        "label": _("Atsisiuntimų (objektų) skaičius"),
+                    },
+                    {"value": "object-count", "label": _("Objektų skaičius")},
+                    {
+                        "value": "field-count",
+                        "label": _("Savybių (duomenų laukų) skaičius"),
+                    },
+                    {"value": "model-count", "label": _("Esybių (modelių) skaičius")},
+                    {
+                        "value": "distribution-count",
+                        "label": _("Duomenų šaltinių (distribucijų) skaičius"),
+                    },
+                    {"value": "dataset-count", "label": _("Duomenų rinkinių skaičius")},
+                    {"value": "request-count", "label": _("Poreikių skaičius")},
+                    {"value": "project-count", "label": _("Projektų skaičius")},
+                ]
+                + (
+                    [{"value": "level-average", "label": _("Brandos lygis (vidurkis)")}]
+                    if filter != "level"
+                    else []
+                )
+            }
+        )
     if model is Organization:
-        active_indicator.update({
-            'fields': [
-                {'value': 'organization-count', 'label': _("Organizacijų skaičius (pavaldžių)")},
-                {'value': 'coordinator-count', 'label': _("Koordinatorių skaičius")},
-                {'value': 'representative-count', 'label': _("Tvarkytojų skaičius")},
-            ]
-        })
-    return {
-        'duration': duration,
-        'sort': sort,
-        'indicator': active_indicator
-    }
+        active_indicator.update(
+            {
+                "fields": [
+                    {
+                        "value": "organization-count",
+                        "label": _("Organizacijų skaičius (pavaldžių)"),
+                    },
+                    {
+                        "value": "coordinator-count",
+                        "label": _("Koordinatorių skaičius"),
+                    },
+                    {
+                        "value": "representative-count",
+                        "label": _("Tvarkytojų skaičius"),
+                    },
+                ]
+            }
+        )
+    return {"duration": duration, "sort": sort, "indicator": active_indicator}
 
 
 def none_to_string(value):
@@ -693,16 +709,16 @@ def object_to_none(obj):
 
 
 def get_encoding(file_path):
-    with open(file_path, mode='rb') as f:
+    with open(file_path, mode="rb") as f:
         mark = f.readline(3)
-        if mark == b'\xef\xbb\xbf':
-            return 'utf-8-sig'
+        if mark == b"\xef\xbb\xbf":
+            return "utf-8-sig"
         else:
-            return 'utf-8'
+            return "utf-8"
 
 
 def validate_file(file):
-    mime_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+    mime_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
     validate_upload(
         file_name=file.name,
         file=file.file,

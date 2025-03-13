@@ -5,9 +5,9 @@ from vitrina.orgs.models import Organization
 
 class OrganizationIndex(SearchIndex, Indexable):
     text = EdgeNgramField(document=True, use_template=True)
-    title = CharField(model_attr='title')
-    title_s = CharField(model_attr='title', indexed=False, stored=True)
-    jurisdiction = MultiValueField(model_attr='jurisdiction__pk', null=True)
+    title = CharField(model_attr="title")
+    title_s = CharField(model_attr="title", indexed=False, stored=True)
+    jurisdiction = MultiValueField(model_attr="jurisdiction__pk", null=True)
 
     def get_model(self):
         return Organization

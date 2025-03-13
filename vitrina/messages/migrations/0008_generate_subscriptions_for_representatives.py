@@ -3,41 +3,38 @@ from django.db import migrations
 
 
 def generate_subscriptions(apps, schema_editor):
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
-    Subscription = apps.get_model("vitrina_messages", 'Subscription')
+    Representative = apps.get_model("vitrina_orgs", "Representative")
+    Subscription = apps.get_model("vitrina_messages", "Subscription")
 
     subscription_args = {
-        'dataset': {
-            'email_subscribed': True,
-            'dataset_comments_sub': True
+        "dataset": {"email_subscribed": True, "dataset_comments_sub": True},
+        "organization": {
+            "email_subscribed": True,
+            "dataset_comments_sub": True,
+            "request_comments_sub": True,
+            "project_comments_sub": True,
         },
-        'organization': {
-            'email_subscribed': True,
-            'dataset_comments_sub': True,
-            'request_comments_sub': True,
-            'project_comments_sub': True
-        }
     }
 
     for representative in Representative.objects.all():
-        if representative.content_type.model in subscription_args and representative.user:
+        if (
+            representative.content_type.model in subscription_args
+            and representative.user
+        ):
             Subscription.objects.update_or_create(
                 user=representative.user,
                 content_type=representative.content_type,
                 object_id=representative.object_id,
                 defaults={
-                    'sub_type': representative.content_type.model.upper(),
-                    **subscription_args[representative.content_type.model]
-                }
+                    "sub_type": representative.content_type.model.upper(),
+                    **subscription_args[representative.content_type.model],
+                },
             )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0007_auto_20231018_1301'),
+        ("vitrina_messages", "0007_auto_20231018_1301"),
     ]
 
-    operations = [
-        migrations.RunPython(generate_subscriptions)
-    ]
+    operations = [migrations.RunPython(generate_subscriptions)]

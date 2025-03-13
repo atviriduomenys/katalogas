@@ -4,21 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ViispKey',
+            name="ViispKey",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key_content', models.TextField(help_text='Pgp key content in base64 form', verbose_name='key_content')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "key_content",
+                    models.TextField(
+                        help_text="Pgp key content in base64 form",
+                        verbose_name="key_content",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'viispkey',
+                "db_table": "viispkey",
             },
         ),
     ]

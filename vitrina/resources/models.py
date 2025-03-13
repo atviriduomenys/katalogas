@@ -15,8 +15,8 @@ from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
 class FormatName(StrEnum):
-    API = 'API'
-    UAPI = 'UAPI'
+    API = "API"
+    UAPI = "UAPI"
 
 
 class Format(models.Model):
@@ -30,11 +30,15 @@ class Format(models.Model):
     mimetype = models.TextField(_("MIME tipas"), blank=True, null=True)
     rating = models.IntegerField(_("Vertinimas"), blank=True, null=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    uri = models.CharField(_("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
-    media_type_uri = models.CharField(_("Laikmenos tipo nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    uri = models.CharField(
+        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
+    media_type_uri = models.CharField(
+        _("Laikmenos tipo nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
 
     class Meta:
-        db_table = 'format'
+        db_table = "format"
         verbose_name = _("Formatas")
         verbose_name_plural = _("Formatai")
 
@@ -43,10 +47,12 @@ class Format(models.Model):
 
 
 class GeoportalFormat(models.Model):
-    format = models.ForeignKey(Format, verbose_name=_("Formatas"), on_delete=models.CASCADE)
+    format = models.ForeignKey(
+        Format, verbose_name=_("Formatas"), on_delete=models.CASCADE
+    )
 
     class Meta:
-        db_table = 'geoportal_format'
+        db_table = "geoportal_format"
         verbose_name = _("Geoportalo formatas")
         verbose_name_plural = _("Geoportalo formatai")
 
@@ -56,14 +62,12 @@ class GeoportalFormat(models.Model):
 
 class GeoportalFormatValue(models.Model):
     geoportal_format = models.ForeignKey(
-        GeoportalFormat,
-        verbose_name=_("Geoportalo formatas"),
-        on_delete=models.CASCADE
+        GeoportalFormat, verbose_name=_("Geoportalo formatas"), on_delete=models.CASCADE
     )
     value = models.CharField(_("Reikšmė"), max_length=255)
 
     class Meta:
-        db_table = 'geoportal_format_value'
+        db_table = "geoportal_format_value"
         verbose_name = _("Geoportalo formato reikšmė")
         verbose_name_plural = _("Geoportalo formato reikšmės")
 
@@ -81,7 +85,7 @@ class DistributionFormat(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'distribution_format'
+        db_table = "distribution_format"
 
 
 class DatasetDistribution(TranslatableModel):
@@ -101,10 +105,8 @@ class DatasetDistribution(TranslatableModel):
     access_url = models.CharField(
         max_length=255,
         blank=True,
-        verbose_name=_('Prieigos nuoroda'),
-        help_text=_(
-            'Nuoroda į svetainę iš kurios galima atsisiųsti duomenis.'
-        ),
+        verbose_name=_("Prieigos nuoroda"),
+        help_text=_("Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."),
     )
 
     format = models.ForeignKey(
@@ -112,16 +114,14 @@ class DatasetDistribution(TranslatableModel):
         models.SET_NULL,
         blank=False,
         null=True,
-        verbose_name=_('Duomenų formatas'),
+        verbose_name=_("Duomenų formatas"),
     )
 
     download_url = models.TextField(
         blank=True,
         null=True,
-        verbose_name=_('Atsisiuntimo nuoroda'),
-        help_text=_(
-            'Tiesioginė duomenų atsisiuntimo nuoroda.'
-        ),
+        verbose_name=_("Atsisiuntimo nuoroda"),
+        help_text=_("Tiesioginė duomenų atsisiuntimo nuoroda."),
     )
 
     file = FilerFileField(
@@ -129,40 +129,48 @@ class DatasetDistribution(TranslatableModel):
         null=True,
         related_name="file_distribution",
         on_delete=models.SET_NULL,
-        verbose_name=_('Duomenų failas'),
+        verbose_name=_("Duomenų failas"),
         help_text=_(
-            'Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir '
-            'įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų '
-            'Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų '
-            'atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) '
-            'duomenų failus, galima talpinti ir kataloge.'
+            "Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir "
+            "įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų "
+            "Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų "
+            "atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) "
+            "duomenų failus, galima talpinti ir kataloge."
         ),
     )
 
     geo_location = models.CharField(
         max_length=255,
         blank=True,
-        verbose_name=_('Geografinė aprėptis'),
+        verbose_name=_("Geografinė aprėptis"),
     )
     period_start = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_('Periodo pradžia'),
+        verbose_name=_("Periodo pradžia"),
     )
     period_end = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_('Periodo pabaiga'),
+        verbose_name=_("Periodo pabaiga"),
     )
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
-    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
-    upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
-    imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
+    data_service = models.ForeignKey(
+        Dataset, models.SET_NULL, null=True, related_name="data_service_distributions"
+    )
+    is_parameterized = models.BooleanField(
+        default=False, verbose_name=_("Parametrizuotas")
+    )
+    upload_to_storage = models.BooleanField(
+        default=False, verbose_name=_("Įkėlimas į saugyklą")
+    )
+    imported = models.BooleanField(
+        default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas")
+    )
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)
@@ -171,26 +179,35 @@ class DatasetDistribution(TranslatableModel):
     size = models.BigIntegerField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
 
-    metadata = GenericRelation('vitrina_structure.Metadata')
-    params = GenericRelation('vitrina_structure.Param')
+    metadata = GenericRelation("vitrina_structure.Metadata")
+    params = GenericRelation("vitrina_structure.Param")
 
     objects = TranslatableManager()
 
     class Meta:
-        db_table = 'dataset_distribution'
+        db_table = "dataset_distribution"
 
     def __str__(self):
-        return self.safe_translation_getter('title', language_code=self.get_current_language()) or ''
+        return (
+            self.safe_translation_getter(
+                "title", language_code=self.get_current_language()
+            )
+            or ""
+        )
 
     def extension(self) -> str:
         if self.file and self.file.file:
             path = pathlib.Path(self.file.file.name)
-            return path.suffix.lstrip('.').upper()
+            return path.suffix.lstrip(".").upper()
         else:
-            return ''
+            return ""
 
     def filename_without_path(self):
-        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
+        return (
+            pathlib.Path(self.file.file.name).name
+            if self.file and self.file.file
+            else ""
+        )
 
     def is_external_url(self):
         return True if self.download_url else False
@@ -209,10 +226,11 @@ class DatasetDistribution(TranslatableModel):
 
     def is_previewable(self):
         return (
-            self.file and self.file.file and
-            self.file.file.storage.exists(self.file.file.name) and
-            (self.extension() == "CSV" or self.extension() == "XLSX") and
-            self.file.file.size > 0
+            self.file
+            and self.file.file
+            and self.file.file.storage.exists(self.file.file.name)
+            and (self.extension() == "CSV" or self.extension() == "XLSX")
+            and self.file.file.size > 0
         )
 
     def get_acl_parents(self):
@@ -222,33 +240,36 @@ class DatasetDistribution(TranslatableModel):
         return parents
 
     def get_absolute_url(self):
-        return reverse('resource-detail', kwargs={
-            'pk': self.dataset.pk,
-            'resource_id': self.pk
-        })
+        return reverse(
+            "resource-detail", kwargs={"pk": self.dataset.pk, "resource_id": self.pk}
+        )
 
     def lt_title(self):
-        return self.safe_translation_getter('title', language_code='lt')
+        return self.safe_translation_getter("title", language_code="lt")
 
     def en_title(self):
-        return self.safe_translation_getter('title', language_code='en')
+        return self.safe_translation_getter("title", language_code="en")
 
     def lt_description(self):
-        return self.safe_translation_getter('description', language_code='lt')
+        return self.safe_translation_getter("description", language_code="lt")
 
     def en_description(self):
-        return self.safe_translation_getter('description', language_code='en')
+        return self.safe_translation_getter("description", language_code="en")
 
     def save_translations(self, *args, **kwargs):
         super(DatasetDistribution, self).save_translations(*args, **kwargs)
 
-        if not self.has_translation(language_code='en') or not self.en_title() or not self.en_description():
+        if (
+            not self.has_translation(language_code="en")
+            or not self.en_title()
+            or not self.en_description()
+        ):
             lt_title = self.lt_title()
             lt_description = self.lt_description()
 
-            if not self.has_translation(language_code='en'):
-                self.create_translation(language_code='en')
-            self.set_current_language('en')
+            if not self.has_translation(language_code="en"):
+                self.create_translation(language_code="en")
+            self.set_current_language("en")
 
             if lt_title and not self.en_title():
                 response_title = requests.post(
@@ -257,11 +278,11 @@ class DatasetDistribution(TranslatableModel):
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
                         "text": lt_title,
-                        "options": ""
+                        "options": "",
                     },
                     headers={
                         "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8"
+                        "Content-Type": "application/json; charset=utf-8",
                     },
                 )
                 en_title = response_title.json()
@@ -274,13 +295,12 @@ class DatasetDistribution(TranslatableModel):
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
                         "text": lt_description,
-                        "options": ""
+                        "options": "",
                     },
                     headers={
                         "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8"
+                        "Content-Type": "application/json; charset=utf-8",
                     },
                 )
                 en_description = response_desc.json()
                 self.description = en_description
-

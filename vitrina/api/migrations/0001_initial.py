@@ -5,55 +5,93 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('vitrina_orgs', '0013_auto_20221014_0904'),
+        ("vitrina_orgs", "0013_auto_20221014_0904"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ApiKey',
+            name="ApiKey",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('deleted', models.BooleanField(blank=True, null=True)),
-                ('deleted_on', models.DateTimeField(blank=True, null=True)),
-                ('version', models.IntegerField(default=1)),
-                ('api_key', models.CharField(blank=True, max_length=255, null=True)),
-                ('enabled', models.BooleanField(blank=True, null=True)),
-                ('expires', models.DateTimeField(blank=True, null=True)),
-                ('organization', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='vitrina_orgs.organization')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("modified", models.DateTimeField(auto_now=True, null=True)),
+                ("deleted", models.BooleanField(blank=True, null=True)),
+                ("deleted_on", models.DateTimeField(blank=True, null=True)),
+                ("version", models.IntegerField(default=1)),
+                ("api_key", models.CharField(blank=True, max_length=255, null=True)),
+                ("enabled", models.BooleanField(blank=True, null=True)),
+                ("expires", models.DateTimeField(blank=True, null=True)),
+                (
+                    "organization",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="vitrina_orgs.organization",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'api_key',
-                'managed': False,
+                "db_table": "api_key",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='ApiDescription',
+            name="ApiDescription",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('modified', models.DateTimeField(auto_now=True, null=True)),
-                ('deleted', models.BooleanField(blank=True, null=True)),
-                ('deleted_on', models.DateTimeField(blank=True, null=True)),
-                ('version', models.IntegerField(default=1)),
-                ('api_version', models.CharField(blank=True, max_length=255, null=True)),
-                ('contact_email', models.CharField(blank=True, max_length=255, null=True)),
-                ('contact_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('contact_url', models.CharField(blank=True, max_length=255, null=True)),
-                ('desription_html', models.TextField(blank=True, null=True)),
-                ('identifier', models.CharField(blank=True, max_length=255, null=True)),
-                ('licence', models.CharField(blank=True, max_length=255, null=True)),
-                ('licence_url', models.CharField(blank=True, max_length=255, null=True)),
-                ('title', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("modified", models.DateTimeField(auto_now=True, null=True)),
+                ("deleted", models.BooleanField(blank=True, null=True)),
+                ("deleted_on", models.DateTimeField(blank=True, null=True)),
+                ("version", models.IntegerField(default=1)),
+                (
+                    "api_version",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "contact_email",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "contact_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "contact_url",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("desription_html", models.TextField(blank=True, null=True)),
+                ("identifier", models.CharField(blank=True, max_length=255, null=True)),
+                ("licence", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "licence_url",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("title", models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'db_table': 'api_description',
-                'managed': False,
+                "db_table": "api_description",
+                "managed": False,
             },
         ),
     ]

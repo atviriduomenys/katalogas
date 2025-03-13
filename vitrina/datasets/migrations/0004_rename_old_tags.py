@@ -4,19 +4,18 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0003_auto_20220905_0914'),
+        ("vitrina_datasets", "0003_auto_20220905_0914"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='dataset',
+            name="dataset",
             options={},
         ),
         migrations.RenameField(
-            model_name='dataset',
-            old_name='tags',
-            new_name='tags_old',
+            model_name="dataset",
+            old_name="tags",
+            new_name="tags_old",
         ),
     ]

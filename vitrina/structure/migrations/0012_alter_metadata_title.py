@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0011_alter_metadata_description'),
+        ("vitrina_structure", "0011_alter_metadata_description"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='metadata',
-            name='title',
-            field=models.TextField(blank=True, null=True, verbose_name='Pavadinimas'),
+            model_name="metadata",
+            name="title",
+            field=models.TextField(blank=True, null=True, verbose_name="Pavadinimas"),
         ),
     ]

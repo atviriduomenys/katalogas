@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_api', '0008_alter_apiscope_dataset'),
+        ("vitrina_api", "0008_alter_apiscope_dataset"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='apiscope',
-            name='enabled',
+            model_name="apiscope",
+            name="enabled",
             field=models.BooleanField(blank=True, null=True),
         ),
     ]

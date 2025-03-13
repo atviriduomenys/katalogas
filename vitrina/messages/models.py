@@ -23,7 +23,7 @@ class EmailTemplate(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'email_template'
+        db_table = "email_template"
 
 
 class GlobalEmail(models.Model):
@@ -37,7 +37,7 @@ class GlobalEmail(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'global_email'
+        db_table = "global_email"
 
 
 class NewsletterSubscription(models.Model):
@@ -51,7 +51,7 @@ class NewsletterSubscription(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'newsletter_subscription'
+        db_table = "newsletter_subscription"
 
 
 class SentMail(models.Model):
@@ -64,11 +64,13 @@ class SentMail(models.Model):
     email_subject = models.TextField(blank=True, null=True, verbose_name="Tema")
     email_content = models.TextField(blank=True, null=True, verbose_name="Turinys")
     email_sent = models.BooleanField(blank=True, null=True, verbose_name="Išsiųsta")
-    identifier = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Identifikatorius"))
+    identifier = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name=_("Identifikatorius")
+    )
 
     class Meta:
         managed = True
-        db_table = 'sent_mail'
+        db_table = "sent_mail"
 
 
 # TODO: Make generic.
@@ -79,17 +81,21 @@ class UserSubscription(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
-    dataset = models.ForeignKey(Dataset, models.CASCADE, db_column='dataset', blank=True, null=True)
+    dataset = models.ForeignKey(
+        Dataset, models.CASCADE, db_column="dataset", blank=True, null=True
+    )
     # dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
-    user = models.ForeignKey(User, models.CASCADE, db_column='user', blank=True, null=True)
+    user = models.ForeignKey(
+        User, models.CASCADE, db_column="user", blank=True, null=True
+    )
     # user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
 
     active = models.BooleanField()
 
     class Meta:
         managed = True
-        db_table = 'user_dataset_subscription'
+        db_table = "user_dataset_subscription"
 
 
 class Subscription(models.Model):
@@ -103,36 +109,49 @@ class Subscription(models.Model):
         (DATASET, _("Duomenų rinkinio prenumerata")),
         (REQUEST, _("Poreikio prenumerata")),
         (PROJECT, _("Projekto prenumerata")),
-        (COMMENT, _("Komentaro prenumerata"))
+        (COMMENT, _("Komentaro prenumerata")),
     )
 
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_object = GenericForeignKey('content_type', 'object_id')
-    sub_type = models.CharField(max_length=255, choices=SUB_TYPE_CHOICES, blank=True, null=True,
-                                verbose_name=_('Prenumeratos tipas'))
-    email_subscribed = models.BooleanField(default=False,
-                                           verbose_name=_('Prenumeratos laiško užsisakymas'))
-    dataset_update_sub = models.BooleanField(default=False,
-                                             verbose_name=_('Susijusių duomenų rinkinių prenumerata'))
-    dataset_comments_sub = models.BooleanField(default=False,
-                                               verbose_name=_('Duomenų rinkinių komentarų prenumerata'))
-    request_update_sub = models.BooleanField(default=False,
-                                             verbose_name=_('Susijusių poreikių prenumerata'))
-    request_comments_sub = models.BooleanField(default=False,
-                                               verbose_name=_('Poreikių komentarų prenumerata'))
-    project_update_sub = models.BooleanField(default=False,
-                                             verbose_name=_('Susijusių projektų prenumerata'))
-    project_comments_sub = models.BooleanField(default=False,
-                                               verbose_name=_('Projektų komentarų prenumerata'))
-    comment_replies_sub = models.BooleanField(default=False,
-                                              verbose_name=_('Komentaro atsako prenumerata'))
+    content_object = GenericForeignKey("content_type", "object_id")
+    sub_type = models.CharField(
+        max_length=255,
+        choices=SUB_TYPE_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name=_("Prenumeratos tipas"),
+    )
+    email_subscribed = models.BooleanField(
+        default=False, verbose_name=_("Prenumeratos laiško užsisakymas")
+    )
+    dataset_update_sub = models.BooleanField(
+        default=False, verbose_name=_("Susijusių duomenų rinkinių prenumerata")
+    )
+    dataset_comments_sub = models.BooleanField(
+        default=False, verbose_name=_("Duomenų rinkinių komentarų prenumerata")
+    )
+    request_update_sub = models.BooleanField(
+        default=False, verbose_name=_("Susijusių poreikių prenumerata")
+    )
+    request_comments_sub = models.BooleanField(
+        default=False, verbose_name=_("Poreikių komentarų prenumerata")
+    )
+    project_update_sub = models.BooleanField(
+        default=False, verbose_name=_("Susijusių projektų prenumerata")
+    )
+    project_comments_sub = models.BooleanField(
+        default=False, verbose_name=_("Projektų komentarų prenumerata")
+    )
+    comment_replies_sub = models.BooleanField(
+        default=False, verbose_name=_("Komentaro atsako prenumerata")
+    )
 
     class Meta:
-        db_table = 'subscription'
-        unique_together = ['user', 'content_type', 'object_id']
+        db_table = "subscription"
+        unique_together = ["user", "content_type", "object_id"]
 
     def __str__(self):
         return str(self.user)

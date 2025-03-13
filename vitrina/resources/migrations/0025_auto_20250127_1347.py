@@ -4,20 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0024_auto_20250124_0828'),
+        ("vitrina_resources", "0024_auto_20250124_0828"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='format',
-            name='media_type_uri',
-            field=models.CharField(blank=True, max_length=255, verbose_name='Laikmenos tipo nuoroda į kontroliuojamą žodyną'),
+            model_name="format",
+            name="media_type_uri",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                verbose_name="Laikmenos tipo nuoroda į kontroliuojamą žodyną",
+            ),
         ),
         migrations.AlterField(
-            model_name='format',
-            name='uri',
-            field=models.CharField(blank=True, max_length=255, verbose_name='Formato nuoroda į kontroliuojamą žodyną'),
+            model_name="format",
+            name="uri",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                verbose_name="Formato nuoroda į kontroliuojamą žodyną",
+            ),
         ),
     ]

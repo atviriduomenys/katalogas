@@ -4,39 +4,38 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_comments', '0004_auto_20221024_1142'),
+        ("vitrina_comments", "0004_auto_20221024_1142"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='comment',
-            old_name='parent_id',
-            new_name='parent',
+            model_name="comment",
+            old_name="parent_id",
+            new_name="parent",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='author_id',
+            model_name="comment",
+            name="author_id",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='author_name',
+            model_name="comment",
+            name="author_name",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='dataset_id',
+            model_name="comment",
+            name="dataset_id",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='dataset_uuid',
+            model_name="comment",
+            name="dataset_uuid",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='ip_address',
+            model_name="comment",
+            name="ip_address",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='request_id',
+            model_name="comment",
+            name="request_id",
         ),
     ]

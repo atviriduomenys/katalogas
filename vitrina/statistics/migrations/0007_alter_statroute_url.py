@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0006_statroute_statroutetranslation'),
+        ("statistics", "0006_statroute_statroutetranslation"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='statroute',
-            name='url',
-            field=models.CharField(max_length=512, verbose_name='Nuoroda'),
+            model_name="statroute",
+            name="url",
+            field=models.CharField(max_length=512, verbose_name="Nuoroda"),
         ),
     ]

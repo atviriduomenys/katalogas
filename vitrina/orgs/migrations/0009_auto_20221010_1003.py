@@ -4,9 +4,9 @@ from django.db import migrations
 
 
 def update_organization_representatives(apps, schema_editor):
-    Organization = apps.get_model('vitrina_orgs', 'Organization')
-    Representative = apps.get_model('vitrina_orgs', 'Representative')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    Organization = apps.get_model("vitrina_orgs", "Organization")
+    Representative = apps.get_model("vitrina_orgs", "Representative")
+    ContentType = apps.get_model("contenttypes", "ContentType")
     for rep in Representative.objects.all():
         if rep.organization:
             rep.content_type = ContentType.objects.get_for_model(Organization)
@@ -15,10 +15,9 @@ def update_organization_representatives(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0008_auto_20221010_1001'),
-        ('vitrina_requests', '0001_initial')
+        ("vitrina_orgs", "0008_auto_20221010_1001"),
+        ("vitrina_requests", "0001_initial"),
     ]
 
     operations = [

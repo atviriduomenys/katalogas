@@ -4,26 +4,25 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_cms', '0001_initial'),
+        ("vitrina_cms", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='learningmaterial',
+            name="learningmaterial",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='externalsite',
+            name="externalsite",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='fileresource',
+            name="fileresource",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='newsitem',
+            name="newsitem",
             options={},
         ),
     ]

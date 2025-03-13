@@ -5,29 +5,41 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0020_auto_20250121_1551'),
+        ("vitrina_classifiers", "0020_auto_20250121_1551"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='geoportalcategory',
-            options={'verbose_name': 'Geoportalo kategorija', 'verbose_name_plural': 'Geoportalo kategorijos'},
+            name="geoportalcategory",
+            options={
+                "verbose_name": "Geoportalo kategorija",
+                "verbose_name_plural": "Geoportalo kategorijos",
+            },
         ),
         migrations.AlterField(
-            model_name='category',
-            name='icon',
-            field=models.CharField(blank=True, help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo', max_length=255),
+            model_name="category",
+            name="icon",
+            field=models.CharField(
+                blank=True,
+                help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo',
+                max_length=255,
+            ),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='numchild',
+            model_name="category",
+            name="numchild",
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='parent',
-            field=models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children_set', to='vitrina_classifiers.category'),
+            model_name="category",
+            name="parent",
+            field=models.ForeignKey(
+                editable=False,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="children_set",
+                to="vitrina_classifiers.category",
+            ),
         ),
     ]

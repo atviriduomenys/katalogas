@@ -7,7 +7,7 @@ from django.http import Http404
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina import settings
@@ -26,20 +26,17 @@ from vitrina.views import HistoryMixin
 
 
 class ResourceDetailView(
-    PermissionRequiredMixin,
-    HistoryMixin,
-    DatasetStructureMixin,
-    DetailView
+    PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView
 ):
-    template_name = 'vitrina/resources/detail.html'
+    template_name = "vitrina/resources/detail.html"
     model = DatasetDistribution
-    pk_url_kwarg = 'resource_id'
+    pk_url_kwarg = "resource_id"
 
     detail_url_name = "resource-detail"
     history_url_name = "dataset-history"
 
     def has_permission(self):
-        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         if dataset.is_public:
             return True
         else:
@@ -53,10 +50,10 @@ class ResourceDetailView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['resource'] = self.object
-        context['dataset'] = self.object.dataset
-        context['can_update'] = has_perm(self.request.user, Action.UPDATE, self.object)
-        context['can_view_members'] = has_perm(
+        context["resource"] = self.object
+        context["dataset"] = self.object.dataset
+        context["can_update"] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
             Representative,
@@ -64,9 +61,9 @@ class ResourceDetailView(
         )
         # TODO: use spinta POST /:inspect to fetch manifest after #477 is done
         # TODO: do not change to True until inspect is finished and html is correct
-        context['structure_acceptable'] = False
-        context['params'] = self.object.params.all().order_by('name')
-        context['models'] = self.object.model_set.all()
+        context["structure_acceptable"] = False
+        context["params"] = self.object.params.all().order_by("name")
+        context["models"] = self.object.model_set.all()
         return context
 
 
@@ -76,18 +73,20 @@ class ResourceCreateView(
     TranslatableCreateView,
 ):
     model = DatasetDistribution
-    template_name = 'vitrina/resources/form.html'
-    context_object_name = 'datasetdistribution'
+    template_name = "vitrina/resources/form.html"
+    context_object_name = "datasetdistribution"
     form_class = DatasetResourceForm
 
     dataset: Dataset
 
     def dispatch(self, request, *args, **kwargs):
-        self.dataset = get_object_or_404(Dataset, pk=kwargs.get('pk'))
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.CREATE, DatasetDistribution, self.dataset)
+        return has_perm(
+            self.request.user, Action.CREATE, DatasetDistribution, self.dataset
+        )
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -97,7 +96,7 @@ class ResourceCreateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _('Naujas duomenų rinkinio šaltinis')
+        context["current_title"] = _("Naujas duomenų rinkinio šaltinis")
         return context
 
     def get(self, request, *args, **kwargs):
@@ -108,17 +107,22 @@ class ResourceCreateView(
         resource.dataset = self.dataset
         resource.save()
 
-        name = form.cleaned_data.get('name')
+        name = form.cleaned_data.get("name")
         if not name:
-            name = Metadata.objects.filter(
-                dataset=self.dataset,
-                content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                name__iregex=r"resource[0-9]+"
-            ).order_by('name').values_list('name', flat=True).last()
+            name = (
+                Metadata.objects.filter(
+                    dataset=self.dataset,
+                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                    name__iregex=r"resource[0-9]+",
+                )
+                .order_by("name")
+                .values_list("name", flat=True)
+                .last()
+            )
             if not name:
-                name = 'resource1'
+                name = "resource1"
             else:
-                n = name.replace('resource', '')
+                n = name.replace("resource", "")
                 try:
                     n = int(n)
                 except ValueError:
@@ -132,7 +136,7 @@ class ResourceCreateView(
             object_id=resource.pk,
             name=name,
             prepare_ast={},
-            access=form.cleaned_data.get('access') or None,
+            access=form.cleaned_data.get("access") or None,
             version=1,
         )
 
@@ -140,24 +144,28 @@ class ResourceCreateView(
             dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
             for plan in dataset_plans:
                 if (
-                        plan.planrequest_set.filter(
-                            request__status=Request.OPENED
-                        ).count() == plan.planrequest_set.count() and
-                        plan.plandataset_set.annotate(
-                            has_distributions=Exists(DatasetDistribution.objects.filter(
-                                dataset_id=OuterRef('dataset_id'),
-                            ))
-                        ).count() == plan.plandataset_set.count()
+                    plan.planrequest_set.filter(request__status=Request.OPENED).count()
+                    == plan.planrequest_set.count()
+                    and plan.plandataset_set.annotate(
+                        has_distributions=Exists(
+                            DatasetDistribution.objects.filter(
+                                dataset_id=OuterRef("dataset_id"),
+                            )
+                        )
+                    ).count()
+                    == plan.plandataset_set.count()
                 ):
                     plan.is_closed = True
                     plan.save()
 
         if self.dataset.status != Dataset.HAS_DATA and self.dataset.is_public:
-            Comment.objects.create(content_type=ContentType.objects.get_for_model(self.dataset),
-                                   object_id=self.dataset.pk,
-                                   type=Comment.STATUS,
-                                   status=Comment.OPENED,
-                                   user=self.request.user)
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.dataset),
+                object_id=self.dataset.pk,
+                type=Comment.STATUS,
+                status=Comment.OPENED,
+                user=self.request.user,
+            )
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
@@ -166,34 +174,32 @@ class ResourceCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['dataset'] = self.dataset
+        kwargs["dataset"] = self.dataset
         return kwargs
 
 
 class ResourceUpdateView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    TranslatableUpdateView
+    LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView
 ):
     model = DatasetDistribution
-    template_name = 'vitrina/resources/form.html'
-    context_object_name = 'datasetdistribution'
+    template_name = "vitrina/resources/form.html"
+    context_object_name = "datasetdistribution"
     form_class = DatasetResourceForm
 
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.UPDATE, resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
             return redirect(resource.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _('Duomenų rinkinio šaltinio redagavimas')
+        context["current_title"] = _("Duomenų rinkinio šaltinio redagavimas")
         return context
 
     def get(self, request, *args, **kwargs):
@@ -201,17 +207,22 @@ class ResourceUpdateView(
 
     def form_valid(self, form):
         resource = form.save()
-        name = form.cleaned_data.get('name')
+        name = form.cleaned_data.get("name")
         if not name:
-            name = Metadata.objects.filter(
-                dataset=resource.dataset,
-                content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                name__iregex=r"resource[0-9]+"
-            ).order_by('name').values_list('name', flat=True).last()
+            name = (
+                Metadata.objects.filter(
+                    dataset=resource.dataset,
+                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                    name__iregex=r"resource[0-9]+",
+                )
+                .order_by("name")
+                .values_list("name", flat=True)
+                .last()
+            )
             if not name:
-                name = 'resource1'
+                name = "resource1"
             else:
-                n = name.replace('resource', '')
+                n = name.replace("resource", "")
                 try:
                     n = int(n)
                 except ValueError:
@@ -220,7 +231,7 @@ class ResourceUpdateView(
                 name = f"resource{n}"
         if metadata := resource.metadata.first():
             metadata.name = name
-            metadata.access = form.cleaned_data.get('access') or None
+            metadata.access = form.cleaned_data.get("access") or None
             metadata.version += 1
             metadata.save()
         else:
@@ -231,7 +242,7 @@ class ResourceUpdateView(
                 object_id=resource.pk,
                 name=name,
                 prepare_ast={},
-                access=form.cleaned_data.get('access') or None,
+                access=form.cleaned_data.get("access") or None,
                 version=1,
             )
         resource.save()
@@ -239,8 +250,8 @@ class ResourceUpdateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
-        kwargs['dataset'] = resource.dataset
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
+        kwargs["dataset"] = resource.dataset
         return kwargs
 
 
@@ -248,14 +259,14 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     model = DatasetDistribution
 
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.DELETE, resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
             return redirect(resource.dataset)
 
     def get(self, *args, **kwargs):
@@ -265,11 +276,14 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs['pk'])
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
         resource.delete()
 
-        if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:
+        if (
+            not DatasetDistribution.objects.filter(dataset=dataset)
+            and dataset.is_public
+        ):
             if dataset.plandataset_set.exists():
                 dataset.status = Dataset.PLANNED
                 comment_status = Comment.PLANNED
@@ -277,11 +291,13 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 dataset.status = Dataset.INVENTORED
                 comment_status = Comment.INVENTORED
 
-            Comment.objects.create(content_type=ContentType.objects.get_for_model(dataset),
-                                   object_id=dataset.pk,
-                                   type=Comment.STATUS,
-                                   status=comment_status,
-                                   user=self.request.user)
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(dataset),
+                object_id=dataset.pk,
+                type=Comment.STATUS,
+                status=comment_status,
+                user=self.request.user,
+            )
             dataset.save()
         return redirect(dataset)
 
@@ -290,17 +306,21 @@ class ResourceModelCreateView(ModelCreateView):
     resource: DatasetDistribution
 
     def dispatch(self, request, *args, **kwargs):
-        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs.get('resource_id'))
+        self.resource = get_object_or_404(
+            DatasetDistribution, pk=kwargs.get("resource_id")
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['current_title'] = _("Modelio pridėjimas")
-        context['parent_links'] = {
-            reverse('home'): _('Pradžia'),
-            reverse('dataset-list'): _('Duomenų rinkiniai'),
-            reverse('dataset-detail', args=[self.dataset.pk]): self.dataset.title,
-            reverse('resource-detail', args=[self.dataset.pk, self.resource.pk]): self.resource.title,
+        context["current_title"] = _("Modelio pridėjimas")
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
+            reverse(
+                "resource-detail", args=[self.dataset.pk, self.resource.pk]
+            ): self.resource.title,
         }
         return context
 
@@ -313,15 +333,12 @@ class ResourceModelCreateView(ModelCreateView):
 
 
 class DynamicResourceDetailView(
-    PermissionRequiredMixin,
-    HistoryMixin,
-    DatasetStructureMixin,
-    DetailView):
-
-    template_name = 'vitrina/resources/dynamic_detail.html'
+    PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView
+):
+    template_name = "vitrina/resources/dynamic_detail.html"
 
     def has_permission(self):
-        dataset = get_object_or_404(Dataset, id=self.kwargs['pk'])
+        dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         if dataset.is_public:
             return True
         else:
@@ -330,7 +347,9 @@ class DynamicResourceDetailView(
     def get_data(self, dataset_pk, model_name, distribution_format):
         dataset = get_object_or_404(Dataset, id=dataset_pk)
         dynamic_resource = DynamicResourceService(dataset)
-        data = dynamic_resource.retrieve_data(dataset_pk, model_name, distribution_format)
+        data = dynamic_resource.retrieve_data(
+            dataset_pk, model_name, distribution_format
+        )
         if not data:
             raise Http404("Data not found")
         return data
@@ -339,35 +358,43 @@ class DynamicResourceDetailView(
         return self.dataset.get_absolute_url()
 
     def get(self, request, *args, **kwargs):
-        dataset_pk = self.kwargs.get('pk')
-        distribution_name = self.kwargs.get('distribution_name')
-        distribution_format = self.kwargs.get('format').upper()
-        dynamic_resource = self.get_data(dataset_pk, distribution_name, distribution_format)
+        dataset_pk = self.kwargs.get("pk")
+        distribution_name = self.kwargs.get("distribution_name")
+        distribution_format = self.kwargs.get("format").upper()
+        dynamic_resource = self.get_data(
+            dataset_pk, distribution_name, distribution_format
+        )
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
-        self.models = dynamic_resource['models']
+        self.models = dynamic_resource["models"]
 
         context = {
-            'resource': dynamic_resource,
-            'dataset': self.dataset,
-            'format': distribution_format,
-            'detail_url': self.get_detail_url(),
-            'structure_url': reverse('dataset-structure', args=[self.dataset.pk]),
-            'data_url': reverse('model-data', args=[self.dataset.pk, self.models[0].name]) if self.models else None,
-            'api_url': reverse('getall-api', args=[self.dataset.pk, self.models[0].name]) if self.models else None,
-            'can_view_members': has_perm(
+            "resource": dynamic_resource,
+            "dataset": self.dataset,
+            "format": distribution_format,
+            "detail_url": self.get_detail_url(),
+            "structure_url": reverse("dataset-structure", args=[self.dataset.pk]),
+            "data_url": reverse(
+                "model-data", args=[self.dataset.pk, self.models[0].name]
+            )
+            if self.models
+            else None,
+            "api_url": reverse(
+                "getall-api", args=[self.dataset.pk, self.models[0].name]
+            )
+            if self.models
+            else None,
+            "can_view_members": has_perm(
                 self.request.user,
                 Action.VIEW,
                 Representative,
                 self.dataset,
             ),
-            'can_manage_history': has_perm(
+            "can_manage_history": has_perm(
                 self.request.user,
                 Action.HISTORY_VIEW,
                 self.dataset,
             ),
-            'history_url': reverse('dataset-history', args=[self.dataset.pk]),
+            "history_url": reverse("dataset-history", args=[self.dataset.pk]),
         }
         return render(request, self.template_name, context)
-
-

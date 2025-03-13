@@ -5,15 +5,19 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0002_alter_category_options'),
+        ("vitrina_classifiers", "0002_alter_category_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='category',
-            name='parent_id',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children_set', to='vitrina_classifiers.category'),
+            model_name="category",
+            name="parent_id",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="children_set",
+                to="vitrina_classifiers.category",
+            ),
         ),
     ]

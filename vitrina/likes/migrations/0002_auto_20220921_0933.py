@@ -4,13 +4,13 @@ from django.db import migrations
 
 
 def migrate_likes(apps, schema_editor):
-    UserLike = apps.get_model('vitrina_likes', 'UserLike')
-    UserVote = apps.get_model('vitrina_likes', 'UserVote')
-    Like = apps.get_model('vitrina_likes', 'Like')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Request = apps.get_model('vitrina_requests', 'request')
-    Dataset = apps.get_model('vitrina_datasets', 'dataset')
-    HarvestingResult = apps.get_model('vitrina_datasets', 'harvestingresult')
+    UserLike = apps.get_model("vitrina_likes", "UserLike")
+    UserVote = apps.get_model("vitrina_likes", "UserVote")
+    Like = apps.get_model("vitrina_likes", "Like")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Request = apps.get_model("vitrina_requests", "request")
+    Dataset = apps.get_model("vitrina_datasets", "dataset")
+    HarvestingResult = apps.get_model("vitrina_datasets", "harvestingresult")
 
     for user_like in UserLike.objects.all():
         content_type = ContentType.objects.get_for_model(Request)
@@ -18,7 +18,7 @@ def migrate_likes(apps, schema_editor):
             created=user_like.created or datetime.now(),
             content_type=content_type,
             object_id=user_like.request_id,
-            user_id=user_like.user_id
+            user_id=user_like.user_id,
         )
 
     for user_vote in UserVote.objects.filter(user__isnull=False):
@@ -28,7 +28,7 @@ def migrate_likes(apps, schema_editor):
                 created=user_vote.created or datetime.now(),
                 content_type=content_type,
                 object_id=user_vote.dataset.pk,
-                user=user_vote.user
+                user=user_vote.user,
             )
         elif user_vote.harvested:
             content_type = ContentType.objects.get_for_model(HarvestingResult)
@@ -36,15 +36,14 @@ def migrate_likes(apps, schema_editor):
                 created=user_vote.created or datetime.now(),
                 content_type=content_type,
                 object_id=user_vote.harvested.pk,
-                user=user_vote.user
+                user=user_vote.user,
             )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_likes', '0001_initial'),
-        ('vitrina_requests', '0001_initial'),
+        ("vitrina_likes", "0001_initial"),
+        ("vitrina_requests", "0001_initial"),
     ]
 
     operations = [

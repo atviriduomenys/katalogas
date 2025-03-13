@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0002_alter_datasetdistribution_options'),
+        ("vitrina_resources", "0002_alter_datasetdistribution_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='filename',
-            field=models.FileField(blank=True, max_length=255, null=True, upload_to='data/'),
+            model_name="datasetdistribution",
+            name="filename",
+            field=models.FileField(
+                blank=True, max_length=255, null=True, upload_to="data/"
+            ),
         ),
     ]

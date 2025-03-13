@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0004_auto_20230602_1424'),
+        ("statistics", "0004_auto_20230602_1424"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='datasetstats',
-            name='download_object_count',
+            model_name="datasetstats",
+            name="download_object_count",
         ),
         migrations.RemoveField(
-            model_name='datasetstats',
-            name='download_request_count',
+            model_name="datasetstats",
+            name="download_request_count",
         ),
     ]

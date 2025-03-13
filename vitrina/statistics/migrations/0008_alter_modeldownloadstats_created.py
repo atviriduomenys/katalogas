@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0007_alter_statroute_url'),
+        ("statistics", "0007_alter_statroute_url"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='modeldownloadstats',
-            name='created',
+            model_name="modeldownloadstats",
+            name="created",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

@@ -14,11 +14,19 @@ from django.utils.html import format_html
 
 from vitrina import settings
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.forms import RepresentativeRequestForm, TemplateForm, AdminPublisherOrganizationForm, \
-    AdminPublisherAssignedOrganizationForm
+from vitrina.orgs.forms import (
+    RepresentativeRequestForm,
+    TemplateForm,
+    AdminPublisherOrganizationForm,
+    AdminPublisherAssignedOrganizationForm,
+)
 from vitrina.orgs.models import Representative, Template
 
-from vitrina.orgs.models import Organization, RepresentativeRequest, PublisherOrganization
+from vitrina.orgs.models import (
+    Organization,
+    RepresentativeRequest,
+    PublisherOrganization,
+)
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.services import pre_representative_delete
@@ -27,9 +35,9 @@ from vitrina.orgs.services import pre_representative_delete
 class RootOrganizationFilter(admin.SimpleListFilter):
     # Human-readable title which will be displayed in the
     # right admin sidebar just above the filter options.
-    title = _('organizacija')
+    title = _("organizacija")
 
-    parameter_name = 'root'
+    parameter_name = "root"
 
     def lookups(self, request, model_admin):
         for org in Organization.objects.filter(depth=1):
@@ -44,13 +52,15 @@ class RootOrganizationFilter(admin.SimpleListFilter):
 
 class OrganizationAdmin(VersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
-    list_display = ['title', 'numchild',]
+    list_display = [
+        "title",
+        "numchild",
+    ]
     list_filter = (RootOrganizationFilter,)
-    search_fields = ('title',)
+    search_fields = ("title",)
 
 
 class RepresentativeAdmin(admin.ModelAdmin):
-
     def delete_model(self, request, obj):
         pre_representative_delete(obj)
         super().delete_model(request, obj)
@@ -62,10 +72,10 @@ class RepresentativeAdmin(admin.ModelAdmin):
 
 
 class PublisherAdmin(admin.ModelAdmin):
-    list_display = ['title']
-    search_fields = ('title',)
-    actions = ['remove_publisher_status']
-    change_form_template = 'vitrina/orgs/admin/organization_publisher_change_form.html'
+    list_display = ["title"]
+    search_fields = ("title",)
+    actions = ["remove_publisher_status"]
+    change_form_template = "vitrina/orgs/admin/organization_publisher_change_form.html"
     form = AdminPublisherAssignedOrganizationForm
 
     def get_queryset(self, request):
@@ -82,42 +92,50 @@ class PublisherAdmin(admin.ModelAdmin):
 
         self._update_assignments(
             obj,
-            set(form.cleaned_data['datasets'].values_list('id', flat=True)),
+            set(form.cleaned_data["datasets"].values_list("id", flat=True)),
             Dataset,
-            Representative.MANAGER
+            Representative.MANAGER,
         )
 
         self._update_assignments(
             obj,
-            set(form.cleaned_data['creator_assignment'].values_list('id', flat=True)),
+            set(form.cleaned_data["creator_assignment"].values_list("id", flat=True)),
             Organization,
-            Representative.MANAGER
+            Representative.MANAGER,
         )
 
     def _update_assignments(self, obj, new_assignments, model, role):
         content_type = ContentType.objects.get_for_model(model)
-        current_assignments = set(model.objects.filter(
-            pk__in=Representative.objects.filter(
-                content_type=content_type,
-                organization=obj
-            ).values_list('object_id', flat=True)
-        ).values_list('id', flat=True))
+        current_assignments = set(
+            model.objects.filter(
+                pk__in=Representative.objects.filter(
+                    content_type=content_type, organization=obj
+                ).values_list("object_id", flat=True)
+            ).values_list("id", flat=True)
+        )
 
         removed_assignments = current_assignments - new_assignments
         added_assignments = new_assignments - current_assignments
 
         if removed_assignments:
-            self._handle_removed_assignments(content_type, model, obj, removed_assignments)
+            self._handle_removed_assignments(
+                content_type, model, obj, removed_assignments
+            )
 
         if added_assignments:
-            self._handle_added_assignments(content_type, model, obj, added_assignments, role)
+            self._handle_added_assignments(
+                content_type, model, obj, added_assignments, role
+            )
 
     @staticmethod
     def _handle_removed_assignments(content_type, model, obj, removed_assignments):
         Representative.objects.filter(
             content_type=content_type,
-            object_id__in=[item.id if isinstance(item, model) else item for item in removed_assignments],
-            organization=obj
+            object_id__in=[
+                item.id if isinstance(item, model) else item
+                for item in removed_assignments
+            ],
+            organization=obj,
         ).delete()
 
         for assignment in removed_assignments:
@@ -128,7 +146,6 @@ class PublisherAdmin(admin.ModelAdmin):
                 assignment.publisher = None
                 assignment.save()
 
-
     @staticmethod
     def _handle_added_assignments(content_type, model, obj, added_assignments, role):
         for assignment in added_assignments:
@@ -138,7 +155,7 @@ class PublisherAdmin(admin.ModelAdmin):
                 content_type=content_type,
                 object_id=assignment,
                 organization=obj,
-                role=role
+                role=role,
             )
             if model == Dataset:
                 assignment = Dataset.objects.get(pk=assignment)
@@ -151,13 +168,22 @@ class PublisherAdmin(admin.ModelAdmin):
 
     def remove_publisher_status(self, request, queryset):
         queryset.update(publisher=False)
-        self.message_user(request, _("Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos tiekėjo rolė."), messages.SUCCESS)
-    remove_publisher_status.short_description = _("Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę")
+        self.message_user(
+            request,
+            _(
+                "Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos tiekėjo rolė."
+            ),
+            messages.SUCCESS,
+        )
+
+    remove_publisher_status.short_description = _(
+        "Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę"
+    )
 
     def get_actions(self, request):
         actions = super().get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
         return actions
 
     def save_related(self, request, form, formsets, change):
@@ -165,26 +191,30 @@ class PublisherAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        extra_context['title'] = _("Duomenų atvėrimo paslaugos tiekėjai")
-        extra_context['add_button_label'] = _("Priskirti duomenų atvėrimo paslaugos tiekėjo rolę")
+        extra_context["title"] = _("Duomenų atvėrimo paslaugos tiekėjai")
+        extra_context["add_button_label"] = _(
+            "Priskirti duomenų atvėrimo paslaugos tiekėjo rolę"
+        )
         return super().changelist_view(request, extra_context=extra_context)
 
-    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
-        extra_context['title'] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
-        extra_context['show_save_and_add_another'] = False
-        extra_context['show_save_and_continue'] = False
-        extra_context['publisher_id'] = object_id
+        extra_context["title"] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
+        extra_context["show_save_and_add_another"] = False
+        extra_context["show_save_and_continue"] = False
+        extra_context["publisher_id"] = object_id
 
         return super().changeform_view(request, object_id, form_url, extra_context)
 
-    def add_view(self, request, form_url='', extra_context=None):
+    def add_view(self, request, form_url="", extra_context=None):
         extra_context = extra_context or {}
-        extra_context.update({
-            'title': _("Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"),
-            'show_save_and_add_another': False,
-            'show_save_and_continue': False,
-        })
+        extra_context.update(
+            {
+                "title": _("Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"),
+                "show_save_and_add_another": False,
+                "show_save_and_continue": False,
+            }
+        )
         return super().add_view(request, form_url, extra_context)
 
     def get_form(self, request, obj=None, **kwargs):
@@ -199,29 +229,33 @@ admin.site.register(Representative, RepresentativeAdmin)
 
 
 class RepresentativeRequestAdmin(admin.ModelAdmin):
-    template_name = 'vitrina/orgs/approve.html'
+    template_name = "vitrina/orgs/approve.html"
     list_display = (
-        'created_display',
-        'user_display',
-        'organization',
-        'document_display',
-        'phone',
-        'email',
-        'status',
-        'account_actions_display',
+        "created_display",
+        "user_display",
+        "organization",
+        "document_display",
+        "phone",
+        "email",
+        "status",
+        "account_actions_display",
     )
     list_display_links = None
-    ordering = ('-created',)
+    ordering = ("-created",)
     actions = None
-    change_list_template = 'vitrina/orgs/admin/representative_request_change_list.html'
-    change_form_template = 'vitrina/orgs/admin/representative_request_change_form.html'
-    delete_confirmation_template = 'vitrina/orgs/admin/representative_request_delete_confirmation.html'
+    change_list_template = "vitrina/orgs/admin/representative_request_change_list.html"
+    change_form_template = "vitrina/orgs/admin/representative_request_change_form.html"
+    delete_confirmation_template = (
+        "vitrina/orgs/admin/representative_request_delete_confirmation.html"
+    )
     form = RepresentativeRequestForm
 
     def changelist_view(self, request, extra_context=None):
         extra_context = {
-            'title': _('Duomenų tiekėjų prašymų sąrašas'),
-            'template': Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first()
+            "title": _("Duomenų tiekėjų prašymų sąrašas"),
+            "template": Template.objects.filter(
+                identifier=Template.REPRESENTATIVE_REQUEST_ID
+            ).first(),
         }
         return super().changelist_view(request, extra_context=extra_context)
 
@@ -240,42 +274,53 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
         if obj.status == RepresentativeRequest.CREATED:
             return format_html(
                 '<a href="{}">{}</a>',
-                reverse("supervisor_admin:vitrina_orgs_representativerequest_change", kwargs={'object_id': obj.id}),
-                str(obj.user)
+                reverse(
+                    "supervisor_admin:vitrina_orgs_representativerequest_change",
+                    kwargs={"object_id": obj.id},
+                ),
+                str(obj.user),
             )
         return str(obj.user)
-    user_display.short_description = _('Naudotojas')
-    user_display.admin_order_field = 'user'
+
+    user_display.short_description = _("Naudotojas")
+    user_display.admin_order_field = "user"
 
     def document_display(self, obj):
         return format_html(
             '<a href="{}">{}</a>',
-            reverse('partner-register-download', kwargs={'pk': obj.id}),
-            obj.document.name
+            reverse("partner-register-download", kwargs={"pk": obj.id}),
+            obj.document.name,
         )
-    document_display.short_description = _('Pridėtas dokumentas')
-    document_display.admin_order_field = 'document'
+
+    document_display.short_description = _("Pridėtas dokumentas")
+    document_display.admin_order_field = "document"
 
     def account_actions_display(self, obj):
         if obj.status == RepresentativeRequest.CREATED:
             return format_html(
                 '<a class="button" href="{}">{}</a>&nbsp;'
                 '<a class="button" href="{}">{}</a>',
-                reverse('partner-register-approve', kwargs={'pk': obj.id}),
+                reverse("partner-register-approve", kwargs={"pk": obj.id}),
                 _("Patvirtinti"),
-                reverse('partner-register-deny', kwargs={'pk': obj.id}),
-                _("Atmesti")
+                reverse("partner-register-deny", kwargs={"pk": obj.id}),
+                _("Atmesti"),
             )
         return ""
-    account_actions_display.short_description = _('Veiksmai')
+
+    account_actions_display.short_description = _("Veiksmai")
     account_actions_display.allow_tags = True
-    account_actions_display.admin_order_field = 'status'
+    account_actions_display.admin_order_field = "status"
 
     def created_display(self, obj):
         timezone = pytz.timezone(settings.TIME_ZONE)
-        return obj.created.astimezone(timezone).strftime("%Y-%m-%d %H:%M") if obj.created else "-"
-    created_display.short_description = _('Sukurta')
-    created_display.admin_order_field = 'created'
+        return (
+            obj.created.astimezone(timezone).strftime("%Y-%m-%d %H:%M")
+            if obj.created
+            else "-"
+        )
+
+    created_display.short_description = _("Sukurta")
+    created_display.admin_order_field = "created"
 
     def response_delete(self, request, obj_display, obj_id):
         self.message_user(
@@ -283,27 +328,33 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
             _(f'"{obj_display}" prašymas pašalintas sėkmingai.'),
             messages.SUCCESS,
         )
-        return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
+        return redirect(
+            reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist")
+        )
 
     def response_change(self, request, obj):
-        msg = mark_safe(_(
-            f'Duomenų tiekėjo "'
-            f'<a href="{reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk])}">'
-            f'{str(obj)}</a>" prašymas pakeistas sėkmingai.')
+        msg = mark_safe(
+            _(
+                f'Duomenų tiekėjo "'
+                f'<a href="{reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk])}">'
+                f'{str(obj)}</a>" prašymas pakeistas sėkmingai.'
+            )
         )
         self.message_user(request, msg, messages.SUCCESS)
         return self.response_post_save_change(request, obj)
 
 
 class TemplateAdmin(admin.ModelAdmin):
-    change_form_template = 'vitrina/orgs/admin/template_change_form.html'
-    object_history_template = 'vitrina/orgs/admin/template_history.html'
+    change_form_template = "vitrina/orgs/admin/template_change_form.html"
+    object_history_template = "vitrina/orgs/admin/template_history.html"
     form = TemplateForm
 
     def response_change(self, request, obj):
-        msg = _('Šablonas pakeistas sėkmingai.')
+        msg = _("Šablonas pakeistas sėkmingai.")
         self.message_user(request, msg, messages.SUCCESS)
-        return redirect(reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist"))
+        return redirect(
+            reverse("supervisor_admin:vitrina_orgs_representativerequest_changelist")
+        )
 
 
 class SupervisorAdminSite(AdminSite):
@@ -312,7 +363,7 @@ class SupervisorAdminSite(AdminSite):
     """
 
     login_form = AuthenticationForm
-    site_header = 'Supervisor admin site'
+    site_header = "Supervisor admin site"
     enable_nav_sidebar = False
 
     def has_permission(self, request):
@@ -322,6 +373,6 @@ class SupervisorAdminSite(AdminSite):
         return request.user.is_supervisor or request.user.is_superuser
 
 
-site = SupervisorAdminSite(name='supervisor_admin')
+site = SupervisorAdminSite(name="supervisor_admin")
 site.register(RepresentativeRequest, RepresentativeRequestAdmin)
 site.register(Template, TemplateAdmin)

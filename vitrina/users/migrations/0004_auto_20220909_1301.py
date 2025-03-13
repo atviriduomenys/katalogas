@@ -5,17 +5,18 @@ from django.db.models import Q
 
 
 def fix_passwords(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
-    users = User.objects.exclude(Q(password__startswith='bcrypt$') | Q(password__startswith='pbkdf2_sha256$'))
+    User = apps.get_model("vitrina_users", "User")
+    users = User.objects.exclude(
+        Q(password__startswith="bcrypt$") | Q(password__startswith="pbkdf2_sha256$")
+    )
     for user in users:
         user.password = "bcrypt$%s" % user.password
-        user.save(update_fields=['password'])
+        user.save(update_fields=["password"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0003_auto_20220816_1153'),
+        ("vitrina_users", "0003_auto_20220816_1153"),
     ]
 
     operations = [

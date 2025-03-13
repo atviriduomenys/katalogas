@@ -3,9 +3,9 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ClassifiersConfig(AppConfig):
-    name = 'vitrina.classifiers'
-    label = 'vitrina_classifiers'
+    name = "vitrina.classifiers"
+    label = "vitrina_classifiers"
     verbose_name = _("Klasifikatoriai")
 
     def ready(self):
-        import vitrina.classifiers.signals
+        import vitrina.classifiers.signals  # noqa: F401

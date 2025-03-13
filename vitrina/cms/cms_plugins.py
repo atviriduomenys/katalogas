@@ -22,10 +22,7 @@ class SideMenuPlugin(CMSPluginBase):
         else:
             parent = instance.page.node.get_parent()
             children = instance.page.node.get_siblings()
-        context.update({
-            'children': children,
-            'parent': parent
-        })
+        context.update({"children": children, "parent": parent})
         return context
 
 
@@ -38,11 +35,13 @@ class LearningMaterialPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'items': LearningMaterial.objects.filter(
-                published__isnull=False
-            ).order_by('-published'),
-        })
+        context.update(
+            {
+                "items": LearningMaterial.objects.filter(
+                    published__isnull=False
+                ).order_by("-published"),
+            }
+        )
         return context
 
 
@@ -55,9 +54,7 @@ class ReportPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'items': PublishedReport.objects.all()
-        })
+        context.update({"items": PublishedReport.objects.all()})
         return context
 
 
@@ -70,10 +67,14 @@ class EUCommissionPortalPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'title': _("Europos komisijos portalai"),
-            'items': ExternalSite.objects.filter(type=ExternalSite.EU_COMISSION_PORTAL),
-        })
+        context.update(
+            {
+                "title": _("Europos komisijos portalai"),
+                "items": ExternalSite.objects.filter(
+                    type=ExternalSite.EU_COMISSION_PORTAL
+                ),
+            }
+        )
         return context
 
 
@@ -86,10 +87,12 @@ class EULandPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'title': _("EU šalys"),
-            'items': ExternalSite.objects.filter(type=ExternalSite.EU_LAND),
-        })
+        context.update(
+            {
+                "title": _("EU šalys"),
+                "items": ExternalSite.objects.filter(type=ExternalSite.EU_LAND),
+            }
+        )
         return context
 
 
@@ -102,10 +105,12 @@ class OtherLandPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'title': _("Kitos šalys"),
-            'items': ExternalSite.objects.filter(type=ExternalSite.OTHER_LAND),
-        })
+        context.update(
+            {
+                "title": _("Kitos šalys"),
+                "items": ExternalSite.objects.filter(type=ExternalSite.OTHER_LAND),
+            }
+        )
         return context
 
 
@@ -118,7 +123,9 @@ class FaqPlugin(CMSPluginBase):
 
     def render(self, context, instance, placeholder):
         context = super().render(context, instance, placeholder)
-        context.update({
-            'items': Faq.objects.all(),
-        })
+        context.update(
+            {
+                "items": Faq.objects.all(),
+            }
+        )
         return context

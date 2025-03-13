@@ -5,7 +5,7 @@ from vitrina.projects.models import Project
 
 
 class ProjectAdmin(VersionAdmin):
-    list_filter = ('status',)
+    list_filter = ("status",)
 
 
 admin.site.register(Project, ProjectAdmin)

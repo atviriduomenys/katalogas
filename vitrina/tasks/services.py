@@ -4,7 +4,6 @@ import operator
 from datetime import timedelta
 from typing import Optional
 
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -39,37 +38,25 @@ def get_past_work_date(
     return res
 
 
-def get_holidays(
-    date_from: datetime.date,
-    date_to: datetime.date
-):
-    return Holiday.objects.filter(
-        date__range=[date_from, date_to]
-    ).values_list('date', flat=True)
+def get_holidays(date_from: datetime.date, date_to: datetime.date):
+    return Holiday.objects.filter(date__range=[date_from, date_to]).values_list(
+        "date", flat=True
+    )
 
 
 def get_active_tasks(
     user: User,
     queryset: Optional[QuerySet] = None,
     now: datetime.date = None,
-    all_tasks: bool = False
+    all_tasks: bool = False,
 ) -> QuerySet:
     queryset = queryset or Task.objects.all()
     now = now or timezone.now().date()
     holidays = get_holidays(
-        date_from=(now - timedelta(days=(VITRINA_TASK_RAISE_2 + 30))),
-        date_to=now
+        date_from=(now - timedelta(days=(VITRINA_TASK_RAISE_2 + 30))), date_to=now
     )
-    date_1 = get_past_work_date(
-        days=VITRINA_TASK_RAISE_1,
-        exclude=holidays,
-        now=now
-    )
-    date_2 = get_past_work_date(
-        days=VITRINA_TASK_RAISE_2,
-        exclude=holidays,
-        now=now
-    )
+    date_1 = get_past_work_date(days=VITRINA_TASK_RAISE_1, exclude=holidays, now=now)
+    date_2 = get_past_work_date(days=VITRINA_TASK_RAISE_2, exclude=holidays, now=now)
 
     orgs = user.representative_set.filter(
         object_id__isnull=False,
@@ -87,13 +74,13 @@ def get_active_tasks(
             org = org.content_object.organization
         args += [
             # 2. User can see his represented org tasks.
-            Q(organization=org) |
-
+            Q(organization=org)
+            |
             # 3. User can see his supervised orgs tasks.
             (
-                Q(organization__path__startswith=org.path) &
-                Q(organization__depth__gt=org.depth) &
-                Q(created__date__lte=date_1)
+                Q(organization__path__startswith=org.path)
+                & Q(organization__depth__gt=org.depth)
+                & Q(created__date__lte=date_1)
             )
         ]
 
@@ -108,5 +95,7 @@ def get_active_tasks(
         query = functools.reduce(operator.and_, [query])
     else:
         # By default, we are only interested in open tasks.
-        query = functools.reduce(operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])])
+        query = functools.reduce(
+            operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])]
+        )
     return queryset.filter(query)

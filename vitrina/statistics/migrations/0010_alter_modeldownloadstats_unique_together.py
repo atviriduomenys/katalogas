@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0009_alter_datasetstats_created'),
+        ("statistics", "0009_alter_datasetstats_created"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='modeldownloadstats',
-            unique_together={('source', 'model', 'model_format', 'created')},
+            name="modeldownloadstats",
+            unique_together={("source", "model", "model_format", "created")},
         ),
     ]

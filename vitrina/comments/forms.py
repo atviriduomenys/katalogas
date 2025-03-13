@@ -10,42 +10,58 @@ from vitrina.requests.models import Request
 PROJECT_STATUSES = (
     (None, _("---------")),
     (Comment.APPROVED, _("Patvirtintas")),
-    (Comment.REJECTED, _("Atmestas"))
+    (Comment.REJECTED, _("Atmestas")),
 )
 
 
 class CommentForm(forms.ModelForm):
-    body = forms.CharField(widget=forms.Textarea(attrs={'rows': 4}), label=_("Komentaras"))
+    body = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 4}), label=_("Komentaras")
+    )
 
     is_opened: bool
 
     class Meta:
         model = Comment
-        fields = ('is_public', 'body',)
+        fields = (
+            "is_public",
+            "body",
+        )
 
     def __init__(self, obj, *args, **kwargs):
-        self.is_opened = kwargs.pop('is_opened') if 'is_opened' in kwargs else None
+        self.is_opened = kwargs.pop("is_opened") if "is_opened" in kwargs else None
         super().__init__(*args, **kwargs)
         if obj and isinstance(obj.__class__, ModelBase):
-            self.auto_id = 'id_' + str(obj.pk)
-            self.fields['body'].label = _("Komentaro tekstas objektui: ") + " " + str(obj)
-            self.fields['body'].widget.attrs.update({'title': _("Komentaras"),
-                                                     'id': 'id_' + 'body_' + str(obj.pk)})
-            self.fields['is_public'].widget.attrs.update({'id': 'id_' + 'is_public_' + str(obj.pk)})
+            self.auto_id = "id_" + str(obj.pk)
+            self.fields["body"].label = (
+                _("Komentaro tekstas objektui: ") + " " + str(obj)
+            )
+            self.fields["body"].widget.attrs.update(
+                {"title": _("Komentaras"), "id": "id_" + "body_" + str(obj.pk)}
+            )
+            self.fields["is_public"].widget.attrs.update(
+                {"id": "id_" + "is_public_" + str(obj.pk)}
+            )
             self.obj = obj
 
 
 class RegisterRequestForm(CommentForm):
-    register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
+    register_request = forms.BooleanField(
+        label=_("Registruoti kaip prašymą"), required=False
+    )
 
     class Meta(CommentForm.Meta):
-        fields = ('is_public', 'register_request', 'body',)
+        fields = (
+            "is_public",
+            "register_request",
+            "body",
+        )
 
     def __init__(self, obj, *args, **kwargs):
         super().__init__(obj, *args, **kwargs)
 
         if self.is_opened is False:
-            self.fields.pop('register_request')
+            self.fields.pop("register_request")
 
 
 class DatasetCommentForm(RegisterRequestForm):
@@ -53,57 +69,78 @@ class DatasetCommentForm(RegisterRequestForm):
         label=_("Didinti duomenų atnaujinimo periodiškumą"),
         required=False,
         queryset=Frequency.objects.all(),
-        to_field_name='title'
+        to_field_name="title",
     )
 
     class Meta(CommentForm.Meta):
-        fields = ('is_public', 'register_request', 'increase_frequency', 'body',)
+        fields = (
+            "is_public",
+            "register_request",
+            "increase_frequency",
+            "body",
+        )
 
     def clean(self):
-        request = self.cleaned_data.get('register_request')
-        public = self.cleaned_data.get('is_public')
+        request = self.cleaned_data.get("register_request")
+        public = self.cleaned_data.get("is_public")
         if request:
             if not public:
-                self.add_error('is_public', _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" +
-                                              " viešas"))
+                self.add_error(
+                    "is_public",
+                    _(
+                        "Jei komentaras registruojamas kaip prašymas, jis privalo būti"
+                        + " viešas"
+                    ),
+                )
         return self.cleaned_data
 
 
 class RequestCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))
+    status = forms.ChoiceField(
+        choices=Request.STATUSES, required=False, label=_("Būsena")
+    )
 
     class Meta(CommentForm.Meta):
-        fields = ('is_public', 'status', 'body',)
+        fields = (
+            "is_public",
+            "status",
+            "body",
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['body'].required = False
+        self.fields["body"].required = False
 
     def clean(self):
-        body = self.cleaned_data.get('body')
-        status = self.cleaned_data.get('status')
+        body = self.cleaned_data.get("body")
+        status = self.cleaned_data.get("status")
         if not status or (status and status == Comment.REJECTED):
             if not body:
-                self.add_error('body', _("Šis laukas yra privalomas"))
+                self.add_error("body", _("Šis laukas yra privalomas"))
         return self.cleaned_data
 
 
 class ProjectCommentForm(CommentForm):
-    status = forms.ChoiceField(choices=PROJECT_STATUSES, required=False, label=_("Būsena"))
+    status = forms.ChoiceField(
+        choices=PROJECT_STATUSES, required=False, label=_("Būsena")
+    )
 
     class Meta(CommentForm.Meta):
-        fields = ('is_public', 'status', 'body',)
+        fields = (
+            "is_public",
+            "status",
+            "body",
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['body'].required = False
+        self.fields["body"].required = False
 
     def clean(self):
-        body = self.cleaned_data.get('body')
-        status = self.cleaned_data.get('status')
+        body = self.cleaned_data.get("body")
+        status = self.cleaned_data.get("status")
         if not status and not body:
-            self.add_error('body', _("Šis laukas yra privalomas"))
+            self.add_error("body", _("Šis laukas yra privalomas"))
         if self.obj.status == status:
-            self.add_error('body', _("Dabartinė būsena sutampa su jūsų pateikta"))
+            self.add_error("body", _("Dabartinė būsena sutampa su jūsų pateikta"))
         return self.cleaned_data
-

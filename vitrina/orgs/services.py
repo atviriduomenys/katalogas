@@ -22,17 +22,17 @@ from vitrina.users.models import User
 
 
 class Action(Enum):
-    CREATE = 'create'
-    UPDATE = 'update'
-    DELETE = 'delete'
-    VIEW = 'view'
-    HISTORY_VIEW = 'history_view'
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+    VIEW = "view"
+    HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
-    STRUCTURE = 'structure'
-    PLAN = 'plan'
-    MANAGE_KEYS = 'manage_keys'
-    MANAGE_PROJECT_KEYS = 'manage_project_keys'
-    ASSIGN = 'assign'
+    STRUCTURE = "structure"
+    PLAN = "plan"
+    MANAGE_KEYS = "manage_keys"
+    MANAGE_PROJECT_KEYS = "manage_project_keys"
+    ASSIGN = "assign"
 
 
 class Role(Enum):
@@ -108,7 +108,7 @@ def is_supervisor(user: User, node: Model) -> bool:
 def is_manager(user: User, node: Model) -> bool:
     if isinstance(node, Organization):
         for rep in user.representative_set.all():
-            if rep.role == 'manager':
+            if rep.role == "manager":
                 return True
     return False
 
@@ -118,11 +118,11 @@ def get_parents(obj: Model) -> list:
 
 
 def has_perm(
-    user: User,            # request.user
+    user: User,  # request.user
     action: Action,
     obj: (
-        Model |            # when action is update, delete
-        Type[Model]        # when action is create
+        Model  # when action is update, delete
+        | Type[Model]  # when action is create
     ),
     # when action is create, object based on which a new objects is created
     parent: Model | None = None,
@@ -158,33 +158,34 @@ def has_perm(
                             return True
                     else:
                         ct = ContentType.objects.get_for_model(node)
-                        where.append(Q(
-                            content_type=ct,
-                            object_id=node.pk,
-                            role=role.value,
-                        ))
+                        where.append(
+                            Q(
+                                content_type=ct,
+                                object_id=node.pk,
+                                role=role.value,
+                            )
+                        )
     if where:
         where = functools.reduce(operator.or_, where)
         if Representative.objects.filter(where, user=user).exists():
             return True
-        
-        user_org = getattr(user, 'organization', None)
-        if user_org and Representative.objects.filter(where, organization=user_org).exists():
+
+        user_org = getattr(user, "organization", None)
+        if (
+            user_org
+            and Representative.objects.filter(where, organization=user_org).exists()
+        ):
             return True
     return False
 
 
 def get_coordinators_count(model: Type[Model], object_id: int) -> int:
     ct = ContentType.objects.get_for_model(model)
-    return (
-        Representative.objects.
-        filter(
-            content_type=ct,
-            object_id=object_id,
-            role=Representative.COORDINATOR,
-        ).
-        count()
-    )
+    return Representative.objects.filter(
+        content_type=ct,
+        object_id=object_id,
+        role=Representative.COORDINATOR,
+    ).count()
 
 
 def hash_api_key(api_key: str) -> str:
@@ -217,21 +218,24 @@ def manage_subscriptions_for_representative(subscribe, user, organization, link)
         if not subscription:
             create_subscription(user, organization)
             if user.email:
-                email([user.email], 'newsletter-org-subscription-created-representative', 'vitrina/orgs/emails/subscribed.md', {
-                    'organization': organization,
-                    'link': link
-                })
+                email(
+                    [user.email],
+                    "newsletter-org-subscription-created-representative",
+                    "vitrina/orgs/emails/subscribed.md",
+                    {"organization": organization, "link": link},
+                )
         else:
             subscription.update(
                 dataset_comments_sub=True,
                 request_comments_sub=True,
                 project_comments_sub=True,
             )
-            email([user.email], 'newsletter-org-subscription-updated-representative',
-                  'vitrina/orgs/emails/subscription_updated.md', {
-                'organization': organization,
-                'link': link
-            })
+            email(
+                [user.email],
+                "newsletter-org-subscription-updated-representative",
+                "vitrina/orgs/emails/subscription_updated.md",
+                {"organization": organization, "link": link},
+            )
     else:
         if subscription:
             subscription.delete()
@@ -244,12 +248,11 @@ def pre_representative_delete(rep: Representative):
         )
         dataset_repr_object_ids = rep.user.representative_set.filter(
             content_type=ContentType.objects.get_for_model(Dataset)
-        ).values_list('object_id', flat=True)
+        ).values_list("object_id", flat=True)
 
-        if (
-            org_repr.count() == 1 and
-            not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(organization_id=rep.object_id)
-        ):
+        if org_repr.count() == 1 and not Dataset.objects.filter(
+            id__in=dataset_repr_object_ids
+        ).exclude(organization_id=rep.object_id):
             rep.user.is_active = False
             rep.user.status = User.SUSPENDED
             rep.user.save()

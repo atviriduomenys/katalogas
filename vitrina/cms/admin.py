@@ -1,12 +1,20 @@
 from django.contrib import admin
 
-from vitrina.cms.forms import LearningMaterialAdminForm, FaqAdminForm, ExternalSiteAdminForm, PublishedReportAdminForm
+from vitrina.cms.forms import (
+    LearningMaterialAdminForm,
+    FaqAdminForm,
+    ExternalSiteAdminForm,
+    PublishedReportAdminForm,
+)
 from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
 from vitrina.orgs.models import PublishedReport
 
 
 class LearningMaterialAdmin(admin.ModelAdmin):
-    list_display = ('topic', 'published',)
+    list_display = (
+        "topic",
+        "published",
+    )
     form = LearningMaterialAdminForm
 
     def save_model(self, request, obj, form, change):
@@ -21,7 +29,7 @@ class LearningMaterialAdmin(admin.ModelAdmin):
 
 
 class FaqAdmin(admin.ModelAdmin):
-    list_display = ('question',)
+    list_display = ("question",)
     form = FaqAdminForm
 
     def save_model(self, request, obj, form, change):
@@ -34,7 +42,10 @@ class FaqAdmin(admin.ModelAdmin):
 
 
 class ExternalSiteAdmin(admin.ModelAdmin):
-    list_display = ('title', 'type',)
+    list_display = (
+        "title",
+        "type",
+    )
     form = ExternalSiteAdminForm
 
     def save_model(self, request, obj, form, change):
@@ -47,7 +58,7 @@ class ExternalSiteAdmin(admin.ModelAdmin):
 
 
 class PublishedReportAdmin(admin.ModelAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
     form = PublishedReportAdminForm
 
     def save_model(self, request, obj, form, change):

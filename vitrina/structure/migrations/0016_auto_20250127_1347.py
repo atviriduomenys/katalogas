@@ -5,21 +5,30 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0036_auto_20250127_1347'),
-        ('vitrina_structure', '0015_auto_20241128_0929'),
+        ("vitrina_datasets", "0036_auto_20250127_1347"),
+        ("vitrina_structure", "0015_auto_20241128_0929"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='metadata',
-            name='metadata_version',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='vitrina_structure.version', verbose_name='Versija'),
+            model_name="metadata",
+            name="metadata_version",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_structure.version",
+                verbose_name="Versija",
+            ),
         ),
         migrations.AlterField(
-            model_name='version',
-            name='dataset',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='dataset_version', to='vitrina_datasets.dataset', verbose_name='Duomenų rinkinys'),
+            model_name="version",
+            name="dataset",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="dataset_version",
+                to="vitrina_datasets.dataset",
+                verbose_name="Duomenų rinkinys",
+            ),
         ),
     ]

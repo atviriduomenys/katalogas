@@ -1,6 +1,4 @@
-import mimetypes
-from django.db import migrations, models
-import django.db.models.deletion
+from django.db import migrations
 
 
 def delete_resources_with_dataset_null(apps, schema_editor):
@@ -12,9 +10,8 @@ def delete_resources_with_dataset_null(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0003_alter_datasetdistribution_filename'),
+        ("vitrina_resources", "0003_alter_datasetdistribution_filename"),
     ]
 
     operations = [

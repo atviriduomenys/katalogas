@@ -14,7 +14,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.views import get_schema_view
 from rest_framework import status, permissions, exceptions
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import ListModelMixin, DestroyModelMixin, CreateModelMixin, UpdateModelMixin
+from rest_framework.mixins import (
+    ListModelMixin,
+    DestroyModelMixin,
+    CreateModelMixin,
+    UpdateModelMixin,
+)
 from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -23,63 +28,64 @@ from reversion import set_comment, set_user
 from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
-from vitrina.api.models import ApiDescription, ApiKey
+from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
-    CatalogSerializer, CategorySerializer,
-    DatasetDistributionSerializer, DatasetSerializer, DatasetStructureSerializer,
+    CatalogSerializer,
+    CategorySerializer,
+    DatasetDistributionSerializer,
+    DatasetSerializer,
+    DatasetStructureSerializer,
     LicenceSerializer,
     ModelDownloadStatsSerializer,
-    PatchDatasetDistributionSerializer, PatchDatasetSerializer,
-    PostDatasetDistributionSerializer, PostDatasetSerializer, PostDatasetStructureSerializer,
-    PutDatasetDistributionSerializer, TaskSerializer, UploadToStorageSerializer,
+    PatchDatasetDistributionSerializer,
+    PatchDatasetSerializer,
+    PostDatasetDistributionSerializer,
+    PostDatasetSerializer,
+    PostDatasetStructureSerializer,
+    PutDatasetDistributionSerializer,
+    TaskSerializer,
+    UploadToStorageSerializer,
 )
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata
-from vitrina.structure.services import _resource_models_to_tabular, create_or_get_uapi_format
+from vitrina.structure.services import (
+    _resource_models_to_tabular,
+    create_or_get_uapi_format,
+)
 from vitrina.tasks.models import Task
 
-CATALOG_TAG = 'Catalogs'
-CATEGORY_TAG = 'Categories'
-LICENCE_TAG = 'Licences'
-API_V1_TAG = 'api-v-1-datasets'
-RETRIEVING_DATA_TAG = '1. Retrieving data'
-ADDING_DATA_TAG = '2. Adding data'
-REMOVING_DATA_TAG = '3. Removing data'
-UPDATING_DATA_TAG = '4. Updating data'
+CATALOG_TAG = "Catalogs"
+CATEGORY_TAG = "Categories"
+LICENCE_TAG = "Licences"
+API_V1_TAG = "api-v-1-datasets"
+RETRIEVING_DATA_TAG = "1. Retrieving data"
+ADDING_DATA_TAG = "2. Adding data"
+REMOVING_DATA_TAG = "3. Removing data"
+UPDATING_DATA_TAG = "4. Updating data"
 
 
 class PartnerOpenAPISchemaGenerator(OpenAPISchemaGenerator):
     def get_schema(self, request=None, public=False):
         schema = super().get_schema(request, public)
-        schema['info']['x-logo'] = {
-            'url': static('img/apix.png')
-        }
-        schema['tags'] = [{
-            'name': CATALOG_TAG,
-            'description': "Retrieving available catalogs"
-        }, {
-            'name': CATEGORY_TAG,
-            'description': "Retrieving available categories"
-        }, {
-            'name': LICENCE_TAG,
-            'description': "Retrieving available licences"
-        }, {
-            'name': API_V1_TAG,
-            'description': "Operations pertaining to datasets and their distributions"
-        }, {
-            'name': RETRIEVING_DATA_TAG
-        }, {
-            'name': ADDING_DATA_TAG
-        }, {
-            'name': REMOVING_DATA_TAG
-        }, {
-            'name': UPDATING_DATA_TAG
-        }]
+        schema["info"]["x-logo"] = {"url": static("img/apix.png")}
+        schema["tags"] = [
+            {"name": CATALOG_TAG, "description": "Retrieving available catalogs"},
+            {"name": CATEGORY_TAG, "description": "Retrieving available categories"},
+            {"name": LICENCE_TAG, "description": "Retrieving available licences"},
+            {
+                "name": API_V1_TAG,
+                "description": "Operations pertaining to datasets and their distributions",
+            },
+            {"name": RETRIEVING_DATA_TAG},
+            {"name": ADDING_DATA_TAG},
+            {"name": REMOVING_DATA_TAG},
+            {"name": UPDATING_DATA_TAG},
+        ]
         return schema
 
 
@@ -99,24 +105,26 @@ class PartnerApiView(SchemaView):
     generator_class = PartnerOpenAPISchemaGenerator
     permission_classes = [permissions.AllowAny]
 
-    def get(self, request, version='', format=None):
-        version = request.version or version or ''
+    def get(self, request, version="", format=None):
+        version = request.version or version or ""
 
         title = description = default_version = ""
         if ApiDescription.objects.filter(identifier="partner"):
-            api_description = ApiDescription.objects.filter(identifier="partner").first()
+            api_description = ApiDescription.objects.filter(
+                identifier="partner"
+            ).first()
             title = api_description.title
             description = api_description.desription_html
             default_version = api_description.api_version
 
         info = openapi.Info(
-            title=title,
-            default_version=default_version,
-            description=description
+            title=title, default_version=default_version, description=description
         )
 
         if isinstance(request.accepted_renderer, _SpecRenderer):
-            generator = self.generator_class(info, version, self.url, self.patterns, self.urlconf)
+            generator = self.generator_class(
+                info, version, self.url, self.patterns, self.urlconf
+            )
         else:
             generator = self.generator_class(info, version, self.url, patterns=[])
 
@@ -127,16 +135,24 @@ class PartnerApiView(SchemaView):
 
 
 HEADER_PARAM = openapi.Parameter(
-    'Authorization',
+    "Authorization",
     in_=openapi.IN_HEADER,
     required=True,
     default="ApiKey MY_KEY",
-    type=openapi.TYPE_STRING
+    type=openapi.TYPE_STRING,
 )
-INTERNAL_ID = openapi.Parameter('internalId', in_=openapi.IN_PATH, type=openapi.TYPE_STRING)
-DATASET_ID = openapi.Parameter('datasetId', in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
-DISTRIBUTION_ID = openapi.Parameter('distributionId', in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
-STRUCTURE_ID = openapi.Parameter('structureId', in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
+INTERNAL_ID = openapi.Parameter(
+    "internalId", in_=openapi.IN_PATH, type=openapi.TYPE_STRING
+)
+DATASET_ID = openapi.Parameter(
+    "datasetId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
+)
+DISTRIBUTION_ID = openapi.Parameter(
+    "distributionId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
+)
+STRUCTURE_ID = openapi.Parameter(
+    "structureId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
+)
 
 
 class CatalogViewSet(ListModelMixin, GenericViewSet):
@@ -148,7 +164,7 @@ class CatalogViewSet(ListModelMixin, GenericViewSet):
         operation_summary="Retrieve a list of available catalogs",
         operation_description="List of catalogs",
         manual_parameters=[HEADER_PARAM],
-        tags=[CATALOG_TAG]
+        tags=[CATALOG_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -163,7 +179,7 @@ class CategoryViewSet(ListModelMixin, GenericViewSet):
         operation_summary="Retrieve all available categories",
         operation_description="All the categories",
         manual_parameters=[HEADER_PARAM],
-        tags=[CATEGORY_TAG]
+        tags=[CATEGORY_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -178,7 +194,7 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
         operation_summary="Retrieve a list of available licences",
         operation_description="All the licences",
         manual_parameters=[HEADER_PARAM],
-        tags=[LICENCE_TAG]
+        tags=[LICENCE_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -187,15 +203,14 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
 class DatasetViewSet(RevisionMixin, ModelViewSet):
     serializer_class = DatasetSerializer
     permission_classes = (APIKeyPermission,)
-    lookup_url_kwarg = 'datasetId'
+    lookup_url_kwarg = "datasetId"
     organization = None
     user = None
 
     def get_queryset(self):
         if self.organization:
             return Dataset.objects.filter(
-                organization=self.organization,
-                deleted__isnull=True
+                organization=self.organization, deleted__isnull=True
             )
         return Dataset.objects.none()
 
@@ -220,22 +235,16 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
         manual_parameters=[HEADER_PARAM],
         tags=[ADDING_DATA_TAG],
         request_body=PostDatasetSerializer,
-        responses={status.HTTP_200_OK: DatasetSerializer()}
+        responses={status.HTTP_200_OK: DatasetSerializer()},
     )
     def create(self, request, *args, **kwargs):
         serializer = PostDatasetSerializer(
             data=request.data,
-            context={
-                'organization': self.organization,
-                'user': self.user
-            }
+            context={"organization": self.organization, "user": self.user},
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        serializer = DatasetSerializer(
-            instance,
-            context={'request': request}
-        )
+        serializer = DatasetSerializer(instance, context={"request": request})
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
@@ -244,27 +253,22 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
         manual_parameters=[HEADER_PARAM, DATASET_ID],
         tags=[UPDATING_DATA_TAG],
         request_body=PatchDatasetSerializer,
-        responses={status.HTTP_200_OK: DatasetSerializer()}
+        responses={status.HTTP_200_OK: DatasetSerializer()},
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = PatchDatasetSerializer(
-            instance,
-            data=request.data,
-            context={'user': self.user},
-            partial=True
+            instance, data=request.data, context={"user": self.user}, partial=True
         )
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        serializer = DatasetSerializer(updated_instance, context={
-            'request': request
-        })
+        serializer = DatasetSerializer(updated_instance, context={"request": request})
         return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Remove a dataset",
         manual_parameters=[HEADER_PARAM, DATASET_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -282,13 +286,10 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
 
 
 class InternalDatasetViewSet(DatasetViewSet):
-
     def get_object(self):
-        internal_id = self.kwargs.get('internalId')
+        internal_id = self.kwargs.get("internalId")
         obj = get_object_or_404(
-            Dataset,
-            organization=self.organization,
-            internal_id=internal_id
+            Dataset, organization=self.organization, internal_id=internal_id
         )
         return obj
 
@@ -307,7 +308,7 @@ class InternalDatasetViewSet(DatasetViewSet):
         manual_parameters=[HEADER_PARAM, INTERNAL_ID],
         tags=[UPDATING_DATA_TAG],
         request_body=PatchDatasetSerializer,
-        responses={status.HTTP_200_OK: DatasetSerializer()}
+        responses={status.HTTP_200_OK: DatasetSerializer()},
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
@@ -316,7 +317,7 @@ class InternalDatasetViewSet(DatasetViewSet):
         operation_summary="Remove a dataset",
         operation_id="datasets_delete_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -339,7 +340,7 @@ class DatasetDistributionViewSet(ModelViewSet):
     @swagger_auto_schema(
         operation_summary="Get all dataset distributions",
         manual_parameters=[HEADER_PARAM, DATASET_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -347,7 +348,7 @@ class DatasetDistributionViewSet(ModelViewSet):
     @swagger_auto_schema(
         operation_summary="Get a single dataset distribution",
         manual_parameters=[HEADER_PARAM, DATASET_ID, DISTRIBUTION_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
@@ -362,15 +363,13 @@ class DatasetDistributionViewSet(ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = PatchDatasetDistributionSerializer(
-            instance,
-            data=request.data,
-            partial=True
+            instance, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        serializer = DatasetDistributionSerializer(updated_instance, context={
-            'request': request
-        })
+        serializer = DatasetDistributionSerializer(
+            updated_instance, context={"request": request}
+        )
         return Response(serializer.data)
 
     @swagger_auto_schema(
@@ -382,14 +381,12 @@ class DatasetDistributionViewSet(ModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         serializer = PostDatasetDistributionSerializer(
-            data=request.data,
-            context={'dataset': self.get_dataset()}
+            data=request.data, context={"dataset": self.get_dataset()}
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         serializer = DatasetDistributionSerializer(
-            instance,
-            context={'request': request}
+            instance, context={"request": request}
         )
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
@@ -403,14 +400,12 @@ class DatasetDistributionViewSet(ModelViewSet):
     )
     def create_with_put(self, request, *args, **kwargs):
         serializer = PutDatasetDistributionSerializer(
-            data=request.data,
-            context={'dataset': self.get_dataset()}
+            data=request.data, context={"dataset": self.get_dataset()}
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         serializer = DatasetDistributionSerializer(
-            instance,
-            context={'request': request}
+            instance, context={"request": request}
         )
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
@@ -418,7 +413,7 @@ class DatasetDistributionViewSet(ModelViewSet):
     @swagger_auto_schema(
         operation_summary="Remove a dataset distribution",
         manual_parameters=[HEADER_PARAM, DATASET_ID, DISTRIBUTION_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -428,11 +423,9 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
     organization = None
 
     def get_dataset(self):
-        internal_id = self.kwargs.get('internalId')
+        internal_id = self.kwargs.get("internalId")
         dataset = get_object_or_404(
-            Dataset,
-            organization=self.organization,
-            internal_id=internal_id
+            Dataset, organization=self.organization, internal_id=internal_id
         )
         return dataset
 
@@ -440,7 +433,7 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         operation_summary="Get all dataset distributions",
         operation_id="datasets_distributions_list_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -449,7 +442,7 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         operation_summary="Get a single dataset distribution",
         operation_id="datasets_distributions_read_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID, DISTRIBUTION_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
@@ -491,7 +484,7 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         operation_summary="Remove a dataset distribution",
         operation_id="datasets_distributions_delete_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID, DISTRIBUTION_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -500,8 +493,9 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
 class UploadToStorageViewSet(ModelViewSet):
     serializer_class = UploadToStorageSerializer
     permission_classes = (APIKeyPermission,)
-    queryset = DatasetDistribution.objects.filter(upload_to_storage=True)\
-        .exclude(download_url__icontains="get.data.gov.lt")
+    queryset = DatasetDistribution.objects.filter(upload_to_storage=True).exclude(
+        download_url__icontains="get.data.gov.lt"
+    )
 
     @swagger_auto_schema(
         operation_summary="List all uploadable distributions",
@@ -551,8 +545,10 @@ class DistributionTabularDataViewSet(ModelViewSet):
         tags=["Retrieving Data"],
     )
     def retrieve(self, request, *args, **kwargs):
-        distribution_id = kwargs.get('distributionId')
-        dataset_distribution_instance = DatasetDistribution.objects.get(id=distribution_id)
+        distribution_id = kwargs.get("distributionId")
+        dataset_distribution_instance = DatasetDistribution.objects.get(
+            id=distribution_id
+        )
         tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
         tabular_data_list = list(tabular_data)
         return Response(tabular_data_list)
@@ -566,14 +562,18 @@ class DistributionCreateAfterUploadToStorage(ModelViewSet):
         tags=["Adding data"],
     )
     def create(self, request, *args, **kwargs):
-        distribution_id = kwargs.get('distributionId')
-        dataset_id = request.data.get('dataset_id')
+        distribution_id = kwargs.get("distributionId")
+        dataset_id = request.data.get("dataset_id")
 
         metadata = Metadata.objects.get(object_id=distribution_id)
         format_obj = create_or_get_uapi_format()
         dataset = Dataset.objects.get(id=dataset_id)
 
-        if not metadata.source and metadata.name.startswith("datasets/gov") or "datasets/gov" in metadata.name:
+        if (
+            not metadata.source
+            and metadata.name.startswith("datasets/gov")
+            or "datasets/gov" in metadata.name
+        ):
             url = f"https://get.data.gov.lt/{metadata.name}/:ns"
         elif metadata.source:
             url = metadata.source
@@ -585,18 +585,21 @@ class DistributionCreateAfterUploadToStorage(ModelViewSet):
             download_url=url,
             format=format_obj,
             title=metadata.name,
-            type='URL',
-            upload_to_storage=True
+            type="URL",
+            upload_to_storage=True,
         )
 
-        return Response({"message": "UAPI DatasetDistribution created successfully"}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "UAPI DatasetDistribution created successfully"},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = (APIKeyPermission,)
     queryset = Task.objects.all()
-    lookup_url_kwarg = 'objectId'
+    lookup_url_kwarg = "objectId"
 
     @swagger_auto_schema(
         operation_summary="List all tasks",
@@ -616,17 +619,17 @@ class TaskViewSet(ModelViewSet):
         operation_summary="Create a task",
         tags=["Adding Data"],
         request_body=TaskSerializer,
-        responses={status.HTTP_201_CREATED: TaskSerializer()}
+        responses={status.HTTP_201_CREATED: TaskSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        title = request.data.get('title', '')
-        error_text = request.data.get('error_text', '')
-        task_type = request.data.get('task_type', '')
-        app_name = request.data.get('app_name', '')
-        model_name = request.data.get('model_name', '')
-        org_id = request.data.get('org_id', '')
+        title = request.data.get("title", "")
+        error_text = request.data.get("error_text", "")
+        task_type = request.data.get("task_type", "")
+        app_name = request.data.get("app_name", "")
+        model_name = request.data.get("model_name", "")
+        org_id = request.data.get("org_id", "")
         model = apps.get_model(app_name, model_name)
-        object_id = self.kwargs['objectId']
+        object_id = self.kwargs["objectId"]
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -634,23 +637,25 @@ class TaskViewSet(ModelViewSet):
             object_id=object_id,
             title=title,
             defaults={
-                'description': error_text,
-                'content_type': ContentType.objects.get_for_model(model),
-                'status': Task.CREATED,
-                'type': task_type,
-                'organization_id': org_id
-            }
+                "description": error_text,
+                "content_type": ContentType.objects.get_for_model(model),
+                "status": Task.CREATED,
+                "type": task_type,
+                "organization_id": org_id,
+            },
         )
 
         task.save()
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     @swagger_auto_schema(
         operation_summary="Update task by ID",
         tags=["Updating Data"],
         request_body=TaskSerializer,
-        responses={status.HTTP_200_OK: TaskSerializer()}
+        responses={status.HTTP_200_OK: TaskSerializer()},
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
@@ -664,10 +669,7 @@ class TaskViewSet(ModelViewSet):
 
 
 class DatasetStructureViewSet(
-    CreateModelMixin,
-    DestroyModelMixin,
-    ListModelMixin,
-    GenericViewSet
+    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
 ):
     serializer_class = DatasetStructureSerializer
     permission_classes = (APIKeyPermission,)
@@ -680,12 +682,12 @@ class DatasetStructureViewSet(
         return queryset
 
     def get_dataset(self):
-        return get_object_or_404(Dataset, pk=self.kwargs.get('datasetId'))
+        return get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"))
 
     @swagger_auto_schema(
         operation_summary="Get all dataset structure entries",
         manual_parameters=[HEADER_PARAM, DATASET_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -699,8 +701,7 @@ class DatasetStructureViewSet(
     )
     def create(self, request, *args, **kwargs):
         serializer = PostDatasetStructureSerializer(
-            data=request.data,
-            context={'dataset': self.get_dataset()}
+            data=request.data, context={"dataset": self.get_dataset()}
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -711,7 +712,7 @@ class DatasetStructureViewSet(
     @swagger_auto_schema(
         operation_summary="Delete dataset structure description",
         manual_parameters=[HEADER_PARAM, DATASET_ID, STRUCTURE_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -721,11 +722,9 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
     organization = None
 
     def get_dataset(self):
-        internal_id = self.kwargs.get('internalId')
+        internal_id = self.kwargs.get("internalId")
         dataset = get_object_or_404(
-            Dataset,
-            organization=self.organization,
-            internal_id=internal_id
+            Dataset, organization=self.organization, internal_id=internal_id
         )
         return dataset
 
@@ -733,7 +732,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
         operation_summary="Get all dataset structure entries",
         operation_id="datasets_structure_list_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID],
-        tags=[RETRIEVING_DATA_TAG]
+        tags=[RETRIEVING_DATA_TAG],
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -753,7 +752,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
         operation_summary="Delete dataset structure description",
         operation_id="datasets_structure_delete_internal",
         manual_parameters=[HEADER_PARAM, INTERNAL_ID, STRUCTURE_ID],
-        tags=[REMOVING_DATA_TAG]
+        tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -768,9 +767,7 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         responses={status.HTTP_200_OK: ModelDownloadStatsSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        serializer = ModelDownloadStatsSerializer(
-            data=request.data
-        )
+        serializer = ModelDownloadStatsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = ModelDownloadStats(**serializer.validated_data)
         if instance.model_requests != 0:
@@ -781,7 +778,7 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
                     model_format=instance.model_format,
                     model_requests=instance.model_requests,
                     model_objects=instance.model_objects,
-                    created=instance.created
+                    created=instance.created,
                 )
             except IntegrityError:
                 ModelDownloadStats.objects.update_or_create(
@@ -791,8 +788,8 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
                     created=instance.created,
                     defaults={
                         "model_requests": instance.model_requests,
-                        "model_objects": instance.model_objects
-                    }
+                        "model_objects": instance.model_objects,
+                    },
                 )
         serializer = ModelDownloadStatsSerializer(instance)
         headers = self.get_success_headers(serializer.data)
@@ -800,6 +797,11 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
 
 
 def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
-    return render(request, 'vitrina/api/edp/dcat_ap_rdf.html', {
-        'datasets': get_datasets_for_rdf(Dataset.public.all()),
-    }, content_type='application/rdf+xml')
+    return render(
+        request,
+        "vitrina/api/edp/dcat_ap_rdf.html",
+        {
+            "datasets": get_datasets_for_rdf(Dataset.public.all()),
+        },
+        content_type="application/rdf+xml",
+    )

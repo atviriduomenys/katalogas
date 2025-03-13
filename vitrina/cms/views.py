@@ -10,16 +10,15 @@ from vitrina.orgs.models import PublishedReport
 
 
 class PolicyView(TemplateView):
-    template_name = 'vitrina/cms/policy.html'
+    template_name = "vitrina/cms/policy.html"
 
 
 class PostDetailView(BasePostDetailView):
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['files'] = FileResource.objects.filter(
+        context["files"] = FileResource.objects.filter(
             content_type=ContentType.objects.get_for_model(self.object),
-            object_id=self.object.pk
+            object_id=self.object.pk,
         )
         return context
 
@@ -29,29 +28,31 @@ class PostDetailView(BasePostDetailView):
 
 class LearningMaterialDetailView(DetailView):
     model = LearningMaterial
-    template_name = 'vitrina/cms/learning_material_detail.html'
+    template_name = "vitrina/cms/learning_material_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['parent_links'] = {
-            reverse('home'): _('Pradžia'),
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
         }
         return context
 
 
 class ReportDetailView(DetailView):
     model = PublishedReport
-    template_name = 'vitrina/cms/report_detail.html'
+    template_name = "vitrina/cms/report_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'lines': [{
-                'cols': item.split("&&&")
-            } for item in self.object.data.split("\n")]
-        })
+        context.update(
+            {
+                "lines": [
+                    {"cols": item.split("&&&")} for item in self.object.data.split("\n")
+                ]
+            }
+        )
         return context
 
 
 class SparqlView(TemplateView):
-    template_name = 'vitrina/cms/sparql.html'
+    template_name = "vitrina/cms/sparql.html"

@@ -6,12 +6,20 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget, Select2Widget
+from django_select2.forms import ModelSelect2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
-from django.forms import TextInput, CharField, DateField, ModelMultipleChoiceField, Form, ModelChoiceField, \
-    CheckboxSelectMultiple, HiddenInput
+from django.forms import (
+    TextInput,
+    CharField,
+    DateField,
+    ModelMultipleChoiceField,
+    Form,
+    ModelChoiceField,
+    CheckboxSelectMultiple,
+    HiddenInput,
+)
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -24,10 +32,22 @@ from vitrina.classifiers.models import Frequency, Licence, Category
 
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.forms import RepresentativeCreateForm, RepresentativeUpdateForm, OrganizationPlanForm
+from vitrina.orgs.forms import (
+    RepresentativeCreateForm,
+    RepresentativeUpdateForm,
+    OrganizationPlanForm,
+)
 
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, DatasetAttribution, Type, DatasetRelation, \
-    Relation, DatasetExcludedGroups, Contact
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetStructure,
+    DatasetGroup,
+    DatasetAttribution,
+    Type,
+    DatasetRelation,
+    Relation,
+    Contact,
+)
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
@@ -43,18 +63,20 @@ class DatasetTypeField(forms.ModelMultipleChoiceField):
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
-    title = TranslatedField(form_class=CharField, label=_('Pavadinimas'), required=True, widget=TextInput())
+    title = TranslatedField(
+        form_class=CharField, label=_("Pavadinimas"), required=True, widget=TextInput()
+    )
     type = DatasetTypeField(
         label=_("Duomenų rinkinio tipas"),
         required=False,
         queryset=Type.objects.all(),
-        widget=forms.CheckboxSelectMultiple
+        widget=forms.CheckboxSelectMultiple,
     )
-    description = TranslatedField(label=_('Aprašymas'), required=True)
+    description = TranslatedField(label=_("Aprašymas"), required=True)
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
-        help_text=_("Pagrindinis API paslaugos adresas")
+        help_text=_("Pagrindinis API paslaugos adresas"),
     )
     endpoint_description = forms.CharField(
         label=_("API specifikacija"),
@@ -63,110 +85,125 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
             "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
             "nuskaitoma mašininiu būdu"
-        )
+        ),
     )
-    files = MultipleFilerField(label=_("Failai"), required=False, upload_to=Dataset.UPLOAD_TO, allow_empty_file=True)
-    name = forms.CharField(label=_("Kodinis pavadinimas"), required=False, validators=[
+    files = MultipleFilerField(
+        label=_("Failai"),
+        required=False,
+        upload_to=Dataset.UPLOAD_TO,
+        allow_empty_file=True,
+    )
+    name = forms.CharField(
+        label=_("Kodinis pavadinimas"),
+        required=False,
+        validators=[
             RegexValidator(
-                '([a-z]+\/?)+',
-                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių"
+                "([a-z]+\/?)+",
+                message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių",
             )
-        ])
+        ],
+    )
 
     contact = forms.ChoiceField(
-        label=_('Kontaktinis asmuo ar organizacija'),
-        required=False
+        label=_("Kontaktinis asmuo ar organizacija"), required=False
     )
 
-    creator = forms.ModelChoiceField( queryset=Organization.objects.all(),
-                                    label=_('Duomenų rinkinio kūrėjas'),required=False)
+    creator = forms.ModelChoiceField(
+        queryset=Organization.objects.all(),
+        label=_("Duomenų rinkinio kūrėjas"),
+        required=False,
+    )
 
-    publisher = forms.ModelChoiceField(queryset=Organization.objects.filter(publisher=True),
-                                    label=_('Duomenų atvėrimo paslaugų teikėjas'), required=False)
+    publisher = forms.ModelChoiceField(
+        queryset=Organization.objects.filter(publisher=True),
+        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        required=False,
+    )
 
-    managed_by_publisher = forms.BooleanField(label=_('Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?'), required=False)
+    managed_by_publisher = forms.BooleanField(
+        label=_("Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"),
+        required=False,
+    )
 
     class Meta:
         model = Dataset
         fields = (
-            'is_public',
-            'tags',
-            'catalog',
-            'licence',
-            'frequency',
-            'access_rights',
-            'distribution_conditions',
-            'type',
-            'endpoint_url',
-            'endpoint_type',
-            'endpoint_description',
-            'endpoint_description_type',
-            'files',
-            'name',
-            'contact',
-            'creator',
-            'publisher',
-            'managed_by_publisher'
+            "is_public",
+            "tags",
+            "catalog",
+            "licence",
+            "frequency",
+            "access_rights",
+            "distribution_conditions",
+            "type",
+            "endpoint_url",
+            "endpoint_type",
+            "endpoint_description",
+            "endpoint_description_type",
+            "files",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
         )
-        labels = {
-            'tags': _("Žymės"),
-            'catalog': _("Katalogas")
-        }
+        labels = {"tags": _("Žymės"), "catalog": _("Katalogas")}
 
-    def __init__(self, request=None, organization = None, *args, **kwargs):
+    def __init__(self, request=None, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.request = request
         self.organization = organization
 
         self.helper.layout = Layout(
-            Field('is_public',
-                  placeholder=_('Ar duomenys vieši')),
-            Field('title',
-                  placeholder=_('Duomenų rinkinio pavadinimas')),
-            Field('name',
-                  placeholder=_('Duomenų rinkinio kodinis pavadinimas')),
-            Field('description',
-                  placeholder=_('Detalus duomenų rinkinio aprašas')),
-            Field('files'),
-            Field('tags',
-                  placeholder=_('Surašykite aktualius raktinius žodžius')),
-            Field('catalog'),
-            Field('licence'),
-            Field('frequency'),
-            Field('type'),
-            Field('endpoint_url'),
-            Field('endpoint_type'),
-            Field('endpoint_description'),
-            Field('endpoint_description_type'),
-            Field('access_rights'),
-            Field('distribution_conditions',
-                  placeholder=_('Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį')),
-            Field('contact'),
-            Field('managed_by_publisher'),
-            Field('creator'),
-            Field('publisher'),
-            Submit('submit', button, css_class='button is-primary')
+            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
+            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("catalog"),
+            Field("licence"),
+            Field("frequency"),
+            Field("type"),
+            Field("endpoint_url"),
+            Field("endpoint_type"),
+            Field("endpoint_description"),
+            Field("endpoint_description_type"),
+            Field("access_rights"),
+            Field(
+                "distribution_conditions",
+                placeholder=_(
+                    "Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
+                ),
+            ),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+            Submit("submit", button, css_class="button is-primary"),
         )
 
-        if self.language_code == 'en':
-            self.fields['description'].required = False
+        if self.language_code == "en":
+            self.fields["description"].required = False
 
         if not instance:
             if Licence.objects.filter(is_default=True).exists():
                 default_licence = Licence.objects.filter(is_default=True).first()
-                self.initial['licence'] = default_licence
+                self.initial["licence"] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
-                self.initial['frequency'] = default_frequency
+                self.initial["frequency"] = default_frequency
         else:
-            self.initial['files'] = list(instance.dataset_files.values_list('file', flat=True))
+            self.initial["files"] = list(
+                instance.dataset_files.values_list("file", flat=True)
+            )
             if instance.name:
-                self.initial['name'] = instance.name
+                self.initial["name"] = instance.name
 
         if self.request.user and self.request.user.organization:
             """
@@ -181,129 +218,157 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             """
             creator_ids = Representative.objects.filter(
                 organization=self.request.user.organization,
-                content_type=ContentType.objects.get_for_model(Organization)
-            ).values_list('object_id', flat=True)
-            self.fields['creator'].queryset = Organization.objects.filter(
-                Q(id__in=creator_ids) |
-                Q(id=self.request.user.organization.id) |
-                Q(id=self.organization.id if self.organization else self.instance.organization.id)
+                content_type=ContentType.objects.get_for_model(Organization),
+            ).values_list("object_id", flat=True)
+            self.fields["creator"].queryset = Organization.objects.filter(
+                Q(id__in=creator_ids)
+                | Q(id=self.request.user.organization.id)
+                | Q(
+                    id=self.organization.id
+                    if self.organization
+                    else self.instance.organization.id
+                )
             ).distinct()
             if self.request.user.organization.publisher:
                 # Show creator field (Meant for publishers)
-                self.fields['managed_by_publisher'].initial = Representative.objects.filter(
+                self.fields[
+                    "managed_by_publisher"
+                ].initial = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(self.instance),
                     object_id=self.instance.id,
-                    organization=self.request.user.organization
+                    organization=self.request.user.organization,
                 ).exists()
 
-                self.fields['creator'].initial = self.instance.organization or self.organization
+                self.fields["creator"].initial = (
+                    self.instance.organization or self.organization
+                )
                 if not self.request.user.is_superuser:
-                    self.fields['publisher'].widget = HiddenInput()
+                    self.fields["publisher"].widget = HiddenInput()
 
             if not self.request.user.organization.publisher:
                 # Show publisher field (Meant for creators)
                 representative = Representative.objects.filter(
                     content_type=ContentType.objects.get_for_model(Organization),
-                    object_id=self.organization.id if self.organization else self.instance.organization.id,
-                    organization__isnull=False
+                    object_id=self.organization.id
+                    if self.organization
+                    else self.instance.organization.id,
+                    organization__isnull=False,
                 )
-                if representative.first() and (self.request.user.is_superuser or representative.first().organization.publisher):
-                    self.fields['publisher'].initial = representative.first().organization.pk
+                if representative.first() and (
+                    self.request.user.is_superuser
+                    or representative.first().organization.publisher
+                ):
+                    self.fields[
+                        "publisher"
+                    ].initial = representative.first().organization.pk
                 if not self.request.user.is_superuser:
-                    self.fields['creator'].widget = HiddenInput()
-                    self.fields['managed_by_publisher'].widget = HiddenInput()
-                self.fields['creator'].initial = self.instance.organization or self.organization
+                    self.fields["creator"].widget = HiddenInput()
+                    self.fields["managed_by_publisher"].widget = HiddenInput()
+                self.fields["creator"].initial = (
+                    self.instance.organization or self.organization
+                )
         else:
-            self.fields['publisher'].widget = HiddenInput()
-            self.fields['creator'].widget = HiddenInput()
-            self.fields['managed_by_publisher'].widget = HiddenInput()
+            self.fields["publisher"].widget = HiddenInput()
+            self.fields["creator"].widget = HiddenInput()
+            self.fields["managed_by_publisher"].widget = HiddenInput()
 
         organization_contacts = Organization.objects.filter(
-            Q(id=self.instance.organization_id) |
-            (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
+            Q(id=self.instance.organization_id)
+            | (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
         )
         user_contacts = User.objects.filter(
-            Q(organization=self.instance.organization) |
-            (Q(organization=self.instance.publisher_id) if self.instance.publisher_id else Q())
+            Q(organization=self.instance.organization)
+            | (
+                Q(organization=self.instance.publisher_id)
+                if self.instance.publisher_id
+                else Q()
+            )
         )
 
-        self.fields['contact'].choices = [
-            ('', '---------'),
+        self.fields["contact"].choices = [
+            ("", "---------"),
         ]
 
         for org in organization_contacts:
-            self.fields['contact'].choices.append(
-                (_(f'Organizacija:'), [(f"org-{org.id}", f'{org.title}')])
+            self.fields["contact"].choices.append(
+                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
             )
-            user_choices = [(f"user-{user.id}", f'{user.get_full_name()}')
-                            for user in user_contacts
-                            if user.organization_id == org.id]
-            self.fields['contact'].choices.append(
-                (_(f'Naudotojai:'), user_choices)
-            )
+            user_choices = [
+                (f"user-{user.id}", f"{user.get_full_name()}")
+                for user in user_contacts
+                if user.organization_id == org.id
+            ]
+            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
-        if contact:= self._get_contact(self.instance):
+        if contact := self._get_contact(self.instance):
             if isinstance(contact, Organization):
-                self.fields['contact'].initial = f"org-{contact.id}"
+                self.fields["contact"].initial = f"org-{contact.id}"
             elif isinstance(contact, User):
-                self.fields['contact'].initial = f"user-{contact.id}"
-
+                self.fields["contact"].initial = f"user-{contact.id}"
 
     def clean_type(self):
-        type = self.cleaned_data.get('type')
+        type = self.cleaned_data.get("type")
         if (
-            type.filter(name=Type.SERVICE).exists() and
-            type.filter(name=Type.SERIES).exists()
+            type.filter(name=Type.SERVICE).exists()
+            and type.filter(name=Type.SERIES).exists()
         ):
-            raise ValidationError(_('Tipai "service" ir "series" negali būti pažymėti abu kartu, '
-                                    'gali būti pažymėtas tik vienas arba kitas.'))
+            raise ValidationError(
+                _(
+                    'Tipai "service" ir "series" negali būti pažymėti abu kartu, '
+                    "gali būti pažymėtas tik vienas arba kitas."
+                )
+            )
         return type
 
     def clean_name(self):
-        name = self.cleaned_data.get('name')
+        name = self.cleaned_data.get("name")
 
         if name:
             if self.instance and self.instance.pk and self.instance.metadata.first():
                 metadata = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    name=name
+                    content_type=ContentType.objects.get_for_model(Dataset), name=name
                 ).exclude(pk=self.instance.metadata.first().pk)
             else:
                 metadata = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    name=name
+                    content_type=ContentType.objects.get_for_model(Dataset), name=name
                 )
             if metadata:
-                raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+                raise ValidationError(
+                    _("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja.")
+                )
 
             if not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
+                raise ValidationError(
+                    _(
+                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+                    )
+                )
             if any([ch.isupper() for ch in name]):
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+                raise ValidationError(
+                    _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
+                )
         return name
 
     def clean_contact(self):
-        contact = self.cleaned_data.get('contact')
+        contact = self.cleaned_data.get("contact")
         if contact:
-            contact_type, contact_id = contact.split('-')
-            if contact_type == 'org':
+            contact_type, contact_id = contact.split("-")
+            if contact_type == "org":
                 return Organization.objects.get(pk=contact_id)
-            elif contact_type == 'user':
+            elif contact_type == "user":
                 return User.objects.get(pk=contact_id)
         return None
 
     @staticmethod
     def _get_contact(instance):
-        contact = Contact.objects.filter(
-            dataset=instance
-        ).first() or None
+        contact = Contact.objects.filter(dataset=instance).first() or None
         return contact.content_object if contact else None
 
 
 class DatasetAdminForm(forms.ModelForm):
     class Meta:
         model = Dataset
-        exclude = ('slug', 'current_structure')
+        exclude = ("slug", "current_structure")
 
 
 class DatasetSearchForm(FacetedSearchForm):
@@ -315,26 +380,36 @@ class DatasetSearchForm(FacetedSearchForm):
         sqs = sqs.models(Dataset)
         if not self.is_valid():
             return self.no_query_found()
-        if self.cleaned_data.get('q'):
-            keyword = self.cleaned_data.get('q')
+        if self.cleaned_data.get("q"):
+            keyword = self.cleaned_data.get("q")
             if len(keyword) < 5:
                 sqs = sqs.autocomplete(text__startswith=keyword)
             else:
                 sqs = sqs.autocomplete(text__icontains=keyword)
 
-            dataset_with_name_ids = self.searchqueryset.models(Dataset).filter(name__icontains=keyword) \
-                .values_list('pk', flat=True)
-            dataset_with_model_name_ids = self.searchqueryset.models(Dataset).filter(model_names__icontains=keyword) \
-                .values_list('pk', flat=True)
-            sqs_ids = sqs.values_list('pk', flat=True)
-            ids = list(dataset_with_model_name_ids) + list(dataset_with_name_ids) + list(sqs_ids)
+            dataset_with_name_ids = (
+                self.searchqueryset.models(Dataset)
+                .filter(name__icontains=keyword)
+                .values_list("pk", flat=True)
+            )
+            dataset_with_model_name_ids = (
+                self.searchqueryset.models(Dataset)
+                .filter(model_names__icontains=keyword)
+                .values_list("pk", flat=True)
+            )
+            sqs_ids = sqs.values_list("pk", flat=True)
+            ids = (
+                list(dataset_with_model_name_ids)
+                + list(dataset_with_name_ids)
+                + list(sqs_ids)
+            )
 
             sqs = self.searchqueryset.models(Dataset).filter(id__in=ids)
 
-        if self.cleaned_data.get('date_from'):
-            sqs = sqs.filter(published__gte=self.cleaned_data['date_from'])
-        if self.cleaned_data.get('date_to'):
-            sqs = sqs.filter(published__lte=self.cleaned_data['date_to'])
+        if self.cleaned_data.get("date_from"):
+            sqs = sqs.filter(published__gte=self.cleaned_data["date_from"])
+        if self.cleaned_data.get("date_to"):
+            sqs = sqs.filter(published__lte=self.cleaned_data["date_to"])
         return sqs
 
     def no_query_found(self):
@@ -342,33 +417,35 @@ class DatasetSearchForm(FacetedSearchForm):
 
 
 class DatasetStructureImportForm(forms.ModelForm):
-    file = FilerFileField(label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO)
+    file = FilerFileField(
+        label=_("Failas"), required=True, upload_to=DatasetStructure.UPLOAD_TO
+    )
 
     class Meta:
         model = DatasetStructure
-        fields = ('file',)
+        fields = ("file",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-structure-form"
         self.helper.layout = Layout(
-            Field('file'),
-            Submit('submit', _('Patvirtinti'), css_class='button is-primary'),
+            Field("file"),
+            Submit("submit", _("Patvirtinti"), css_class="button is-primary"),
         )
 
 
 class OrganizationWidget(ModelSelect2Widget):
     model = Organization
-    search_fields = ['title__icontains']
+    search_fields = ["title__icontains"]
     max_results = 10
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
         queryset = queryset.annotate(
-            attribution_count=Count('datasetattribution')
-        ).order_by('-attribution_count')
+            attribution_count=Count("datasetattribution")
+        ).order_by("-attribution_count")
         return queryset
 
 
@@ -377,51 +454,74 @@ class DatasetAttributionForm(forms.ModelForm):
         label=_("Organizacija"),
         required=False,
         queryset=Organization.public.all(),
-        widget=OrganizationWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0})
+        widget=OrganizationWidget(
+            attrs={"data-width": "100%", "data-minimum-input-length": 0}
+        ),
     )
 
     class Meta:
         model = DatasetAttribution
-        fields = ('attribution', 'organization', 'agent',)
+        fields = (
+            "attribution",
+            "organization",
+            "agent",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
 
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "attribution-form"
         self.helper.layout = Layout(
-            Field('attribution'),
-            Field('organization'),
-            Field('agent'),
-            Submit('submit', _('Sukurti'), css_class='button is-primary'),
+            Field("attribution"),
+            Field("organization"),
+            Field("agent"),
+            Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 
     def clean(self):
-        attribution = self.cleaned_data.get('attribution')
-        organization = self.cleaned_data.get('organization')
-        agent = self.cleaned_data.get('agent')
+        attribution = self.cleaned_data.get("attribution")
+        organization = self.cleaned_data.get("organization")
+        agent = self.cleaned_data.get("agent")
 
         if organization and agent:
-            self.add_error('organization', _('Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'))
+            self.add_error(
+                "organization",
+                _('Negalima užpildyti abiejų "Organizacija" ir "Agentas" laukų.'),
+            )
 
         elif not organization and not agent:
-            self.add_error('organization', _('Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'))
+            self.add_error(
+                "organization",
+                _('Privaloma užpildyti "Organizacija" arba "Agentas" lauką.'),
+            )
 
-        elif organization and DatasetAttribution.objects.filter(
-            dataset=self.dataset,
-            organization=organization,
-            attribution=attribution,
-        ).exists():
-            self.add_error('organization', _(f'Ryšys "{attribution}" su šia organizacija jau egzistuoja.'))
+        elif (
+            organization
+            and DatasetAttribution.objects.filter(
+                dataset=self.dataset,
+                organization=organization,
+                attribution=attribution,
+            ).exists()
+        ):
+            self.add_error(
+                "organization",
+                _(f'Ryšys "{attribution}" su šia organizacija jau egzistuoja.'),
+            )
 
-        elif agent and DatasetAttribution.objects.filter(
-            dataset=self.dataset,
-            agent=agent,
-            attribution=attribution,
-        ).exists():
-            self.add_error('agent', _(f'Ryšys "{attribution}" su šiuo agentu jau egzistuoja.'))
+        elif (
+            agent
+            and DatasetAttribution.objects.filter(
+                dataset=self.dataset,
+                agent=agent,
+                attribution=attribution,
+            ).exists()
+        ):
+            self.add_error(
+                "agent", _(f'Ryšys "{attribution}" su šiuo agentu jau egzistuoja.')
+            )
 
         return self.cleaned_data
 
@@ -429,29 +529,30 @@ class DatasetAttributionForm(forms.ModelForm):
 class AddProjectForm(forms.ModelForm):
     class Meta:
         model = Dataset
-        fields = ['projects']
+        fields = ["projects"]
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        self.dataset = kwargs.pop('dataset', None)
+        self.user = kwargs.pop("user", None)
+        self.dataset = kwargs.pop("dataset", None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-add-project-form"
-        self.fields['projects'].queryset = get_projects(self.user, self.dataset, form_query=True)
+        self.fields["projects"].queryset = get_projects(
+            self.user, self.dataset, form_query=True
+        )
         self.helper.layout = Layout(
-            Field('projects'),
-            Submit('submit', _("Pridėti"), css_class='button is-primary')
+            Field("projects"),
+            Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )
 
     projects = ModelMultipleChoiceField(
-        label=_('Projektai'),
+        label=_("Projektai"),
         queryset=None,
         widget=forms.CheckboxSelectMultiple,
         required=True,
         help_text=_(
-            "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų "
-            "rinkinys."
+            "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų rinkinys."
         ),
     )
 
@@ -459,29 +560,28 @@ class AddProjectForm(forms.ModelForm):
 class AddRequestForm(forms.ModelForm):
     class Meta:
         model = Dataset
-        fields = ['requests']
+        fields = ["requests"]
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        self.dataset = kwargs.pop('dataset', None)
+        self.user = kwargs.pop("user", None)
+        self.dataset = kwargs.pop("dataset", None)
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-add-request-form"
-        self.fields['requests'].queryset = get_requests(self.user, self.dataset)
+        self.fields["requests"].queryset = get_requests(self.user, self.dataset)
         self.helper.layout = Layout(
-            Field('requests'),
-            Submit('submit', _("Pridėti"), css_class='button is-primary')
+            Field("requests"),
+            Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )
 
     requests = ModelMultipleChoiceField(
-        label=_('Poreikiai'),
+        label=_("Poreikiai"),
         queryset=None,
         widget=forms.CheckboxSelectMultiple,
         required=True,
         help_text=_(
-            "Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų "
-            "rinkinys."
+            "Pažymėkite poreikius, kuriuose yra naudojamas šis duomenų rinkinys."
         ),
     )
 
@@ -500,13 +600,13 @@ class DatasetCategoryForm(Form):
         label=_("Grupės"),
         required=False,
         queryset=DatasetGroup.objects.all(),
-        widget=CheckboxSelectMultiple
+        widget=CheckboxSelectMultiple,
     )
     category = ModelMultipleChoiceField(
         label=_("Kategorija"),
         required=False,
         queryset=Category.objects.all(),
-        widget=CheckboxSelectMultiple
+        widget=CheckboxSelectMultiple,
     )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -516,44 +616,59 @@ class DatasetCategoryForm(Form):
         self.helper = FormHelper()
         self.helper.form_id = "dataset-category-form"
         self.helper.layout = Layout(
-            Field('group'),
-            Field('search'),
-            HTML(f'<div class="mt-4 mb-3"><input type="checkbox" id="show_selected_id"/>'
-                 f'<strong>{_("Rodyti pasirinktas kategorijas")}</strong></div>'),
-            Field('category'),
-            Submit('submit', _("Išsaugoti"), css_class='button is-primary')
+            Field("group"),
+            Field("search"),
+            HTML(
+                f'<div class="mt-4 mb-3"><input type="checkbox" id="show_selected_id"/>'
+                f"<strong>{_('Rodyti pasirinktas kategorijas')}</strong></div>"
+            ),
+            Field("category"),
+            Submit("submit", _("Išsaugoti"), css_class="button is-primary"),
         )
 
         category_choices = MoveNodeForm.mk_dropdown_tree(Category)
         category_choices = category_choices[1:]
-        self.fields['category'].choices = category_choices
-        self.initial['category'] = self.dataset.category.all()
+        self.fields["category"].choices = category_choices
+        self.initial["category"] = self.dataset.category.all()
 
-        self.initial['group'] = DatasetGroup.objects.filter(category__in=self.dataset.category.all()).distinct()
+        self.initial["group"] = DatasetGroup.objects.filter(
+            category__in=self.dataset.category.all()
+        ).distinct()
 
 
 class PartOfWidget(ModelSelect2Widget):
     model = Dataset
-    search_fields = [
-        'translations__title__icontains',
-        'absolute_url__icontains']
-    dependent_fields = {'organization_id': 'organization__pk'}
+    search_fields = ["translations__title__icontains", "absolute_url__icontains"]
+    dependent_fields = {"organization_id": "organization__pk"}
     max_results = 10
 
     def filter_queryset(self, request, term, queryset=None, **dependent_fields):
         organization_id = None
-        if 'organization__pk' in dependent_fields:
-            organization_id = dependent_fields.pop('organization__pk')
+        if "organization__pk" in dependent_fields:
+            organization_id = dependent_fields.pop("organization__pk")
         if queryset:
             domain = get_current_domain(request)
             queryset = queryset.annotate(
-                absolute_url=Concat(Value(domain), Value('/datasets/'), 'pk', Value('/'), output_field=_CharField())
+                absolute_url=Concat(
+                    Value(domain),
+                    Value("/datasets/"),
+                    "pk",
+                    Value("/"),
+                    output_field=_CharField(),
+                )
             )
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
         if organization_id:
-            organization_datasets = queryset.filter(organization__pk=organization_id).values_list('pk', flat=True)
+            organization_datasets = queryset.filter(
+                organization__pk=organization_id
+            ).values_list("pk", flat=True)
             if organization_datasets:
-                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(organization_datasets)])
+                preserved = Case(
+                    *[
+                        When(pk=pk, then=pos)
+                        for pos, pk in enumerate(organization_datasets)
+                    ]
+                )
                 queryset = queryset.order_by(preserved)
         return queryset
 
@@ -562,44 +677,50 @@ class DatasetRelationForm(forms.ModelForm):
     organization_id = forms.IntegerField(widget=forms.HiddenInput)
     part_of = forms.ModelChoiceField(
         label=_("Duomenų rinkinys"),
-        widget=PartOfWidget(attrs={'data-width': '100%', 'data-minimum-input-length': 0}),
-        queryset=Dataset.public.all()
+        widget=PartOfWidget(
+            attrs={"data-width": "100%", "data-minimum-input-length": 0}
+        ),
+        queryset=Dataset.public.all(),
     )
     relation_type = forms.ChoiceField(label=_("Ryšio tipas"))
 
     class Meta:
         model = DatasetRelation
-        fields = ('organization_id', 'relation_type', 'part_of',)
+        fields = (
+            "organization_id",
+            "relation_type",
+            "part_of",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-relation-form"
         self.helper.layout = Layout(
-            Field('organization_id'),
-            Field('relation_type'),
-            Field('part_of'),
-            Submit('submit', _("Pridėti"), css_class='button is-primary')
+            Field("organization_id"),
+            Field("relation_type"),
+            Field("part_of"),
+            Submit("submit", _("Pridėti"), css_class="button is-primary"),
         )
 
-        self.initial['organization_id'] = self.dataset.organization.pk
+        self.initial["organization_id"] = self.dataset.organization.pk
 
-        relation_choices = [(None, '---------')]
+        relation_choices = [(None, "---------")]
         for rel in Relation.objects.all():
             relation_choices.append((f"{rel.pk}", rel.title))
-            relation_choices.append((f'{rel.pk}_inv', rel.inversive_title))
-        self.fields['relation_type'].choices = tuple(relation_choices)
+            relation_choices.append((f"{rel.pk}_inv", rel.inversive_title))
+        self.fields["relation_type"].choices = tuple(relation_choices)
 
     def clean_part_of(self):
-        part_of = self.cleaned_data.get('part_of')
-        relation = self.cleaned_data.get('relation_type')
+        part_of = self.cleaned_data.get("part_of")
+        relation = self.cleaned_data.get("relation_type")
 
         if relation:
             inverse = False
-            if relation.endswith('_inv'):
-                relation = relation.replace('_inv', '')
+            if relation.endswith("_inv"):
+                relation = relation.replace("_inv", "")
                 inverse = True
             try:
                 relation = Relation.objects.get(pk=int(relation))
@@ -608,18 +729,22 @@ class DatasetRelationForm(forms.ModelForm):
 
             if inverse:
                 if DatasetRelation.objects.filter(
-                    relation=relation,
-                    dataset=part_of,
-                    part_of=self.dataset
+                    relation=relation, dataset=part_of, part_of=self.dataset
                 ):
-                    raise ValidationError(_(f'"{relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'))
+                    raise ValidationError(
+                        _(
+                            f'"{relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+                        )
+                    )
             else:
                 if DatasetRelation.objects.filter(
-                    relation=relation,
-                    dataset=self.dataset,
-                    part_of=part_of
+                    relation=relation, dataset=self.dataset, part_of=part_of
                 ):
-                    raise ValidationError(_(f'"{relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'))
+                    raise ValidationError(
+                        _(
+                            f'"{relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
+                        )
+                    )
 
         return part_of
 
@@ -627,46 +752,45 @@ class DatasetRelationForm(forms.ModelForm):
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.deadline:
-            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
+            return mark_safe(
+                f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>"
+            )
         else:
             return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class DatasetPlanForm(forms.ModelForm):
     plan = PlanChoiceField(
-        label=_("Terminas"),
-        widget=forms.RadioSelect(),
-        queryset=Plan.objects.all()
+        label=_("Terminas"), widget=forms.RadioSelect(), queryset=Plan.objects.all()
     )
     form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
         model = PlanDataset
-        fields = ('plan', 'form_type',)
+        fields = (
+            "plan",
+            "form_type",
+        )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-plan-form"
         self.helper.layout = Layout(
-            Field('form_type'),
-            Field('plan'),
-            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+            Field("form_type"),
+            Field("plan"),
+            Submit("submit", _("Įtraukti"), css_class="button is-primary"),
         )
 
-        self.fields['plan'].queryset = self.fields['plan'].queryset.filter(
-            Q(deadline__isnull=True) |
-            Q(deadline__gt=date.today())
+        self.fields["plan"].queryset = self.fields["plan"].queryset.filter(
+            Q(deadline__isnull=True) | Q(deadline__gt=date.today())
         )
 
     def clean_plan(self):
-        plan = self.cleaned_data.get('plan')
-        if PlanDataset.objects.filter(
-            plan=plan,
-            dataset=self.dataset
-        ):
+        plan = self.cleaned_data.get("plan")
+        if PlanDataset.objects.filter(plan=plan, dataset=self.dataset):
             raise ValidationError(_("Duomenų rinkinys jau priskirtas šiam planui."))
         return plan
 
@@ -676,32 +800,41 @@ class PlanForm(OrganizationPlanForm):
 
     class Meta:
         model = Plan
-        fields = ('title', 'description', 'deadline', 'publisher', 'provider_title', 'receiver',)
+        fields = (
+            "title",
+            "description",
+            "deadline",
+            "publisher",
+            "provider_title",
+            "receiver",
+        )
 
     def __init__(self, obj, organizations, user, *args, **kwargs):
         self.obj = obj
         super().__init__(organizations, user, *args, **kwargs)
         self.helper = FormHelper()
-        self.helper.attrs['novalidate'] = ''
+        self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "plan-form"
         self.helper.layout = Layout(
-            Field('form_type'),
-            Field('organizations'),
-            Field('user_id'),
-            Field('title'),
-            Field('description'),
-            Field('deadline'),
-            Field('receiver'),
-            Field('publisher'),
-            Field('provider_title'),
-            Submit('submit', _('Įtraukti'), css_class='button is-primary'),
+            Field("form_type"),
+            Field("organizations"),
+            Field("user_id"),
+            Field("title"),
+            Field("description"),
+            Field("deadline"),
+            Field("receiver"),
+            Field("publisher"),
+            Field("provider_title"),
+            Submit("submit", _("Įtraukti"), css_class="button is-primary"),
         )
 
         if len(self.organizations) == 1:
-            self.initial['receiver'] = self.organizations[0]
-            self.fields['receiver'].widget = HiddenInput()
+            self.initial["receiver"] = self.organizations[0]
+            self.fields["receiver"].widget = HiddenInput()
         else:
             organization_ids = [org.pk for org in self.organizations]
-            self.fields['receiver'].queryset = self.fields['receiver'].queryset.filter(pk__in=organization_ids)
+            self.fields["receiver"].queryset = self.fields["receiver"].queryset.filter(
+                pk__in=organization_ids
+            )
 
-        self.initial['title'] = self.obj.get_plan_title()
+        self.initial["title"] = self.obj.get_plan_title()

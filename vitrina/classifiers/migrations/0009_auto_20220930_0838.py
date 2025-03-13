@@ -4,22 +4,21 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0008_alter_path_depth'),
+        ("vitrina_classifiers", "0008_alter_path_depth"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='category',
+            name="category",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='frequency',
+            name="frequency",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='licence',
+            name="licence",
             options={},
         ),
     ]

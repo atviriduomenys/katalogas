@@ -5,39 +5,65 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0023_remove_untranslated_fields'),
+        ("vitrina_resources", "0023_remove_untranslated_fields"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='GeoportalFormat',
+            name="GeoportalFormat",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Geoportalo formatas',
-                'verbose_name_plural': 'Geoportalo formatai',
-                'db_table': 'geoportal_format',
+                "verbose_name": "Geoportalo formatas",
+                "verbose_name_plural": "Geoportalo formatai",
+                "db_table": "geoportal_format",
             },
         ),
         migrations.CreateModel(
-            name='GeoportalFormatValue',
+            name="GeoportalFormatValue",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('value', models.CharField(max_length=255, verbose_name='Reikšmė')),
-                ('geoportal_format', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_resources.geoportalformat', verbose_name='Geoportalo formatas')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("value", models.CharField(max_length=255, verbose_name="Reikšmė")),
+                (
+                    "geoportal_format",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="vitrina_resources.geoportalformat",
+                        verbose_name="Geoportalo formatas",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Geoportalo formato reikšmė',
-                'verbose_name_plural': 'Geoportalo formato reikšmės',
-                'db_table': 'geoportal_format_value',
+                "verbose_name": "Geoportalo formato reikšmė",
+                "verbose_name_plural": "Geoportalo formato reikšmės",
+                "db_table": "geoportal_format_value",
             },
         ),
         migrations.AddField(
-            model_name='geoportalformat',
-            name='format',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='vitrina_resources.format', verbose_name='Formatas'),
+            model_name="geoportalformat",
+            name="format",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="vitrina_resources.format",
+                verbose_name="Formatas",
+            ),
         ),
     ]

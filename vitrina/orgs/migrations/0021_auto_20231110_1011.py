@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0020_auto_20231108_0433'),
+        ("vitrina_orgs", "0020_auto_20231108_0433"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='representativerequest',
-            name='document',
-            field=models.FileField(upload_to='data/files/request_assignments'),
+            model_name="representativerequest",
+            name="document",
+            field=models.FileField(upload_to="data/files/request_assignments"),
         ),
     ]

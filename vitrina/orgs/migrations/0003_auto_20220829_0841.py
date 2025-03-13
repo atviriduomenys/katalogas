@@ -10,24 +10,19 @@ from treebeard.mp_tree import MP_Node
 
 def update_parents(apps, schema_editor):
     Organization = apps.get_model("vitrina_orgs", "Organization")
-    for jurisdiction in Organization.objects.filter(
-        jurisdiction__isnull=False
-    ).values_list('jurisdiction', flat=True).distinct():
+    for jurisdiction in (
+        Organization.objects.filter(jurisdiction__isnull=False)
+        .values_list("jurisdiction", flat=True)
+        .distinct()
+    ):
         if jurisdiction == "Savivaldybės":
             jurisdiction = "Vidaus reikalų ministerija"
         organization = (
-            Organization.objects.
-            filter(title__icontains=jurisdiction).
-            first()
-        ) or Organization(
-            title=jurisdiction,
-            is_public=True
-        )
+            Organization.objects.filter(title__icontains=jurisdiction).first()
+        ) or Organization(title=jurisdiction, is_public=True)
         organization.role = "ministry"
         organization.save()
-        for child in Organization.objects.filter(
-            jurisdiction=jurisdiction
-        ).exclude(
+        for child in Organization.objects.filter(jurisdiction=jurisdiction).exclude(
             pk=organization.pk
         ):
             child.parent = organization
@@ -47,7 +42,7 @@ def _fix_mp(
     order_by: list[str],  # model.node_order_by
     parent: MP_Node | None = None,
     depth: int = 1,
-    path: str = '',
+    path: str = "",
 ) -> int:  # numchild
     i = 0
     qs = model.objects.filter(parent=parent).order_by(*order_by)
@@ -55,59 +50,73 @@ def _fix_mp(
         obj.depth = depth
         obj.path = path + _get_path(i)
         obj.numchild = _fix_mp(model, order_by, obj, depth + 1, obj.path)
-        obj.save(update_fields=['depth', 'path', 'numchild'])
+        obj.save(update_fields=["depth", "path", "numchild"])
     return i
 
 
 def update_paths(apps, schema_editor):
     Organization = apps.get_model("vitrina_orgs", "Organization")
-    _fix_mp(Organization, ['created'])
+    _fix_mp(Organization, ["created"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0002_alter_organization_options'),
+        ("vitrina_orgs", "0002_alter_organization_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
+            name="organization",
             options={},
         ),
         migrations.AddField(
-            model_name='organization',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='vitrina_orgs.organization'),
+            model_name="organization",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="vitrina_orgs.organization",
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='role',
-            field=models.CharField(blank=True, choices=[('ministry', 'Ministerija'), ('municipality', 'Savivaldybė')],
-                                   max_length=255, null=True),
+            model_name="organization",
+            name="role",
+            field=models.CharField(
+                blank=True,
+                choices=[("ministry", "Ministerija"), ("municipality", "Savivaldybė")],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.RunPython(update_parents),
-
         migrations.AddField(
-            model_name='organization',
-            name='depth',
+            model_name="organization",
+            name="depth",
             field=models.PositiveIntegerField(default=1),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='organization',
-            name='kind',
-            field=models.CharField(choices=[('com', 'Verslo organizacija'), ('org', 'Nepelno ir nevalstybinė organizacija'), ('gov', 'Valstybinė įstaiga')], default='org', max_length=36),
+            model_name="organization",
+            name="kind",
+            field=models.CharField(
+                choices=[
+                    ("com", "Verslo organizacija"),
+                    ("org", "Nepelno ir nevalstybinė organizacija"),
+                    ("gov", "Valstybinė įstaiga"),
+                ],
+                default="org",
+                max_length=36,
+            ),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='numchild',
+            model_name="organization",
+            name="numchild",
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='organization',
-            name='path',
+            model_name="organization",
+            name="path",
             field=models.CharField(blank=True, null=True, max_length=255),
         ),
         migrations.RunPython(update_paths),

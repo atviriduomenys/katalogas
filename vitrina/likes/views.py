@@ -17,9 +17,13 @@ class LikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
     user: User
 
     def dispatch(self, request, *args, **kwargs):
-        self.content_type = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
-        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get('obj_id'))
-        self.user = get_object_or_404(User, pk=kwargs.get('user_id'))
+        self.content_type = get_object_or_404(
+            ContentType, pk=kwargs.get("content_type_id")
+        )
+        self.obj = get_object_or_404(
+            self.content_type.model_class(), pk=kwargs.get("obj_id")
+        )
+        self.user = get_object_or_404(User, pk=kwargs.get("user_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -29,7 +33,10 @@ class LikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+            if (
+                self.obj.status == Project.APPROVED
+                or self.obj.user == self.request.user
+            ):
                 return True
             else:
                 return has_perm(
@@ -41,9 +48,7 @@ class LikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         Like.objects.create(
-            content_type=self.content_type,
-            object_id=self.obj.pk,
-            user=self.user
+            content_type=self.content_type, object_id=self.obj.pk, user=self.user
         )
         return redirect(self.obj.get_absolute_url())
 
@@ -54,9 +59,13 @@ class UnlikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
     user: User
 
     def dispatch(self, request, *args, **kwargs):
-        self.content_type = get_object_or_404(ContentType, pk=kwargs.get('content_type_id'))
-        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get('obj_id'))
-        self.user = get_object_or_404(User, pk=kwargs.get('user_id'))
+        self.content_type = get_object_or_404(
+            ContentType, pk=kwargs.get("content_type_id")
+        )
+        self.obj = get_object_or_404(
+            self.content_type.model_class(), pk=kwargs.get("obj_id")
+        )
+        self.user = get_object_or_404(User, pk=kwargs.get("user_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -66,7 +75,10 @@ class UnlikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
+            if (
+                self.obj.status == Project.APPROVED
+                or self.obj.user == self.request.user
+            ):
                 return True
             else:
                 return has_perm(
@@ -77,6 +89,10 @@ class UnlikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return True
 
     def post(self, request, *args, **kwargs):
-        if Like.objects.filter(content_type=self.content_type, object_id=self.obj.pk, user=self.user).exists():
-            Like.objects.filter(content_type=self.content_type, object_id=self.obj.pk, user=self.user).delete()
+        if Like.objects.filter(
+            content_type=self.content_type, object_id=self.obj.pk, user=self.user
+        ).exists():
+            Like.objects.filter(
+                content_type=self.content_type, object_id=self.obj.pk, user=self.user
+            ).delete()
         return redirect(self.obj.get_absolute_url())

@@ -9,7 +9,7 @@ class DuplicateAPIKeyException(APIException):
         "Baigėsi Jūsų API rakto galiojimas. "
         "Raktą galite atsinaujinti savo organizacijos tvarkytojų sąraše: {url}"
     )
-    default_code = 'duplicate_api_key'
+    default_code = "duplicate_api_key"
 
     def __init__(self, detail=None, code=None, url=None):
         if url:

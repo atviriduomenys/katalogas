@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_tasks', '0007_auto_20230808_1156'),
+        ("vitrina_tasks", "0007_auto_20230808_1156"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='task',
-            name='role',
-            field=models.CharField(blank=True, choices=[('supervisor', 'Vyr. koordinatorius'), ('coordinator', 'Organizacijos koordinatorius'), ('manager', 'Organizacijos tvarkytojas')], max_length=255, null=True),
+            model_name="task",
+            name="role",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("supervisor", "Vyr. koordinatorius"),
+                    ("coordinator", "Organizacijos koordinatorius"),
+                    ("manager", "Organizacijos tvarkytojas"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

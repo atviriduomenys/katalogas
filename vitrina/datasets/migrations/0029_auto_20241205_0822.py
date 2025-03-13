@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0028_auto_20241202_1314'),
+        ("vitrina_datasets", "0028_auto_20241202_1314"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
-            name='creator_text',
+            model_name="dataset",
+            name="creator_text",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

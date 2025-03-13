@@ -20,13 +20,17 @@ class FinancingPlan(models.Model):
     received_financing = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     year = models.IntegerField(blank=True, null=True)
-    created_by = models.ForeignKey(User, models.CASCADE, db_column='created_by', blank=True, null=True)
-    organization = models.ForeignKey(Organization, models.CASCADE, blank=True, null=True)
+    created_by = models.ForeignKey(
+        User, models.CASCADE, db_column="created_by", blank=True, null=True
+    )
+    organization = models.ForeignKey(
+        Organization, models.CASCADE, blank=True, null=True
+    )
 
     class Meta:
         managed = True
-        db_table = 'financing_plan'
-        unique_together = (('organization', 'year'),)
+        db_table = "financing_plan"
+        unique_together = (("organization", "year"),)
 
     def __str__(self):
         return f"Finansavimo planas {self.year}"
@@ -44,7 +48,7 @@ class FinancingPlanState(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'financing_plan_state'
+        db_table = "financing_plan_state"
 
 
 class NationalFinancingPlan(models.Model):
@@ -62,7 +66,7 @@ class NationalFinancingPlan(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'national_financing_plan'
+        db_table = "national_financing_plan"
 
 
 class Project(models.Model):
@@ -76,7 +80,7 @@ class Project(models.Model):
     objects = models.Manager()
 
     class Meta:
-        db_table = 'project'
+        db_table = "project"
 
     def __str__(self):
         return self.title
@@ -88,49 +92,59 @@ class Plan(models.Model):
     created = models.DateField(_("Sukurta"), auto_now_add=True, editable=False)
     deadline = models.DateField(_("Įgyvendinimo terminas"), null=True, blank=True)
     receiver = models.ForeignKey(
-        'vitrina_orgs.Organization',
+        "vitrina_orgs.Organization",
         verbose_name=_("Paslaugų gavėjas"),
-        related_name='receiver_plans',
-        on_delete=models.PROTECT
+        related_name="receiver_plans",
+        on_delete=models.PROTECT,
     )
     publisher = models.ForeignKey(
-        'vitrina_orgs.Organization',
+        "vitrina_orgs.Organization",
         verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
-        related_name='publisher_plans',
+        related_name="publisher_plans",
         on_delete=models.PROTECT,
         null=True,
-        blank=True
+        blank=True,
     )
-    provider_title = models.CharField(_("Paslaugų teikėjo pavadinimas"), max_length=255, null=True, blank=True)
+    provider_title = models.CharField(
+        _("Paslaugų teikėjo pavadinimas"), max_length=255, null=True, blank=True
+    )
     procurement = models.URLField(_("Nuoroda į viešąjį pirkimą"), null=True, blank=True)
     price = models.FloatField(_("Pirkimo kaina EUR"), null=True, blank=True)
-    project = models.ForeignKey(Project, verbose_name=_("Projektas"), on_delete=models.PROTECT, null=True, blank=True)
+    project = models.ForeignKey(
+        Project,
+        verbose_name=_("Projektas"),
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
     is_closed = models.BooleanField(_("Uždarytas"), default=False)
 
     objects = models.Manager()
 
     class Meta:
-        db_table = 'plan'
+        db_table = "plan"
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('plan-detail', args=[self.receiver.pk, self.pk])
+        return reverse("plan-detail", args=[self.receiver.pk, self.pk])
 
 
 class PlanDataset(models.Model):
     plan = models.ForeignKey(Plan, verbose_name=_("Planas"), on_delete=models.CASCADE)
     dataset = models.ForeignKey(
-        'vitrina_datasets.Dataset',
-        verbose_name=_('Duomenų rinkinys'),
-        on_delete=models.CASCADE
+        "vitrina_datasets.Dataset",
+        verbose_name=_("Duomenų rinkinys"),
+        on_delete=models.CASCADE,
     )
-    created = models.DateTimeField(_("Įtraukimo data"), auto_now_add=True, editable=False)
+    created = models.DateTimeField(
+        _("Įtraukimo data"), auto_now_add=True, editable=False
+    )
 
     class Meta:
-        db_table = 'plan_dataset'
-        unique_together = (('plan', 'dataset'),)
+        db_table = "plan_dataset"
+        unique_together = (("plan", "dataset"),)
 
     def __str__(self):
         return str(self.plan)
@@ -139,15 +153,15 @@ class PlanDataset(models.Model):
 class PlanRequest(models.Model):
     plan = models.ForeignKey(Plan, verbose_name=_("Planas"), on_delete=models.CASCADE)
     request = models.ForeignKey(
-        'vitrina_requests.Request',
-        verbose_name=_("Poreikis"),
-        on_delete=models.CASCADE
+        "vitrina_requests.Request", verbose_name=_("Poreikis"), on_delete=models.CASCADE
     )
-    created = models.DateTimeField(_("Įtraukimo data"), auto_now_add=True, editable=False)
+    created = models.DateTimeField(
+        _("Įtraukimo data"), auto_now_add=True, editable=False
+    )
 
     class Meta:
-        db_table = 'plan_request'
-        unique_together = (('plan', 'request'),)
+        db_table = "plan_request"
+        unique_together = (("plan", "request"),)
 
     def __str__(self):
         return str(self.plan)

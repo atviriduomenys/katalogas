@@ -20,61 +20,61 @@ from vitrina.projects.models import Project
 
 
 def home(request):
-    coordinator_count = User.objects.select_related('representative').filter(
-        representative__role='coordinator'
-    ).distinct('representative__user').count()
-    manager_count = User.objects.select_related('representative').filter(
-        representative__role='manager'
-    ).exclude(representative__role='coordinator').distinct('representative__user').count()
-    user_count = User.objects.exclude(representative__role='manager').exclude(representative__role='coordinator').count()
-    return render(request, 'landing.html', {
-        'counts': {
-            'dataset': Dataset.public.count(),
-            'organization': Organization.public.count(),
-            'project': Project.objects.filter(status='APPROVED').count(),
-            'coordinators': coordinator_count,
-            'managers': manager_count,
-            'users': user_count
+    coordinator_count = (
+        User.objects.select_related("representative")
+        .filter(representative__role="coordinator")
+        .distinct("representative__user")
+        .count()
+    )
+    manager_count = (
+        User.objects.select_related("representative")
+        .filter(representative__role="manager")
+        .exclude(representative__role="coordinator")
+        .distinct("representative__user")
+        .count()
+    )
+    user_count = (
+        User.objects.exclude(representative__role="manager")
+        .exclude(representative__role="coordinator")
+        .count()
+    )
+    return render(
+        request,
+        "landing.html",
+        {
+            "counts": {
+                "dataset": Dataset.public.count(),
+                "organization": Organization.public.count(),
+                "project": Project.objects.filter(status="APPROVED").count(),
+                "coordinators": coordinator_count,
+                "managers": manager_count,
+                "users": user_count,
+            },
+            "categories": (Category.objects.filter(featured=True).order_by("title")),
+            "datasets": (
+                Dataset.public.select_related("organization").order_by("-published")[:3]
+            ),
+            "requests": (
+                Request.public.prefetch_related("organizations").order_by("-created")[
+                    :3
+                ]
+            ),
+            "projects": (
+                Project.public.filter(image__isnull=False, status="APPROVED").order_by(
+                    "-created"
+                )[:3]
+            ),
+            "orgs": (
+                Organization.public.filter(
+                    numchild=0,
+                    image__isnull=False,
+                )
+                .annotate(datasets=Count("dataset"))
+                .order_by("-datasets")[:3]
+            ),
+            "stat_routes": (StatRoute.objects.filter(featured=True).order_by("order")),
         },
-        'categories': (
-            Category.objects.
-            filter(featured=True).
-            order_by('title')
-        ),
-        'datasets': (
-            Dataset.public.
-            select_related('organization').
-            order_by('-published')[:3]
-        ),
-        'requests': (
-            Request.public.
-            prefetch_related('organizations').
-            order_by('-created')[:3]
-        ),
-        'projects': (
-            Project.public.
-            filter(
-                image__isnull=False,
-                status='APPROVED'
-            ).
-            order_by('-created')[:3]
-        ),
-        'orgs': (
-            Organization.public.
-            filter(
-                numchild=0,
-                image__isnull=False,
-            ).
-            annotate(datasets=Count('dataset')).
-            order_by('-datasets')[:3]
-        ),
-        'stat_routes': (
-          StatRoute.objects.filter(
-              featured=True
-          ).
-          order_by('order')
-        ),
-    })
+    )
 
 
 class PlanMixin:
@@ -83,10 +83,12 @@ class PlanMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'plan_url_name': self.get_plan_url_name(),
-            'plan_url': self.get_plan_url(),
-        })
+        context.update(
+            {
+                "plan_url_name": self.get_plan_url_name(),
+                "plan_url": self.get_plan_url(),
+            }
+        )
         return context
 
     def get_plan_url_name(self):
@@ -102,7 +104,7 @@ class PlanMixin:
 
 
 class HistoryView(PermissionRequiredMixin, TemplateView):
-    template_name = 'history.html'
+    template_name = "history.html"
     model: Type[Model] = None
     detail_url_name = None
     history_url_name = None
@@ -111,7 +113,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     object: Model
 
     def dispatch(self, request, *args, **kwargs):
-        object_id = self.kwargs.get('pk')
+        object_id = self.kwargs.get("pk")
         self.object = get_object_or_404(self.model, pk=object_id)
         return super().dispatch(request, *args, **kwargs)
 
@@ -120,32 +122,40 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'detail_url_name': self.get_detail_url_name(),
-            'history_url_name': self.get_history_url_name(),
-            'detail_url': self.get_detail_url(),
-            'history_url': self.get_history_url(),
-            "history": [
-                {
-                    'date': version.revision.date_created,
-                    'user': version.revision.user,
-                    'action': self.model.HISTORY_MESSAGES.get(
-                        version.revision.comment,
-                    ) if (
-                        hasattr(self.model, 'HISTORY_MESSAGES') and
-                        self.model.HISTORY_MESSAGES.get(version.revision.comment)
-                    ) else version.revision.comment,
-                }
-                for version in self.get_history_objects()
-            ],
-            'can_manage_history': has_perm(
-                self.request.user,
-                Action.HISTORY_VIEW,
-                self.get_history_object(),
-            ),
-            'tabs_template_name': self.tabs_template_name,
-        })
-        context['history'] = [dict(t) for t in {tuple(d.items()) for d in context['history']}]
+        context.update(
+            {
+                "detail_url_name": self.get_detail_url_name(),
+                "history_url_name": self.get_history_url_name(),
+                "detail_url": self.get_detail_url(),
+                "history_url": self.get_history_url(),
+                "history": [
+                    {
+                        "date": version.revision.date_created,
+                        "user": version.revision.user,
+                        "action": self.model.HISTORY_MESSAGES.get(
+                            version.revision.comment,
+                        )
+                        if (
+                            hasattr(self.model, "HISTORY_MESSAGES")
+                            and self.model.HISTORY_MESSAGES.get(
+                                version.revision.comment
+                            )
+                        )
+                        else version.revision.comment,
+                    }
+                    for version in self.get_history_objects()
+                ],
+                "can_manage_history": has_perm(
+                    self.request.user,
+                    Action.HISTORY_VIEW,
+                    self.get_history_object(),
+                ),
+                "tabs_template_name": self.tabs_template_name,
+            }
+        )
+        context["history"] = [
+            dict(t) for t in {tuple(d.items()) for d in context["history"]}
+        ]
         return context
 
     def get_detail_url_name(self):
@@ -171,10 +181,8 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         return self.object
 
     def get_history_objects(self):
-        return (
-            Version.objects.
-            get_for_object(self.get_history_object()).
-            order_by('-revision__date_created')
+        return Version.objects.get_for_object(self.get_history_object()).order_by(
+            "-revision__date_created"
         )
 
 
@@ -184,17 +192,19 @@ class HistoryMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({
-            'detail_url_name': self.get_detail_url_name(),
-            'history_url_name': self.get_history_url_name(),
-            'detail_url': self.get_detail_url(),
-            'history_url': self.get_history_url(),
-            'can_manage_history': has_perm(
-                self.request.user,
-                Action.HISTORY_VIEW,
-                self.get_history_object(),
-            )
-        })
+        context.update(
+            {
+                "detail_url_name": self.get_detail_url_name(),
+                "history_url_name": self.get_history_url_name(),
+                "detail_url": self.get_detail_url(),
+                "history_url": self.get_history_url(),
+                "can_manage_history": has_perm(
+                    self.request.user,
+                    Action.HISTORY_VIEW,
+                    self.get_history_object(),
+                ),
+            }
+        )
         return context
 
     def get_detail_url_name(self):
@@ -221,7 +231,6 @@ class HistoryMixin:
 
 
 class ChartMixin:
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context

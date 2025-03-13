@@ -7,9 +7,20 @@ from vitrina.statistics.models import StatRoute
 
 
 class StatRouteAdmin(TranslatableAdmin):
-    list_display = ('title', 'formatted_url', 'featured',)
-    ordering = ('order',)
-    fields = ('title', 'description', 'url', 'order', 'featured', 'image',)
+    list_display = (
+        "title",
+        "formatted_url",
+        "featured",
+    )
+    ordering = ("order",)
+    fields = (
+        "title",
+        "description",
+        "url",
+        "order",
+        "featured",
+        "image",
+    )
 
     @admin.display(description=_("Nuoroda"))
     def formatted_url(self, obj):

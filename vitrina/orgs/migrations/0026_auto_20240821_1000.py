@@ -4,27 +4,27 @@ from django.db import migrations, models
 
 
 def update_representative_request_emails(apps, schema_editor):
-    RepresentativeRequest = apps.get_model('vitrina_orgs', 'RepresentativeRequest')
+    RepresentativeRequest = apps.get_model("vitrina_orgs", "RepresentativeRequest")
 
     for request in RepresentativeRequest.objects.filter(
-        email__isnull=True,
-        user__isnull=False
+        email__isnull=True, user__isnull=False
     ):
         request.email = request.user.email
-        request.save(update_fields=['email'])
+        request.save(update_fields=["email"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0025_auto_20240821_0957'),
+        ("vitrina_orgs", "0025_auto_20240821_0957"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='representativerequest',
-            name='created',
-            field=models.DateTimeField(auto_now_add=True, null=True, verbose_name='Sukurta'),
+            model_name="representativerequest",
+            name="created",
+            field=models.DateTimeField(
+                auto_now_add=True, null=True, verbose_name="Sukurta"
+            ),
         ),
         migrations.RunPython(update_representative_request_emails),
     ]

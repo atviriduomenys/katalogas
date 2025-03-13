@@ -6,26 +6,33 @@ import filer.fields.file
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('filer', '0015_alter_file_owner_alter_file_polymorphic_ctype_and_more'),
-        ('vitrina_resources', '0012_alter_title_description'),
+        ("filer", "0015_alter_file_owner_alter_file_polymorphic_ctype_and_more"),
+        ("vitrina_resources", "0012_alter_title_description"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='datasetdistribution',
-            old_name='file',
-            new_name='filename',
+            model_name="datasetdistribution",
+            old_name="file",
+            new_name="filename",
         ),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='filename',
-            field=models.CharField(blank=True, max_length=255, null=True)
+            model_name="datasetdistribution",
+            name="filename",
+            field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='datasetdistribution',
-            name='file',
-            field=filer.fields.file.FilerFileField(blank=True, help_text='Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) duomenų failus, galima talpinti ir kataloge.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='file_distribution', to='filer.file', verbose_name='Duomenų failas'),
+            model_name="datasetdistribution",
+            name="file",
+            field=filer.fields.file.FilerFileField(
+                blank=True,
+                help_text="Atvirų duomenų katalogas nėra skirtas duomenų talpinimui ir įprastinių atveju duomenys turėtu būti talpinami atvirų duomenų Saugykloje ar kitoje vietoje, pateikiant tiesioginę duomenų atsisiuntimo nuorodą. Tačiau nedidelės apimties (iki 5Mb) duomenų failus, galima talpinti ir kataloge.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="file_distribution",
+                to="filer.file",
+                verbose_name="Duomenų failas",
+            ),
         ),
     ]

@@ -10,35 +10,39 @@ class Category(MP_Node):
     version = models.IntegerField(default=1, blank=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    uri = models.CharField(
+        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
     title = models.CharField(max_length=255, blank=True, null=True)
     title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     parent = models.ForeignKey(
-        'self',
-        related_name='children_set',
+        "self",
+        related_name="children_set",
         null=True,
         db_index=True,
         on_delete=models.SET_NULL,
         editable=False,
     )
     featured = models.BooleanField()
-    icon = models.CharField(max_length=255,
-                            blank=True,
-                            help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo')
-    groups = models.ManyToManyField(to='vitrina_datasets.DatasetGroup')
+    icon = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo',
+    )
+    groups = models.ManyToManyField(to="vitrina_datasets.DatasetGroup")
 
-    node_order_by = ['title']
+    node_order_by = ["title"]
 
     objects = MP_NodeManager()
 
     class Meta:
-        db_table = 'category'
+        db_table = "category"
 
     def __str__(self):
         lang = get_language()
-        if lang == 'en' and self.title_en:
+        if lang == "en" and self.title_en:
             return self.title_en
         return self.title
 
@@ -70,7 +74,7 @@ class Licence(models.Model):
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'licence'
+        db_table = "licence"
 
     def __str__(self):
         return self.title
@@ -87,44 +91,52 @@ class Frequency(models.Model):
     title_en = models.TextField(blank=True, null=True)
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
-    hours = models.IntegerField(verbose_name=_('Valandos'), blank=True, null=True)
-    code = models.CharField(unique=True, max_length=255, verbose_name='Kodas', null=True, blank=True)
+    hours = models.IntegerField(verbose_name=_("Valandos"), blank=True, null=True)
+    code = models.CharField(
+        unique=True, max_length=255, verbose_name="Kodas", null=True, blank=True
+    )
 
     class Meta:
-        db_table = 'frequency'
-        ordering = ['hours']
+        db_table = "frequency"
+        ordering = ["hours"]
 
     def __str__(self):
         lang = get_language()
-        if lang == 'en' and self.title_en:
+        if lang == "en" and self.title_en:
             return self.title_en
         return self.title
 
 
 class AreaOfManagement(models.Model):
-    name_lt = models.CharField(max_length=255, verbose_name=_("Pavadinimas lietuviškai"), default="Nepriskirta")
-    name_en = models.CharField(max_length=255, verbose_name=_("Pavadinimas angliškai"), default="Unassigned")
+    name_lt = models.CharField(
+        max_length=255, verbose_name=_("Pavadinimas lietuviškai"), default="Nepriskirta"
+    )
+    name_en = models.CharField(
+        max_length=255, verbose_name=_("Pavadinimas angliškai"), default="Unassigned"
+    )
 
     class Meta:
-        db_table = 'area_of_management'
+        db_table = "area_of_management"
         verbose_name = _("Valdymo sritis")
         verbose_name_plural = _("Valdymo sritys")
 
     def __str__(self):
         lang = get_language()
-        if lang == 'en' and self.name_en:
+        if lang == "en" and self.name_en:
             return self.name_en
         return self.name_lt
 
 
 class GeoportalCategory(models.Model):
     title = models.CharField(_("Pavadinimas"), max_length=255)
-    categories = models.ManyToManyField(Category, verbose_name=_("Atitinkančios kategorijos"), blank=True)
+    categories = models.ManyToManyField(
+        Category, verbose_name=_("Atitinkančios kategorijos"), blank=True
+    )
 
     objects = models.Manager()
 
     class Meta:
-        db_table = 'geoportal_category'
+        db_table = "geoportal_category"
         verbose_name = _("Geoportalo kategorija")
         verbose_name_plural = _("Geoportalo kategorijos")
 
@@ -139,13 +151,13 @@ class GeoportalFrequency(models.Model):
         verbose_name=_("Atitinkantis atnaujinimo periodiškumas"),
         null=True,
         blank=True,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
     objects = models.Manager()
 
     class Meta:
-        db_table = 'geoportal_frequency'
+        db_table = "geoportal_frequency"
         verbose_name = _("Geoportalo atnaujinimo periodiškumas")
         verbose_name_plural = _("Geoportalo atnaujinimo periodiškumai")
 
@@ -160,13 +172,13 @@ class GeoportalLicence(models.Model):
         verbose_name=_("Atitinkanti licencija"),
         null=True,
         blank=True,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
     objects = models.Manager()
 
     class Meta:
-        db_table = 'geoportal_licence'
+        db_table = "geoportal_licence"
         verbose_name = _("Geoportalo licencija")
         verbose_name_plural = _("Geoportalo licencijos")
 
@@ -189,13 +201,13 @@ class GeoportalAccessRights(models.Model):
         null=True,
         blank=True,
         choices=ACCESS_RIGHTS,
-        max_length=255
+        max_length=255,
     )
 
     objects = models.Manager()
 
     class Meta:
-        db_table = 'geoportal_access_rights'
+        db_table = "geoportal_access_rights"
         verbose_name = _("Geoportalo prieigos teisė")
         verbose_name_plural = _("Geoportalo prieigos teisės")
 

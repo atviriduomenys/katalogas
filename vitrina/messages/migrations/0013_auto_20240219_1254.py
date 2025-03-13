@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_messages', '0012_auto_20240219_1105'),
+        ("vitrina_messages", "0012_auto_20240219_1105"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='sentmail',
-            name='recipient',
-            field=models.TextField(blank=True, null=True, verbose_name='Gavėjas'),
+            model_name="sentmail",
+            name="recipient",
+            field=models.TextField(blank=True, null=True, verbose_name="Gavėjas"),
         ),
     ]

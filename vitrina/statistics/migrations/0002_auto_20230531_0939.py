@@ -4,50 +4,118 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('statistics', '0001_initial'),
+        ("statistics", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DatasetStats',
+            name="DatasetStats",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('dataset_id', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('download_request_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('download_object_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('object_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('field_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('model_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('distribution_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('request_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('project_count', models.CharField(blank=True, max_length=255, null=True, unique=True)),
-                ('maturity_level', models.CharField(blank=True, max_length=255, null=True, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                (
+                    "dataset_id",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "download_request_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "download_object_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "object_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "field_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "model_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "distribution_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "request_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "project_count",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
+                (
+                    "maturity_level",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, unique=True
+                    ),
+                ),
             ],
             options={
-                'db_table': 'dataset_statistic',
-                'managed': True,
+                "db_table": "dataset_statistic",
+                "managed": True,
             },
         ),
         migrations.CreateModel(
-            name='ModelDownloadStats',
+            name="ModelDownloadStats",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('source', models.CharField(blank=True, max_length=255, null=True)),
-                ('model', models.CharField(blank=True, max_length=255, null=True)),
-                ('model_format', models.CharField(blank=True, max_length=255, null=True)),
-                ('model_requests', models.BigIntegerField(blank=True, null=True)),
-                ('model_objects', models.BigIntegerField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("source", models.CharField(blank=True, max_length=255, null=True)),
+                ("model", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "model_format",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("model_requests", models.BigIntegerField(blank=True, null=True)),
+                ("model_objects", models.BigIntegerField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'model_download_statistic',
-                'managed': True,
+                "db_table": "model_download_statistic",
+                "managed": True,
             },
         ),
         migrations.DeleteModel(
-            name='Stats',
+            name="Stats",
         ),
     ]

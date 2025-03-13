@@ -6,28 +6,31 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("contenttypes", "0002_remove_content_type_name"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('vitrina_orgs', '0011_auto_20221012_1350'),
+        ("vitrina_orgs", "0011_auto_20221012_1350"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='representative',
-            name='content_type',
-            field=models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
+            model_name="representative",
+            name="content_type",
+            field=models.ForeignKey(
+                default=None,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="contenttypes.contenttype",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='representative',
-            name='object_id',
+            model_name="representative",
+            name="object_id",
             field=models.PositiveIntegerField(default=None),
             preserve_default=False,
         ),
         migrations.AlterUniqueTogether(
-            name='representative',
-            unique_together={('content_type', 'object_id', 'user')},
+            name="representative",
+            unique_together={("content_type", "object_id", "user")},
         ),
     ]

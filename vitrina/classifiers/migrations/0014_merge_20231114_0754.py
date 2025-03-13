@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0013_auto_20231108_1026'),
-        ('vitrina_classifiers', '0013_generate_frequency_fk'),
+        ("vitrina_classifiers", "0013_auto_20231108_1026"),
+        ("vitrina_classifiers", "0013_generate_frequency_fk"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0001_initial'),
+        ("vitrina_classifiers", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='category',
-            options={'managed': True},
+            name="category",
+            options={"managed": True},
         ),
     ]

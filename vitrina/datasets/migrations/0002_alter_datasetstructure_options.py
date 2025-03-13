@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0001_initial'),
+        ("vitrina_datasets", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='datasetstructure',
+            name="datasetstructure",
             options={},
         ),
     ]

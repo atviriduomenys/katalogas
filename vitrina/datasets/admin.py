@@ -18,8 +18,19 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
 from vitrina.datasets.forms import DatasetAdminForm
-from vitrina.datasets.models import Dataset, DatasetGroup, Attribution, DataServiceType, DataServiceSpecType, Type, \
-    Relation, DatasetReport, Contact, GeoportalDataServiceTypeValue, GeoportalDataServiceType
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetGroup,
+    Attribution,
+    DataServiceType,
+    DataServiceSpecType,
+    Type,
+    Relation,
+    DatasetReport,
+    Contact,
+    GeoportalDataServiceTypeValue,
+    GeoportalDataServiceType,
+)
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
@@ -28,32 +39,35 @@ from vitrina.structure.services import get_data_from_spinta, to_row
 
 
 class AttributionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'title',)
+    list_display = (
+        "name",
+        "title",
+    )
 
 
 class DatasetAdmin(TranslatableAdmin, VersionAdmin):
-    list_display = ('title', 'description', 'is_public')
+    list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
 
 
 class GroupAdmin(TranslatableAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class DataServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class DataServiceSpecTypeAdmin(admin.ModelAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class TypeAdmin(TranslatableAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class RelationAdmin(TranslatableAdmin):
-    list_display = ('title',)
+    list_display = ("title",)
 
 
 class DatasetLateFilter(admin.SimpleListFilter):
@@ -71,9 +85,17 @@ class DatasetLateFilter(admin.SimpleListFilter):
         late_ids = []
         not_late_ids = []
         for obj in queryset:
-            if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+            if (
+                distribution := obj.datasetdistribution_set.filter(
+                    modified__isnull=False
+                )
+                .order_by("-modified")
+                .first()
+            ):
                 if obj.frequency and obj.frequency.hours:
-                    need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                    need_to_modify = distribution.modified + timedelta(
+                        hours=obj.frequency.hours
+                    )
                     now = timezone.now()
                     if need_to_modify < now:
                         late_ids.append(obj.id)
@@ -88,21 +110,30 @@ class DatasetLateFilter(admin.SimpleListFilter):
 
 class DatasetReportAdmin(admin.ModelAdmin):
     list_display = (
-        'root_organization_display',
-        'organization_display',
-        'title_display',
-        'coordinators_display',
-        'managers_display',
-        'distribution_published_display',
-        'frequency_display',
-        'spinta_modified_display',
-        'distribution_modified_display',
-        'late_display'
+        "root_organization_display",
+        "organization_display",
+        "title_display",
+        "coordinators_display",
+        "managers_display",
+        "distribution_published_display",
+        "frequency_display",
+        "spinta_modified_display",
+        "distribution_modified_display",
+        "late_display",
     )
     list_display_links = None
-    search_fields = ('translations__title', 'organization__title', 'creator_text', 'representative_emails',)
-    list_filter = (FormatFilter, DatasetLateFilter, 'organization',)
-    change_list_template = 'vitrina/datasets/admin/dataset_report_change_list.html'
+    search_fields = (
+        "translations__title",
+        "organization__title",
+        "creator_text",
+        "representative_emails",
+    )
+    list_filter = (
+        FormatFilter,
+        DatasetLateFilter,
+        "organization",
+    )
+    change_list_template = "vitrina/datasets/admin/dataset_report_change_list.html"
 
     def has_add_permission(self, request):
         return False
@@ -120,7 +151,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             deleted_on__isnull=True,
             organization_id__isnull=False,
             translations__title__isnull=False,
-            status=Dataset.HAS_DATA
+            status=Dataset.HAS_DATA,
         ).distinct()
         queryset = queryset.annotate(
             representative_emails=ArrayAgg("representatives__email")
@@ -133,14 +164,19 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 title = obj.organization.title[:40] + "..."
             else:
                 title = obj.organization.title
-            return format_html('<a href="{}" target="_blank">{}</a>', obj.organization.get_absolute_url(), title)
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                obj.organization.get_absolute_url(),
+                title,
+            )
         elif obj.creator_text:
             if len(obj.creator_text) >= 40:
                 return obj.creator_text[:40] + "..."
             else:
                 return obj.creator_text
         return "-"
-    organization_display.short_description = _('Institucija')
+
+    organization_display.short_description = _("Institucija")
     organization_display.allow_tags = True
 
     def root_organization_display(self, obj):
@@ -151,9 +187,14 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     title = root_organization.title[:40] + "..."
                 else:
                     title = root_organization.title
-                return format_html('<a href="{}" target="_blank">{}</a>', root_organization.get_absolute_url(), title)
+                return format_html(
+                    '<a href="{}" target="_blank">{}</a>',
+                    root_organization.get_absolute_url(),
+                    title,
+                )
         return "-"
-    root_organization_display.short_description = _('Tėvinė institucija')
+
+    root_organization_display.short_description = _("Tėvinė institucija")
     root_organization_display.allow_tags = True
 
     def title_display(self, obj):
@@ -161,73 +202,100 @@ class DatasetReportAdmin(admin.ModelAdmin):
             title = obj.title[:40] + "..."
         else:
             title = obj.title
-        return format_html('<a href="{}" target="_blank">{}</a>', obj.get_absolute_url(), title)
-    title_display.short_description = _('Duomenų rinkinys')
+        return format_html(
+            '<a href="{}" target="_blank">{}</a>', obj.get_absolute_url(), title
+        )
+
+    title_display.short_description = _("Duomenų rinkinys")
     title_display.allow_tags = True
 
     def coordinators_display(self, obj):
-        coordinators = obj.representatives.filter(role=Representative.COORDINATOR).values_list('email', flat=True)
+        coordinators = obj.representatives.filter(
+            role=Representative.COORDINATOR
+        ).values_list("email", flat=True)
         if coordinators:
             return mark_safe("<br/>".join(coordinators))
         return "-"
-    coordinators_display.short_description = _('Koordinatoriai')
+
+    coordinators_display.short_description = _("Koordinatoriai")
     coordinators_display.allow_tags = True
 
     def managers_display(self, obj):
-        managers = obj.representatives.filter(role=Representative.MANAGER).values_list('email', flat=True)
+        managers = obj.representatives.filter(role=Representative.MANAGER).values_list(
+            "email", flat=True
+        )
         if managers:
             return mark_safe("<br/>".join(managers))
         return "-"
-    managers_display.short_description = _('Tvarkytojai')
+
+    managers_display.short_description = _("Tvarkytojai")
     managers_display.allow_tags = True
 
     def distribution_published_display(self, obj):
-        if distribution := obj.datasetdistribution_set.order_by('created').first():
+        if distribution := obj.datasetdistribution_set.order_by("created").first():
             tz = pytz.timezone(settings.TIME_ZONE)
             return distribution.created.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
+
     distribution_published_display.short_description = mark_safe(
-        _('Duomenų šaltinio pirmo</br>publikavimo data saugykloje')
+        _("Duomenų šaltinio pirmo</br>publikavimo data saugykloje")
     )
 
     def frequency_display(self, obj):
         if obj.frequency:
             return obj.frequency.title
-        return '-'
-    frequency_display.short_description = mark_safe(_('Duomenų atnaujinimo</br>periodiškumas'))
+        return "-"
+
+    frequency_display.short_description = mark_safe(
+        _("Duomenų atnaujinimo</br>periodiškumas")
+    )
 
     def spinta_modified_display(self, obj):
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+        if (
+            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
+            .order_by("-modified")
+            .first()
+        ):
             if (
-                distribution.format and
-                distribution.format.extension in (FormatName.API, FormatName.UAPI) and
-                distribution.download_url
+                distribution.format
+                and distribution.format.extension in (FormatName.API, FormatName.UAPI)
+                and distribution.download_url
             ):
                 modified = None
                 is_model_url = False
                 download_url = urlparse(distribution.download_url)
-                path_parts = [p for p in download_url.path.split('/') if p]
+                path_parts = [p for p in download_url.path.split("/") if p]
 
                 if (
-                    path_parts and
-                    path_parts[-1] != ':ns' and
-                    path_parts[-1][0].isupper()
+                    path_parts
+                    and path_parts[-1] != ":ns"
+                    and path_parts[-1][0].isupper()
                 ):
                     is_model_url = True
 
                 if is_model_url:
-                    latest_change = get_data_from_spinta(download_url.path, ':changes/-1/', timeout=10)
-                    latest_change = latest_change.get('_data')
-                    modified = latest_change[0].get('_created') if latest_change else None
+                    latest_change = get_data_from_spinta(
+                        download_url.path, ":changes/-1/", timeout=10
+                    )
+                    latest_change = latest_change.get("_data")
+                    modified = (
+                        latest_change[0].get("_created") if latest_change else None
+                    )
                 else:
                     models = get_data_from_spinta(download_url.path)
-                    models = models.get('_data', [])
+                    models = models.get("_data", [])
 
                     for model in models:
-                        if model_name := model.get('name'):
-                            latest_change = get_data_from_spinta(model_name, ':changes/-1/', timeout=10)
-                            latest_change = latest_change.get('_data')
-                            latest_change_date = latest_change[0].get('_created') if latest_change else None
+                        if model_name := model.get("name"):
+                            latest_change = get_data_from_spinta(
+                                model_name, ":changes/-1/", timeout=10
+                            )
+                            latest_change = latest_change.get("_data")
+                            latest_change_date = (
+                                latest_change[0].get("_created")
+                                if latest_change
+                                else None
+                            )
 
                             if latest_change_date:
                                 if not modified:
@@ -239,20 +307,36 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     modified = datetime.fromisoformat(modified)
                     return modified.strftime("%Y-%m-%d %H:%M")
         return "-"
-    spinta_modified_display.short_description = mark_safe(_('Duomenys atnaujinti</br>saugykloje'))
+
+    spinta_modified_display.short_description = mark_safe(
+        _("Duomenys atnaujinti</br>saugykloje")
+    )
 
     def distribution_modified_display(self, obj):
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+        if (
+            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
+            .order_by("-modified")
+            .first()
+        ):
             tz = pytz.timezone(settings.TIME_ZONE)
             return distribution.modified.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
-    distribution_modified_display.short_description = mark_safe(_('Metaduomenys atnaujinti</br>kataloge'))
+
+    distribution_modified_display.short_description = mark_safe(
+        _("Metaduomenys atnaujinti</br>kataloge")
+    )
 
     def _is_late_for(self, obj):
         text = ""
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+        if (
+            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
+            .order_by("-modified")
+            .first()
+        ):
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                need_to_modify = distribution.modified + timedelta(
+                    hours=obj.frequency.hours
+                )
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify
@@ -270,9 +354,15 @@ class DatasetReportAdmin(admin.ModelAdmin):
         return text
 
     def _is_late_for_days(self, obj):
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by('-modified').first():
+        if (
+            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
+            .order_by("-modified")
+            .first()
+        ):
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                need_to_modify = distribution.modified + timedelta(
+                    hours=obj.frequency.hours
+                )
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify
@@ -284,16 +374,17 @@ class DatasetReportAdmin(admin.ModelAdmin):
         if late_for:
             return format_html('<span style="color: red;">{}</span>', late_for)
         return "-"
-    late_display.short_description = _('Vėluoja')
+
+    late_display.short_description = _("Vėluoja")
     late_display.allow_tags = True
 
     def changelist_view(self, request, extra_context=None):
         result = super().changelist_view(request, extra_context)
-        if request.GET.get('format') and request.GET.get('format') == 'csv':
-            if change_list := result.context_data.get('cl'):
+        if request.GET.get("format") and request.GET.get("format") == "csv":
+            if change_list := result.context_data.get("cl"):
                 stream = self._export_dataset_report(change_list.queryset, request)
-                result = StreamingHttpResponse(stream, content_type='text/csv')
-                result['Content-Disposition'] = 'attachment; filename=Ataskaita.csv'
+                result = StreamingHttpResponse(stream, content_type="text/csv")
+                result["Content-Disposition"] = "attachment; filename=Ataskaita.csv"
                 result["Cache-Control"] = "no-cache"
                 result["X-Accel-Buffering"] = "no"
         return result
@@ -304,38 +395,42 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 return value
 
         cols = {
-            'root_organization': _("Tėvinė institucija"),
-            'organization': _("Institucija"),
-            'dataset_title': _("Duomenų rinkinio pavadinimas"),
-            'coordinators': _("Koodinatoriai"),
-            'managers': _("Tvarkytojai"),
-            'dataset_url': _("Duomenų rinkinio nuoroda"),
-            'created': _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
-            'frequency': _("Duomenų atnaujinimo periodiškumas"),
-            'spinta_modified': _("Duomenys atnaujinti saugykloje"),
-            'modified': _("Metaduomenys atnaujinti kataloge"),
-            'late': _("Vėlavimas, dienomis"),
+            "root_organization": _("Tėvinė institucija"),
+            "organization": _("Institucija"),
+            "dataset_title": _("Duomenų rinkinio pavadinimas"),
+            "coordinators": _("Koodinatoriai"),
+            "managers": _("Tvarkytojai"),
+            "dataset_url": _("Duomenų rinkinio nuoroda"),
+            "created": _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
+            "frequency": _("Duomenų atnaujinimo periodiškumas"),
+            "spinta_modified": _("Duomenys atnaujinti saugykloje"),
+            "modified": _("Metaduomenys atnaujinti kataloge"),
+            "late": _("Vėlavimas, dienomis"),
         }
         rows = self._get_dataset_report(cols, queryset, request)
         rows = ({v: row[k] for k, v in cols.items()} for row in rows)
 
         stream = _Stream()
-        yield stream.write(b'\xef\xbb\xbf')
+        yield stream.write(b"\xef\xbb\xbf")
 
-        writer = csv.DictWriter(stream, fieldnames=cols.values(), delimiter=';')
+        writer = csv.DictWriter(stream, fieldnames=cols.values(), delimiter=";")
         yield writer.writeheader()
         for row in rows:
             yield writer.writerow(row)
 
     def _get_dataset_report(self, cols, queryset, request):
         for item in queryset:
-            coordinators = item.representatives.filter(role=Representative.COORDINATOR).values_list('email', flat=True)
+            coordinators = item.representatives.filter(
+                role=Representative.COORDINATOR
+            ).values_list("email", flat=True)
             if coordinators:
                 coordinators = "\n".join(coordinators)
             else:
                 coordinators = "-"
 
-            managers = item.representatives.filter(role=Representative.MANAGER).values_list('email', flat=True)
+            managers = item.representatives.filter(
+                role=Representative.MANAGER
+            ).values_list("email", flat=True)
             if managers:
                 managers = "\n".join(managers)
             else:
@@ -350,38 +445,50 @@ class DatasetReportAdmin(admin.ModelAdmin):
             elif item.creator_text:
                 organization = item.creator_text
 
-            yield to_row(cols.keys(), {
-                'organization': organization,
-                'root_organization': root_organization,
-                'dataset_title': item.title,
-                'coordinators': coordinators,
-                'managers': managers,
-                'dataset_url': "%s%s" % (get_current_domain(request), item.get_absolute_url()),
-                'created': self.distribution_published_display(item),
-                'frequency': self.frequency_display(item),
-                'spinta_modified': self.spinta_modified_display(item),
-                'modified': self.distribution_modified_display(item),
-                'late': self._is_late_for_days(item),
-            })
+            yield to_row(
+                cols.keys(),
+                {
+                    "organization": organization,
+                    "root_organization": root_organization,
+                    "dataset_title": item.title,
+                    "coordinators": coordinators,
+                    "managers": managers,
+                    "dataset_url": "%s%s"
+                    % (get_current_domain(request), item.get_absolute_url()),
+                    "created": self.distribution_published_display(item),
+                    "frequency": self.frequency_display(item),
+                    "spinta_modified": self.spinta_modified_display(item),
+                    "modified": self.distribution_modified_display(item),
+                    "late": self._is_late_for_days(item),
+                },
+            )
 
 
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ( 'dataset', 'email', 'phone_display', 'content_type_display', 'content_object_display')
-    search_fields = ('email', 'phone', 'content_object')
+    list_display = (
+        "dataset",
+        "email",
+        "phone_display",
+        "content_type_display",
+        "content_object_display",
+    )
+    search_fields = ("email", "phone", "content_object")
     title = _("Kontaktai")
 
     def phone_display(self, obj):
         return obj.phone
-    phone_display.short_description = _('Telefono numeris')
+
+    phone_display.short_description = _("Telefono numeris")
 
     def content_type_display(self, obj):
         return obj.content_type
+
     content_type_display.short_description = _("Kontaktinio objekto tipas")
 
     def content_object_display(self, obj):
         return obj.content_object
-    content_object_display.short_description = _("Kontaktinis objektas")
 
+    content_object_display.short_description = _("Kontaktinis objektas")
 
 
 class GeoportalDataServiceTypeValueInline(admin.TabularInline):
@@ -391,12 +498,19 @@ class GeoportalDataServiceTypeValueInline(admin.TabularInline):
 
 class GeoportalDataServiceTypeAdmin(admin.ModelAdmin):
     inlines = [GeoportalDataServiceTypeValueInline]
-    list_display = ('data_service_type', 'values_display',)
+    list_display = (
+        "data_service_type",
+        "values_display",
+    )
 
     def values_display(self, obj):
-        return mark_safe("<br/>".join([item.value for item in obj.geoportaldataservicetypevalue_set.all()]))
+        return mark_safe(
+            "<br/>".join(
+                [item.value for item in obj.geoportaldataservicetypevalue_set.all()]
+            )
+        )
 
-    values_display.short_description = _('Geoportalo reikšmės')
+    values_display.short_description = _("Geoportalo reikšmės")
 
 
 admin.site.register(Dataset, DatasetAdmin)

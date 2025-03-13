@@ -4,17 +4,16 @@ from django.db import migrations
 
 
 def fix_viisp_passwords(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
+    User = apps.get_model("vitrina_users", "User")
 
     for user in User.objects.filter(password="bcrypt$viisp"):
         user.password = make_password(None)
-        user.save(update_fields=['password'])
+        user.save(update_fields=["password"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0006_auto_20221027_1109'),
+        ("vitrina_users", "0006_auto_20221027_1109"),
     ]
 
     operations = [

@@ -3,14 +3,14 @@
 from django.db import migrations
 from vitrina.orgs.models import Organization
 
+
 def fix_ordering(apps, schema_editor):
     Organization.fix_tree(fix_paths=True)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0021_auto_20231110_1011'),
+        ("vitrina_orgs", "0021_auto_20231110_1011"),
     ]
 
     operations = [

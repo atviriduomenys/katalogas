@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0005_metadata_type_args'),
+        ("vitrina_structure", "0005_metadata_type_args"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='model',
-            name='is_parameterized',
-            field=models.BooleanField(default=False, verbose_name='Parametrizuotas'),
+            model_name="model",
+            name="is_parameterized",
+            field=models.BooleanField(default=False, verbose_name="Parametrizuotas"),
         ),
     ]

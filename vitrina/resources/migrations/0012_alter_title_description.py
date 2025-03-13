@@ -7,35 +7,36 @@ def replace_null_values(apps, schema_editor):
 
     for resource in DatasetDistribution.objects.all():
         if not resource.title:
-            resource.title = ''
+            resource.title = ""
         if not resource.description:
-            resource.description = ''
-        resource.save(update_fields=['title', 'description'])
+            resource.description = ""
+        resource.save(update_fields=["title", "description"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_resources', '0010_alter_dataset_field'),
+        ("vitrina_resources", "0010_alter_dataset_field"),
     ]
 
     operations = [
         migrations.RunPython(replace_null_values),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='description',
-            field=models.TextField(blank=True, default='', verbose_name='Aprašymas'),
+            model_name="datasetdistribution",
+            name="description",
+            field=models.TextField(blank=True, default="", verbose_name="Aprašymas"),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='title',
-            field=models.CharField(blank=True, default='', max_length=255, verbose_name='Pavadinimas'),
+            model_name="datasetdistribution",
+            name="title",
+            field=models.CharField(
+                blank=True, default="", max_length=255, verbose_name="Pavadinimas"
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='datasetdistribution',
-            name='version',
+            model_name="datasetdistribution",
+            name="version",
             field=models.IntegerField(default=1),
         ),
     ]

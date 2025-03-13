@@ -4,19 +4,16 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0010_auto_20240917_0911'),
+        ("vitrina_users", "0010_auto_20240917_0911"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='user',
-            name='email',
+            model_name="user",
+            name="email",
         ),
         migrations.RenameField(
-            model_name='user',
-            old_name='email_copy',
-            new_name='email'
-        )
+            model_name="user", old_name="email_copy", new_name="email"
+        ),
     ]

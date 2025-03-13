@@ -10,11 +10,23 @@ from vitrina import settings
 from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.datasets.models import Dataset, DatasetStructure, DatasetGroup, Type, Relation, DataServiceType, \
-    DataServiceSpecType, DatasetRelation, Attribution, DatasetAttribution, Contact, GeoportalDataServiceType, \
-    GeoportalDataServiceTypeValue
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetStructure,
+    DatasetGroup,
+    Type,
+    Relation,
+    DataServiceType,
+    DataServiceSpecType,
+    DatasetRelation,
+    Attribution,
+    DatasetAttribution,
+    Contact,
+    GeoportalDataServiceType,
+    GeoportalDataServiceTypeValue,
+)
 
-MANIFEST = '''\
+MANIFEST = """\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description
 ,datasets/gov/ivpk/adk,,,,,,,,,,,,Opend Data Portal,
 ,,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,
@@ -33,7 +45,7 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 ,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,
 ,,,,,title,string,,,,2,open,dct:title,,
 ,,,,,,comment,type,,"update(property: ""title@lt"", type: ""text"")",4,open,spinta:204,2022-10-23 11:00,
-'''
+"""
 
 
 class DatasetTranslationFactory(DjangoModelFactory):
@@ -44,7 +56,7 @@ class DatasetTranslationFactory(DjangoModelFactory):
 class DatasetFactory(DjangoModelFactory):
     class Meta:
         model = Dataset
-        django_get_or_create = ('organization', 'is_public')
+        django_get_or_create = ("organization", "is_public")
 
     organization = factory.SubFactory(OrganizationFactory)
     is_public = True
@@ -57,21 +69,25 @@ class DatasetFactory(DjangoModelFactory):
         "date_time",
         tzinfo=timezone.get_current_timezone(),
     )
-    title = factory.Dict({
-        'en': factory.Faker('text', max_nb_chars=20, locale='en_US'),
-        'lt': factory.Faker('text', max_nb_chars=20, locale='lt_LT'),
-    })
-    description = factory.Dict({
-        'en': factory.Faker('text', locale='en_US'),
-        'lt': factory.Faker('text', locale='lt_LT'),
-    })
+    title = factory.Dict(
+        {
+            "en": factory.Faker("text", max_nb_chars=20, locale="en_US"),
+            "lt": factory.Faker("text", max_nb_chars=20, locale="lt_LT"),
+        }
+    )
+    description = factory.Dict(
+        {
+            "en": factory.Faker("text", locale="en_US"),
+            "lt": factory.Faker("text", locale="lt_LT"),
+        }
+    )
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        title = kwargs.pop('title')
-        description = kwargs.pop('description')
+        title = kwargs.pop("title")
+        description = kwargs.pop("description")
         dataset = model_class(*args, **kwargs)
-        for lang in ('en', 'lt'):
+        for lang in ("en", "lt"):
             dataset.set_current_language(lang)
             dataset.title = _get_language_value(lang, title)
             dataset.description = _get_language_value(lang, description)
@@ -106,8 +122,8 @@ class AttributionFactory(DjangoModelFactory):
     class Meta:
         model = Attribution
 
-    name = factory.Faker('word')
-    title = factory.Faker('catch_phrase')
+    name = factory.Faker("word")
+    title = factory.Faker("catch_phrase")
 
 
 class DatasetAttributionFactory(DjangoModelFactory):
@@ -122,13 +138,12 @@ class DatasetAttributionFactory(DjangoModelFactory):
 class DatasetStructureFactory(DjangoModelFactory):
     class Meta:
         model = DatasetStructure
-        django_get_or_create = ('title',)
+        django_get_or_create = ("title",)
 
     version = 1
-    title = factory.Faker('catch_phrase')
+    title = factory.Faker("catch_phrase")
     file = factory.SubFactory(
-        FilerFileFactory,
-        file=FileField(filename='manifest.csv', data=MANIFEST)
+        FilerFileFactory, file=FileField(filename="manifest.csv", data=MANIFEST)
     )
     dataset = factory.SubFactory(DatasetFactory)
 
@@ -152,7 +167,7 @@ class TypeFactory(DjangoModelFactory):
     class Meta:
         model = Type
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -169,7 +184,7 @@ class RelationFactory(DjangoModelFactory):
     class Meta:
         model = Relation
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -196,25 +211,27 @@ class DataServiceTypeFactory(DjangoModelFactory):
     class Meta:
         model = DataServiceType
 
-    title = factory.Faker('word')
+    title = factory.Faker("word")
 
 
 class DataServiceSpecTypeFactory(DjangoModelFactory):
     class Meta:
         model = DataServiceSpecType
 
-    title = factory.Faker('word')
+    title = factory.Faker("word")
 
 
 class ContactFactory(DjangoModelFactory):
     class Meta:
         model = Contact
-    phone = factory.Faker('phone_number')
-    email = factory.Faker('email')
-    dataset = factory.SubFactory(DatasetFactory)
-    content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
-    object_id = factory.SelfAttribute('organization.id')
 
+    phone = factory.Faker("phone_number")
+    email = factory.Faker("email")
+    dataset = factory.SubFactory(DatasetFactory)
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.organization)
+    )
+    object_id = factory.SelfAttribute("organization.id")
 
 
 class GeoportalDataServiceTypeFactory(DjangoModelFactory):
@@ -229,4 +246,4 @@ class GeoportalDataServiceTypeValueFactory(DjangoModelFactory):
         model = GeoportalDataServiceTypeValue
 
     geoportal_data_service_type = factory.SubFactory(GeoportalDataServiceTypeFactory)
-    value = factory.Faker('word')
+    value = factory.Faker("word")

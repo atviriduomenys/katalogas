@@ -1,12 +1,9 @@
 from typing import List, Any, Dict, Type
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
 from vitrina.helpers import get_filter_url
-from vitrina.orgs.models import Representative, Organization
-from vitrina.orgs.services import has_perm, Action
 
 
 def update_facet_data(
@@ -31,11 +28,10 @@ def update_facet_data(
             elif facet[0] == "UNASSIGNED":
                 display_value = "Nepriskirta"
             data = {
-                'filter_value': facet[0],
-                'display_value': display_value,
-                'count': facet[1],
-                'url': get_filter_url(request, field_name, facet[0]),
+                "filter_value": facet[0],
+                "display_value": display_value,
+                "count": facet[1],
+                "url": get_filter_url(request, field_name, facet[0]),
             }
             updated_facet_data.append(data)
     return updated_facet_data
-

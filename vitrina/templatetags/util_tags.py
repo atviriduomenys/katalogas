@@ -14,7 +14,7 @@ from vitrina.cms.models import Deployment
 from vitrina.structure.services import get_srid
 
 register = template.Library()
-assignment_tag = getattr(register, 'assignment_tag', register.simple_tag)
+assignment_tag = getattr(register, "assignment_tag", register.simple_tag)
 
 
 @assignment_tag
@@ -37,7 +37,7 @@ def get_list(dictionary, key):
     return dictionary.getlist(key)
 
 
-@register.filter(name='range')
+@register.filter(name="range")
 def range_(value: int) -> Iterable[int]:
     return range(value)
 
@@ -61,7 +61,7 @@ def is_past_due(value):
 def get_google_analytics_id():
     google_analytics_id = Setting.objects.filter(name="GOOGLE_ANALYTICS_ID").first()
     if google_analytics_id:
-        if google_analytics_id.value != '':
+        if google_analytics_id.value != "":
             return google_analytics_id.value
         else:
             return None
@@ -71,7 +71,7 @@ def get_google_analytics_id():
 
 @assignment_tag
 def logged_in_user(_user, _logged_in_user):
-    if _logged_in_user != '':
+    if _logged_in_user != "":
         return _logged_in_user
     else:
         return _user

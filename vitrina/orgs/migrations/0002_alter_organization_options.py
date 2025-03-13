@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0001_initial'),
+        ("vitrina_orgs", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
-            options={'managed': True},
+            name="organization",
+            options={"managed": True},
         ),
     ]

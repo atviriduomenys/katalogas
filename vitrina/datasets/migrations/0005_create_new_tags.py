@@ -6,35 +6,55 @@ import tagulous.models.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0004_rename_old_tags'),
+        ("vitrina_datasets", "0004_rename_old_tags"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Tagulous_Dataset_tags',
+            name="Tagulous_Dataset_tags",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('slug', models.SlugField()),
-                ('count',
-                 models.IntegerField(default=0, help_text='Internal counter of how many times this tag is in use')),
-                ('protected',
-                 models.BooleanField(default=False, help_text='Will not be deleted when the count reaches 0')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("slug", models.SlugField()),
+                (
+                    "count",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Internal counter of how many times this tag is in use",
+                    ),
+                ),
+                (
+                    "protected",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Will not be deleted when the count reaches 0",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('name',),
-                'abstract': False,
-                'unique_together': {('slug',)},
+                "ordering": ("name",),
+                "abstract": False,
+                "unique_together": {("slug",)},
             },
             bases=(tagulous.models.models.BaseTagModel, models.Model),
         ),
         migrations.AddField(
-            model_name='dataset',
-            name='tags',
-            field=tagulous.models.fields.TagField(_set_tag_meta=True, blank=True,
-                                                  help_text='Enter a comma-separated tag string',
-                                                  to='vitrina_datasets.Tagulous_Dataset_tags'),
+            model_name="dataset",
+            name="tags",
+            field=tagulous.models.fields.TagField(
+                _set_tag_meta=True,
+                blank=True,
+                help_text="Enter a comma-separated tag string",
+                to="vitrina_datasets.Tagulous_Dataset_tags",
+            ),
         ),
     ]

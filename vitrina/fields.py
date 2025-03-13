@@ -2,7 +2,14 @@ import pathlib
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.forms import TextInput, Field, FileField, ImageField, ClearableFileInput, CharField
+from django.forms import (
+    TextInput,
+    Field,
+    FileField,
+    ImageField,
+    ClearableFileInput,
+    CharField,
+)
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
@@ -38,15 +45,17 @@ class FilerClearableFileInput(ClearableFileInput):
             value = File.objects.get(pk=value)
         checkbox_name = self.clear_checkbox_name(name)
         checkbox_id = self.clear_checkbox_id(checkbox_name)
-        context['widget'].update({
-            'checkbox_name': checkbox_name,
-            'checkbox_id': checkbox_id,
-            'is_initial': self.is_initial(value),
-            'input_text': self.input_text,
-            'initial_text': self.initial_text,
-            'clear_checkbox_label': self.clear_checkbox_label,
-            'value': value,
-        })
+        context["widget"].update(
+            {
+                "checkbox_name": checkbox_name,
+                "checkbox_id": checkbox_id,
+                "is_initial": self.is_initial(value),
+                "input_text": self.input_text,
+                "initial_text": self.initial_text,
+                "clear_checkbox_label": self.clear_checkbox_label,
+                "value": value,
+            }
+        )
         return context
 
 
@@ -81,16 +90,13 @@ class FilerFieldMixin:
 
             current_folder = None
             if self.upload_to:
-                folders = self.upload_to.split('/')
+                folders = self.upload_to.split("/")
                 for folder_name in folders:
                     current_folder, created = Folder.objects.get_or_create(
-                        name=folder_name,
-                        parent=current_folder
+                        name=folder_name, parent=current_folder
                     )
             file = self.filer_model.objects.create(
-                file=file,
-                original_filename=file.name,
-                folder=current_folder
+                file=file, original_filename=file.name, folder=current_folder
             )
         return file
 
@@ -107,22 +113,24 @@ class FilerImageField(FilerFieldMixin, ImageField):
 
 class MultipleFileInput(ClearableFileInput):
     allow_multiple_selected = True
-    template_name = 'component/clearable_multiple_file_input.html'
+    template_name = "component/clearable_multiple_file_input.html"
     input_text = _("Pridėti")
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         checkbox_name = self.clear_checkbox_name(name)
         checkbox_id = self.clear_checkbox_id(checkbox_name)
-        context['widget'].update({
-            'checkbox_name': checkbox_name,
-            'checkbox_id': checkbox_id,
-            'is_initial': self.is_initial(value),
-            'input_text': self.input_text,
-            'initial_text': self.initial_text,
-            'clear_checkbox_label': self.clear_checkbox_label,
-            'value': self.get_value(value),
-        })
+        context["widget"].update(
+            {
+                "checkbox_name": checkbox_name,
+                "checkbox_id": checkbox_id,
+                "is_initial": self.is_initial(value),
+                "input_text": self.input_text,
+                "initial_text": self.initial_text,
+                "clear_checkbox_label": self.clear_checkbox_label,
+                "value": self.get_value(value),
+            }
+        )
         return context
 
     @staticmethod
@@ -132,10 +140,14 @@ class MultipleFileInput(ClearableFileInput):
             for val in value:
                 if isinstance(val, int):
                     file = File.objects.get(pk=val)
-                    res.append({
-                        'value_text': pathlib.Path(file.file.name).name if file.file else "",
-                        'url': file.file.url
-                    })
+                    res.append(
+                        {
+                            "value_text": pathlib.Path(file.file.name).name
+                            if file.file
+                            else "",
+                            "url": file.file.url,
+                        }
+                    )
         return res
 
     def is_initial(self, value):
@@ -145,9 +157,11 @@ class MultipleFileInput(ClearableFileInput):
                 if isinstance(val, int):
                     file = File.objects.get(pk=val)
                     files.append(file)
-        return all(
-            [super(MultipleFileInput, self).is_initial(file) for file in files]
-        ) if files else False
+        return (
+            all([super(MultipleFileInput, self).is_initial(file) for file in files])
+            if files
+            else False
+        )
 
 
 class MultipleFilerField(FileField):
@@ -185,16 +199,13 @@ class MultipleFilerField(FileField):
 
             current_folder = None
             if self.upload_to:
-                folders = self.upload_to.split('/')
+                folders = self.upload_to.split("/")
                 for folder_name in folders:
                     current_folder, created = Folder.objects.get_or_create(
-                        name=folder_name,
-                        parent=current_folder
+                        name=folder_name, parent=current_folder
                     )
             file = File.objects.create(
-                file=file,
-                original_filename=file.name,
-                folder=current_folder
+                file=file, original_filename=file.name, folder=current_folder
             )
         return file
 
@@ -214,7 +225,7 @@ class MultipleFilerField(FileField):
 
 
 class TranslatedFileInput(ClearableFileInput):
-    template_name = 'component/clearable_file_input.html'
+    template_name = "component/clearable_file_input.html"
     file_input_text = None
 
     def __init__(self, file_input_text=None, attrs=None):
@@ -223,9 +234,11 @@ class TranslatedFileInput(ClearableFileInput):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        context['widget'].update({
-            'file_input_text': self.file_input_text or _("Pasirinkti failą"),
-        })
+        context["widget"].update(
+            {
+                "file_input_text": self.file_input_text or _("Pasirinkti failą"),
+            }
+        )
         return context
 
 
@@ -234,7 +247,7 @@ class TranslatedFileField(FileField):
 
 
 class DisabledTextInput(TextInput):
-    template_name = 'component/disabled_text.html'
+    template_name = "component/disabled_text.html"
 
 
 class DisabledCharField(CharField):

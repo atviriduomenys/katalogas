@@ -5,21 +5,29 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0023_auto_20231124_0919'),
+        ("vitrina_datasets", "0023_auto_20231124_0919"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datasetstructure',
-            name='dataset',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_datasets.dataset'),
+            model_name="datasetstructure",
+            name="dataset",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="vitrina_datasets.dataset",
+            ),
         ),
         migrations.AlterField(
-            model_name='datasetvisit',
-            name='dataset',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    to='vitrina_datasets.dataset'),
+            model_name="datasetvisit",
+            name="dataset",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="vitrina_datasets.dataset",
+            ),
         ),
     ]

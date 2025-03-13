@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
@@ -21,24 +21,24 @@ def get_due_date():
 
 
 class Task(models.Model):
-    SUPERVISOR = 'supervisor'
-    COORDINATOR = 'coordinator'
-    MANAGER = 'manager'
+    SUPERVISOR = "supervisor"
+    COORDINATOR = "coordinator"
+    MANAGER = "manager"
     ROLES = (
         (SUPERVISOR, _("Vyr. koordinatorius")),
         (COORDINATOR, _("Organizacijos koordinatorius")),
-        (MANAGER, _("Organizacijos tvarkytojas"))
+        (MANAGER, _("Organizacijos tvarkytojas")),
     )
 
-    APIKEY = 'apikey'
-    DATASET = 'dataset'
-    COMMENT = 'comment'
-    REQUEST = 'request'
-    PROJECT = 'project'
-    ERROR = 'error'
-    ERROR_FREQUENCY = 'error_frequency'
-    ERROR_DISTRIBUTION = 'error_distribution'
-    ERROR_GEOPORTAL = 'error_geoportal'
+    APIKEY = "apikey"
+    DATASET = "dataset"
+    COMMENT = "comment"
+    REQUEST = "request"
+    PROJECT = "project"
+    ERROR = "error"
+    ERROR_FREQUENCY = "error_frequency"
+    ERROR_DISTRIBUTION = "error_distribution"
+    ERROR_GEOPORTAL = "error_geoportal"
     TYPES = (
         (APIKEY, _("Raktas")),
         (DATASET, _("Duomenų rinkinys")),
@@ -65,19 +65,23 @@ class Task(models.Model):
     STATUSES = (
         (CREATED, _("Registruota")),
         (ASSIGNED, _("Priskirta")),
-        (COMPLETED, _("Išspręsta"))
+        (COMPLETED, _("Išspręsta")),
     )
     FILTER_STATUSES = {
         CREATED: _("Registruota"),
         ASSIGNED: _("Priskirta"),
-        COMPLETED: _("Išspręsta")
+        COMPLETED: _("Išspręsta"),
     }
 
     title = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
-    organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
-    comment_object = models.ForeignKey(to=Comment, blank=True, null=True, on_delete=models.SET_NULL)
+    organization = models.ForeignKey(
+        to=Organization, blank=True, null=True, on_delete=models.SET_NULL
+    )
+    comment_object = models.ForeignKey(
+        to=Comment, blank=True, null=True, on_delete=models.SET_NULL
+    )
     status = models.CharField(max_length=255, default=CREATED, choices=STATUSES)
     type = models.CharField(max_length=255, choices=TYPES, default=COMMENT)
     role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
@@ -91,10 +95,10 @@ class Task(models.Model):
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
     object_id = models.PositiveIntegerField(null=True)
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = 'task'
+        db_table = "task"
 
     def __str__(self):
         return self.title
@@ -104,10 +108,9 @@ class Task(models.Model):
         super(Task, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('user-task-detail', kwargs={
-            'pk': self.user.pk,
-            'task_id': self.pk
-        })
+        return reverse(
+            "user-task-detail", kwargs={"pk": self.user.pk, "task_id": self.pk}
+        )
 
     def is_due_or_expiring(self):
         due = pd.to_datetime(self.due_date).date()
@@ -131,4 +134,4 @@ class Holiday(models.Model):
     date = models.DateField(unique=True)
 
     class Meta:
-        db_table = 'holiday'
+        db_table = "holiday"

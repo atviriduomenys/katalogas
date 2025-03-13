@@ -22,7 +22,7 @@ REQUEST_HISTORY_STATUSES = {
     APPROVED: _("Patvirtinta"),
     EDITED: _("Redaguota"),
     STATUS_CHANGED: _("Pakeistas statusas"),
-    ASSIGNED: _("Priskirta")
+    ASSIGNED: _("Priskirta"),
 }
 
 
@@ -40,7 +40,7 @@ class Request(models.Model):
         (OPENED, _("Įvykdytas")),
         (ANSWERED, _("Atsakytas")),
         (PLANNED, _("Suplanuotas")),
-        (APPROVED, _("Įvertintas"))
+        (APPROVED, _("Įvertintas")),
     )
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
@@ -48,7 +48,7 @@ class Request(models.Model):
         OPENED: _("Įvykdytas"),
         ANSWERED: _("Atsakytas"),
         PLANNED: _("Suplanuotas"),
-        APPROVED: _("Įvertintas")
+        APPROVED: _("Įvertintas"),
     }
 
     EDITED = "EDITED"
@@ -72,7 +72,9 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True, related_name='dataset_request')
+    dataset = models.ForeignKey(
+        Dataset, models.SET_NULL, blank=True, null=True, related_name="dataset_request"
+    )
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -95,13 +97,13 @@ class Request(models.Model):
     public = PublicRequestManager()
 
     class Meta:
-        db_table = 'request'
+        db_table = "request"
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('request-detail', kwargs={'pk': self.pk})
+        return reverse("request-detail", kwargs={"pk": self.pk})
 
     def get_acl_parents(self):
         parents = [self]
@@ -119,19 +121,16 @@ class Request(models.Model):
 
     def get_likes(self):
         from vitrina.likes.models import Like
+
         content_type = ContentType.objects.get_for_model(self)
-        return (
-            Like.objects.
-            filter(
-                content_type=content_type,
-                object_id=self.pk,
-            ).
-            count()
-        )
+        return Like.objects.filter(
+            content_type=content_type,
+            object_id=self.pk,
+        ).count()
 
     def is_not_closed(self):
         return self.status != self.REJECTED and self.status != self.OPENED
-    
+
     def jurisdiction(self):
         jurisdictions = []
         for item in self.requestassignment_set.all():
@@ -140,10 +139,13 @@ class Request(models.Model):
 
     def dataset_statuses(self):
         statuses = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset and dataset.status not in statuses:
@@ -152,10 +154,13 @@ class Request(models.Model):
 
     def dataset_organizations(self):
         orgs = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset and dataset.organization and dataset.organization not in orgs:
@@ -164,10 +169,13 @@ class Request(models.Model):
 
     def dataset_categories(self):
         cats = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset and dataset.category not in cats:
@@ -176,10 +184,13 @@ class Request(models.Model):
 
     def dataset_parent_categories(self):
         cats = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset:
@@ -190,10 +201,13 @@ class Request(models.Model):
 
     def dataset_group_list(self):
         groups = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset:
@@ -204,10 +218,13 @@ class Request(models.Model):
 
     def dataset_get_tag_list(self):
         tags = []
-        dataset_ids = [ro.object_id for ro in RequestObject.objects.filter(
-            request_id=self.pk,
-            content_type=ContentType.objects.get_for_model(Dataset)
-        )]
+        dataset_ids = [
+            ro.object_id
+            for ro in RequestObject.objects.filter(
+                request_id=self.pk,
+                content_type=ContentType.objects.get_for_model(Dataset),
+            )
+        ]
         for dataset_id in dataset_ids:
             dataset = Dataset.objects.filter(id=dataset_id).first()
             if dataset:
@@ -217,7 +234,9 @@ class Request(models.Model):
         return tags
 
     def get_organization_titles(self):
-        return list(self.requestassignment_set.values_list('organization__title', flat=True))
+        return list(
+            self.requestassignment_set.values_list("organization__title", flat=True)
+        )
 
     @staticmethod
     def statuses_ordered(facet):
@@ -227,12 +246,11 @@ class Request(models.Model):
             Request.ANSWERED: 3,
             Request.REJECTED: 4,
             Request.PLANNED: 5,
-            Request.OPENED: 6
+            Request.OPENED: 6,
         }
         if facet:
             facet = sorted(facet, key=lambda item: order.get(item[0], 0))
         return facet
-
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -249,7 +267,7 @@ class RequestEvent(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'request_event'
+        db_table = "request_event"
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
@@ -267,13 +285,13 @@ class RequestStructure(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'request_structure'
+        db_table = "request_structure"
 
 
 class RequestObject(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
     object_id = models.PositiveIntegerField(null=True)
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
     request = models.ForeignKey(Request, on_delete=models.CASCADE)
 
     external_object_id = models.CharField(max_length=255, blank=True, null=True)
@@ -281,18 +299,24 @@ class RequestObject(models.Model):
 
 
 class RequestAssignment(models.Model):
-    organization = models.ForeignKey(Organization, models.PROTECT, db_column='organization', blank=True, null=True)
-    request = models.ForeignKey(Request, models.CASCADE, db_column='request', blank=True, null=True)
-    status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
+    organization = models.ForeignKey(
+        Organization, models.PROTECT, db_column="organization", blank=True, null=True
+    )
+    request = models.ForeignKey(
+        Request, models.CASCADE, db_column="request", blank=True, null=True
+    )
+    status = models.CharField(
+        max_length=255, choices=Request.STATUSES, blank=True, null=True
+    )
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
     class Meta:
-        db_table = 'request_assignment'
-        unique_together = (('organization', 'request'),)
+        db_table = "request_assignment"
+        unique_together = (("organization", "request"),)
 
     def __str__(self):
         return self.organization.__str__()
-    
+
     @property
     def display_status(self):
         for status in Request.STATUSES:
@@ -302,10 +326,15 @@ class RequestAssignment(models.Model):
     @property
     def display_date(self):
         from vitrina.comments.models import Comment
-        latest_status_comment = Comment.objects.filter(
-            content_type=ContentType.objects.get_for_model(RequestAssignment),
-            object_id=self.pk
-        ).order_by('-created').first()
+
+        latest_status_comment = (
+            Comment.objects.filter(
+                content_type=ContentType.objects.get_for_model(RequestAssignment),
+                object_id=self.pk,
+            )
+            .order_by("-created")
+            .first()
+        )
         return latest_status_comment.created if latest_status_comment else self.created
 
     def get_acl_parents(self):

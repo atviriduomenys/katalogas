@@ -4,33 +4,51 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0036_auto_20241230_0937'),
+        ("vitrina_orgs", "0036_auto_20241230_0937"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PublisherOrganization',
-            fields=[
-            ],
+            name="PublisherOrganization",
+            fields=[],
             options={
-                'verbose_name': 'Duomenų atvėrimo paslaugų tiekėjas',
-                'verbose_name_plural': 'Duomenų atvėrimo paslaugų tiekėjai',
-                'proxy': True,
-                'indexes': [],
-                'constraints': [],
+                "verbose_name": "Duomenų atvėrimo paslaugų tiekėjas",
+                "verbose_name_plural": "Duomenų atvėrimo paslaugų tiekėjai",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
             },
-            bases=('vitrina_orgs.organization',),
+            bases=("vitrina_orgs.organization",),
         ),
         migrations.AlterField(
-            model_name='organization',
-            name='kind',
-            field=models.CharField(choices=[('gov', 'Valstybinė įstaiga'), ('com', 'Verslo organizacija'), ('org', 'Nepelno ir nevalstybinė organizacija')], default='org', max_length=36, verbose_name='Tipas'),
+            model_name="organization",
+            name="kind",
+            field=models.CharField(
+                choices=[
+                    ("gov", "Valstybinė įstaiga"),
+                    ("com", "Verslo organizacija"),
+                    ("org", "Nepelno ir nevalstybinė organizacija"),
+                ],
+                default="org",
+                max_length=36,
+                verbose_name="Tipas",
+            ),
         ),
         migrations.AlterField(
-            model_name='representativerequest',
-            name='status',
-            field=models.CharField(blank=True, choices=[('CREATED', 'Pateiktas'), ('APPROVED', 'Patvirtintas'), ('REJECTED', 'Atmestas')], default='CREATED', max_length=255, null=True, verbose_name='Būsena'),
+            model_name="representativerequest",
+            name="status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("CREATED", "Pateiktas"),
+                    ("APPROVED", "Patvirtintas"),
+                    ("REJECTED", "Atmestas"),
+                ],
+                default="CREATED",
+                max_length=255,
+                null=True,
+                verbose_name="Būsena",
+            ),
         ),
     ]

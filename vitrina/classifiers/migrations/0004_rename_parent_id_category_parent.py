@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_classifiers', '0003_alter_category_parent_id'),
+        ("vitrina_classifiers", "0003_alter_category_parent_id"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='category',
-            old_name='parent_id',
-            new_name='parent',
+            model_name="category",
+            old_name="parent_id",
+            new_name="parent",
         ),
     ]

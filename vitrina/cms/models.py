@@ -17,11 +17,11 @@ class CmsAttachment(models.Model):
     file_data = models.TextField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
-    cms_page = models.ForeignKey('CmsPage', models.CASCADE, blank=True, null=True)
+    cms_page = models.ForeignKey("CmsPage", models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'cms_attachment'
+        db_table = "cms_attachment"
 
 
 class CmsMenuItem(models.Model):
@@ -33,7 +33,7 @@ class CmsMenuItem(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cms_menu_item'
+        db_table = "cms_menu_item"
 
 
 class CmsPage(models.Model):
@@ -49,14 +49,14 @@ class CmsPage(models.Model):
     slug = models.TextField(blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
-    parent = models.ForeignKey('self', models.SET_NULL, blank=True, null=True)
+    parent = models.ForeignKey("self", models.SET_NULL, blank=True, null=True)
     language = models.CharField(max_length=255, blank=True, null=True)
     list_children = models.BooleanField()
 
     class Meta:
         managed = False
         # XXX: Original table is name is `cms_page`, but it clashes with django-cms.
-        db_table = 'adp_cms_page'
+        db_table = "adp_cms_page"
 
 
 class CssRuleOverride(models.Model):
@@ -73,7 +73,7 @@ class CssRuleOverride(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'css_rule_override'
+        db_table = "css_rule_override"
 
 
 class ExternalSite(models.Model):
@@ -84,7 +84,7 @@ class ExternalSite(models.Model):
     TYPE_CHOICES = (
         (EU_COMISSION_PORTAL, _("Europos komisijos portalai")),
         (EU_LAND, _("EU šalys")),
-        (OTHER_LAND, _("Kitos šalys"))
+        (OTHER_LAND, _("Kitos šalys")),
     )
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -93,21 +93,29 @@ class ExternalSite(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
     title = models.TextField(blank=True, null=True, verbose_name=_("Pavadinimas"))
-    type = models.CharField(max_length=255, blank=True, null=True, choices=TYPE_CHOICES, verbose_name=_("Tipas"))
-    url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Nuoroda"))
+    type = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        choices=TYPE_CHOICES,
+        verbose_name=_("Tipas"),
+    )
+    url = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name=_("Nuoroda")
+    )
     image = FilerImageField(
         null=True,
         blank=True,
         related_name="image_site",
         on_delete=models.SET_NULL,
-        verbose_name=_("Paveikslėlis")
+        verbose_name=_("Paveikslėlis"),
     )
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        db_table = 'external_site'
+        db_table = "external_site"
         verbose_name = _("Portalas")
         verbose_name_plural = _("Portalai")
 
@@ -119,14 +127,14 @@ class Faq(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
-    answer = models.TextField(blank=True, null=True, verbose_name=_('Atsakymas'))
+    answer = models.TextField(blank=True, null=True, verbose_name=_("Atsakymas"))
     question = models.TextField(blank=True, null=True, verbose_name=_("Klausimas"))
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'faq'
+        db_table = "faq"
         verbose_name = _("Dažnai užduodamas klausimas")
         verbose_name_plural = _("Dažnai užduodami klausimai")
 
@@ -142,20 +150,17 @@ class FileResource(models.Model):
     version = models.IntegerField()
 
     file = FilerFileField(
-        null=True,
-        blank=True,
-        related_name="file_object",
-        on_delete=models.CASCADE
+        null=True, blank=True, related_name="file_object", on_delete=models.CASCADE
     )
     content_type = models.ForeignKey(
         to=ContentType,
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        related_name='content_type_files'
+        related_name="content_type_files",
     )
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
 
     # Deprecated fields bellow
     filename = models.CharField(max_length=255, blank=True, null=True)
@@ -165,7 +170,7 @@ class FileResource(models.Model):
     type = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        db_table = 'file_resource'
+        db_table = "file_resource"
 
 
 class LearningMaterial(models.Model):
@@ -179,12 +184,18 @@ class LearningMaterial(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name=_("Aprašymas"))
     learning_material_id = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
-    topic = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas"))
+    topic = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas")
+    )
     user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
-    video_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda"))
+    video_url = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda")
+    )
     summary = models.TextField(blank=True, null=True, verbose_name=_("Santrauka"))
     author_name = models.TextField(blank=True, null=True, verbose_name=_("Autorius"))
-    published = models.DateField(blank=True, null=True, verbose_name=_("Publikavimo data"))
+    published = models.DateField(
+        blank=True, null=True, verbose_name=_("Publikavimo data")
+    )
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     requested = models.IntegerField(blank=True, null=True)
     image = FilerImageField(
@@ -192,14 +203,14 @@ class LearningMaterial(models.Model):
         blank=True,
         related_name="image_learning_material",
         on_delete=models.SET_NULL,
-        verbose_name=_("Paveikslėlis")
+        verbose_name=_("Paveikslėlis"),
     )
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        db_table = 'learning_material'
+        db_table = "learning_material"
         verbose_name = _("Mokymosi medžiaga")
         verbose_name_plural = _("Mokymosi medžiaga")
 
@@ -224,14 +235,16 @@ class NewsItem(models.Model):
     author_name = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)
-    image = FilerImageField(null=True, blank=True, related_name="image_news_item", on_delete=models.SET_NULL)
+    image = FilerImageField(
+        null=True, blank=True, related_name="image_news_item", on_delete=models.SET_NULL
+    )
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'news_item'
+        db_table = "news_item"
 
 
 class TermsOfUse(models.Model):
@@ -249,7 +262,7 @@ class TermsOfUse(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'terms_of_use'
+        db_table = "terms_of_use"
 
 
 class Deployment(models.Model):
@@ -259,4 +272,4 @@ class Deployment(models.Model):
     message_en = models.TextField(_("Pranešimas (anglų kalba)"), blank=True, null=True)
 
     class Meta:
-        db_table = 'deployment'
+        db_table = "deployment"

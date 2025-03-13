@@ -1,4 +1,7 @@
-from haystack.backends.elasticsearch7_backend import Elasticsearch7SearchBackend, Elasticsearch7SearchEngine
+from haystack.backends.elasticsearch7_backend import (
+    Elasticsearch7SearchBackend,
+    Elasticsearch7SearchEngine,
+)
 
 
 class ElasticsearchBackend(Elasticsearch7SearchBackend):
@@ -23,12 +26,10 @@ class ElasticsearchBackend(Elasticsearch7SearchBackend):
                             "lowercase",
                         ],
                     },
-                    'edgengram_search_analyzer': {
+                    "edgengram_search_analyzer": {
                         "tokenizer": "whitespace",
-                        "filter": [
-                            "lowercase"
-                        ]
-                    }
+                        "filter": ["lowercase"],
+                    },
                 },
                 "filter": {
                     "haystack_ngram": {
@@ -50,7 +51,7 @@ class ElasticsearchBackend(Elasticsearch7SearchBackend):
         "edge_ngram": {
             "type": "text",
             "analyzer": "edgengram_analyzer",
-            'search_analyzer': 'edgengram_search_analyzer',
+            "search_analyzer": "edgengram_search_analyzer",
         },
         "ngram": {
             "type": "text",
@@ -68,4 +69,3 @@ class ElasticsearchBackend(Elasticsearch7SearchBackend):
 
 class ElasticSearchEngine(Elasticsearch7SearchEngine):
     backend = ElasticsearchBackend
-

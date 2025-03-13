@@ -6,22 +6,19 @@ from vitrina import settings
 
 
 def create_system_user(apps, schema_editor):
-    User = apps.get_model('vitrina_users', 'User')
+    User = apps.get_model("vitrina_users", "User")
     User.objects.create(
         first_name="Sistemos",
         last_name="Naudotojas",
         email=settings.SYSTEM_USER_EMAIL,
         password="",
-        is_staff=True
+        is_staff=True,
     )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_users', '0005_auto_20221010_1047'),
+        ("vitrina_users", "0005_auto_20221010_1047"),
     ]
 
-    operations = [
-        migrations.RunPython(create_system_user)
-    ]
+    operations = [migrations.RunPython(create_system_user)]

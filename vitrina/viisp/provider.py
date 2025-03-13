@@ -6,18 +6,17 @@ from allauth.socialaccount.signals import social_account_added
 import bcrypt
 
 
-
 class VIISPAccount(ProviderAccount):
     pass
 
 
 class VIISPProvider(OAuth2Provider):
-    id = 'viisp'
-    name = 'Viisp'
+    id = "viisp"
+    name = "Viisp"
     account_class = VIISPAccount
 
     def extract_uid(self, data):
-        return str(data['ticket_id'])
+        return str(data["ticket_id"])
 
     def get_default_scope(self):
         return ["first_name", "last_name", "email", "phone"]
@@ -35,14 +34,14 @@ class VIISPProvider(OAuth2Provider):
         return ret
 
     def extract_extra_data(self, data):
-        personal_code_bytes = data.get('personal_code').encode('utf-8')
+        personal_code_bytes = data.get("personal_code").encode("utf-8")
         salt = bcrypt.gensalt()
-        hash = bcrypt.hashpw(personal_code_bytes, salt) 
+        hash = bcrypt.hashpw(personal_code_bytes, salt)
         return dict(
-            personal_code=hash.decode('utf-8'),
+            personal_code=hash.decode("utf-8"),
             coordinator_phone_number=data.get("phone"),
             coordinator_email=data.get("email"),
-            password_not_set=True   
+            password_not_set=True,
         )
 
     def sociallogin_from_response(self, request, response):
@@ -50,6 +49,7 @@ class VIISPProvider(OAuth2Provider):
         from allauth.socialaccount.models import SocialAccount, SocialLogin
         from vitrina.users.models import User
         from vitrina.orgs.models import Representative
+
         adapter = get_adapter(request)
         uid = self.extract_uid(response)
         extra_data = self.extract_extra_data(response)
@@ -58,13 +58,13 @@ class VIISPProvider(OAuth2Provider):
         email_addresses = self.extract_email_addresses(response)
         self.cleanup_email_addresses(common_fields.get("email"), email_addresses)
         socialaccount = SocialAccount(extra_data=extra_data, uid=uid, provider=self.id)
-        
-        user = User.objects.filter(email=extra_data.get('coordinator_email')).first()
+
+        user = User.objects.filter(email=extra_data.get("coordinator_email")).first()
         if user:
             existing_social_account = SocialAccount.objects.filter(user=user).first()
             if existing_social_account:
                 socialaccount = existing_social_account
-            
+
         sociallogin = SocialLogin(
             account=socialaccount, email_addresses=email_addresses
         )
@@ -80,8 +80,12 @@ class VIISPProvider(OAuth2Provider):
             adapter.populate_user(request, sociallogin, common_fields)
 
         # update related representatives
-        if user := User.objects.filter(email=extra_data.get('coordinator_email')).first():
-            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
+        if user := User.objects.filter(
+            email=extra_data.get("coordinator_email")
+        ).first():
+            if reps := Representative.objects.filter(
+                email=user.email, user__isnull=True
+            ):
                 reps.update(user=user)
 
         return sociallogin

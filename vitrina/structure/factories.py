@@ -4,7 +4,18 @@ import uuid
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.structure.models import Model, Metadata, Property, Prefix, Enum, EnumItem, Param, ParamItem, Base, Version
+from vitrina.structure.models import (
+    Model,
+    Metadata,
+    Property,
+    Prefix,
+    Enum,
+    EnumItem,
+    Param,
+    ParamItem,
+    Base,
+    Version,
+)
 
 
 class MetadataFactory(DjangoModelFactory):
@@ -13,18 +24,18 @@ class MetadataFactory(DjangoModelFactory):
 
     uuid = str(uuid.uuid4())
     dataset = factory.SubFactory(DatasetFactory)
-    name = factory.Faker('word')
-    title = factory.Faker('catch_phrase')
-    description = factory.Faker('catch_phrase')
+    name = factory.Faker("word")
+    title = factory.Faker("catch_phrase")
+    description = factory.Faker("catch_phrase")
     version = 1
     access = Metadata.OPEN
 
-    type = ''
-    ref = ''
-    source = ''
-    prepare = ''
-    prepare_ast = ''
-    uri = ''
+    type = ""
+    ref = ""
+    source = ""
+    prepare = ""
+    prepare_ast = ""
+    uri = ""
 
 
 class ModelFactory(DjangoModelFactory):
@@ -52,7 +63,7 @@ class EnumFactory(DjangoModelFactory):
     class Meta:
         model = Enum
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
 
 
 class EnumItemFactory(DjangoModelFactory):
@@ -66,14 +77,14 @@ class PrefixFactory(DjangoModelFactory):
     class Meta:
         model = Prefix
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
 
 
 class ParamFactory(DjangoModelFactory):
     class Meta:
         model = Param
 
-    name = factory.Faker('word')
+    name = factory.Faker("word")
 
 
 class ParamItemFactory(DjangoModelFactory):

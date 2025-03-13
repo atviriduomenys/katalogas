@@ -4,17 +4,19 @@ from django.db import migrations
 
 
 def assign_dataset_published_date(apps, schema_editor):
-    Dataset = apps.get_model('vitrina_datasets', 'Dataset')
+    Dataset = apps.get_model("vitrina_datasets", "Dataset")
 
     for dataset in Dataset.objects.filter(is_public=True, published=None):
         dataset.published = dataset.created
-        dataset.save(update_fields=['published'])
+        dataset.save(update_fields=["published"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0019_merge_0018_auto_20230705_1128_0018_auto_20230718_1229'),
+        (
+            "vitrina_datasets",
+            "0019_merge_0018_auto_20230705_1128_0018_auto_20230718_1229",
+        ),
     ]
 
     operations = [

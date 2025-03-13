@@ -7,11 +7,11 @@ import filer.fields.file
 
 def get_model(apps, obj_class):
     model = None
-    Project = apps.get_model('vitrina_projects', 'Project')
-    Organization = apps.get_model('vitrina_orgs', 'Organization')
-    ExternalSite = apps.get_model('vitrina_cms', 'ExternalSite')
-    LearningMaterial = apps.get_model('vitrina_cms', 'LearningMaterial')
-    NewsItem = apps.get_model('vitrina_cms', 'NewsItem')
+    Project = apps.get_model("vitrina_projects", "Project")
+    Organization = apps.get_model("vitrina_orgs", "Organization")
+    ExternalSite = apps.get_model("vitrina_cms", "ExternalSite")
+    LearningMaterial = apps.get_model("vitrina_cms", "LearningMaterial")
+    NewsItem = apps.get_model("vitrina_cms", "NewsItem")
 
     if obj_class.endswith("Usecase"):
         model = Project
@@ -27,8 +27,8 @@ def get_model(apps, obj_class):
 
 
 def migrate_content_objects(apps, schema_editor):
-    FileResource = apps.get_model('vitrina_cms', 'FileResource')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    FileResource = apps.get_model("vitrina_cms", "FileResource")
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     for file in FileResource.objects.all():
         model = get_model(apps, file.obj_class)
@@ -39,38 +39,49 @@ def migrate_content_objects(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('filer', '0015_alter_file_owner_alter_file_polymorphic_ctype_and_more'),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('vitrina_cms', '0003_auto_20221205_1110'),
-        ('vitrina_orgs', '0001_initial'),
-        ('vitrina_projects', '0001_initial'),
+        ("filer", "0015_alter_file_owner_alter_file_polymorphic_ctype_and_more"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("vitrina_cms", "0003_auto_20221205_1110"),
+        ("vitrina_orgs", "0001_initial"),
+        ("vitrina_projects", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='fileresource',
-            name='content_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='content_type_files', to='contenttypes.contenttype'),
+            model_name="fileresource",
+            name="content_type",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="content_type_files",
+                to="contenttypes.contenttype",
+            ),
         ),
         migrations.AddField(
-            model_name='fileresource',
-            name='file',
-            field=filer.fields.file.FilerFileField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='file_object', to='filer.file'),
+            model_name="fileresource",
+            name="file",
+            field=filer.fields.file.FilerFileField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="file_object",
+                to="filer.file",
+            ),
         ),
         migrations.AddField(
-            model_name='fileresource',
-            name='object_id',
+            model_name="fileresource",
+            name="object_id",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.RunPython(migrate_content_objects),
         migrations.RemoveField(
-            model_name='fileresource',
-            name='obj_class',
+            model_name="fileresource",
+            name="obj_class",
         ),
         migrations.RemoveField(
-            model_name='fileresource',
-            name='obj_id',
+            model_name="fileresource",
+            name="obj_id",
         ),
     ]

@@ -7,7 +7,7 @@ from vitrina import settings
 
 def backwards_func(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
-    DatasetTranslation = apps.get_model('vitrina_datasets', 'DatasetTranslation')
+    DatasetTranslation = apps.get_model("vitrina_datasets", "DatasetTranslation")
 
     for dataset in Dataset.objects.all():
         translation = _get_translation(dataset, DatasetTranslation)
@@ -31,9 +31,8 @@ def _get_translation(dataset, DatasetTranslation):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_datasets', '0008_create_translations'),
+        ("vitrina_datasets", "0008_create_translations"),
     ]
 
     operations = [

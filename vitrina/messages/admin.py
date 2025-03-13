@@ -8,11 +8,11 @@ from django.template import Template
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'content_object', 'created')
+    list_display = ("user", "content_object", "created")
 
     @admin.display()
     def content_object(self, obj):
-        if obj.content_object and hasattr(obj.content_object, 'get_absolute_url'):
+        if obj.content_object and hasattr(obj.content_object, "get_absolute_url"):
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
                 obj.content_object.get_absolute_url(),
@@ -27,26 +27,26 @@ class NotValidKeyException(Exception):
 
 
 class EmailTemplateAdmin(admin.ModelAdmin):
-    list_display = ('title', 'subject', 'created')
+    list_display = ("title", "subject", "created")
 
-    def add_view(self, request, form_url='', extra_context=None):
-        self.exclude = ('created', 'deleted', 'deleted_on', 'modified_on')
+    def add_view(self, request, form_url="", extra_context=None):
+        self.exclude = ("created", "deleted", "deleted_on", "modified_on")
         return super(EmailTemplateAdmin, self).add_view(request)
 
     def change_view(self, request, object_id, extra_content=None):
         email_keys_from_db = []
         email_keys_from_form = []
-        self.exclude = ('created', 'deleted', 'deleted_on', 'modified_on')
+        self.exclude = ("created", "deleted", "deleted_on", "modified_on")
         email_template = EmailTemplate.objects.filter(id=object_id).first()
         if request.method == "POST":
             template_db = email_template.template
             template_db = Template(template_db)
-            template_form = Template(request.POST['template'])
+            template_form = Template(request.POST["template"])
             for key in template_db.nodelist:
-                if type(key).__name__ == 'VariableNode':
+                if type(key).__name__ == "VariableNode":
                     email_keys_from_db.append(key.filter_expression.token)
             for key in template_form:
-                if type(key).__name__ == 'VariableNode':
+                if type(key).__name__ == "VariableNode":
                     email_keys_from_form.append(key.filter_expression.token)
             for key in email_keys_from_form:
                 if key not in email_keys_from_db:
@@ -56,7 +56,12 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 
 
 class SentMailAdmin(admin.ModelAdmin):
-    list_display = ('recipient_list', 'email_subject', 'email_content_shortened', 'email_sent',)
+    list_display = (
+        "recipient_list",
+        "email_subject",
+        "email_content_shortened",
+        "email_sent",
+    )
 
     def recipient_list(self, obj):
         if len(obj.recipient) >= 50:
@@ -64,7 +69,7 @@ class SentMailAdmin(admin.ModelAdmin):
         else:
             return obj.recipient
 
-    recipient_list.short_description = _('Gavėjai')
+    recipient_list.short_description = _("Gavėjai")
 
     def email_content_shortened(self, obj):
         if len(obj.email_content) >= 50:
@@ -72,7 +77,7 @@ class SentMailAdmin(admin.ModelAdmin):
         else:
             return obj.email_content
 
-    email_content_shortened.short_description = _('Turinys')
+    email_content_shortened.short_description = _("Turinys")
 
 
 admin.site.register(Subscription, SubscriptionAdmin)

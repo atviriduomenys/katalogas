@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_structure', '0001_initial'),
+        ("vitrina_structure", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='metadata',
-            name='average_level',
-            field=models.FloatField(blank=True, null=True, verbose_name='Apskaičiuotas brandos lygis'),
+            model_name="metadata",
+            name="average_level",
+            field=models.FloatField(
+                blank=True, null=True, verbose_name="Apskaičiuotas brandos lygis"
+            ),
         ),
     ]

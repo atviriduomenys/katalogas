@@ -48,16 +48,18 @@ class Project(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
+    image = FilerImageField(
+        null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL
+    )
 
-    comments = GenericRelation('vitrina_comments.Comment')
+    comments = GenericRelation("vitrina_comments.Comment")
     datasets = models.ManyToManyField("vitrina_datasets.Dataset")
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        db_table = 'usecase'
+        db_table = "usecase"
 
     objects = models.Manager()
     public = PublicProjectManager()
@@ -66,7 +68,7 @@ class Project(models.Model):
         return self.get_title()
 
     def get_absolute_url(self):
-        return reverse('project-detail', kwargs={'pk': self.pk})
+        return reverse("project-detail", kwargs={"pk": self.pk})
 
     def get_title(self):
         if self.title:
@@ -79,15 +81,12 @@ class Project(models.Model):
 
     def get_likes(self):
         from vitrina.likes.models import Like
+
         content_type = ContentType.objects.get_for_model(self)
-        return (
-            Like.objects.
-            filter(
-                content_type=content_type,
-                object_id=self.pk,
-            ).
-            count()
-        )
+        return Like.objects.filter(
+            content_type=content_type,
+            object_id=self.pk,
+        ).count()
 
 
 class UsecaseLike(models.Model):
@@ -101,4 +100,4 @@ class UsecaseLike(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'usecase_like'
+        db_table = "usecase_like"

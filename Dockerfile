@@ -29,8 +29,5 @@ RUN pip install gunicorn==20.1.0 poetry --no-cache-dir
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction
 
-ENV DJANGO_SETTINGS_MODULE="vitrina.settings"
-ENV STATIC_ROOT="/app/static"
-ENV DEBUG="false"
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"

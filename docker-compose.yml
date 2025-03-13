@@ -13,6 +13,9 @@ services:
       - DJANGO_SUPERUSER_EMAIL=test@test.com
       - DJANGO_SUPERUSER_PASSWORD=test
       - DEBUG=true
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - STATIC_ROOT=/app/static
+      - RUN=DEVELOPMENT
     ports:
       - 8000:8000
     env_file:

@@ -20,7 +20,6 @@ class CmsAttachment(models.Model):
     cms_page = models.ForeignKey("CmsPage", models.CASCADE, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "cms_attachment"
 
 
@@ -32,7 +31,6 @@ class CmsMenuItem(models.Model):
     version = models.IntegerField()
 
     class Meta:
-        managed = False
         db_table = "cms_menu_item"
 
 
@@ -54,7 +52,6 @@ class CmsPage(models.Model):
     list_children = models.BooleanField()
 
     class Meta:
-        managed = False
         # XXX: Original table is name is `cms_page`, but it clashes with django-cms.
         db_table = "adp_cms_page"
 
@@ -72,7 +69,6 @@ class CssRuleOverride(models.Model):
     title = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "css_rule_override"
 
 
@@ -133,7 +129,6 @@ class Faq(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "faq"
         verbose_name = _("Dažnai užduodamas klausimas")
         verbose_name_plural = _("Dažnai užduodami klausimai")
@@ -243,7 +238,6 @@ class NewsItem(models.Model):
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "news_item"
 
 
@@ -261,7 +255,6 @@ class TermsOfUse(models.Model):
     published = models.DateField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "terms_of_use"
 
 

@@ -30,7 +30,7 @@ class User(AbstractUser):
     version = models.IntegerField(default=1)
     email = models.CharField(
         _("Elektroninis paštas"), max_length=255, blank=True, null=True
-    )
+    ) # TODO should be unique.
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)

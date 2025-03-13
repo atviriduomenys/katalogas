@@ -990,7 +990,6 @@ class GeoportalLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "geoportal_lt_entry"
 
 
@@ -1020,7 +1019,6 @@ class OpenDataGovLtEntry(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "open_data_gov_lt_entry"
 
 
@@ -1043,7 +1041,6 @@ class HarvestingResult(models.Model):
     category = models.ForeignKey(Category, models.CASCADE, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "harvesting_result"
 
 
@@ -1090,7 +1087,6 @@ class DatasetMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_migrate"
 
 
@@ -1105,7 +1101,6 @@ class DatasetRemark(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_remark"
 
 
@@ -1130,7 +1125,6 @@ class DatasetResource(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_resource"
 
 
@@ -1151,7 +1145,6 @@ class DatasetEvent(models.Model):
     )  # Field renamed because of name conflict.
 
     class Meta:
-        managed = False
         db_table = "dataset_event"
 
 
@@ -1178,7 +1171,6 @@ class DatasetResourceMigrate(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_resource_migrate"
 
 
@@ -1268,7 +1260,6 @@ class DatasetStructureField(models.Model):
     dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_structure_field"
 
 
@@ -1284,7 +1275,6 @@ class DatasetVisit(models.Model):
     dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = "dataset_visit"
 
 
@@ -1302,7 +1292,6 @@ class HarvestedVisit(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = "harvested_visit"
 
 

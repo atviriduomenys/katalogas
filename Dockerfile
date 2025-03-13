@@ -34,5 +34,3 @@ ENV STATIC_ROOT="/app/static"
 ENV DEBUG="false"
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"
-
-#CMD ["gunicorn", "vitrina.wsgi", "-b", "0.0.0.0:8000"]

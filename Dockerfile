@@ -36,3 +36,10 @@ RUN npm install
 WORKDIR /app
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"
+
+RUN apt-get install -y --no-install-recommends npm
+WORKDIR /app/webpack
+RUN npm install
+RUN npm run build || true
+
+WORKDIR /app

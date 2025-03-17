@@ -22,12 +22,17 @@ RUN apt-get update && \
     libboost-all-dev \
     libsnappy-dev \
     libgflags-dev \
-    libgoogle-glog-dev
+    libgoogle-glog-dev \
+    npm
 
 RUN pip install --upgrade pip wheel --no-cache-dir
 RUN pip install gunicorn==20.1.0 poetry --no-cache-dir
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction
 
+WORKDIR /app/webpack
+RUN npm install
+
+WORKDIR /app
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"

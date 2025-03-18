@@ -1,0 +1,76 @@
+# Should be ran on server before deployments
+# docker network create katalogas
+# docker compose -f docker-compose.nginx.yml up -d
+
+services:
+  ${BRANCH}:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - ./entrypoint.sh
+    environment:
+      - REDIS_URL=redis://${BRANCH}-redis:6379/
+      - DATABASE_URL=postgres://admin:admin123@${BRANCH}-database:5432/katalogas
+      - DJANGO_SUPERUSER_EMAIL=test@test.com
+      - DJANGO_SUPERUSER_PASSWORD=test
+      - SEARCH_URL=elasticsearch://${BRANCH}-elasticsearch:9200/haystack
+      - DEBUG=true
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - STATIC_ROOT=/app/static
+      - RUN_MODE=GUNICORN
+      - ALLOWED_HOSTS=*,127.0.0.0
+      - SPINTA_SERVER_URL=https://test.data.gov.lt
+      - SPINTA_SERVER_NAME='Test Data Gov'
+    networks:
+      katalogas:
+        aliases:
+          - ${BRANCH}
+    depends_on:
+      - ${BRANCH}-database
+      - ${BRANCH}-redis
+      - ${BRANCH}-elasticsearch
+    volumes:
+      - /tmp/${BRANCH}-static:/app/static
+
+  ${BRANCH}-elasticsearch:
+    image: elasticsearch:7.8.1
+    environment:
+      discovery.type: 'single-node'
+      indices.query.bool.max_clause_count: 8192
+    volumes:
+      - ${BRANCH}-elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - katalogas
+
+  ${BRANCH}-database:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=katalogas
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+    volumes:
+      - ${BRANCH}-postgres:/var/lib/postgresql/data
+    networks:
+      - katalogas
+
+  ${BRANCH}-redis:
+    image: redis:latest
+    restart: always
+    networks:
+      - katalogas
+
+  ${BRANCH}-nginx:
+    image: nginx:latest
+    volumes:
+      - /tmp/${BRANCH}-static:/usr/share/nginx/html/static
+    networks:
+      - katalogas
+
+volumes:
+  ${BRANCH}-postgres:
+  ${BRANCH}-elasticsearch:
+
+networks:
+  katalogas:
+    external: true

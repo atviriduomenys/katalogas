@@ -281,5 +281,55 @@
             }
             location.href = url;
         };
+
+        function uploadFile(model) {
+            const inputFile = document.getElementById('fileInput');
+            inputFile.click();
+            inputFile.onchange = function() {
+                const formData = new FormData();
+                formData.append('file', inputFile.files[0]);
+                formData.append('model', model);
+                fetch("{% url 'file_upload' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value  // CSRF Token
+                    },
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    let messageHtml;
+                    if (data.message) {
+                        // Success message
+                        messageHtml = `<div class="message is-success"><div class="message-body"><p>${data.message}</p></div></div>`;
+                    } else {
+                        // Error message
+                        let errorMsg = gettext("Atsiprašome, įvyko klaida. ");
+                        errorMsg = errorMsg + data.error;
+                        messageHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+                    }
+                    $('#model-data-table').prepend(messageHtml);
+
+                    // Remove the message after 5 seconds
+                    setTimeout(function() {
+                        $('#model-data-table .message').first().remove(); // Removes the first message
+                    }, 5000); // 5000ms = 5 seconds
+                })
+                .catch(error => {
+                    // Error in the request
+                    let errorMsg = gettext("Atsiprašome, įvyko klaida. ");
+                    errorMsg = errorMsg + error;
+                    let errorHtml = `<div class="message is-danger"><div class="message-body"><p>${errorMsg}</p></div></div>`;
+
+                    // Prepend the error message to the table
+                    $('#model-data-table').prepend(errorHtml);
+
+                    // Remove the error message after 5 seconds
+                    setTimeout(function() {
+                        $('#model-data-table .message').first().remove(); // Removes the first message
+                    }, 5000); // 5000ms = 5 seconds
+                });
+            };
+        }
     </script>
 {% endblock %}

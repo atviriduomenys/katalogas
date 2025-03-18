@@ -120,6 +120,7 @@ INSTALLED_APPS = [
     "vitrina",
     "vitrina.cms",
     "vitrina.api",
+    "vitrina.api_example",
     "vitrina.viisp",
     "vitrina.orgs",
     "vitrina.plans",

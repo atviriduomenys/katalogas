@@ -1,5 +1,6 @@
 from django.urls import path
 
+from vitrina.api_example.views import file_upload_view
 from vitrina.structure.views import DatasetStructureView, VersionCreateView
 from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import ModelStructureView
@@ -201,4 +202,5 @@ urlpatterns = [
         VersionDetailView.as_view(),
         name="version-detail",
     ),
+    path('datasets/<int:pk>/examples/upload/', file_upload_view, name='file_upload'),
 ]

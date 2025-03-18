@@ -4,7 +4,7 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
-
+import yaml
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.views import View
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
+from pygments.lexers import YamlLexer
 from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
@@ -26,6 +27,7 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
+from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none
 from vitrina.orgs.models import Representative
@@ -702,41 +704,45 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
         data = json.loads(request.POST.get("data", ""))
         data_count = 0
-        if data.get("errors"):
-            context["errors"] = data.get("errors")
+        # if data.get("errors"):
+        #     context["errors"] = data.get("errors")
+        # else:
+        context["properties"] = {prop.name: prop for prop in self.props}
+        all_props = self.model.get_given_props().values_list(
+            "metadata__name", flat=True
+        )
+        exclude = all_props - context["properties"].keys()
+        exclude.update(EXCLUDED_COLS)
+
+        context["data"] = data.get("_data") or []
+        data_count = len(context["data"])
+        if context["data"]:
+            context["headers"] = [
+                col for col in context["data"][0].keys() if col not in exclude
+            ]
+        elif selected_cols:
+            context["headers"] = selected_cols
         else:
-            context["properties"] = {prop.name: prop for prop in self.props}
-            all_props = self.model.get_given_props().values_list(
-                "metadata__name", flat=True
-            )
-            exclude = all_props - context["properties"].keys()
-            exclude.update(EXCLUDED_COLS)
-
-            context["data"] = data.get("_data") or []
-            data_count = len(context["data"])
-            if context["data"]:
+            _data = get_data_from_spinta(self.model, query="limit(1)")
+            _data = _data.get("_data")
+            if _data:
                 context["headers"] = [
-                    col for col in context["data"][0].keys() if col not in exclude
+                    col for col in _data[0].keys() if col not in exclude
                 ]
-            elif selected_cols:
-                context["headers"] = selected_cols
             else:
-                _data = get_data_from_spinta(self.model, query="limit(1)")
-                _data = _data.get("_data")
-                if _data:
-                    context["headers"] = [
-                        col for col in _data[0].keys() if col not in exclude
-                    ]
-                else:
-                    headers = ["_id"]
-                    headers.extend(context["properties"].keys())
-                    context["headers"] = headers
-            context["excluded_cols"] = exclude
-            context["formats"] = FORMATS
-            context["tags"] = tags
-            context["select"] = select
-            context["selected_cols"] = selected_cols or context["headers"]
-
+                headers = ["_id"]
+                headers.extend(context["properties"].keys())
+                context["headers"] = headers
+        context["excluded_cols"] = exclude
+        context["formats"] = FORMATS
+        context["tags"] = tags
+        context["select"] = select
+        context["selected_cols"] = selected_cols or context["headers"]
+        context['can_manage'] = self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.STRUCTURE,
+            Dataset,
+            self.object)
         rendered_template = render_to_string(self.template_name, context)
 
         return JsonResponse(
@@ -1280,12 +1286,20 @@ class GetAllApiView(ApiView):
             query = f"{query}&limit(1)"
         else:
             query = "limit(1)"
+        api_example = ApiExample.objects.filter(path=self.model).first()
         data = get_data_from_spinta(self.model, query=query)
-        context["response"] = highlight(
+
+        context["server_response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
             HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
         )
+        if api_example:
+            context["response"] = highlight(
+                api_example.file_data,
+                YamlLexer(),
+                HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
+            )
 
         if self.model.name:
             uuid = None
@@ -1327,11 +1341,21 @@ class GetOneApiView(ApiView):
             )
         else:
             data = {}
-        context["response"] = highlight(
+        api_example = ApiExample.objects.filter(path=self.model).first()
+        if api_example:
+            parsed_yaml = yaml.safe_load(api_example.file_data)
+            parsed_yaml_str = yaml.dump(parsed_yaml)
+        context["server_response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
             HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
         )
+        if api_example:
+            context["response"] = highlight(
+                parsed_yaml_str,
+                YamlLexer(),
+                HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
+            )
 
         if self.model.name:
             context["actions"] = {

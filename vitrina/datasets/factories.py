@@ -14,7 +14,7 @@ from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
     DatasetGroup,
-    Type,
+    ResourceSubclass,
     Relation,
     DatasetRelation,
     Attribution,
@@ -159,21 +159,21 @@ class DatasetGroupFactory(DjangoModelFactory):
         return group
 
 
-class TypeFactory(DjangoModelFactory):
+class ResourceSubclassFactory(DjangoModelFactory):
     class Meta:
-        model = Type
+        model = ResourceSubclass
 
     name = factory.Faker("word")
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        type = model_class(*args, **kwargs)
+        resource_subclass = model_class(*args, **kwargs)
         fake = faker.Faker()
         for lang in reversed(settings.LANGUAGES):
-            type.set_current_language(lang[0])
-            type.title = fake.word()
-        type.save()
-        return type
+            resource_subclass.set_current_language(lang[0])
+            resource_subclass.title = fake.word()
+        resource_subclass.save()
+        return resource_subclass
 
 
 class RelationFactory(DjangoModelFactory):

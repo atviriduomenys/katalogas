@@ -64,6 +64,41 @@ class DatasetFile(models.Model):
         )
 
 
+class LegalResource(models.Model):
+    """This class represents the legislation, policy or policies that lie behind the Rules that govern the service."""
+
+    DEFAULT_HVD_URI = "http://data.europa.eu/eli/reg_impl/2023/138/oj"
+
+    uri = models.URLField(_("Nuoroda į taikomą teisės aktą"), max_length=255)
+
+    class Meta:
+        verbose_name = _("Teisinis išteklis")
+        verbose_name_plural = _("Teisiniai ištekliai")
+
+    def __str__(self):
+        return self.uri
+
+
+class HvdCategory(TranslatableModel):
+    name = models.CharField("Pilnas pavadinimas", max_length=255)
+    definition = models.TextField("Apibūdinimas")
+    uri = models.URLField("Nuoroda į kontroliuojama žodyną", max_length=255)
+
+    translations = TranslatedFields(
+        title=models.CharField("Pavadinimas", max_length=255),
+        description=models.TextField("Aprašymas"),
+    )
+
+    class Meta:
+        verbose_name = "Didelės vertės duomenų kategorija"
+        verbose_name_plural = "Didelės vertės duomenų kategorijos"
+
+    def __str__(self):
+        return self.safe_translation_getter(
+            "title", language_code=self.get_current_language()
+        )
+
+
 class Dataset(TranslatableModel):
     UPLOAD_TO = "data/files"
 
@@ -287,7 +322,7 @@ class Dataset(TranslatableModel):
         related_name="published_datasets",
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name=_('Duomenų atvėrimo paslaugų teikėjas'),
+        verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
     )
     landing_page = models.URLField(_("Prieigos nuoroda"), max_length=1024, null=True, blank=True)
 
@@ -298,10 +333,24 @@ class Dataset(TranslatableModel):
         verbose_name=_("Duomenų rinkinio ryšiai"),
         blank=True,
     )
-    type = models.ManyToManyField(
-        "Type",
-        verbose_name=_("Tipas"),
+    resource_subclass = models.ManyToManyField(
+        "ResourceSubclass",
+        verbose_name=_("Resurso poklasiai"),
         blank=True,
+    )
+    type = models.ManyToManyField(
+        "DatasetType",
+        db_table="dataset_types",
+        verbose_name=_("Duomenų rinkinio tipai"),
+        blank=True,
+    )
+    applicable_legislation = models.ManyToManyField(
+        "LegalResource",
+        verbose_name=_("Taikomi teisės aktai"),
+        help_text="Nuoroda į taikomą teisęs aktą",
+    )
+    hvd_category = models.ManyToManyField(
+        "HvdCategory", verbose_name=_("Didelės vertės duomenų kategorijos")
     )
     endpoint_url = models.URLField(
         _("API adresas"),
@@ -700,10 +749,12 @@ class Dataset(TranslatableModel):
             return metadata.name
         return ""
 
-    def public_types(self):
-        return list(self.type.filter(show_filter=True).values_list("pk", flat=True))
+    def public_resource_subclasses(self):
+        return list(
+            self.resource_subclass.filter(show_filter=True).values_list("pk", flat=True)
+        )
 
-    def type_order(self):
+    def resource_subclass_order(self):
         order = 0
         related_datasets = self.related_datasets.all()
         part_of = self.part_of.all()
@@ -1468,11 +1519,37 @@ class DatasetAttribution(models.Model):
             return f"{self.attribution} - {self.dataset}, {self.agent}"
 
 
-class Type(TranslatableModel):
+class DatasetType(TranslatableModel):
+    code = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    label = models.CharField(_("Pilnas pavadinimas"), max_length=255)
+    definition = models.TextField(_("Apibūdinimas"))
+    uri = models.CharField(_("Nuorodą į kontroliuojamą žodyną"), max_length=255)
+    translations = TranslatedFields(
+        title=models.CharField(_("Pavadinimas"), max_length=255),
+        description=models.TextField(_("Aprašymas")),
+    )
+    is_used = models.BooleanField(_("Naudojamas"), default=False)
+
+    class Meta:
+        verbose_name = _("Duomenų rinkinio tipas")
+        verbose_name_plural = _("Duomenų rinkinio tipai")
+
+    def __str__(self):
+        return self.safe_translation_getter(
+            "title", language_code=self.get_current_language()
+        )
+
+
+class ResourceSubclass(TranslatableModel):
+    """Represents a resource subclass such as `DataService`, `DatasetSeries`, etc."""
+
     SERIES = "series"
     SERVICE = "service"
+    CATALOG = "catalog"
+    DATASET = "dataset"
+    INFORMATION_SYSTEM = "information_system"
 
-    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    name = models.CharField(_("Kodinis pavadinimas"), unique=True, max_length=255)
     uri = models.CharField(
         _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
     )
@@ -1483,9 +1560,8 @@ class Type(TranslatableModel):
     show_filter = models.BooleanField(_("Rodyti filtre"), default=False)
 
     class Meta:
-        db_table = "type"
-        verbose_name = _("Tipas")
-        verbose_name_plural = _("Tipai")
+        verbose_name = _("Resurso poklasis")
+        verbose_name_plural = _("Resurso poklasiai")
 
     def __str__(self):
         return self.safe_translation_getter(

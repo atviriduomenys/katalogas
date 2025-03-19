@@ -68,10 +68,7 @@ from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
 from vitrina.structure.models import Model, Metadata, Property
-from vitrina.structure.services import (
-    create_structure_objects,
-    get_model_name,
-)
+from vitrina.structure.services import create_structure_objects, get_model_name
 from vitrina.structure.views import DatasetStructureMixin
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
@@ -105,15 +102,18 @@ from vitrina.datasets.services import (
 )
 from vitrina.datasets.models import (
     Dataset,
+    DatasetType,
     DatasetStructure,
     DatasetGroup,
     DatasetAttribution,
-    Type,
+    ResourceSubclass,
     DatasetRelation,
     Relation,
     DatasetFile,
     Contact,
     DatasetExcludedGroups,
+    LegalResource,
+    HvdCategory,
 )
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.helpers import (
@@ -145,7 +145,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         "formats",
         "published",
         "level",
-        "type",
+        "resource_subclass",
         "access_rights",
     ]
     form_class = DatasetSearchForm
@@ -212,11 +212,11 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             datasets = datasets.order_by("published_created_s")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                datasets = datasets.order_by("lt_title_s", "-type_order")
+                datasets = datasets.order_by("lt_title_s", "-resource_subclass_order")
             else:
-                datasets = datasets.order_by("en_title_s", "-type_order")
+                datasets = datasets.order_by("en_title_s", "-resource_subclass_order")
         elif sorting == "sort-by-relevance":
-            datasets = datasets.order_by("-type_order")
+            datasets = datasets.order_by("-resource_subclass_order")
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -314,9 +314,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 ),
                 Filter(
                     *filter_args,
-                    "type",
-                    _("Tipas"),
-                    Type,
+                    "resource_subclass",
+                    _("Resurso poklasis"),
+                    ResourceSubclass,
                     multiple=True,
                     is_int=False,
                     stats=False,
@@ -674,8 +674,11 @@ class DatasetCreateView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Naujas duomenų rinkinys")
-        context["service_types"] = list(
-            Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True)
+        service_resource_subclass = ResourceSubclass.objects.filter(
+            name=ResourceSubclass.SERVICE
+        ).first()
+        context["service_resource_subclass"] = (
+            service_resource_subclass.pk if service_resource_subclass else None
         )
         return context
 
@@ -693,8 +696,8 @@ class DatasetCreateView(
         self.object.organization_id = self.kwargs.get("pk")
         self.object.save()
 
-        types = form.cleaned_data.get("type")
-        if types.filter(name=Type.SERVICE):
+        resource_subclasses = form.cleaned_data.get("resource_subclass")
+        if resource_subclasses.filter(name=ResourceSubclass.SERVICE):
             self.object.service = True
         else:
             self.object.endpoint_url = None
@@ -702,7 +705,7 @@ class DatasetCreateView(
             self.object.endpoint_description = None
             self.object.endpoint_description_type = None
             self.object.service = False
-        if types.filter(name=Type.SERIES):
+        if resource_subclasses.filter(name=ResourceSubclass.SERIES):
             self.object.series = True
         else:
             self.object.series = False
@@ -726,7 +729,7 @@ class DatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
-        self.object.type.set(types)
+        self.object.resource_subclass.set(resource_subclasses)
         self.object.save()
         set_comment(Dataset.CREATED)
         if not form.cleaned_data.get("creator"):
@@ -874,8 +877,11 @@ class DatasetUpdateView(
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         switch_language(self.object, get_language())
-        context["service_types"] = list(
-            Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True)
+        service_resource_subclass = ResourceSubclass.objects.filter(
+            name=ResourceSubclass.SERVICE
+        ).first()
+        context["service_resource_subclass"] = (
+            service_resource_subclass.pk if service_resource_subclass else None
         )
         context["request_user"] = (
             self.request.user if self.request.user.is_authenticated else None
@@ -895,9 +901,9 @@ class DatasetUpdateView(
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
 
-        types = form.cleaned_data.get("type")
-        self.object.type.set(types)
-        if types.filter(name=Type.SERVICE):
+        resource_subclasses = form.cleaned_data.get("resource_subclass")
+        self.object.resource_subclass.set(resource_subclasses)
+        if resource_subclasses.filter(name=ResourceSubclass.SERVICE):
             self.object.service = True
             self.object.datasetdistribution_set.all().delete()
         else:
@@ -906,20 +912,22 @@ class DatasetUpdateView(
             self.object.endpoint_description = None
             self.object.endpoint_description_type = None
             self.object.service = False
-        if types.filter(name=Type.SERIES):
+        if resource_subclasses.filter(name=ResourceSubclass.SERIES):
             self.object.series = True
             self.object.datasetdistribution_set.all().delete()
         else:
             self.object.series = False
 
-        if (
-            "endpoint_url" in form.changed_data or "type" in form.changed_data
-        ) or (
-            self.object.is_public and not self.object.published
-        ):
-            if self.object.is_public and not self.object.published:
-                self.object.published = timezone.now()
+        endpoint_or_resource_subclass_changed = (
+            "endpoint_url" in form.changed_data
+            or "resource_subclass" in form.changed_data
+        )
+        needs_publication = self.object.is_public and not self.object.published
 
+        if needs_publication:
+            self.object.published = timezone.now()
+
+        if endpoint_or_resource_subclass_changed:
             latest_status_comment = (
                 Comment.objects.filter(
                     content_type=ContentType.objects.get_for_model(self.object),
@@ -3069,14 +3077,29 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         form = DatasetCategoryForm(self.dataset, request.POST)
         if form.is_valid():
+            hvd_code = "HVD"
             self.dataset.category.clear()
-            for category in form.cleaned_data.get("category"):
+            self.dataset.applicable_legislation.clear()
+            for category in (categories := form.cleaned_data.get("category")):
                 self.dataset.category.add(category)
+                if hvd_category := HvdCategory.objects.translated(
+                    title=category.title
+                ).first():
+                    self.dataset.type.add(DatasetType.objects.get(code=hvd_code))
+                    legal_resource, created = LegalResource.objects.get_or_create(
+                        uri=LegalResource.DEFAULT_HVD_URI,
+                    )
+                    self.dataset.applicable_legislation.add(legal_resource)
+                    self.dataset.hvd_category.add(hvd_category)
+                if dataset_type := DatasetType.objects.translated(
+                    title=category.title
+                ).first():
+                    self.dataset.type.add(dataset_type)
             self.dataset.save()
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
             for group in DatasetGroup.objects.filter(
-                category__in=form.cleaned_data.get("category")
+                category__in=categories
             ).distinct():
                 if group not in form.cleaned_data.get("group"):
                     DatasetExcludedGroups.objects.create(

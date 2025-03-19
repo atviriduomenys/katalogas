@@ -123,14 +123,14 @@ class RequestListView(FacetedSearchView):
         for field in self.facet_fields:
             requests = requests.facet(field, **options)
         if sorting is None or sorting == "sort-by-date-newest":
-            requests = requests.order_by("-type_order", "-created")
+            requests = requests.order_by("-resource_subclass_order", "-created")
         elif sorting == "sort-by-date-oldest":
-            requests = requests.order_by("-type_order", "created")
+            requests = requests.order_by("-resource_subclass_order", "created")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                requests = requests.order_by("-type_order", "lt_title_s")
+                requests = requests.order_by("-resource_subclass_order", "lt_title_s")
             else:
-                requests = requests.order_by("-type_order", "en_title_s")
+                requests = requests.order_by("-resource_subclass_order", "en_title_s")
         return requests
 
     def get_context_data(self, **kwargs):

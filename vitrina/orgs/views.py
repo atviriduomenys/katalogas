@@ -860,7 +860,7 @@ class OrganizationUpdateView(
             node.move(parent_org, "sorted-child")
             self.object.refresh_from_db()
 
-        if 'jurisdiction' in form.changed_data:
+        if "jurisdiction" in form.changed_data:
             # save related datasets to update search index
             for dataset in self.object.dataset_set.all():
                 dataset.save()

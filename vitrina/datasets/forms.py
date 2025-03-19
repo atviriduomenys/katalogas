@@ -43,7 +43,7 @@ from vitrina.datasets.models import (
     DatasetStructure,
     DatasetGroup,
     DatasetAttribution,
-    Type,
+    ResourceSubclass,
     DatasetRelation,
     Relation,
     Contact,
@@ -54,14 +54,6 @@ from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 
 
-class DatasetTypeField(forms.ModelMultipleChoiceField):
-    def label_from_instance(self, obj):
-        if obj.description:
-            return mark_safe(f'{obj.title}<br/><p class="help">{obj.description}</p>')
-        else:
-            return obj.title
-
-
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(
         form_class=CharField,
@@ -69,10 +61,10 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         required=True,
         widget=TextInput(),
     )
-    type = DatasetTypeField(
-        label=_("Duomenų ištekliaus tipas"),
+    resource_subclass = forms.ModelMultipleChoiceField(
+        label=_("Resurso poklasis"),
         required=False,
-        queryset=Type.objects.all(),
+        queryset=ResourceSubclass.objects.all(),
         widget=forms.CheckboxSelectMultiple,
     )
     description = TranslatedField(
@@ -136,7 +128,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "frequency",
             "access_rights",
             "distribution_conditions",
-            "type",
+            "resource_subclass",
             "endpoint_url",
             "endpoint_type",
             "endpoint_description",
@@ -172,7 +164,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("catalog"),
             Field("licence"),
             Field("frequency"),
-            Field("type"),
+            Field("resource_subclass"),
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),
@@ -309,19 +301,19 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             elif isinstance(contact, User):
                 self.fields["contact"].initial = f"user-{contact.id}"
 
-    def clean_type(self):
-        type = self.cleaned_data.get("type")
+    def clean_resource_subclass(self):
+        resource_subclass = self.cleaned_data.get("resource_subclass")
         if (
-            type.filter(name=Type.SERVICE).exists()
-            and type.filter(name=Type.SERIES).exists()
+            resource_subclass.filter(name=ResourceSubclass.SERVICE).exists()
+            and resource_subclass.filter(name=ResourceSubclass.SERIES).exists()
         ):
             raise ValidationError(
                 _(
-                    'Tipai "service" ir "series" negali būti pažymėti abu kartu, '
+                    'Poklasiai "service" ir "series" negali būti pažymėti abu kartu, '
                     "gali būti pažymėtas tik vienas arba kitas."
                 )
             )
-        return type
+        return resource_subclass
 
     def clean_name(self):
         name = self.cleaned_data.get("name")

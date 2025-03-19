@@ -69,6 +69,16 @@
                                     <td>{{ resource.period_end|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                 </tr>
                                 <tr>
+                                    <th>{% translate "Didelės vertės duomenų distribucija" %}</th>
+                                    <td>
+                                        {% if resource.applicable_legislation.all %}
+                                            {% translate "Taip" %}
+                                        {% else %}
+                                            {% translate "Ne" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>{% translate "Dydis" %}</th>
                                     <td>{{ resource.size|default:"" }}</td>
                                 </tr>

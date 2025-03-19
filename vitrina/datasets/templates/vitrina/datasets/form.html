@@ -30,44 +30,86 @@
 
 {% block scripts %}
     <script>
-        $(document).ready(function() {
-            $('#id_category').select2();
-            $('#id_category').on('select2:select', function (e) {
-                let value = $('#id_category').find(':selected')[0].innerText;
-                $('#select2-id_category-container')[0].innerHTML = $.trim(value);
-            });
-            $('#id_category').trigger('select2:select');
+        $(document).ready(() => {
+            const initializeSelect2 = () => {
+                const $category = $('#id_category');
+                $category.select2();
 
-            let serviceTypes = {{ service_types|safe }};
-            $('div#div_id_type input').on('change', function() {
-                let foundService = false;
-                $('div#div_id_type input:checked').each(function() {
-                    if (serviceTypes.includes(parseInt($(this).val()))) {
-                        foundService = true;
-                        $('div#div_id_endpoint_url').show();
-                        $('div#div_id_endpoint_type').show();
-                        $('div#div_id_endpoint_description').show();
-                        $('div#div_id_endpoint_description_type').show();
-                        return true;
-                    }
+                $category.on('select2:select', () => {
+                    const value = $category.find(':selected')[0].innerText;
+                    $('#select2-id_category-container')[0].innerHTML = $.trim(value);
                 });
 
-                if (!foundService) {
-                    $('div#div_id_endpoint_url').hide();
-                    $('div#div_id_endpoint_type').hide();
-                    $('div#div_id_endpoint_description').hide();
-                    $('div#div_id_endpoint_description_type').hide();
-                }
-            });
-            if(!$('div#div_id_type input').val()) {
-                $('div#div_id_endpoint_url').hide();
-                $('div#div_id_endpoint_type').hide();
-                $('div#div_id_endpoint_description').hide();
-                $('div#div_id_endpoint_description_type').hide();
-            }
-            else {
-                $('div#div_id_type input').trigger('change');
-            }
+                $category.trigger('select2:select');
+            };
+
+            const initializeToggleableRadios = () => {
+                const $radioInputs = $('div#div_id_subclass input[type="radio"]');
+                const $radioContainer = $('div#div_id_subclass');
+
+                $radioInputs.each(function() {
+                    const $radio = $(this);
+                    $radio.data('checked', $radio.prop('checked'));
+                    $radio.on('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    });
+                });
+                $radioContainer.on('click', 'label', function(e) {
+                    e.preventDefault();
+
+                    const $label = $(this);
+                    const $radio = $label.find('input[type="radio"]');
+                    const isCurrentlyChecked = $radio.data('checked');
+
+                    $radioInputs.each(function() {
+                        $(this).data('checked', false);
+                        $(this).prop('checked', false);
+                    });
+
+                    if (!isCurrentlyChecked) {
+                        $radio.data('checked', true);
+                        $radio.prop('checked', true);
+                    }
+
+                    $radio.trigger('change');
+                });
+            };
+
+            const initializeServiceFields = () => {
+                const serviceSubclass = {{ service_resource_subclass|default:'null'|safe }};
+                const $dependentFields = $(
+                    'div#div_id_endpoint_url, ' +
+                    'div#div_id_endpoint_type, ' +
+                    'div#div_id_endpoint_description, ' +
+                    'div#div_id_endpoint_description_type'
+                );
+
+                const updateDependentFields = () => {
+                    const $checkedRadio = $('div#div_id_subclass input:checked');
+                    if (!$checkedRadio.length || serviceSubclass === null) {
+                        $dependentFields.hide();
+                        return;
+                    }
+
+                    const selectedValue = parseInt($checkedRadio.val());
+                    const isServiceSubclass = selectedValue === serviceSubclass;
+
+                    if (isServiceSubclass) {
+                        $dependentFields.show();
+                    } else {
+                        $dependentFields.hide();
+                    }
+                };
+
+                $('div#div_id_subclass').on('change', 'input[type="radio"]', updateDependentFields);
+                updateDependentFields();
+            };
+
+            initializeSelect2();
+            initializeToggleableRadios();
+            initializeServiceFields();
         });
     </script>
 {% endblock %}

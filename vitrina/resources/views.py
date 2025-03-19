@@ -12,7 +12,7 @@ from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina import settings
 from vitrina.comments.models import Comment
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, LegalResource
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import Action, has_perm
@@ -129,6 +129,13 @@ class ResourceCreateView(
                     n = 0
                 n += 1
                 name = f"resource{n}"
+
+        if form.cleaned_data.get("is_hvd"):
+            legal_resource, created = LegalResource.objects.get_or_create(
+                uri=LegalResource.DEFAULT_HVD_URI,
+            )
+            resource.applicable_legislation.add(legal_resource)
+
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.dataset,
@@ -232,6 +239,15 @@ class ResourceUpdateView(
                     n = 0
                 n += 1
                 name = f"resource{n}"
+
+        if form.cleaned_data.get("is_hvd"):
+            legal_resource, created = LegalResource.objects.get_or_create(
+                uri=LegalResource.DEFAULT_HVD_URI,
+            )
+            resource.applicable_legislation.add(legal_resource)
+        else:
+            resource.applicable_legislation.clear()
+
         if metadata := resource.metadata.first():
             metadata.name = name
             metadata.access = form.cleaned_data.get("access") or None

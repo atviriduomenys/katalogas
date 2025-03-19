@@ -20,10 +20,10 @@ from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
-    DatasetAttributionFactory, TypeFactory, RelationFactory, \
+    DatasetAttributionFactory, ResourceSubclassFactory, RelationFactory, \
     DatasetRelationFactory, ContactFactory
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact, ResourceSubclass, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -1736,34 +1736,32 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
     assert resp.url == dataset.get_absolute_url()
     assert dataset.datasetattribution_set.count() == 0
 
-
 @pytest.mark.django_db
-def test_dataset_with_type_error(app: DjangoTestApp):
+def test_dataset_with_resource_subclass_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
-    series_type = TypeFactory(name='series')
-    service_type = TypeFactory(name='service')
+    series_resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERIES)
+    service_resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
 
     form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
-    form['type'] = [service_type.pk, series_type.pk]
+    form['resource_subclass'] = [service_resource_subclass.pk, series_resource_subclass.pk]
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[
-        'Tipai "service" ir "series" negali būti pažymėti abu kartu, gali būti pažymėtas tik vienas arba kitas.'
+        'Poklasiai "service" ir "series" negali būti pažymėti abu kartu, gali būti pažymėtas tik vienas arba kitas.'
     ]]
 
-
 @pytest.mark.django_db
-def test_dataset_with_type(app: DjangoTestApp):
+def test_dataset_with_resource_subclass(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
-    type = TypeFactory(name='service')
+    resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
     service_type = FileFormat()
     service_spec_type = FileFormat()
 
     form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
-    form['type'] = [type.pk]
+    form['resource_subclass'] = [resource_subclass.pk]
     form['endpoint_url'] = "https://test.com"
     form['endpoint_type'] = service_type.pk
     form['endpoint_description'] = "https://testdescription.com"
@@ -1771,7 +1769,7 @@ def test_dataset_with_type(app: DjangoTestApp):
     resp = form.submit()
     dataset.refresh_from_db()
     assert resp.url == dataset.get_absolute_url()
-    assert list(dataset.type.all()) == [type]
+    assert list(dataset.resource_subclass.all()) == [resource_subclass]
     assert dataset.series is False
     assert dataset.service is True
     assert dataset.endpoint_url == "https://test.com"
@@ -2834,14 +2832,14 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
 def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
     LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
-    service_type = TypeFactory(name=Type.SERVICE)
+    service_resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
-    form['type'] = [service_type.pk]
+    form['resource_subclass'] = [service_resource_subclass.pk]
     form['endpoint_url'] = 'https://example.com'
     form.submit()
     assert Dataset.objects.count() == 1
@@ -2856,13 +2854,13 @@ def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_update_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
+    service_resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
     organization = OrganizationFactory()
     dataset = DatasetFactory(organization=organization)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = [service_type.pk]
+    form['resource_subclass'] = [service_resource_subclass.pk]
     form['endpoint_url'] = 'https://example.com'
     form.submit()
     dataset.refresh_from_db()
@@ -2876,14 +2874,14 @@ def test_update_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
+    service_resource_subclass = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
     organization = OrganizationFactory()
     dataset = DatasetFactory(organization=organization, service=True)
-    dataset.type.add(service_type)
+    dataset.resource_subclass.add(service_resource_subclass)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = []
+    form['resource_subclass'] = []
     form.submit()
     dataset.refresh_from_db()
     assert dataset.service is False
@@ -3483,8 +3481,8 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         ),
         endpoint_description='https://endpoint-description.com',
     )
-    service_type = TypeFactory(name=Type.SERVICE)
-    dataset.type.add(service_type)
+    service_type = ResourceSubclassFactory(name=ResourceSubclass.SERVICE)
+    dataset.resource_subclass.add(service_type)
     relation = DatasetRelationFactory(
         part_of=dataset,
         relation=RelationFactory(name=Relation.SERVICE)

@@ -22,7 +22,7 @@ from vitrina.datasets.models import (
     Dataset,
     DatasetGroup,
     Attribution,
-    Type,
+    ResourceSubclass,
     Relation,
     DatasetReport,
     Contact,
@@ -52,7 +52,7 @@ class GroupAdmin(TranslatableAdmin):
     list_display = ("title",)
 
 
-class TypeAdmin(TranslatableAdmin):
+class ResourceSubclassAdmin(TranslatableAdmin):
     list_display = ("title",)
 
 
@@ -489,7 +489,7 @@ class GeoportalDataServiceTypeValueInline(admin.TabularInline):
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
-admin.site.register(Type, TypeAdmin)
+admin.site.register(ResourceSubclass, ResourceSubclassAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
 admin.site.register(Contact, ContactAdmin)

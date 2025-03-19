@@ -77,8 +77,10 @@ class DatasetIndex(SearchIndex, Indexable):
     published = DateTimeField(model_attr="published", null=True, faceted=True)
     status = CharField(model_attr="status", faceted=True, null=True)
     level = IntegerField(model_attr="get_level", faceted=True, null=True)
-    type = MultiValueField(model_attr="public_types", faceted=True)
-    type_order = IntegerField(model_attr="type_order")
+    resource_subclass = MultiValueField(
+        model_attr="public_resource_subclasses", faceted=True
+    )
+    resource_subclass_order = IntegerField(model_attr="resource_subclass_order")
     is_public = BooleanField(model_attr="is_public", faceted=True, null=False)
     managers = MultiValueField(model_attr="get_managers", faceted=True)
     access_rights = CharField(model_attr="access_rights", faceted=True, null=True)

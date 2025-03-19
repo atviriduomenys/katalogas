@@ -134,6 +134,9 @@ class DatasetResourceForm(TranslatableModelForm):
         widget=forms.RadioSelect,
         choices=LEVEL_CHOICES,
     )
+    is_hvd = forms.BooleanField(
+        label=_("Didelės vertės duomenų distribucija"), required=False
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -156,6 +159,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "is_parameterized",
             "upload_to_storage",
             "imported",
+            "is_hvd",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -177,6 +181,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("access"),
             Field("level"),
             Field("is_parameterized"),
+            Field("is_hvd"),
             Field("geo_location", placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
                 Field("period_start", placeholder=_("Pasirinkite pradžios datą")),
@@ -201,10 +206,13 @@ class DatasetResourceForm(TranslatableModelForm):
             self.initial["level"] = (
                 metadata.level_given if metadata.level_given is not None else "None"
             )
+            self.fields[
+                "is_hvd"
+            ].initial = self.resource.applicable_legislation.exists()
         else:
             self.initial["level"] = "None"
 
-        if not dataset.type.filter(name="catalog"):
+        if not dataset.resource_subclass or dataset.resource_subclass.name != "catalog":
             self.fields["imported"].widget = forms.HiddenInput()
 
     def clean(self):

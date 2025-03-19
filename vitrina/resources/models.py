@@ -10,7 +10,7 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, LegalResource
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
@@ -173,6 +173,11 @@ class DatasetDistribution(TranslatableModel):
         null=True,
         verbose_name=_("Atsisiuntimo nuoroda"),
         help_text=_("Tiesioginė duomenų atsisiuntimo nuoroda."),
+    )
+    applicable_legislation = models.ManyToManyField(
+        LegalResource,
+        verbose_name=_("Taikomi teisės aktai"),
+        help_text="Nuoroda į taikomą teisęs aktą",
     )
 
     file = FilerFileField(

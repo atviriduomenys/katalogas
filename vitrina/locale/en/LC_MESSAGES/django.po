@@ -585,7 +585,7 @@ msgid "Naudotojai:"
 msgstr "Users:"
 
 msgid ""
-"Tipai \"service\" ir \"series\" negali būti pažymėti abu kartu, gali būti "
+"Poklasiai \"service\" ir \"series\" negali būti pažymėti abu kartu, gali būti "
 "pažymėtas tik vienas arba kitas."
 msgstr ""
 "Both \"service\" and \"series\" types cannot be selected, select only one of "
@@ -779,6 +779,30 @@ msgstr "Show filter"
 
 msgid "Tipai"
 msgstr "Types"
+
+msgid "Nuoroda į taikomą teisės aktą"
+msgstr "URL to legal resource"
+
+msgid "Teisinis išteklis"
+msgstr "Legal resource"
+
+msgid "Teisiniai ištekliai"
+msgstr "Legal resources"
+
+msgid "Didelės vertės duomenų kategorija"
+msgstr "High-value dataset category"
+
+msgid "Didelės vertės duomenų distribucija"
+msgstr "High-value data distribution"
+
+msgid "Didelės vertės duomenų kategorijos"
+msgstr "High-value dataset categories"
+
+msgid "Resurso poklasis"
+msgstr "Resource subclass"
+
+msgid "Resurso poklasiai"
+msgstr "Resource subclasses"
 
 msgid "Atvirkštinio ryšio pavadinimas"
 msgstr "Reverse relation title"

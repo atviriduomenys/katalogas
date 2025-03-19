@@ -1608,8 +1608,8 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 0
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
     assert dataset.status == Dataset.HAS_DATA
@@ -1666,8 +1666,8 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 0
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.endpoint_url is None
     assert dataset.status == Dataset.INVENTORED
     assert dataset.comments.count() == 1
@@ -1729,8 +1729,8 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
 
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.status == Dataset.HAS_DATA
@@ -1805,8 +1805,8 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
 
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
@@ -1877,8 +1877,8 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
 
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
@@ -1943,8 +1943,8 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
 
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
-    assert dataset.type.count() == 1
-    assert dataset.type.first().name == "service"
+    assert dataset.resource_subclass.count() == 1
+    assert dataset.resource_subclass.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_type is None
     assert dataset.status == Dataset.HAS_DATA

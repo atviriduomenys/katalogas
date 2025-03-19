@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset, Type, Relation, DatasetRelation
+from vitrina.datasets.models import Dataset, ResourceSubclass, Relation, DatasetRelation
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
@@ -36,12 +36,12 @@ def _get_elem(tag, element, find_all=False):
     return [] if find_all else None
 
 
-def _create_or_get_service_type():
-    type_obj, created = Type.objects.get_or_create(name='service')
+def _create_or_get_service_resource_subclass():
+    resource_subclass_obj, created = ResourceSubclass.objects.get_or_create(name='service')
     if created:
-        type_obj.title = 'Duomenų publikavimo paslauga'
-        type_obj.save()
-    return type_obj
+        resource_subclass_obj.title = 'Duomenų publikavimo paslauga'
+        resource_subclass_obj.save()
+    return resource_subclass_obj
 
 
 def _get_categories(title):
@@ -170,15 +170,15 @@ def main():
                         published=timezone.now()
                     )
 
-                # type
-                dataset_type = _get_elem("{%s}hierarchyLevel" % gmd, xml)
-                dataset_type = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_type)
-                if dataset_type is not None and dataset_type.text == 'service':
+                # resource_subclass
+                dataset_resource_subclass = _get_elem("{%s}hierarchyLevel" % gmd, xml)
+                dataset_resource_subclass = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_resource_subclass)
+                if dataset_resource_subclass is not None and dataset_resource_subclass.text == "service":
                     dataset.service = True
-                    service_type = _create_or_get_service_type()
-                    if not dataset.type.filter(pk=service_type.pk):
+                    service_resource_subclass = _create_or_get_service_resource_subclass()
+                    if not dataset.type.filter(pk=service_resource_subclass.pk):
                         changed = True
-                        dataset.type.add(service_type)
+                        dataset.resource_subclass.add(service_resource_subclass)
 
                 # dataset info
                 dataset_info = _get_elem("{%s}identificationInfo" % gmd, xml)

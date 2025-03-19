@@ -146,10 +146,10 @@ class Comment(models.Model):
                 body_text = _(
                     f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}."
                 )
-            elif isinstance(self.content_object, Dataset) and self.status == self.OPENED:
-                body_text = _(
-                    f"Statusas pakeistas į {Dataset.HAS_DATA_TITLE}."
-                )
+            elif (
+                isinstance(self.content_object, Dataset) and self.status == self.OPENED
+            ):
+                body_text = _(f"Statusas pakeistas į {Dataset.HAS_DATA_TITLE}.")
             else:
                 body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:

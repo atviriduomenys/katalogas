@@ -487,6 +487,60 @@ def test_update_distribution__existing_translation(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_create_hvd_distribution(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension='URL')
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    form['format'] = file_format.id
+    form['download_url'] = "www.google.lt"
+    form['is_hvd'] = True
+
+    form.submit()
+
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    assert distribution.applicable_legislation.first().uri == "http://data.europa.eu/eli/reg_impl/2023/138/oj"
+
+@pytest.mark.django_db
+def test_update_distribution_to_hvd(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory()
+    user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    form['is_hvd'] = True
+    form.submit()
+
+    distribution.refresh_from_db()
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    assert distribution.applicable_legislation.first().uri == "http://data.europa.eu/eli/reg_impl/2023/138/oj"
+
+
+@pytest.mark.django_db
+def test_update_hvd_distribution_to_not_hvd(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory()
+    user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    form['is_hvd'] = False
+    form.submit()
+
+    distribution.refresh_from_db()
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    assert distribution.applicable_legislation.first() is None
+
+
+@pytest.mark.django_db
 def test_distribution_with_compression_and_packaging_formats(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)

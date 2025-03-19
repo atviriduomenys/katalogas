@@ -8,6 +8,9 @@ from django.shortcuts import get_object_or_404
 def handle_yaml_file(uploaded_file):
     try:
         file_content = uploaded_file.read().decode('utf-8')
+        if not file_content:
+            raise ValueError
+
         yaml.safe_load(file_content)
         return file_content, None
     except yaml.YAMLError as e:

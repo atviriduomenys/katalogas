@@ -4,6 +4,7 @@ from .forms import FileUploadForm
 from .models import ApiExample
 from ..datasets.models import Dataset
 from django.shortcuts import get_object_or_404
+import logging
 
 def handle_yaml_file(uploaded_file):
     try:
@@ -14,9 +15,11 @@ def handle_yaml_file(uploaded_file):
         yaml.safe_load(file_content)
         return file_content, None
     except yaml.YAMLError as e:
-        return None, f"Klaidingas YAML failas: {str(e)}"
+        logging.error(f"Klaidingas YAML failas: {str(e)}")
+        return None, "Klaidingas YAML failas."
     except Exception as e:
-        return None, f"Įvyko klaida apdorojant failą: {str(e)}"
+        logging.error(f"Įvyko klaida apdorojant failą: {str(e)}")
+        return None, "Įvyko klaida apdorojant failą."
 
 
 def is_duplicate(file_content):

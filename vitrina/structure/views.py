@@ -738,12 +738,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["tags"] = tags
             context["select"] = select
             context["selected_cols"] = selected_cols or context["headers"]
-            context['can_manage'] = self.can_manage_structure = has_perm(
-                self.request.user,
-                Action.STRUCTURE,
-                Dataset,
-                self.object)
-            context["dataset_id"] = self.object.id
+
         rendered_template = render_to_string(self.template_name, context)
 
         return JsonResponse(
@@ -1287,20 +1282,12 @@ class GetAllApiView(ApiView):
             query = f"{query}&limit(1)"
         else:
             query = "limit(1)"
-        api_example = ApiExample.objects.filter(dataset=self.object).first()
         data = get_data_from_spinta(self.model, query=query)
-
-        context["server_response"] = highlight(
+        context["response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
             HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),
         )
-        if api_example:
-            context["response"] = highlight(
-                api_example.file_data,
-                YamlLexer(),
-                HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
-            )
 
         if self.model.name:
             uuid = None
@@ -1342,16 +1329,7 @@ class GetOneApiView(ApiView):
             )
         else:
             data = {}
-        api_example = ApiExample.objects.filter(dataset=self.object).first()
-        if api_example:
-            parsed_yaml = yaml.safe_load(api_example.file_data)
-            parsed_yaml_str = yaml.dump(parsed_yaml)
-            context["response"] = highlight(
-                parsed_yaml_str,
-                YamlLexer(),
-                HtmlFormatter(style=get_style_by_name('borland'), noclasses=True)
-            )
-        context["server_response"] = highlight(
+        context["response"] = highlight(
             json.dumps(data, indent=2, ensure_ascii=False),
             JsonLexer(),
             HtmlFormatter(style=get_style_by_name("borland"), noclasses=True),

@@ -1,4 +1,29 @@
 services:
+  vitrina:
+    volumes:
+      - ".:/app"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - ./entrypoint.sh
+    environment:
+      - REDIS_URL=redis://redis:6379/
+      - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
+      - DJANGO_SUPERUSER_EMAIL=test@test.com
+      - DJANGO_SUPERUSER_PASSWORD=test
+      - DEBUG=true
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - STATIC_ROOT=/app/static
+      - RUN_MODE=DEVELOPMENT
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
   postgres:
     image: postgres:14
     restart: always
@@ -20,7 +45,7 @@ services:
       ADMINER_DEFAULT_SERVER: 'postgres'
 
   mysql:
-    image: mysql:5
+    image: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 'secret'
       MYSQL_DATABASE: 'adp-dev'

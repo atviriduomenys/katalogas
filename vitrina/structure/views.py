@@ -4,7 +4,7 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
-import yaml
+
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -16,7 +16,6 @@ from django.urls import reverse
 from django.views import View
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
-from pygments.lexers import YamlLexer
 from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexers.data import JsonLexer
@@ -27,7 +26,6 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
-from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none
 from vitrina.orgs.models import Representative

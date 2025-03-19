@@ -42,14 +42,7 @@
             </ul>
        </div>
        <div class="mb-5">
-           <div class="header-container" style="display: flex; justify-content: space-between; align-items: center; position: relative;">
-                <h4 class="custom-title is-size-4-mobile">{% translate "Užklausa" %}</h4>
-               <label class="switch" style="position: relative; display: flex; align-items: center;">
-                    <input type="checkbox" id="dataSwitch">
-                    <span class="slider round"></span>
-               </label>
-
-           </div>
+           <h4 class="custom-title is-size-4-mobile">{% translate "Užklausa" %}</h4>
 
            <div>
                {% for key, tab in tabs.items %}
@@ -61,12 +54,7 @@
        </div>
        <div>
            <h4 class="custom-title is-size-4-mobile">{% translate "Atsakymas" %}</h4>
-           <div id="basicResponse">
-               {{ response|safe }}
-            </div>
-            <div id="serverResponse" style="display: none;">
-                {{ server_response|safe }}
-            </div>
+           {{ response|safe }}
        </div>
     </div>
 </div>
@@ -102,17 +90,5 @@
             content.css('display', 'block');
             tab.addClass('is-active');
         }
-        document.getElementById("dataSwitch").addEventListener("change", function() {
-        var basicResponse = document.getElementById("basicResponse");
-        var serverResponse = document.getElementById("serverResponse");
-
-        if (this.checked) {
-            basicResponse.style.display = "none";
-            serverResponse.style.display = "block";
-        } else {
-            basicResponse.style.display = "block";
-            serverResponse.style.display = "none";
-        }
-    });
     </script>
 {% endblock %}

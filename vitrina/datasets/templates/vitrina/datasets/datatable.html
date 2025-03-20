@@ -8,6 +8,7 @@
         <th>{% translate "Pavadinimas" %}</th>
         <th>{% translate "Periodo pradžia" %}</th>
         <th>{% translate "Periodo pabaiga" %}</th>
+        <th>{% translate "Licencija" %}</th>
         <th>{% translate "Dydis" %}</th>
         <th class="has-text-centered">{% translate "Formatas" %}</th>
         <th>{% translate "Publikuota" %}</th>
@@ -39,9 +40,19 @@
             </td>
             <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
+            <td>
+               <a href="{{ r.licence.url }}" class="has-text-info-dark" target="_blank">
+                    {{ r.licence.title|default:"-" }}
+                </a>
+            </td>
             <td>{{ r.size|default:"-" }}</td>
             <td class="has-text-centered">
                 {{ r.get_format|default:"-" }}
+            </td>
+            <td class="has-text-centered">
+                <a href="{{ r.licence.url }}" class="has-text-info-dark" target="_blank">
+                    {{ r.licence.title|default:"-" }}
+                </a>
             </td>
             <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% if dataset.frequency.hours == 0 %}
@@ -109,6 +120,11 @@
             <td>{{ r.size|default:"-" }}</td>
             <td class="has-text-centered">
                 {{ r.format|default:"-" }}
+            </td>
+           <td class="has-text-centered">
+                <a href="{{ r.licence.url }}" class="has-text-info-dark" target="_blank">
+                    {{ r.licence.title|default:"-" }}
+                </a>
             </td>
             <td>{{  r.created|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>

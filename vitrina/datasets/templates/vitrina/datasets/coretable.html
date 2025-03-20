@@ -143,21 +143,6 @@
             </td>
         </tr>
     {% endif%}
-    {% if dataset.licence %}
-        <tr>
-            <th>
-                {% translate "Licencija" %}
-                <span class="icon info-icon has-tooltip-multiline is-middle"
-                      data-tooltip="{% translate 'Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga' %}">
-                    <i class="fas fa-info-circle"></i>
-                </span>
-            </th>
-            <td>
-                <a href="{{ dataset.licence.url | default:dataset.licence.id }}" target="_blank"
-                   title="{{ dataset.licence.description }}">{{ dataset.licence.title }}</a>
-            </td>
-        </tr>
-    {% endif %}
     <tr>
         <th>
             {% translate "Katalogas" %}

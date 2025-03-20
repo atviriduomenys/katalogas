@@ -514,7 +514,6 @@ def test_geoportal_import__access_rights_and_licence_create_with_existing_value(
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.access_rights == Dataset.PUBLIC
-    assert dataset.licence == licence
 
 
 @pytest.mark.django_db
@@ -568,12 +567,10 @@ def test_geoportal_import__access_rights_and_licence_create_with_not_existing_va
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.access_rights is None
-    assert dataset.licence is None
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
     assert 'Nerastos prieigos teisės: "copyright"' in task.description
-    assert 'Nerasta licencija: "copyright"' in task.description
 
 
 @pytest.mark.django_db
@@ -630,7 +627,6 @@ def test_geoportal_import__access_rights_and_licence_update(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.access_rights == Dataset.PUBLIC
-    assert dataset.licence == licence
 
 
 @pytest.mark.django_db

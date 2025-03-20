@@ -702,7 +702,7 @@ msgstr "Description"
 msgid "Duomenų tvarkytojas"
 msgstr "Data editor"
 
-msgid "Licenzija"
+msgid "Licencija"
 msgstr "Licence"
 
 msgid "Duomenų rinkinys viešinamas"

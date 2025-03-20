@@ -28,7 +28,7 @@ from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects, get_requests
-from vitrina.classifiers.models import Frequency, Licence, Category
+from vitrina.classifiers.models import Frequency, Category
 
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
@@ -132,7 +132,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "is_public",
             "tags",
             "catalog",
-            "licence",
             "frequency",
             "access_rights",
             "distribution_conditions",
@@ -170,7 +169,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),
-            Field("licence"),
             Field("frequency"),
             Field("type"),
             Field("endpoint_url"),
@@ -195,9 +193,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.fields["description"].required = False
 
         if not instance:
-            if Licence.objects.filter(is_default=True).exists():
-                default_licence = Licence.objects.filter(is_default=True).first()
-                self.initial["licence"] = default_licence
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial["frequency"] = default_frequency

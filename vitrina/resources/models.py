@@ -10,6 +10,7 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
+from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
@@ -166,6 +167,15 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Suspausto failų paketo formatas"),
+    )
+
+    licence = models.ForeignKey(
+        Licence,
+        models.SET_NULL,
+        db_column="licence",
+        blank=False,
+        null=True,
+        verbose_name=_("Licencija"),
     )
 
     download_url = models.TextField(

@@ -21,7 +21,7 @@ from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
-from vitrina.classifiers.models import Category, Licence, Frequency
+from vitrina.classifiers.models import Category, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
 from vitrina.settings import TRANSLATION_CLIENT_ID
@@ -184,15 +184,6 @@ class Dataset(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Duomenų tvarkytojas"),
-    )
-
-    licence = models.ForeignKey(
-        Licence,
-        models.SET_NULL,
-        db_column="licence",
-        blank=False,
-        null=True,
-        verbose_name=_("Licenzija"),
     )
 
     status = models.CharField(
@@ -1055,14 +1046,6 @@ class Dataset(TranslatableModel):
     def is_opened(self):
         return self.status == self.HAS_DATA
 
-    def get_license_url(self):
-        url = (
-            Licence.objects.filter(title=self.licence)
-            .values_list("url", flat=True)
-            .first()
-        )
-        return url
-
     def get_json_ld(self, model_url: str = None):
         formats: list = ["CSV", "JSON", "JSONL", "ASCII", "RDF"]
         json_ld = {
@@ -1071,7 +1054,6 @@ class Dataset(TranslatableModel):
             "name": self.title or None,
             "description": self.description or None,
             "url": self.get_absolute_url() or None,
-            "license": self.get_license_url() or None,
             "creator": {
                 "@type": "Organization",
                 "name": str(self.organization) if self.organization else None,

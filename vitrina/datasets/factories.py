@@ -7,7 +7,7 @@ from django.utils import timezone
 from factory.django import DjangoModelFactory, FileField
 
 from vitrina import settings
-from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
+from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import (
@@ -59,7 +59,6 @@ class DatasetFactory(DjangoModelFactory):
     version = 1
     will_be_financed = False
     status = Dataset.HAS_DATA
-    licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
     published = factory.Faker(
         "date_time",

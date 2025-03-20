@@ -16,7 +16,6 @@ from reversion.models import Version
 from webtest import Upload
 
 from vitrina.classifiers.factories import CategoryFactory, FrequencyFactory, AreaOfManagementFactory
-from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
@@ -906,7 +905,6 @@ def test_change_form_wrong_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
-    licence = LicenceFactory(is_default=True)
     frequency = FrequencyFactory(is_default=True)
     category = CategoryFactory()
     org = OrganizationFactory()
@@ -914,7 +912,6 @@ def test_change_form_correct_login(app: DjangoTestApp):
         published=timezone.localize(datetime(2022, 9, 7)),
         slug='test-dataset-slug',
         description='test description',
-        licence=licence,
         frequency=frequency,
         organization=org
     )
@@ -973,7 +970,6 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     org = OrganizationFactory(
         title="Org_title",
@@ -1047,13 +1043,11 @@ def test_language_change(app: DjangoTestApp, dataset):
 
 @pytest.mark.django_db
 def test_dataset_add_form_initial_values(app: DjangoTestApp):
-    default_licence = LicenceFactory(is_default=True)
     default_frequency = FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
-    assert form['licence'].value == str(default_licence.pk)
     assert form['frequency'].value == str(default_frequency.pk)
 
 
@@ -1880,7 +1874,6 @@ def test_add_dataset_to_plan(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_create_non_public(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
@@ -1898,7 +1891,6 @@ def test_dataset_create_non_public(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_create_public(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
@@ -1916,7 +1908,6 @@ def test_dataset_create_public(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_update_from_public_to_non_public(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     dataset = DatasetFactory()
     user = UserFactory(is_staff=True)
@@ -1936,7 +1927,6 @@ def test_dataset_update_from_public_to_non_public(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_update_from_non_public_to_public(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     dataset = DatasetFactory(
         is_public=False,
@@ -2317,16 +2307,16 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
     html = response.text
     table_data = parse_table(html)
     expected_data = [
-        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', 'Saugykla API',
+        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', '-', 'Saugykla API',  '-',
             resource.created.strftime('%Y-%m-%d'),resource.modified.strftime('%Y-%m-%d'),
             'PeržiūrėtiAtsisiųsti', 'Redaguoti', 'Trinti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF', '-',
          resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti']
     ]
     assert table_data == expected_data
@@ -2347,20 +2337,20 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     html = response.text
     table_data = parse_table(html)
     expected_data = [
-        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', 'Saugykla API',
+        ['', '-', resource.title, '2022-01-01', '2022-12-31', '-', '-', 'Saugykla API', '-',
             resource.created.strftime('%Y-%m-%d'),resource.modified.strftime('%Y-%m-%d'),
             'PeržiūrėtiAtsisiųsti', 'Redaguoti', 'Trinti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSON', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF', '-',
          resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel2', '2022-01-01', '2022-12-31', '-', 'CSV',
+        ['', '-', 'TestModel2', '2022-01-01', '2022-12-31', '-', 'CSV', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
-        ['', '-', 'TestModel3', '2022-01-01', '2022-12-31', '-', 'CSV',
+        ['', '-', 'TestModel3', '2022-01-01', '2022-12-31', '-', 'CSV', '-',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
 
     ]
@@ -2538,7 +2528,6 @@ def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp
 
 @pytest.mark.django_db
 def test_create_dataset_change_creator(app):
-    licence = LicenceFactory(is_default=True)
     frequency = FrequencyFactory(is_default=True)
 
     org = OrganizationFactory()
@@ -2561,7 +2550,6 @@ def test_create_dataset_change_creator(app):
 
     form['title'] = 'Test Dataset'
     form['description'] = 'This is a test dataset.'
-    form['licence'] = str(licence.pk)
     form['frequency'] = str(frequency.pk)
     form['creator'] = str(org.pk)
 
@@ -2576,7 +2564,6 @@ def test_create_dataset_change_creator(app):
 
 @pytest.mark.django_db
 def test_create_dataset_change_publisher(app):
-    licence = LicenceFactory(is_default=True)
     frequency = FrequencyFactory(is_default=True)
 
     org = OrganizationFactory()
@@ -2599,7 +2586,6 @@ def test_create_dataset_change_publisher(app):
 
     form['title'] = 'Test Dataset'
     form['description'] = 'This is a test dataset.'
-    form['licence'] = str(licence.pk)
     form['frequency'] = str(frequency.pk)
     form['publisher'] = str(publisher_org.pk)
 
@@ -2658,7 +2644,6 @@ def test_create_dataset_publisher_options(app):
 
 @pytest.mark.django_db
 def test_dataset_detail_with_publisher(app: DjangoTestApp):
-    licence = LicenceFactory(is_default=True)
     frequency = FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
     publisher_org = OrganizationFactory(publisher=True)
@@ -2667,7 +2652,6 @@ def test_dataset_detail_with_publisher(app: DjangoTestApp):
     ds = DatasetFactory(
         organization=organization,
         publisher=publisher_org,
-        licence=licence,
         frequency=frequency
     )
 
@@ -2832,7 +2816,6 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     service_type = TypeFactory(name=Type.SERVICE)
     organization = OrganizationFactory()
@@ -2896,11 +2879,9 @@ def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_landing_page(app: DjangoTestApp):
-    licence = LicenceFactory(is_default=True)
     frequency = FrequencyFactory(is_default=True)
     org = OrganizationFactory()
     dataset = DatasetFactory(
-        licence=licence,
         frequency=frequency,
         organization=org
     )
@@ -2930,7 +2911,6 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
         frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
         category=[
             CategoryFactory(title='Energy'),
@@ -3030,9 +3010,6 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/text/csv"/>
                 </dcat:mediaType>
@@ -3053,9 +3030,6 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
@@ -3083,7 +3057,6 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
         frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
         category=[
             CategoryFactory(title='Energy'),
@@ -3181,9 +3154,6 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/text/csv"/>
                 </dcat:mediaType>
@@ -3204,9 +3174,6 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
@@ -3234,7 +3201,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
         frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
         category=[
             CategoryFactory(title='Energy'),
@@ -3360,9 +3326,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
@@ -3384,9 +3347,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/jsonl"/>
                 </dcat:mediaType>
@@ -3408,9 +3368,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/rdf"/>
                 </dcat:mediaType>
@@ -3432,9 +3389,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
                 </dct:rights>
-                <dct:license>
-                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
-                </dct:license>
                 <dcat:mediaType>
                     <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/csv"/>
                 </dcat:mediaType>
@@ -3462,7 +3416,6 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
         frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
         category=[
             CategoryFactory(title='Energy'),

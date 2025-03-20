@@ -7,13 +7,11 @@ from vitrina.resources.models import Format
 from vitrina.resources.models import FormatName
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
-from vitrina.classifiers.models import Licence
 
 
 def get_datasets_for_rdf(qs):
     datasets = (
         qs.select_related("organization")
-        .select_related("licence")
         .prefetch_related("category")
         .prefetch_related("translations")
         .prefetch_related("datasetdistribution_set")
@@ -58,7 +56,6 @@ def get_datasets_for_rdf(qs):
             "modified": dataset.modified,
             "organization": dataset.organization,
             "frequency": _get_frequency(dataset.frequency),
-            "licence": _get_licence(dataset.licence),
             "distributions": distributions,
             "contact": _get_contact_email(dataset),
             "landing_page": dataset.landing_page,
@@ -102,7 +99,6 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         "download_url": dist.get_download_url(),
         "access_url": dist.get_access_url(),
         "access_service": dist.data_service.get_absolute_url() if dist.data_service else None,
-        "licence": _get_licence(dataset.licence),
         "format": _get_format(dist.format),
         "compression_format": _get_format(dist.compression_format),
         "packaging_format": _get_format(dist.packaging_format),
@@ -160,11 +156,6 @@ def _get_frequency(frequency: Optional[Frequency]):
             },
         ],
     }
-
-
-def _get_licence(licence: Optional[Licence]):
-    if licence and licence.url:
-        return {"uri": licence.url}
 
 
 def _get_format(format: Optional[Format]):

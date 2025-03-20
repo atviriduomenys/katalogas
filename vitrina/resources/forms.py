@@ -8,6 +8,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from parler.forms import TranslatedField, TranslatableModelForm
 
+from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
@@ -91,6 +92,12 @@ class DatasetResourceForm(TranslatableModelForm):
         label=_("Periodo pabaiga"),
         help_text=_("Data nuo kada duomenys nebėra aktualūs."),
     )
+    licence = forms.ModelChoiceField(
+        label=_("Licencijos tipas"),
+        help_text=_("Licencija duomenų panaudojimui."),
+        required=False,
+        queryset=Licence.objects.all(),
+    )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
@@ -144,6 +151,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "period_start",
             "period_end",
             "access_url",
+            "licence",
             "format",
             "compression_format",
             "packaging_format",
@@ -183,6 +191,7 @@ class DatasetResourceForm(TranslatableModelForm):
                 Field("period_end", placeholder=_("Pasirinkite pabaigos datą")),
             ),
             Field("access_url"),
+            Field("licence"),
             Field("format"),
             Field("compression_format"),
             Field("packaging_format"),
@@ -193,6 +202,9 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("upload_to_storage"),
             Submit("submit", button, css_class="button is-primary"),
         )
+        if Licence.objects.filter(is_default=True).exists():
+            default_licence = Licence.objects.filter(is_default=True).first()
+            self.initial["licence"] = default_licence
 
         if self.resource and self.resource.metadata.first():
             metadata = self.resource.metadata.first()

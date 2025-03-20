@@ -69,6 +69,14 @@
                                     <td>{{ resource.period_end|default:""|date:"SHORT_DATE_FORMAT" }}</td>
                                 </tr>
                                 <tr>
+                                    <th>{% translate "Licencija" %}</th>
+                                    <td>
+                                        <a href="{{ resource.licence.url }}" class="has-text-info-dark" target="_blank">
+                                            {{ resource.licence.title|default:"-" }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>{% translate "Dydis" %}</th>
                                     <td>{{ resource.size|default:"" }}</td>
                                 </tr>

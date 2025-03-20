@@ -416,9 +416,6 @@ class DynamicResourceService:
                 "access_service": self.uapi_distribution.data_service.get_absolute_url()
                 if self.uapi_distribution.data_service
                 else None,
-                "licence": self.dataset.licence
-                if self.dataset.licence and self.dataset.licence.url
-                else None,
                 "format": {"uri": format_uri},
                 "media_type": {"uri": format_media_type},
                 "created": self.uapi_distribution.created,

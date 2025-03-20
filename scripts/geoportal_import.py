@@ -253,15 +253,6 @@ def main():
                             dataset.access_rights = None
                             errors.append(f'Nerastos prieigos teisės: "{access_rights_value.text}"')
 
-                    licence = _get_licence(access_rights_value.text)
-                    if created or dataset.licence != licence:
-                        changed = True
-                        if licence:
-                            dataset.licence = licence
-                        else:
-                            dataset.licence = None
-                            errors.append(f'Nerasta licencija: "{access_rights_value.text}"')
-
                 # organization
                 if created:
                     # publisher will always be "Viešoji įstaiga Statybos sektoriaus vystymo agentūra" organization

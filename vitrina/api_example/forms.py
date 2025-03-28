@@ -2,7 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Field, Submit, Layout, HTML
+from crispy_forms.layout import Field, Submit, Layout
 
 from vitrina.api_example.models import ApiExample
 

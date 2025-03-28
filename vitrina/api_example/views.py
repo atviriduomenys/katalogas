@@ -1,10 +1,5 @@
-import yaml
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic import CreateView
-
-from reversion import set_comment
-from reversion.views import RevisionMixin
 
 from vitrina.api_example.forms import YamlFileUploadForm
 from vitrina.orgs.services import has_perm, Action

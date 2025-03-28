@@ -17,7 +17,7 @@
     <div class="field has-addons has-addons-right">
      {% if can_manage %}
       <p class="control">
-        <a class="button" onclick="uploadFile({{ dataset_id }})">
+        <a class="button" href="{% url 'file_upload' dataset_id %}">
           {% translate "Įkelti pavyzdį" %}
         </a>
       </p>

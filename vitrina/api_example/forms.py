@@ -1,12 +1,23 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
-class FileUploadForm(forms.Form):
-    file = forms.FileField()
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Field, Submit, Layout, HTML
 
-    def clean_file(self):
-        uploaded_file = self.cleaned_data.get('file')
+from vitrina.api_example.models import ApiExample
 
-        if not uploaded_file.name.endswith(('.yaml', '.yml')):
-            raise forms.ValidationError('Only YAML files are allowed.')
 
-        return uploaded_file
+class YamlFileUploadForm(forms.ModelForm):
+    class Meta:
+        model = ApiExample
+        fields = ["yaml_file"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.form_id = "file_upload_form"
+        self.helper.layout = Layout(
+            Field("yaml_file"),
+            Submit("submit", _("Patvirtinti"), css_class="button is-primary"),
+        )

@@ -10,6 +10,7 @@ from django.db.models import Model
 from django.db.models import Q
 
 from vitrina import settings
+from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
@@ -84,6 +85,7 @@ acl = {
     (Project, Action.MANAGE_PROJECT_KEYS): [Role.AUTHOR, Role.SUPERVISOR],
     (RequestAssignment, Action.CREATE): [Role.COORDINATOR],
     (RequestAssignment, Action.DELETE): [Role.COORDINATOR],
+    (ApiExample, Action.CREATE): [Role.COORDINATOR, Role.MANAGER]
 }
 
 

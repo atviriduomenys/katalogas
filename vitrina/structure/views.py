@@ -736,6 +736,12 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["tags"] = tags
             context["select"] = select
             context["selected_cols"] = selected_cols or context["headers"]
+            context['can_manage'] = self.can_manage_structure = has_perm(
+                self.request.user,
+                Action.STRUCTURE,
+                Dataset,
+                self.object)
+            context["dataset_id"] = self.object.id
 
         rendered_template = render_to_string(self.template_name, context)
 

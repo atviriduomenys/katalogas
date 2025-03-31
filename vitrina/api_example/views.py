@@ -1,4 +1,7 @@
+import yaml
+
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import ValidationError
 from django.views.generic import CreateView
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -50,6 +53,12 @@ class YamlFileImportView(
 
     def form_valid(self, form):
         file_data = form.cleaned_data["yaml_file"]
-        self.get_manifest(file_data)
+        try:
+            yaml.safe_load(file_data)
+        except yaml.YAMLError:
+            raise ValidationError(f"Neteisingas YAML failas.")
+
+        except ValidationError as e:
+            raise e
         file_instance = ApiExample(yaml_file=file_data, dataset=self.dataset)
         file_instance.save()

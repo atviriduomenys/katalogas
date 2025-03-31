@@ -23,7 +23,7 @@ from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, 
     DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
     DatasetRelationFactory, ContactFactory
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.models import Dataset, DatasetStructure, Contact
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -2817,4 +2817,65 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
     assert publisher_org.website in response.text
 
 
+@pytest.mark.django_db
+def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
+    LicenceFactory(is_default=True)
+    FrequencyFactory(is_default=True)
+    service_type = TypeFactory(name=Type.SERVICE)
+    organization = OrganizationFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
+    form['title'] = 'Added title'
+    form['description'] = 'Added new dataset description'
+    form['type'] = [service_type.pk]
+    form['endpoint_url'] = 'https://example.com'
+    form.submit()
+    assert Dataset.objects.count() == 1
+    dataset = Dataset.objects.first()
+    assert dataset.service is True
+    assert dataset.endpoint_url == 'https://example.com'
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.OPENED
 
+
+@pytest.mark.django_db
+def test_update_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
+    service_type = TypeFactory(name=Type.SERVICE)
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(organization=organization)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['type'] = [service_type.pk]
+    form['endpoint_url'] = 'https://example.com'
+    form.submit()
+    dataset.refresh_from_db()
+    assert dataset.service is True
+    assert dataset.endpoint_url == 'https://example.com'
+    assert dataset.status == Dataset.HAS_DATA
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.OPENED
+
+
+@pytest.mark.django_db
+def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
+    service_type = TypeFactory(name=Type.SERVICE)
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(organization=organization, service=True)
+    dataset.type.add(service_type)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['type'] = []
+    form.submit()
+    dataset.refresh_from_db()
+    assert dataset.service is False
+    assert dataset.endpoint_url is None
+    assert dataset.status == Dataset.INVENTORED
+    assert dataset.comments.count() == 1
+    assert dataset.comments.first().type == Comment.STATUS
+    assert dataset.comments.first().status == Comment.INVENTORED

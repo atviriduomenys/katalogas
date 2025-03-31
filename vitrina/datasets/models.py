@@ -71,8 +71,9 @@ class Dataset(TranslatableModel):
     INVENTORED = "INVENTORED"
     PLANNED = "PLANNED"
     UNASSIGNED = "UNASSIGNED"
+    HAS_DATA_TITLE = _("Atvertas")
     STATUSES = (
-        (HAS_DATA, _("Atvertas")),
+        (HAS_DATA, HAS_DATA_TITLE),
         (INVENTORED, _("Inventorintas")),
         (PLANNED, _("Planuojamas atverti")),
         (UNASSIGNED, _("Nepriskirta")),

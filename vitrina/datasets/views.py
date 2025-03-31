@@ -671,17 +671,6 @@ class DatasetCreateView(
         self.object.organization_id = self.kwargs.get("pk")
         self.object.save()
 
-        if self.object.is_public:
-            self.object.published = timezone.now()
-            self.object.status = Dataset.INVENTORED
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(self.object),
-                object_id=self.object.pk,
-                user=self.request.user,
-                type=Comment.STATUS,
-                status=Comment.INVENTORED,
-            )
-
         types = form.cleaned_data.get("type")
         if types.filter(name=Type.SERVICE):
             self.object.service = True
@@ -695,6 +684,22 @@ class DatasetCreateView(
             self.object.series = True
         else:
             self.object.series = False
+
+        if self.object.is_public:
+            self.object.published = timezone.now()
+            if self.object.service and self.object.endpoint_url:
+                self.object.status = Dataset.HAS_DATA
+                comment_status = Comment.OPENED
+            else:
+                self.object.status = Dataset.INVENTORED
+                comment_status = Comment.INVENTORED
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                user=self.request.user,
+                type=Comment.STATUS,
+                status=comment_status,
+            )
 
         self.object.save()
         tags = form.cleaned_data.get("tags")
@@ -865,8 +870,31 @@ class DatasetUpdateView(
         self.object = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
-        if self.object.is_public and not self.object.published:
-            self.object.published = timezone.now()
+
+        types = form.cleaned_data.get("type")
+        self.object.type.set(types)
+        if types.filter(name=Type.SERVICE):
+            self.object.service = True
+            self.object.datasetdistribution_set.all().delete()
+        else:
+            self.object.endpoint_url = None
+            self.object.endpoint_type = None
+            self.object.endpoint_description = None
+            self.object.endpoint_description_type = None
+            self.object.service = False
+        if types.filter(name=Type.SERIES):
+            self.object.series = True
+            self.object.datasetdistribution_set.all().delete()
+        else:
+            self.object.series = False
+
+        if (
+            "endpoint_url" in form.changed_data or "type" in form.changed_data
+        ) or (
+            self.object.is_public and not self.object.published
+        ):
+            if self.object.is_public and not self.object.published:
+                self.object.published = timezone.now()
 
             latest_status_comment = (
                 Comment.objects.filter(
@@ -879,7 +907,9 @@ class DatasetUpdateView(
                 .first()
             )
 
-            if self.object.datasetdistribution_set.exists():
+            if self.object.datasetdistribution_set.exists() or (
+                self.object.service and self.object.endpoint_url
+            ):
                 self.object.status = Dataset.HAS_DATA
                 comment_status = Comment.OPENED
             elif self.object.plandataset_set.exists():
@@ -904,21 +934,6 @@ class DatasetUpdateView(
         elif not self.object.is_public and self.object.published:
             self.object.published = None
             self.object.status = Dataset.UNASSIGNED
-
-        types = form.cleaned_data.get("type")
-        self.object.type.set(types)
-        if types.filter(name=Type.SERVICE):
-            self.object.service = True
-        else:
-            self.object.endpoint_url = None
-            self.object.endpoint_type = None
-            self.object.endpoint_description = None
-            self.object.endpoint_description_type = None
-            self.object.service = False
-        if types.filter(name=Type.SERIES):
-            self.object.series = True
-        else:
-            self.object.series = False
 
         self.object.save()
         set_comment(Dataset.EDITED)

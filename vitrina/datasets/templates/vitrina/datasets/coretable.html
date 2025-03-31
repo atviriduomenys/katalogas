@@ -134,6 +134,32 @@
             {% endif %}
         </td>
     </tr>
+    {% if dataset.service %}
+        <tr>
+            <th>{% translate "API adresas" %}</th>
+            <td>
+                {% if dataset.endpoint_url %}
+                    <a href="{{ dataset.endpoint_url }}">{{ dataset.endpoint_url|truncatechars:50 }}</a>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>{% translate "API formatas" %}</th>
+            <td>{{ dataset.endpoint_type|default:"" }}</td>
+        </tr>
+        <tr>
+            <th>{% translate "API specifikacija" %}</th>
+            <td>
+                {% if dataset.endpoint_description %}
+                    <a href="{{ dataset.endpoint_description }}">{{ dataset.endpoint_description|truncatechars:50 }}</a>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>{% translate "API specifikacijos formatas" %}</th>
+            <td>{{ dataset.endpoint_description_type|default:"" }}</td>
+        </tr>
+    {% endif %}
     </tbody>
 </table>
 

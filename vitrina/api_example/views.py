@@ -56,7 +56,7 @@ class YamlFileImportView(
         try:
             yaml.safe_load(file_data)
         except yaml.YAMLError:
-            raise ValidationError(f"Neteisingas YAML failas.")
+            raise ValidationError("Neteisingas YAML failas.")
 
         except ValidationError as e:
             raise e

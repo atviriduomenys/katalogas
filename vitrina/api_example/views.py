@@ -2,6 +2,7 @@ import yaml
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ValidationError
+from django.http import HttpResponseRedirect
 from django.views.generic import CreateView
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -51,6 +52,12 @@ class YamlFileImportView(
             ApiExample,
         )
 
+    def get_success_url(self):
+        return reverse(
+            "model-data-table",
+            kwargs={"pk": self.dataset.pk, "model": self.dataset.get_absolute_url()},
+        )
+
     def form_valid(self, form):
         file_data = form.cleaned_data["yaml_file"]
         try:
@@ -62,3 +69,4 @@ class YamlFileImportView(
             raise e
         file_instance = ApiExample(yaml_file=file_data, dataset=self.dataset)
         file_instance.save()
+        return HttpResponseRedirect(self.dataset.get_absolute_url())

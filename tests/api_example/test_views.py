@@ -28,7 +28,7 @@ def test_api_example_yaml_file_import_success(app: DjangoTestApp):
 
     app.set_user(user)
     resp = app.get(reverse("file_upload", args=[dataset.pk]))
-    form = resp.forms["base_form"]
+    form = resp.forms["file_upload_form"]
 
     yaml_content = b"""
         type: yaml
@@ -39,4 +39,4 @@ def test_api_example_yaml_file_import_success(app: DjangoTestApp):
     api_example = ApiExample.objects.first()
     assert api_example is not None
     assert api_example.dataset == dataset
-    assert api_example.yaml_file.name.endswith("manifest.yaml")
+    assert api_example.yaml_file.name.endswith("test.yaml")

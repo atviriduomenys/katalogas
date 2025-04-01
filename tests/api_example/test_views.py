@@ -30,9 +30,9 @@ def test_api_example_yaml_file_import_success(app: DjangoTestApp):
     resp = app.get(reverse("file_upload", args=[dataset.pk]))
     form = resp.forms["file_upload_form"]
 
-    yaml_content = b"""
+    yaml_content = """
         type: yaml
-        """
+        """.encode()
     form["yaml_file"] = (BytesIO(yaml_content), "test.yaml")
     form.submit()
 

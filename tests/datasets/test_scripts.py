@@ -2754,9 +2754,9 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_geoportal_import__add_to_geoportal_service(app: DjangoTestApp):
-    relation = RelationFactory(name=Relation.SERVICE)
-    geoportal_service = DatasetFactory(service=True, title="Geoportalas")
+def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
+    relation = RelationFactory(name=Relation.CATALOG)
+    geoportal_catalog = DatasetFactory(title="Lietuvos erdvinės informacijos portalas")
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -2801,4 +2801,4 @@ def test_geoportal_import__add_to_geoportal_service(app: DjangoTestApp):
     dataset = Dataset.objects.filter(geoportal_id="1").first()
     assert dataset.dataset_relations.count() == 1
     assert dataset.dataset_relations.first().relation == relation
-    assert dataset.dataset_relations.first().part_of == geoportal_service
+    assert dataset.dataset_relations.first().part_of == geoportal_catalog

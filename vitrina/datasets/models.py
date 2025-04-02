@@ -1369,6 +1369,7 @@ class Relation(TranslatableModel):
     PART_OF = "part-of"
     SERIES = "series"
     SERVICE = "service"
+    CATALOG = "hasPart"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
     uri = models.CharField(

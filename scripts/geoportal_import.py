@@ -417,23 +417,22 @@ def main():
                     changed = True
                     dataset.category.remove(cat)
 
-                # add dataset to Geoportal service
-                if not dataset.service:
-                    geoportal_service = Dataset.objects.filter(
-                        translations__title="Geoportalas",
-                        service=True
-                    ).first()
-                    relation = Relation.objects.filter(name=Relation.SERVICE).first()
-                    if geoportal_service and relation and not DatasetRelation.objects.filter(
+                # add dataset to Geoportal catalog
+                geoportal_catalog = Dataset.objects.filter(
+                    translations__title="Lietuvos erdvinės informacijos portalas",
+                ).first()
+                relation = Relation.objects.filter(name=Relation.CATALOG).first()
+                if geoportal_catalog and relation and not DatasetRelation.objects.filter(
+                    relation=relation,
+                    dataset=dataset,
+                    part_of=geoportal_catalog
+                ):
+                    dataset_relation = DatasetRelation.objects.create(
                         relation=relation,
                         dataset=dataset,
-                        part_of=geoportal_service
-                    ):
-                        DatasetRelation.objects.create(
-                            relation=relation,
-                            dataset=dataset,
-                            part_of=geoportal_service
-                        )
+                        part_of=geoportal_catalog
+                    )
+                    dataset.part_of.add(dataset_relation)
 
                 # inform superusers about import errors
                 dataset_url = "https://%s%s" % (

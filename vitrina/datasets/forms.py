@@ -109,13 +109,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     )
 
     creator = forms.ModelChoiceField(
-        queryset=Organization.objects.all(),
+        queryset=Organization.public.all(),
         label=_("Duomenų rinkinio kūrėjas"),
         required=False,
     )
 
     publisher = forms.ModelChoiceField(
-        queryset=Organization.objects.filter(publisher=True),
+        queryset=Organization.public.filter(publisher=True),
         label=_("Duomenų atvėrimo paslaugų teikėjas"),
         required=False,
     )
@@ -366,6 +366,16 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
 
 class DatasetAdminForm(forms.ModelForm):
+    organization = forms.ModelChoiceField(
+        queryset=Organization.public.all(),
+        label=_("Organizacija"),
+    )
+    publisher = forms.ModelChoiceField(
+        queryset=Organization.public.filter(publisher=True),
+        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        required=False,
+    )
+
     class Meta:
         model = Dataset
         exclude = ("slug", "current_structure")

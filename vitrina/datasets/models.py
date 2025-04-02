@@ -218,7 +218,7 @@ class Dataset(TranslatableModel):
         related_name="published_datasets",
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name=_('"Duomenų atvėrimo paslaugų teikėjas"'),
+        verbose_name=_('Duomenų atvėrimo paslaugų teikėjas'),
     )
 
     # DCAT 3 fields

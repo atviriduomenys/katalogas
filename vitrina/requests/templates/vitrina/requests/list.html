@@ -6,6 +6,14 @@
 
 {% block current_title %}{% translate "Gauti poreikiai duomenų rinkiniams" %}{% endblock %}
 
+{% block head %}
+    <style>
+        .dataset-list-description {
+            word-break: break-word;
+        }
+    </style>
+{% endblock %}
+
 {% block parent_links %}
 <ul class="p-t-sm">
     <li>
@@ -170,7 +178,7 @@
 
                                 <p class="dataset-list-description my-1">
                                     {% if i.object.description %}
-                                        {{ i.object.description }}
+                                        {{ i.object.description|escape }}
                                     {% endif %}
                                 </p>
 

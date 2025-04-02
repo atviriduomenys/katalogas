@@ -860,6 +860,15 @@ class OrganizationUpdateView(
             node.move(parent_org, "sorted-child")
             self.object.refresh_from_db()
 
+        if 'jurisdiction' in form.changed_data:
+            # save related datasets to update search index
+            for dataset in self.object.dataset_set.all():
+                dataset.save()
+
+            # save related requests to update search index
+            for request_assignment in self.object.requestassignment_set.all():
+                request_assignment.request.save()
+
         return HttpResponseRedirect(self.get_success_url())
 
 

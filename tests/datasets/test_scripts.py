@@ -13,8 +13,8 @@ from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, Cate
 from vitrina.classifiers.models import GeoportalCategory, GeoportalAccessRights
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DataServiceTypeFactory, GeoportalDataServiceTypeFactory, \
-    GeoportalDataServiceTypeValueFactory
-from vitrina.datasets.models import Dataset
+    GeoportalDataServiceTypeValueFactory, RelationFactory
+from vitrina.datasets.models import Dataset, Relation
 from vitrina.messages.factories import SubscriptionFactory
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -1631,10 +1631,10 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
     assert dataset.type.first().name == "service"
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
-    assert dataset.status == Dataset.INVENTORED
+    assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
+    assert dataset.comments.first().status == Comment.OPENED
 
 
 @pytest.mark.django_db
@@ -1754,10 +1754,10 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
     assert dataset.type.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
-    assert dataset.status == Dataset.INVENTORED
+    assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
+    assert dataset.comments.first().status == Comment.OPENED
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -1833,10 +1833,10 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
-    assert dataset.status == Dataset.INVENTORED
+    assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
+    assert dataset.comments.first().status == Comment.OPENED
 
 
 @pytest.mark.django_db
@@ -1907,10 +1907,10 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_url == "https://example.com"
     assert dataset.endpoint_type == service_type
-    assert dataset.status == Dataset.INVENTORED
+    assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
+    assert dataset.comments.first().status == Comment.OPENED
 
 
 @pytest.mark.django_db
@@ -1974,10 +1974,10 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
     assert dataset.type.first().name == "service"
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.endpoint_type is None
-    assert dataset.status == Dataset.INVENTORED
+    assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
+    assert dataset.comments.first().status == Comment.OPENED
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -2751,3 +2751,54 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert Version.objects.get_for_object(dataset).count() == 0
+
+
+@pytest.mark.django_db
+def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
+    relation = RelationFactory(name=Relation.CATALOG)
+    geoportal_catalog = DatasetFactory(title="Lietuvos erdvinės informacijos portalas")
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">
+                        http://www.data.com
+                    </dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">
+                        https://www.metadata.com
+                    </dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+            </gmd:identificationInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_data.side_effect = [get_all_mock, get_one_mock]
+        geoportal_import()
+
+    assert Dataset.objects.count() == 2
+    dataset = Dataset.objects.filter(geoportal_id="1").first()
+    assert dataset.dataset_relations.count() == 1
+    assert dataset.dataset_relations.first().relation == relation
+    assert dataset.dataset_relations.first().part_of == geoportal_catalog

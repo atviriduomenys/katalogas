@@ -364,6 +364,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         contact = Contact.objects.filter(dataset=instance).first() or None
         return contact.content_object if contact else None
 
+    def clean_endpoint_url(self):
+        endpoint_url = self.cleaned_data.get("endpoint_url")
+        types = self.cleaned_data.get("type")
+        if not endpoint_url and types and types.filter(name="service"):
+            raise ValidationError(_("Šis laukas yra privalomas"))
+        return endpoint_url
+
 
 class DatasetAdminForm(forms.ModelForm):
     class Meta:

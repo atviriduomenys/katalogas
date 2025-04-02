@@ -21,18 +21,20 @@ def get_datasets_for_rdf(qs):
         .order_by("published")
     )
     for dataset in datasets:
-        distributions = [
-            distribution
-            for dist in dataset.datasetdistribution_set.all()
-            if (distribution := _get_distribution(dataset, dist)) is not None
-        ]
+        distributions = []
+        if not dataset.service:
+            distributions = [
+                distribution
+                for dist in dataset.datasetdistribution_set.all()
+                if (distribution := _get_distribution(dataset, dist)) is not None
+            ]
 
-        if dataset.is_part_of_dataservice():
-            dataset_resources = DynamicResourceService(dataset)
-            dynamic_distributions = dataset_resources.generate_resources(
-                is_for_rdf_export=True
-            )
-            distributions.extend(dynamic_distributions)
+            if dataset.is_part_of_dataservice():
+                dataset_resources = DynamicResourceService(dataset)
+                dynamic_distributions = dataset_resources.generate_resources(
+                    is_for_rdf_export=True
+                )
+                distributions.extend(dynamic_distributions)
 
         yield {
             "uri": dataset.get_absolute_url(),
@@ -59,6 +61,11 @@ def get_datasets_for_rdf(qs):
             "licence": _get_licence(dataset.licence),
             "distributions": distributions,
             "contact": _get_contact_email(dataset),
+            "service": dataset.service,
+            "endpoint_url": dataset.endpoint_url,
+            "endpoint_type": dataset.endpoint_type,
+            "endpoint_description": dataset.endpoint_description,
+            "endpoint_description_type": dataset.endpoint_description_type
         }
 
 

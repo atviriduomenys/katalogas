@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset, Type, GeoportalDataServiceTypeValue
+from vitrina.datasets.models import Dataset, Type, GeoportalDataServiceTypeValue, Relation, DatasetRelation
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
@@ -161,7 +161,6 @@ def main():
 
                 created = False
                 changed = False
-                is_service = False
 
                 dataset = Dataset.objects.filter(geoportal_id=dataset_id).first()
                 if not dataset:
@@ -175,7 +174,7 @@ def main():
                 dataset_type = _get_elem("{%s}hierarchyLevel" % gmd, xml)
                 dataset_type = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_type)
                 if dataset_type is not None and dataset_type.text == 'service':
-                    is_service = True
+                    dataset.service = True
                     service_type = _create_or_get_service_type()
                     if not dataset.type.filter(pk=service_type.pk):
                         changed = True
@@ -314,7 +313,7 @@ def main():
                 distribution_format = _get_elem(".//{%s}name" % gmd, distribution_format)
                 distribution_format = _get_elem(".//{%s}CharacterString" % gco, distribution_format)
 
-                if is_service:
+                if dataset.service:
                     if data_url and data_url != "-" and dataset.endpoint_url != data_url:
                         changed = True
                         dataset.endpoint_url = data_url
@@ -328,8 +327,13 @@ def main():
                                 dataset.endpoint_type = endpoint_type
                         else:
                             errors.append(f'Nerastas API formatas: "{distribution_format.text}"')
-                    dataset.status = Dataset.INVENTORED
-                    comment_status = Comment.INVENTORED
+
+                    if dataset.endpoint_url:
+                        dataset.status = Dataset.HAS_DATA
+                        comment_status = Comment.OPENED
+                    else:
+                        dataset.status = Dataset.INVENTORED
+                        comment_status = Comment.INVENTORED
                 else:
                     if data_url and data_url != "-":
                         dataset.status = Dataset.HAS_DATA
@@ -412,6 +416,23 @@ def main():
                 for cat in removed_categories:
                     changed = True
                     dataset.category.remove(cat)
+
+                # add dataset to Geoportal catalog
+                geoportal_catalog = Dataset.objects.filter(
+                    translations__title="Lietuvos erdvinės informacijos portalas",
+                ).first()
+                relation = Relation.objects.filter(name=Relation.CATALOG).first()
+                if geoportal_catalog and relation and not DatasetRelation.objects.filter(
+                    relation=relation,
+                    dataset=dataset,
+                    part_of=geoportal_catalog
+                ):
+                    dataset_relation = DatasetRelation.objects.create(
+                        relation=relation,
+                        dataset=dataset,
+                        part_of=geoportal_catalog
+                    )
+                    dataset.part_of.add(dataset_relation)
 
                 # inform superusers about import errors
                 dataset_url = "https://%s%s" % (

@@ -16,7 +16,11 @@
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
     {% for dataset in datasets %}
+    {% if dataset.service %}
+    <dcat:DataService rdf:about="{{ current_domain_full }}{{ dataset.uri|cut:' ' }}">
+    {% else %}
     <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri|cut:' ' }}">
+    {% endif %}
         {% for t in dataset.translations %}
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
@@ -87,6 +91,15 @@
         {% for keyword in dataset.keywords %}
             <dcat:keyword>{{ keyword }}</dcat:keyword>
         {% endfor %}
+        {% if dataset.endpoint_url %}
+        <dcat:endpointURL rdf:resource="{{ dataset.endpoint_url }}"/>
+        {% endif %}
+        {% if dataset.endpoint_type %}
+        <dct:format>{{ dataset.endpoint_type }}</dct:format>
+        {% endif %}
+        {% if dataset.endpoint_description %}
+        <dcat:endpointDescription rdf:resource="{{ dataset.endpoint_description }}"/>
+        {% endif %}
         {% for dist in dataset.distributions %}
         <dcat:distribution>
             <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|cut:' ' }}">
@@ -127,6 +140,10 @@
             </dcat:Distribution>
         </dcat:distribution>
         {% endfor %}
+    {% if dataset.service %}
+    </dcat:DataService>
+    {% else %}
     </dcat:Dataset>
+    {% endif %}
     {% endfor %}
 </rdf:RDF>

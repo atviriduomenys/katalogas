@@ -159,17 +159,6 @@ class Organization(MP_Node):
                     tags.append(tag)
         return tags
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # save related datasets to update search index
-        for dataset in self.dataset_set.all():
-            dataset.save()
-
-        # save related requests to update search index
-        for request_assignment in self.requestassignment_set.all():
-            request_assignment.request.save()
-
 
 class PublisherOrganization(Organization):
     class Meta:

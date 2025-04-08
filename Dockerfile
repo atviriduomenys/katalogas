@@ -36,3 +36,4 @@ RUN npm install
 WORKDIR /app
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"
+EXPOSE 8000

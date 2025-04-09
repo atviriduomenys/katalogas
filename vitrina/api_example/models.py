@@ -10,7 +10,7 @@ class ApiExample(models.Model):
     )
     yaml_file = models.FileField(
         upload_to="data/files/yaml_examples",
-        verbose_name=_("Pridėtas YAML duomenų pavyzdys"),
+        verbose_name=_("Sukelti pavyzdinius duomenis YAML formatu."),
     )
 
     class Meta:

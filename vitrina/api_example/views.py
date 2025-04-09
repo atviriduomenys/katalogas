@@ -4,7 +4,6 @@ import tempfile
 from io import StringIO
 
 import yaml
-import spinta
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic import CreateView

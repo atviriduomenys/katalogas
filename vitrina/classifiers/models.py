@@ -31,7 +31,7 @@ class Category(MP_Node):
         blank=True,
         help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo',
     )
-    groups = models.ManyToManyField(to="vitrina_datasets.DatasetGroup")
+    groups = models.ManyToManyField(to="vitrina_datasets.DatasetGroup", blank=True)
 
     node_order_by = ["title"]
 
@@ -49,13 +49,6 @@ class Category(MP_Node):
     def get_family_objects(self):
         yield from self.get_ancestors()
         yield from self.get_descendants()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # save related datasets to update search index
-        for dataset in self.dataset_set.all():
-            dataset.save()
 
 
 class Licence(models.Model):

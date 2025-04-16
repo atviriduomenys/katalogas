@@ -3,20 +3,22 @@ import subprocess
 import tempfile
 from io import StringIO
 
-import yaml
-
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.views.generic import CreateView
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.core.files.base import ContentFile
+from django.shortcuts import redirect
+from django.views.generic import CreateView
+
+import yaml
 
 from vitrina.api_example.forms import YamlFileUploadForm
 from vitrina.orgs.services import has_perm, Action
-from ..orgs.models import Representative
-from ..structure.services import export_dataset_structure
-from ..structure.views import DatasetStructureMixin
+from vitrina.structure.services import export_dataset_structure
+from vitrina.structure.views import DatasetStructureMixin
 
+from ..orgs.models import Representative
 from .models import ApiExample
 
 
@@ -29,6 +31,15 @@ class YamlFileImportView(
     model = ApiExample
     form_class = YamlFileUploadForm
     template_name = "base_form.html"
+
+    def get(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            redirect_url = reverse(
+                "model-data", args=[self.dataset.pk, self.models[0].name]
+            )
+
+            return redirect(redirect_url)
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         form = YamlFileUploadForm(dataset=self.dataset)
@@ -71,11 +82,12 @@ class YamlFileImportView(
 
     def form_valid(self, form):
         yaml_content = form.cleaned_data["code_field"]
-
-        if not self.is_valid_yaml(yaml_content):
+        if not self.is_valid_yaml(yaml_content)[0]:
             return self.render_to_response(
                 self.get_context_data(
-                    form=form, alert=True, alert_content="Neteisingas YAML failas."
+                    form=form,
+                    alert=True,
+                    alert_content=f"{self.is_valid_yaml(yaml_content)[1]}",
                 )
             )
 
@@ -106,10 +118,14 @@ class YamlFileImportView(
 
     def is_valid_yaml(self, yaml_content):
         try:
-            yaml.safe_load(yaml_content)
-            return True
+            yaml_content = yaml.safe_load_all(yaml_content)
+            return self.get_manifest_and_run_spinta(yaml_content)
         except yaml.YAMLError:
-            return False
+            return False, "Neteisingas YAML failas."
+        except subprocess.SubprocessError as e:
+            lines = e.stderr.strip().split("\n")
+            last_n = lines[-10:]
+            return False, "\n".join(last_n).replace(",", "/n")
 
     def generate_file_hash(self, file_content):
         return hashlib.sha256(file_content.encode("utf-8")).hexdigest()
@@ -169,25 +185,31 @@ class YamlFileImportView(
 
         return temp_file_path
 
-    def get_manifest(self, file_data):
+    def get_manifest_and_run_spinta(self, yaml_data):
         temp_file_path = self.collect_and_save_to_temp_file()
-
         with tempfile.NamedTemporaryFile(
-            delete=False, mode="w", encoding="utf-8"
+            delete=False,
+            mode="w",
+            newline="",
+            encoding="utf-8",
+            prefix="example",
+            suffix=".yaml",
         ) as temp_file_yaml:
-            temp_file_yaml.write(file_data)
-
+            yaml.dump_all(yaml_data, temp_file_yaml)
         temp_file_path_yaml = temp_file_yaml.name
-        self.run_spinta_getall(temp_file_path, temp_file_path_yaml)
+        return self.run_spinta_getall(temp_file_path, temp_file_path_yaml)
 
-    def run_spinta_getall(self, manifest_path):
-        try:
-            result = subprocess.run(
-                ["spinta", "check", f"{manifest_path}"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            return e.stderr
+    def run_spinta_getall(self, manifest_path, yaml_path):
+        result = subprocess.run(
+            [
+                "spinta",
+                "getall",
+                f"{manifest_path}",
+                f"{yaml_path}",
+                f"{self.models[0]}",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout

@@ -28,11 +28,15 @@ class YamlFileUploadForm(forms.ModelForm):
             if example and example.yaml_file:
                 with example.yaml_file.open() as file:
                     yaml_content = file.read().decode("utf-8").strip()
-                    yaml_content = yaml.dump(
-                        yaml.safe_load(yaml_content),
-                        default_flow_style=False,
-                        allow_unicode=True,
-                    )
+                    loaded_documents = list(yaml.safe_load_all(yaml_content))
+                    yaml_output = ""
+                    for doc in loaded_documents:
+                        yaml_output += yaml.dump(
+                            doc,
+                            default_flow_style=False,
+                            allow_unicode=True,
+                        )
+                        yaml_output += "---\n"
 
         self.initial["code_field"] = yaml_content
         self.helper = FormHelper()

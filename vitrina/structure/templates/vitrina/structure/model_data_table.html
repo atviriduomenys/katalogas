@@ -17,10 +17,12 @@
     <div class="field has-addons has-addons-right">
      {% if can_manage %}
       <p class="control">
+        {% if not debug %}
         <a class="button" href="{% url 'file_upload' dataset_id %}">
           {% translate "Įkelti duomenis" %}
         </a>
       </p>
+        {% endif %}
        <input type="file" id="fileInput" style="display:none" />
       {% endif %}
       <p class="control">

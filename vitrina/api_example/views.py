@@ -34,10 +34,7 @@ class YamlFileImportView(
 
     def get(self, request, *args, **kwargs):
         if not settings.DEBUG:
-            redirect_url = reverse(
-                "model-data", args=[self.dataset.pk, self.models[0].name]
-            )
-
+            redirect_url = reverse("dataset-detail", args=[self.dataset.pk])
             return redirect(redirect_url)
         return super().get(request, *args, **kwargs)
 

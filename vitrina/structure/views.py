@@ -703,35 +703,35 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
         data = json.loads(request.POST.get("data", ""))
         data_count = 0
-        # if data.get("errors"):
-        #     context["errors"] = data.get("errors")
-        #else:
-        context["properties"] = {prop.name: prop for prop in self.props}
-        all_props = self.model.get_given_props().values_list(
-            "metadata__name", flat=True
-        )
-        exclude = all_props - context["properties"].keys()
-        exclude.update(EXCLUDED_COLS)
-
-        context["data"] = data.get("_data") or []
-        data_count = len(context["data"])
-        if context["data"]:
-            context["headers"] = [
-                col for col in context["data"][0].keys() if col not in exclude
-            ]
-        elif selected_cols:
-            context["headers"] = selected_cols
+        if data.get("errors"):
+            context["errors"] = data.get("errors")
         else:
-            _data = get_data_from_spinta(self.model, query="limit(1)")
-            _data = _data.get("_data")
-            if _data:
+            context["properties"] = {prop.name: prop for prop in self.props}
+            all_props = self.model.get_given_props().values_list(
+                "metadata__name", flat=True
+            )
+            exclude = all_props - context["properties"].keys()
+            exclude.update(EXCLUDED_COLS)
+
+            context["data"] = data.get("_data") or []
+            data_count = len(context["data"])
+            if context["data"]:
                 context["headers"] = [
-                    col for col in _data[0].keys() if col not in exclude
+                    col for col in context["data"][0].keys() if col not in exclude
                 ]
+            elif selected_cols:
+                context["headers"] = selected_cols
             else:
-                headers = ["_id"]
-                headers.extend(context["properties"].keys())
-                context["headers"] = headers
+                _data = get_data_from_spinta(self.model, query="limit(1)")
+                _data = _data.get("_data")
+                if _data:
+                    context["headers"] = [
+                        col for col in _data[0].keys() if col not in exclude
+                    ]
+                else:
+                    headers = ["_id"]
+                    headers.extend(context["properties"].keys())
+                    context["headers"] = headers
             context["excluded_cols"] = exclude
             context["formats"] = FORMATS
             context["tags"] = tags

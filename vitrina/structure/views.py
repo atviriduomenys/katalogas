@@ -5,6 +5,7 @@ from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
 
+from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -736,6 +737,13 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["tags"] = tags
             context["select"] = select
             context["selected_cols"] = selected_cols or context["headers"]
+            context['can_manage'] = self.can_manage_structure = has_perm(
+                self.request.user,
+                Action.STRUCTURE,
+                Dataset,
+                self.object)
+            context["dataset_id"] = self.object.id
+            context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
 
         rendered_template = render_to_string(self.template_name, context)
 

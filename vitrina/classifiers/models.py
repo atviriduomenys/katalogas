@@ -30,7 +30,7 @@ class Category(MP_Node):
     icon = models.CharField(
         max_length=255,
         blank=True,
-        help_text='Naudokite "glyph" pavadinimą iš icomoon.svg failo',
+        help_text="Piktogramas rasite https://fontawesome.com/search?ic=free.",
     )
     groups = models.ManyToManyField(to="vitrina_datasets.DatasetGroup", blank=True)
 

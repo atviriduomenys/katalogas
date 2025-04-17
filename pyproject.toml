@@ -66,6 +66,7 @@ django-ipware = "^7.0.1"
 django-redis = "^5.4.0"
 setuptools = "^75.7.0"
 dataset = "^1.5.2"
+fontawesomefree = "^6.6.0"
 psutil = "^7.0.0"
 weasyprint = "^62.0"
 pdfminer-six = "^20250506"
@@ -95,6 +96,9 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 include = [
     "vitrina/*.py",
+]
+exclude = [
+    "**/migrations/*.py",
 ]
 line-length = 88
 indent-width = 4

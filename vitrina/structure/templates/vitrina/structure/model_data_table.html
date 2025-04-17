@@ -17,7 +17,7 @@
     <div class="field has-addons has-addons-right">
      {% if can_manage %}
       <p class="control">
-        {% if not debug %}
+        {% if is_dev_features_enabled %}
         <a class="button" href="{% url 'file_upload' dataset_id %}">
           {% translate "Įkelti duomenis" %}
         </a>

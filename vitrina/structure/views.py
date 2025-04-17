@@ -743,7 +743,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
                 Dataset,
                 self.object)
             context["dataset_id"] = self.object.id
-            context["is_development"] = settings.DEBUG
+            context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
 
         rendered_template = render_to_string(self.template_name, context)
 

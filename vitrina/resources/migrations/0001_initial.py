@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('filer', '0017_image__transparent'),
+        ('vitrina_datasets', '0001_initial')
     ]
 
     operations = [

@@ -10,6 +10,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
+      - SEARCH_URL=elasticsearch7://elasticsearch:9200/haystack
       - DJANGO_SUPERUSER_EMAIL=test@test.com
       - DJANGO_SUPERUSER_PASSWORD=test
       - DEBUG=true

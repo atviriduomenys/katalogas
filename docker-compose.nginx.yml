@@ -9,7 +9,10 @@ services:
       - "80:80"
     networks:
       - katalogas
+      - spinta
 
 networks:
   katalogas:
+    external: true
+  spinta:
     external: true

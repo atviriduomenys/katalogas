@@ -64,19 +64,33 @@ class DatasetTypeField(forms.ModelMultipleChoiceField):
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(
-        form_class=CharField, label=_("Pavadinimas"), required=True, widget=TextInput()
+        form_class=CharField,
+        label=_("Pavadinimas"),
+        required=True,
+        widget=TextInput(),
+        help_text=_(
+            "Pateikiamas duomenų rinkiniui suteiktas pavadinimas. "
+            "Galima pakartoti, jei pavadinimas pateikiamas keliomis kalbomis."
+        ),
     )
     type = DatasetTypeField(
         label=_("Duomenų rinkinio tipas"),
         required=False,
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple,
+        help_text=_("Ši savybė nurodo duomenų paslaugos tipą."),
     )
-    description = TranslatedField(label=_("Aprašymas"), required=True)
+    description = TranslatedField(
+        label=_("Aprašymas"),
+        required=True,
+        help_text=_(
+            "Laisvu tekstu pateikiamas duomenų rinkinio aprašas. Galima pakartoti, jei aprašas yra keliomis kalbomis."
+        ),
+    )
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
-        help_text=_("Pagrindinis API paslaugos adresas"),
+        help_text=_("Pagrindinis API paslaugos adresas."),
     )
     endpoint_description = forms.CharField(
         label=_("API specifikacija"),
@@ -84,7 +98,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         help_text=_(
             "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
             "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
-            "nuskaitoma mašininiu būdu"
+            "nuskaitoma mašininiu būdu."
         ),
     )
     files = MultipleFilerField(
@@ -92,6 +106,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
+        help_text=_("Šioje savybėje nurodomas vienas ar keli duomenų struktūros aprašų failai."),
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
@@ -102,27 +117,36 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių",
             )
         ],
+        help_text=_(
+            "Kodinis pavadinimas yra neprivalomas duomenų rinkinio pavadinimas, "
+            "sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių."
+        ),
     )
 
     contact = forms.ChoiceField(
-        label=_("Kontaktinis asmuo ar organizacija"), required=False
+        label=_("Kontaktinis asmuo ar organizacija"),
+        required=False,
+        help_text=_("Nurodoma ar už duomenų rinkinio turinį atsakingas asmuo ar organizacija."),
     )
 
     creator = forms.ModelChoiceField(
         queryset=Organization.public.all(),
         label=_("Duomenų rinkinio kūrėjas"),
         required=False,
+        help_text=_("Nurodomas duomenų rinkinio kūrėjas iš duotų pasirinkimų."),
     )
 
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
         label=_("Duomenų atvėrimo paslaugų teikėjas"),
         required=False,
+        help_text=_("Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų rinkinio prieinamumą."),
     )
 
     managed_by_publisher = forms.BooleanField(
         label=_("Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"),
         required=False,
+        help_text=_("Savybė, nurodanti ar esate pateikiamo duomenų rinkinio atvėrimo paslaugos tiekėjas."),
     )
 
     class Meta:

@@ -128,26 +128,69 @@ class Dataset(TranslatableModel):
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    created = models.DateTimeField(
+        blank=True,
+        null=True,
+        auto_now_add=True,
+        help_text=_("Duomenų rinkinio sukūrimo data, nustatoma automatiškai."),
+    )
+    modified = models.DateTimeField(
+        blank=True,
+        null=True,
+        auto_now=True,
+        help_text=_("Naujausia duomenų rinkinio pakeitimo arba modifikavimo data, nustatoma automatiškai."),
+    )
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField(default=1)
-    slug = models.CharField(unique=True, max_length=255, blank=False, null=True)
+    version = models.IntegerField(
+        default=1,
+        help_text=_("Duomenų rinkinio versijos identifikavimas (pavadinimas arba identifikatorius)."),
+    )
+    slug = models.CharField(
+        unique=True,
+        max_length=255,
+        blank=False,
+        null=True,
+        help_text=_("Nurodo pavadinimo versiją, skirta naudoti URL'e vietoj identifikatoriaus."),
+    )
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
-    theme = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ManyToManyField(
-        Category, verbose_name=_("Kategorija"), blank=True
+    theme = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Ši savybė nurodo duomenų rinkinio temą. Duomenų rinkinys gali būti susietas su keliomis temomis."),
     )
-    category_old = models.CharField(max_length=255, blank=True, null=True)
+    category = models.ManyToManyField(
+        Category,
+        verbose_name=_("Kategorija"),
+        blank=True,
+        help_text=_(
+            "Ši savybė nurodo duomenų rinkinio kategoriją, geriausiai apibūdinančią duomenis. "
+            "Duomenų rinkinys gali būti susietas su keliomis kategorijomis."
+        ),
+    )
+    category_old = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Ši savybė nurodo senesnę duomenų rinkinio kategoriją (jei pasikeitė klasifikacija)."),
+    )
 
     catalog = models.ForeignKey(
-        Catalog, models.SET_NULL, db_column="catalog", blank=True, null=True
+        Catalog,
+        models.SET_NULL,
+        db_column="catalog",
+        blank=True,
+        null=True,
+        help_text=_(
+            "Ši savybė nurodo susijusį duomenų rinkinį, į kurį fiziškai arba logiškai įtrauktas aprašomas katalogas."
+        ),
     )
-    origin = models.CharField(max_length=255, blank=True, null=True)
+    origin = models.CharField(max_length=255, blank=True, null=True, help_text=_("Duomenų šaltinio pavadinimas."))
 
     organization = models.ForeignKey(
         Organization,
@@ -155,6 +198,7 @@ class Dataset(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Organizacija"),
+        help_text=_("Institucija ar įstaiga, kuri valdo ar teikia duomenis."),
     )
 
     licence = models.ForeignKey(
@@ -164,27 +208,70 @@ class Dataset(TranslatableModel):
         blank=False,
         null=True,
         verbose_name=_("Licenzija"),
+        help_text=_(
+            "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga. "
+            "Pastaba: privaloma savybė, jei paslauga susijusi su didelės vertės duomenų rinkiniais."
+        ),
     )
 
-    status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
-    published = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(
+        max_length=255,
+        choices=STATUSES,
+        default=UNASSIGNED,
+        help_text=_("Dabartinė duomenų rinkinio būklė (Atvertas, inventorintas, planuojamas atverti, nepriskirta)."),
+    )
+    published = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_("Data, kada duomenų rinkinys buvo paviešintas."),
+    )
     is_public = models.BooleanField(
-        default=True, verbose_name=_("Duomenų rinkinys viešinamas")
+        default=True,
+        verbose_name=_("Duomenų rinkinys viešinamas"),
+        help_text=_("Savybė nurodanti ar duomenų rinkinys yra prieinamas viešai."),
     )
 
-    language = models.CharField(max_length=255, blank=True, null=True)
-    spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
-    temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
+    language = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Ši savybė nurodo duomenų rinkinio kalbą. "
+            "Šią savybę galima pakartoti, jei duomenų rinkinys yra keliomis kalbomis."
+        ),
+    )
+    spatial_coverage = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Šioje savybėje nurodoma geografinė duomenų aprėptis."),
+    )
+    temporal_coverage = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys."),
+    )
 
-    update_frequency = models.CharField(max_length=255, blank=True, null=True)
+    update_frequency = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Ši savybė nurodo, kaip dažnai atnaujinamas duomenų rinkinys."),
+    )
     frequency = models.ForeignKey(
         Frequency,
         models.SET_NULL,
         blank=False,
         null=True,
         verbose_name=_("Atnaujinimo dažnumas"),
+        help_text=_("Ši savybė nurodo, kaip dažnai atnaujinamas duomenų rinkinys. Galima rinktis iš duotų variantų."),
     )
-    last_update = models.DateTimeField(blank=True, null=True)
+    last_update = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_("Data, kada paskutinįkart buvo atnaujintas duomenų rinkinys."),
+    )
 
     access_rights = models.CharField(
         _("Prieigos teisės"),
@@ -192,9 +279,16 @@ class Dataset(TranslatableModel):
         null=True,
         choices=ACCESS_RIGHTS,
         max_length=255,
+        help_text=_(
+            "Ši savybė susijusi su informacija, kuri nurodo, ar duomenų rinkinys yra atviri duomenys, "
+            "ar jam taikomi prieigos apribojimai, ar jis nėra viešas."
+        ),
     )
     distribution_conditions = models.TextField(
-        blank=True, null=True, verbose_name=_("Platinimo salygos")
+        blank=True,
+        null=True,
+        verbose_name=_("Platinimo salygos"),
+        help_text=_("Ši savybė nurodo papildomas sąlygas norint viešinti duomenų rinkinį."),
     )
 
     tags = TagField(
@@ -204,22 +298,39 @@ class Dataset(TranslatableModel):
         autocomplete_view="autocomplete_tags",
         autocomplete_limit=20,
         verbose_name="Žymės",
-        help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+        help_text=_("Nurodomas sąrašas žymų (žymos skiriamos kablelio simboliu) susijusių su duomenimis."),
         autocomplete_settings={"width": "100%"},
         autocomplete_view_fulltext=True,
     )
 
-    notes = models.TextField(blank=True, null=True)
-    geoportal_id = models.CharField(
-        _("Geoportalo id"), max_length=255, blank=True, null=True
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Šios ir ankstesnės duomenų rinkinio versijos skirtumų aprašymas."),
     )
-    creator_text = models.CharField(max_length=255, blank=True, null=True)
+    geoportal_id = models.CharField(
+        _("Geoportalo id"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Unikalus ID, jei rinkinys taip pat pateikiamas geoportale."),
+    )
+    creator_text = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Šia savybe pateikiamas valstybės valdymo ar savivaldos institucijos ar organizacijos, "
+            "kuri yra informacinės sistemos valdytojas, pavadinimas."
+        ),
+    )
     publisher = models.ForeignKey(
         Organization,
         related_name="published_datasets",
         on_delete=models.SET_NULL,
         null=True,
         verbose_name=_('Duomenų atvėrimo paslaugų teikėjas'),
+        help_text=_("Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų rinkinio prieinamumą."),
     )
     landing_page = models.URLField(_("Prieigos nuoroda"), max_length=1024, null=True, blank=True)
 
@@ -229,10 +340,28 @@ class Dataset(TranslatableModel):
         related_name="related_datasets",
         verbose_name=_("Duomenų rinkinio ryšiai"),
         blank=True,
+        help_text=_(
+            "Ši savybė nurodo susijusį duomenų rinkinį, į kurį fiziškai arba logiškai įtrauktas aprašomas katalogas."
+        ),
     )
-    type = models.ManyToManyField("Type", verbose_name=_("Tipas"), blank=True)
+    type = models.ManyToManyField(
+        "Type",
+        verbose_name=_("Tipas"),
+        blank=True,
+        help_text=_(
+            "Ši savybė nurodo duomenų paslaugos tipą. "
+            "Numatytas rekomenduojamas kontroliuojamo žodyno duomenų paslaugos tipas."
+        ),
+    )
     endpoint_url = models.URLField(
-        _("API adresas"), null=True, blank=True, max_length=512
+        _("API adresas"),
+        null=True,
+        blank=True,
+        max_length=512,
+        help_text=_(
+            "Šioje savybėje nurodomas galinio taško (angl. endpoint) URL, kuris turi būti nekintantis. "
+            "Tai reiškia, kad leidėjai turėtų daryti viską, kad išlaikytų stabilią ir esamą vertę."
+        ),
     )
     endpoint_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -240,10 +369,17 @@ class Dataset(TranslatableModel):
         verbose_name=_("API formatas"),
         null=True,
         blank=True,
-        related_name="format_endpoint_types"
+        related_name="format_endpoint_types",
+        help_text=_("Šioje savybėje nurodomas galinio taško duomenų pateikimo formatas (XML, SOAP, JSON)."),
     )
     endpoint_description = models.URLField(
-        _("API specifikacija"), null=True, blank=True
+        _("API specifikacija"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Ši savybė aprašo paslaugas, prieinamas per galinius taškus (angl. endpoint), "
+            "įskaitant jų operacijas, parametrus ir pan."
+        ),
     )
     endpoint_description_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -251,39 +387,109 @@ class Dataset(TranslatableModel):
         verbose_name=_("API specifikacijos formatas"),
         null=True,
         blank=True,
-        related_name="format_endpoint_description_types"
+        related_name="format_endpoint_description_types",
+        help_text=_("Šioje savybėje pateikiamas aprašymo dokumentacijos tipas (XSD, WSDL, Open API)."),
     )
-    service = models.BooleanField(_("DataService rinkinys"), default=False)
-    series = models.BooleanField(_("DataSeries rinkinys"), default=False)
+    service = models.BooleanField(
+        _("DataService rinkinys"),
+        default=False,
+        help_text=_("Žymė nurodanti ar rinkinys yra API paslauga."),
+    )
+    series = models.BooleanField(
+        _("DataSeries rinkinys"),
+        default=False,
+        help_text=_("Žymė nurodanti ar rinkinys priklauso duomenų serijai."),
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
-    meta = models.TextField(blank=True, null=True)
+    meta = models.TextField(blank=True, null=True, help_text=_("Vidaus naudojimui skirtas aprašymo laukas."))
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/9
-    priority_score = models.IntegerField(blank=True, null=True)
+    priority_score = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "Savybė nurodanti duomenų rinkinių paklausos vertinimą. "
+            "Jei duomenų rinkinys atvertas, "
+            "tada jam suteikiamas maksimalus balas ir toliau jokie kriterijai nevertinami."
+        ),
+    )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
-    structure_data = models.TextField(blank=True, null=True)
-    structure_filename = models.CharField(max_length=255, blank=True, null=True)
+    structure_data = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Pateikiami duomenų struktūros duomenys."),
+    )
+    structure_filename = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Duomenų struktūros failo pavadinimas."),
+    )
     current_structure = models.ForeignKey(
-        "DatasetStructure", models.SET_NULL, related_name="+", blank=True, null=True
+        "DatasetStructure",
+        models.SET_NULL,
+        related_name="+",
+        blank=True,
+        null=True,
+        help_text=_("Dabartinė duomenų struktūra."),
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
-    financed = models.BooleanField(blank=True, null=True)
-    financing_plan_id = models.BigIntegerField(blank=True, null=True)
-    financing_priorities = models.TextField(blank=True, null=True)
-    financing_received = models.BigIntegerField(blank=True, null=True)
-    financing_required = models.BigIntegerField(blank=True, null=True)
-    will_be_financed = models.BooleanField(blank=True, default=False)
+    financed = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text=_("Žyma nurodanti ar duomenų rinkinio rengimas buvo finansuojamas."),
+    )
+    financing_plan_id = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Finansavimo plano ar programos identifikatorius."),
+    )
+    financing_priorities = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Finansavimo prioritetų aprašymas ar žymos."),
+    )
+    financing_received = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Gauta finansavimo suma eurais."),
+    )
+    financing_required = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Reikalinga finansavimo suma eurais."),
+    )
+    will_be_financed = models.BooleanField(
+        blank=True,
+        default=False,
+        help_text=_("Žyma nurodanti, kad yra planuojama gauti finansavimą ateityje."),
+    )
     # --------------------------->8-------------------------------------
 
-    metadata = GenericRelation("vitrina_structure.Metadata")
-    comments = GenericRelation("vitrina_comments.Comment")
-    tasks = GenericRelation("vitrina_tasks.Task")
-    representatives = GenericRelation("vitrina_orgs.Representative")
-    request_objects = GenericRelation("vitrina_requests.RequestObject")
+    metadata = GenericRelation(
+        "vitrina_structure.Metadata",
+        help_text=_("Susiję duomenų struktūros metaduomenys."),
+    )
+    comments = GenericRelation(
+        "vitrina_comments.Comment",
+        help_text=_("Komentarai, pateikti prie duomenų rinkinio."),
+    )
+    tasks = GenericRelation(
+        "vitrina_tasks.Task",
+        help_text=_("Užduotys, susijusios su rinkiniu."),
+    )
+    representatives = GenericRelation(
+        "vitrina_orgs.Representative",
+        help_text=_("Atsakingi asmenys ar organizacijos atstovai."),
+    )
+    request_objects = GenericRelation(
+        "vitrina_requests.RequestObject",
+        help_text=_("Poreikiai ar iniciatyvos, susijusios su rinkiniu."),
+    )
 
     objects = TranslatableManager()
     public = PublicDatasetManager()

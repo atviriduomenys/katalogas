@@ -126,7 +126,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     contact = forms.ChoiceField(
         label=_("Kontaktinis asmuo ar organizacija"),
         required=False,
-        help_text=_("Nurodoma ar už duomenų rinkinio turinį atsakingas asmuo ar organizacija."),
+        help_text=_("Nurodomas asmuo arba organizacija atsakinga už duomenų rinkinio turinį."),
     )
 
     creator = forms.ModelChoiceField(

@@ -587,7 +587,7 @@ msgstr "Contact person or organization"
 msgid ""
 "Nurodoma ar už duomenų rinkinio turinį atsakingas asmuo ar organizacija."
 msgstr ""
-"Indicates whether a person or organization is responsible for the content of "
+"Indicates the person or an organization that is responsible for the content of "
 "the dataset."
 
 msgid "Duomenų rinkinio kūrėjas"

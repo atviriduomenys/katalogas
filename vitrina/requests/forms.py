@@ -76,14 +76,19 @@ class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
 
 
 class RequestForm(ModelForm):
-    title = CharField(label=_("Pavadinimas"))
-    description = CharField(label=_("Aprašymas"), widget=Textarea)
+    title = CharField(label=_("Pavadinimas"), help_text=_("Trumpas poreikio pavadinimas."))
+    description = CharField(
+        label=_("Aprašymas"),
+        widget=Textarea,
+        help_text=_("Išsamus aprašymas - koks yra poreikis."),
+    )
     organizations = ModelMultipleChoiceField(
         label=_("Organizacija"),
         queryset=Organization.public.annotate(dataset_count=Count("dataset")).order_by(
             "-dataset_count"
         ),
         required=False,
+        help_text=_("Pasirinkimo laukas, organizacija(-os), kurioms poreikio įgyvendinimas/atsakymas yra aktualus."),
     )
 
     class Meta:

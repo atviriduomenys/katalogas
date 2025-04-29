@@ -27,14 +27,28 @@ from vitrina.structure.models import (
 
 
 class EnumForm(forms.ModelForm):
-    value = forms.CharField(label=_("Reikšmė"))
-    source = forms.CharField(label=_("Reikšmė šaltinyje"), required=False)
-    access = forms.ChoiceField(
-        label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
+    value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."))
+    source = forms.CharField(
+        label=_("Reikšmė šaltinyje"),
+        required=False,
+        help_text=_("Fiksuotos reikšmės vertė šaltinyje."),
     )
-    title = forms.CharField(label=_("Pavadinimas"), required=False)
+    access = forms.ChoiceField(
+        label=_("Prieigos lygmuo"),
+        choices=Metadata.ACCESS_TYPES,
+        required=False,
+        help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą viešiems šios vardų erdvės elementams."),
+    )
+    title = forms.CharField(
+        label=_("Pavadinimas"),
+        required=False,
+        help_text=_("Duomenų rinkinio ar vardų erdvės pavadinimas."),
+    )
     description = forms.CharField(
-        label=_("Aprašymas"), widget=forms.Textarea(attrs={"rows": 8}), required=False
+        label=_("Aprašymas"),
+        widget=forms.Textarea(attrs={"rows": 8}),
+        required=False,
+        help_text=_("Duomenų rinkinio ar vardų erdvės aprašymas."),
     )
 
     class Meta:
@@ -295,19 +309,49 @@ def _check_prepare_ast(ast, model_props, bind=False):
 
 
 class ModelCreateForm(forms.ModelForm):
-    name = forms.CharField(label=_("Kodinis pavadinimas"))
-    source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
-    prepare = forms.CharField(label=_("Duomenų filtras"), required=False)
-    uri = forms.CharField(label=_("Klasė"), required=False)
+    name = forms.CharField(
+        label=_("Kodinis pavadinimas"),
+        help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."),
+    )
+    source = forms.CharField(
+        label=_("Duomenų šaltinis"),
+        required=False,
+        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
+    )
+    prepare = forms.CharField(
+        label=_("Duomenų filtras"),
+        required=False,
+        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
+    )
+    uri = forms.CharField(
+        label=_("Klasė"),
+        required=False,
+        help_text=_("Sąsaja su išoriniu žodynu."),
+    )
     level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=MODEL_LEVEL_CHOICES,
+        help_text=_(
+            "Modelio brandos lygis, nusakantis modelio brandos lygį, pavyzdžiui ar nurodytas pirminis raktas, "
+            "ar modelio pavadinimas atitinka kodiniams pavadinimams keliamus reikalavimus."
+        ),
     )
-    title = forms.CharField(label=_("Pavadinimas"), required=False)
+    title = forms.CharField(
+        label=_("Pavadinimas"),
+        required=False,
+        help_text=_(
+            "Trumpas modelio pavadinimas. Pirmas žodis iš didžiosios raidės, pavadinimo gale taško nereikia. "
+            "Pavadinime nereikia kartoti duomenų rinkinio pavadinimo. "
+            "Modelio pavadinimas rašomas duomenų rinkinio kontekste."
+        ),
+    )
     description = forms.CharField(
-        label=_("Aprašymas"), required=False, widget=forms.Textarea(attrs={"rows": 8})
+        label=_("Aprašymas"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 8}),
+        help_text=_("Modelio aprašymas."),
     )
 
     base = forms.ModelChoiceField(
@@ -315,6 +359,10 @@ class ModelCreateForm(forms.ModelForm):
         required=False,
         queryset=Model.objects.all(),
         widget=BaseWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
+        help_text=_(
+            "Modelio bazė naudojama objekto identifikatoriams susieti, "
+            "kai keli skirtingi duomenų modeliai aprašo tą pačią realaus pasaulio esybę."
+        ),
     )
     base_ref = OrderedModelMultipleChoiceField(
         label=_("Pirminis raktas"),
@@ -323,20 +371,40 @@ class ModelCreateForm(forms.ModelForm):
             attrs={"data-width": "100%", "data-minimum-input-length": 0}
         ),
         queryset=Property.objects.all(),
+        help_text=_(
+            "model.property reikšmė, kurios pagalba model objektai siejami su base objektais. "
+            "Jei susiejimas pagal vieną model.property yra neįmanomas, galima nurodyti kelis model.property pavadinimus, "
+            "atskirtus kableliu. Galima naudoti tik tuos model.property, kurie neturi nurodyto property.type, "
+            "kas reiškia, kad toks pat laukas turi būti tiek base, tiek model laukų sąraše."
+        ),
     )
     base_level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=BASE_LEVEL_CHOICES,
+        help_text=_(
+            "Brandos lygis, nurodantis modelio susiejamumą su nurodytu baziniu modeliu. "
+            "Plačiau žiūrėti Ryšiai tarp modelių | Brandos lygis. Jei brandos lygis yra žemesnis nei 3, "
+            "tada identifikatorių siejimas nėra atliekamas, "
+            "tokiu būdu tiesiog nurodomas semantinis susiejimas metaduomenų, o ne duomenų lygmenyje."
+        ),
     )
 
     comment = forms.CharField(
         label=_("Keitimo komentaras"),
         required=False,
         widget=forms.Textarea(attrs={"rows": 6}),
+        help_text=_(
+            "Pateikiamas komentaras apie šio modelio pakeitimus ar jų priežastis. "
+            "Naudinga versijavimui ir bendradarbiavimui."
+        ),
     )
-    is_parameterized = forms.BooleanField(label=_("Parametrizuotas"), required=False)
+    is_parameterized = forms.BooleanField(
+        label=_("Parametrizuotas"),
+        required=False,
+        help_text=_("Žymė, nurodanti ar modelis yra parametrizuotas - t.y. turi dinamiškai kintančių dalių ar filtrų."),
+    )
 
     class Meta:
         model = Metadata
@@ -686,8 +754,21 @@ TYPES = (
 
 class PropertyForm(forms.ModelForm):
     dataset_id = forms.IntegerField(widget=forms.HiddenInput)
-    name = forms.CharField(label=_("Kodinis pavadinimas"))
-    type = forms.ChoiceField(label=_("Tipas"), choices=TYPES)
+    name = forms.CharField(
+        label=_("Kodinis pavadinimas"),
+        help_text=_(
+            "Duomenų lauko kodinis pavadinimas. "
+            "Galimi simboliai: lotyniškos raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
+        ),
+    )
+    type = forms.ChoiceField(
+        label=_("Tipas"),
+        choices=TYPES,
+        help_text=_(
+            "Nurodomas loginis duomenų tipas. Loginis duomenų tipas yra toks tipas, "
+            "kurį tikitės gauti publikuojant duomenis per API. Loginis tipas gali skirtis nuo duomenų šaltinio tipo."
+        ),
+    )
     ref = forms.ModelChoiceField(
         label=_("Ryšys"),
         required=False,
@@ -695,27 +776,60 @@ class PropertyForm(forms.ModelForm):
             attrs={"data-width": "100%", "data-minimum-input-length": 0}
         ),
         queryset=Model.objects.all(),
+        help_text=_(
+            "Priklauso nuo property.type, nurodo matavimo vienetus, laiko ar vietos tikslumą, "
+            "klasifikatorių arba ryšį su kitais modeliais."
+        )
     )
-    ref_others = forms.CharField(label=_("Ryšys"), required=False)
-    source = forms.CharField(label=_("Duomenų šaltinis"), required=False)
-    prepare = forms.CharField(label=_("Duomenų transformacija"), required=False)
-    uri = forms.CharField(label=_("Klasė"), required=False)
+    ref_others = forms.CharField(
+        label=_("Ryšys"),
+        required=False,
+        help_text=_("Savybė nurodo sąryšį su papildomais modeliais."),
+    )
+    source = forms.CharField(
+        label=_("Duomenų šaltinis"),
+        required=False,
+        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
+    )
+    prepare = forms.CharField(
+        label=_("Duomenų transformacija"),
+        required=False,
+        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
+    )
+    uri = forms.CharField(label=_("Klasė"), required=False, help_text=_("Sąsaja su išoriniu žodynu."))
     level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
         widget=forms.RadioSelect,
         choices=PROPERTY_LEVEL_CHOICES,
+        help_text=_("Nurodo duomenų lauko brandos lygį."),
     )
     access = forms.ChoiceField(
         label=_("Prieigos lygis"),
         required=False,
         choices=Metadata.ACCESS_TYPES,
+        help_text=_("Nurodo prieigos prie duomenų lygį."),
     )
-    title = forms.CharField(label=_("Pavadinimas"), required=False)
+    title = forms.CharField(
+        label=_("Pavadinimas"),
+        required=False,
+        help_text=_(
+            "Duomenų lauko pavadinimas. "
+            "Šis pavadinimas yra skirtas skaityti žmonėms ir bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+            "Jei nenurodyta, bus naudojamas property kodinis pavadinimas."
+        ),
+    )
     description = forms.CharField(
-        label=_("Aprašymas"), required=False, widget=forms.Textarea(attrs={"rows": 8})
+        label=_("Aprašymas"),
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 8}),
+        help_text=_("Duomenų lauko aprašymas."),
     )
-    type_args = forms.CharField(label=_("Tipo parametrai"), required=False)
+    type_args = forms.CharField(
+        label=_("Tipo parametrai"),
+        required=False,
+        help_text=_("Nurodo duomenų lauko tipo parametrus."),
+    )
 
     class Meta:
         model = Metadata

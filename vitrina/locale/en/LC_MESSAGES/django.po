@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-29 10:30+0300\n"
+"POT-Creation-Date: 2025-04-29 14:58+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -75,31 +75,23 @@ msgstr "Category"
 msgid "organizacijos"
 msgstr "organization"
 
-#, fuzzy
-#| msgid "Priskirtos organizacijos"
 msgid "Priskirtų organizacijų kiekis"
-msgstr "Assigned organizations"
+msgstr "Assigned organization count"
 
 msgid "Pavadinimas"
 msgstr "Title"
 
-#, fuzzy
-#| msgid "Taikymo srities redagavimas"
 msgid "Valdymo srities koregavimo istorija"
-msgstr "Edit scope"
+msgstr "Control area adjustment history"
 
-#, fuzzy
-#| msgid "Poreikių valdymo sritys"
 msgid "Pridėti valdymo sritį"
-msgstr "Request management areas"
+msgstr "Add management area"
 
 msgid "Kategorijos"
 msgstr "Categories"
 
-#, fuzzy
-#| msgid "Identifikatoriai"
 msgid "Klasifikatoriai"
-msgstr "Identifiers"
+msgstr "Classificators"
 
 msgid "Nuoroda į kontroliuojamą žodyną"
 msgstr "URI"
@@ -107,53 +99,35 @@ msgstr "URI"
 msgid "Valandos"
 msgstr "Hours"
 
-#, fuzzy
-#| msgid "Pavadinimas"
 msgid "Pavadinimas lietuviškai"
-msgstr "Title"
+msgstr "Title in Lithuanian"
 
-#, fuzzy
-#| msgid "Pavadinimas"
 msgid "Pavadinimas angliškai"
-msgstr "Title"
+msgstr "Title in English"
 
 msgid "Valdymo sritis"
 msgstr "Management area"
 
-#, fuzzy
-#| msgid "Valdymo sritis"
 msgid "Valdymo sritys"
-msgstr "Management area"
+msgstr "Management areas"
 
-#, fuzzy
-#| msgid "Duomenų rinkinių kategorijos"
 msgid "Atitinkančios kategorijos"
-msgstr "Dataset categories"
+msgstr "Matching categories"
 
-#, fuzzy
-#| msgid "Priskirti kategorijai"
 msgid "Geoportalo kategorija"
-msgstr "Assign to category"
+msgstr "Geoportal category"
 
-#, fuzzy
-#| msgid "Kategorijos"
 msgid "Geoportalo kategorijos"
-msgstr "Categories"
+msgstr "Geoportal categories"
 
-#, fuzzy
-#| msgid "Duomenų atnaujinimo periodiškumas"
 msgid "Atitinkantis atnaujinimo periodiškumas"
-msgstr "Data renew period"
+msgstr "Matching update frequency"
 
-#, fuzzy
-#| msgid "Duomenų atnaujinimo periodiškumas"
 msgid "Geoportalo atnaujinimo periodiškumas"
-msgstr "Data renew period"
+msgstr "Geoportal update frequency"
 
-#, fuzzy
-#| msgid "Duomenų atnaujinimo periodiškumas"
 msgid "Geoportalo atnaujinimo periodiškumai"
-msgstr "Data renew period"
+msgstr "Geoportal update frequencies"
 
 msgid "Atitinkanti licencija"
 msgstr "Corresponding license"
@@ -164,35 +138,23 @@ msgstr "Geoportal license"
 msgid "Geoportalo licencijos"
 msgstr "Geoportal licenses"
 
-#, fuzzy
-#| msgid "Atverti duomenys"
 msgid "Atviri duomenys"
-msgstr "Open data"
+msgstr "Public data"
 
-#, fuzzy
-#| msgid "Redaguoti duomenys"
 msgid "Apsaugoti duomenys"
-msgstr "Edited data"
+msgstr "Protected data"
 
-#, fuzzy
-#| msgid "Redaguoti duomenys"
 msgid "Uždari duomenys"
-msgstr "Edited data"
+msgstr "Private data"
 
-#, fuzzy
-#| msgid "Prieigos teisės"
 msgid "Atitinkančios prieigos teisės"
-msgstr "Access rights"
+msgstr "Corresponding access rights"
 
-#, fuzzy
-#| msgid "Prieigos teisės"
 msgid "Geoportalo prieigos teisė"
-msgstr "Access rights"
+msgstr "Geoportal Access right"
 
-#, fuzzy
-#| msgid "Prieigos teisės"
 msgid "Geoportalo prieigos teisės"
-msgstr "Access rights"
+msgstr "Geoportal access rights"
 
 msgid "ADP"
 msgstr "ADP"
@@ -239,8 +201,6 @@ msgstr "URL"
 msgid "Duomenys"
 msgstr "Data"
 
-#, fuzzy
-#| msgid "Paveiksliukas"
 msgid "Paveikslėlis"
 msgstr "Picture"
 
@@ -265,15 +225,11 @@ msgstr "Publication date"
 msgid "Mokymosi medžiaga"
 msgstr "Learning material"
 
-#, fuzzy
-#| msgid "Periodo pradžia"
 msgid "Diegimo darbų pradžia"
-msgstr "Period start"
+msgstr "Deployment start"
 
-#, fuzzy
-#| msgid "Periodo pabaiga"
 msgid "Diegimo darbų pabaiga"
-msgstr "Period end"
+msgstr "Deployment end"
 
 msgid "Pranešimas (lietuvių kalba)"
 msgstr "Message (in Lithuanian)"
@@ -507,15 +463,11 @@ msgstr "No"
 msgid "Institucija"
 msgstr "Institution"
 
-#, fuzzy
-#| msgid "Tėvinė savybė"
 msgid "Tėvinė institucija"
-msgstr "Parent property"
+msgstr "Parent institution"
 
-#, fuzzy
-#| msgid "Koordinatorius"
 msgid "Koordinatoriai"
-msgstr "Coordinator"
+msgstr "Coordinators"
 
 msgid "Tvarkytojai"
 msgstr "Managers"
@@ -523,8 +475,6 @@ msgstr "Managers"
 msgid "Duomenų šaltinio pirmo</br>publikavimo data saugykloje"
 msgstr "Date of the data source's first</br>publication in the repository"
 
-#, fuzzy
-#| msgid "Duomenų atnaujinimo periodiškumas"
 msgid "Duomenų atnaujinimo</br>periodiškumas"
 msgstr "Data renew period"
 
@@ -537,15 +487,11 @@ msgstr "Metadata updated</br>in the catalog"
 msgid "Duomenų rinkinio pavadinimas"
 msgstr "Dataset title"
 
-#, fuzzy
-#| msgid "Koordinatorius"
 msgid "Koodinatoriai"
-msgstr "Coordinator"
+msgstr "Coordinators"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio prenumerata"
 msgid "Duomenų rinkinio nuoroda"
-msgstr "Dataset subscription"
+msgstr "Link to dataset"
 
 msgid "Duomenų šaltinio pirmo publikavimo data saugykloje"
 msgstr "Date of the data source's first publication in the repository"
@@ -562,28 +508,20 @@ msgstr "Metadata updated in the catalog"
 msgid "Vėlavimas, dienomis"
 msgstr "Delay, in days"
 
-#, fuzzy
-#| msgid "Raktai"
 msgid "Kontaktai"
-msgstr "Keys"
+msgstr "Contacts"
 
 msgid "Telefono numeris"
 msgstr "Phone number"
 
-#, fuzzy
-#| msgid "Objekto tipas"
 msgid "Kontaktinio objekto tipas"
-msgstr "Object type"
+msgstr "Contact object type"
 
-#, fuzzy
-#| msgid "Komentaro tekstas objektui: "
 msgid "Kontaktinis objektas"
-msgstr "Comment for object:"
+msgstr "Contact object"
 
-#, fuzzy
-#| msgid "Palyginimo reikšmė"
 msgid "Geoportalo reikšmės"
-msgstr "Compare value"
+msgstr "Geoportal values"
 
 msgid "Datasets"
 msgstr "Datasets"
@@ -611,27 +549,20 @@ msgstr ""
 msgid "API adresas"
 msgstr "API address"
 
-#, fuzzy
-#| msgid "Pagrindinis API paslaugos adresas"
 msgid "Pagrindinis API paslaugos adresas."
-msgstr "Main API service address"
+msgstr "Main API service address."
 
 msgid "API specifikacija"
 msgstr "API specification"
 
-#, fuzzy
-#| msgid ""
-#| "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas "
-#| "API specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, "
-#| "kuri nėra nuskaitoma mašininiu būdu"
 msgid ""
 "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
 "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
 "nuskaitoma mašininiu būdu."
 msgstr ""
-"Url to API specification, for example OpenAPI (Swagger), WSDL or other API "
-"specification format, it can also be url to API documentation that is not "
-"machine read"
+"A URL to an API specification, such as OpenAPI (Swagger), WSDL, or another "
+"API specification format. It can also be a URL to API documentation that is "
+"not machine-readable."
 
 msgid "Failai"
 msgstr "Files"
@@ -650,8 +581,6 @@ msgstr ""
 "The code name is an optional dataset name made of lowercase letters and (or) "
 "may contain hyphens."
 
-#, fuzzy
-#| msgid "Sujungti su kita organizacija"
 msgid "Kontaktinis asmuo ar organizacija"
 msgstr "Contact person or organization"
 
@@ -661,15 +590,11 @@ msgstr ""
 "Indicates whether a person or organization is responsible for the content of "
 "the dataset."
 
-#, fuzzy
-#| msgid "Duomenų rinkinio struktūra"
 msgid "Duomenų rinkinio kūrėjas"
-msgstr "Dataset structure"
+msgstr "Dataset creator"
 
-#, fuzzy
-#| msgid "Šis duomenų rinkinys neturi jam registruotų poreikių."
 msgid "Nurodomas duomenų rinkinio kūrėjas iš duotų pasirinkimų."
-msgstr "This dataset doesn't have requests."
+msgstr "The dataset creator is selected from the given options."
 
 msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgstr "Data open service provider"
@@ -681,10 +606,8 @@ msgstr ""
 "This property specifies the entity (organization) responsible for the "
 "dataset's availability."
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"
-msgstr "Data open service provider"
+msgstr "Are you the data open service provider for this dataset?"
 
 msgid ""
 "Savybė, nurodanti ar esate pateikiamo duomenų rinkinio atvėrimo paslaugos "
@@ -721,15 +644,11 @@ msgid ""
 "Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
 msgstr "Provide all of the conditions required to distribute the dataset"
 
-#, fuzzy
-#| msgid "Organizacija"
 msgid "Organizacija:"
-msgstr "Organization"
+msgstr "Organization:"
 
-#, fuzzy
-#| msgid "Naudotojai"
 msgid "Naudotojai:"
-msgstr "Users"
+msgstr "Users:"
 
 msgid ""
 "Tipai \"service\" ir \"series\" negali būti pažymėti abu kartu, gali būti "
@@ -744,10 +663,8 @@ msgstr "Dataset with this code name already exists."
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
-#, fuzzy
-#| msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
-msgstr "Code name can only include latin characters."
+msgstr "Code name can only include lowercase letters."
 
 msgid "Failas"
 msgstr "File"
@@ -782,10 +699,8 @@ msgstr "Groups"
 msgid "Kategorija"
 msgstr "Category"
 
-#, fuzzy
-#| msgid "Priskirti kategorijai"
 msgid "Rodyti pasirinktas kategorijas"
-msgstr "Assign to category"
+msgstr "Show selected categories"
 
 msgid "Išsaugoti"
 msgstr "Save"
@@ -850,10 +765,8 @@ msgstr "Added to request"
 msgid "Description"
 msgstr "Description"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio sukūrimo data"
 msgid "Duomenų rinkinio sukūrimo data, nustatoma automatiškai."
-msgstr "Dataset creation date"
+msgstr "Dataset creation date, set automatically."
 
 msgid ""
 "Naujausia duomenų rinkinio pakeitimo arba modifikavimo data, nustatoma "
@@ -862,12 +775,10 @@ msgstr ""
 "The most recent modification or update date of the dataset, set "
 "automatically."
 
-#, fuzzy
-#| msgid "Duomenų rinkinio kodinis pavadinimas"
 msgid ""
 "Duomenų rinkinio versijos identifikavimas (pavadinimas arba "
 "identifikatorius)."
-msgstr "Dataset code name"
+msgstr "Dataset version identifier (name or identifier)."
 
 msgid ""
 "Nurodo pavadinimo versiją, skirta naudoti URL'e vietoj identifikatoriaus."
@@ -903,10 +814,8 @@ msgstr ""
 "This property specifies a related dataset that is physically or logically "
 "included in the described catalog."
 
-#, fuzzy
-#| msgid "Duomenų rinkinio pavadinimas"
 msgid "Duomenų šaltinio pavadinimas."
-msgstr "Dataset title"
+msgstr "Dataset title."
 
 msgid "Institucija ar įstaiga, kuri valdo ar teikia duomenis."
 msgstr "The institution or agency that manages or provides the data."
@@ -929,10 +838,8 @@ msgstr ""
 "The current status of the dataset (Opened, inventoried, planned to open, "
 "unassigned)."
 
-#, fuzzy
-#| msgid "Duomenų rinkinys viešinamas"
 msgid "Data, kada duomenų rinkinys buvo paviešintas."
-msgstr "The dataset is public"
+msgstr "Date when the dataset was made public"
 
 msgid "Duomenų rinkinys viešinamas"
 msgstr "The dataset is public"
@@ -953,10 +860,8 @@ msgstr "This property specifies the geographic coverage of the dataset."
 msgid "Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys."
 msgstr "This property indicates the time period covered by the dataset."
 
-#, fuzzy
-#| msgid "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų rinkinys."
 msgid "Ši savybė nurodo, kaip dažnai atnaujinamas duomenų rinkinys."
-msgstr "Select projects that use this dataset."
+msgstr "This property indicates how often the dataset is updated."
 
 msgid "Atnaujinimo dažnumas"
 msgstr "Update frequency"
@@ -982,11 +887,10 @@ msgstr ""
 msgid "Platinimo salygos"
 msgstr "Terms of distribution"
 
-#, fuzzy
-#| msgid ""
-#| "Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
 msgid "Ši savybė nurodo papildomas sąlygas norint viešinti duomenų rinkinį."
-msgstr "Provide all of the conditions required to distribute the dataset"
+msgstr ""
+"This property specifies additional conditions required to publish the "
+"dataset."
 
 msgid ""
 "Nurodomas sąrašas žymų (žymos skiriamos kablelio simboliu) susijusių su "
@@ -1082,20 +986,14 @@ msgstr ""
 "A property indicating the demand assessment of datasets. If the dataset is "
 "open, it is given the maximum score and no further criteria are evaluated."
 
-#, fuzzy
-#| msgid "Pageidaujama duomenų struktūra"
 msgid "Pateikiami duomenų struktūros duomenys."
-msgstr "Requested data structure"
+msgstr "Provided data structure details."
 
-#, fuzzy
-#| msgid "Duomenų rinkinio pavadinimas"
 msgid "Duomenų struktūros failo pavadinimas."
-msgstr "Dataset title"
+msgstr "Data structure file name."
 
-#, fuzzy
-#| msgid "Įkelta duomenų struktūra"
 msgid "Dabartinė duomenų struktūra."
-msgstr "Uploaded data structure"
+msgstr "Current data structure."
 
 msgid "Žyma nurodanti ar duomenų rinkinio rengimas buvo finansuojamas."
 msgstr "A tag indicating whether the preparation of the dataset was funded."
@@ -1115,20 +1013,14 @@ msgstr "The required amount of funding in euros."
 msgid "Žyma nurodanti, kad yra planuojama gauti finansavimą ateityje."
 msgstr "A tag indicating that funding is planned to be received in the future."
 
-#, fuzzy
-#| msgid "Įkelta duomenų struktūra"
 msgid "Susiję duomenų struktūros metaduomenys."
-msgstr "Uploaded data structure"
+msgstr "Related data structure metadata."
 
-#, fuzzy
-#| msgid "Teikti poreikį duomenų rinkiniui"
 msgid "Komentarai, pateikti prie duomenų rinkinio."
-msgstr "Submit a request for a dataset"
+msgstr "Comments for the dataset."
 
-#, fuzzy
-#| msgid "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu"
 msgid "Užduotys, susijusios su rinkiniu."
-msgstr "Subscribe for newsletters related to the dataset"
+msgstr "Tasks related to the dataset."
 
 msgid "Atsakingi asmenys ar organizacijos atstovai."
 msgstr "sponsible individuals or representatives of the organization."
@@ -1145,15 +1037,11 @@ msgstr "Addition to dataset"
 msgid "Duomenų atvėrimas"
 msgstr "Data opening"
 
-#, fuzzy
-#| msgid "Įtraukiama į versiją"
 msgid "Jau įtraukta į versiją"
-msgstr "Add to version"
+msgstr "Already included in the version"
 
-#, fuzzy
-#| msgid "Duomenų rinkinių atnaujinimo dažnumas"
 msgid "Duomenų rinkinių atnaujinimo ataskaita"
-msgstr "Dataset update frequency"
+msgstr "Dataset update report"
 
 msgid "Struktūra"
 msgstr "Structure"
@@ -1197,10 +1085,8 @@ msgstr "Datasets relations"
 msgid "Content Type"
 msgstr "Turinio tipas"
 
-#, fuzzy
-#| msgid "Objekto id"
 msgid "Object ID"
-msgstr "Object id"
+msgstr "Object ID"
 
 msgid "Email"
 msgstr "El. pašto adresas"
@@ -1208,23 +1094,17 @@ msgstr "El. pašto adresas"
 msgid "Phone"
 msgstr "Telefono numeris"
 
-#, fuzzy
-#| msgid "Raktas"
 msgid "Kontaktas"
-msgstr "Key"
+msgstr "Contact"
 
 msgid "Naudotojas"
 msgstr "User"
 
-#, fuzzy
-#| msgid "API formatas"
 msgid "Geoportalo API formatas"
-msgstr "API format"
+msgstr "Geoportal API format"
 
-#, fuzzy
-#| msgid "API formatas"
 msgid "Geoportalo API formatai"
-msgstr "API format"
+msgstr "Geoportal API formats"
 
 msgid "Reikšmė"
 msgstr "Value"
@@ -1235,27 +1115,17 @@ msgstr "Geoportal API format value"
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
 
-#, fuzzy
-#| msgid ""
-#| "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, jokie kiti "
-#| "simboliai negalimi."
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
 "skaičiai, "
-msgstr ""
-"Code name can contain capital/lowercase letters and numbers. All other "
-"symbols are not allowed."
+msgstr "Model code name can contain uppercase/lowercase letters and numbers. "
 
-#, fuzzy
-#| msgid ""
-#| "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti "
-#| "atskirti _ simboliu,jokie kiti simboliai negalimi."
 msgid ""
 "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti atskirti "
 "_ simboliu, arba . simboliu, "
 msgstr ""
-"Code name can include lowercase letters and numbers, words can be separated "
-"with _ symbol, all other symbols are not allowed."
+"The name can include lowercase letters and numbers, words can be separated "
+"by an underscore (_) or a dot (.) symbol. "
 
 msgid "Duomenų rinkinių atvėrimo progresas"
 msgstr "Progress of opening datasets"
@@ -1287,10 +1157,8 @@ msgstr "Dataset categories"
 msgid "Patinka"
 msgstr "Like"
 
-#, fuzzy
-#| msgid "Teikti poreikį duomenų rinkiniui"
 msgid "Teigiamų įvertinimų kiekis duomenų rinkiniui"
-msgstr "Submit a request for a dataset"
+msgstr "Number of positive ratings for the dataset"
 
 msgid "Brandos lygis"
 msgstr "Maturity level"
@@ -1339,21 +1207,13 @@ msgstr ""
 "Groups to which this dataset belongs (e.g., administrative units, "
 "statistical units)."
 
-#, fuzzy
-#| msgid ""
-#| "Duomenų rinkinio atvėrimo būsena: Inventorintas, parengti metaduomenys, "
-#| "planuojamas atverti, atvertas, nenumatytas atverti"
 msgid ""
 "Duomenų rinkinio atvėrimo būsena: inventorintas, atvertas, planuojamas "
 "atverti"
-msgstr ""
-"Dataset status: inventored, prepared metadata, planned to open, opened not "
-"schedules to open"
+msgstr "Dataset status: inventoried, open, planned to be opened"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio peržiūros"
 msgid "Duomenų rinkinio viešumo būsena"
-msgstr "Dataset views"
+msgstr "Dataset visibility status"
 
 msgid "Atliktas darbas"
 msgstr "Harvested"
@@ -1376,10 +1236,8 @@ msgstr ""
 "Specifies the specific information system – a state information system or "
 "registry – within which the datasets are managed."
 
-#, fuzzy
-#| msgid "Pagrindinis API paslaugos adresas"
 msgid "Pagrindinis API paslaugos adresas, kuriuo galima pasiekti duomenis"
-msgstr "Main API service address"
+msgstr "Main API service address for accessing data"
 
 msgid "Techninis formatas (pvz., REST, SOAP)"
 msgstr "Technical format (e.g., REST, SOAP)"
@@ -1450,10 +1308,8 @@ msgstr ""
 msgid "Kategorijų priskyrimas"
 msgstr "Category assignment"
 
-#, fuzzy
-#| msgid "Priskirti kategorijai"
 msgid "Pasirinkite kategoriją."
-msgstr "Assign to category"
+msgstr "Select a category."
 
 msgid "Teritorija"
 msgstr "Territory"
@@ -1515,10 +1371,8 @@ msgstr "Phone number"
 msgid "Institucija, atsakinga už duomenų atvėrimą"
 msgstr "The institution responsible for opening the data to the public"
 
-#, fuzzy
-#| msgid "Asmeninė informacija"
 msgid "Kontaktinė informacija"
-msgstr "Personal information"
+msgstr "Contact information"
 
 msgid "Dalintis socialiniuose tinkluose"
 msgstr "Share on social networks"
@@ -1798,10 +1652,6 @@ msgstr "Time"
 msgid "Duomenų rinkinių būsenos"
 msgstr "Dataset statuses"
 
-#, fuzzy
-#| msgid ""
-#| "{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją "
-#| "rinkinio įkėlimo datai"
 msgid "pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
 msgstr ""
 "{self.get_title_for_indicator(indicator)} for dataset categories and "
@@ -1810,15 +1660,9 @@ msgstr ""
 msgid "Duomenų rinkinių brandos lygiai"
 msgstr "Dataset maturity levels"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio įkėlimo data"
 msgid "pagal rinkinio brandos lygį rinkinio įkėlimo datai"
 msgstr "Dataset publication date"
 
-#, fuzzy
-#| msgid ""
-#| "{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją "
-#| "rinkinio įkėlimo datai"
 msgid "pagal rinkinio organizaciją rinkinio įkėlimo datai"
 msgstr ""
 "{self.get_title_for_indicator(indicator)} for dataset categories and "
@@ -1833,10 +1677,6 @@ msgstr "Dataset formats"
 msgid "Duomenų rinkinių atnaujinimo dažnumas"
 msgstr "Dataset update frequency"
 
-#, fuzzy
-#| msgid ""
-#| "{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją "
-#| "rinkinio įkėlimo datai"
 msgid "pagal rinkinio atnaujinimą rinkinio įkėlimo datai"
 msgstr ""
 "{self.get_title_for_indicator(indicator)} for dataset categories and "
@@ -1845,20 +1685,12 @@ msgstr ""
 msgid "Duomenų rinkinių grupės"
 msgstr "Dataset groups"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio įkėlimo data"
 msgid "pagal rinkinio grupes rinkinio įkėlimo datai"
 msgstr "Dataset publication date"
 
-#, fuzzy
-#| msgid "Duomenų rinkinių kiekis metuose"
 msgid "Duomenų rinkinių prieigos teisės"
 msgstr "Dataset count by years"
 
-#, fuzzy
-#| msgid ""
-#| "{self.get_title_for_indicator(indicator)} pagal rinkinio žymes rinkinio "
-#| "įkėlimo datai"
 msgid "pagal rinkinio prieigos teises rinkinio įkėlimo datai"
 msgstr ""
 "{self.get_title_for_indicator(indicator)} for dataset tags and publication "
@@ -1873,10 +1705,8 @@ msgstr "Delete term"
 msgid "Organizacijos"
 msgstr "Organizations"
 
-#, fuzzy
-#| msgid "Pasirinkimas"
 msgid "Pasirinkti failą"
-msgstr "Enum item"
+msgstr "Select a file"
 
 msgid "I ketvirtis"
 msgstr "I quarter"
@@ -1990,10 +1820,8 @@ msgstr "At least one subscription type must be selected"
 msgid "Gavėjas"
 msgstr "Recipient"
 
-#, fuzzy
-#| msgid "Identifikatoriai"
 msgid "Identifikatorius"
-msgstr "Identifiers"
+msgstr "Identifier"
 
 msgid "Organizacijos prenumerata"
 msgstr "Organization subscription"
@@ -2037,8 +1865,6 @@ msgstr "Project comment subscription"
 msgid "Komentaro atsako prenumerata"
 msgstr "Comment reply subscription"
 
-#, fuzzy
-#| msgid "Jūs neturit teisės sukurti prenumeratos kitam vartotojui."
 msgid "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
 msgstr "You don't have permission to create subscription for other user."
 
@@ -2064,56 +1890,36 @@ msgstr ""
 "The role of data open service provider has been successfully removed from "
 "the selected organizations."
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Duomenų atvėrimo paslaugos tiekėjai"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Priskirti duomenų atvėrimo paslaugos tiekėjo rolę"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Redaguoti duomenų atvėrimo paslaugos tiekėją"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų rinkinių sąrašas"
 msgid "Duomenų tiekėjų prašymų sąrašas"
 msgstr "Dataset list"
 
-#, fuzzy
-#| msgid "Pridėti duomenys"
 msgid "Pridėtas dokumentas"
 msgstr "Added data"
 
 msgid "Atmesti"
 msgstr "Reject"
 
-#, fuzzy
-#| msgid "Veiksmas"
 msgid "Veiksmai"
 msgstr "Action"
 
-#, fuzzy
-#| msgid "Duomenų teikėjai"
 msgid "Duomenų tiekėjo \""
 msgstr "Data providers"
 
-#, fuzzy
-#| msgid "Slaptažodžio keitimas sėkmingas"
 msgid "Šablonas pakeistas sėkmingai."
 msgstr "Password was changed successfully"
 
@@ -2166,10 +1972,8 @@ msgstr "Grant API access"
 msgid "Pergeneruoti raktą"
 msgstr "Regenerate key"
 
-#, fuzzy
-#| msgid "Prenumeruoti"
 msgid "Prenumeruoti pranešimus"
-msgstr "Subscribe"
+msgstr "Subscribe to notifications"
 
 msgid "Formatas 0... arba +370..."
 msgstr "Format 0... or +370..."
@@ -2190,13 +1994,9 @@ msgstr "Request"
 msgid "Koordinatoriaus telefono numeris"
 msgstr "Coordinator phone number"
 
-#, fuzzy
-#| msgid "Pridėti duomenys"
 msgid "Pridėti dokumentą"
 msgstr "Added data"
 
-#, fuzzy
-#| msgid "Neteisingas uri \"{uri}\" formatas."
 msgid "Neteisingas telefono numerio formatas."
 msgstr "Invalid uri \"{uri}\" format."
 
@@ -2261,10 +2061,8 @@ msgstr "Add dataset creator from the registry center"
 msgid "Įveskite organizacijos pavadinimą arba pilną įmonės kodą."
 msgstr "Enter the organization's name or the full company code."
 
-#, fuzzy
-#| msgid "Organizacijos koordinatorius"
 msgid "Naujos organizacijos koordinatorius"
-msgstr "Organization coordinator"
+msgstr "Coordinator for a new organization"
 
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr "Incorrect object type. It must be AreaOfManagement or int."
@@ -2293,18 +2091,12 @@ msgstr "Organization is public"
 msgid "Vaidmuo"
 msgstr "Role"
 
-#, fuzzy
-#| msgid "Duomenų pavadinimas"
 msgid "Alternatyvūs pavadinimai"
-msgstr "Data title"
+msgstr "Alternative titles"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Duomenų atvėrimo paslaugų tiekėjas"
 msgstr "Data open service provider"
 
-#, fuzzy
-#| msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgid "Duomenų atvėrimo paslaugų tiekėjai"
 msgstr "Data open service provider"
 
@@ -2323,13 +2115,9 @@ msgstr "Submitted"
 msgid "Modifikuota"
 msgstr "Modified"
 
-#, fuzzy
-#| msgid "Atmestas"
 msgid "Tekstas"
 msgstr "Rejected"
 
-#, fuzzy
-#| msgid "Priskirti duomenų rinkiniai"
 msgid "Galimi duomenų rinkiniai"
 msgstr "Assigned datasets"
 
@@ -2338,8 +2126,6 @@ msgid ""
 "teikėju"
 msgstr "A list of datasets for which you become the data open service provider"
 
-#, fuzzy
-#| msgid "Vaikinės organizacijos"
 msgid "Galimos organizacijos"
 msgstr "Child organizations"
 
@@ -2355,15 +2141,11 @@ msgstr "Enter at least 3 characters..."
 msgid "Rezultatų nerasta"
 msgstr "No results found"
 
-#, fuzzy
-#| msgid "Paieška..."
 msgid "Ieškoma..."
 msgstr "Search..."
 
-#, fuzzy
-#| msgid "Pasiūlymas organizacijai"
 msgid "Pasirinkta organizacija egzistuoja"
-msgstr "Request for organization"
+msgstr "Selected organization exists"
 
 msgid ""
 "Pasirinktos organizacijos nėra, nurodykite koordinatorių naujai "
@@ -2372,10 +2154,8 @@ msgstr ""
 "The selected organization does not exist, please specify a coordinator for "
 "the new organization."
 
-#, fuzzy
-#| msgid "Patvirtinti keitimą"
 msgid "Patvirtinkite pakeitimus"
-msgstr "Confirm"
+msgstr "Confirm changes"
 
 msgid "Atšaukti"
 msgstr "Cancel"
@@ -2386,46 +2166,32 @@ msgstr "It is mandatory to specify a coordinator for the new organization."
 msgid "Įmonės kodas"
 msgstr "Company code"
 
-#, fuzzy
-#| msgid "Kodinis pavadinimas"
 msgid "Įmonės pavadinimas"
 msgstr "Code name"
 
-#, fuzzy
-#| msgid "organizaciją su"
 msgid "Ar organizacija egzistuoja?"
-msgstr "organization with"
+msgstr "Does the organization exist?"
 
 msgid "*Pastaba: Bus sukurta nauja organizacija."
 msgstr "*Note: A new organization will be created."
 
-#, fuzzy
-#| msgid "Priskirti duomenų rinkiniai"
-msgid "Pasirinktie duomenų rinkino kūrėją"
-msgstr "Assigned datasets"
+msgid "Pasirinkite duomenų rinkino kūrėją"
+msgstr "Assign the creator of the dataset"
 
-#, fuzzy
-#| msgid "Parametro redagavimas"
 msgid "Prašymo redagavimas"
-msgstr "Edit parameter"
+msgstr "Editing the request"
 
-#, fuzzy
-#| msgid "Registruoti duomenų teikėją"
 msgid "Redaguoti duomenų tiekėjo prašymą"
-msgstr "Register data provider"
+msgstr "Edit data provider request"
 
 msgid "Grįžti į sąrašą"
 msgstr "Back to the list"
 
-#, fuzzy
-#| msgid "Prašymų komentarai"
 msgid "Prašymo dokumento šablonas"
-msgstr "Request comments"
+msgstr "Request document template"
 
-#, fuzzy
-#| msgid "Redaguoti organizaciją"
 msgid "Redaguoti šabloną"
-msgstr "Edit organization"
+msgstr "Edit template"
 
 #, python-format
 msgid ""
@@ -2440,10 +2206,8 @@ msgstr "Yes, I am sure"
 msgid "Ne, grįžti atgal"
 msgstr "No, go back"
 
-#, fuzzy
-#| msgid "Rakto redagavimas"
 msgid "Šablono redagavimas"
-msgstr "Edit key"
+msgstr "Edit template"
 
 msgid "Išsisaugokite API raktą, nes jis bus rodomas tik vieną kartą."
 msgstr "Save the API key, because it will be shown only one time."
@@ -2451,18 +2215,14 @@ msgstr "Save the API key, because it will be shown only one time."
 msgid "Raktai"
 msgstr "Keys"
 
-#, fuzzy
-#| msgid "Pirminis raktas"
 msgid "Vidiniai raktai"
-msgstr "Primary key"
+msgstr "Internal keys"
 
 msgid "Naujas raktas"
 msgstr "New key"
 
-#, fuzzy
-#| msgid "Pirminis raktas"
 msgid "Išoriniai raktai"
-msgstr "Primary key"
+msgstr "Foreign keys"
 
 msgid "Organizacija/Panaudojimo atvejis"
 msgstr "Organization/Use case"
@@ -2473,10 +2233,8 @@ msgstr "Disable"
 msgid "Įjungti"
 msgstr "Enable"
 
-#, fuzzy
-#| msgid "Poreikio peržiūros"
 msgid "Rakto peržiūra"
-msgstr "Request views"
+msgstr "Key preview"
 
 msgid "Keisti slaptažodį"
 msgstr "Change password"
@@ -2505,10 +2263,8 @@ msgstr "Transferring data"
 msgid "Organizacijos narių sąrašas"
 msgstr "Organization members list"
 
-#, fuzzy
-#| msgid "Pridėti narį"
 msgid "Pridėti kontaką"
-msgstr "Add member"
+msgstr "Add contact"
 
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"
@@ -2573,15 +2329,11 @@ msgstr "The form has been submitted. The chief coordinator will review it."
 msgid "Į pradžią"
 msgstr "To start"
 
-#, fuzzy
-#| msgid "Informacija duomenų teikėjo registravimui"
 msgid "Naujo duomenų tiekėjo registravimas"
-msgstr "Data provider information for registration"
+msgstr "Register a new data provider"
 
-#, fuzzy
-#| msgid "Prašymo forma"
 msgid "Prašymo sukurti negalima"
-msgstr "Request form"
+msgstr "Request cannot be created"
 
 msgid ""
 "Jums jau yra suteiktos duomenų tiekėjo teisės prie pasirinktos "
@@ -2598,19 +2350,15 @@ msgstr ""
 msgid "Naujas terminas"
 msgstr "New deadline"
 
-#, fuzzy
-#| msgid "Registracija"
 msgid "Registracija negalima"
-msgstr "Registration"
+msgstr "Registration is not allowed"
 
 msgid ""
 "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga."
 msgstr "This registration link has expired or the link is incorrect."
 
-#, fuzzy
-#| msgid "Įkėlimas į saugyklą"
 msgid "Raktas duomenų įkėlimui į saugyklą"
-msgstr "Upload to storage"
+msgstr "Key for uploading data to storage"
 
 msgid "Organizacijų skaičius pagal valdymo sritį laike"
 msgstr "Organization count by managment area in time"
@@ -2624,10 +2372,8 @@ msgstr "Coordinator count for management area in time"
 msgid "Tvarkytojų skaičius pagal valdymo sritį laike"
 msgstr "Manager count for management area in time"
 
-#, fuzzy
-#| msgid "Rakto redagavimas"
 msgid "Kontaktų redagavimas"
-msgstr "Edit key"
+msgstr "Contact editing"
 
 msgid "Organizacijos redagavimas"
 msgstr "Edit organization"
@@ -2642,8 +2388,6 @@ msgstr ""
 "Failed to connect to the storage API, so the keys displayed in the table may "
 "not match the keys in the storage."
 
-#, fuzzy
-#| msgid "API rakto pašalinti nepavyko."
 msgid "API rakto pašalinimas nesėkmingas."
 msgstr "Couldn't remove the API key."
 
@@ -2766,10 +2510,8 @@ msgstr "Add to existing plan"
 msgid "Termino redagavimas"
 msgstr "Edit term"
 
-#, fuzzy
-#| msgid "Duomenų panaudojimo atvejai"
 msgid "Siūlomo panaudojimo atvejo pavadinimas."
-msgstr "Data use cases"
+msgstr "Title of the Proposed use case."
 
 msgid "Išsamus pasiūlymo aprašymas."
 msgstr "Detailed description of the proposal."
@@ -2783,10 +2525,8 @@ msgid ""
 msgstr ""
 "The link is related to the proposed use case (github, main website, etc.)."
 
-#, fuzzy
-#| msgid "Pateikti naują panaudojimo atvejį"
 msgid "Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."
-msgstr "Submit a new use case"
+msgstr "Image related to the proposed use case."
 
 msgid "Panaudojimo atvejis"
 msgstr "Use case"
@@ -2794,10 +2534,8 @@ msgstr "Use case"
 msgid "Leidimas"
 msgstr "Permission"
 
-#, fuzzy
-#| msgid "Projektas leidimų neturi"
 msgid "Šiuo metu raktas galiojančių leidimų neturi."
-msgstr "Project doesn't have permissions"
+msgstr "Currently the key does not have any valid permissions."
 
 msgid "Duomenų rinkinių sąrašas"
 msgstr "Dataset list"
@@ -2872,15 +2610,11 @@ msgstr "Ask for permissions"
 msgid "Rakto ID"
 msgstr "Key ID"
 
-#, fuzzy
-#| msgid "Šaltinio pavadinimas"
 msgid "Rakto pavadinimas"
-msgstr "Source title"
+msgstr "Key title"
 
-#, fuzzy
-#| msgid "Projektas leidimų neturi"
 msgid "Šiuo metu raktas leidimų neturi"
-msgstr "Project doesn't have permissions"
+msgstr "Currently the key does not have permissions"
 
 msgid "Panaudos atvejo registracija"
 msgstr "Use case registration"
@@ -2893,10 +2627,8 @@ msgid ""
 "raktas: "
 msgstr "API key will be shown only one time, so you must copy it. Created key:"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio pavadinimas"
 msgid "Trumpas poreikio pavadinimas."
-msgstr "Dataset title"
+msgstr "Request title"
 
 msgid "Išsamus aprašymas - koks yra poreikis."
 msgstr "Detailed description - what is the request."
@@ -3091,10 +2823,8 @@ msgstr ""
 "The status of the submitted need (Submitted, Rejected, Fulfilled, Responded, "
 "Planned, Evaluated)"
 
-#, fuzzy
-#| msgid "Poreikio registravimas"
 msgid "Poreikio registravimo data"
-msgstr "Request creation"
+msgstr "Request creation date"
 
 msgid "Data, kada poreikis buvo atnaujintas"
 msgstr "The date when the request was updated"
@@ -3108,8 +2838,6 @@ msgstr "The date when the data is planned to be opened"
 msgid "Naudotojų skaičius"
 msgstr "User count"
 
-#, fuzzy
-#| msgid "Naudotojų skaičius"
 msgid "Nurodomas naudotojų skaičius"
 msgstr "User count"
 
@@ -3237,10 +2965,8 @@ msgstr "Or upload a data file."
 msgid "Pateikta nuoroda yra neteisinga."
 msgstr "The provided link is incorrect."
 
-#, fuzzy
-#| msgid "Formatas nesutampa su įkelto failo formatu."
 msgid "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-msgstr "Format doesn't match with uploaded file format."
+msgstr "The format does not match the uploaded file or link format."
 
 msgid "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr "Dataset distribution with this download link already exists."
@@ -3254,15 +2980,11 @@ msgstr "MIME type"
 msgid "Vertinimas"
 msgstr "Rating"
 
-#, fuzzy
-#| msgid "Nuoroda į kontroliuojamą žodyną"
 msgid "Formato nuoroda į kontroliuojamą žodyną"
-msgstr "URI"
+msgstr "URI reference to a controlled vocabulary"
 
-#, fuzzy
-#| msgid "Nuoroda į kontroliuojamą žodyną"
 msgid "Laikmenos tipo nuoroda į kontroliuojamą žodyną"
-msgstr "URI"
+msgstr "Media type reference to a controlled vocabulary"
 
 msgid "Formatai"
 msgstr "Formats"
@@ -3354,18 +3076,14 @@ msgstr "Statistics link"
 msgid "Statistikos nuorodos"
 msgstr "Statistics links"
 
-#, fuzzy
-#| msgid "Galimos reikšmės neapibrėžtos."
 msgid "Fiksuotos reikšmės vertė."
-msgstr "No enum ."
+msgstr "Enum value."
 
 msgid "Reikšmė šaltinyje"
 msgstr "Source"
 
-#, fuzzy
-#| msgid "Reikšmė šaltinyje"
 msgid "Fiksuotos reikšmės vertė šaltinyje."
-msgstr "Source"
+msgstr "Enum source"
 
 msgid ""
 "Prieigos lygis, naudojamas pagal nutylėjimą viešiems šios vardų erdvės "
@@ -3373,15 +3091,11 @@ msgid ""
 msgstr ""
 "The access level used by default for public elements of this namespace."
 
-#, fuzzy
-#| msgid "Duomenų rinkinio pavadinimas"
 msgid "Duomenų rinkinio ar vardų erdvės pavadinimas."
 msgstr "Dataset title"
 
-#, fuzzy
-#| msgid "Duomenų rinkinio narių sąrašas"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
-msgstr "Dataset members"
+msgstr "Dataset or namespace description."
 
 msgid "Reikšmė turi būti integer tipo."
 msgstr "Value must be integer."
@@ -3533,10 +3247,8 @@ msgstr ""
 "period is needed at the end. The dataset name should not be repeated in the "
 "model name. The model name is written in the context of the dataset."
 
-#, fuzzy
-#| msgid "Modelio pridėjimas"
 msgid "Modelio aprašymas."
-msgstr "Add model"
+msgstr "Model description."
 
 msgid "Modelio bazė"
 msgstr "Model base"
@@ -3756,10 +3468,8 @@ msgstr "The property indicates a relationship with additional models."
 msgid "Duomenų transformacija"
 msgstr "Data transformation"
 
-#, fuzzy
-#| msgid "Naujas duomenų laukas"
 msgid "Nurodo duomenų lauko brandos lygį."
-msgstr "New property"
+msgstr "Indicates the maturity level of the field"
 
 msgid "Prieigos lygis"
 msgstr "Access"
@@ -3776,34 +3486,24 @@ msgstr ""
 "displayed in data field lists and headers. If not provided, the property "
 "code name will be used."
 
-#, fuzzy
-#| msgid "Duomenų lauko pridėjimas"
 msgid "Duomenų lauko aprašymas."
-msgstr "Add property"
+msgstr "Data field description."
 
 msgid "Tipo parametrai"
 msgstr "Type parameters"
 
-#, fuzzy
-#| msgid "Naujas duomenų laukas"
 msgid "Nurodo duomenų lauko tipo parametrus."
-msgstr "New property"
+msgstr "Indicates the type parameters for the data field."
 
-#, fuzzy
-#| msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgid "Kodiniame pavadinime negali būti naudojamos didžiosios raidės."
-msgstr "Code name can only include latin characters."
+msgstr "Code name can not include upper case letters."
 
-#, fuzzy
-#| msgid ""
-#| "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti "
-#| "atskirti _ simboliu,jokie kiti simboliai negalimi."
 msgid ""
 "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti atskirti "
 "_ simboliu, jokie kiti simboliai negalimi."
 msgstr ""
-"Code name can include lowercase letters and numbers, words can be separated "
-"with _ symbol, all other symbols are not allowed."
+"Code name can include lowercase letters and numbers, and words can be "
+"separated by the _ symbol. No other symbols are allowed."
 
 msgid "Netinkami matavimo vienetai."
 msgstr "Invalid units of measure."
@@ -3970,10 +3670,8 @@ msgstr "See full change list"
 msgid "rengiama"
 msgstr "preparing"
 
-#, fuzzy
-#| msgid "Keisti duomenis"
 msgid "Įkelti duomenis"
-msgstr "Change data"
+msgstr "Upload data"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
@@ -4116,15 +3814,11 @@ msgstr "Handler"
 msgid "Užduočių nėra!"
 msgstr "There are no tasks!"
 
-#, fuzzy
-#| msgid "Duomenų paieška"
 msgid "Užduočių paieška"
-msgstr "Data search"
+msgstr "Task search"
 
-#, fuzzy
-#| msgid "Ieškoti duomenų..."
 msgid "Ieškoti užduočių"
-msgstr "Look for data..."
+msgstr "Look for tasks..."
 
 msgid "dieną"
 msgstr "day"
@@ -4141,15 +3835,11 @@ msgstr "day"
 msgid "dienos"
 msgstr "days"
 
-#, fuzzy
-#| msgid "Užduotys"
 msgid "Mano užduotys"
-msgstr "Tasks"
+msgstr "My tasks"
 
-#, fuzzy
-#| msgid "Užduotys"
 msgid "Visos užduotys"
-msgstr "Tasks"
+msgstr "All tasks"
 
 msgid "Užduoties uždarymas"
 msgstr "Close task"
@@ -4280,10 +3970,8 @@ msgstr "Subscribers"
 msgid "Ar tikrai norite patvirtinti"
 msgstr "Are you sure you want ro confirm"
 
-#, fuzzy
-#| msgid "Aprašymas"
 msgid "prašymą"
-msgstr "Description"
+msgstr "request"
 
 msgid "Grįžti"
 msgstr "Go back"
@@ -4354,11 +4042,7 @@ msgstr "First"
 msgid "Atgal"
 msgstr "Back"
 
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "                Puslapis %(number)s iš %(total)s.\n"
-#| "            "
+#, python-format
 msgid ""
 "\n"
 "                    Puslapis %(number)s iš %(total)s.\n"
@@ -4395,45 +4079,29 @@ msgstr "Personal information"
 msgid "Svarbios datos"
 msgstr "Important dates"
 
-#, fuzzy
-#| msgid "Jūsų vardas, pavardė;"
 msgid "Vardas ir pavardė"
-msgstr "Your name, surname;"
+msgstr "Name and surname;"
 
-#, fuzzy
-#| msgid "Sukurta"
 msgid "Sukurtas"
 msgstr "Created"
 
-#, fuzzy
-#| msgid "Prisijungimas"
 msgid "Paskutinis prisijungimas"
-msgstr "Login"
+msgstr "Last login"
 
-#, fuzzy
-#| msgid "Pateikti naują panaudojimo atvejį"
 msgid "Sukurti naują naudotoją"
-msgstr "Submit a new use case"
+msgstr "Create a new user"
 
-#, fuzzy
-#| msgid "Narių sąrašas"
 msgid "Naudotojų sąrašas"
 msgstr "Members"
 
-#, fuzzy
-#| msgid "Redaguoti organizaciją"
 msgid "Redaguoti naudotoją"
-msgstr "Edit organization"
+msgstr "Edit user"
 
-#, fuzzy
-#| msgid "Naudotojas"
 msgid "Naudotojas \""
 msgstr "User"
 
-#, fuzzy
-#| msgid "Neteisingi prisijungimo duomenys"
 msgid "Vienkartinis prisijungimo kodas"
-msgstr "Incorrect login data"
+msgstr "Single use login code"
 
 msgid "Įveskite prisijungimo kodą."
 msgstr "Enter the login code."
@@ -4534,44 +4202,30 @@ msgstr "Surname can not be shorter than 3 symbols and can't have numbers"
 msgid "Turite sutikti su naudojimo sąlygomis"
 msgstr "You must agree to the terms of service"
 
-#, fuzzy
-#| msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
 msgid "Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"
 msgstr "User with this e-mail already exists"
 
-#, fuzzy
-#| msgid "Įveskite el. pašto adresą..."
 msgid "Įveskite tinkamą el. pašto adresą."
-msgstr "Your email address"
+msgstr "Insert a valid email address"
 
-#, fuzzy
-#| msgid "Elektroninis paštas"
 msgid "Elektroninis pašto adresas"
 msgstr "E-mail address"
 
-#, fuzzy
-#| msgid "Slaptažodžio atkūrimas"
 msgid "Slaptažodžio patvirtinimas"
-msgstr "Password reset"
+msgstr "Password confirmation"
 
 msgid "Patikrinimui įveskite tokį patį slaptažodį kaip anksčiau."
 msgstr "For verification, enter the same password as before."
 
-#, fuzzy
-#| msgid "Organizacijos teikėjas"
 msgid "Organizacijos ir rolės"
-msgstr "Organization manager"
+msgstr "Organizations and roles"
 
 msgid "Paskutinį kartą prisijungė"
 msgstr "Last logged in"
 
-#, fuzzy
-#| msgid "Atstatyti slaptažodį"
 msgid "Atnaujinti slaptažodį"
-msgstr "Reset password"
+msgstr "Renew password"
 
-#, fuzzy
-#| msgid "Pakartokite slaptažodį"
 msgid "Pakartoti slatažodį"
 msgstr "Repeat password"
 
@@ -4581,10 +4235,8 @@ msgstr "Change password"
 msgid "Atstatyti slaptažodį"
 msgstr "Reset password"
 
-#, fuzzy
-#| msgid "Naudotojas su tokiu el. pašto adresu neegzistuoja"
 msgid "Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"
-msgstr "User with this e-mail does not exist"
+msgstr "User with this e-mail does not exist or is inactive"
 
 msgid "Slaptažodžiai nesutampa. Pabandykite įvesti dar kartą."
 msgstr "Passwords do not match. Please try again."
@@ -4601,35 +4253,23 @@ msgstr "Confirm"
 msgid "Aktyvus"
 msgstr "Active"
 
-#, fuzzy
-#| msgid "Planuojama atverti"
 msgid "Laukiama patvirtinimo"
-msgstr "Planned to open"
+msgstr "Waiting for confirmation"
 
-#, fuzzy
-#| msgid "Suspenduoti"
 msgid "Suspenduotas"
-msgstr "Suspend"
+msgstr "Suspended"
 
-#, fuzzy
-#| msgid "Pašalinti"
 msgid "Pašalintas"
-msgstr "Delete"
-
-#, fuzzy
-#| msgid "Ištrinta"
-msgid "Užrakintas"
 msgstr "Deleted"
 
-#, fuzzy
-#| msgid "Naudotojai"
-msgid "Visi naudotojai"
-msgstr "Users"
+msgid "Užrakintas"
+msgstr "Locked"
 
-#, fuzzy
-#| msgid "API adresas"
+msgid "Visi naudotojai"
+msgstr "All users"
+
 msgid "IP adresas"
-msgstr "API address"
+msgstr "IP address"
 
 msgid "Naudotojų statistika"
 msgstr "User statistics"
@@ -4637,13 +4277,9 @@ msgstr "User statistics"
 msgid "Home"
 msgstr "Pagrindinis"
 
-#, fuzzy
-#| msgid "Naudotojas"
 msgid "Naujas naudotojas"
-msgstr "User"
+msgstr "New user"
 
-#, fuzzy
-#| msgid "Ištrinta"
 msgid "Ištrinti"
 msgstr "Deleted"
 
@@ -4657,10 +4293,8 @@ msgstr ""
 msgid "Grįžti atgal"
 msgstr "Go back"
 
-#, fuzzy
-#| msgid "Ar tikrai norite pašalinti"
 msgid "Ar tikrai norite pašalinti naudotoją?"
-msgstr "Are you sure you want to delete"
+msgstr "Are you sure you want to delete the user?"
 
 #, python-format
 msgid ""
@@ -4670,10 +4304,8 @@ msgstr ""
 "You are logged in as %(user)s, but you do not have permission to access this "
 "page. Would you like to log in with a different user?"
 
-#, fuzzy
-#| msgid "Įveskite el. pašto adresą..."
 msgid "Patvirtinkite el. pašto adresą"
-msgstr "Your email address"
+msgstr "Confirm your email address"
 
 #, python-format
 msgid ""
@@ -4792,10 +4424,8 @@ msgstr ""
 "We've sent you an email for confirmation. Follow the link in the email to "
 "complete the registration."
 
-#, fuzzy
-#| msgid "Slaptažodžio atstatymas"
 msgid "Slaptažodžio nustatymas"
-msgstr "Password reset"
+msgstr "Set password"
 
 msgid ""
 "Tam, kad pabaigti autentifikaciją per viisp ir sukurti naują vartotoją "
@@ -4878,10 +4508,8 @@ msgstr ""
 msgid "Pgp key content"
 msgstr ""
 
-#, fuzzy
-#| msgid "Prisijungti"
 msgid "Prisijungti nepavyko"
-msgstr "Login"
+msgstr "Login failed"
 
 msgid "Jūsų paskyra yra neaktyvi."
 msgstr "Your account is inactive."

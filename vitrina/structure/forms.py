@@ -758,7 +758,7 @@ class PropertyForm(forms.ModelForm):
         label=_("Kodinis pavadinimas"),
         help_text=_(
             "Duomenų lauko kodinis pavadinimas. "
-            "Galimi simboliai: lotyniškos raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
+            "Galimi simboliai: lotyniškos mažosios raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
         ),
     )
     type = forms.ChoiceField(

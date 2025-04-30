@@ -118,8 +118,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             )
         ],
         help_text=_(
-            "Kodinis pavadinimas yra neprivalomas duomenų rinkinio pavadinimas, "
-            "sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių."
+            "Kodinis pavadinimas yra neprivalomas (jei nepateiktas, sugeneruojamas automatiškai iš pavadinimo) duomenų rinkinio pavadinimas, sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių."
         ),
     )
 

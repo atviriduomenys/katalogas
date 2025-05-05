@@ -88,6 +88,42 @@ class DistributionFormat(models.Model):
         db_table = "distribution_format"
 
 
+class CompressionFormat(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    extension = models.CharField(_("Failo plėtinys"), max_length=255, blank=True, null=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
+    uri = models.CharField(
+        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
+
+    class Meta:
+        db_table = "compression_format"
+        verbose_name = _("Suspausto failo formatas")
+        verbose_name_plural = _("Suspausto failo formatai")
+
+    def __str__(self):
+        return self.title
+
+
+class PackagingFormat(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    extension = models.CharField(_("Failo plėtinys"), max_length=255, blank=True, null=True)
+    title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
+    uri = models.CharField(
+        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
+
+    class Meta:
+        db_table = "packaging_format"
+        verbose_name = _("Suspausto failų paketo formatas")
+        verbose_name_plural = _("Suspausto failų paketo formatai")
+
+    def __str__(self):
+        return self.title
+
+
 class DatasetDistribution(TranslatableModel):
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -115,6 +151,21 @@ class DatasetDistribution(TranslatableModel):
         blank=False,
         null=True,
         verbose_name=_("Duomenų formatas"),
+        related_name="format_distributions"
+    )
+    compression_format = models.ForeignKey(
+        CompressionFormat,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Suspausto failo formatas"),
+    )
+    packaging_format = models.ForeignKey(
+        PackagingFormat,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Suspausto failų paketo formatas"),
     )
 
     download_url = models.TextField(
@@ -217,8 +268,15 @@ class DatasetDistribution(TranslatableModel):
             return self.download_url
         elif self.file:
             return self.file.url
-        elif self.access_url:
+        return ""
+
+    def get_access_url(self):
+        if self.access_url:
             return self.access_url
+        elif self.dataset and self.dataset.landing_page:
+            return self.dataset.landing_page
+        elif download_url := self.get_download_url():
+            return download_url
         return ""
 
     def get_format(self):

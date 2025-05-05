@@ -10,7 +10,7 @@ from vitrina.resources.models import (
     DatasetDistribution,
     Format,
     GeoportalFormat,
-    GeoportalFormatValue,
+    GeoportalFormatValue, CompressionFormat, PackagingFormat,
 )
 
 
@@ -96,3 +96,19 @@ class GeoportalFormatValueFactory(DjangoModelFactory):
 
     geoportal_format = factory.SubFactory(GeoportalFormatFactory)
     value = factory.Faker("word")
+
+
+class CompressionFormatFactory(DjangoModelFactory):
+    class Meta:
+        model = CompressionFormat
+
+    title = factory.Faker("word")
+    extension = factory.Faker("word")
+
+
+class PackagingFormatFactory(DjangoModelFactory):
+    class Meta:
+        model = PackagingFormat
+
+    title = factory.Faker("word")
+    extension = factory.Faker("word")

@@ -20,10 +20,10 @@ from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
-    DatasetAttributionFactory, TypeFactory, DataServiceTypeFactory, DataServiceSpecTypeFactory, RelationFactory, \
+    DatasetAttributionFactory, TypeFactory, RelationFactory, \
     DatasetRelationFactory, ContactFactory
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type
+from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -31,7 +31,10 @@ from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
-from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.structure.factories import ModelFactory, MetadataFactory
+from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 
@@ -1750,8 +1753,8 @@ def test_dataset_with_type(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory()
     type = TypeFactory(name='service')
-    service_type = DataServiceTypeFactory()
-    service_spec_type = DataServiceSpecTypeFactory()
+    service_type = FileFormat()
+    service_spec_type = FileFormat()
 
     form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
     form['type'] = [type.pk]
@@ -2315,6 +2318,8 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
         ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF',
+         resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
         ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti']
     ]
@@ -2343,6 +2348,8 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
         ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'JSONL',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
+        ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'RDF',
+         resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
         ['', '-', 'TestModel', '2022-01-01', '2022-12-31', '-', 'CSV',
             resource.created.strftime('%Y-%m-%d'), resource.modified.strftime('%Y-%m-%d'), '', '', 'Atidaryti'],
         ['', '-', 'TestModel2', '2022-01-01', '2022-12-31', '-', 'CSV',
@@ -2879,3 +2886,664 @@ def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
     assert dataset.comments.first().status == Comment.INVENTORED
+
+
+@pytest.mark.django_db
+def test_dataset_landing_page(app: DjangoTestApp):
+    licence = LicenceFactory(is_default=True)
+    frequency = FrequencyFactory(is_default=True)
+    org = OrganizationFactory()
+    dataset = DatasetFactory(
+        licence=licence,
+        frequency=frequency,
+        organization=org
+    )
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
+    form['landing_page'] = 'https://example.com'
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': dataset.id})
+    assert dataset.landing_page == 'https://example.com'
+
+
+@pytest.mark.django_db
+def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
+    iana = 'http://www.iana.org/assignments'
+    po = 'http://publications.europa.eu/resource/authority'
+
+    dataset = DatasetFactory(
+        title={
+            'lt': 'Testas1',
+            'en': 'Test1',
+        },
+        description={
+            'lt': 'Duomenų rinkinio aprašymas.',
+            'en': 'Dataset description.',
+        },
+        published=datetime(2016, 8, 1),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
+        category=[
+            CategoryFactory(title='Energy'),
+            CategoryFactory(
+                title='Environment',
+                uri=f'{po}/data-theme/ENVI',
+            ),
+        ],
+        organization=OrganizationFactory(
+            title='Data Enterprise',
+            email='data@example.com',
+        ),
+        landing_page='https://landing-page.com'
+    )
+    dist1 = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Failas 1",
+        description="Failas su prieigos nuoroda",
+        format=FileFormat(
+            uri=f'{po}/file-type/CSV',
+            media_type_uri=f'{iana}/media-types/text/csv',
+        ),
+        access_url="https://access-url.com"
+    )
+    dist2 = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Failas 2",
+        description="Failas be prieigos nuorodos",
+        format=FileFormat(
+            uri=f'{po}/file-type/JSON',
+            media_type_uri=f'{iana}/media-types/application/json',
+        ),
+    )
+
+    res = app.get(reverse('dataset-rdf-download', args=[dataset.pk]))
+
+    assert res.status_code == 200
+    assert res.headers['Content-Type'] == 'application/rdf+xml'
+    assert strip_empty_lines(res.text) == f'''\
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="http://example.com"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
+    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+        <dct:title xml:lang="en">Test1</dct:title>
+        <dct:description xml:lang="en">Dataset description.</dct:description>
+        <dct:title xml:lang="lt">Testas1</dct:title>
+        <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
+        <dcat:theme>
+            <skos:Concept>
+                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
+            </skos:Concept>
+        </dcat:theme>
+        <dcat:theme>
+            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
+        </dcat:theme>
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>Data Enterprise</foaf:name>
+                <foaf:mbox rdf:resource="mailto:data@example.com"/>
+            </foaf:Organization>
+        </dct:publisher>
+        <dct:accrualPeriodicity>
+            <dct:Frequency rdf:about="http://publications.europa.eu/resource/authority/frequency/IRREG"/>
+        </dct:accrualPeriodicity>
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+        <dcat:landingPage rdf:resource="https://landing-page.com"/>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist1.id}">
+                <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
+                <dct:title xml:lang="lt">Failas 1</dct:title>
+                <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{dist1.access_url}"/>
+                <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/text/csv"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/CSV"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist2.id}">
+                <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
+                <dct:title xml:lang="lt">Failas 2</dct:title>
+                <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
+                <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+    </dcat:Dataset>
+</rdf:RDF>'''
+
+
+@pytest.mark.django_db
+def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
+    iana = 'http://www.iana.org/assignments'
+    po = 'http://publications.europa.eu/resource/authority'
+
+    dataset = DatasetFactory(
+        title={
+            'lt': 'Testas1',
+            'en': 'Test1',
+        },
+        description={
+            'lt': 'Duomenų rinkinio aprašymas.',
+            'en': 'Dataset description.',
+        },
+        published=datetime(2016, 8, 1),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
+        category=[
+            CategoryFactory(title='Energy'),
+            CategoryFactory(
+                title='Environment',
+                uri=f'{po}/data-theme/ENVI',
+            ),
+        ],
+        organization=OrganizationFactory(
+            title='Data Enterprise',
+            email='data@example.com',
+        ),
+    )
+    dist1 = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Failas 1",
+        description="Failas su prieigos nuoroda",
+        format=FileFormat(
+            uri=f'{po}/file-type/CSV',
+            media_type_uri=f'{iana}/media-types/text/csv',
+        ),
+        access_url="https://access-url.com"
+    )
+    dist2 = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Failas 2",
+        description="Failas be prieigos nuorodos",
+        format=FileFormat(
+            uri=f'{po}/file-type/JSON',
+            media_type_uri=f'{iana}/media-types/application/json',
+        ),
+    )
+
+    res = app.get(reverse('dataset-rdf-download', args=[dataset.pk]))
+
+    assert res.status_code == 200
+    assert res.headers['Content-Type'] == 'application/rdf+xml'
+    assert strip_empty_lines(res.text) == f'''\
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="http://example.com"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
+    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+        <dct:title xml:lang="en">Test1</dct:title>
+        <dct:description xml:lang="en">Dataset description.</dct:description>
+        <dct:title xml:lang="lt">Testas1</dct:title>
+        <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
+        <dcat:theme>
+            <skos:Concept>
+                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
+            </skos:Concept>
+        </dcat:theme>
+        <dcat:theme>
+            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
+        </dcat:theme>
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>Data Enterprise</foaf:name>
+                <foaf:mbox rdf:resource="mailto:data@example.com"/>
+            </foaf:Organization>
+        </dct:publisher>
+        <dct:accrualPeriodicity>
+            <dct:Frequency rdf:about="http://publications.europa.eu/resource/authority/frequency/IRREG"/>
+        </dct:accrualPeriodicity>
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist1.id}">
+                <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
+                <dct:title xml:lang="lt">Failas 1</dct:title>
+                <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{dist1.access_url}"/>
+                <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/text/csv"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/CSV"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist2.id}">
+                <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
+                <dct:title xml:lang="lt">Failas 2</dct:title>
+                <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+    </dcat:Dataset>
+</rdf:RDF>'''
+
+
+@pytest.mark.django_db
+def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
+    iana = 'http://www.iana.org/assignments'
+    po = 'http://publications.europa.eu/resource/authority'
+
+    dataset = DatasetFactory(
+        title={
+            'lt': 'Testas1',
+            'en': 'Test1',
+        },
+        description={
+            'lt': 'Duomenų rinkinio aprašymas.',
+            'en': 'Dataset description.',
+        },
+        published=datetime(2016, 8, 1),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
+        category=[
+            CategoryFactory(title='Energy'),
+            CategoryFactory(
+                title='Environment',
+                uri=f'{po}/data-theme/ENVI',
+            ),
+        ],
+        organization=OrganizationFactory(
+            title='Data Enterprise',
+            email='data@example.com',
+        ),
+    )
+    data_service = DatasetFactory(service=True)
+    dist = DatasetDistributionFactory(
+        dataset=dataset,
+        title="Duomenys",
+        description="Duomenys iš spintos",
+        format=FileFormat(
+            title='Saugyklos API',
+            extension='UAPI'
+        ),
+        uapi_format=True,
+        data_service=data_service
+    )
+    model = ModelFactory(
+        dataset=dataset,
+        distribution=dist
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    FileFormat(
+        title="JSON",
+        extension="JSON",
+        uri=f'{po}/file-type/JSON',
+        media_type_uri=f'{iana}/media-types/application/json',
+    ),
+    FileFormat(
+        title="JSONL",
+        extension="JSONL",
+        uri=f'{po}/file-type/JSONL',
+        media_type_uri=f'{iana}/media-types/application/jsonl',
+    ),
+    FileFormat(
+        title="CSV",
+        extension="CSV",
+        uri=f'{po}/file-type/CSV',
+        media_type_uri=f'{iana}/media-types/application/csv',
+    ),
+    FileFormat(
+        title="RDF",
+        extension="RDF",
+        uri=f'{po}/file-type/RDF',
+        media_type_uri=f'{iana}/media-types/application/rdf',
+    ),
+
+    res = app.get(reverse('dataset-rdf-download', args=[dataset.pk]))
+
+    assert res.status_code == 200
+    assert res.headers['Content-Type'] == 'application/rdf+xml'
+    assert strip_empty_lines(res.text) == f'''\
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="http://example.com"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
+    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+        <dct:title xml:lang="en">Test1</dct:title>
+        <dct:description xml:lang="en">Dataset description.</dct:description>
+        <dct:title xml:lang="lt">Testas1</dct:title>
+        <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
+        <dcat:theme>
+            <skos:Concept>
+                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
+            </skos:Concept>
+        </dcat:theme>
+        <dcat:theme>
+            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
+        </dcat:theme>
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>Data Enterprise</foaf:name>
+                <foaf:mbox rdf:resource="mailto:data@example.com"/>
+            </foaf:Organization>
+        </dct:publisher>
+        <dct:accrualPeriodicity>
+            <dct:Frequency rdf:about="http://publications.europa.eu/resource/authority/frequency/IRREG"/>
+        </dct:accrualPeriodicity>
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/json">
+                <dct:type rdf:resource="URL"/>
+                <dct:title xml:lang="lt">Duomenys</dct:title>
+                <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
+                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/jsonl">
+                <dct:type rdf:resource="URL"/>
+                <dct:title xml:lang="lt">Duomenys</dct:title>
+                <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
+                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/jsonl"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSONL"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/rdf">
+                <dct:type rdf:resource="URL"/>
+                <dct:title xml:lang="lt">Duomenys</dct:title>
+                <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
+                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/rdf"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/RDF"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+        <dcat:distribution>
+            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/TestModel/csv">
+                <dct:type rdf:resource="URL"/>
+                <dct:title xml:lang="lt">Duomenys</dct:title>
+                <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
+                <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
+                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
+                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dct:rights>
+                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                </dct:rights>
+                <dct:license>
+                    <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
+                </dct:license>
+                <dcat:mediaType>
+                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/csv"/>
+                </dcat:mediaType>
+                <dct:format>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/CSV"/>
+                </dct:format>
+            </dcat:Distribution>
+        </dcat:distribution>
+    </dcat:Dataset>
+</rdf:RDF>'''
+
+
+@pytest.mark.django_db
+def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
+    iana = 'http://www.iana.org/assignments'
+    po = 'http://publications.europa.eu/resource/authority'
+
+    dataset = DatasetFactory(
+        title={
+            'lt': 'Testas1',
+            'en': 'Test1',
+        },
+        description={
+            'lt': 'Duomenų rinkinio aprašymas.',
+            'en': 'Dataset description.',
+        },
+        published=datetime(2016, 8, 1),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
+        category=[
+            CategoryFactory(title='Energy'),
+            CategoryFactory(
+                title='Environment',
+                uri=f'{po}/data-theme/ENVI',
+            ),
+        ],
+        organization=OrganizationFactory(
+            title='Data Enterprise',
+            email='data@example.com',
+        ),
+        service=True,
+        endpoint_url='https://endpoint-url.com',
+        endpoint_type=FileFormat(
+            uri=f'{po}/file-type/WMS',
+            media_type_uri=f'{iana}/media-types/application/wms',
+        ),
+        endpoint_description='https://endpoint-description.com',
+    )
+    service_type = TypeFactory(name=Type.SERVICE)
+    dataset.type.add(service_type)
+    relation = DatasetRelationFactory(
+        part_of=dataset,
+        relation=RelationFactory(name=Relation.SERVICE)
+    )
+    relation.dataset.part_of.add(relation)
+
+    res = app.get(reverse('dataset-rdf-download', args=[dataset.pk]))
+
+    assert res.status_code == 200
+    assert res.headers['Content-Type'] == 'application/rdf+xml'
+    assert strip_empty_lines(res.text) == f'''\
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="http://example.com"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
+    <dcat:DataService rdf:about="http://example.com/datasets/{dataset.id}/">
+        <dct:title xml:lang="en">Test1</dct:title>
+        <dct:description xml:lang="en">Dataset description.</dct:description>
+        <dct:title xml:lang="lt">Testas1</dct:title>
+        <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
+        <dcat:theme>
+            <skos:Concept>
+                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
+            </skos:Concept>
+        </dcat:theme>
+        <dcat:theme>
+            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
+        </dcat:theme>
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>Data Enterprise</foaf:name>
+                <foaf:mbox rdf:resource="mailto:data@example.com"/>
+            </foaf:Organization>
+        </dct:publisher>
+        <dct:accrualPeriodicity>
+            <dct:Frequency rdf:about="http://publications.europa.eu/resource/authority/frequency/IRREG"/>
+        </dct:accrualPeriodicity>
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+        <dcat:endpointURL rdf:resource="https://endpoint-url.com"/>
+        <dct:format>
+            <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/WMS"/>
+        </dct:format>
+        <dcat:endpointDescription rdf:resource="https://endpoint-description.com"/>
+        <dcat:servesDataset>
+            <dcat:Dataset rdf:about="http://example.com/datasets/{relation.dataset.pk}/" />
+        </dcat:servesDataset>
+    </dcat:DataService>
+</rdf:RDF>'''

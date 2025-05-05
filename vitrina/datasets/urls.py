@@ -57,6 +57,7 @@ from vitrina.datasets.views import (
     DatasetsPublishersView,
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
+    DatasetRDFDownloadView,
 )
 
 urlpatterns = [
@@ -171,6 +172,7 @@ urlpatterns = [
         DatasetDistributionPreviewView.as_view(),
         name="dataset-distribution-preview",
     ),
+    path("datasets/<int:pk>/dcat-ap.rdf", DatasetRDFDownloadView.as_view(), name="dataset-rdf-download"),
     path(
         "datasets/<int:pk>/structure/import/",
         DatasetStructureImportView.as_view(),

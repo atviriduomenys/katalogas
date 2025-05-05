@@ -22,14 +22,11 @@ from vitrina.datasets.models import (
     Dataset,
     DatasetGroup,
     Attribution,
-    DataServiceType,
-    DataServiceSpecType,
     Type,
     Relation,
     DatasetReport,
     Contact,
     GeoportalDataServiceTypeValue,
-    GeoportalDataServiceType,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -51,14 +48,6 @@ class DatasetAdmin(TranslatableAdmin, VersionAdmin):
 
 
 class GroupAdmin(TranslatableAdmin):
-    list_display = ("title",)
-
-
-class DataServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ("title",)
-
-
-class DataServiceSpecTypeAdmin(admin.ModelAdmin):
     list_display = ("title",)
 
 
@@ -496,32 +485,12 @@ class GeoportalDataServiceTypeValueInline(admin.TabularInline):
     extra = 0
 
 
-class GeoportalDataServiceTypeAdmin(admin.ModelAdmin):
-    inlines = [GeoportalDataServiceTypeValueInline]
-    list_display = (
-        "data_service_type",
-        "values_display",
-    )
-
-    def values_display(self, obj):
-        return mark_safe(
-            "<br/>".join(
-                [item.value for item in obj.geoportaldataservicetypevalue_set.all()]
-            )
-        )
-
-    values_display.short_description = _("Geoportalo reikšmės")
-
-
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
-admin.site.register(DataServiceType, DataServiceTypeAdmin)
-admin.site.register(DataServiceSpecType, DataServiceSpecTypeAdmin)
 admin.site.register(Type, TypeAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
 admin.site.register(Contact, ContactAdmin)
-admin.site.register(GeoportalDataServiceType, GeoportalDataServiceTypeAdmin)
 
 tagulous.admin.register(Dataset.tags)

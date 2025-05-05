@@ -1,4 +1,3 @@
-import requests
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import DateField
@@ -82,6 +81,8 @@ class DatasetResourceForm(TranslatableModelForm):
             "period_end",
             "access_url",
             "format",
+            "compression_format",
+            "packaging_format",
             "data_service",
             "download_url",
             "file",
@@ -117,11 +118,13 @@ class DatasetResourceForm(TranslatableModelForm):
             ),
             Field("access_url"),
             Field("format"),
+            Field("compression_format"),
+            Field("packaging_format"),
+            Field("file", placeholder=_("Šaltinio failas")),
             Field("download_url"),
             Field("imported"),
             Field("data_service"),
             Field("upload_to_storage"),
-            Field("file", placeholder=_("Šaltinio failas")),
             Submit("submit", button, css_class="button is-primary"),
         )
 
@@ -135,6 +138,7 @@ class DatasetResourceForm(TranslatableModelForm):
     def clean(self):
         file = self.cleaned_data.get("file")
         url = self.cleaned_data.get("download_url")
+        access_url = self.cleaned_data.get("access_url")
         upload = self.cleaned_data.get("upload_to_storage")
 
         if file and url:
@@ -144,62 +148,11 @@ class DatasetResourceForm(TranslatableModelForm):
                     "įkelkit failą, ne abu."
                 )
             )
-        if not file and not url:
-            self.add_error("download_url", _("Pateikite duomenų atsisiuntimo nuorodą."))
+
+        if not file and not url and not access_url:
+            self.add_error("access_url", _("Pateikite duomenų prieigos nuorodą."))
+            self.add_error("download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą."))
             self.add_error("file", _("Arba įkelkite duomenų failą."))
-
-        fmt = self.cleaned_data.get("format")
-        if fmt:
-            fmt_extension = fmt.extension.upper().strip()
-            if not file and url:
-                url_extension = url.split(".")
-                url_extension = (
-                    url_extension[-1].upper().strip() if url_extension else None
-                )
-
-                if url_extension != fmt_extension and fmt_extension not in [
-                    "URL",
-                    "API",
-                    "UAPI",
-                ]:
-                    content_type = ""
-                    try:
-                        if not url.startswith(("http://", "https://")):
-                            self.add_error(
-                                "download_url", _("Pateikta nuoroda yra neteisinga.")
-                            )
-                        else:
-                            try:
-                                response = requests.head(url)
-                                content_type = (
-                                    response.headers.get("Content-Type", "")
-                                    .upper()
-                                    .strip()
-                                )
-                            except requests.RequestException:
-                                self.add_error(
-                                    "download_url",
-                                    _("Pateikta nuoroda yra neteisinga."),
-                                )
-
-                        if fmt_extension not in content_type:
-                            self.add_error(
-                                "format",
-                                _(
-                                    "Formatas nesutampa su įkelto failo ar nuorodos formatu."
-                                ),
-                            )
-                    except requests.RequestException:
-                        self.add_error(
-                            "download_url", _("Pateikta nuoroda yra neteisinga.")
-                        )
-            elif not url and file:
-                file_extension = file.extension.upper().strip()
-                if fmt_extension != file_extension:
-                    self.add_error(
-                        "format",
-                        _("Formatas nesutampa su įkelto failo ar nuorodos formatu."),
-                    )
 
         if url and "get.data.gov.lt" in url and not upload:
             self.cleaned_data["upload_to_storage"] = True

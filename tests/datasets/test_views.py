@@ -32,6 +32,7 @@ from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
@@ -3347,8 +3348,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="https://get.data.gov.lt/test/dataset"/>
-                <dcat:downloadURL rdf:resource="https://get.data.gov.lt/test/dataset/:all/:format/json"/>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
                 <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -3371,8 +3372,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="https://get.data.gov.lt/test/dataset"/>
-                <dcat:downloadURL rdf:resource="https://get.data.gov.lt/test/dataset/:all/:format/jsonl"/>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
                 <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -3395,8 +3396,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="https://get.data.gov.lt/test/dataset"/>
-                <dcat:downloadURL rdf:resource="https://get.data.gov.lt/test/dataset/:all/:format/rdf"/>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
                 <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -3419,8 +3420,8 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="https://get.data.gov.lt/test/dataset"/>
-                <dcat:downloadURL rdf:resource="https://get.data.gov.lt/test/dataset/TestModel/:format/csv"/>
+                <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
+                <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
                 <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>

@@ -63,6 +63,20 @@
                     </a>
                 </div>
             {% endif %}
+            <div class="field has-addons has-addons-right">
+              <p class="control">
+                <a class="button" href="{% url 'dataset-rdf-download' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="downlaod_dataset_rdf">
+                  {% translate "Atsisiųsti" %}
+                </a>
+              </p>
+              <p class="control">
+                <span class="select">
+                  <select aria-label="{% translate 'Atsisiuntimo formatas' %}">
+                      <option value="RDF">RDF</option>
+                  </select>
+                </span>
+              </p>
+            </div>
 
             <div class="content">
                 <p class="no-margin-bottom">

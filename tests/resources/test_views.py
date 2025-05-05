@@ -7,7 +7,8 @@ from webtest import Upload
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, CompressionFormatFactory, \
+    PackagingFormatFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory
@@ -216,38 +217,6 @@ def test_create_resource_without_name(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_create_resource_with_file_and_wrong_format(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    dataset = DatasetFactory()
-    format = FileFormat(extension='URL')
-    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
-    form['title'] = 'New resource'
-    form['format'] = format.pk
-    form['file'] = Upload('test.csv', b'Column\nValue')
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[
-        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
-    ]]
-
-
-@pytest.mark.django_db
-def test_create_resource_with_download_url_and_wrong_format(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    dataset = DatasetFactory()
-    format = FileFormat(extension='CSV')
-    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
-    form['title'] = 'New resource'
-    form['format'] = format.pk
-    form['download_url'] = "www.test.com"
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[
-        'Formatas nesutampa su įkelto failo ar nuorodos formatu.'
-    ]]
-
-
-@pytest.mark.django_db
 def test_create_resource_with_existing_download_url(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -291,6 +260,7 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
     app.set_user(user)
     response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]))
     assert response.context['object'] == resource
+
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
@@ -506,3 +476,65 @@ def test_update_distribution__existing_translation(app: DjangoTestApp):
     distribution.set_current_language("en")
     assert distribution.title == "Title"
     assert distribution.description == "Description"
+
+
+@pytest.mark.django_db
+def test_distribution_with_compression_and_packaging_formats(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    file_format = FileFormat()
+    compression_format = CompressionFormatFactory()
+    packaging_format = PackagingFormatFactory()
+
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = file_format.pk
+    form['download_url'] = "http://www.test.com"
+    form['compression_format'] = compression_format.pk
+    form['packaging_format'] = packaging_format.pk
+    form.submit()
+
+    assert DatasetDistribution.objects.count() == 1
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.compression_format == compression_format
+    assert distribution.packaging_format == packaging_format
+
+
+@pytest.mark.django_db
+def test_create_distribution_without_access_download_urls_and_file(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    file_format = FileFormat()
+
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['title'] = 'New resource'
+    form['format'] = file_format.pk
+    resp = form.submit()
+
+    assert len(resp.context['form'].errors) == 3
+    assert resp.context['form'].errors['access_url'] == ['Pateikite duomenų prieigos nuorodą.']
+    assert resp.context['form'].errors['download_url'] == ['Arba pateikite duomenų atsisiuntimo nuorodą.']
+    assert resp.context['form'].errors['file'] == ['Arba įkelkite duomenų failą.']
+
+
+@pytest.mark.django_db
+def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True)
+    resource = DatasetDistributionFactory(uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form['name'] = "TestModel"
+    form.submit()
+    assert resource.model_set.first().name == 'TestModel'
+
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "rdf"]))
+    assert response.status_code == 200
+    assert response.context['resource']['title'] == "TestModel"
+    assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/rdf'
+    assert list(response.context['resource']['models']) == list(resource.model_set.all())
+    assert response.context['format'] == 'RDF'
+    assert response.context['resource']['dataset'] == dataset

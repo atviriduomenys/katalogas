@@ -32,6 +32,8 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.core.exceptions import ObjectDoesNotExist
+
+from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.datasets.helpers import is_manager_dataset_list
 from django.http.response import HttpResponsePermanentRedirect
 
@@ -563,6 +565,26 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         dataset.delete()
         return HttpResponseRedirect(self.get_success_url())
+
+
+class DatasetRDFDownloadView(PermissionRequiredMixin, View):
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
+        if dataset.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, dataset)
+
+    def get(self, request, **kwargs):
+        dataset = Dataset.objects.filter(pk=kwargs.get('pk'))
+        return render(
+            request,
+            "vitrina/api/edp/dcat_ap_rdf.html",
+            {
+                "datasets": get_datasets_for_rdf(dataset),
+            },
+            content_type="application/rdf+xml",
+        )
 
 
 class OpenDataPortalDatasetDetailView(View):

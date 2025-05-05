@@ -134,6 +134,12 @@
             {% endif %}
         </td>
     </tr>
+    {% if dataset.landing_page %}
+    <tr>
+        <th>{% translate "Prieigos nuoroda" %}</th>
+        <td><a href="dataset.landing_page">{{ dataset.landing_page|truncatechars:50 }}</a></td>
+    </tr>
+    {% endif %}
     {% if dataset.service %}
         <tr>
             <th>{% translate "API adresas" %}</th>

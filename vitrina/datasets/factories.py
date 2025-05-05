@@ -16,14 +16,10 @@ from vitrina.datasets.models import (
     DatasetGroup,
     Type,
     Relation,
-    DataServiceType,
-    DataServiceSpecType,
     DatasetRelation,
     Attribution,
     DatasetAttribution,
     Contact,
-    GeoportalDataServiceType,
-    GeoportalDataServiceTypeValue,
 )
 
 MANIFEST = """\
@@ -207,20 +203,6 @@ class DatasetRelationFactory(DjangoModelFactory):
     relation = factory.SubFactory(RelationFactory)
 
 
-class DataServiceTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = DataServiceType
-
-    title = factory.Faker("word")
-
-
-class DataServiceSpecTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = DataServiceSpecType
-
-    title = factory.Faker("word")
-
-
 class ContactFactory(DjangoModelFactory):
     class Meta:
         model = Contact
@@ -232,18 +214,3 @@ class ContactFactory(DjangoModelFactory):
         lambda o: ContentType.objects.get_for_model(o.organization)
     )
     object_id = factory.SelfAttribute("organization.id")
-
-
-class GeoportalDataServiceTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = GeoportalDataServiceType
-
-    data_service_type = factory.SubFactory(DataServiceTypeFactory)
-
-
-class GeoportalDataServiceTypeValueFactory(DjangoModelFactory):
-    class Meta:
-        model = GeoportalDataServiceTypeValue
-
-    geoportal_data_service_type = factory.SubFactory(GeoportalDataServiceTypeFactory)
-    value = factory.Faker("word")

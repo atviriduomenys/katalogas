@@ -12,8 +12,7 @@ from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, Cate
     GeoportalFrequencyFactory, GeoportalLicenceFactory, GeoportalAccessRightsFactory
 from vitrina.classifiers.models import GeoportalCategory, GeoportalAccessRights
 from vitrina.comments.models import Comment
-from vitrina.datasets.factories import DatasetFactory, DataServiceTypeFactory, GeoportalDataServiceTypeFactory, \
-    GeoportalDataServiceTypeValueFactory, RelationFactory
+from vitrina.datasets.factories import DatasetFactory, RelationFactory
 from vitrina.datasets.models import Dataset, Relation
 from vitrina.messages.factories import SubscriptionFactory
 from vitrina.messages.models import Subscription
@@ -1000,9 +999,7 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1113,9 +1110,7 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1185,9 +1180,7 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV, JSON</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV, JSON</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1257,9 +1250,7 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1324,9 +1315,7 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1388,9 +1377,7 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1455,9 +1442,7 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1534,9 +1519,7 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>CSV, JSON</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>CSV, JSON</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1570,9 +1553,9 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
 
 @pytest.mark.django_db
 def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
-    service_type = DataServiceTypeFactory(title="WMS")
-    geo_service_type = GeoportalDataServiceTypeFactory(data_service_type=service_type)
-    GeoportalDataServiceTypeValueFactory(geoportal_data_service_type=geo_service_type, value="wms")
+    service_type = FileFormat(title="WMS")
+    geo_service_type = GeoportalFormatFactory(format=service_type)
+    GeoportalFormatValueFactory(geoportal_format=geo_service_type, value="wms")
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -1607,9 +1590,7 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>WMS</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>WMS</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1731,9 +1712,7 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>WMS</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>WMS</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1766,9 +1745,9 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
 
 @pytest.mark.django_db
 def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
-    service_type = DataServiceTypeFactory(title="WMS")
-    geo_service_type = GeoportalDataServiceTypeFactory(data_service_type=service_type)
-    GeoportalDataServiceTypeValueFactory(geoportal_data_service_type=geo_service_type, value="wms")
+    service_type = FileFormat(title="WMS")
+    geo_service_type = GeoportalFormatFactory(format=service_type)
+    GeoportalFormatValueFactory(geoportal_format=geo_service_type, value="wms")
 
     dataset = DatasetFactory(
         geoportal_id="1",
@@ -1809,9 +1788,7 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>WMS</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>WMS</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1841,9 +1818,9 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
-    service_type = DataServiceTypeFactory(title="WMS")
-    geo_service_type = GeoportalDataServiceTypeFactory(data_service_type=service_type)
-    GeoportalDataServiceTypeValueFactory(geoportal_data_service_type=geo_service_type, value="wms")
+    service_type = FileFormat(title="WMS")
+    geo_service_type = GeoportalFormatFactory(format=service_type)
+    GeoportalFormatValueFactory(geoportal_format=geo_service_type, value="wms")
 
     dataset = DatasetFactory(
         geoportal_id="1",
@@ -1883,9 +1860,7 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                  <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>WMS</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>WMS</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>
@@ -1951,9 +1926,7 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
             </gmd:identificationInfo>
             <gmd:distributionInfo>
                 <gmd:distributionFormat>
-                    <gmd:name>
-                        <gco:CharacterString>WMS</gco:CharacterString>
-                    </gmd:name>
+                    <gmd:MD_Format_GC>WMS</gmd:MD_Format_GC>
                 </gmd:distributionFormat>
                 <gmd:transferOptions>
                     <gmd:CI_OnlineResource>

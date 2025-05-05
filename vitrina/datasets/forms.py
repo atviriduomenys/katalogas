@@ -146,6 +146,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "creator",
             "publisher",
             "managed_by_publisher",
+            'landing_page',
         )
         labels = {"tags": _("Žymės"), "catalog": _("Katalogas")}
 
@@ -166,6 +167,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
             Field("catalog"),
             Field("licence"),
             Field("frequency"),

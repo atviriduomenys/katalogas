@@ -76,6 +76,18 @@
                                     <th>{% translate "Formatas" %}</th>
                                     <td>{{ resource.get_format|default:"" }}</td>
                                 </tr>
+                                {% if resource.compression_format %}
+                                <tr>
+                                    <th>{% translate "Suspausto failo formatas" %}</th>
+                                    <td>{{ resource.compression_format }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if resource.packaging_format %}
+                                <tr>
+                                    <th>{% translate "Suspausto failų paketo formatas" %}</th>
+                                    <td>{{ resource.packaging_format }}</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <th>{% translate "Publikuota" %}</th>
                                     <td>{{  resource.created|default:""|date:"SHORT_DATE_FORMAT" }}</td>

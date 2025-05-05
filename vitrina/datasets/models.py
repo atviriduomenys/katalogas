@@ -221,6 +221,7 @@ class Dataset(TranslatableModel):
         null=True,
         verbose_name=_('Duomenų atvėrimo paslaugų teikėjas'),
     )
+    landing_page = models.URLField(_("Prieigos nuoroda"), max_length=1024, null=True, blank=True)
 
     # DCAT 3 fields
     part_of = models.ManyToManyField(
@@ -234,21 +235,23 @@ class Dataset(TranslatableModel):
         _("API adresas"), null=True, blank=True, max_length=512
     )
     endpoint_type = models.ForeignKey(
-        "DataServiceType",
+        "vitrina_resources.Format",
         on_delete=models.SET_NULL,
         verbose_name=_("API formatas"),
         null=True,
         blank=True,
+        related_name="format_endpoint_types"
     )
     endpoint_description = models.URLField(
         _("API specifikacija"), null=True, blank=True
     )
     endpoint_description_type = models.ForeignKey(
-        "DataServiceSpecType",
+        "vitrina_resources.Format",
         on_delete=models.SET_NULL,
         verbose_name=_("API specifikacijos formatas"),
         null=True,
         blank=True,
+        related_name="format_endpoint_description_types"
     )
     service = models.BooleanField(_("DataService rinkinys"), default=False)
     series = models.BooleanField(_("DataSeries rinkinys"), default=False)

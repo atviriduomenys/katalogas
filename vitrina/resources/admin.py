@@ -3,7 +3,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.resources.forms import FormatAdminForm
-from vitrina.resources.models import Format, GeoportalFormat, GeoportalFormatValue
+from vitrina.resources.models import Format, GeoportalFormat, GeoportalFormatValue, CompressionFormat, PackagingFormat
 
 
 class FormatAdmin(admin.ModelAdmin):
@@ -30,5 +30,23 @@ class GeoportalFormatAdmin(admin.ModelAdmin):
     values_display.short_description = _("Geoportalo reikšmės")
 
 
+class CompressionFormatAdmin(admin.ModelAdmin):
+    fields = (
+        "title",
+        "extension",
+        "uri"
+    )
+
+
+class PackagingFormatAdmin(admin.ModelAdmin):
+    fields = (
+        "title",
+        "extension",
+        "uri"
+    )
+
+
 admin.site.register(Format, FormatAdmin)
 admin.site.register(GeoportalFormat, GeoportalFormatAdmin)
+admin.site.register(CompressionFormat, CompressionFormatAdmin)
+admin.site.register(PackagingFormat, PackagingFormatAdmin)

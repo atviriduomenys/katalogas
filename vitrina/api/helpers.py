@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vitrina.datasets.models import Dataset, Contact
+from vitrina.datasets.models import Dataset, Contact, Relation, DatasetRelation
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
 from vitrina.resources.models import Format
@@ -61,11 +61,16 @@ def get_datasets_for_rdf(qs):
             "licence": _get_licence(dataset.licence),
             "distributions": distributions,
             "contact": _get_contact_email(dataset),
+            "landing_page": dataset.landing_page,
             "service": dataset.service,
             "endpoint_url": dataset.endpoint_url,
-            "endpoint_type": dataset.endpoint_type,
+            "endpoint_type": _get_format(dataset.endpoint_type),
             "endpoint_description": dataset.endpoint_description,
-            "endpoint_description_type": dataset.endpoint_description_type
+            "endpoint_description_type": dataset.endpoint_description_type,
+            "related_datasets": (
+                _get_rel_dataset(relation)
+                for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)
+            ),
         }
 
 
@@ -94,9 +99,13 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
                 "description": dist.description,
             },
         ],
-        "access_url": dist.get_download_url(),
+        "download_url": dist.get_download_url(),
+        "access_url": dist.get_access_url(),
+        "access_service": dist.data_service.get_absolute_url() if dist.data_service else None,
         "licence": _get_licence(dataset.licence),
         "format": _get_format(dist.format),
+        "compression_format": _get_format(dist.compression_format),
+        "packaging_format": _get_format(dist.packaging_format),
         "media_type": _get_media_type(dist.format),
         "created": dist.created,
         "modified": dist.modified,
@@ -125,6 +134,12 @@ def _get_category(category: Category):
                 "title": category.title,
             },
         ],
+    }
+
+
+def _get_rel_dataset(relation: DatasetRelation):
+    return {
+        "uri": relation.dataset.get_absolute_url(),
     }
 
 

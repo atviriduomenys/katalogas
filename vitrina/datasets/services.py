@@ -352,6 +352,7 @@ class DynamicResourceService:
     JSON_FORMAT = "JSON"
     JSONL_FORMAT = "JSONL"
     CSV_FORMAT = "CSV"
+    RDF_FORMAT = "RDF"
 
     def __init__(self, dataset):
         self.dataset: Dataset = dataset
@@ -373,6 +374,7 @@ class DynamicResourceService:
         return [
             self._create_distribution(models, self.JSON_FORMAT, is_for_rdf_export),
             self._create_distribution(models, self.JSONL_FORMAT, is_for_rdf_export),
+            self._create_distribution(models, self.RDF_FORMAT, is_for_rdf_export),
             *self._create_csv_distributions(models, is_for_rdf_export),
         ]
 
@@ -388,7 +390,7 @@ class DynamicResourceService:
             )
             format_media_type = (
                 Format.objects.filter(title=distribution_format)
-                .values_list("uri", flat=True)
+                .values_list("media_type_uri", flat=True)
                 .first()
             )
             return {
@@ -409,7 +411,11 @@ class DynamicResourceService:
                     },
                 ],
                 "type": self.uapi_distribution.type,
-                "access_url": download_url,
+                "download_url": download_url,
+                "access_url": self._generate_access_url(models),
+                "access_service": self.uapi_distribution.data_service.get_absolute_url()
+                if self.uapi_distribution.data_service
+                else None,
                 "licence": self.dataset.licence
                 if self.dataset.licence and self.dataset.licence.url
                 else None,
@@ -450,10 +456,18 @@ class DynamicResourceService:
             for model in models
         ]
 
+    def _generate_access_url(self, models):
+        if self.uapi_distribution.access_url:
+            return self.uapi_distribution.access_url
+        if models:
+            return f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
+        return ""
+
     def _generate_download_url(self, models, distribution_format):
         if (
             distribution_format == self.JSON_FORMAT
             or distribution_format == self.JSONL_FORMAT
+            or distribution_format == self.RDF_FORMAT
         ):
             base_url = (
                 f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
@@ -474,7 +488,7 @@ class DynamicResourceService:
         dataset = Dataset.objects.get(pk=dataset_pk)
         models = dataset.model_set.all()
 
-        if distribution_format in [self.JSON_FORMAT, self.JSONL_FORMAT]:
+        if distribution_format in [self.JSON_FORMAT, self.JSONL_FORMAT, self.RDF_FORMAT]:
             full_name_parts = (
                 models[0].full_name
                 if "/" not in models[0].full_name

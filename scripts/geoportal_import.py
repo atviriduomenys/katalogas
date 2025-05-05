@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset, Type, GeoportalDataServiceTypeValue, Relation, DatasetRelation
+from vitrina.datasets.models import Dataset, Type, Relation, DatasetRelation
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
@@ -310,18 +310,17 @@ def main():
                 distribution_info = _get_elem(".//{%s}distributionInfo" % gmd, xml)
 
                 distribution_format = _get_elem(".//{%s}distributionFormat" % gmd, distribution_info)
-                distribution_format = _get_elem(".//{%s}name" % gmd, distribution_format)
-                distribution_format = _get_elem(".//{%s}CharacterString" % gco, distribution_format)
+                distribution_format = _get_elem(".//{%s}MD_Format_GC" % gmd, distribution_format)
 
                 if dataset.service:
                     if data_url and data_url != "-" and dataset.endpoint_url != data_url:
                         changed = True
                         dataset.endpoint_url = data_url
                     if distribution_format is not None and distribution_format.text != "-":
-                        if endpoint_type := GeoportalDataServiceTypeValue.objects.filter(
+                        if endpoint_type := GeoportalFormatValue.objects.filter(
                             value__iexact=distribution_format.text
                         ).first():
-                            endpoint_type = endpoint_type.geoportal_data_service_type.data_service_type
+                            endpoint_type = endpoint_type.geoportal_format.format
                             if endpoint_type and endpoint_type != dataset.endpoint_type:
                                 changed = True
                                 dataset.endpoint_type = endpoint_type
@@ -478,6 +477,8 @@ def main():
                                 'url': dataset_url
                             }
                         )
+                        print(title)
+                        print(description)
 
                 # inform subscribers
                 organization_subs = Subscription.objects.none()

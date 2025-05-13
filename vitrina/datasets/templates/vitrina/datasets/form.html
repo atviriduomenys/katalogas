@@ -28,6 +28,16 @@
     </style>
 {% endblock %}
 
+{% block content %}
+  <div class="notification is-info">
+    <p>
+        {% translate "Šioje formoje aprašome konceptualųjį duomenų rinkinį, nepriklausomai nuo to, kaip fiziškai pateikiami patys duomenys.<br><br>Duomenų rinkinio duomenis teikia organizacija, vienu ar keliais skirtingais formatais.<br><br>Skirtingos duomenų rinkinio pateiktys (angl. distributions), turi būti vienodo turinio, pateikiant vienodą kiekį ir tų pačių objektų, tačiau skirtingose pateiktyse objektai gali būti pateikiami skirtinga forma, formatu, gali būti pateikiami vertimai į skirtingas kalbas.<br><br>Duomenų rinkinys apibūdina duomenyse pateikiamų objektų aibę, o ne duomenų pateikimo formą." %}
+    </p>
+  </div>
+
+  {{ block.super }}
+{% endblock %}
+
 {% block scripts %}
     <script>
         $(document).ready(function() {

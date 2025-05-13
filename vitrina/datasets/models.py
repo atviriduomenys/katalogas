@@ -143,26 +143,21 @@ class Dataset(TranslatableModel):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField(
-        default=1,
-        help_text=_("Duomenų rinkinio versijos identifikavimas (pavadinimas arba identifikatorius)."),
-    )
+    version = models.IntegerField(default=1)  # TODO: Deprecated, versioning is done w/ django-reversion
     slug = models.CharField(
         unique=True,
         max_length=255,
         blank=False,
         null=True,
-        help_text=_("Nurodo pavadinimo versiją, skirta naudoti URL'e vietoj identifikatoriaus."),
-    )
-    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
+    )  # TODO: Deprecated, slugs are formed from id's
+    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)  # TODO: Remove blank and null
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(
         max_length=255,
         blank=True,
         null=True,
-        help_text=_("Ši savybė nurodo duomenų rinkinio temą. Duomenų rinkinys gali būti susietas su keliomis temomis."),
-    )
+    )  # TODO: Deprecated, category should be used instead.
     category = models.ManyToManyField(
         Category,
         verbose_name=_("Kategorija"),
@@ -187,18 +182,21 @@ class Dataset(TranslatableModel):
         blank=True,
         null=True,
         help_text=_(
-            "Ši savybė nurodo susijusį duomenų rinkinį, į kurį fiziškai arba logiškai įtrauktas aprašomas katalogas."
+            "Nurodo išorinį metaduomenų katalogą, jei duomenų rinkinys yra registruotas ne šiame, "
+            "o kitame išoriniame metaduomenų kataloge."
         ),
     )
-    origin = models.CharField(max_length=255, blank=True, null=True, help_text=_("Duomenų šaltinio pavadinimas."))
+    # TODO: Should not be used anymore, instead:
+    #  - https://github.com/atviriduomenys/katalogas/blob/1c2e6cf69f271a655700b196ae7fd7e0fb6d2807/vitrina/datasets/models.py#L1399
+    origin = models.CharField(max_length=255, blank=True, null=True)
 
     organization = models.ForeignKey(
         Organization,
         models.PROTECT,
         blank=True,
         null=True,
-        verbose_name=_("Organizacija"),
-        help_text=_("Institucija ar įstaiga, kuri valdo ar teikia duomenis."),
+        verbose_name=_("Duomenų tvarkytojas"),
+        help_text=_("Organizacija atsakingą už duomenų tvarkymą ir duomenų objektų registravimą."),
     )
 
     licence = models.ForeignKey(
@@ -209,8 +207,8 @@ class Dataset(TranslatableModel):
         null=True,
         verbose_name=_("Licenzija"),
         help_text=_(
-            "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga. "
-            "Pastaba: privaloma savybė, jei paslauga susijusi su didelės vertės duomenų rinkiniais."
+            "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga ar duomenų rinkinys "
+            "(priklauso nuo ištekliaus tipo)."
         ),
     )
 
@@ -223,7 +221,7 @@ class Dataset(TranslatableModel):
     published = models.DateTimeField(
         blank=True,
         null=True,
-        help_text=_("Data, kada duomenų rinkinys buvo paviešintas."),
+        help_text=_("Data, kada duomenų rinkinys buvo paviešintas paskutinį kartą."),
     )
     is_public = models.BooleanField(
         default=True,
@@ -235,10 +233,7 @@ class Dataset(TranslatableModel):
         max_length=255,
         blank=True,
         null=True,
-        help_text=_(
-            "Ši savybė nurodo duomenų rinkinio kalbą. "
-            "Šią savybę galima pakartoti, jei duomenų rinkinys yra keliomis kalbomis."
-        ),
+        help_text=_("Ši savybė nurodo duomenų rinkinio kalbą."),
     )
     spatial_coverage = models.CharField(
         max_length=255,
@@ -349,8 +344,8 @@ class Dataset(TranslatableModel):
         verbose_name=_("Tipas"),
         blank=True,
         help_text=_(
-            "Ši savybė nurodo duomenų paslaugos tipą. "
-            "Numatytas rekomenduojamas kontroliuojamo žodyno duomenų paslaugos tipas."
+            "Ši savybė nurodo duomenų ištekliaus tipą. "
+            "Numatytas rekomenduojamas kontroliuojamo žodyno duomenų ištekliaus tipas."
         ),
     )
     endpoint_url = models.URLField(

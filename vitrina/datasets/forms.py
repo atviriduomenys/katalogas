@@ -68,37 +68,35 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         label=_("Pavadinimas"),
         required=True,
         widget=TextInput(),
-        help_text=_(
-            "Pateikiamas duomenų rinkiniui suteiktas pavadinimas. "
-            "Galima pakartoti, jei pavadinimas pateikiamas keliomis kalbomis."
-        ),
+        help_text=_("Pateikiamas duomenų rinkiniui suteiktas pavadinimas."),
     )
     type = DatasetTypeField(
         label=_("Duomenų rinkinio tipas"),
         required=False,
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        help_text=_("Ši savybė nurodo duomenų paslaugos tipą."),
+        help_text=_("Ši savybė nurodo duomenų ištekliaus tipą."),
     )
     description = TranslatedField(
         label=_("Aprašymas"),
         required=True,
-        help_text=_(
-            "Laisvu tekstu pateikiamas duomenų rinkinio aprašas. Galima pakartoti, jei aprašas yra keliomis kalbomis."
-        ),
+        help_text=_("Laisvu tekstu pateikiamas duomenų rinkinio aprašas."),
     )
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
-        help_text=_("Pagrindinis API paslaugos adresas."),
+        help_text=_("Pagrindinis duomenų teikimo paslaugos (API) prieigos taškas. Pavyzdžiui: https://api.example.com/v1/."),
     )
     endpoint_description = forms.CharField(
         label=_("API specifikacija"),
         required=False,
         help_text=_(
-            "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
-            "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
-            "nuskaitoma mašininiu būdu."
+            "Nuoroda į duomenų teikimo paslaugos (API) specifikaciją. Pati specifikacija gali būti pateikta HTML, PDF "
+            "ar kitais formatais, taip pat gali būti pateikiama nuoroda į mašininių būdu nuskaitomus specifikacijų "
+            "failus, kurie yra parašyti OpenAPI, WSDL, XSD, JSON Schema ar kitais specifikacijų formatais. "
+            "Specifikacijų failus galite pateikti ""Files"" laukelyje, o čia pateikti nuorodą."
+            ""
+            "Pavyzdys: https://api.example.com/docs/v1/."
         ),
     )
     files = MultipleFilerField(
@@ -106,7 +104,10 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
-        help_text=_("Šioje savybėje nurodomas vienas ar keli duomenų struktūros aprašų failai."),
+        help_text=_(
+            "Galite pateikti papildomus failus, kurie apibūdina duomenų rinkinį. "
+            "Šie failai bus pateikiami kartu su duomenų rinkinio aprašymu."
+        ),
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
@@ -117,30 +118,53 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
                 message="Kodinis pavadinimas turi būti sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių",
             )
         ],
-        help_text=_(
-            "Kodinis pavadinimas yra neprivalomas (jei nepateiktas, sugeneruojamas automatiškai iš pavadinimo) duomenų rinkinio pavadinimas, sudarytas iš mažųjų raidžių ir (arba) gali turėti pasvirųjų brūkšnių."
-        ),
+        help_text=mark_safe(_(
+            "Duomenų rinkinio kodinis pavadinimas, kuris naudojamas formuojant API prieigos taškus.<br>"
+            "Kodinis pavadinimas turi būti unikalus, tai reiškia, kad negali būti kitų duomenų rinkinių su tokiu pačiu kodiniu pavadinimu.<br>"
+            "Kodinio pavadinimo pradžia turi sutapti su informacinės sistemos ar duomenų teikimo paslaugos kodiniu pavadinimu, "
+            "kurio sudedamoji dalis yra šis duomenų rinkinys.<br><br>"
+            "Kodinis pavadinimas sudaromas iš:<br>"
+            "- mažųjų lotyniškų raidžių ir skaičių,<br>"
+            "- atskiri vardų erdvės elementai atskiriami `/` simboliais,<br>"
+            "- žodžiai gali būti atskiriami `_` simboliais,<br>"
+            "- vardų erdvės elemento pavadinimas negali prasidėti skaičiumi,<br>"
+            "- kodinis pavadinimas turėtų būti ne ilgesnis, nei 60 simbolių.<br><br>"
+            "Pavyzdžiai:<br>"
+            "- <code>datasets/gov/org1/is2/dataset1</code><br>"
+            "- <code>datasets/gov/org1/is3/service4/dataset2</code>"
+        )),
     )
 
     contact = forms.ChoiceField(
         label=_("Kontaktinis asmuo ar organizacija"),
         required=False,
-        help_text=_("Nurodomas asmuo arba organizacija atsakinga už duomenų rinkinio turinį."),
+        help_text=_(
+            "Nurodomas asmuo arba organizacija atsakinga už duomenų rinkinio turinį. "
+            "Šiuo adresu bus nukreipiami visi paklausimai dėl duomenų rinkinio."
+        ),
     )
 
     creator = forms.ModelChoiceField(
         queryset=Organization.public.all(),
         label=_("Duomenų rinkinio kūrėjas"),
         required=False,
-        help_text=_("Nurodomas duomenų rinkinio kūrėjas iš duotų pasirinkimų."),
+        help_text=_(
+            "Duomenų rinkinio tvarkytojas, organizacija, kuriai pavesta atsakomybė tvarkyti šio duomenų rinkinio "
+            "duomenis."
+        ),
     )
 
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
-        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        label=_("Paslaugų teikėjas"),
         required=False,
-        help_text=_("Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų rinkinio prieinamumą."),
-    )
+        help_text=_(
+            "Organizacija atsakinga už duomenų rinkinio duomenų publikavimą. "
+            "Ši organizacija atsakinga ne už duomenų turinį, o už duomenų publikavimą, tiek atvirų duomenų pavidalu, "
+            "tiek ribotos prieigos pavidalu. Gali būti nurodomos tik tos organizacijos, kurios yra įtrauktos į duomenų "
+            "publikavimo paslaugų teikėjų sąrašą."
+        ),
+    )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
 
     managed_by_publisher = forms.BooleanField(
         label=_("Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"),
@@ -404,7 +428,7 @@ class DatasetAdminForm(forms.ModelForm):
     )
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
-        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        label=_("Paslaugų teikėjas"),
         required=False,
     )
 

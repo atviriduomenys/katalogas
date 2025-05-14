@@ -60,6 +60,8 @@ SPINTA_PATH = BASE_DIR / env("SPINTA_PATH")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG", default=True)
 
+IS_DEV_FEATURES_ENABLED = env("IS_DEV_FEATURES_ENABLED", default=False)
+
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"] + env.list("ALLOWED_HOSTS", default=[])
 
 # If runing behind proxy, set this to HTTP_X_FORWARDED_PROTO
@@ -120,6 +122,7 @@ INSTALLED_APPS = [
     "vitrina",
     "vitrina.cms",
     "vitrina.api",
+    "vitrina.api_example",
     "vitrina.viisp",
     "vitrina.orgs",
     "vitrina.plans",

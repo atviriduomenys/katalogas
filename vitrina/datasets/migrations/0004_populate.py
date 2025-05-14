@@ -131,6 +131,8 @@ class Migration(migrations.Migration):
     dependencies = [
         ("vitrina_datasets", "0003_auto_20250313_1841"),
         ("vitrina_resources", "0002_datasetdistribution_dataset"),
+        ('vitrina_classifiers', "0003_populate"),
+        ('vitrina_orgs', '0002_initial')
     ]
 
     operations = [

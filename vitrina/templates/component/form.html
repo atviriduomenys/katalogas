@@ -1,3 +1,42 @@
 {% load crispy_forms_tags %}
 
+{% if alert %}
+    <div class="message is-danger">
+        <div class="message-body">
+            {{ alert_content }}
+        </div>
+    </div>
+{% endif %}
+
+{% if success %}
+    <div class="message is-success">
+        <div class="message-body">
+            {{ success_content }}
+        </div>
+    </div>
+{% endif %}
+
+{% if code_mirror %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/addon/lint/lint.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/mode/yaml/yaml.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.61.0/theme/eclipse.min.css">
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var editor = CodeMirror.fromTextArea(document.querySelector('.codemirror'), {
+                lineNumbers: true,
+                mode: "yaml",  // Enable YAML mode
+                theme: "eclipse",  // Use the Eclipse theme
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                gutters: ["CodeMirror-lint-markers"],
+                lint: true
+            });
+        });
+    </script>
+{% endif %}
+
 {% crispy form %}

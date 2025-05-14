@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-14 11:35+0300\n"
+"POT-Creation-Date: 2025-05-14 11:45+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -699,145 +699,32 @@ msgstr "Added to request"
 msgid "Description"
 msgstr "Description"
 
-msgid "Duomenų rinkinio sukūrimo data, nustatoma automatiškai."
-msgstr "Dataset creation date, set automatically."
-
-msgid ""
-"Naujausia duomenų rinkinio pakeitimo arba modifikavimo data, nustatoma "
-"automatiškai."
-msgstr ""
-"The most recent modification or update date of the dataset, set "
-"automatically."
-
-msgid ""
-"Ši savybė nurodo duomenų rinkinio kategoriją, geriausiai apibūdinančią "
-"duomenis. Duomenų rinkinys gali būti susietas su keliomis kategorijomis."
-msgstr ""
-"This property specifies the category of the dataset that best describes the "
-"data. The dataset can be linked to multiple categories."
-
-msgid ""
-"Ši savybė nurodo senesnę duomenų rinkinio kategoriją (jei pasikeitė "
-"klasifikacija)."
-msgstr ""
-"This property specifies the previous category of the dataset (if the "
-"classification has changed)."
-
-msgid ""
-"Nurodo išorinį metaduomenų katalogą, jei duomenų rinkinys yra registruotas "
-"ne šiame, o kitame išoriniame metaduomenų kataloge."
-msgstr ""
-
 msgid "Duomenų tvarkytojas"
 msgstr "Data editor"
-
-msgid ""
-"Organizacija atsakingą už duomenų tvarkymą ir duomenų objektų registravimą."
-msgstr ""
-"The organization responsible for data management and the registration of "
-"data objects."
 
 msgid "Licenzija"
 msgstr "Licence"
 
-msgid ""
-"Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga ar "
-"duomenų rinkinys (priklauso nuo ištekliaus tipo)."
-msgstr ""
-"This property specifies the license under which the data service or dataset "
-"is distributed (depending on the type of resource)."
-
-msgid ""
-"Dabartinė duomenų rinkinio būklė (Atvertas, inventorintas, planuojamas "
-"atverti, nepriskirta)."
-msgstr ""
-"The current status of the dataset (Opened, inventoried, planned to open, "
-"unassigned)."
-
-msgid "Data, kada duomenų rinkinys buvo paviešintas paskutinį kartą."
-msgstr "Date when the dataset was made public the last time"
-
 msgid "Duomenų rinkinys viešinamas"
 msgstr "The dataset is public"
-
-msgid "Savybė nurodanti ar duomenų rinkinys yra prieinamas viešai."
-msgstr "A property indicating whether the dataset is publicly accessible."
-
-msgid "Ši savybė nurodo duomenų rinkinio kalbą."
-msgstr "This property indicates the language of the dataset."
-
-msgid "Šioje savybėje nurodoma geografinė duomenų aprėptis."
-msgstr "This property specifies the geographic coverage of the dataset."
-
-msgid "Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys."
-msgstr "This property indicates the time period covered by the dataset."
-
-msgid "Ši savybė nurodo, kaip dažnai atnaujinamas duomenų rinkinys."
-msgstr "This property indicates how often the dataset is updated."
 
 msgid "Atnaujinimo dažnumas"
 msgstr "Update frequency"
 
-msgid ""
-"Ši savybė nurodo, kaip dažnai atnaujinamas duomenų rinkinys. Galima rinktis "
-"iš duotų variantų."
-msgstr ""
-
-msgid "Data, kada paskutinįkart buvo atnaujintas duomenų rinkinys."
-msgstr "The date when the dataset was last updated."
-
 msgid "Prieigos teisės"
 msgstr "Access rights"
-
-msgid ""
-"Ši savybė susijusi su informacija, kuri nurodo, ar duomenų rinkinys yra "
-"atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas."
-msgstr ""
-"This property relates to information indicating whether the dataset is open "
-"data, subject to access restrictions, or not public."
 
 msgid "Platinimo salygos"
 msgstr "Terms of distribution"
 
-msgid "Ši savybė nurodo papildomas sąlygas norint viešinti duomenų rinkinį."
-msgstr ""
-"This property specifies additional conditions required to publish the "
-"dataset."
-
-msgid ""
-"Nurodomas sąrašas žymų (žymos skiriamos kablelio simboliu) susijusių su "
-"duomenimis."
-msgstr ""
-"A list of tags related to the data is provided (tags are separated by "
-"commas)."
-
-msgid "Šios ir ankstesnės duomenų rinkinio versijos skirtumų aprašymas."
-msgstr ""
-"A description of the differences between the current and previous versions "
-"of the dataset."
+msgid "Pateikite kableliu atskirtą sąrašą žymių."
+msgstr "Provide a list of tags separated by commas"
 
 msgid "Geoportalo id"
 msgstr "Geoportal ID"
 
-msgid "Unikalus ID, jei rinkinys taip pat pateikiamas geoportale."
-msgstr "A unique ID, if the dataset is also published on the geoportal."
-
-msgid ""
-"Šia savybe pateikiamas valstybės valdymo ar savivaldos institucijos ar "
-"organizacijos, kuri yra informacinės sistemos valdytojas, pavadinimas."
-msgstr ""
-"This property provides the name of the state or municipal institution or "
-"organization that manages the information system."
-
 msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgstr "Data open service provider"
-
-msgid ""
-"Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų rinkinio "
-"prieinamumą."
-msgstr ""
-"This property specifies the entity (organization) responsible for the "
-"dataset's availability."
 
 msgid "Prieigos nuoroda"
 msgstr "Access url"
@@ -845,120 +732,17 @@ msgstr "Access url"
 msgid "Duomenų rinkinio ryšiai"
 msgstr "Dataset relations"
 
-msgid ""
-"Ši savybė nurodo susijusį duomenų rinkinį, į kurį fiziškai arba logiškai "
-"įtrauktas aprašomas katalogas."
-msgstr ""
-"This property specifies a related dataset that is physically or logically "
-"included in the described catalog."
-
-msgid ""
-"Ši savybė nurodo duomenų ištekliaus tipą. Numatytas rekomenduojamas "
-"kontroliuojamo žodyno duomenų ištekliaus tipas."
-msgstr ""
-"This property specifies the type of the data resource. The default is a "
-"recommended type from a controlled vocabulary."
-
-msgid ""
-"Šioje savybėje nurodomas galinio taško (angl. endpoint) URL, kuris turi būti "
-"nekintantis. Tai reiškia, kad leidėjai turėtų daryti viską, kad išlaikytų "
-"stabilią ir esamą vertę."
-msgstr ""
-"This property specifies the endpoint URL, which must remain constant. This "
-"means publishers should make every effort to maintain a stable and "
-"persistent value."
-
 msgid "API formatas"
 msgstr "API format"
-
-msgid ""
-"Šioje savybėje nurodomas galinio taško duomenų pateikimo formatas (XML, "
-"SOAP, JSON)."
-msgstr ""
-"This property specifies the data delivery format of the endpoint (XML, SOAP, "
-"JSON)."
-
-msgid ""
-"Ši savybė aprašo paslaugas, prieinamas per galinius taškus (angl. endpoint), "
-"įskaitant jų operacijas, parametrus ir pan."
-msgstr ""
-"This property describes the services available through the endpoints, "
-"including their operations, parameters, etc."
 
 msgid "API specifikacijos formatas"
 msgstr "API specification format"
 
-msgid ""
-"Šioje savybėje pateikiamas aprašymo dokumentacijos tipas (XSD, WSDL, Open "
-"API)."
-msgstr ""
-"This property specifies the type of description documentation (XSD, WSDL, "
-"Open API)."
-
 msgid "DataService rinkinys"
 msgstr "DataService dataset"
 
-msgid "Žymė nurodanti ar rinkinys yra API paslauga."
-msgstr "A tag indicating whether the dataset is an API service."
-
 msgid "DataSeries rinkinys"
 msgstr "DataSeries dataset"
-
-msgid "Žymė nurodanti ar rinkinys priklauso duomenų serijai."
-msgstr "A tag indicating whether the dataset belongs to a data series."
-
-msgid "Vidaus naudojimui skirtas aprašymo laukas."
-msgstr "A description field intended for internal use."
-
-msgid ""
-"Savybė nurodanti duomenų rinkinių paklausos vertinimą. Jei duomenų rinkinys "
-"atvertas, tada jam suteikiamas maksimalus balas ir toliau jokie kriterijai "
-"nevertinami."
-msgstr ""
-"A property indicating the demand assessment of datasets. If the dataset is "
-"open, it is given the maximum score and no further criteria are evaluated."
-
-msgid "Pateikiami duomenų struktūros duomenys."
-msgstr "Provided data structure details."
-
-msgid "Duomenų struktūros failo pavadinimas."
-msgstr "Data structure file name."
-
-msgid "Dabartinė duomenų struktūra."
-msgstr "Current data structure."
-
-msgid "Žyma nurodanti ar duomenų rinkinio rengimas buvo finansuojamas."
-msgstr "A tag indicating whether the preparation of the dataset was funded."
-
-msgid "Finansavimo plano ar programos identifikatorius."
-msgstr "The identifier of the funding plan or program."
-
-msgid "Finansavimo prioritetų aprašymas ar žymos."
-msgstr "A description or tags of the funding priorities."
-
-msgid "Gauta finansavimo suma eurais."
-msgstr "The amount of funding received in euros."
-
-msgid "Reikalinga finansavimo suma eurais."
-msgstr "The required amount of funding in euros."
-
-msgid "Žyma nurodanti, kad yra planuojama gauti finansavimą ateityje."
-msgstr "A tag indicating that funding is planned to be received in the future."
-
-msgid "Susiję duomenų struktūros metaduomenys."
-msgstr "Related data structure metadata."
-
-msgid "Komentarai, pateikti prie duomenų rinkinio."
-msgstr "Comments for the dataset."
-
-msgid "Užduotys, susijusios su rinkiniu."
-msgstr "Tasks related to the dataset."
-
-msgid "Atsakingi asmenys ar organizacijos atstovai."
-msgstr "sponsible individuals or representatives of the organization."
-
-msgid "Poreikiai ar iniciatyvos, susijusios su rinkiniu."
-msgstr "Requirements or initiatives related to the dataset."
 
 msgid "Dataset"
 msgstr "Dataset"

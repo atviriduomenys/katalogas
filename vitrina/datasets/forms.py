@@ -70,7 +70,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         widget=TextInput(),
     )
     type = DatasetTypeField(
-        label=_("Duomenų rinkinio tipas"),
+        label=_("Duomenų ištekliaus tipas"),
         required=False,
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple,

@@ -9,8 +9,9 @@ from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Q, Count
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
+from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, gettext
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
@@ -116,11 +117,15 @@ class EnumForm(forms.ModelForm):
         return description
 
 
-def _get_level_title(title, description=None):
-    if description:
-        return mark_safe(f'{title}<br/><p class="help">{description}</p>')
-    else:
-        return title
+def _get_level_title(title: str, description: str | None = None) -> str:
+    def _render() -> str:
+        title_text = gettext(title)
+        if description:
+            description_text = gettext(description)
+            return mark_safe(f'{title_text}<br/><p class="help">{description_text}</p>')
+        return title_text
+
+    return lazy(_render, str)()
 
 
 MODEL_LEVEL_CHOICES = (

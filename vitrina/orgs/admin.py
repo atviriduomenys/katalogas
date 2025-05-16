@@ -61,6 +61,8 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
 
 
 class RepresentativeAdmin(admin.ModelAdmin):
+    search_fields = ("email",)
+
     def delete_model(self, request, obj):
         pre_representative_delete(obj)
         super().delete_model(request, obj)

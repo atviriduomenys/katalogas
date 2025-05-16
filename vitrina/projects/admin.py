@@ -6,6 +6,7 @@ from vitrina.projects.models import Project
 
 class ProjectAdmin(VersionAdmin):
     list_filter = ("status",)
+    search_fields = ("title",)
 
 
 admin.site.register(Project, ProjectAdmin)

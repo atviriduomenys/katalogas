@@ -16,6 +16,7 @@
             <div class="column is-6">
                 <p id="newsletter_search_title">{% translate "Užsiprenumeruokite mūsų naujienlaiškį" %}</p>
                 <form class="field has-addons media-content" action="/subscribeNewsletter" method="post">
+                    {% csrf_token %}
                     <p class="control is-expanded">
                         <input class="input newsletter-input" type="email" id="newsletter-input-email" required="required"
                                placeholder="{% translate 'Įveskite el. pašto adresą...' %}"

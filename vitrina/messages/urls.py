@@ -13,6 +13,4 @@ urlpatterns = [
         SubscribeFormView.as_view(),
         name="subscribe-form",
     ),
-    # @PostMapping("/subscribeNewsletter")
-    # @GetMapping("/unsubscribe/{hash}")
 ]

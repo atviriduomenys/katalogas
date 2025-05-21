@@ -38,7 +38,7 @@ class EnumForm(forms.ModelForm):
         label=_("Prieigos lygmuo"),
         choices=Metadata.ACCESS_TYPES,
         required=False,
-        help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą viešiems šios vardų erdvės elementams."),
+        help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."),
     )
     title = forms.CharField(
         label=_("Pavadinimas"),

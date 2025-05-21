@@ -2811,10 +2811,10 @@ msgid "Fiksuotos reikšmės vertė šaltinyje."
 msgstr "Enum source"
 
 msgid ""
-"Prieigos lygis, naudojamas pagal nutylėjimą viešiems šios vardų erdvės "
+"Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
 "elementams."
 msgstr ""
-"The access level used by default for public elements of this namespace."
+"The access level used as default for all elements of this namespace."
 
 msgid "Duomenų rinkinio ar vardų erdvės pavadinimas."
 msgstr "Dataset title"

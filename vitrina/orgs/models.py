@@ -3,10 +3,12 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from django.utils.text import slugify
 from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
+from vitrina.models import UUIDBaseModel
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
@@ -336,3 +338,51 @@ class Template(models.Model):
 
     def __str__(self):
         return self.document.name
+
+
+class Agent(UUIDBaseModel):
+    synchronized_at = models.DateTimeField(
+        verbose_name=_("Paskutinės sinchronizacijos data"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma data, kada paskutįkart buvo bandyta vykdyti sinchronizaciją."),
+    )
+    is_last_sync_successful = models.BooleanField(
+        verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
+    )
+    title = models.CharField(
+        verbose_name=_("Pavadinimas"),
+        max_length=255,
+        help_text=_("Nurodomas Agento pavadinimas."),
+    )
+    codename = models.CharField(
+        verbose_name=_("Kodinis pavadinimas"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nurodomas Agento kodinis pavadinimas."),
+    )
+    is_enabled = models.BooleanField(
+        verbose_name=_("Agentas įjungtas"),
+        default=False,
+        help_text=_("Nurodoma, ar Agentas yra įjungtas ar išjungtas."),
+    )
+
+    service = models.ForeignKey(
+        "vitrina_datasets.Dataset",
+        verbose_name=_("Duomenų paslauga"),
+        on_delete=models.CASCADE,
+        help_text=_("Nurodoma su Agentu susieta duomenų paslauga."),
+    )
+    organization = models.ForeignKey(
+        "vitrina_orgs.Organization",
+        verbose_name=_("Organizacija"),
+        on_delete=models.CASCADE,
+        help_text=_("Nurodoma organizacija, kuriai priskirtas Agentas."),
+    )
+
+    def save(self, *args, **kwargs) -> None:
+        self.codename = slugify(self.title).replace('-', '_')
+        return super().save(*args, **kwargs)

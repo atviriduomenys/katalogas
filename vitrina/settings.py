@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     "vitrina.comments",
     "vitrina.messages",
     "vitrina.translate",
+    "vitrina.uapi",
     "vitrina.likes",
 ]
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-15 10:14+0300\n"
+"POT-Creation-Date: 2025-05-22 16:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2813,8 +2813,7 @@ msgstr "Enum source"
 msgid ""
 "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
 "elementams."
-msgstr ""
-"The access level used as default for all elements of this namespace."
+msgstr "The access level used as default for all elements of this namespace."
 
 msgid "Duomenų rinkinio ar vardų erdvės pavadinimas."
 msgstr "Dataset title"
@@ -3794,6 +3793,41 @@ msgstr "Dislike"
 
 msgid "Atsisakyti prenumeratos"
 msgstr "Cancel subscription"
+
+msgid "Agentai"
+msgstr "Agents"
+
+msgid "Paskutinės sinchronizacijos data"
+msgstr "Date of last synchronization"
+
+msgid "Nurodoma data, kada paskutįkart buvo bandyta vykdyti sinchronizaciją."
+msgstr "Date when the last synchronization was attempted"
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr "Was last synchronization successful?"
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr "Indicates whether the last synchronization was successful, no errors were raised during it"
+
+msgid "Nurodomas Agento pavadinimas."
+msgstr "The agent's title"
+
+msgid "Nurodomas Agento kodinis pavadinimas."
+msgstr "The agent's codename"
+
+msgid "Agentas įjungtas"
+msgstr "Agent is enabled"
+
+msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
+msgstr "Indicates whether the agent is enabled or disabled"
+
+msgid "Nurodoma su Agentu susieta duomenų paslauga."
+msgstr "The data service associated with the agent"
+
+msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
+msgstr "The organization to which the agent is assigned"
 
 msgid "Asmeninė informacija"
 msgstr "Personal information"

@@ -9,7 +9,7 @@ module.exports = {
     jquery: path.resolve(__dirname, './src/jquery.js'),
   },
   output: {
-    path: path.resolve(__dirname, '../vitrina/static'),
+    path: path.resolve(__dirname, '../static'),
     filename: 'js/[name].js',
     library: '[name]'
   },

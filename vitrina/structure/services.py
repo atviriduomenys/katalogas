@@ -1046,8 +1046,8 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
                 "dataset": meta.name,
                 "level": meta.level_given,
                 "access": _get_access(meta.access),
-                "title": meta.title,
-                "description": meta.description,
+                "title": meta.title or dataset.title,
+                "description": meta.description or dataset.description,
             },
         )
     yield from _prefixes_to_tabular(dataset, separator=separator)

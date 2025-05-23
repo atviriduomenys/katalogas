@@ -7,7 +7,7 @@ from factory.django import FileField
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
-from vitrina.datasets.factories import DatasetStructureFactory
+from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
@@ -1635,6 +1635,10 @@ def test_structure_export__prefixes(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -1647,7 +1651,7 @@ def test_structure_export__prefixes(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
         '1,,,,,,prefix,spinta,,,,,https://github.com/atviriduomenys/spinta/issues/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '3,,,,,,prefix,dcat,,,,,http://www.w3.org/ns/dcat#,,\r\n'
         '4,,,,,,,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
@@ -1673,6 +1677,10 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -1683,7 +1691,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
@@ -1716,6 +1724,10 @@ def test_structure_export__base_model(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -1726,7 +1738,7 @@ def test_structure_export__base_model(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
@@ -1759,6 +1771,10 @@ def test_structure_export__property_ref(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -1769,7 +1785,7 @@ def test_structure_export__property_ref(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
@@ -1801,6 +1817,10 @@ def test_structure_export__model_ref(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -1811,7 +1831,7 @@ def test_structure_export__model_ref(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
@@ -1840,6 +1860,10 @@ def test_structure_export__comments(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
     structure.dataset.current_structure = structure
@@ -1849,7 +1873,7 @@ def test_structure_export__comments(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
@@ -1883,6 +1907,10 @@ def test_structure_export__enums(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
     structure.dataset.current_structure = structure
@@ -1892,7 +1920,7 @@ def test_structure_export__enums(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,,,,,enum,Size,,SMALL,,,,,\r\n'
@@ -1931,6 +1959,10 @@ def test_structure_export__params(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
     structure.dataset.current_structure = structure
@@ -1940,7 +1972,7 @@ def test_structure_export__params(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
         '3,,,,,,param,country,,lt,,,,,\r\n'
@@ -2139,6 +2171,10 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -2173,7 +2209,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,\r\n'
+        '1,test_dataset,,,,,,,,,,,,Title,Description\r\n'
         '2,,resource1,,,,,,http://www.example.com,,,,,,\r\n'
         '3,,,,Modelis,,,id,,,,,,,\r\n'
         '4,,,,,id,integer,,,,,,,,\r\n'
@@ -2188,4 +2224,38 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
         '10,,,,,id,int,,,,,,,,\r\n'
         '11,,,,,country,ref,Salis,code,,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export_after_changing_dataset_title_and_description(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,Title,Description\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse('dataset-change', kwargs={'pk': structure.dataset.pk})).forms['dataset-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'Edited description'
+    resp = form.submit()
+    assert resp.url == reverse('dataset-detail', kwargs={'pk': structure.dataset.pk})
+    assert structure.dataset.metadata.count() == 1
+    assert structure.dataset.metadata.first().title == "Edited title"
+    assert structure.dataset.metadata.first().description == "Edited description"
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,Edited title,Edited description\r\n'
     )

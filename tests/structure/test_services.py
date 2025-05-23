@@ -2147,6 +2147,83 @@ def test_structure_without_resource__dataset_name(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_export_after_changing_model_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,,\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,\n'
+        '3,,,,Model,,,id,,,,,,,\n'
+        '4,,,,,id,integer,,,,,,,,\n'
+        ',,,,,,,,,,,,,,\n'
+        '5,,,Model,,,,,,,,,,,\n'
+        '6,,,,Country,,,id,,,,,,,\n'
+        '7,,,,,id,int,,,,,,,,\n'
+        '8,,,,,code,string,,,,,,,,\n'
+        ',,,,,,,,,,,,,,\n'
+        ',,,/,,,,,,,,,,,\n'
+        '9,,,,City,,,id,,,,,,,\n'
+        '10,,,,,id,int,,,,,,,,\n'
+        '11,,,,,country,ref,Country,code,,,,,,\n'
+        ',,,,,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    model = Model.objects.get(
+        dataset=structure.dataset,
+        metadata__name="test_dataset/Model"
+    )
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
+    form['name'] = "Modelis"
+    resp = form.submit()
+    assert resp.url == model.get_absolute_url()
+    assert model.metadata.first().name == 'test_dataset/Modelis'
+    assert model.ref_model_base.count() == 1
+    assert model.ref_model_base.first().metadata.first().name == 'test_dataset/Modelis'
+
+    model = Model.objects.get(
+        dataset=structure.dataset,
+        metadata__name="test_dataset/Country"
+    )
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
+    form['name'] = "Salis"
+    resp = form.submit()
+    assert resp.url == model.get_absolute_url()
+    assert model.metadata.first().name == 'test_dataset/Salis'
+    assert model.ref_model_properties.count() == 1
+    assert model.ref_model_properties.first().metadata.first().ref == 'test_dataset/Salis'
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,\r\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,,,Modelis,,,id,,,,,,,\r\n'
+        '4,,,,,id,integer,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        '5,,,Modelis,,,,,,,,,,,\r\n'
+        '6,,,,Salis,,,id,,,,,,,\r\n'
+        '7,,,,,id,int,,,,,,,,\r\n'
+        '8,,,,,code,string,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+        ',,,/,,,,,,,,,,,\r\n'
+        '9,,,,City,,,id,,,,,,,\r\n'
+        '10,,,,,id,int,,,,,,,,\r\n'
+        '11,,,,,country,ref,Salis,code,,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
 def test_structure_export_after_changing_dataset_title_and_description(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)

@@ -1957,6 +1957,20 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         elif model.base:
             model.base.delete()
 
+        # if name was changed, need to change related object metadata where updated model is base or ref model
+        if 'name' in form.changed_data:
+            if ref_model_base := model.ref_model_base.all():
+                for item in ref_model_base:
+                    if metadata := item.metadata.first():
+                        metadata.name = str(model)
+                        metadata.save()
+
+            if ref_model_properties := model.ref_model_properties.all():
+                for item in ref_model_properties:
+                    if metadata := item.metadata.first():
+                        metadata.ref = str(model)
+                        metadata.save()
+
         model.update_level()
         self.dataset.update_level()
 

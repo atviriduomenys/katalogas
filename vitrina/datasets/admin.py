@@ -43,6 +43,7 @@ class AttributionAdmin(admin.ModelAdmin):
 
 
 class DatasetAdmin(TranslatableAdmin, VersionAdmin):
+    search_fields = ('title',)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
 

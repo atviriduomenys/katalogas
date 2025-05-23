@@ -737,11 +737,9 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["tags"] = tags
             context["select"] = select
             context["selected_cols"] = selected_cols or context["headers"]
-            context['can_manage'] = self.can_manage_structure = has_perm(
-                self.request.user,
-                Action.STRUCTURE,
-                Dataset,
-                self.object)
+            context["can_manage"] = self.can_manage_structure = has_perm(
+                self.request.user, Action.STRUCTURE, Dataset, self.object
+            )
             context["dataset_id"] = self.object.id
             context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
 
@@ -1503,6 +1501,9 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             )
         self.object.save()
         value = form.cleaned_data.get("value")
+        visibility = form.cleaned_data.get("visibility")
+        status = form.cleaned_data.get("status")
+        eli = form.cleaned_data.get("eli")
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
                 value = f'"{value}"'
@@ -1514,6 +1515,9 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             name=self.object.enum.name,
             type="enum",
             prepare=value,
+            visibility=visibility,
+            status=status,
+            eli=eli,
             prepare_ast=spyna.parse(form.cleaned_data.get("value")),
             source=form.cleaned_data.get("source"),
             access=form.cleaned_data.get("access") or None,
@@ -1610,6 +1614,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.access = form.cleaned_data.get("access") or None
             metadata.title = form.cleaned_data.get("title")
             metadata.description = form.cleaned_data.get("description")
+            metadata.visibility = form.cleaned_data.get("visibility")
+            metadata.eli = form.cleaned_data.get("eli")
+            metadata.status = form.cleaned_data.get("status")
             metadata.version += 1
 
             if latest_version := metadata.metadataversion_set.order_by(
@@ -1958,7 +1965,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             model.base.delete()
 
         # if name was changed, need to change related object metadata where updated model is base or ref model
-        if 'name' in form.changed_data:
+        if "name" in form.changed_data:
             if ref_model_base := model.ref_model_base.all():
                 for item in ref_model_base:
                     if metadata := item.metadata.first():

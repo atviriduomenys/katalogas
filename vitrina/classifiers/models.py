@@ -1,7 +1,8 @@
 from django.db import models
-from treebeard.mp_tree import MP_Node, MP_NodeManager
-
 from django.utils.translation import gettext_lazy as _, get_language
+
+from parler.models import TranslatableModel, TranslatedFields
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 
 class Category(MP_Node):
@@ -206,3 +207,63 @@ class GeoportalAccessRights(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Visibility(TranslatableModel):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    version = models.IntegerField(default=1)
+    deleted = models.BooleanField(blank=True, null=True)
+    deleted_on = models.DateTimeField(blank=True, null=True)
+
+    title = models.CharField(
+        unique=True,
+        max_length=255,
+        verbose_name="Kodinis pavadinimas",
+        blank=True,
+        null=True,
+    )
+
+    translations = TranslatedFields(
+        name=models.CharField(
+            _("Pavadinimas"), unique=True, max_length=255, blank=False
+        ),
+        description=models.CharField(
+            _("Aprašymas"), max_length=255, blank=True, null=True
+        ),
+    )
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "visibility"
+        verbose_name = _("Prieigos lygis")
+        verbose_name_plural = _("Prieigos lygiai")
+
+
+class Status(TranslatableModel):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    version = models.IntegerField(default=1)
+    deleted = models.BooleanField(blank=True, null=True)
+    deleted_on = models.DateTimeField(blank=True, null=True)
+
+    title = models.CharField(
+        unique=True,
+        max_length=255,
+        verbose_name="Kodinis pavadinimas",
+        blank=True,
+        null=True,
+    )
+    url = models.CharField(max_length=255, blank=True, null=True)
+    translations = TranslatedFields(
+        name=models.CharField(
+            _("Pavadinimas"), unique=True, max_length=255, blank=False
+        ),
+        description=models.CharField(_("Description"), max_length=255, blank=True),
+    )
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "status"
+        verbose_name = _("Statusas")
+        verbose_name_plural = _("Statusai")

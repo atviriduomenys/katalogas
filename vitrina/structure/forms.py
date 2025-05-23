@@ -15,6 +15,7 @@ from django.utils.translation import gettext_lazy as _, gettext
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
+from vitrina.classifiers.models import Visibility, Status
 from vitrina.structure import spyna
 from vitrina.structure.helpers import is_time_unit, is_si_unit
 from vitrina.structure.models import (
@@ -27,7 +28,18 @@ from vitrina.structure.models import (
 )
 
 
+class ModelChoiceTypeField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        if obj.description:
+            return mark_safe(f'{obj.name}<br/><p class="help">{obj.description}</p>')
+        else:
+            return obj.name
+
+
 class EnumForm(forms.ModelForm):
+    value = forms.CharField(label=_("Reikšmė"))
+    source = forms.CharField(label=_("Reikšmė šaltinyje"), required=False)
+    eli = forms.URLField(label=_("ELI identifikatorius"), required=False)
     value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."))
     source = forms.CharField(
         label=_("Reikšmė šaltinyje"),
@@ -51,10 +63,31 @@ class EnumForm(forms.ModelForm):
         required=False,
         help_text=_("Duomenų rinkinio ar vardų erdvės aprašymas."),
     )
+    visibility = ModelChoiceTypeField(
+        label=_("Metaduomenų matomumas"),
+        required=False,
+        queryset=Visibility.objects.all(),
+        widget=forms.RadioSelect,
+    )
+    status = ModelChoiceTypeField(
+        label=_("Statusas"),
+        required=False,
+        queryset=Status.objects.all(),
+        widget=forms.RadioSelect,
+    )
 
     class Meta:
         model = EnumItem
-        fields = ("value", "source", "access", "title", "description")
+        fields = (
+            "value",
+            "source",
+            "eli",
+            "access",
+            "title",
+            "description",
+            "visibility",
+            "status",
+        )
 
     def __init__(self, prop=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,9 +99,12 @@ class EnumForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field("value"),
             Field("source"),
+            Field("eli"),
             Field("access"),
             Field("title"),
             Field("description"),
+            Field("visibility"),
+            Field("status"),
             Submit(
                 "submit",
                 _("Redaguoti") if instance else _("Sukurti"),
@@ -76,6 +112,10 @@ class EnumForm(forms.ModelForm):
             ),
         )
 
+        if Visibility.objects.filter(is_default=True).exists():
+            default_visibility = Visibility.objects.filter(is_default=True).first()
+        if Status.objects.filter(is_default=True).exists():
+            default_status = Status.objects.filter(is_default=True).first()
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
             if (
@@ -90,6 +130,18 @@ class EnumForm(forms.ModelForm):
             self.initial["access"] = metadata.access
             self.initial["title"] = metadata.title
             self.initial["description"] = metadata.description
+            self.initial["visibility"] = (
+                metadata.visibility
+                if metadata.visibility is not None
+                else default_visibility
+            )
+            self.initial["eli"] = metadata.eli
+            self.initial["status"] = (
+                metadata.status if metadata.status is not None else default_status
+            )
+        else:
+            self.initial["visibility"] = default_visibility
+            self.initial["status"] = default_status
 
     def clean_value(self):
         value = self.cleaned_data.get("value")
@@ -318,6 +370,7 @@ class ModelCreateForm(forms.ModelForm):
         label=_("Kodinis pavadinimas"),
         help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."),
     )
+    eli = forms.URLField(label=_("ELI identifikatorius"), required=False)
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
@@ -342,6 +395,18 @@ class ModelCreateForm(forms.ModelForm):
             "Modelio brandos lygis, nusakantis modelio brandos lygį, pavyzdžiui ar nurodytas pirminis raktas, "
             "ar modelio pavadinimas atitinka kodiniams pavadinimams keliamus reikalavimus."
         ),
+    )
+    visibility = ModelChoiceTypeField(
+        label=_("Metaduomenų matomumas"),
+        required=False,
+        queryset=Visibility.objects.all(),
+        widget=forms.RadioSelect,
+    )
+    status = ModelChoiceTypeField(
+        label=_("Statusas"),
+        required=False,
+        queryset=Status.objects.all(),
+        widget=forms.RadioSelect,
     )
     title = forms.CharField(
         label=_("Pavadinimas"),
@@ -415,10 +480,13 @@ class ModelCreateForm(forms.ModelForm):
         model = Metadata
         fields = (
             "name",
+            "eli",
             "source",
             "prepare",
             "uri",
             "level",
+            "visibility",
+            "status",
             "title",
             "description",
             "base",
@@ -436,10 +504,13 @@ class ModelCreateForm(forms.ModelForm):
         self.helper.form_id = "model-form"
         self.helper.layout = Layout(
             Field("name"),
+            Field("eli"),
             Field("source"),
             Field("prepare"),
             Field("uri"),
             Field("level"),
+            Field("visibility"),
+            Field("status"),
             Field("title"),
             Field("description"),
             Field("is_parameterized"),
@@ -454,6 +525,12 @@ class ModelCreateForm(forms.ModelForm):
 
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
+        if Visibility.objects.filter(is_default=True).exists():
+            default_visibility = Visibility.objects.filter(is_default=True).first()
+            self.initial["visibility"] = default_visibility
+        if Status.objects.filter(is_default=True).exists():
+            default_status = Status.objects.filter(is_default=True).first()
+            self.initial["status"] = default_status
 
     def clean_level(self):
         level = self.cleaned_data.get("level")
@@ -569,12 +646,15 @@ class ModelUpdateForm(ModelCreateForm):
         fields = (
             "model_id",
             "name",
+            "eli",
             "ref",
             "source",
             "prepare",
             "uri",
             "is_parameterized",
             "level",
+            "visibility",
+            "status",
             "title",
             "description",
             "base",
@@ -590,11 +670,14 @@ class ModelUpdateForm(ModelCreateForm):
         self.helper.layout = Layout(
             Field("model_id"),
             Field("name"),
+            Field("eli"),
             Field("ref"),
             Field("source"),
             Field("prepare"),
             Field("uri"),
             Field("level"),
+            Field("visibility"),
+            Field("status"),
             Field("title"),
             Field("description"),
             Field("is_parameterized"),
@@ -608,6 +691,10 @@ class ModelUpdateForm(ModelCreateForm):
         )
 
         if instance:
+            if Visibility.objects.filter(is_default=True).exists():
+                default_visibility = Visibility.objects.filter(is_default=True).first()
+            if Status.objects.filter(is_default=True).exists():
+                default_status = Status.objects.filter(is_default=True).first()
             model = instance.object
             self.initial["model_id"] = model.pk
             self.initial["name"] = instance.name.split("/")[-1]
@@ -619,6 +706,15 @@ class ModelUpdateForm(ModelCreateForm):
             )
             self.initial["is_parameterized"] = model.is_parameterized
             self.initial["base_level"] = "None"
+            self.initial["visibility"] = (
+                instance.visibility
+                if instance.visibility is not None
+                else default_visibility
+            )
+            self.initial["status"] = (
+                instance.status if instance.status is not None else default_status
+            )
+            self.initial["eli"] = instance.eli
             if model.base:
                 self.initial["base"] = model.base.model
                 self.initial["base_ref"] = model.base.property_list.order_by(
@@ -766,6 +862,7 @@ class PropertyForm(forms.ModelForm):
             "Galimi simboliai: lotyniškos mažosios raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
         ),
     )
+    eli = forms.URLField(label=_("ELI identifikatorius"), required=False)
     type = forms.ChoiceField(
         label=_("Tipas"),
         choices=TYPES,
@@ -809,6 +906,18 @@ class PropertyForm(forms.ModelForm):
         choices=PROPERTY_LEVEL_CHOICES,
         help_text=_("Nurodo duomenų lauko brandos lygį."),
     )
+    visibility = ModelChoiceTypeField(
+        label=_("Metaduomenų matomumas"),
+        required=False,
+        queryset=Visibility.objects.all(),
+        widget=forms.RadioSelect,
+    )
+    status = ModelChoiceTypeField(
+        label=_("Statusas"),
+        required=False,
+        queryset=Status.objects.all(),
+        widget=forms.RadioSelect,
+    )
     access = forms.ChoiceField(
         label=_("Prieigos lygis"),
         required=False,
@@ -841,6 +950,7 @@ class PropertyForm(forms.ModelForm):
         fields = (
             "dataset_id",
             "name",
+            "eli",
             "type",
             "type_args",
             "ref",
@@ -849,6 +959,8 @@ class PropertyForm(forms.ModelForm):
             "prepare",
             "uri",
             "level",
+            "visibility",
+            "status",
             "access",
             "title",
             "description",
@@ -864,6 +976,7 @@ class PropertyForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field("dataset_id"),
             Field("name"),
+            Field("eli"),
             Field("type"),
             Field("type_args"),
             Field("ref"),
@@ -872,6 +985,8 @@ class PropertyForm(forms.ModelForm):
             Field("prepare"),
             Field("uri"),
             Field("level"),
+            Field("visibility"),
+            Field("status"),
             Field("access"),
             Field("title"),
             Field("description"),
@@ -882,6 +997,12 @@ class PropertyForm(forms.ModelForm):
             ),
         )
 
+        if Visibility.objects.filter(is_default=True).exists():
+            default_visibility = Visibility.objects.filter(is_default=True).first()
+            self.initial["visibility"] = default_visibility
+        if Status.objects.filter(is_default=True).exists():
+            default_status = Status.objects.filter(is_default=True).first()
+            self.initial["status"] = default_status
         self.initial["dataset_id"] = self.model.dataset.pk
         self.initial["level"] = "None"
         if instance:
@@ -889,6 +1010,15 @@ class PropertyForm(forms.ModelForm):
                 instance.level_given if instance.level_given is not None else "None"
             )
             self.initial["access"] = instance.access
+            self.initial["eli"] = instance.eli
+            self.initial["visibility"] = (
+                instance.visibility
+                if instance.visibility is not None
+                else default_visibility
+            )
+            self.initial["status"] = (
+                instance.status if instance.status is not None else default_status
+            )
             if instance.object.ref_model:
                 self.initial["ref"] = instance.object.ref_model
                 self.initial["ref_others"] = None

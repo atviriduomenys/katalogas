@@ -10,6 +10,7 @@ from django.db.models import Q, Max, Avg
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.classifiers.models import Visibility, Status
 from vitrina.structure.helpers import get_type_repr
 
 
@@ -74,6 +75,19 @@ class Metadata(models.Model):
     )
     access = models.IntegerField(
         _("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True
+    )
+    visibility = models.ForeignKey(
+        Visibility,
+        models.SET_NULL,
+        verbose_name=_("Metaduomenų matomumas"),
+        null=True,
+        blank=True,
+    )
+    eli = models.URLField(
+        _("ELI identifikatorius"), blank=True, null=True, max_length=500
+    )
+    status = models.ForeignKey(
+        Status, models.SET_NULL, verbose_name=_("Statusas"), null=True, blank=True
     )
     prefix = models.ForeignKey(
         Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True

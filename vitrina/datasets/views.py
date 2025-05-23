@@ -752,6 +752,8 @@ class DatasetCreateView(
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             name=form.cleaned_data.get("name", ""),
+            title=self.object.title,
+            description=self.object.description,
             prepare_ast={},
             version=1,
         )
@@ -967,21 +969,27 @@ class DatasetUpdateView(
                     file=file,
                 )
 
+        if metadata := self.object.metadata.first():
+            metadata.title = self.object.title
+            metadata.description = self.object.description
+            metadata.save()
+        else:
+            metadata = Metadata.objects.create(
+                uuid=str(uuid.uuid4()),
+                dataset=self.object,
+                content_type=ContentType.objects.get_for_model(self.object),
+                object_id=self.object.pk,
+                name=form.cleaned_data.get("name"),
+                title=self.object.title,
+                description=self.object.description,
+                prepare_ast={},
+                version=1,
+            )
+
         if "name" in form.changed_data:
-            if metadata := self.object.metadata.first():
-                metadata.name = form.cleaned_data.get("name")
-                metadata.draft = True
-                metadata.save()
-            else:
-                Metadata.objects.create(
-                    uuid=str(uuid.uuid4()),
-                    dataset=self.object,
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    name=form.cleaned_data.get("name"),
-                    prepare_ast={},
-                    version=1,
-                )
+            metadata.name = form.cleaned_data.get("name")
+            metadata.draft = True
+            metadata.save()
 
             # Update model names
             for model in self.object.model_set.all():

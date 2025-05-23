@@ -933,6 +933,9 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert dataset.description == 'edited dataset description'
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+    assert dataset.metadata.count() == 1
+    assert dataset.metadata.first().title == "Edited title"
+    assert dataset.metadata.first().description == "edited dataset description"
 
 
 @pytest.mark.django_db
@@ -993,6 +996,9 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
     assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
+    assert added_dataset.first().metadata.count() == 1
+    assert added_dataset.first().metadata.first().title == "Added title"
+    assert added_dataset.first().metadata.first().description == "Added new dataset description"
 
 
 @pytest.mark.haystack

@@ -2171,6 +2171,10 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
         )
     )
 
@@ -2205,7 +2209,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,\r\n'
+        '1,test_dataset,,,,,,,,,,,,Title,Description\r\n'
         '2,,resource1,,,,,,http://www.example.com,,,,,,\r\n'
         '3,,,,Modelis,,,id,,,,,,,\r\n'
         '4,,,,,id,integer,,,,,,,,\r\n'

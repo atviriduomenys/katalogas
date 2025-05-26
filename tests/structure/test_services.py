@@ -1666,7 +1666,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '4,,,,Licence,,,id,,page(id),,,,Licence,\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
         '6,,,,,title,string,,,,2,open,dct:title,,\n'
@@ -1694,7 +1694,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '4,,,,Licence,,,id,,page(id),,,,Licence,\r\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
         '6,,,,,title,string,,,,2,open,dct:title,,\r\n'
@@ -1713,7 +1713,7 @@ def test_structure_export__base_model(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '4,,,,Base,,,,,,,,,,\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
         ',,,,,,,,,,,,,,\n'
@@ -1741,7 +1741,7 @@ def test_structure_export__base_model(app: DjangoTestApp):
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '4,,,,Base,,,,,,,,,,\r\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
         ',,,,,,,,,,,,,,\r\n'
@@ -1760,7 +1760,7 @@ def test_structure_export__property_ref(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '4,,,,Country,,,,,,,,,,\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
         '6,,,,,title,string,,,,5,open,dct:title,,\n'
@@ -1788,7 +1788,7 @@ def test_structure_export__property_ref(app: DjangoTestApp):
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '4,,,,Country,,,,,,,,,,\r\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
         '6,,,,,title,string,,,,5,open,dct:title,,\r\n'
@@ -1808,7 +1808,7 @@ def test_structure_export__model_ref(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '4,,,,Country,,,"id, title",,,,,,,\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
         '6,,,,,title,string,,,,5,open,dct:title,,\n'
@@ -1834,7 +1834,7 @@ def test_structure_export__model_ref(app: DjangoTestApp):
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '4,,,,Country,,,"id, title",,,,,,,\r\n'
         '5,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
         '6,,,,,title,string,,,,5,open,dct:title,,\r\n'
@@ -1851,7 +1851,7 @@ def test_structure_export__comments(app: DjangoTestApp):
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '4,,,,Country,,,,,,,,,,\n'
         '5,,,,,,comment,type,,,,open,,Model comment,\n'
         '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
@@ -1876,7 +1876,7 @@ def test_structure_export__comments(app: DjangoTestApp):
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,Title,Description\r\n'
         '2,,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '4,,,,Country,,,,,,,,,,\r\n'
         '5,,,,,,comment,type,,,,open,,Model comment,\r\n'
         '6,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
@@ -1896,7 +1896,7 @@ def test_structure_export__enums(app: DjangoTestApp):
         '3,,,,,,enum,Size,,SMALL,,,,,\n'
         '4,,,,,,,,,MEDIUM,,,,,\n'
         '5,,,,,,,,,BIG,,,,,\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '7,,,,City,,,,,,,,,,\n'
         '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
         '9,,,,,size,Size,,,,5,open,dct:size,,\n'
@@ -1927,7 +1927,7 @@ def test_structure_export__enums(app: DjangoTestApp):
         '4,,,,,,,,,MEDIUM,,,,,\r\n'
         '5,,,,,,,,,BIG,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '7,,,,City,,,,,,,,,,\r\n'
         '8,,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\r\n'
         '9,,,,,size,Size,,,,5,open,dct:size,,\r\n'
@@ -1949,7 +1949,7 @@ def test_structure_export__params(app: DjangoTestApp):
         '3,,,,,,param,country,,lt,,,,,\n'
         '4,,,,,,,,,lv,,,,,\n'
         '5,,,,,,,,,ee,,,,,\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,Title,Description\n'
         '7,,,,City,,,,,,,,,,\n'
         '8,,,,,,param,type,,created,,,,,\n'
         '9,,,,,,,,,modified,,,,,\n'
@@ -1979,7 +1979,7 @@ def test_structure_export__params(app: DjangoTestApp):
         '4,,,,,,,,,lv,,,,,\r\n'
         '5,,,,,,,,,ee,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '7,,,,City,,,,,,,,,,\r\n'
         '8,,,,,,param,type,,created,,,,,\r\n'
         '9,,,,,,,,,modified,,,,,\r\n'
@@ -2153,7 +2153,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
         '1,test_dataset,,,,,,,,,,,,,\n'
-        '2,,resource1,,,,,,http://www.example.com,,,,,,\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,Title,Description\n'
         '3,,,,Model,,,id,,,,,,,\n'
         '4,,,,,id,integer,,,,,,,,\n'
         ',,,,,,,,,,,,,,\n'
@@ -2210,7 +2210,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
         '1,test_dataset,,,,,,,,,,,,Title,Description\r\n'
-        '2,,resource1,,,,,,http://www.example.com,,,,,,\r\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,Title,Description\r\n'
         '3,,,,Modelis,,,id,,,,,,,\r\n'
         '4,,,,,id,integer,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
@@ -2258,4 +2258,46 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
         '1,test_dataset,,,,,,,,,,,,Edited title,Edited description\r\n'
+    )
+
+
+@pytest.mark.django_db
+def test_structure_export_after_changing_distribution_title_and_description(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,Dataset,Dataset description\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,Resource,Resource description\n'
+        '3,,,,Model,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    dist_format = FileFormat()
+
+    distribution = DatasetDistribution.objects.first()
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk})).forms['resource-form']
+    form['title'] = 'Edited title'
+    form['description'] = 'Edited description'
+    form['format'] = dist_format.pk
+    resp = form.submit()
+    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
+    assert distribution.metadata.count() == 1
+    assert distribution.metadata.first().title == "Edited title"
+    assert distribution.metadata.first().description == "Edited description"
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,Edited title,Edited description\r\n'
+        '3,,,,Model,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
     )

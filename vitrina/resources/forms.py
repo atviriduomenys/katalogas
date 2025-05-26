@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import DateField
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from crispy_forms.helper import FormHelper
@@ -12,6 +13,63 @@ from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
+
+
+def _get_level_title(title, description=None):
+    if description:
+        return mark_safe(f'{title}<br/><p class="help">{description}</p>')
+    else:
+        return title
+
+
+LEVEL_CHOICES = (
+    (None, _get_level_title(_("Nenurodyta"))),
+    (
+        0,
+        _get_level_title(
+            _("Nėra identifikatoriaus"),
+            _(
+                "Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
+            ),
+        ),
+    ),
+    (
+        1,
+        _get_level_title(
+            _("Neunikalus identifikatorius"),
+            _(
+                "Duomenų laukas parinktas kaip identifikatorius nėra unikalus arba parinktas "
+                "laukas nėra privalomas ir ne visi objektai gali turėti reikšmę."
+            ),
+        ),
+    ),
+    (
+        2,
+        _get_level_title(
+            _("Nepatikimas identifikatorius"),
+            _(
+                "Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."
+            ),
+        ),
+    ),
+    (
+        3,
+        _get_level_title(
+            _("Patikimas identifikatorius"),
+            _(
+                "Naudojamas patikimas lokalus identifikatorius, tačiau objektams nėra priskirtas "
+                "globalus nekintantis identifikatorius."
+            ),
+        ),
+    ),
+    (
+        4,
+        _get_level_title(
+            _("Globalus identifikatorius"),
+            _("Objektams priskirtas globalus nekintantis identifikatorius."),
+        ),
+    ),
+)
 
 
 class DatasetResourceForm(TranslatableModelForm):
@@ -70,6 +128,12 @@ class DatasetResourceForm(TranslatableModelForm):
         required=False,
         queryset=Dataset.public.filter(service=True),
     )
+    level = forms.ChoiceField(
+        label=_("Brandos lygis"),
+        required=False,
+        widget=forms.RadioSelect,
+        choices=LEVEL_CHOICES,
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -88,6 +152,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "file",
             "name",
             "access",
+            "level",
             "is_parameterized",
             "upload_to_storage",
             "imported",
@@ -110,6 +175,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("description", placeholder=_("Detalus šaltinio aprašas"), rows="2"),
             Field("name"),
             Field("access"),
+            Field("level"),
             Field("is_parameterized"),
             Field("geo_location", placeholder=_("Pateikitę geografinę padėtį")),
             inline_fields(
@@ -129,8 +195,14 @@ class DatasetResourceForm(TranslatableModelForm):
         )
 
         if self.resource and self.resource.metadata.first():
-            self.initial["access"] = self.resource.metadata.first().access
-            self.initial["name"] = self.resource.metadata.first().name
+            metadata = self.resource.metadata.first()
+            self.initial["access"] = metadata.access
+            self.initial["name"] = metadata.name
+            self.initial["level"] = (
+                metadata.level_given if metadata.level_given is not None else "None"
+            )
+        else:
+            self.initial["level"] = "None"
 
         if not dataset.type.filter(name="catalog"):
             self.fields["imported"].widget = forms.HiddenInput()
@@ -195,6 +267,12 @@ class DatasetResourceForm(TranslatableModelForm):
                     _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
                 )
         return name
+
+    def clean_level(self):
+        level = self.cleaned_data.get("level")
+        if level and level != "None":
+            return int(level)
+        return None
 
 
 class FormatAdminForm(forms.ModelForm):

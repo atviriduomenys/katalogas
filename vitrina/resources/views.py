@@ -140,6 +140,7 @@ class ResourceCreateView(
             version=1,
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
+            level_given=form.cleaned_data.get("level"),
         )
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
@@ -236,6 +237,7 @@ class ResourceUpdateView(
             metadata.access = form.cleaned_data.get("access") or None
             metadata.title = form.cleaned_data.get("title")
             metadata.description = form.cleaned_data.get("description")
+            metadata.level_given = form.cleaned_data.get("level")
             metadata.version += 1
             metadata.save()
         else:
@@ -250,6 +252,7 @@ class ResourceUpdateView(
                 version=1,
                 title=form.cleaned_data.get("title"),
                 description=form.cleaned_data.get("description"),
+                level_given=form.cleaned_data.get("level"),
             )
         resource.save()
         return redirect(resource.get_absolute_url())

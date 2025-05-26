@@ -34,6 +34,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
     form['title'] = "Edited title"
     form['description'] = "edited resource description"
+    form['level'] = 2
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
@@ -44,6 +45,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert resource.metadata.first().name == 'resource1'
     assert resource.metadata.first().title == "Edited title"
     assert resource.metadata.first().description == "edited resource description"
+    assert resource.metadata.first().level_given == 2
 
 
 @pytest.mark.django_db
@@ -87,6 +89,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['download_url'] = "www.google.lt"
     form['period_start'] = '2022-10-20'
     form['period_end'] = '2022-12-20'
+    form['level'] = 1
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1
@@ -94,6 +97,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert DatasetDistribution.objects.first().metadata.first().name == 'resource1'
     assert DatasetDistribution.objects.first().metadata.first().title == 'Added title'
     assert DatasetDistribution.objects.first().metadata.first().description == 'Added new resource description'
+    assert DatasetDistribution.objects.first().metadata.first().level_given == 1
 
 
 @pytest.mark.django_db

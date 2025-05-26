@@ -1209,8 +1209,8 @@ def _resource_to_tabular(resource: DatasetDistribution):
                 "ref": meta.ref,
                 "level": meta.level_given,
                 "access": _get_access(meta.access),
-                "title": meta.title,
-                "description": meta.description,
+                "title": meta.title or resource.title,
+                "description": meta.description or resource.description,
             },
         )
     yield from _comments_to_tabular(resource)

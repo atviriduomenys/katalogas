@@ -610,6 +610,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
                         dataset=dataset,
                         download_url=resource_meta.source,
                         title=resource_meta.name,
+                        description=resource_meta.description,
                         type="URL",
                     )
                 distribution.set_current_language("lt")

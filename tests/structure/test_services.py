@@ -2301,3 +2301,43 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
         '3,,,,Model,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
     )
+
+
+@pytest.mark.django_db
+def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,Dataset,Dataset description\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,Resource,Resource description\n'
+        '3,,,,Model,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    dist_format = FileFormat()
+
+    distribution = DatasetDistribution.objects.first()
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk})).forms['resource-form']
+    form['level'] = 2
+    form['format'] = dist_format.pk
+    resp = form.submit()
+    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
+    assert distribution.metadata.count() == 1
+    assert distribution.metadata.first().level_given == 2
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,2,,,Resource,Resource description\r\n'
+        '3,,,,Model,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,\r\n'
+    )

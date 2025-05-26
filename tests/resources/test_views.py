@@ -42,6 +42,8 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert resource.description == 'edited resource description'
     assert resource.metadata.count() == 1
     assert resource.metadata.first().name == 'resource1'
+    assert resource.metadata.first().title == "Edited title"
+    assert resource.metadata.first().description == "edited resource description"
 
 
 @pytest.mark.django_db
@@ -90,6 +92,8 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert DatasetDistribution.objects.filter().count() == 1
     assert DatasetDistribution.objects.first().metadata.count() == 1
     assert DatasetDistribution.objects.first().metadata.first().name == 'resource1'
+    assert DatasetDistribution.objects.first().metadata.first().title == 'Added title'
+    assert DatasetDistribution.objects.first().metadata.first().description == 'Added new resource description'
 
 
 @pytest.mark.django_db

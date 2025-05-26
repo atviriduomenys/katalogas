@@ -246,6 +246,11 @@ class StatusAdmin(TranslatableAdmin):
     )
     fields = ("name", "description", "title", "url", "is_default")
 
+    def save_model(self, request, obj, form, change):
+        if obj.is_default:
+            Status.objects.filter(is_default=True).update(is_default=False)
+        super().save_model(request, obj, form, change)
+
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)
 admin.site.register(Category, CategoryAdmin)

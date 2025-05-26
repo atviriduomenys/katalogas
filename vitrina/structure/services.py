@@ -1334,7 +1334,7 @@ def _get_access(acess: int) -> str:
     return ""
 
 
-def _get_title(obj) -> str:
+def _get_title(obj: Status | Visibility) -> str:
     if obj is None:
         return ""
     return obj.title

@@ -112,10 +112,8 @@ class EnumForm(forms.ModelForm):
             ),
         )
 
-        if Visibility.objects.filter(is_default=True).exists():
-            default_visibility = Visibility.objects.filter(is_default=True).first()
-        if Status.objects.filter(is_default=True).exists():
-            default_status = Status.objects.filter(is_default=True).first()
+        default_visibility = Visibility.objects.filter(is_default=True).first()
+        default_status = Status.objects.filter(is_default=True).first()
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
             if (
@@ -525,12 +523,8 @@ class ModelCreateForm(forms.ModelForm):
 
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
-        if Visibility.objects.filter(is_default=True).exists():
-            default_visibility = Visibility.objects.filter(is_default=True).first()
-            self.initial["visibility"] = default_visibility
-        if Status.objects.filter(is_default=True).exists():
-            default_status = Status.objects.filter(is_default=True).first()
-            self.initial["status"] = default_status
+        self.initial["visibility"] = Visibility.objects.filter(is_default=True).first()
+        self.initial["status"] = Status.objects.filter(is_default=True).first()
 
     def clean_level(self):
         level = self.cleaned_data.get("level")
@@ -691,10 +685,8 @@ class ModelUpdateForm(ModelCreateForm):
         )
 
         if instance:
-            if Visibility.objects.filter(is_default=True).exists():
-                default_visibility = Visibility.objects.filter(is_default=True).first()
-            if Status.objects.filter(is_default=True).exists():
-                default_status = Status.objects.filter(is_default=True).first()
+            default_visibility = Visibility.objects.filter(is_default=True).first()
+            default_status = Status.objects.filter(is_default=True).first()
             model = instance.object
             self.initial["model_id"] = model.pk
             self.initial["name"] = instance.name.split("/")[-1]
@@ -997,12 +989,10 @@ class PropertyForm(forms.ModelForm):
             ),
         )
 
-        if Visibility.objects.filter(is_default=True).exists():
-            default_visibility = Visibility.objects.filter(is_default=True).first()
-            self.initial["visibility"] = default_visibility
-        if Status.objects.filter(is_default=True).exists():
-            default_status = Status.objects.filter(is_default=True).first()
-            self.initial["status"] = default_status
+        default_visibility = Visibility.objects.filter(is_default=True).first()
+        default_status = Status.objects.filter(is_default=True).first()
+        self.initial["visibility"] = default_visibility
+        self.initial["status"] = default_status
         self.initial["dataset_id"] = self.model.dataset.pk
         self.initial["level"] = "None"
         if instance:

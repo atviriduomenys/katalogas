@@ -49,7 +49,14 @@
             {% if model.access_display_value %}
                 <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
             {% endif %}
-
+            {% if metadata.eli %}
+                <span class="mr-3 tag is-white is-white">
+                        <span class="icon is-small has-text-grey">
+                            <i class="fas fa-link mr-1"></i>
+                            <span>ELI</span>
+                        </span>
+                </span>
+            {% endif %}
             <span>{{ metadata.average_level|default:"0"|floatformat:"0" }}</span>
             <span class="icon has-text-warning pr-3"><i class="fas fa-star"></i></span>
 
@@ -62,9 +69,9 @@
             {% endif %}
 
         </div>
-        {% if metadata.visibility %}
-            <div class="control">
-                <div class="tags has-addons">
+        <div class="control">
+        <div class="tags has-addons">
+        {% if metadata.visibility is not None %}
                     <span class="tag is-white is-white">{% translate "Matomumas" %}</span>
                 {% if metadata.visibility == 0 %}
                     <span class="tag is-grey is-light">{% translate "Metaduomenys nepublikuojami" %}</span>
@@ -78,10 +85,31 @@
                 {% if metadata.visibility == 3 %}
                     <span class="tag is-info is-light">{% translate "Taikomas EU lygmeniu" %}</span>
                 {% endif %}
-                </div>
-            </div>
         {% endif %}
-
+        {% if metadata.status %}
+                    <span class="tag is-white is-white">{% translate "Būsena" %}</span>
+            {% if metadata.status.codename == "develop" %}
+                <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
+                    {% translate metadata.status.name %}
+                </span>
+            {% endif %}
+            {% if metadata.status.codename == "completed" %}
+                <span class="tag is-success is-light">{% translate metadata.status.name %}</span>
+            {% endif %}
+            {% if metadata.status.codename == "discont" %}
+               <span class="tag" style="background-color: #fff5e5; color: #ffa525;">
+                    {% translate metadata.status.name %}
+               </span>
+            {% endif %}
+            {% if metadata.status.codename == "deprecated" %}
+                <span class="tag is-warning is-light">{% translate metadata.status.name %}</span>
+            {% endif %}
+            {% if metadata.status.codename == "withdrawn" %}
+                <span class="tag is-info is-light" style="background-color: #fbeaed; color: #d22d4d;">{% translate metadata.status.name %}</span>
+            {% endif %}
+        {% endif %}
+        </div>
+        </div>
         <div class="mb-2">
             {% if model.base %}
                 <span class="pr-5">
@@ -114,7 +142,7 @@
                 {% define prop.metadata.first as prop_metadata %}
                 <div class="mb-2">
                     <div class="columns no-margin-bottom">
-                     <div class="column is-10">
+                     <div class="column is-8">
                          {% if prop_metadata.visibility is not None %}
                             {% if prop_metadata.visibility == 0 %}
                                 <span class="mr-3 tag is-light is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
@@ -189,7 +217,27 @@
                             {% if prop_metadata.access is not None %}
                             <span class="mr-3 tag is-info is-light">{{ prop_metadata.get_access_display }}</span>
                             {% endif %}
-
+                            {% if metadata.status %}
+                                {% if metadata.status.codename == "develop" %}
+                                    <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
+                                        {% translate metadata.status.name %}
+                                    </span>
+                                {% endif %}
+                                {% if metadata.status.codename == "completed" %}
+                                    <span class="tag is-success is-light">{% translate metadata.status.name %}</span>
+                                {% endif %}
+                                {% if metadata.status.codename == "discont" %}
+                                   <span class="tag" style="background-color: #fff5e5; color: #ffa525;">
+                                        {% translate metadata.status.name %}
+                                   </span>
+                                {% endif %}
+                                {% if metadata.status.codename == "deprecated" %}
+                                    <span class="tag is-warning is-light">{% translate metadata.status.name %}</span>
+                                {% endif %}
+                                {% if metadata.status.codename == "withdrawn" %}
+                                    <span class="tag is-info is-light" style="background-color: #fbeaed; color: #d22d4d;">{% translate metadata.status.name %}</span>
+                                {% endif %}
+                            {% endif %}
                             <br/>
                             <p class="ml-4">{{ prop_metadata.title }}</p>
                         </div>
@@ -202,7 +250,15 @@
                             </span>
                             {% endif %}
                         </div>
-
+                        <div class="column is-1">
+                            {% if metadata.eli %}
+                            <span class="tag is-white is-white">
+                                <span class="icon is-small has-text-grey">
+                                <i class="fas fa-link mr-1"></i>
+                                <span>ELI</span>
+                                </span>
+                                </span>{% endif %}
+                        </div>
                         <div class="column is-1">
                             {% if prop_metadata.metadata_version and prop_metadata.draft %}
                                 <span class="tag is-danger is-light">{{ prop_metadata.metadata_version}} ({% translate "rengiama" %})</span>

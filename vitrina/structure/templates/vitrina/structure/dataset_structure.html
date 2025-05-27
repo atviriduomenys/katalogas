@@ -126,6 +126,29 @@
                             {% endif %}
                         </small>
                     </div>
+                    <div class="column is-2">
+                        {% if metadata.status %}
+                            {% if metadata.status.codename == "develop" %}
+                                <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
+                                    {% translate metadata.status.name %}
+                                </span>
+                            {% endif %}
+                            {% if metadata.status.codename == "completed" %}
+                                <span class="tag is-success is-light">{% translate metadata.status.name %}</span>
+                            {% endif %}
+                            {% if metadata.status.codename == "discont" %}
+                               <span class="tag" style="background-color: #fff5e5; color: #ffa525;">
+                                    {% translate metadata.status.name %}
+                               </span>
+                            {% endif %}
+                            {% if metadata.status.codename == "deprecated" %}
+                                <span class="tag is-warning is-light">{% translate metadata.status.name %}</span>
+                            {% endif %}
+                            {% if metadata.status.codename == "withdrawn" %}
+                                <span class="tag is-info is-light" style="background-color: #fbeaed; color: #d22d4d;">{% translate metadata.status.name %}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     <div class="column is-1">
                         {% if metadata.average_level %}
                             <span>
@@ -133,6 +156,17 @@
                                 <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
                             </span>
                         {% endif %}
+                    </div>
+                    <div class="column is-1">
+                        {% if metadata.eli %}
+                            <span class="mr-3 tag is-white is-white">
+                                    <span class="icon is-small has-text-grey">
+                                        <i class="fas fa-link mr-1"></i>
+                                        <span>ELI</span>
+                                    </span>
+                            </span>
+                        {% endif %}
+
                     </div>
                     <div class="column is-1">
                         {% if metadata.metadata_version and metadata.draft %}

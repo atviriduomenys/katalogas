@@ -962,7 +962,7 @@ def _parse_visibility(value: str) -> int:
 
 def _get_status(value: str) -> Status:
     if value:
-        return Status.objects.filter(title=value).first()
+        return Status.objects.filter(codename=value).first()
     return Status.objects.filter(is_default=True).first()
 
 
@@ -1354,7 +1354,7 @@ def _get_visibility(visibility: int) -> str:
     return ""
 
 def _get_title(obj: Status | None) -> str:
-    return "" if obj is None else obj.title
+    return "" if obj is None else obj.codename
 
 
 def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:

@@ -2349,3 +2349,80 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
         '3,,,,Model,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,\r\n'
     )
+
+@pytest.mark.django_db
+def test_structure_export_visibility_status_eli_columns(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,completed,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,4,completed,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,4,completed,package,protected,,,Class One,\r\n'
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,completed,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,4,completed,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,4,completed,package,protected,,,Class One,\r\n'
+    )
+
+@pytest.mark.django_db
+def test_structure_with_visibility_eli_status_fields_for_model(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,completed,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,4,completed,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,4,completed,package,protected,,,Class One,\r\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset)
+    )
+    assert metadata.count() == 1
+    assert list(metadata.values_list('name', flat=True)) == ['example']
+    models = Model.objects.all()
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Model)
+    ).order_by('order')
+    assert models.count() == 1
+    assert models.dataset == structure.dataset
+    assert metadata.count() == 1
+    assert list(metadata.values_list(
+        'visibility',
+        'status',
+        'eli',
+    )) == [
+               ('package', 'completed', ''),
+          ]

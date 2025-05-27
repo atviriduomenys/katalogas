@@ -209,37 +209,6 @@ class GeoportalAccessRights(models.Model):
         return self.title
 
 
-class Visibility(TranslatableModel):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
-    version = models.IntegerField(default=1)
-    deleted = models.BooleanField(blank=True, null=True)
-    deleted_on = models.DateTimeField(blank=True, null=True)
-
-    title = models.CharField(
-        unique=True,
-        max_length=255,
-        verbose_name="Kodinis pavadinimas",
-        blank=True,
-        null=True,
-    )
-
-    translations = TranslatedFields(
-        name=models.CharField(
-            _("Pavadinimas"), unique=True, max_length=255, blank=False
-        ),
-        description=models.CharField(
-            _("Aprašymas"), max_length=255, blank=True, null=True
-        ),
-    )
-    is_default = models.BooleanField(default=False)
-
-    class Meta:
-        db_table = "visibility"
-        verbose_name = _("Prieigos lygis")
-        verbose_name_plural = _("Prieigos lygiai")
-
-
 class Status(TranslatableModel):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -247,14 +216,14 @@ class Status(TranslatableModel):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
-    title = models.CharField(
+    codename = models.CharField(
         unique=True,
         max_length=255,
         verbose_name="Kodinis pavadinimas",
         blank=True,
         null=True,
     )
-    url = models.CharField(max_length=255, blank=True, null=True)
+    url = models.CharField(max_length=512, verbose_name="Nuoroda į kontroliuojamą EU žodyną", blank=True, null=True, )
     translations = TranslatedFields(
         name=models.CharField(
             _("Pavadinimas"), unique=True, max_length=255, blank=False
@@ -265,5 +234,5 @@ class Status(TranslatableModel):
 
     class Meta:
         db_table = "status"
-        verbose_name = _("Statusas")
-        verbose_name_plural = _("Statusai")
+        verbose_name = _("Būsena")
+        verbose_name_plural = _("Būsenos")

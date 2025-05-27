@@ -62,6 +62,26 @@
             {% endif %}
 
         </div>
+        {% if metadata.visibility %}
+            <div class="control">
+                <div class="tags has-addons">
+                    <span class="tag is-white is-white">{% translate "Matomumas" %}</span>
+                {% if metadata.visibility == 0 %}
+                    <span class="tag is-grey is-light">{% translate "Metaduomenys nepublikuojami" %}</span>
+                {% endif %}
+                {% if metadata.visibility == 1 %}
+                    <span class="tag is-warning is-light">{% translate "Taikomas IS lygmeniu" %}</span>
+                {% endif %}
+                {% if metadata.visibility == 2 %}
+                    <span class="tag is-success is-light">{% translate "Taikomas LT lygmeniu" %}</span>
+                {% endif %}
+                {% if metadata.visibility == 3 %}
+                    <span class="tag is-info is-light">{% translate "Taikomas EU lygmeniu" %}</span>
+                {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
         <div class="mb-2">
             {% if model.base %}
                 <span class="pr-5">
@@ -94,7 +114,31 @@
                 {% define prop.metadata.first as prop_metadata %}
                 <div class="mb-2">
                     <div class="columns no-margin-bottom">
-                        <div class="column is-10">
+                     <div class="column is-10">
+                         {% if prop_metadata.visibility is not None %}
+                            {% if prop_metadata.visibility == 0 %}
+                                <span class="mr-3 tag is-light is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                    <span class="icon is-small has-text-grey">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </span>
+                                </span>
+                            {% endif %}
+                            {% if prop_metadata.visibility == 1 %}
+                                <span class="mr-3 tag is-warning is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                    IS
+                                </span>
+                            {% endif %}
+                            {% if prop_metadata.visibility == 2 %}
+                                <span class="mr-3 tag is-success is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                LT
+                                </span>
+                            {% endif %}
+                            {% if prop_metadata.visibility == 3 %}
+                                <span class="mr-3 tag is-info is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                    EU
+                                </span>
+                            {% endif %}
+                         {% endif %}
                             <span class="pr-3 is-family-monospace">
                                 <a href="{{ prop.get_absolute_url }}">{{ prop }}</a>
                             </span>

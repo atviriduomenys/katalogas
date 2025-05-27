@@ -170,10 +170,16 @@ class DatasetStructureView(
             )
         else:
             self.models = (
-                Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                Model.objects
+                .annotate(access=Max("model_properties__metadata__access"))
+                .filter(
+                    dataset=self.object,
+                    access__gte=Metadata.PUBLIC,
+                )
+                .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
             )
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -278,10 +284,14 @@ class ModelStructureView(
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
+                .exclude(metadata__visibility=Metadata.PRIVATE)
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .exclude(metadata__visibility=Metadata.PRIVATE)
             )
+
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -299,7 +309,7 @@ class ModelStructureView(
             context["props_without_base"] = (
                 self.model.get_props_excluding_base().filter(
                     metadata__access__gte=Metadata.PUBLIC
-                )
+                ).exclude(metadata__visibility=Metadata.PRIVATE)
             )
         context["can_view_members"] = has_perm(
             self.request.user,
@@ -483,6 +493,9 @@ class PropertyStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
+        if metadata := self.property.metadata.first():
+            if metadata.visibility == Metadata.PRIVATE:
+                return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
         if self.object.is_public:
             return self.property in self.props
         else:
@@ -513,7 +526,6 @@ class PropertyStructureView(
         self.property = get_object_or_404(
             Property, model=self.model, metadata__name=prop_name
         )
-
         self.can_manage_structure = has_perm(
             self.request.user, Action.STRUCTURE, Dataset, self.object
         )
@@ -526,11 +538,12 @@ class PropertyStructureView(
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(
                 metadata__access__gte=Metadata.PUBLIC
-            )
+            ).exclude(metadata__visibility=Metadata.PRIVATE)
 
         return super().dispatch(request, *args, **kwargs)
 

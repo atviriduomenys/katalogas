@@ -14,7 +14,6 @@ from vitrina.classifiers.models import (
     GeoportalFrequency,
     GeoportalLicence,
     GeoportalAccessRights,
-    Visibility,
     Status,
 )
 from vitrina.classifiers.models import Licence
@@ -221,30 +220,14 @@ class GeoportalAccessRightsAdmin(admin.ModelAdmin):
     )
 
 
-class VisibilityAdmin(TranslatableAdmin):
-    list_display = (
-        "title",
-        "is_default",
-    )
-    fields = (
-        "name",
-        "description",
-        "title",
-        "is_default",
-    )
-
-    def save_model(self, request, obj, form, change):
-        if obj.is_default:
-            Visibility.objects.filter(is_default=True).update(is_default=False)
-        super().save_model(request, obj, form, change)
-
-
 class StatusAdmin(TranslatableAdmin):
     list_display = (
-        "title",
+        "name",
+        "codename",
         "is_default",
+        "url"
     )
-    fields = ("name", "description", "title", "url", "is_default")
+    fields = ("name", "description", "codename", "url", "is_default")
 
     def save_model(self, request, obj, form, change):
         if obj.is_default:
@@ -260,5 +243,4 @@ admin.site.register(GeoportalCategory, GeoportalCategoryAdmin)
 admin.site.register(GeoportalFrequency, GeoportalFrequencyAdmin)
 admin.site.register(GeoportalLicence, GeoportalLicenceAdmin)
 admin.site.register(GeoportalAccessRights, GeoportalAccessRightsAdmin)
-admin.site.register(Visibility, VisibilityAdmin)
 admin.site.register(Status, StatusAdmin)

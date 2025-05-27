@@ -16,7 +16,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _, get_language
 
 from vitrina import settings
-from vitrina.classifiers.models import Visibility, Status
+from vitrina.classifiers.models import Status
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
@@ -472,7 +472,7 @@ def _create_or_update_metadata(
         )
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
-        status = _parse_status(obj_meta.status)
+        status = _get_status(obj_meta.status)
         if latest_version := metadata.metadataversion_set.order_by(
             "-version__created"
         ).first():
@@ -566,6 +566,9 @@ def _create_or_update_metadata(
             level=obj_meta.level,
             level_given=obj_meta.level_given,
             access=_parse_access(obj_meta.access),
+            visibility=_parse_visibility(obj_meta.visibility),
+            eli=obj_meta.eli,
+            status=_get_status(obj_meta.status),
             uri=obj_meta.uri,
             version=1,
             title=obj_meta.title,
@@ -944,14 +947,20 @@ def _parse_access(value: str):
             access = Metadata.OPEN
     return access
 
-
-def _parse_visibility(value: str):
+def _parse_visibility(value: str) -> int:
+    visibility = None
     if value:
-        return Visibility.objects.filter(title=value).first()
-    return Visibility.objects.filter(is_default=True).first()
+        if value == "private":
+            visibility = Metadata.PRIVATE
+        elif value == "protected":
+            visibility = Metadata.PROTECTED
+        elif value == "package":
+            visibility = Metadata.PACKAGE
+        elif value == "public":
+            visibility = Metadata.VISIBILITY_PUBLIC
+    return visibility
 
-
-def _parse_status(value: str):
+def _get_status(value: str) -> Status:
     if value:
         return Status.objects.filter(title=value).first()
     return Status.objects.filter(is_default=True).first()
@@ -1098,7 +1107,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
                         "title": meta.title,
                         "description": meta.description,
                         "status": _get_title(meta.status),
-                        "visibility": _get_title(meta.visibility),
+                        "visibility": _get_visibility(meta.visibility),
                         "eli": meta.eli,
                     },
                 )
@@ -1128,7 +1137,7 @@ def _params_to_tabular(obj: models.Model, separator: bool = False):
                         "title": meta.title,
                         "description": meta.description,
                         "status": _get_title(meta.status),
-                        "visibility": _get_title(meta.visibility),
+                        "visibility": _get_visibility(meta.visibility),
                         "eli": meta.eli,
                     },
                 )
@@ -1171,7 +1180,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False):
                     "uri": meta.uri,
                     "source": meta.source,
                     "status": _get_title(meta.status),
-                    "visibility": _get_title(meta.visibility),
+                    "visibility": _get_visibility(meta.visibility),
                     "eli": meta.eli,
                     "prepare": meta.prepare,
                     "ref": ", ".join(
@@ -1305,7 +1314,7 @@ def _properties_to_tabular(model: Model):
                     "prepare": meta.prepare,
                     "ref": _prop_ref_to_tabular(prop, meta),
                     "status": _get_title(meta.status),
-                    "visibility": _get_title(meta.visibility),
+                    "visibility": _get_visibility(meta.visibility),
                     "eli": meta.eli,
                 },
             )
@@ -1333,11 +1342,19 @@ def _get_access(acess: int) -> str:
         return "open"
     return ""
 
+def _get_visibility(visibility: int) -> str:
+    if visibility == Metadata.PRIVATE:
+        return "private"
+    elif visibility == Metadata.PROTECTED:
+        return "protected"
+    elif visibility == Metadata.PACKAGE:
+        return "package"
+    elif visibility == Metadata.VISIBILITY_PUBLIC:
+        return "public"
+    return ""
 
-def _get_title(obj: Status | Visibility) -> str:
-    if obj is None:
-        return ""
-    return obj.title
+def _get_title(obj: Status | None) -> str:
+    return "" if obj is None else obj.title
 
 
 def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:

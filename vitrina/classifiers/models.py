@@ -220,15 +220,44 @@ class Status(TranslatableModel):
         unique=True,
         max_length=255,
         verbose_name="Kodinis pavadinimas",
+        help_text=_(
+            "Savybė nurodanti prieigos prie metaduomenų lygį. "
+            "DCAT-AP rekomenduoja naudoti šias klasifikatoriaus reikšmes: "
+            "- develop "
+            "- completed "
+            "- discont "
+            "- deprecated "
+            "- withdrawn "
+        ),
         blank=True,
         null=True,
     )
-    url = models.CharField(max_length=512, verbose_name="Nuoroda į kontroliuojamą EU žodyną", blank=True, null=True, )
+    url = models.CharField(
+        max_length=512,
+        verbose_name="Nuoroda į kontroliuojamą EU žodyną",
+        blank=True,
+        null=True,
+    )
     translations = TranslatedFields(
         name=models.CharField(
-            _("Pavadinimas"), unique=True, max_length=255, blank=False
+            _("Pavadinimas"),
+            help_text=_(
+                "Būsenos lauko pavadinimas. "
+                "Šis pavadinimas yra skirtas skaityti žmonėms ir bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+            ),
+            unique=True,
+            max_length=255,
+            blank=False,
         ),
-        description=models.CharField(_("Description"), max_length=255, blank=True),
+        description=models.CharField(
+            _("Aprašymas"),
+            help_text=_(
+                "Būsenos lauko aprašymas. "
+                "Šis aprašymas yra skirtas skaityti žmonėms ir bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+            ),
+            max_length=255,
+            blank=True,
+        ),
     )
     is_default = models.BooleanField(default=False)
 

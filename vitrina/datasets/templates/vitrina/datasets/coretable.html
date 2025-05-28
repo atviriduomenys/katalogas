@@ -4,7 +4,13 @@
 <table class="table is-fullwidth has-border-bottom th-40 no-margin-bottom custom-table-padding">
     <tbody>
     <tr>
-        <th>{% translate "Patinka" %}</th>
+        <th>
+            {% translate "Patinka" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Teigiamų įvertinimų kiekis duomenų rinkiniui' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td id="dataset_likes">
             {% like obj=dataset user=request.user %}
         </td>
@@ -28,14 +34,26 @@
     </tr>
     {% if dataset.temporal_coverage %}
         <tr>
-            <th>{% translate "Laikotarpis" %}</th>
+            <th>
+                {% translate "Laikotarpis" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Nurodoma, kokio laikotarpio duomenys yra pateikti (pvz.: 2024-01-01 — 2025-01-01)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 {{ dataset.temporal_coverage }}
             </td>
         </tr>
     {% endif %}
     <tr>
-        <th>{% translate "Atnaujinama" %}</th>
+        <th>
+            {% translate "Atnaujinama" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Nurodoma, kokiu dažnumu duomenys yra atnaujinami (pvz.: kas mėnesį, kasmet)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>
             {% if dataset.frequency %}
                 {{ dataset.frequency }}
@@ -43,7 +61,13 @@
         </td>
     </tr>
     <tr>
-        <th>{% translate "Kategorijos" %}</th>
+        <th>
+            {% translate "Kategorijos" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                data-tooltip="{% translate 'Temos ar sritys, kurioms priskiriamas duomenų rinkinys (pvz.: Sveikata, Švietimas)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>
             <ul class="mt-0 ml-4">
                 {% for category in dataset.category.all %}
@@ -61,7 +85,13 @@
     {% if dataset.get_all_groups %}
         </tr>
             <tr>
-            <th>{% translate "Grupės" %}</th>
+            <th>
+                {% translate "Grupės" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Grupės, kurioms priklauso šis duomenų rinkinys (pvz.: administraciniai vienetai, statistiniai vienetai)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
             {% for group in dataset.get_all_groups %}
                 <span>{{ group.title }}</span>
@@ -115,7 +145,13 @@
     {% endif%}
     {% if dataset.licence %}
         <tr>
-            <th>{% translate "Licencija" %}</th>
+            <th>
+                {% translate "Licencija" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 <a href="{{ dataset.licence.url | default:dataset.licence.id }}" target="_blank"
                    title="{{ dataset.licence.description }}">{{ dataset.licence.title }}</a>
@@ -123,7 +159,13 @@
         </tr>
     {% endif %}
     <tr>
-        <th>{% translate "Katalogas" %}</th>
+        <th>
+            {% translate "Katalogas" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Nurodoma konkreti informacinė sistema - valstybės informacinė sistema ar registras, kurio apimtyje yra tvarkomi duomenų rinkiniai' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>
             {% if dataset.catalog %}
                 {% if harvested %}
@@ -142,7 +184,13 @@
     {% endif %}
     {% if dataset.service %}
         <tr>
-            <th>{% translate "API adresas" %}</th>
+            <th>
+                {% translate "API adresas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Pagrindinis API paslaugos adresas, kuriuo galima pasiekti duomenis' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 {% if dataset.endpoint_url %}
                     <a href="{{ dataset.endpoint_url }}">{{ dataset.endpoint_url|truncatechars:50 }}</a>
@@ -150,11 +198,23 @@
             </td>
         </tr>
         <tr>
-            <th>{% translate "API formatas" %}</th>
+            <th>
+                {% translate "API formatas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Techninis formatas (pvz., REST, SOAP)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ dataset.endpoint_type|default:"" }}</td>
         </tr>
         <tr>
-            <th>{% translate "API specifikacija" %}</th>
+            <th>
+                {% translate "API specifikacija" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Nuoroda į API dokumentaciją (pvz., OpenAPI, Swagger)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 {% if dataset.endpoint_description %}
                     <a href="{{ dataset.endpoint_description }}">{{ dataset.endpoint_description|truncatechars:50 }}</a>
@@ -162,7 +222,13 @@
             </td>
         </tr>
         <tr>
-            <th>{% translate "API specifikacijos formatas" %}</th>
+            <th>
+                {% translate "API specifikacijos formatas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'API dokumentacijos formatas (pvz., JSON, YAML)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ dataset.endpoint_description_type|default:"" }}</td>
         </tr>
     {% endif %}
@@ -178,14 +244,26 @@
     <tbody>
     {% if dataset.manager %}
         <tr>
-            <th>{% translate "Atsakingas asmuo" %}</th>
+            <th>
+                {% translate "Atsakingas asmuo" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Asmuo ar institucija, atsakinga už duomenų rinkinio turinį. Dažnai pateikiamas kontaktas: el. pašto adresas, telefono numeris' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 {{ dataset.manager }}{% if dataset.manager.email %}, {{ dataset.manager.email }}{% endif %}{% if dataset.manager.phone %}, {{ dataset.manager.phone }}{% endif %}
             </td>
         </tr>
     {% elif harvested %}
         <tr>
-            <th>{% translate "Atsakingas asmuo" %}</th>
+            <th>
+                {% translate "Atsakingas asmuo" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Asmuo ar institucija, atsakinga už duomenų rinkinio turinį. Dažnai pateikiamas kontaktas: el. pašto adresas, telefono numeris' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>
                 {{ dataset.responsiblePerson }}{% if dataset.email1 %} {{ dataset.email1 }}{% endif %}{% if dataset.phone %} {{ dataset.phone }}{% endif %}
             </td>
@@ -193,7 +271,13 @@
     {% else %}
         {% if meta %}
             <tr>
-                <th>{% translate "Atsakingas asmuo" %}</th>
+                <th>
+                    {% translate "Atsakingas asmuo" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle"
+                          data-tooltip="{% translate 'Asmuo ar institucija, atsakinga už duomenų rinkinio turinį. Dažnai pateikiamas kontaktas: el. pašto adresas, telefono numeris' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
                 {% for key, value in meta %}
                     {% if key == 'Kontaktinis_asmuo' %}
                     {% endif %}
@@ -202,17 +286,35 @@
         {% endif %}
     {% endif %}
     <tr>
-        <th>{% translate "Duomenų rinkinio sukūrimo data" %}</th>
+        <th>
+            {% translate "Duomenų rinkinio sukūrimo data" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Kada buvo sukurtas duomenų rinkinys (metai, mėnuo, diena)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>{{ dataset.created|date:"SHORT_DATETIME_FORMAT" }}</td>
     </tr>
     {% if dataset.modified %}
         <tr>
-            <th>{% translate "Paskutinio atnaujinimo data" %}</th>
+            <th>
+                {% translate "Paskutinio atnaujinimo data" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Kada paskutinį kartą buvo atnaujinti duomenys' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ dataset.modified|date:"SHORT_DATETIME_FORMAT" }}</td>
         </tr>
     {% endif %}
     <tr>
-        <th>{% translate "Platinimo sąlygos" %}</th>
+        <th>
+            {% translate "Platinimo sąlygos" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Ribojimai ar sąlygos, taikomos duomenų naudojimui (pvz., naudojimo apribojimai, prieigos teisės)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>{% if harvested %}
                 {% if dataset.useLimitation %}
                     {% translate "Naudojimo limitas" %}: {{ dataset.useLimitation }}<br>
@@ -234,7 +336,13 @@
     {% if harvested %}
         {% if orgProvider %}
             <tr>
-                <th>{% translate "Organizacijos teikėjas" %}</th>
+                <th>
+                    {% translate "Organizacijos teikėjas" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle"
+                          data-tooltip="{% translate 'Organizacijos, kuri pateikė ar teikia duomenis, atstovas. Pateikiami el. paštas, telefonas' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
                 <td>
                     {{ dataset.orgProvider }}<br>
                     <a href="mailto:{{ dataset.orgEmail }}">{{ dataset.orgEmail }}</a><br>

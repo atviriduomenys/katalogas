@@ -9,11 +9,22 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ProjectForm(ModelForm):
-    title = CharField(label=_("Pavadinimas"))
-    description = CharField(label=_("Aprašymas"), widget=Textarea)
-    url = CharField(label=_("Nuoroda į panaudojimo atvejį"), required=False)
+    title = CharField(label=_("Pavadinimas"), help_text=_("Siūlomo panaudojimo atvejo pavadinimas."))
+    description = CharField(
+        label=_("Aprašymas"),
+        widget=Textarea,
+        help_text=_("Išsamus pasiūlymo aprašymas."),
+    )
+    url = CharField(
+        label=_("Nuoroda į panaudojimo atvejį"),
+        required=False,
+        help_text=_("Nuoroda susijusi su siūlomu panaudojimo atveju (github, pagrindinė svetainė, kt.).")
+    )
     image = FilerImageField(
-        label=_("Paveiksliukas"), required=False, upload_to=Project.UPLOAD_TO
+        label=_("Paveiksliukas"),
+        required=False,
+        upload_to=Project.UPLOAD_TO,
+        help_text=_("Paveiksliukas susijęs su pasiūlytu panaudojimo atveju.")
     )
 
     class Meta:

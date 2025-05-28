@@ -11,36 +11,66 @@
         </tr>
     {% endif %}
     <tr>
-        <th>{% translate "Būsena" %}</th>
+        <th>
+            {% translate "Būsena" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Pateikto poreikio būsena (Pateiktas, Atmestas, Įvykdytas, Atsakytas, Suplanuotas, Įvertintas)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td id="request_status"><b>{{ status }}</b></td>
     </tr>
     <tr>
-        <th>{% translate "Registravimo data" %}</th>
+        <th>
+            {% translate "Registravimo data" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Poreikio registravimo data' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>{{ request_object.created }}</td>
     </tr>
     {% if request_object.modified %}
         <tr>
-            <th>{% translate "Atnaujinimo data" %}</th>
+            <th>
+                {% translate "Atnaujinimo data" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Data, kada poreikis buvo atnaujintas' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ request_object.modified }}</td>
         </tr>
     {% endif %}
     {% if request_object.planned_opening_date %}
         {% if not request_object.is_existing %}
             <tr>
-                <th>{% translate "Planuojama atvėrimo data" %}</th>
+                <th>
+                    {% translate "Planuojama atvėrimo data" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Nurodoma data, kada planuojama atverti duomenis' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
                 <td>{{ request_object.planned_opening_date }}</td>
             </tr>
         {% endif %}
     {% endif %}
     {% if user_count %}
         <tr>
-            <th>{% translate "Naudotojų skaičius" %}</th>
+            <th>
+                {% translate "Naudotojų skaičius" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Nurodomas naudotojų skaičius' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ user_count }}</td>
         </tr>
     {% endif %}
     {% if request_object.periodicity %}
     <tr>
-        <th>{% translate "Duomenų atnaujinimo periodiškumas" %}</th>
+        <th>
+            {% translate "Duomenų atnaujinimo periodiškumas" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Nurodomas periodas - kaip dažnai duomenis yra atnaujinami (pvz.: kas mėnesį, kas metus)' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </th>
         <td>{{ request_object.periodicity }}</td>
     </tr>
     {% endif %}
@@ -48,13 +78,23 @@
     {% has_author_view_perm request_object request.user as can_view_author %}
     {% if can_view_author %}
         <tr>
-            <th>{% translate "Autorius" %}</th>
+            <th>
+                {% translate "Autorius" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Nurodomas asmuo pateikęs poreikį ar pasiūlymą' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
             <td>{{ request_object.user }}<br/> <small><a href="mailto:{{ request_object.user.email }}">{{ request_object.user.email }}</a></small></td>
         </tr>
     {% endif %}
 
     <tr>
-        <th>{% translate "Patinka" %}:</th>
+        <th>
+            {% translate "Patinka" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{% translate 'Teigiamų įvertinimų kiekis duomenų rinkiniui' %}">
+                <i class="fas fa-info-circle"></i>
+            </span>:
+        </th>
         <td id="request_likes">
             {% like obj=request_object user=request.user %}
         </td>

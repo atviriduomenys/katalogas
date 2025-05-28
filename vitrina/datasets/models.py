@@ -128,25 +128,54 @@ class Dataset(TranslatableModel):
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    created = models.DateTimeField(
+        blank=True,
+        null=True,
+        auto_now_add=True,
+    )
+    modified = models.DateTimeField(
+        blank=True,
+        null=True,
+        auto_now=True,
+    )
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField(default=1)
-    slug = models.CharField(unique=True, max_length=255, blank=False, null=True)
-    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
+    version = models.IntegerField(default=1)  # TODO: Deprecated, versioning is done w/ django-reversion
+    slug = models.CharField(
+        unique=True,
+        max_length=255,
+        blank=False,
+        null=True,
+    )  # TODO: Deprecated, slugs are formed from id's
+    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)  # TODO: Remove blank and null
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
-    theme = models.CharField(max_length=255, blank=True, null=True)
+    theme = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )  # TODO: Deprecated, category should be used instead.
     category = models.ManyToManyField(
-        Category, verbose_name=_("Kategorija"), blank=True
+        Category,
+        verbose_name=_("Kategorija"),
+        blank=True,
     )
-    category_old = models.CharField(max_length=255, blank=True, null=True)
+    category_old = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
 
     catalog = models.ForeignKey(
-        Catalog, models.SET_NULL, db_column="catalog", blank=True, null=True
+        Catalog,
+        models.SET_NULL,
+        db_column="catalog",
+        blank=True,
+        null=True,
     )
+    # TODO: Should not be used anymore, instead:
+    #  - https://github.com/atviriduomenys/katalogas/blob/1c2e6cf69f271a655700b196ae7fd7e0fb6d2807/vitrina/datasets/models.py#L1399
     origin = models.CharField(max_length=255, blank=True, null=True)
 
     organization = models.ForeignKey(
@@ -154,7 +183,7 @@ class Dataset(TranslatableModel):
         models.PROTECT,
         blank=True,
         null=True,
-        verbose_name=_("Organizacija"),
+        verbose_name=_("Duomenų tvarkytojas"),
     )
 
     licence = models.ForeignKey(
@@ -166,17 +195,41 @@ class Dataset(TranslatableModel):
         verbose_name=_("Licenzija"),
     )
 
-    status = models.CharField(max_length=255, choices=STATUSES, default=UNASSIGNED)
-    published = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(
+        max_length=255,
+        choices=STATUSES,
+        default=UNASSIGNED,
+    )
+    published = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
     is_public = models.BooleanField(
-        default=True, verbose_name=_("Duomenų rinkinys viešinamas")
+        default=True,
+        verbose_name=_("Duomenų rinkinys viešinamas"),
     )
 
-    language = models.CharField(max_length=255, blank=True, null=True)
-    spatial_coverage = models.CharField(max_length=255, blank=True, null=True)
-    temporal_coverage = models.CharField(max_length=255, blank=True, null=True)
+    language = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    spatial_coverage = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    temporal_coverage = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
 
-    update_frequency = models.CharField(max_length=255, blank=True, null=True)
+    update_frequency = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     frequency = models.ForeignKey(
         Frequency,
         models.SET_NULL,
@@ -184,7 +237,10 @@ class Dataset(TranslatableModel):
         null=True,
         verbose_name=_("Atnaujinimo dažnumas"),
     )
-    last_update = models.DateTimeField(blank=True, null=True)
+    last_update = models.DateTimeField(
+        blank=True,
+        null=True,
+    )
 
     access_rights = models.CharField(
         _("Prieigos teisės"),
@@ -194,7 +250,9 @@ class Dataset(TranslatableModel):
         max_length=255,
     )
     distribution_conditions = models.TextField(
-        blank=True, null=True, verbose_name=_("Platinimo salygos")
+        blank=True,
+        null=True,
+        verbose_name=_("Platinimo salygos"),
     )
 
     tags = TagField(
@@ -209,11 +267,21 @@ class Dataset(TranslatableModel):
         autocomplete_view_fulltext=True,
     )
 
-    notes = models.TextField(blank=True, null=True)
-    geoportal_id = models.CharField(
-        _("Geoportalo id"), max_length=255, blank=True, null=True
+    notes = models.TextField(
+        blank=True,
+        null=True,
     )
-    creator_text = models.CharField(max_length=255, blank=True, null=True)
+    geoportal_id = models.CharField(
+        _("Geoportalo id"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    creator_text = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     publisher = models.ForeignKey(
         Organization,
         related_name="published_datasets",
@@ -230,9 +298,16 @@ class Dataset(TranslatableModel):
         verbose_name=_("Duomenų rinkinio ryšiai"),
         blank=True,
     )
-    type = models.ManyToManyField("Type", verbose_name=_("Tipas"), blank=True)
+    type = models.ManyToManyField(
+        "Type",
+        verbose_name=_("Tipas"),
+        blank=True,
+    )
     endpoint_url = models.URLField(
-        _("API adresas"), null=True, blank=True, max_length=512
+        _("API adresas"),
+        null=True,
+        blank=True,
+        max_length=512,
     )
     endpoint_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -240,10 +315,12 @@ class Dataset(TranslatableModel):
         verbose_name=_("API formatas"),
         null=True,
         blank=True,
-        related_name="format_endpoint_types"
+        related_name="format_endpoint_types",
     )
     endpoint_description = models.URLField(
-        _("API specifikacija"), null=True, blank=True
+        _("API specifikacija"),
+        null=True,
+        blank=True,
     )
     endpoint_description_type = models.ForeignKey(
         "vitrina_resources.Format",
@@ -251,39 +328,87 @@ class Dataset(TranslatableModel):
         verbose_name=_("API specifikacijos formatas"),
         null=True,
         blank=True,
-        related_name="format_endpoint_description_types"
+        related_name="format_endpoint_description_types",
     )
-    service = models.BooleanField(_("DataService rinkinys"), default=False)
-    series = models.BooleanField(_("DataSeries rinkinys"), default=False)
+    service = models.BooleanField(
+        _("DataService rinkinys"),
+        default=False,
+    )
+    series = models.BooleanField(
+        _("DataSeries rinkinys"),
+        default=False,
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
     meta = models.TextField(blank=True, null=True)
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/9
-    priority_score = models.IntegerField(blank=True, null=True)
+    priority_score = models.IntegerField(
+        blank=True,
+        null=True,
+    )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/14
-    structure_data = models.TextField(blank=True, null=True)
-    structure_filename = models.CharField(max_length=255, blank=True, null=True)
+    structure_data = models.TextField(
+        blank=True,
+        null=True,
+    )
+    structure_filename = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     current_structure = models.ForeignKey(
-        "DatasetStructure", models.SET_NULL, related_name="+", blank=True, null=True
+        "DatasetStructure",
+        models.SET_NULL,
+        related_name="+",
+        blank=True,
+        null=True,
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/26
-    financed = models.BooleanField(blank=True, null=True)
-    financing_plan_id = models.BigIntegerField(blank=True, null=True)
-    financing_priorities = models.TextField(blank=True, null=True)
-    financing_received = models.BigIntegerField(blank=True, null=True)
-    financing_required = models.BigIntegerField(blank=True, null=True)
-    will_be_financed = models.BooleanField(blank=True, default=False)
+    financed = models.BooleanField(
+        blank=True,
+        null=True,
+    )
+    financing_plan_id = models.BigIntegerField(
+        blank=True,
+        null=True,
+    )
+    financing_priorities = models.TextField(
+        blank=True,
+        null=True,
+    )
+    financing_received = models.BigIntegerField(
+        blank=True,
+        null=True,
+    )
+    financing_required = models.BigIntegerField(
+        blank=True,
+        null=True,
+    )
+    will_be_financed = models.BooleanField(
+        blank=True,
+        default=False,
+    )
     # --------------------------->8-------------------------------------
 
-    metadata = GenericRelation("vitrina_structure.Metadata")
-    comments = GenericRelation("vitrina_comments.Comment")
-    tasks = GenericRelation("vitrina_tasks.Task")
-    representatives = GenericRelation("vitrina_orgs.Representative")
-    request_objects = GenericRelation("vitrina_requests.RequestObject")
+    metadata = GenericRelation(
+        "vitrina_structure.Metadata",
+    )
+    comments = GenericRelation(
+        "vitrina_comments.Comment",
+    )
+    tasks = GenericRelation(
+        "vitrina_tasks.Task",
+    )
+    representatives = GenericRelation(
+        "vitrina_orgs.Representative",
+    )
+    request_objects = GenericRelation(
+        "vitrina_requests.RequestObject",
+    )
 
     objects = TranslatableManager()
     public = PublicDatasetManager()

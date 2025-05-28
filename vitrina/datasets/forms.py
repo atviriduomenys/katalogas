@@ -64,28 +64,28 @@ class DatasetTypeField(forms.ModelMultipleChoiceField):
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     title = TranslatedField(
-        form_class=CharField, label=_("Pavadinimas"), required=True, widget=TextInput()
+        form_class=CharField,
+        label=_("Pavadinimas"),
+        required=True,
+        widget=TextInput(),
     )
     type = DatasetTypeField(
-        label=_("Duomenų rinkinio tipas"),
+        label=_("Duomenų ištekliaus tipas"),
         required=False,
         queryset=Type.objects.all(),
         widget=forms.CheckboxSelectMultiple,
     )
-    description = TranslatedField(label=_("Aprašymas"), required=True)
+    description = TranslatedField(
+        label=_("Aprašymas"),
+        required=True,
+    )
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=False,
-        help_text=_("Pagrindinis API paslaugos adresas"),
     )
     endpoint_description = forms.CharField(
         label=_("API specifikacija"),
         required=False,
-        help_text=_(
-            "Nuoroda į API specifikaciją, pavyzdžiui OpenAPI (Swagger), WSDL ar kitas API "
-            "specifikacijos formatas, gali būti ir nuoroda į API dokumentaciją, kuri nėra "
-            "nuskaitoma mašininiu būdu"
-        ),
     )
     files = MultipleFilerField(
         label=_("Failai"),
@@ -105,7 +105,8 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     )
 
     contact = forms.ChoiceField(
-        label=_("Kontaktinis asmuo ar organizacija"), required=False
+        label=_("Kontaktinis asmuo ar organizacija"),
+        required=False,
     )
 
     creator = forms.ModelChoiceField(
@@ -116,9 +117,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
-        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        label=_("Paslaugų teikėjas"),
         required=False,
-    )
+    )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
 
     managed_by_publisher = forms.BooleanField(
         label=_("Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"),
@@ -381,7 +382,7 @@ class DatasetAdminForm(forms.ModelForm):
     )
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
-        label=_("Duomenų atvėrimo paslaugų teikėjas"),
+        label=_("Paslaugų teikėjas"),
         required=False,
     )
 
